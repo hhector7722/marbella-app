@@ -35,6 +35,19 @@ export {
 } from './opening-carry.ts';
 export { loadEmployeeBoundaryFacts } from './load-employee-facts.ts';
 export {
+  buildOvertimeWeeksFromSsot,
+  type StaffWeeklyStats,
+  type WeeklyStats,
+  type BuildOvertimeWeeksOptions,
+} from './overtime-weeks-ssot.ts';
+export {
+  buildLaborCostPeriodFromSsot,
+  buildLaborCostDayDetailFromSsot,
+  type LaborDayCell,
+  type LaborDayWorker,
+} from './labor-cost-ssot.ts';
+export { ordinaryHourlyRateFromSsot } from './ordinary-rate-ssot.ts';
+export {
   applyContractualChange,
   assertContractTermInvariants,
   coalesceIdenticalConsecutiveTerms,

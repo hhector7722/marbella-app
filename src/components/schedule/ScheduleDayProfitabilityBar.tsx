@@ -13,6 +13,7 @@ import {
     formatScheduleEuro,
     type ScheduleShiftForCost,
 } from '@/lib/schedule-day-profitability';
+import { getSsotOrdinaryHourlyRate } from '@/app/actions/ssot-ordinary-rate';
 
 type Props = {
     date: string;
@@ -63,11 +64,8 @@ export function ScheduleDayProfitabilityBar({ date, shifts }: Props) {
             if (toFetch.length > 0) {
                 const fetched = await Promise.all(
                     toFetch.map(async (userId) => {
-                        const { data, error } = await supabase.rpc('fn_labor_effective_ordinary_rate', {
-                            p_user_id: userId,
-                            p_on_date: date,
-                        });
-                        const rate = error ? 0 : Number(data) || 0;
+                        const res = await getSsotOrdinaryHourlyRate(userId, date);
+                        const rate = res.success ? res.rate : 0;
                         setCachedLaborRate(userId, date, rate);
                         return { userId, rate };
                     }),

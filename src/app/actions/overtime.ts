@@ -4,6 +4,13 @@ import { createClient } from "@/utils/supabase/server";
 import { madridDayUtcRangeIso } from "@/lib/madrid-date-bounds";
 import { calculateRoundedHours } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
+import {
+    buildOvertimeWeeksFromSsot,
+    type StaffWeeklyStats,
+    type WeeklyStats,
+} from '@/lib/hours-engine';
+
+export type { StaffWeeklyStats, WeeklyStats };
 
 /** Horas Marbella entre dos instantes ISO (misma regla que fn_round_marbella_hours en BD). */
 function marbellaHoursBetweenClockIso(clockInIso: string, clockOutIso: string): number {
@@ -66,62 +73,25 @@ function resolveClockOutIso(
     return null;
 }
 
-export interface StaffWeeklyStats {
-    id: string;
-    name: string;
-    role: string;
-    totalHours: number;
-    regularHours: number;
-    overtimeHours: number;
-    totalCost: number;
-    regularCost: number;
-    overtimeCost: number;
-    isPaid: boolean;
-    preferStock?: boolean;
-}
-
-export interface WeeklyStats {
-    weekId: string;
-    label: string;
-    startDate: Date;
-    totalAmount: number;
-    totalHours: number;
-    staff: StaffWeeklyStats[];
-}
-
 const EMPTY_OVERTIME = {
     weeksResult: [] as WeeklyStats[],
     summary: { totalCost: 0, totalHours: 0, totalOvertimeCost: 0 }
 };
 
+/**
+ * Listado de horas extras / nómina semanal.
+ * Fuente: Hours Engine (misma liquidación que WorkerWeeklyHistoryModal).
+ * Ya no usa get_weekly_worker_stats.
+ */
 export async function getOvertimeData(startDate: string, endDate: string, userId?: string) {
     try {
         const supabase = await createClient();
-
-        const { data, error } = await supabase.rpc('get_weekly_worker_stats', {
-            p_start_date: startDate,
-            p_end_date: endDate,
-            p_user_id: userId ?? null,
-            p_only_completed_weeks: true,
+        return await buildOvertimeWeeksFromSsot(supabase, {
+            startDate,
+            endDate,
+            userId: userId ?? null,
+            onlyCompletedWeeks: true,
         });
-
-        if (error) {
-            console.error("Error fetching overtime data from RPC:", error);
-            return EMPTY_OVERTIME;
-        }
-
-        if (data == null) return EMPTY_OVERTIME;
-
-        const weeks = Array.isArray((data as any).weeksResult) ? (data as any).weeksResult : [];
-        const summary = (data as any).summary ?? EMPTY_OVERTIME.summary;
-        return {
-            weeksResult: weeks,
-            summary: {
-                totalCost: Number(summary.totalCost) || 0,
-                totalHours: Number(summary.totalHours) || 0,
-                totalOvertimeCost: Number(summary.totalOvertimeCost) || 0
-            }
-        };
     } catch (e) {
         console.error("getOvertimeData failed:", e);
         return EMPTY_OVERTIME;

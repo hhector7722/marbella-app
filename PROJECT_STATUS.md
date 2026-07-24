@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-24 (Asistencia cabecera: solo nombre)
+**Última actualización:** 2026-07-24 (Migración consumidores SSOT Fase 2)
+
+- [x] **Migración consumidores SSOT — pantallas (2026-07-24)**: Overtime/Dashboard/Master Extras unificados a HE (`buildOvertimeWeeksFromSsot`; adiós lista≠modal). `/dashboard/labor` sin `fn_labor_*`/`get_labor_cost_*`. Insights M.O. horaria + tarifas Horario/Schedule vía SSOT. Doc: [`docs/MIGRACION_CONSUMIDORES_SSOT_FASE2.md`](docs/MIGRACION_CONSUMIDORES_SSOT_FASE2.md). Sin tocar núcleo HE / Shadow / snapshots / payroll.
+
+**Última actualización anterior:** 2026-07-24 (Asistencia cabecera: solo nombre)
 
 - [x] **Filtro empleado cabecera solo nombre (2026-07-24)**: En `/staff/history`, al filtrar por empleado la cabecera muestra solo `first_name` (sin apellidos). Export PDF/Excel sigue con nombre completo.
 

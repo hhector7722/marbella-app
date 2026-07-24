@@ -479,10 +479,11 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto "prompt-ready"**. Debe 
 
 <!-- sync:project-status:start — NO EDITAR A MANO; generado por `scripts/sync-llm-prompt-from-project-status.mjs` -->
 
-**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-24 (Asistencia cabecera: solo nombre)
+**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-24 (Migración consumidores SSOT Fase 2)
 
 Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; máx. 45 entradas):
 
+- **Migración consumidores SSOT — pantallas (2026-07-24)**: Overtime/Dashboard/Master Extras unificados a HE (`buildOvertimeWeeksFromSsot`; adiós lista≠modal). `/dashboard/labor` sin `fn_labor_*`/`get_labor_cost_*`. Insights M.O. horaria + tarifas Horario/Schedule vía SSOT. Doc: [`docs/MIGRACION_CONSUMIDORES_SSOT_FASE2.md`](docs/MIGRACION_CONSUMIDORES_SSOT_FASE2.md). Sin tocar núcleo HE / Shadow / snapshots / payroll.
 - **Filtro empleado cabecera solo nombre (2026-07-24)**: En `/staff/history`, al filtrar por empleado la cabecera muestra solo `first_name` (sin apellidos). Export PDF/Excel sigue con nombre completo.
 - **Cierre módulo laboral SSOT (2026-07-24)**: `/profile` deja de editar alta/baja (solo lectura). Frontera + jornada solo en `/profile/contrato`. `updateProfile` bloquea `joining_date`/`end_date`. `updateLaborConditions` dispara `fn_recalc_and_propagate_snapshots` tras guardar. Alta sigue creando tramo vía trigger. Módulo laboral **cerrado** (sin bugs; espejo profiles←terms intencional para SQL).
 - **Corrección bug Bali (2026-07-24)**: Fence de baja en `fn_recalc` usa `hours_contract_terms` (día a día), no `profiles.contracted_hours_weekly`. Migración `20260724120000_shadow_bali_fence_contract_terms.sql`. Run `4b0b3a55-…` vs `bfdb100b-…`: EMR **82,35% → 88,24%**, Exact **14→15**, Diff **3→2**. Bali → EXACT. Fernando exact. Héctor/Pere intactos. Tests **42/42**. Productor SQL **técnicamente convergido**; pendiente solo semilla Pere. Doc: residual/validation § Corrección Bali.
@@ -527,6 +528,5 @@ Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; m
 - **Editar histórico contractual desde la lista (2026-07-16)**: En `/profile/contrato`, pulsar un tramo del histórico abre corrección de horas/régimen/bolsa/tarifa (periodo solo lectura). Reescritura in-place vía planificador (`D = inicio del tramo`) + coalescencia. Sin editar `effective_from`/`effective_to` a mano.
 - **Factura imprimible en modal pedido reservas (2026-07-16)**: Sustituida la X de cierre por icono factura (`Receipt`). Misma vía de impresión que la comanda (iframe → print). Logo, desglose qty/precios, fecha/hora reserva, base + IVA 10%, total, mensaje de gracias. Cierre del modal: tap fuera.
 - **Condiciones laborales v2 — fecha efectiva + splice (2026-07-16)**: Formulario con fecha efectiva (default hoy Madrid). Planificador unificado: localiza tramo, parte o reescribe in-place, cola intacta, coalescencia de vecinos idénticos. `profiles` espeja el tramo **abierto**. UI: cabeceras petróleo en `/profile/contrato`. Sin orquestador. Tests: `test:hours-engine:contract-terms` + `labor` → suite **124/124**.
-- **Fix TypeScript build Vercel — filtro FC recetas (2026-07-16)**: El ternario en `.select(needsFc ? RECIPE_FOOD_COST_SELECT : …)` rompía el parser de tipos de Supabase (`ParserError`). Ramas separadas en `/recipes` y `/recipes/[id]`; `RECIPE_FOOD_COST_SELECT` con `as const`.
 
 <!-- sync:project-status:end -->

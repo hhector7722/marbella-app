@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { getISOWeek, format, addDays, parseISO } from 'date-fns';
 import { getBusinessHourFromTicket } from '@/lib/utils';
 import { filterVisiblePlantillaEmployees } from '@/lib/staff/plantilla-employees';
+import { buildOvertimeWeeksFromSsot } from '@/lib/hours-engine';
 
 export async function getDashboardData() {
     const supabase = await createClient();
@@ -92,30 +93,9 @@ export async function getDashboardData() {
 
     const salesChartData = Array.isArray(salesChartDataRaw) ? salesChartDataRaw : Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
 
-    // --- PROCESS LABOR COST (Daily Stats) ---
-    let dailyStats = null;
-    if (lastClose) {
-        const closeDate = new Date(lastClose.closed_at);
-        const closeDateStart = new Date(closeDate);
-        closeDateStart.setHours(0, 0, 0, 0);
-
-        // Fetch labor cost using RPC
-        const { data: laborCostData } = await supabase.rpc('get_daily_labor_cost', {
-            p_target_date: closeDateStart.toISOString().split('T')[0]
-        });
-        const laborCost = laborCostData || 0;
-
-        const laborPercent = lastClose.net_sales > 0 ? (laborCost / lastClose.net_sales) * 100 : 0;
-        dailyStats = {
-            date: new Date(lastClose.closed_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
-            fullDate: new Date(lastClose.closed_at).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }),
-            weather: lastClose.weather || 'General',
-            costeManoObra: laborCost,
-            porcentajeManoObra: laborPercent,
-            laborCostBg: laborPercent > 35 ? 'bg-rose-500' : (laborPercent > 30 ? 'bg-orange-400' : 'bg-emerald-500'),
-            laborCostColor: laborPercent > 35 ? 'text-rose-600' : (laborPercent > 30 ? 'text-orange-500' : 'text-emerald-600')
-        };
-    }
+    // --- PROCESS LABOR COST: eliminado get_daily_labor_cost (legacy).
+    // El coste M.O. SSOT vive en /dashboard/labor (Fase 2).
+    const dailyStats = null;
 
     // --- PROCESS BOXES & MOVEMENTS ---
     let boxes = [];
@@ -174,39 +154,37 @@ export async function getDashboardData() {
         }
     }
 
-    // --- PROCESS OVERTIME (Last 60 days) ---
+    // --- PROCESS OVERTIME (Last 60 days) — Hours Engine SSOT ---
     let overtimeData: any[] = [];
     let initialPaidStatus: Record<string, boolean> = {};
 
     const sixtyDaysAgo = format(addDays(new Date(), -60), 'yyyy-MM-dd');
     const todayISO = format(new Date(), 'yyyy-MM-dd');
 
-    const { data: rpcData, error: rpcError } = await supabase.rpc('get_weekly_worker_stats', {
-        p_start_date: sixtyDaysAgo,
-        p_end_date: todayISO,
-        p_only_completed_weeks: true,
-    });
-
-    if (rpcError) {
-        console.error("Error fetching overtime from RPC in dashboard:", rpcError);
-    } else if (rpcData) {
-        overtimeData = rpcData.weeksResult.map((week: any) => ({
+    try {
+        const ot = await buildOvertimeWeeksFromSsot(supabase, {
+            startDate: sixtyDaysAgo,
+            endDate: todayISO,
+            onlyCompletedWeeks: true,
+        });
+        overtimeData = ot.weeksResult.map((week) => ({
             weekId: week.weekId,
             total: week.totalAmount,
             expanded: false,
-            staff: week.staff.map((s: any) => ({
+            staff: week.staff.map((s) => ({
                 id: s.id,
                 name: s.name.split(' ')[0],
                 amount: s.totalCost,
-                hours: s.overtimeHours
-            }))
+                hours: s.overtimeHours,
+            })),
         }));
-
-        rpcData.weeksResult.forEach((week: any) => {
-            week.staff.forEach((s: any) => {
+        ot.weeksResult.forEach((week) => {
+            week.staff.forEach((s) => {
                 initialPaidStatus[`${week.weekId}-${s.id}`] = s.isPaid;
             });
         });
+    } catch (e) {
+        console.error('Error fetching overtime SSOT in dashboard:', e);
     }
 
     return {

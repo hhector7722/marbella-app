@@ -30,6 +30,10 @@ import {
     PLANTILLA_EMPLOYEE_SELECT,
 } from '@/lib/staff/plantilla-employees';
 import { trackUsageModalApply } from '@/lib/usage/client';
+import {
+    getLaborCostDayDetailSsot,
+    getLaborCostPeriodSsot,
+} from '@/app/actions/labor-cost-ssot';
 
 type DayCell = { total: number; fixed: number; overtime: number };
 
@@ -290,53 +294,30 @@ export default function LaborHistoryPage() {
             }
 
             const byDate: Record<string, DayCell> = {};
-            let cursor = startOfMonth(start);
-            const endMonth = startOfMonth(end);
-
             const todayStr = format(new Date(), 'yyyy-MM-dd');
 
-            while (cursor.getTime() <= endMonth.getTime()) {
-                const y = cursor.getFullYear();
-                const m = cursor.getMonth() + 1;
-                const { data, error } = await supabase.rpc('get_labor_cost_month_summary', {
-                    p_year: y,
-                    p_month: m,
-                    p_user_id: workerFilterId ?? null,
-                });
-                if (error) throw error;
-                const raw = data as Record<string, unknown> | null;
-                const rawByDate = (raw?.byDate as Record<string, unknown> | undefined) || {};
-                for (const [key, val] of Object.entries(rawByDate)) {
-                    const iso = key.split('T')[0];
-                    if (iso > todayStr) continue;
-                    if (!dayInPeriod(iso, periodStart, periodEnd)) continue;
-                    const cell = val as Record<string, unknown> | null;
-                    if (!cell || typeof cell !== 'object') continue;
-                    byDate[iso] = {
-                        total: Number(cell.total) || 0,
-                        fixed: Number(cell.fixed) || 0,
-                        overtime: Number(cell.overtime) || 0,
-                    };
-                }
-                cursor = addMonths(cursor, 1);
-            }
-
-            let totalFixed = 0;
-            let totalOvertime = 0;
-            let totalCost = 0;
-            for (const c of Object.values(byDate)) {
-                totalFixed += c.fixed;
-                totalOvertime += c.overtime;
-                totalCost += c.total;
+            const period = await getLaborCostPeriodSsot({
+                startDate: periodStart.split('T')[0],
+                endDate: periodEnd.split('T')[0],
+                userId: workerFilterId ?? null,
+            });
+            for (const [iso, cell] of Object.entries(period.byDate)) {
+                if (iso > todayStr) continue;
+                if (!dayInPeriod(iso, periodStart, periodEnd)) continue;
+                byDate[iso] = {
+                    total: Number(cell.total) || 0,
+                    fixed: Number(cell.fixed) || 0,
+                    overtime: Number(cell.overtime) || 0,
+                };
             }
 
             setSummary({
                 year: start.getFullYear(),
                 month: start.getMonth() + 1,
                 daysInMonth: Object.keys(byDate).length,
-                totalFixed,
-                totalOvertime,
-                totalCost,
+                totalFixed: period.totalFixed,
+                totalOvertime: period.totalOvertime,
+                totalCost: period.totalCost,
                 byDate,
             });
 
@@ -399,77 +380,42 @@ export default function LaborHistoryPage() {
             setDetailLoading(true);
             setDayDetail(null);
             try {
-                const [laborRes, salesRes] = await Promise.all([
-                    supabase.rpc('get_labor_cost_day_detail', { p_date: key }),
+                const [labor, salesRes] = await Promise.all([
+                    getLaborCostDayDetailSsot({
+                        date: key,
+                        userId: workerFilterId ?? null,
+                    }),
                     supabase.rpc('get_cash_closings_summary', {
                         p_start_date: key,
                         p_end_date: key,
                     }),
                 ]);
-                if (laborRes.error) throw laborRes.error;
                 if (salesRes.error) console.warn(salesRes.error);
-                const raw = laborRes.data as Record<string, unknown> | null;
-                if (!raw) {
-                    setDayDetail(null);
-                    return;
-                }
                 const dayNetSales = salesRes.error
                     ? 0
                     : Number((salesRes.data as { totalNet?: number } | null)?.totalNet) || 0;
 
-                const wrows = Array.isArray(raw.workers) ? raw.workers : [];
-                let workers: WorkerRow[] = wrows.map((w: Record<string, unknown>) => {
-                    const id = String(w.id ?? w.userId ?? '');
+                const workers: WorkerRow[] = labor.workers.map((w) => {
                     const total = Number(w.total) || 0;
                     let laborPctOfSales: number | null = null;
                     if (dayNetSales > 0) {
                         laborPctOfSales = (total / dayNetSales) * 100;
                     }
                     return {
-                        id,
-                        name: w.name != null ? String(w.name) : null,
-                        fixed: Number(w.fixed ?? w.fixedCost) || 0,
-                        overtime: Number(w.overtime ?? w.overtimeCost) || 0,
+                        id: w.id,
+                        name: w.name,
+                        fixed: Number(w.fixed) || 0,
+                        overtime: Number(w.overtime) || 0,
                         total,
                         laborPctOfSales,
                     };
                 });
 
-                if (workerFilterId) {
-                    workers = workers.filter((w) => w.id === workerFilterId);
-                    if (workers.length === 0) {
-                        setDayDetail({
-                            date: String(raw.date),
-                            totalFixed: 0,
-                            totalOvertime: 0,
-                            totalCost: 0,
-                            dayNetSales,
-                            workers: [],
-                        });
-                        return;
-                    }
-                    const w = workers[0];
-                    setDayDetail({
-                        date: String(raw.date),
-                        totalFixed: w.fixed,
-                        totalOvertime: w.overtime,
-                        totalCost: w.total,
-                        dayNetSales,
-                        workers: [w],
-                    });
-                    return;
-                }
-
-                const totalFixed = workers.reduce((s, w) => s + w.fixed, 0);
-                const totalOvertime = workers.reduce((s, w) => s + w.overtime, 0);
-                const totalCost =
-                    Number(raw.totalCost ?? raw.dayTotal) ||
-                    totalFixed + totalOvertime;
                 setDayDetail({
-                    date: String(raw.date),
-                    totalFixed,
-                    totalOvertime,
-                    totalCost,
+                    date: key,
+                    totalFixed: labor.totalFixed,
+                    totalOvertime: labor.totalOvertime,
+                    totalCost: labor.totalCost,
                     dayNetSales,
                     workers,
                 });

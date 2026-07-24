@@ -2,6 +2,8 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { z } from 'zod'
+import { buildLaborCostPeriodFromSsot } from '@/lib/hours-engine'
+import { getBusinessHourFromTicket } from '@/lib/utils'
 import {
   hourlyProfitabilityRowSchema,
   weekdayAnalysisRowSchema,
@@ -176,17 +178,62 @@ export async function getHourlySalesVsLabor(
   const gate = await gateManager()
   if (!gate.ok) return { success: false, error: gate.error }
 
-  const { data, error } = await gate.supabase.rpc('get_hourly_sales_vs_labor', {
-    p_date_from: parsed.data.dateFrom,
-    p_date_to: parsed.data.dateTo,
-  })
+  const { dateFrom: from, dateTo: to } = parsed.data
 
-  if (error) {
-    console.error('[insights] get_hourly_sales_vs_labor RPC error:', error.message)
-    return { success: false, error: error.message }
+  // Ventas por ticket (hora Madrid) + coste laboral HE (SSOT) prorrateado por € de venta.
+  // No usa get_hourly_sales_vs_labor / fn_labor_* / fn_worker_hourly_rate.
+  const [ticketsRes, labor] = await Promise.all([
+    gate.supabase
+      .from('tickets_marbella')
+      .select('total_documento, fecha, hora_cierre, fecha_real')
+      .gte('fecha', from)
+      .lte('fecha', to),
+    buildLaborCostPeriodFromSsot(gate.supabase, {
+      startDate: from,
+      endDate: to,
+    }),
+  ])
+
+  if (ticketsRes.error) {
+    console.error('[insights] tickets_marbella error:', ticketsRes.error.message)
+    return { success: false, error: ticketsRes.error.message }
   }
 
-  const validated = parseRpcRows(hourlyProfitabilityRowSchema, data, 'get_hourly_sales_vs_labor')
+  const byHour = Array.from({ length: 24 }, (_, hour) => ({
+    hour,
+    total_revenue: 0,
+    ticket_count: 0,
+  }))
+
+  for (const t of ticketsRes.data ?? []) {
+    const h = getBusinessHourFromTicket({
+      fecha: t.fecha != null ? String(t.fecha) : undefined,
+      hora_cierre: t.hora_cierre ?? undefined,
+    })
+    if (!Number.isFinite(h) || h < 0 || h > 23) continue
+    byHour[h]!.total_revenue += Number(t.total_documento) || 0
+    byHour[h]!.ticket_count += 1
+  }
+
+  const totalRevenue = byHour.reduce((s, r) => s + r.total_revenue, 0)
+  const totalLabor = labor.totalCost
+
+  const rows: HourlyProfitabilityRow[] = byHour.map((r) => {
+    const share = totalRevenue > 0 ? r.total_revenue / totalRevenue : 0
+    const labor_cost = Math.round(totalLabor * share * 100) / 100
+    const avg_ticket =
+      r.ticket_count > 0 ? r.total_revenue / r.ticket_count : 0
+    return {
+      hour: r.hour,
+      total_revenue: Math.round(r.total_revenue * 100) / 100,
+      ticket_count: r.ticket_count,
+      avg_ticket: Math.round(avg_ticket * 100) / 100,
+      labor_cost,
+      margin: Math.round((r.total_revenue - labor_cost) * 100) / 100,
+    }
+  })
+
+  const validated = parseRpcRows(hourlyProfitabilityRowSchema, rows, 'hourly_ssot')
   if (!validated.ok) return { success: false, error: validated.error }
 
   return { success: true, data: validated.data }
