@@ -479,10 +479,11 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto "prompt-ready"**. Debe 
 
 <!-- sync:project-status:start — NO EDITAR A MANO; generado por `scripts/sync-llm-prompt-from-project-status.mjs` -->
 
-**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-24 (Asistencia: etiqueta especial en dashboard + fit real)
+**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-24 (Asistencia: slots fijos P/H/Ex)
 
 Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; máx. 45 entradas):
 
+- **Asistencia celda: P no desplaza H/Ex (2026-07-24)**: Tres slots fijos `h-3` (P → H → Ex). Sin datos el slot queda vacío; al añadir P no se mueven relojes ni H/Ex.
 - **Asistencia etiqueta especial visible (2026-07-24)**: El calendario del **dashboard staff** seguía con círculo F/E/B/P (por eso «no había cambio»). Ahora usa `SpecialDayLabel` compartido (historial + dashboard): nombre completo centrado, tamaño por longitud + measure con probe (sin `max-w-full`).
 - **Asistencia celda: fila P encima de H (2026-07-24)**: Si hay `justified_hours` con fichaje, fila `P` (misma tipografía que H/Ex) + valor en azul, encima de `H` (solo trabajadas). Sin `+j` en la misma línea ni badge esquina.
 - **Zoom browser temporal solo Héctor (2026-07-24)**: `generateViewport` en `layout.tsx` habilita pinch/double-tap zoom (`userScalable`, max 5) solo si email = `hhector7722@gmail.com`; resto del staff sigue bloqueado. También se omite `touch-manipulation` en `<body>` para ese usuario. **Revertir cuando ya no haga falta.**
@@ -527,6 +528,5 @@ Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; m
 - **Badge cantidad en esquina de foto (2026-07-16)**: Círculo de unidades sobre la imagen (esquina superior derecha, inset) — 100% visible, sin sombra ni recorte. Nombre sin badge.
 - **Reabrir pedido: cliente parte del pedido existente (2026-07-16)**: `/pedido/[token]` hidrata el carrito con `event_orders.items` vía RPC `get_client_event_order_items_by_token` (mapea `is_half` → `id:medio`). Reopen sigue sin borrar líneas. Migración [`20260716240000_get_client_order_items_by_token.sql`](supabase/migrations/20260716240000_get_client_order_items_by_token.sql) **aplicada**.
 - **Footer pedido UX (2026-07-16)**: «Ver pedido» sin icono; unidades en badge rojo tipo notificación; botones más bajos con safe-area. Badge de cantidad en productos sin recorte (overflow + estilo campana).
-- **Tarjeta semanal: footer → motor (2026-07-16)**: HORAS / PENDIENTES / EXTRAS / IMPORTE salen de `LiquidationResult` vía [`week-card-from-liquidation.ts`](src/lib/hours-engine/week-card-from-liquidation.ts) + `patchWeeksFromLiquidation`. Misma fuente que Ex. diarias → imposible discrepancia. `/staff/history` + `WorkerWeeklyHistoryModal`. RPC solo clocks/`isPaid`. Tests: `npm run test:hours-engine:week-card` (10) + suite **104/104**. Sin orquestador, sin borrar snapshots.
 
 <!-- sync:project-status:end -->

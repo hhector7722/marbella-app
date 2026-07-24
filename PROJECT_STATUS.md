@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-24 (Asistencia: etiqueta especial en dashboard + fit real)
+**Última actualización:** 2026-07-24 (Asistencia: slots fijos P/H/Ex)
+
+- [x] **Asistencia celda: P no desplaza H/Ex (2026-07-24)**: Tres slots fijos `h-3` (P → H → Ex). Sin datos el slot queda vacío; al añadir P no se mueven relojes ni H/Ex.
+
+**Última actualización anterior:** 2026-07-24 (Asistencia: etiqueta especial en dashboard + fit real)
 
 - [x] **Asistencia etiqueta especial visible (2026-07-24)**: El calendario del **dashboard staff** seguía con círculo F/E/B/P (por eso «no había cambio»). Ahora usa `SpecialDayLabel` compartido (historial + dashboard): nombre completo centrado, tamaño por longitud + measure con probe (sin `max-w-full`).
 

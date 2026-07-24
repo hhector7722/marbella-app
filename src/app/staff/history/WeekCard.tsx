@@ -254,29 +254,36 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                                 )}
                             </div>
                             {!isSpecialOnly && (
-                                <div className={cn("w-full space-y-0 mt-0.5 min-h-[20px]", isOtherMonth && "opacity-45")}>
-                                    {hasPersonalAdd && hJustFmt ? (
-                                        <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                            <span className="ml-0.5">P</span>
-                                            <span className={cn("font-bold pr-1", isOtherMonth ? "text-gray-400" : "text-blue-500")}>
-                                                {hJustFmt}
-                                            </span>
-                                        </div>
-                                    ) : null}
-                                    {day.hasLog && day.clockIn && hWorkedFmt ? (
-                                        <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                            <span className="ml-0.5">H</span>
-                                            <span className={cn("font-bold pr-1", isOtherMonth ? "text-gray-400" : "text-gray-800")}>
-                                                {hWorkedFmt}
-                                            </span>
-                                        </div>
-                                    ) : <div className="h-3" />}
-                                    {exFormatted ? (
-                                        <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                            <span className="ml-0.5">Ex</span>
-                                            <span className={cn("font-bold pr-1", isOtherMonth ? "text-gray-400" : "text-gray-800")}>{exFormatted}</span>
-                                        </div>
-                                    ) : <div className="h-3" />}
+                                <div className={cn("w-full space-y-0 mt-0.5 shrink-0 min-h-[36px]", isOtherMonth && "opacity-45")}>
+                                    {/* Slot fijo P → H → Ex: vacío reserva h-3 para no desplazar filas */}
+                                    <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                        {hasPersonalAdd && hJustFmt ? (
+                                            <>
+                                                <span className="ml-0.5">P</span>
+                                                <span className={cn("font-bold pr-1", isOtherMonth ? "text-gray-400" : "text-blue-500")}>
+                                                    {hJustFmt}
+                                                </span>
+                                            </>
+                                        ) : null}
+                                    </div>
+                                    <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                        {day.hasLog && day.clockIn && hWorkedFmt ? (
+                                            <>
+                                                <span className="ml-0.5">H</span>
+                                                <span className={cn("font-bold pr-1", isOtherMonth ? "text-gray-400" : "text-gray-800")}>
+                                                    {hWorkedFmt}
+                                                </span>
+                                            </>
+                                        ) : null}
+                                    </div>
+                                    <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                        {exFormatted ? (
+                                            <>
+                                                <span className="ml-0.5">Ex</span>
+                                                <span className={cn("font-bold pr-1", isOtherMonth ? "text-gray-400" : "text-gray-800")}>{exFormatted}</span>
+                                            </>
+                                        ) : null}
+                                    </div>
                                 </div>
                             )}
                         </div>
