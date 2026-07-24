@@ -1,13 +1,33 @@
-export {
-  createInMemoryDiscrepancyStore,
-  upsertObservedDiscrepancy,
-  type DiscrepancyStore,
-  type UpsertObservedDiscrepancyResult,
-} from './discrepancy-store.ts';
+export type {
+  PersistShadowRunResult,
+  ShadowComparisonRecord,
+  ShadowComparisonStore,
+  ShadowDiscrepancyStore,
+  ShadowFieldDiffRecord,
+  ShadowMetricsStore,
+  ShadowPersistencePorts,
+  ShadowRunPersistMeta,
+  ShadowRunRecord,
+  ShadowRunStore,
+} from './ports.ts';
 
-/** @deprecated scaffolding */
+export {
+  persistShadowRunResult,
+  upsertObservedDiscrepancy,
+  type UpsertObservedDiscrepancyResult,
+} from './persist-run.ts';
+
+export {
+  createInMemoryComparisonStore,
+  createInMemoryDiscrepancyStore,
+  createInMemoryMetricsStore,
+  createInMemoryRunStore,
+  createInMemoryShadowPersistence,
+} from './memory.ts';
+
+/** @deprecated */
 export function shadowPersistenceNotImplemented(): never {
   throw new Error(
-    'shadow/persistence: usar createInMemoryDiscrepancyStore (Supabase en Commit 7)',
+    'shadow/persistence: usar persistShadowRunResult + ShadowPersistencePorts',
   );
 }

@@ -14,13 +14,17 @@ export {
 } from './metrics.ts';
 
 export {
+  executeAndPersistShadowRun,
   executeShadowRun,
   factLoaderFromMap,
   subjectKey,
   subjectLoaderFromList,
+  type ExecuteAndPersistShadowRunInput,
+  type ExecuteAndPersistShadowRunOutput,
+  type ExecuteShadowRunInput,
 } from './run-shadow.ts';
 
 /** @deprecated scaffolding */
 export function runShadowParityNotImplemented(): never {
-  throw new Error('shadow/runner: usar executeShadowRun');
+  throw new Error('shadow/runner: usar executeShadowRun / executeAndPersistShadowRun');
 }

@@ -66,7 +66,7 @@ describe('shadow discrepancy lifecycle', () => {
     );
   });
 
-  it('upsert por fingerprint incrementa occurrences', () => {
+  it('upsert por fingerprint incrementa occurrences', async () => {
     const store = createInMemoryDiscrepancyStore();
     const input = {
       employeeId: 'e1',
@@ -77,11 +77,11 @@ describe('shadow discrepancy lifecycle', () => {
       owner: 'Liquidation' as const,
       nowIso: '2026-07-24T10:00:00.000Z',
     };
-    const first = upsertObservedDiscrepancy(store, input);
+    const first = await upsertObservedDiscrepancy(store, input);
     assert.equal(first.wasExisting, false);
     assert.equal(first.discrepancy.occurrences, 1);
 
-    const second = upsertObservedDiscrepancy(store, {
+    const second = await upsertObservedDiscrepancy(store, {
       ...input,
       nowIso: '2026-07-25T10:00:00.000Z',
     });
@@ -92,7 +92,7 @@ describe('shadow discrepancy lifecycle', () => {
     assert.equal(store.list().length, 1);
   });
 
-  it('detecta regresión si reaparece tras CLOSED', () => {
+  it('detecta regresión si reaparece tras CLOSED', async () => {
     const store = createInMemoryDiscrepancyStore();
     const input = {
       employeeId: 'e1',
@@ -102,7 +102,7 @@ describe('shadow discrepancy lifecycle', () => {
       severity: 'CRITICAL' as const,
       owner: 'Architecture' as const,
     };
-    const created = upsertObservedDiscrepancy(store, input).discrepancy;
+    const created = (await upsertObservedDiscrepancy(store, input)).discrepancy;
     const closed = transitionDiscrepancy(
       transitionDiscrepancy(
         transitionDiscrepancy(created, 'CONFIRMED'),
@@ -110,9 +110,9 @@ describe('shadow discrepancy lifecycle', () => {
       ),
       'VERIFIED',
     );
-    store.upsert(transitionDiscrepancy(closed, 'CLOSED'));
+    await store.upsert(transitionDiscrepancy(closed, 'CLOSED'));
 
-    const again = upsertObservedDiscrepancy(store, input);
+    const again = await upsertObservedDiscrepancy(store, input);
     assert.equal(again.isRegression, true);
     assert.equal(again.discrepancy.status, 'INVESTIGATING');
     assert.ok(again.discrepancy.occurrences >= 2);

@@ -15,6 +15,16 @@ import type {
   ShadowSubject,
   ShadowSubjectLoader,
 } from './ports.ts';
+import type { ShadowPersistencePorts, ShadowRunPersistMeta } from '../persistence/ports.ts';
+import { persistShadowRunResult } from '../persistence/persist-run.ts';
+import { SHADOW_DOMAIN_VERSION } from '../version.ts';
+import type { PersistShadowRunResult } from '../persistence/ports.ts';
+
+export type ExecuteShadowRunInput = {
+  subjects: ShadowSubjectLoader;
+  facts: ShadowFactLoader;
+  options: ShadowRunnerOptions;
+};
 
 function compareSubjects(a: ShadowSubject, b: ShadowSubject): number {
   const e = a.employeeId.localeCompare(b.employeeId);
@@ -28,13 +38,9 @@ function defaultNowIso(): string {
 
 /**
  * Ejecuta un Shadow Run completo en memoria.
- * Sin escrituras. Sin side-effects. Determinista si clock/runId/duration son fijos.
+ * Sin escrituras. Determinista si clock/runId/duration son fijos.
  */
-export function executeShadowRun(input: {
-  subjects: ShadowSubjectLoader;
-  facts: ShadowFactLoader;
-  options: ShadowRunnerOptions;
-}): ShadowRunResult {
+export function executeShadowRun(input: ExecuteShadowRunInput): ShadowRunResult {
   const startedAt = input.options.clock?.nowIso() ?? defaultNowIso();
   const runId = input.options.runId ?? crypto.randomUUID();
   const t0 =
@@ -144,6 +150,46 @@ export function executeShadowRun(input: {
       totals: metricsToTotals(metrics),
     };
   }
+}
+
+export type ExecuteAndPersistShadowRunInput = ExecuteShadowRunInput & {
+  /** Si se omite, no hay side-effects de persistencia. */
+  persistence?: ShadowPersistencePorts;
+  persistMeta?: Partial<ShadowRunPersistMeta> & {
+    hoursEngineVersion: string;
+  };
+};
+
+export type ExecuteAndPersistShadowRunOutput = {
+  result: ShadowRunResult;
+  persist: PersistShadowRunResult | null;
+};
+
+/**
+ * Runner con persistencia opcional vía puertos (nunca Supabase directo).
+ */
+export async function executeAndPersistShadowRun(
+  input: ExecuteAndPersistShadowRunInput,
+): Promise<ExecuteAndPersistShadowRunOutput> {
+  const result = executeShadowRun(input);
+  if (!input.persistence) {
+    return { result, persist: null };
+  }
+  const meta: ShadowRunPersistMeta = {
+    hoursEngineVersion: input.persistMeta?.hoursEngineVersion ?? 'unknown',
+    shadowVersion: input.persistMeta?.shadowVersion ?? SHADOW_DOMAIN_VERSION,
+    config: {
+      horizonStart: input.options.horizonStart,
+      horizonEnd: input.options.horizonEnd,
+      ...(input.persistMeta?.config ?? {}),
+    },
+  };
+  const persist = await persistShadowRunResult(
+    input.persistence,
+    result,
+    meta,
+  );
+  return { result, persist };
 }
 
 /** Helper: loader de sujetos desde un array fijo (fixtures / dry-run futuro). */

@@ -2,13 +2,7 @@
  * Shadow Domain — bounded context de **Migración** (SSOT Phase 1).
  *
  * Independiente de Liquidation (Hours Engine) y del productor SQL.
- * Solo conoce: Canonical Comparison Vector, Discrepancy, Run, Metrics, Report, Alert.
- *
- * Dependencias permitidas hacia fuera:
- *   HE  → HeAdapter → CanonicalComparisonVector
- *   SQL → SqlAdapter → CanonicalComparisonVector
- *
- * Prohibido: importar liquidateWeek / fn_recalc / mutar productores.
+ * Persistencia solo vía puertos (nunca Supabase en este módulo).
  */
 
 export * from './types/index.ts';
@@ -20,9 +14,23 @@ export {
   transitionDiscrepancy,
 } from './resolver/index.ts';
 export {
+  createInMemoryComparisonStore,
   createInMemoryDiscrepancyStore,
+  createInMemoryMetricsStore,
+  createInMemoryRunStore,
+  createInMemoryShadowPersistence,
+  persistShadowRunResult,
   upsertObservedDiscrepancy,
-  type DiscrepancyStore,
+  type PersistShadowRunResult,
+  type ShadowComparisonRecord,
+  type ShadowComparisonStore,
+  type ShadowDiscrepancyStore,
+  type ShadowFieldDiffRecord,
+  type ShadowMetricsStore,
+  type ShadowPersistencePorts,
+  type ShadowRunPersistMeta,
+  type ShadowRunRecord,
+  type ShadowRunStore,
   type UpsertObservedDiscrepancyResult,
 } from './persistence/index.ts';
 export {
@@ -38,6 +46,7 @@ export {
   type ClassifyCompareResult,
 } from './classifier/index.ts';
 export {
+  executeAndPersistShadowRun,
   executeShadowRun,
   factLoaderFromMap,
   subjectKey,
@@ -45,6 +54,9 @@ export {
   computeShadowRunMetrics,
   matchStatusFromClassification,
   metricsToTotals,
+  type ExecuteAndPersistShadowRunInput,
+  type ExecuteAndPersistShadowRunOutput,
+  type ExecuteShadowRunInput,
   type ShadowFactLoader,
   type ShadowRunnerClock,
   type ShadowRunnerOptions,
@@ -52,3 +64,4 @@ export {
   type ShadowSubjectFacts,
   type ShadowSubjectLoader,
 } from './runner/index.ts';
+export { SHADOW_DOMAIN_VERSION } from './version.ts';

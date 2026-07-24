@@ -1,10 +1,12 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-24 (Shadow Mode Commit 6: Runner in-memory)
+**Última actualización:** 2026-07-24 (Shadow Mode Commit 7: persistencia por puertos)
 
-- [x] **Shadow Mode Commit 6 — Runner in-memory (2026-07-24)**: `executeShadowRun` orquesta subjects→facts→adapters→compare→classify→`ShadowRunResult` sin persistir. Puertos inyectables + fixtures. Determinista con clock/runId fijos. `npm run test:shadow` (26). Sin Supabase/CLI/cron.
+- [x] **Shadow Mode Commit 7 — Persistencia desacoplada (2026-07-24)**: Puertos `Shadow*Store` en dominio; `persistShadowRunResult`; in-memory + infra Supabase (`src/infrastructure/shadow`). Migración `20260724060000_shadow_parity_persistence.sql` (RLS manager). Runner sin Supabase; persistencia opcional. Tests shadow **31**. Sin CLI/cron/UI.
 
-- [x] **Shadow Mode Commits 1–5 (2026-07-24)**: Dominio `src/lib/shadow/` — Canonical Vector, adapters HE/SQL, Discrepancy+lifecycle, comparator, classifier D000–D017. Cero impacto UI/productores. Pendiente: persistencia BD (7), CLI (8).
+- [x] **Shadow Mode Commit 6 — Runner in-memory (2026-07-24)**: `executeShadowRun` orquesta subjects→facts→adapters→compare→classify→`ShadowRunResult` sin persistir. Puertos inyectables + fixtures. Determinista con clock/runId fijos.
+
+- [x] **Shadow Mode Commits 1–5 (2026-07-24)**: Dominio `src/lib/shadow/` — Canonical Vector, adapters HE/SQL, Discrepancy+lifecycle, comparator, classifier D000–D017.
 
 **Última actualización anterior:** 2026-07-24 (Asistencia UI: fuente dinámica F/E/B/P)
 
