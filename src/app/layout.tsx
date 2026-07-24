@@ -14,10 +14,12 @@ import SileoProvider from "@/components/SileoProvider";
 import ChatMarbellaLazy from "@/components/chat/ChatMarbellaLazy";
 import { UsageAuthenticatedTracker } from "@/components/usage/UsageAuthenticatedTracker";
 import { withTimeout } from "@/lib/with-timeout";
+import { isMasterDashboardUser } from "@/lib/master-dashboard";
+import { cn } from "@/lib/utils";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const viewport: Viewport = {
+const LOCKED_VIEWPORT: Viewport = {
   width: "device-width",
   initialScale: 1,
   minimumScale: 1,
@@ -27,6 +29,31 @@ export const viewport: Viewport = {
   themeColor: "#ffffff",
   interactiveWidget: "overlays-content",
 };
+
+/** Temporal: permite pinch/double-tap zoom solo a Héctor (auditoría UI). */
+const ZOOMABLE_VIEWPORT: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  minimumScale: 0.5,
+  maximumScale: 5,
+  userScalable: true,
+  viewportFit: "cover",
+  themeColor: "#ffffff",
+  interactiveWidget: "overlays-content",
+};
+
+export async function generateViewport(): Promise<Viewport> {
+  const supabase = await createClient();
+  try {
+    const { data } = await supabase.auth.getSession();
+    if (isMasterDashboardUser(data.session?.user?.email)) {
+      return ZOOMABLE_VIEWPORT;
+    }
+  } catch {
+    // Sin sesión o error de auth → viewport bloqueado (resto del staff).
+  }
+  return LOCKED_VIEWPORT;
+}
 
 export const metadata: Metadata = {
   title: "Bar La Marbella",
@@ -92,9 +119,18 @@ export default async function RootLayout({
     needsOnboarding = await withTimeout<boolean>(profilePromise, 4000, false);
   }
 
+  const allowBrowserZoom = isMasterDashboardUser(user?.email);
+
   return (
     <html lang="es" className="light">
-      <body className={`${inter.className} bg-marbella-shell touch-manipulation`}>
+      <body
+        className={cn(
+          inter.className,
+          "bg-marbella-shell",
+          // touch-manipulation bloquea double-tap zoom; solo quitarlo para Héctor.
+          !allowBrowserZoom && "touch-manipulation",
+        )}
+      >
         <UnreadNotificationsShell>
           <SileoProvider />
           <ServiceWorkerRegistration />
