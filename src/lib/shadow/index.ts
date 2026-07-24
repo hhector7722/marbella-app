@@ -25,3 +25,8 @@ export {
   type DiscrepancyStore,
   type UpsertObservedDiscrepancyResult,
 } from './persistence/index.ts';
+export {
+  compareCanonicalVectors,
+  type CanonicalCompareResult,
+  type RawCanonicalFieldDelta,
+} from './comparator/index.ts';

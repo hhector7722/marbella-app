@@ -16,7 +16,7 @@
     "test:hours-engine:labor": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/lib/hours-engine/labor-conditions.test.ts",
     "test:hours-engine:gate": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/lib/hours-engine/hours-engine.gate-validation.test.ts",
     "test:hours-engine:orchestrator": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/lib/hours-engine/orchestrator/invalidation-orchestrator.test.ts",
-    "test:shadow": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/lib/shadow/shadow.scaffold.test.ts src/lib/shadow/adapters/adapters.test.ts src/lib/shadow/discrepancy/discrepancy.test.ts",
+    "test:shadow": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/lib/shadow/shadow.scaffold.test.ts src/lib/shadow/adapters/adapters.test.ts src/lib/shadow/discrepancy/discrepancy.test.ts src/lib/shadow/comparator/comparator.test.ts",
     "check:copilot-voice-schemas": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-copilot-voice-schemas.mjs",
     "sync:llm-prompt": "node scripts/sync-llm-prompt-from-project-status.mjs",
     "sync:llm-prompt:check": "node scripts/sync-llm-prompt-from-project-status.mjs --check",

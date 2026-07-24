@@ -1,7 +1,10 @@
-/**
- * Comparator — solo CanonicalComparisonVector (Commit 4).
- * @internal scaffolding
- */
+export {
+  compareCanonicalVectors,
+  type CanonicalCompareResult,
+  type RawCanonicalFieldDelta,
+} from './compare.ts';
+
+/** @deprecated scaffolding */
 export function compareCanonicalVectorsNotImplemented(): never {
-  throw new Error('shadow/comparator: no implementado (Commit 4)');
+  throw new Error('shadow/comparator: usar compareCanonicalVectors');
 }
