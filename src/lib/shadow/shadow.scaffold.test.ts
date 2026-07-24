@@ -30,24 +30,24 @@ describe('shadow domain scaffolding', () => {
     assert.ok(CANONICAL_COMPARABLE_FIELDS.includes('carryOut'));
   });
 
-  it('adapters stub fallan hasta Commit 2', () => {
+  it('adapters stub redirigen a createHeAdapter/createSqlAdapter', () => {
     assert.throws(
       () =>
         createHeAdapterStub().toCanonical({
           employeeId: 'x',
           weekStart: '2026-07-20',
-          liquidation: {},
+          liquidation: {} as never,
         }),
-      /Commit 2/,
+      /createHeAdapter/,
     );
     assert.throws(
       () =>
         createSqlAdapterStub().toCanonical({
           employeeId: 'x',
           weekStart: '2026-07-20',
-          snapshot: {},
+          snapshot: { week_start: '2026-07-20' },
         }),
-      /Commit 2/,
+      /createSqlAdapter/,
     );
   });
 });

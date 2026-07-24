@@ -1,6 +1,8 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-24 (Shadow Mode: scaffolding dominio Migración)
+**Última actualización:** 2026-07-24 (Shadow Mode: HE/SQL adapters → Canonical Vector)
+
+- [x] **Shadow Mode Commit 2 — Canonical adapters (2026-07-24)**: `heLiquidationToCanonical` / `sqlSnapshotToCanonical` proyectan a `CanonicalComparisonVector`. Hours Engine y SQL no se modifican. Tests: `npm run test:shadow` (9).
 
 - [x] **Shadow Mode Commit 1 — dominio `src/lib/shadow/` (2026-07-24)**: Bounded context de migración (SSOT Fase 1). Tipos canónicos, taxonomía D000–D017, ciclo de vida de discrepancias, stubs de adapters/comparator/runner. **No** toca Hours Engine ni SQL. Cero impacto en UI. Tests: `npm run test:shadow`.
 
