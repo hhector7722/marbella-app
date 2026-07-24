@@ -3,7 +3,7 @@ import {
   type DiscrepancyStatus,
   type ShadowDiscrepancy,
 } from '../types/discrepancy.ts';
-import { withDiscrepancyStatus } from './factory.ts';
+import { withDiscrepancyStatus } from '../discrepancy/factory.ts';
 
 export class InvalidDiscrepancyTransitionError extends Error {
   readonly from: DiscrepancyStatus;
