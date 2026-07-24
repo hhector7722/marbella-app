@@ -30,3 +30,10 @@ export {
   type CanonicalCompareResult,
   type RawCanonicalFieldDelta,
 } from './comparator/index.ts';
+export {
+  classifyCompareResult,
+  classifyFieldDelta,
+  ROUNDING_EPSILON_HOURS,
+  type ClassifiedFieldDiff,
+  type ClassifyCompareResult,
+} from './classifier/index.ts';

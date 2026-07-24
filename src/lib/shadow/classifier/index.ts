@@ -1,7 +1,12 @@
-/**
- * Classifier — taxonomía D000–D017 (Commit 5).
- * @internal scaffolding
- */
+export {
+  classifyCompareResult,
+  classifyFieldDelta,
+  ROUNDING_EPSILON_HOURS,
+  type ClassifiedFieldDiff,
+  type ClassifyCompareResult,
+} from './classify.ts';
+
+/** @deprecated scaffolding */
 export function classifyFieldDiffNotImplemented(): never {
-  throw new Error('shadow/classifier: no implementado (Commit 5)');
+  throw new Error('shadow/classifier: usar classifyCompareResult');
 }
