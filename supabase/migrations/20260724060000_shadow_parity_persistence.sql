@@ -31,6 +31,8 @@ create table if not exists public.shadow_parity_run_metrics (
   critical_differences integer not null,
   comparisons integer not null,
   skipped integer not null,
+  failed integer not null default 0,
+  succeeded integer not null default 0,
   diffs integer not null,
   duration_ms integer not null,
   exact_match_rate numeric not null,

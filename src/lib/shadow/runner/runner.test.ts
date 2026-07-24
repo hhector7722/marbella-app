@@ -92,7 +92,7 @@ function fixtureMap(
 const CLOCK = { nowIso: () => '2026-07-24T12:00:00.000Z' };
 
 describe('executeShadowRun (fixtures)', () => {
-  it('recorre sujetos, compara y calcula métricas en memoria', () => {
+  it('recorre sujetos, compara y calcula métricas en memoria', async () => {
     const a = alignedFacts('e1', '2026-07-20');
     const b = alignedFacts('e2', '2026-07-20', {
       hoursWorked: 45,
@@ -108,7 +108,7 @@ describe('executeShadowRun (fixtures)', () => {
     b.snapshot.balance_hours = 5;
     b.snapshot.total_hours = 45;
 
-    const result = executeShadowRun({
+    const result = await executeShadowRun({
       subjects: subjectLoaderFromList([
         { employeeId: 'e2', weekStart: '2026-07-20' },
         { employeeId: 'e1', weekStart: '2026-07-20' },
@@ -138,10 +138,11 @@ describe('executeShadowRun (fixtures)', () => {
     assert.ok((result.metrics.byCode.D006 ?? 0) >= 1);
   });
 
-  it('cuenta skipped sin comparar', () => {
+  it('cuenta skipped sin comparar', async () => {
     const a = alignedFacts('e1', '2026-07-20');
-    a.skip = true;
-    const result = executeShadowRun({
+    (a as { skip?: boolean; skipReason?: string }).skip = true;
+    (a as { skipReason?: string }).skipReason = 'test-skip';
+    const result = await executeShadowRun({
       subjects: subjectLoaderFromList([
         { employeeId: 'e1', weekStart: '2026-07-20' },
       ]),
@@ -159,7 +160,7 @@ describe('executeShadowRun (fixtures)', () => {
     assert.equal(result.comparisons.length, 0);
   });
 
-  it('es determinista: dos runs idénticos → mismo resultado', () => {
+  it('es determinista: dos runs idénticos → mismo resultado', async () => {
     const a = alignedFacts('e1', '2026-07-13');
     const b = alignedFacts('e1', '2026-07-20', {
       hoursWorked: 42,
@@ -168,7 +169,7 @@ describe('executeShadowRun (fixtures)', () => {
       balanceFinal: 2,
       carryOut: 2,
     });
-    b.snapshot.extra_hours = null; // schema gap / null OT
+    b.snapshot.extra_hours = null;
 
     const opts = {
       horizonStart: '2026-07-13',
@@ -184,13 +185,13 @@ describe('executeShadowRun (fixtures)', () => {
     ]);
     const facts = factLoaderFromMap(fixtureMap([a, b]));
 
-    const r1 = executeShadowRun({ subjects, facts, options: { ...opts } });
-    const r2 = executeShadowRun({ subjects, facts, options: { ...opts } });
+    const r1 = await executeShadowRun({ subjects, facts, options: { ...opts } });
+    const r2 = await executeShadowRun({ subjects, facts, options: { ...opts } });
 
     assert.deepEqual(r1, r2);
   });
 
-  it('tolerated cuando solo D004', () => {
+  it('tolerated cuando solo D004', async () => {
     const a = alignedFacts('e1', '2026-07-20', {
       weeklyBalance: 1.02,
       balanceFinal: 0,
@@ -199,7 +200,7 @@ describe('executeShadowRun (fixtures)', () => {
     a.snapshot.balance_hours = 1.0;
     a.snapshot.final_balance = 0;
 
-    const result = executeShadowRun({
+    const result = await executeShadowRun({
       subjects: subjectLoaderFromList([
         { employeeId: 'e1', weekStart: '2026-07-20' },
       ]),
@@ -216,6 +217,43 @@ describe('executeShadowRun (fixtures)', () => {
     assert.equal(result.metrics.toleratedMatches, 1);
     assert.ok(
       result.comparisons[0]!.fieldDiffs.every((d) => d.discrepancyCode === 'D004'),
+    );
+  });
+
+  it('fallo por sujeto no aborta el run', async () => {
+    const good = alignedFacts('e1', '2026-07-20');
+    const result = await executeShadowRun({
+      subjects: subjectLoaderFromList([
+        { employeeId: 'e-bad', weekStart: '2026-07-20' },
+        { employeeId: 'e1', weekStart: '2026-07-20' },
+      ]),
+      facts: {
+        loadFacts(subject) {
+          if (subject.employeeId === 'e-bad') {
+            return { status: 'error', error: 'boom-empleado' };
+          }
+          return { status: 'ready', facts: good };
+        },
+      },
+      options: {
+        horizonStart: '2026-07-20',
+        horizonEnd: '2026-07-26',
+        runId: 'run-partial-fail',
+        clock: CLOCK,
+        fixedDurationMs: 3,
+      },
+    });
+    assert.equal(result.status, 'completed');
+    assert.equal(result.metrics.failed, 1);
+    assert.equal(result.metrics.succeeded, 1);
+    assert.equal(result.metrics.comparisons, 1);
+    assert.equal(
+      result.subjectOutcomes.find((o) => o.employeeId === 'e-bad')?.outcome,
+      'failed',
+    );
+    assert.equal(
+      result.subjectOutcomes.find((o) => o.employeeId === 'e1')?.outcome,
+      'succeeded',
     );
   });
 });

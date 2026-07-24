@@ -14,42 +14,41 @@ export type ShadowSubject = {
  */
 export type ShadowSubjectFacts = {
   subject: ShadowSubject;
-  /** Resultado HE ya liquidado (loader o fixture). */
   liquidation: LiquidationResult;
   heFacts?: HeAdapterFacts;
   bagModeOverride?: boolean | null;
-  /** Fila SQL / snapshot proyectable. */
   snapshot: SqlWeeklySnapshotRow;
   profilePreferStock?: boolean | null;
-  /** Si true, el runner omite comparación (p.ej. semana abierta). */
-  skip?: boolean;
-  skipReason?: string;
 };
+
+/** Resultado de carga por sujeto (infra → Runner). */
+export type ShadowFactLoadResult =
+  | { status: 'ready'; facts: ShadowSubjectFacts }
+  | { status: 'skip'; reason: string }
+  | { status: 'error'; error: string };
 
 /** Puerto: enumerar sujetos del horizonte. */
 export type ShadowSubjectLoader = {
-  listSubjects(): readonly ShadowSubject[];
+  listSubjects():
+    | readonly ShadowSubject[]
+    | Promise<readonly ShadowSubject[]>;
 };
 
 /** Puerto: cargar hechos de un sujeto (solo lectura). */
 export type ShadowFactLoader = {
-  loadFacts(subject: ShadowSubject): ShadowSubjectFacts | null;
+  loadFacts(
+    subject: ShadowSubject,
+  ): ShadowFactLoadResult | Promise<ShadowFactLoadResult>;
 };
 
 export type ShadowRunnerClock = {
-  /** ISO fijo en tests. */
   nowIso(): string;
 };
 
 export type ShadowRunnerOptions = {
   horizonStart: string;
   horizonEnd: string;
-  /** Obligatorio para determinismo en tests. */
   runId?: string;
   clock?: ShadowRunnerClock;
-  /**
-   * Si se aporta, durationMs usa este valor (tests deterministas).
-   * Si no, se mide con performance.now / Date.
-   */
   fixedDurationMs?: number;
 };

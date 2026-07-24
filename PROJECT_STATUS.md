@@ -1,8 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-24 (Shadow Mode Commit 7: persistencia por puertos)
+**Última actualización:** 2026-07-24 (Shadow Mode Commit 8A: CLI + loaders reales)
 
-- [x] **Shadow Mode Commit 7 — Persistencia desacoplada (2026-07-24)**: Puertos `Shadow*Store` en dominio; `persistShadowRunResult`; in-memory + infra Supabase (`src/infrastructure/shadow`). Migración `20260724060000_shadow_parity_persistence.sql` (RLS manager). Runner sin Supabase; persistencia opcional. Tests shadow **31**. Sin CLI/cron/UI.
+- [x] **Shadow Mode Commit 8A — CLI ops + loaders reales (2026-07-24)**: `npm run shadow` → loaders Supabase (subjects/facts) → `executeAndPersistShadowRun` → resumen consola. Dominio sin CLI/Supabase. Fallos por sujeto no abortan. Primer run real semana `2026-07-20`: EMR 35.29%, persistido `7e73bfc9-…`. **8B NO** (cron/flags/dashboard/alertas).
+
+- [x] **Shadow Mode Commit 7 — Persistencia desacoplada (2026-07-24)**: Puertos `Shadow*Store` en dominio; `persistShadowRunResult`; in-memory + infra Supabase (`src/infrastructure/shadow`). Migración `20260724060000_shadow_parity_persistence.sql` (RLS manager) **aplicada**. Runner sin Supabase; persistencia opcional.
 
 - [x] **Shadow Mode Commit 6 — Runner in-memory (2026-07-24)**: `executeShadowRun` orquesta subjects→facts→adapters→compare→classify→`ShadowRunResult` sin persistir. Puertos inyectables + fixtures. Determinista con clock/runId fijos.
 

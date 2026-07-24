@@ -3,22 +3,30 @@ import { createSqlAdapter } from '../adapters/sql-adapter.ts';
 import { compareCanonicalVectors } from '../comparator/compare.ts';
 import { classifyCompareResult } from '../classifier/classify.ts';
 import type { ShadowRunResult } from '../types/run-result.ts';
-import type { ShadowRunComparisonItem } from '../types/run-result.ts';
+import type {
+  ShadowRunComparisonItem,
+  ShadowSubjectOutcome,
+} from '../types/run-result.ts';
 import {
   computeShadowRunMetrics,
   matchStatusFromClassification,
   metricsToTotals,
 } from './metrics.ts';
 import type {
+  ShadowFactLoadResult,
   ShadowFactLoader,
   ShadowRunnerOptions,
   ShadowSubject,
+  ShadowSubjectFacts,
   ShadowSubjectLoader,
 } from './ports.ts';
-import type { ShadowPersistencePorts, ShadowRunPersistMeta } from '../persistence/ports.ts';
+import type {
+  ShadowPersistencePorts,
+  ShadowRunPersistMeta,
+  PersistShadowRunResult,
+} from '../persistence/ports.ts';
 import { persistShadowRunResult } from '../persistence/persist-run.ts';
 import { SHADOW_DOMAIN_VERSION } from '../version.ts';
-import type { PersistShadowRunResult } from '../persistence/ports.ts';
 
 export type ExecuteShadowRunInput = {
   subjects: ShadowSubjectLoader;
@@ -37,10 +45,13 @@ function defaultNowIso(): string {
 }
 
 /**
- * Ejecuta un Shadow Run completo en memoria.
- * Sin escrituras. Determinista si clock/runId/duration son fijos.
+ * Ejecuta un Shadow Run.
+ * Fallos por sujeto no abortan el run.
+ * Determinista si clock/runId/duration son fijos y loaders son deterministas.
  */
-export function executeShadowRun(input: ExecuteShadowRunInput): ShadowRunResult {
+export async function executeShadowRun(
+  input: ExecuteShadowRunInput,
+): Promise<ShadowRunResult> {
   const startedAt = input.options.clock?.nowIso() ?? defaultNowIso();
   const runId = input.options.runId ?? crypto.randomUUID();
   const t0 =
@@ -48,59 +59,110 @@ export function executeShadowRun(input: ExecuteShadowRunInput): ShadowRunResult 
       ? performance.now()
       : null;
 
-  const subjectList = [...input.subjects.listSubjects()].sort(compareSubjects);
+  const subjectList = [...(await input.subjects.listSubjects())].sort(
+    compareSubjects,
+  );
   const heAdapter = createHeAdapter();
   const sqlAdapter = createSqlAdapter();
 
   const comparisons: ShadowRunComparisonItem[] = [];
+  const subjectOutcomes: ShadowSubjectOutcome[] = [];
   let skipped = 0;
+  let failed = 0;
 
   try {
     for (const subject of subjectList) {
-      const bundle = input.facts.loadFacts(subject);
-      if (bundle == null || bundle.skip) {
-        skipped += 1;
+      let loaded: ShadowFactLoadResult;
+      try {
+        loaded = await input.facts.loadFacts(subject);
+      } catch (err) {
+        failed += 1;
+        subjectOutcomes.push({
+          employeeId: subject.employeeId,
+          weekStart: subject.weekStart,
+          outcome: 'failed',
+          detail: err instanceof Error ? err.message : String(err),
+        });
         continue;
       }
 
-      const heVector = heAdapter.toCanonical({
-        employeeId: subject.employeeId,
-        weekStart: subject.weekStart,
-        liquidation: bundle.liquidation,
-        facts: bundle.heFacts,
-        bagModeOverride: bundle.bagModeOverride,
-      });
+      if (loaded.status === 'skip') {
+        skipped += 1;
+        subjectOutcomes.push({
+          employeeId: subject.employeeId,
+          weekStart: subject.weekStart,
+          outcome: 'skipped',
+          detail: loaded.reason,
+        });
+        continue;
+      }
 
-      const sqlVector = sqlAdapter.toCanonical({
-        employeeId: subject.employeeId,
-        weekStart: subject.weekStart,
-        snapshot: bundle.snapshot,
-        profilePreferStock: bundle.profilePreferStock,
-      });
+      if (loaded.status === 'error') {
+        failed += 1;
+        subjectOutcomes.push({
+          employeeId: subject.employeeId,
+          weekStart: subject.weekStart,
+          outcome: 'failed',
+          detail: loaded.error,
+        });
+        continue;
+      }
 
-      const raw = compareCanonicalVectors(heVector, sqlVector);
-      const classified = classifyCompareResult(raw);
-      const matchStatus = matchStatusFromClassification(classified);
+      try {
+        const bundle = loaded.facts;
+        const heVector = heAdapter.toCanonical({
+          employeeId: subject.employeeId,
+          weekStart: subject.weekStart,
+          liquidation: bundle.liquidation,
+          facts: bundle.heFacts,
+          bagModeOverride: bundle.bagModeOverride,
+        });
 
-      const fieldDiffs = [...classified.fieldDiffs]
-        .map((f) => ({
-          field: f.field,
-          heValue: f.heValue,
-          sqlValue: f.sqlValue,
-          discrepancyCode: f.discrepancyCode,
-          severity: f.severity,
-        }))
-        .sort((a, b) => a.field.localeCompare(b.field));
+        const sqlVector = sqlAdapter.toCanonical({
+          employeeId: subject.employeeId,
+          weekStart: subject.weekStart,
+          snapshot: bundle.snapshot,
+          profilePreferStock: bundle.profilePreferStock,
+        });
 
-      comparisons.push({
-        employeeId: subject.employeeId,
-        weekStart: subject.weekStart,
-        matchStatus,
-        heVector,
-        sqlVector,
-        primaryDiscrepancyCode: classified.primaryCode,
-        fieldDiffs,
-      });
+        const raw = compareCanonicalVectors(heVector, sqlVector);
+        const classified = classifyCompareResult(raw);
+        const matchStatus = matchStatusFromClassification(classified);
+
+        const fieldDiffs = [...classified.fieldDiffs]
+          .map((f) => ({
+            field: f.field,
+            heValue: f.heValue,
+            sqlValue: f.sqlValue,
+            discrepancyCode: f.discrepancyCode,
+            severity: f.severity,
+          }))
+          .sort((a, b) => a.field.localeCompare(b.field));
+
+        comparisons.push({
+          employeeId: subject.employeeId,
+          weekStart: subject.weekStart,
+          matchStatus,
+          heVector,
+          sqlVector,
+          primaryDiscrepancyCode: classified.primaryCode,
+          fieldDiffs,
+        });
+        subjectOutcomes.push({
+          employeeId: subject.employeeId,
+          weekStart: subject.weekStart,
+          outcome: 'succeeded',
+          detail: matchStatus,
+        });
+      } catch (err) {
+        failed += 1;
+        subjectOutcomes.push({
+          employeeId: subject.employeeId,
+          weekStart: subject.weekStart,
+          outcome: 'failed',
+          detail: err instanceof Error ? err.message : String(err),
+        });
+      }
     }
 
     const finishedAt = input.options.clock?.nowIso() ?? defaultNowIso();
@@ -111,6 +173,7 @@ export function executeShadowRun(input: ExecuteShadowRunInput): ShadowRunResult 
     const metrics = computeShadowRunMetrics({
       comparisons,
       skipped,
+      failed,
       durationMs,
     });
 
@@ -124,6 +187,7 @@ export function executeShadowRun(input: ExecuteShadowRunInput): ShadowRunResult 
       errorMessage: null,
       metrics,
       comparisons,
+      subjectOutcomes,
       totals: metricsToTotals(metrics),
     };
   } catch (err) {
@@ -135,6 +199,7 @@ export function executeShadowRun(input: ExecuteShadowRunInput): ShadowRunResult 
     const metrics = computeShadowRunMetrics({
       comparisons,
       skipped,
+      failed,
       durationMs,
     });
     return {
@@ -147,13 +212,13 @@ export function executeShadowRun(input: ExecuteShadowRunInput): ShadowRunResult 
       errorMessage: message,
       metrics,
       comparisons,
+      subjectOutcomes,
       totals: metricsToTotals(metrics),
     };
   }
 }
 
 export type ExecuteAndPersistShadowRunInput = ExecuteShadowRunInput & {
-  /** Si se omite, no hay side-effects de persistencia. */
   persistence?: ShadowPersistencePorts;
   persistMeta?: Partial<ShadowRunPersistMeta> & {
     hoursEngineVersion: string;
@@ -165,13 +230,10 @@ export type ExecuteAndPersistShadowRunOutput = {
   persist: PersistShadowRunResult | null;
 };
 
-/**
- * Runner con persistencia opcional vía puertos (nunca Supabase directo).
- */
 export async function executeAndPersistShadowRun(
   input: ExecuteAndPersistShadowRunInput,
 ): Promise<ExecuteAndPersistShadowRunOutput> {
-  const result = executeShadowRun(input);
+  const result = await executeShadowRun(input);
   if (!input.persistence) {
     return { result, persist: null };
   }
@@ -192,7 +254,6 @@ export async function executeAndPersistShadowRun(
   return { result, persist };
 }
 
-/** Helper: loader de sujetos desde un array fijo (fixtures / dry-run futuro). */
 export function subjectLoaderFromList(
   subjects: readonly ShadowSubject[],
 ): ShadowSubjectLoader {
@@ -203,13 +264,24 @@ export function subjectLoaderFromList(
   };
 }
 
-/** Helper: fact loader desde mapa employeeId|weekStart → facts. */
 export function factLoaderFromMap(
-  map: ReadonlyMap<string, import('./ports.ts').ShadowSubjectFacts>,
+  map: ReadonlyMap<string, ShadowSubjectFacts>,
 ): ShadowFactLoader {
   return {
     loadFacts(subject) {
-      return map.get(`${subject.employeeId}|${subject.weekStart}`) ?? null;
+      const facts = map.get(`${subject.employeeId}|${subject.weekStart}`);
+      if (!facts) {
+        return { status: 'skip', reason: 'not_in_map' };
+      }
+      if ((facts as ShadowSubjectFacts & { skip?: boolean }).skip) {
+        return {
+          status: 'skip',
+          reason:
+            (facts as ShadowSubjectFacts & { skipReason?: string })
+              .skipReason ?? 'skipped',
+        };
+      }
+      return { status: 'ready', facts };
     },
   };
 }

@@ -6,7 +6,6 @@ import type {
 } from './run.ts';
 import type { CanonicalComparableField } from './canonical-vector.ts';
 
-/** Una comparación clasificada dentro de un Shadow Run (solo memoria). */
 export type ShadowRunComparisonItem = {
   employeeId: string;
   weekStart: string;
@@ -23,7 +22,13 @@ export type ShadowRunComparisonItem = {
   }[];
 };
 
-/** Métricas mínimas del Commit 6. */
+export type ShadowSubjectOutcome = {
+  employeeId: string;
+  weekStart: string;
+  outcome: 'succeeded' | 'failed' | 'skipped';
+  detail: string | null;
+};
+
 export type ShadowRunMetrics = {
   totalSubjects: number;
   exactMatches: number;
@@ -31,18 +36,15 @@ export type ShadowRunMetrics = {
   criticalDifferences: number;
   comparisons: number;
   skipped: number;
+  failed: number;
+  succeeded: number;
   diffs: number;
-  /** ms — inyectable/fijo en tests para determinismo estricto. */
   durationMs: number;
   exactMatchRate: number;
   criticalDiffRate: number;
   byCode: Readonly<Partial<Record<DiscrepancyCode, number>>>;
 };
 
-/**
- * Única salida del Runner (Commit 6).
- * Sin persistencia. Sin efectos secundarios.
- */
 export type ShadowRunResult = {
   runId: string;
   startedAt: string;
@@ -53,6 +55,6 @@ export type ShadowRunResult = {
   errorMessage: string | null;
   metrics: ShadowRunMetrics;
   comparisons: readonly ShadowRunComparisonItem[];
-  /** Totales compatibles con ShadowRun.totals. */
+  subjectOutcomes: readonly ShadowSubjectOutcome[];
   totals: ShadowRunTotals;
 };

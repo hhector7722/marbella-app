@@ -84,6 +84,8 @@ export function createSupabaseShadowMetricsStore(
           critical_differences: metrics.criticalDifferences,
           comparisons: metrics.comparisons,
           skipped: metrics.skipped,
+          failed: metrics.failed,
+          succeeded: metrics.succeeded,
           diffs: metrics.diffs,
           duration_ms: metrics.durationMs,
           exact_match_rate: metrics.exactMatchRate,

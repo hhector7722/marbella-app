@@ -1,4 +1,5 @@
 export type {
+  ShadowFactLoadResult,
   ShadowFactLoader,
   ShadowRunnerClock,
   ShadowRunnerOptions,

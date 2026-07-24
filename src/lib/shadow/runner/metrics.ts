@@ -8,7 +8,6 @@ import type { ComparisonMatchStatus } from '../types/run.ts';
 
 function rate(num: number, den: number): number {
   if (den === 0) return 0;
-  // 4 decimales fijos → determinismo estable en JSON/asserts.
   return Math.round((num / den) * 10000) / 10000;
 }
 
@@ -29,9 +28,10 @@ export function matchStatusFromClassification(input: {
 export function computeShadowRunMetrics(input: {
   comparisons: readonly ShadowRunComparisonItem[];
   skipped: number;
+  failed: number;
   durationMs: number;
 }): ShadowRunMetrics {
-  const { comparisons, skipped, durationMs } = input;
+  const { comparisons, skipped, failed, durationMs } = input;
   let exactMatches = 0;
   let toleratedMatches = 0;
   let diffs = 0;
@@ -41,9 +41,7 @@ export function computeShadowRunMetrics(input: {
   for (const c of comparisons) {
     if (c.matchStatus === 'exact') exactMatches += 1;
     else if (c.matchStatus === 'tolerated') toleratedMatches += 1;
-    else if (c.matchStatus === 'skipped') {
-      /* no-op: skipped counted aparte */
-    } else diffs += 1;
+    else diffs += 1;
 
     for (const f of c.fieldDiffs) {
       byCode[f.discrepancyCode] = (byCode[f.discrepancyCode] ?? 0) + 1;
@@ -52,7 +50,8 @@ export function computeShadowRunMetrics(input: {
   }
 
   const compared = comparisons.length;
-  const totalSubjects = compared + skipped;
+  const succeeded = compared;
+  const totalSubjects = compared + skipped + failed;
 
   return {
     totalSubjects,
@@ -61,6 +60,8 @@ export function computeShadowRunMetrics(input: {
     criticalDifferences,
     comparisons: compared,
     skipped,
+    failed,
+    succeeded,
     diffs,
     durationMs,
     exactMatchRate: rate(exactMatches, compared),

@@ -57,6 +57,7 @@ export {
   type ExecuteAndPersistShadowRunInput,
   type ExecuteAndPersistShadowRunOutput,
   type ExecuteShadowRunInput,
+  type ShadowFactLoadResult,
   type ShadowFactLoader,
   type ShadowRunnerClock,
   type ShadowRunnerOptions,

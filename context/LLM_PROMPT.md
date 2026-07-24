@@ -479,11 +479,14 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto "prompt-ready"**. Debe 
 
 <!-- sync:project-status:start — NO EDITAR A MANO; generado por `scripts/sync-llm-prompt-from-project-status.mjs` -->
 
-**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-24 (Shadow Mode: scaffolding dominio Migración)
+**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-24 (Shadow Mode Commit 8A: CLI + loaders reales)
 
 Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; máx. 45 entradas):
 
-- **Shadow Mode Commit 1 — dominio `src/lib/shadow/` (2026-07-24)**: Bounded context de migración (SSOT Fase 1). Tipos canónicos, taxonomía D000–D017, ciclo de vida de discrepancias, stubs de adapters/comparator/runner. **No** toca Hours Engine ni SQL. Cero impacto en UI. Tests: `npm run test:shadow`.
+- **Shadow Mode Commit 8A — CLI ops + loaders reales (2026-07-24)**: `npm run shadow` → loaders Supabase (subjects/facts) → `executeAndPersistShadowRun` → resumen consola. Dominio sin CLI/Supabase. Fallos por sujeto no abortan. Primer run real semana `2026-07-20`: EMR 35.29%, persistido `7e73bfc9-…`. **8B NO** (cron/flags/dashboard/alertas).
+- **Shadow Mode Commit 7 — Persistencia desacoplada (2026-07-24)**: Puertos `Shadow*Store` en dominio; `persistShadowRunResult`; in-memory + infra Supabase (`src/infrastructure/shadow`). Migración `20260724060000_shadow_parity_persistence.sql` (RLS manager) **aplicada**. Runner sin Supabase; persistencia opcional.
+- **Shadow Mode Commit 6 — Runner in-memory (2026-07-24)**: `executeShadowRun` orquesta subjects→facts→adapters→compare→classify→`ShadowRunResult` sin persistir. Puertos inyectables + fixtures. Determinista con clock/runId fijos.
+- **Shadow Mode Commits 1–5 (2026-07-24)**: Dominio `src/lib/shadow/` — Canonical Vector, adapters HE/SQL, Discrepancy+lifecycle, comparator, classifier D000–D017.
 - **Asistencia celda: fuente dinámica etiqueta especial (2026-07-24)**: Día solo F/E/B/P → nombre completo centrado con tamaño Tailwind adaptativo (12→7px) según ancho de celda (`ResizeObserver`), para que «Baja»/«Festivo» lean más grandes y «Enfermedad» no se corte.
 - **Asistencia celda: nombre completo y H+personal (2026-07-24)**: Día solo F/E/B/P → etiqueta completa centrada (`Festivo`, `Enfermedad`, …) sin círculo/letra. Día con fichaje + `justified_hours` → sin **P** esquina; fila `H 6 +1` con el `+1` en azul personal. Regular / no registrado sin cambio.
 - **Fix horas justificadas vs `idx_one_shift_per_day` (2026-07-23)**: La BD solo permite **un** `time_logs` por empleado/día. Columna `justified_hours` (migración aplicada). El modal suma el permiso en el mismo fichaje (`total_hours = trabajadas + justificadas`). Badge **P** si `justified_hours > 0`.
@@ -525,8 +528,5 @@ Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; m
 - **Fix ver pedido cliente en staff (2026-07-16)**: Al abrir el modal de encargo (o deep-link `?eventId=`), se refetch de `events` + `event_orders` — ya no se muestra el shell vacío en caché.
 - **Pedido cliente: campana + push como reservas (2026-07-16)**: Al «Enviar pedido», mismos destinatarios que reservas (alba/hernan/pere/hector). In-app en campana (`client_order_submitted`) y **push** vía pg_net → `/api/webhooks/reservations-push`. También `reservation_new` vuelve a mostrarse en la campana (mismo centro). Migración [`20260716210000_client_order_push_and_notify.sql`](supabase/migrations/20260716210000_client_order_push_and_notify.sql) **aplicada**.
 - **Pedido carta fotocopia + picker Entero/Medio (2026-07-16)**: Misma UI de precios que la carta (`CartaDualRacionPrices`). Tap en producto → suma al carrito (no lightbox). Si hay precio medio (bocadillo/ración TPV), tap abre modal Entero/Medio.
-- **Modal del día desktop (2026-07-16)**: `PavilionDayModal` + `ActivitiesTab` y vista día de `StaffScheduleModal` — utilidades `day-modal-*` (≥1024px): panel a `100dvh`, filas de hora iguales, chips/filas de turnos repartidas, dots ocultos. Smartphone/tablet sin cambios.
-- **Tramos contractuales versionados (2026-07-16)**: Tabla `hours_contract_terms` (RLS + seed desde perfil actual, 22 empleados). Contract Resolver / liquidación / Ex. diarias leen **solo** tramos versionados vía `loadEmployeeBoundaryFacts` + `employeeFactsFromContractTerms`. Eliminado `employeeFactsFromProfile`. Tarifa OT versionada en el tramo (`overtimeRatePerHour`). Tests: `npm run test:hours-engine:contract-terms` + suite **80/80**. Migración [`20260716200000_hours_contract_terms.sql`](supabase/migrations/20260716200000_hours_contract_terms.sql) **aplicada**. Inmutabilidad del pasado demostrada (cambiar tramo vigente/futuro no reinterpreta histórico).
-- **Pedido ración medio = mismo artículo TPV (2026-07-16)**: Como en TPV (opción ración), Entero/Medio sobre el mismo `articulo_id` + `override_precio_medio`. Carrito: claves `id` / `id:medio`. Resumen cliente: 2 líneas (`ENT…` y `1/2 · ENT…`). Comanda staff: mismo product_id, `notes: 1/2`, precio medio. RPC `fn_event_order_apply_racion` + `save_client` / staff create/update.
 
 <!-- sync:project-status:end -->

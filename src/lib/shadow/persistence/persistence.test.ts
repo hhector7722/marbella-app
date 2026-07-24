@@ -86,9 +86,9 @@ function facts(
 const CLOCK = { nowIso: () => '2026-07-24T12:00:00.000Z' };
 
 describe('shadow persistence ports (in-memory)', () => {
-  it('persistencia desactivada: executeShadowRun sin side-effects', () => {
+  it('persistencia desactivada: executeShadowRun sin side-effects', async () => {
     const a = facts('e1', '2026-07-20');
-    const r1 = executeShadowRun({
+    const r1 = await executeShadowRun({
       subjects: subjectLoaderFromList([a.subject]),
       facts: factLoaderFromMap(new Map([[subjectKey(a.subject), a]])),
       options: {
@@ -99,7 +99,7 @@ describe('shadow persistence ports (in-memory)', () => {
         fixedDurationMs: 1,
       },
     });
-    const r2 = executeShadowRun({
+    const r2 = await executeShadowRun({
       subjects: subjectLoaderFromList([a.subject]),
       facts: factLoaderFromMap(new Map([[subjectKey(a.subject), a]])),
       options: {
@@ -293,7 +293,7 @@ describe('shadow persistence ports (in-memory)', () => {
     };
 
     const a = facts('e1', '2026-07-20');
-    const result = executeShadowRun({
+    const result = await executeShadowRun({
       subjects: subjectLoaderFromList([a.subject]),
       facts: factLoaderFromMap(new Map([[subjectKey(a.subject), a]])),
       options: {
