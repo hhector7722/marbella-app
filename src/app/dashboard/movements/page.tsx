@@ -821,45 +821,45 @@ export default function MovementsPage() {
                                     onClick={() => setCashModalMode('in')}
                                     aria-label="Entrada"
                                     title="Entrada"
-                                    className="shrink-0 px-1 py-0.5 rounded-lg hover:bg-white/10 transition-colors min-h-12 min-w-[44px] flex flex-col items-center justify-center gap-0.5 active:scale-95"
+                                    className="shrink-0 px-1 pt-0.5 pb-0 rounded-lg hover:bg-white/10 transition-colors min-h-12 min-w-[44px] flex flex-col items-center justify-start gap-1.5 active:scale-95"
                                 >
                                     <div className="w-5 h-5 flex items-center justify-center bg-emerald-500 rounded-full shadow-sm">
                                         <Plus className="w-3 h-3 text-white" strokeWidth={3} />
                                     </div>
-                                    <span className="text-[6px] font-black uppercase tracking-widest text-white leading-none">Entrada</span>
+                                    <span className="text-[6px] font-black uppercase tracking-widest text-white leading-none mt-0.5">Entrada</span>
                                 </button>
                                 <button
                                     type="button"
                                     onClick={openOut}
                                     aria-label="Salida"
                                     title="Salida"
-                                    className="shrink-0 px-1 py-0.5 rounded-lg hover:bg-white/10 transition-colors min-h-12 min-w-[44px] flex flex-col items-center justify-center gap-0.5 active:scale-95"
+                                    className="shrink-0 -ml-1.5 px-1 pt-0.5 pb-0 rounded-lg hover:bg-white/10 transition-colors min-h-12 min-w-[44px] flex flex-col items-center justify-start gap-1.5 active:scale-95"
                                 >
                                     <div className="w-5 h-5 flex items-center justify-center bg-rose-500 rounded-full shadow-sm">
                                         <Minus className="w-3 h-3 text-white" strokeWidth={3} />
                                     </div>
-                                    <span className="text-[6px] font-black uppercase tracking-widest text-white leading-none">Salida</span>
+                                    <span className="text-[6px] font-black uppercase tracking-widest text-white leading-none mt-0.5">Salida</span>
                                 </button>
                                 <button
                                     type="button"
                                     onClick={openAudit}
                                     aria-label="Arqueo"
                                     title="Arqueo"
-                                    className="shrink-0 px-1 py-0.5 rounded-lg hover:bg-white/10 transition-colors min-h-12 min-w-[44px] flex flex-col items-center justify-center gap-0.5 active:scale-95"
+                                    className="shrink-0 -ml-1.5 px-1 pt-0.5 pb-0 rounded-lg hover:bg-white/10 transition-colors min-h-12 min-w-[44px] flex flex-col items-center justify-start gap-1.5 active:scale-95"
                                 >
                                     <div className="w-5 h-5 flex items-center justify-center bg-orange-500 rounded-full shadow-sm">
                                         <RefreshCw className="w-2.5 h-2.5 text-white" strokeWidth={4} />
                                     </div>
-                                    <span className="text-[6px] font-black uppercase tracking-widest text-white leading-none">Arqueo</span>
+                                    <span className="text-[6px] font-black uppercase tracking-widest text-white leading-none mt-0.5">Arqueo</span>
                                 </button>
                             </div>
 
-                            {/* NAVEGADOR MENSUAL (centrado) */}
-                            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center gap-0.5 sm:gap-1 max-w-[min(100%,14rem)] sm:max-w-none px-1">
+                            {/* NAVEGADOR MENSUAL (centrado; ancho = texto del mes) */}
+                            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 inline-flex w-fit max-w-[calc(100%-9rem)] items-center">
                                 <button
                                     type="button"
                                     onClick={handlePrevMonth}
-                                    className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center text-white"
+                                    className="shrink-0 rounded-lg hover:bg-white/10 transition-colors min-h-10 pl-1.5 pr-0.5 flex items-center justify-center text-white"
                                     aria-label="Mes anterior"
                                 >
                                     <ChevronLeft size={18} />
@@ -867,7 +867,7 @@ export default function MovementsPage() {
                                 <button
                                     type="button"
                                     onClick={() => setIsTimeFilterOpen(true)}
-                                    className="text-[10px] sm:text-xs md:text-sm font-black text-white capitalize text-center px-1 truncate hover:text-white/80 transition-colors"
+                                    className="text-[10px] sm:text-xs md:text-sm font-black text-white capitalize text-center px-0.5 whitespace-nowrap hover:text-white/80 transition-colors"
                                 >
                                     {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
                                         ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
@@ -876,7 +876,7 @@ export default function MovementsPage() {
                                 <button
                                     type="button"
                                     onClick={handleNextMonth}
-                                    className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center text-white"
+                                    className="shrink-0 rounded-lg hover:bg-white/10 transition-colors min-h-10 pl-0.5 pr-1.5 flex items-center justify-center text-white"
                                     aria-label="Mes siguiente"
                                 >
                                     <ChevronRight size={18} />

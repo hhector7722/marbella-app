@@ -1656,11 +1656,11 @@ export default function HistoryPage() {
                                     </button>
                                 </div>
                             </div>
-                            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center gap-0.5 sm:gap-1 max-w-[min(100%,14rem)] sm:max-w-none px-1">
+                            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 inline-flex w-fit max-w-[calc(100%-9rem)] items-center">
                                 <button
                                     type="button"
                                     onClick={handlePrevMonth}
-                                    className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center text-white"
+                                    className="shrink-0 rounded-lg hover:bg-white/10 transition-colors min-h-10 pl-1.5 pr-0.5 flex items-center justify-center text-white"
                                     aria-label="Mes anterior"
                                 >
                                     <ChevronLeft size={18} />
@@ -1668,14 +1668,14 @@ export default function HistoryPage() {
                                 <button
                                     type="button"
                                     onClick={() => setIsTimeFilterOpen(true)}
-                                    className="text-[10px] sm:text-xs md:text-sm font-black text-white capitalize text-center px-1 truncate hover:text-white/80 transition-colors"
+                                    className="text-[10px] sm:text-xs md:text-sm font-black text-white capitalize text-center px-0.5 whitespace-nowrap hover:text-white/80 transition-colors"
                                 >
                                     {monthNavLabel}
                                 </button>
                                 <button
                                     type="button"
                                     onClick={handleNextMonth}
-                                    className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center text-white"
+                                    className="shrink-0 rounded-lg hover:bg-white/10 transition-colors min-h-10 pl-0.5 pr-1.5 flex items-center justify-center text-white"
                                     aria-label="Mes siguiente"
                                 >
                                     <ChevronRight size={18} />
