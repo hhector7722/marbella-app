@@ -1,6 +1,12 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-24 (Zoom browser temporal Héctor)
+**Última actualización:** 2026-07-24 (Asistencia: etiqueta especial en dashboard + fit real)
+
+- [x] **Asistencia etiqueta especial visible (2026-07-24)**: El calendario del **dashboard staff** seguía con círculo F/E/B/P (por eso «no había cambio»). Ahora usa `SpecialDayLabel` compartido (historial + dashboard): nombre completo centrado, tamaño por longitud + measure con probe (sin `max-w-full`).
+
+**Última actualización anterior:** 2026-07-24 (Asistencia UI: fila P encima de H)
+
+- [x] **Asistencia celda: fila P encima de H (2026-07-24)**: Si hay `justified_hours` con fichaje, fila `P` (misma tipografía que H/Ex) + valor en azul, encima de `H` (solo trabajadas). Sin `+j` en la misma línea ni badge esquina.
 
 - [x] **Zoom browser temporal solo Héctor (2026-07-24)**: `generateViewport` en `layout.tsx` habilita pinch/double-tap zoom (`userScalable`, max 5) solo si email = `hhector7722@gmail.com`; resto del staff sigue bloqueado. También se omite `touch-manipulation` en `<body>` para ese usuario. **Revertir cuando ya no haga falta.**
 

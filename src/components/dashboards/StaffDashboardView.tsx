@@ -36,6 +36,7 @@ import { STAFF_MANUAL_ASSETS, STAFF_MANUAL_MENU, STAFF_TPV_MANUAL_ITEMS, STAFF_T
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { liquidateWeekForCard, loadEmployeeBoundaryFacts, resolveOpeningCarryIn, employeeTimelineStartWeek, isPaidLookupFromRows, bagModeOverrideLookupFromRows } from '@/lib/hours-engine';
+import { SpecialDayLabel, specialEventFullLabel, specialEventTextClass } from '@/components/staff/SpecialDayLabel';
 
 const CONTACTS_DATA = [
     { name: 'Hielo Fenix', phone: '(3461) 028-8888' },
@@ -791,7 +792,11 @@ export default function StaffDashboardView() {
 
                                 <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
                                     <div className="grid grid-cols-7">
-                                        {weekDays.map((day, i) => (
+                                        {weekDays.map((day, i) => {
+                                            const specialLabel = day.eventType
+                                                ? specialEventFullLabel(day.eventType)
+                                                : null;
+                                            return (
                                             <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[108px] bg-white relative">
                                                 <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center relative z-10">
                                                     <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
@@ -806,26 +811,11 @@ export default function StaffDashboardView() {
                                                     <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
                                                     {/* Filas de altura fija para alinear círculos verde/rojo entre todos los días */}
                                                     <div className="flex-1 flex flex-col justify-center w-full pb-1 mt-4 min-h-[52px]">
-                                                        {day.eventType && day.eventType !== 'regular' && day.eventType !== 'no_registered' ? (
-                                                            <>
-                                                                <div className="h-5 flex items-center justify-center shrink-0">
-                                                                    <div className={cn(
-                                                                        "w-5 h-5 rounded-full shadow-sm flex items-center justify-center leading-none",
-                                                                        day.eventType === 'holiday' ? 'bg-red-500 text-white' :
-                                                                            day.eventType === 'weekend' ? 'bg-yellow-400 text-white' :
-                                                                                day.eventType === 'adjustment' ? 'bg-orange-500 text-white' :
-                                                                                    day.eventType === 'personal' ? 'bg-blue-500 text-white' : 'bg-gray-400 text-white'
-                                                                    )}>
-                                                                        <span className="text-[9px] font-black">
-                                                                            {day.eventType === 'holiday' ? 'F' :
-                                                                                day.eventType === 'weekend' ? 'E' :
-                                                                                    day.eventType === 'adjustment' ? 'B' :
-                                                                                        day.eventType === 'personal' ? 'P' : '?'}
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                                <div className="h-5 shrink-0" aria-hidden />
-                                                            </>
+                                                        {specialLabel ? (
+                                                            <SpecialDayLabel
+                                                                label={specialLabel}
+                                                                className={specialEventTextClass(day.eventType!)}
+                                                            />
                                                         ) : (
                                                             <>
                                                                 {/* Fila entrada: misma altura en todos los días para alinear círculos verdes */}
@@ -873,7 +863,8 @@ export default function StaffDashboardView() {
                                                     </div>
                                                 </div>
                                             </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 </div>
 

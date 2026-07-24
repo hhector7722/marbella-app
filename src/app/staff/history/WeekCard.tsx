@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { X, Coins, Landmark, Save } from 'lucide-react';
 import { parseISO, startOfWeek } from 'date-fns';
 import { cn, calculateRoundedHours } from '@/lib/utils';
 import { toast } from 'sonner';
+import { SpecialDayLabel } from '@/components/staff/SpecialDayLabel';
 
 const DAY_HEADERS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 
@@ -16,68 +17,6 @@ const EVENT_TYPES = [
     { value: 'personal', label: 'Personal', initial: 'P', color: 'bg-blue-500 text-white', text: 'text-blue-500', border: 'border-blue-200 bg-blue-50' },
     { value: 'no_registered', label: 'No registrado', initial: 'NR', showCross: true, color: 'bg-red-600 text-white', text: 'text-red-600', border: 'border-red-200 bg-red-50' },
 ];
-
-/** Pasos Tailwind (grandes → pequeños) para encajar el nombre completo en la celda. */
-const SPECIAL_LABEL_SIZE_STEPS = [
-    'text-[12px]',
-    'text-[11px]',
-    'text-[10px]',
-    'text-[9px]',
-    'text-[8px]',
-    'text-[7px]',
-] as const;
-
-/** Etiqueta F/E/B/P centrada: elige el mayor text-* que quepa en el ancho disponible. */
-function SpecialDayLabel({ label, className }: { label: string; className?: string }) {
-    const boxRef = useRef<HTMLDivElement>(null);
-    const textRef = useRef<HTMLSpanElement>(null);
-    const [sizeClass, setSizeClass] = useState<string>(SPECIAL_LABEL_SIZE_STEPS[2]);
-
-    useLayoutEffect(() => {
-        const box = boxRef.current;
-        const text = textRef.current;
-        if (!box || !text) return;
-
-        const fit = () => {
-            const cs = getComputedStyle(box);
-            const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
-            const maxW = box.clientWidth - padX;
-            if (maxW <= 0) return;
-            for (const step of SPECIAL_LABEL_SIZE_STEPS) {
-                text.className = cn(
-                    'block max-w-full whitespace-nowrap text-center font-black leading-none tracking-tight',
-                    step,
-                    className,
-                );
-                if (text.scrollWidth <= maxW) {
-                    setSizeClass(step);
-                    return;
-                }
-            }
-            setSizeClass(SPECIAL_LABEL_SIZE_STEPS[SPECIAL_LABEL_SIZE_STEPS.length - 1]);
-        };
-
-        fit();
-        const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : null;
-        ro?.observe(box);
-        return () => ro?.disconnect();
-    }, [label, className]);
-
-    return (
-        <div ref={boxRef} className="flex w-full min-w-0 flex-1 items-center justify-center px-1">
-            <span
-                ref={textRef}
-                className={cn(
-                    'block max-w-full whitespace-nowrap text-center font-black leading-none tracking-tight',
-                    sizeClass,
-                    className,
-                )}
-            >
-                {label}
-            </span>
-        </div>
-    );
-}
 
 /** Horas Marbella: solo enteros o .5 */
 const fmtHours = (val: number): string => {
@@ -316,16 +255,19 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                             </div>
                             {!isSpecialOnly && (
                                 <div className={cn("w-full space-y-0 mt-0.5 min-h-[20px]", isOtherMonth && "opacity-45")}>
-                                    {day.hasLog && day.clockIn && (hWorkedFmt || hJustFmt) ? (
-                                        <div className="flex justify-between items-center text-[8px] text-gray-400 h-3 min-w-0 gap-0.5">
-                                            <span className="ml-0.5 shrink-0">H</span>
-                                            <span className={cn("font-bold pr-0.5 truncate text-right", isOtherMonth ? "text-gray-400" : "text-gray-800")}>
-                                                {hWorkedFmt || ' '}
-                                                {hasPersonalAdd && hJustFmt ? (
-                                                    <span className={cn('font-black', isOtherMonth ? 'text-gray-400' : 'text-blue-500')}>
-                                                        {' '}+{hJustFmt}
-                                                    </span>
-                                                ) : null}
+                                    {hasPersonalAdd && hJustFmt ? (
+                                        <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                            <span className="ml-0.5">P</span>
+                                            <span className={cn("font-bold pr-1", isOtherMonth ? "text-gray-400" : "text-blue-500")}>
+                                                {hJustFmt}
+                                            </span>
+                                        </div>
+                                    ) : null}
+                                    {day.hasLog && day.clockIn && hWorkedFmt ? (
+                                        <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
+                                            <span className="ml-0.5">H</span>
+                                            <span className={cn("font-bold pr-1", isOtherMonth ? "text-gray-400" : "text-gray-800")}>
+                                                {hWorkedFmt}
                                             </span>
                                         </div>
                                     ) : <div className="h-3" />}

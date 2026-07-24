@@ -479,10 +479,12 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto "prompt-ready"**. Debe 
 
 <!-- sync:project-status:start — NO EDITAR A MANO; generado por `scripts/sync-llm-prompt-from-project-status.mjs` -->
 
-**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-24 (Zoom browser temporal Héctor)
+**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-24 (Asistencia: etiqueta especial en dashboard + fit real)
 
 Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; máx. 45 entradas):
 
+- **Asistencia etiqueta especial visible (2026-07-24)**: El calendario del **dashboard staff** seguía con círculo F/E/B/P (por eso «no había cambio»). Ahora usa `SpecialDayLabel` compartido (historial + dashboard): nombre completo centrado, tamaño por longitud + measure con probe (sin `max-w-full`).
+- **Asistencia celda: fila P encima de H (2026-07-24)**: Si hay `justified_hours` con fichaje, fila `P` (misma tipografía que H/Ex) + valor en azul, encima de `H` (solo trabajadas). Sin `+j` en la misma línea ni badge esquina.
 - **Zoom browser temporal solo Héctor (2026-07-24)**: `generateViewport` en `layout.tsx` habilita pinch/double-tap zoom (`userScalable`, max 5) solo si email = `hhector7722@gmail.com`; resto del staff sigue bloqueado. También se omite `touch-manipulation` en `<body>` para ese usuario. **Revertir cuando ya no haga falta.**
 - **Shadow Convergence Iteración A (2026-07-24)**: Única causa — SQL no persistía `ordinary_hours`/`extra_hours`. Fix en `fn_recalc_and_propagate_snapshots` + backfill. Shadow run `3ade336a-…` semana 2026-07-20: EMR **35,29% → 52,94%**, CDR **64,71% → 47,06%**, D006 fuera del top. Migración `20260724080000_shadow_iter_a_ordinary_extra_hours.sql`. **Sin B/C/D/E ni 8B.**
 - **Shadow Validation Report (2026-07-24)**: Auditoría del run `7e73bfc9-…` (EMR 35,29%). Causas raíz agrupadas A–F (≥90% explicado). **8B bloqueado** hasta corregir A+B (ordinary/extra SQL + `end_date`). Doc: [`SHADOW_VALIDATION_REPORT.md`](SHADOW_VALIDATION_REPORT.md).
@@ -526,7 +528,5 @@ Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; m
 - **Reabrir pedido: cliente parte del pedido existente (2026-07-16)**: `/pedido/[token]` hidrata el carrito con `event_orders.items` vía RPC `get_client_event_order_items_by_token` (mapea `is_half` → `id:medio`). Reopen sigue sin borrar líneas. Migración [`20260716240000_get_client_order_items_by_token.sql`](supabase/migrations/20260716240000_get_client_order_items_by_token.sql) **aplicada**.
 - **Footer pedido UX (2026-07-16)**: «Ver pedido» sin icono; unidades en badge rojo tipo notificación; botones más bajos con safe-area. Badge de cantidad en productos sin recorte (overflow + estilo campana).
 - **Tarjeta semanal: footer → motor (2026-07-16)**: HORAS / PENDIENTES / EXTRAS / IMPORTE salen de `LiquidationResult` vía [`week-card-from-liquidation.ts`](src/lib/hours-engine/week-card-from-liquidation.ts) + `patchWeeksFromLiquidation`. Misma fuente que Ex. diarias → imposible discrepancia. `/staff/history` + `WorkerWeeklyHistoryModal`. RPC solo clocks/`isPaid`. Tests: `npm run test:hours-engine:week-card` (10) + suite **104/104**. Sin orquestador, sin borrar snapshots.
-- **Ración medio en comanda sin «1/2» duplicado (2026-07-16)**: Producto = `1/2 ENT. LLOM PLANXA` (cantidad aparte). Ya no se muestra `1/2` otra vez en notas. RPC `fn_event_order_apply_racion` + UI/print. Migración [`20260716230000_half_ration_name_no_dup.sql`](supabase/migrations/20260716230000_half_ration_name_no_dup.sql) **aplicada**.
-- **Icono calendario = avisos reservas + pedido (2026-07-16)**: `ReservationsBell` muestra `reservation_new` y `client_order_submitted` (badge + panel). La campana general los excluye. Destinatarios sin cambio (alba/hernan/pere/hector).
 
 <!-- sync:project-status:end -->
