@@ -1,14 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-24 (Shadow Mode: comparator + classifier)
+**Última actualización:** 2026-07-24 (Shadow Mode Commit 6: Runner in-memory)
 
-- [x] **Shadow Mode Commits 1–5 (2026-07-24)**: Dominio `src/lib/shadow/` — Canonical Vector, adapters HE/SQL, Discrepancy+lifecycle, comparator, classifier D000–D017. Cero impacto UI/productores. `npm run test:shadow` (22). Pendiente: Runner, persistencia BD, CLI.
+- [x] **Shadow Mode Commit 6 — Runner in-memory (2026-07-24)**: `executeShadowRun` orquesta subjects→facts→adapters→compare→classify→`ShadowRunResult` sin persistir. Puertos inyectables + fixtures. Determinista con clock/runId fijos. `npm run test:shadow` (26). Sin Supabase/CLI/cron.
 
-- [x] **Shadow Mode Commit 3 — Discrepancy + lifecycle (2026-07-24)**: Entidad con fingerprint, occurrences, estados NEW→…→CLOSED, store en memoria y upsert anti-duplicado/regresión. Persistencia Supabase en Commit 7.
-
-- [x] **Shadow Mode Commit 2 — Canonical adapters (2026-07-24)**: `heLiquidationToCanonical` / `sqlSnapshotToCanonical` proyectan a `CanonicalComparisonVector`. Hours Engine y SQL no se modifican. Tests: `npm run test:shadow` (9).
-
-- [x] **Shadow Mode Commit 1 — dominio `src/lib/shadow/` (2026-07-24)**: Bounded context de migración (SSOT Fase 1). Tipos canónicos, taxonomía D000–D017, ciclo de vida de discrepancias, stubs de adapters/comparator/runner. **No** toca Hours Engine ni SQL. Cero impacto en UI. Tests: `npm run test:shadow`.
+- [x] **Shadow Mode Commits 1–5 (2026-07-24)**: Dominio `src/lib/shadow/` — Canonical Vector, adapters HE/SQL, Discrepancy+lifecycle, comparator, classifier D000–D017. Cero impacto UI/productores. Pendiente: persistencia BD (7), CLI (8).
 
 **Última actualización anterior:** 2026-07-24 (Asistencia UI: fuente dinámica F/E/B/P)
 

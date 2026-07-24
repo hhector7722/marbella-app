@@ -70,3 +70,17 @@ export const CANONICAL_COMPARABLE_FIELDS = [
 
 export type CanonicalComparableField =
   (typeof CANONICAL_COMPARABLE_FIELDS)[number];
+
+/**
+ * Campos que solo generan delta si **ambos** lados tienen valor.
+ * Evita D000 sistemático (p.ej. regimeLabel solo en HE).
+ */
+export const CANONICAL_OPTIONAL_COMPARE_FIELDS = [
+  'justifiedHours',
+  'physicalHours',
+  'regimeLabel',
+  'ordinaryHours',
+  'overtimeHours',
+  'otCost',
+  'laborCost',
+] as const satisfies readonly CanonicalComparableField[];

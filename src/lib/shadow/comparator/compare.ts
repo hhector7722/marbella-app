@@ -1,5 +1,6 @@
 import {
   CANONICAL_COMPARABLE_FIELDS,
+  CANONICAL_OPTIONAL_COMPARE_FIELDS,
   type CanonicalComparableField,
   type CanonicalComparisonVector,
 } from '../types/canonical-vector.ts';
@@ -66,11 +67,18 @@ export function compareCanonicalVectors(
   }
 
   const epsilon = options?.epsilon ?? DEFAULT_EPSILON;
+  const optional = new Set<string>(CANONICAL_OPTIONAL_COMPARE_FIELDS);
   const deltas: RawCanonicalFieldDelta[] = [];
 
   for (const field of CANONICAL_COMPARABLE_FIELDS) {
     const heValue = readField(he, field);
     const sqlValue = readField(sql, field);
+
+    if (optional.has(field) && (heValue === null || sqlValue === null)) {
+      // Solo se compara si ambos lados aportan valor.
+      continue;
+    }
+
     const schemaGap =
       (heValue === null && sqlValue !== null) ||
       (heValue !== null && sqlValue === null);

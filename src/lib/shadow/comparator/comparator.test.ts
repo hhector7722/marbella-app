@@ -52,12 +52,13 @@ describe('compareCanonicalVectors', () => {
     assert.equal(r.deltas[0]!.schemaGap, false);
   });
 
-  it('marca schemaGap si un lado es null', () => {
+  it('marca schemaGap si un lado es null en campo obligatorio', () => {
     const r = compareCanonicalVectors(
-      base('he', { ordinaryHours: 40 }),
-      base('sql', { ordinaryHours: null }),
+      base('he', { contractedHoursEffective: 40 }),
+      base('sql', { contractedHoursEffective: null }),
     );
     assert.equal(r.deltas[0]!.schemaGap, true);
+    assert.equal(r.deltas[0]!.field, 'contractedHoursEffective');
   });
 
   it('rechaza subjects distintos', () => {

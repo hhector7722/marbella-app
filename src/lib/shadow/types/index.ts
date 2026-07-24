@@ -1,5 +1,6 @@
 export {
   CANONICAL_COMPARABLE_FIELDS,
+  CANONICAL_OPTIONAL_COMPARE_FIELDS,
   type CanonicalComparableField,
   type CanonicalComparisonVector,
   type ShadowSubjectKey,
@@ -30,6 +31,11 @@ export type {
 } from './report.ts';
 export type { ShadowAlert } from './alert.ts';
 export type { ShadowFieldDiff } from './field-diff.ts';
+export type {
+  ShadowRunComparisonItem,
+  ShadowRunMetrics,
+  ShadowRunResult,
+} from './run-result.ts';
 
 export {
   DISCREPANCY_CODES,

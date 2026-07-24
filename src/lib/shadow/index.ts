@@ -37,3 +37,18 @@ export {
   type ClassifiedFieldDiff,
   type ClassifyCompareResult,
 } from './classifier/index.ts';
+export {
+  executeShadowRun,
+  factLoaderFromMap,
+  subjectKey,
+  subjectLoaderFromList,
+  computeShadowRunMetrics,
+  matchStatusFromClassification,
+  metricsToTotals,
+  type ShadowFactLoader,
+  type ShadowRunnerClock,
+  type ShadowRunnerOptions,
+  type ShadowSubject,
+  type ShadowSubjectFacts,
+  type ShadowSubjectLoader,
+} from './runner/index.ts';
