@@ -814,43 +814,43 @@ export default function MovementsPage() {
                     {/* CABECERA COMPACTA (misma altura que /dashboard/history) */}
                     <div className="bg-[#36606F] px-1.5 py-1 md:px-2 md:py-1.5 relative shrink-0">
                         <div className="relative flex items-center justify-between gap-1 min-w-0">
-                            {/* ACCIONES CAJA (izquierda) */}
-                            <div className="flex items-center gap-0.5 shrink-0 z-10">
+                            {/* ACCIONES CAJA (izquierda; centro Y = centro del mes) */}
+                            <div className="flex items-center gap-0.5 shrink-0 z-10 self-center">
                                 <button
                                     type="button"
                                     onClick={() => setCashModalMode('in')}
                                     aria-label="Entrada"
                                     title="Entrada"
-                                    className="shrink-0 px-1 pt-0.5 pb-0 rounded-lg hover:bg-white/10 transition-colors min-h-12 min-w-[44px] flex flex-col items-center justify-start gap-1.5 active:scale-95"
+                                    className="shrink-0 px-1 py-0.5 rounded-lg hover:bg-white/10 transition-colors min-h-10 min-w-[40px] flex flex-col items-center justify-center gap-1 active:scale-95"
                                 >
                                     <div className="w-5 h-5 flex items-center justify-center bg-emerald-500 rounded-full shadow-sm">
                                         <Plus className="w-3 h-3 text-white" strokeWidth={3} />
                                     </div>
-                                    <span className="text-[6px] font-black uppercase tracking-widest text-white leading-none mt-0.5">Entrada</span>
+                                    <span className="text-[6px] font-black uppercase tracking-widest text-white leading-none">Entrada</span>
                                 </button>
                                 <button
                                     type="button"
                                     onClick={openOut}
                                     aria-label="Salida"
                                     title="Salida"
-                                    className="shrink-0 -ml-1.5 px-1 pt-0.5 pb-0 rounded-lg hover:bg-white/10 transition-colors min-h-12 min-w-[44px] flex flex-col items-center justify-start gap-1.5 active:scale-95"
+                                    className="shrink-0 -ml-1.5 px-1 py-0.5 rounded-lg hover:bg-white/10 transition-colors min-h-10 min-w-[40px] flex flex-col items-center justify-center gap-1 active:scale-95"
                                 >
                                     <div className="w-5 h-5 flex items-center justify-center bg-rose-500 rounded-full shadow-sm">
                                         <Minus className="w-3 h-3 text-white" strokeWidth={3} />
                                     </div>
-                                    <span className="text-[6px] font-black uppercase tracking-widest text-white leading-none mt-0.5">Salida</span>
+                                    <span className="text-[6px] font-black uppercase tracking-widest text-white leading-none">Salida</span>
                                 </button>
                                 <button
                                     type="button"
                                     onClick={openAudit}
                                     aria-label="Arqueo"
                                     title="Arqueo"
-                                    className="shrink-0 -ml-1.5 px-1 pt-0.5 pb-0 rounded-lg hover:bg-white/10 transition-colors min-h-12 min-w-[44px] flex flex-col items-center justify-start gap-1.5 active:scale-95"
+                                    className="shrink-0 -ml-1.5 px-1 py-0.5 rounded-lg hover:bg-white/10 transition-colors min-h-10 min-w-[40px] flex flex-col items-center justify-center gap-1 active:scale-95"
                                 >
                                     <div className="w-5 h-5 flex items-center justify-center bg-orange-500 rounded-full shadow-sm">
                                         <RefreshCw className="w-2.5 h-2.5 text-white" strokeWidth={4} />
                                     </div>
-                                    <span className="text-[6px] font-black uppercase tracking-widest text-white leading-none mt-0.5">Arqueo</span>
+                                    <span className="text-[6px] font-black uppercase tracking-widest text-white leading-none">Arqueo</span>
                                 </button>
                             </div>
 
