@@ -10,8 +10,7 @@ export function staffSelectionApplySummary(employee: {
 }): string {
   if (!employee.id) return 'Plantilla (todos)';
   const first = (employee.first_name || '').trim();
-  const last = (employee.last_name || '').trim();
-  if (first && last) return `${first} ${last}`;
+  // Cabecera / filtro asistencia: solo nombre de pila (sin apellidos).
   return first || 'Sin nombre';
 }
 

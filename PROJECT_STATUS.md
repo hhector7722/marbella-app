@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-24 (Cierre módulo laboral SSOT — gobernanza contrato)
+**Última actualización:** 2026-07-24 (Asistencia cabecera: solo nombre)
+
+- [x] **Filtro empleado cabecera solo nombre (2026-07-24)**: En `/staff/history`, al filtrar por empleado la cabecera muestra solo `first_name` (sin apellidos). Export PDF/Excel sigue con nombre completo.
+
+**Última actualización anterior:** 2026-07-24 (Cierre módulo laboral SSOT — gobernanza contrato)
 
 - [x] **Cierre módulo laboral SSOT (2026-07-24)**: `/profile` deja de editar alta/baja (solo lectura). Frontera + jornada solo en `/profile/contrato`. `updateProfile` bloquea `joining_date`/`end_date`. `updateLaborConditions` dispara `fn_recalc_and_propagate_snapshots` tras guardar. Alta sigue creando tramo vía trigger. Módulo laboral **cerrado** (sin bugs; espejo profiles←terms intencional para SQL).
 
