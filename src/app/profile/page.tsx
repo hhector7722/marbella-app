@@ -18,7 +18,6 @@ import CompanyPdfDocumentModal, { CompanyPdfDocumentKind } from '@/components/pr
 import ComunicadosModal from '@/components/profile/ComunicadosModal';
 import ContratoModal from '@/components/profile/ContratoModal';
 import { AvatarCropModal } from '@/components/profile/AvatarCropModal';
-import { updateProfile } from '@/app/actions/profile';
 import { getHomeHrefForUser, isMasterDashboardUser } from '@/lib/master-dashboard';
 import {
     PLANTILLA_EMPLOYEE_SELECT,
@@ -90,9 +89,7 @@ function ProfileContent() {
     const [cropModalImageSrc, setCropModalImageSrc] = useState<string | null>(null);
     const [avatarUploading, setAvatarUploading] = useState(false);
     const [joiningDateYmd, setJoiningDateYmd] = useState<string>('');
-    const [joiningDateSaving, setJoiningDateSaving] = useState(false);
     const [endDateYmd, setEndDateYmd] = useState<string>('');
-    const [endDateSaving, setEndDateSaving] = useState(false);
     const [plantillaOpen, setPlantillaOpen] = useState(false);
     const [plantillaEmployees, setPlantillaEmployees] = useState<PlantillaEmployee[]>([]);
     const [plantillaLoading, setPlantillaLoading] = useState(false);
@@ -390,48 +387,6 @@ function ProfileContent() {
         router.push(getHomeHrefForUser(currentUser?.email, viewerRole));
     }, [currentUser?.email, viewerRole, router]);
 
-    const saveJoiningDate = useCallback(async () => {
-        if (!profile || !isManager) return;
-        setJoiningDateSaving(true);
-        try {
-            const normalized = String(joiningDateYmd || '').trim();
-            const payload = normalized.length > 0 ? normalized : null;
-            const res = await updateProfile(profile.id, { joining_date: payload });
-            if (!res?.success) {
-                toast.error(res?.error || 'No se pudo guardar la fecha de inicio');
-                return;
-            }
-            toast.success('Fecha de inicio guardada');
-            fetchInitialData();
-        } catch (e) {
-            console.error(e);
-            toast.error('Error al guardar la fecha de inicio');
-        } finally {
-            setJoiningDateSaving(false);
-        }
-    }, [profile, isManager, joiningDateYmd]);
-
-    const saveEndDate = useCallback(async () => {
-        if (!profile || !isManager) return;
-        setEndDateSaving(true);
-        try {
-            const normalized = String(endDateYmd || '').trim();
-            const payload = normalized.length > 0 ? normalized : null;
-            const res = await updateProfile(profile.id, { end_date: payload });
-            if (!res?.success) {
-                toast.error(res?.error || 'No se pudo guardar la fecha de finalización');
-                return;
-            }
-            toast.success('Fecha de finalización guardada');
-            fetchInitialData();
-        } catch (e) {
-            console.error(e);
-            toast.error('Error al guardar la fecha de finalización');
-        } finally {
-            setEndDateSaving(false);
-        }
-    }, [profile, isManager, endDateYmd]);
-
     const handleLogout = async () => {
         const { error } = await supabase.auth.signOut();
         if (error) toast.error('Error al salir');
@@ -648,73 +603,32 @@ function ProfileContent() {
                                 </h2>
                                 <div className="bg-white rounded-xl border border-zinc-100 shadow-sm p-4 mb-4">
                                     <div className="grid grid-cols-1 gap-3">
-                                        <div className="flex items-center justify-between gap-3">
-                                            <div className="min-w-0">
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Fecha inicio contrato</p>
-                                                <p className="text-[11px] font-bold text-zinc-700 truncate">
-                                                    {joiningDateYmd ? joiningDateYmd : ' '}
-                                                </p>
-                                            </div>
-                                            <div className="shrink-0 flex items-center gap-2">
-                                                <input
-                                                    type="date"
-                                                    value={joiningDateYmd || ''}
-                                                    onChange={(e) => setJoiningDateYmd(e.target.value)}
-                                                    className={cn(
-                                                        'min-h-[48px] h-12 px-3 rounded-xl border border-zinc-200 bg-white',
-                                                        'text-[12px] font-bold text-zinc-800',
-                                                        'focus:outline-none focus:ring-2 focus:ring-[#36606F]/30'
-                                                    )}
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={saveJoiningDate}
-                                                    disabled={joiningDateSaving}
-                                                    className={cn(
-                                                        'min-h-[48px] h-12 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest',
-                                                        joiningDateSaving ? 'bg-zinc-200 text-zinc-500' : 'bg-emerald-600 text-white hover:bg-emerald-700',
-                                                        'active:scale-95 transition shrink-0'
-                                                    )}
-                                                >
-                                                    {joiningDateSaving ? 'Guardando…' : 'Guardar'}
-                                                </button>
-                                            </div>
+                                        <div className="min-h-[48px] flex flex-col justify-center gap-1">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                                                Fecha inicio contrato
+                                            </p>
+                                            <p className="text-sm font-bold text-zinc-800">
+                                                {joiningDateYmd ? joiningDateYmd : ' '}
+                                            </p>
                                         </div>
-                                        <div className="flex items-center justify-between gap-3">
-                                            <div className="min-w-0">
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Finalización trabajador</p>
-                                                <p className="text-[11px] font-bold text-zinc-700 truncate">
-                                                    {endDateYmd ? endDateYmd : 'Activo'}
-                                                </p>
-                                            </div>
-                                            <div className="shrink-0 flex items-center gap-2">
-                                                <input
-                                                    type="date"
-                                                    value={endDateYmd || ''}
-                                                    onChange={(e) => setEndDateYmd(e.target.value)}
-                                                    className={cn(
-                                                        'min-h-[48px] h-12 px-3 rounded-xl border border-zinc-200 bg-white',
-                                                        'text-[12px] font-bold text-zinc-800',
-                                                        'focus:outline-none focus:ring-2 focus:ring-[#36606F]/30'
-                                                    )}
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={saveEndDate}
-                                                    disabled={endDateSaving}
-                                                    className={cn(
-                                                        'min-h-[48px] h-12 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest',
-                                                        endDateSaving ? 'bg-zinc-200 text-zinc-500' : 'bg-emerald-600 text-white hover:bg-emerald-700',
-                                                        'active:scale-95 transition shrink-0'
-                                                    )}
-                                                >
-                                                    {endDateSaving ? 'Guardando…' : 'Guardar'}
-                                                </button>
-                                            </div>
+                                        <div className="min-h-[48px] flex flex-col justify-center gap-1">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                                                Finalización trabajador
+                                            </p>
+                                            <p className="text-sm font-bold text-zinc-800">
+                                                {endDateYmd ? endDateYmd : 'Activo'}
+                                            </p>
                                         </div>
                                         <p className="text-[11px] text-zinc-500 leading-snug">
-                                            Si un empleado empieza a mitad de semana, los días anteriores se computan como <span className="font-black">extras</span>.
+                                            Si un empleado empieza a mitad de semana, los días anteriores se computan como{' '}
+                                            <span className="font-black">extras</span>.
                                         </p>
+                                        {canManageLaborConditions ? (
+                                            <p className="text-[11px] text-zinc-500 leading-snug">
+                                                Para editar fechas, jornada o régimen usa{' '}
+                                                <span className="font-black">Condiciones laborales</span>.
+                                            </p>
+                                        ) : null}
                                     </div>
                                 </div>
                                 {viewingOtherProfile ? (

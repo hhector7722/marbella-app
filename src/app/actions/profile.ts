@@ -82,7 +82,7 @@ export async function updateProfile(
 
 
 
-    // Condiciones laborales globales: solo /profile/contrato → updateLaborConditions.
+    // Condiciones laborales + frontera alta/baja: solo /profile/contrato → updateLaborConditions.
 
     const blockedContractKeys = [
 
@@ -95,6 +95,10 @@ export async function updateProfile(
         'is_fixed_salary',
 
         'role',
+
+        'joining_date',
+
+        'end_date',
 
     ] as const;
 
@@ -114,15 +118,11 @@ export async function updateProfile(
 
 
 
-    // Alta/baja y plantilla: solo managers
+    // Plantilla: solo managers
 
-    const frontierKeys = ['joining_date', 'end_date', 'visible_in_plantilla'] as const;
+    if (data.visible_in_plantilla !== undefined && !isManager) {
 
-    const touchesFrontier = frontierKeys.some((k) => data[k] !== undefined);
-
-    if (touchesFrontier && !isManager) {
-
-        return { success: false, error: 'Solo managers pueden cambiar alta/baja o plantilla' };
+        return { success: false, error: 'Solo managers pueden cambiar la visibilidad en plantilla' };
 
     }
 

@@ -46,12 +46,39 @@ function resolveBagMode(
 }
 
 /**
+ * CarryOut canónico desde hechos SQL (no hay columna `carry_out`).
+ *
+ * Equivalente funcional a lo que `fn_recalc` pondría en `pending_balance`
+ * de la semana siguiente a partir de este `final_balance`:
+ * - crédito (`final > 0`): solo arrastra si Bolsa y semana no pagada;
+ * - deuda / cero: arrastra siempre.
+ *
+ * Así se alinea con HE `carryOut` (modo Pago → crédito liquidado = 0).
+ * Si el modo bolsa no se puede resolver y hay crédito → `null` (no inventar).
+ */
+export function projectSqlCarryOut(input: {
+  finalBalance: number | null;
+  bagMode: boolean | null;
+  isPaid: boolean | null;
+}): number | null {
+  const { finalBalance, bagMode, isPaid } = input;
+  if (finalBalance === null) return null;
+  if (finalBalance > 0) {
+    if (bagMode === null) return null;
+    const paid = isPaid === true;
+    if (bagMode && !paid) return finalBalance;
+    return 0;
+  }
+  return finalBalance;
+}
+
+/**
  * Proyecta weekly_snapshots → CanonicalComparisonVector.
  *
- * Nota semántica (D006 potencial): SQL no siempre distingue overtimeHours
- * de final_balance. Aquí:
- * - overtimeHours ← extra_hours si viene informado; si no, null (no inventar).
- * - balanceFinal / carryOut ← final_balance (mismo número en el motor SQL actual).
+ * - overtimeHours ← extra_hours si informado; si no, null (no inventar).
+ * - balanceFinal ← final_balance (saldo contable de la semana).
+ * - carryOut ← proyección de arrastre a W+1 (regla pending de fn_recalc),
+ *   no el final_balance crudo (bug Fernando / modo Pago).
  */
 export function sqlSnapshotToCanonical(
   input: SqlAdapterSnapshotInput,
@@ -102,6 +129,13 @@ export function sqlSnapshotToCanonical(
       ? null
       : Number(row.total_cost);
 
+  const isPaid = row.is_paid ?? null;
+  const carryOut = projectSqlCarryOut({
+    finalBalance: finalBal,
+    bagMode,
+    isPaid,
+  });
+
   /** En SQL, total_cost > 0 implica horas cobrables; no hay campo payable hours. */
   const payableHours =
     bagMode === true
@@ -134,14 +168,14 @@ export function sqlSnapshotToCanonical(
     ordinaryHours: ordinary,
     overtimeHours: extraExplicit,
     carryIn: pending,
-    carryOut: finalBal,
+    carryOut,
     weeklyBalance: weeklyBal,
     balanceFinal: finalBal,
     pendingHours: pending,
     payableHours,
     compensatedHours,
     bagModeApplied: bagMode,
-    isPaid: row.is_paid ?? null,
+    isPaid,
     otCost: totalCost,
     laborCost: null,
   };

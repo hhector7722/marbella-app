@@ -20,7 +20,7 @@ Este documento describe el flujo real del código en migraciones Supabase y cóm
 - **Contrato efectivo** por semana: `weekly_snapshots.contracted_hours_snapshot` si existe; si no, `profiles.contracted_hours_weekly`.
 - **Reglas de `balance_hours` (resumen)**:
   - Mes **agosto** (`extract(month from week_start) = 8`): balance semanal = suma de horas de la semana (regla histórica del proyecto).
-  - **Manager** o **salario fijo**: `total_hours` en snapshot puede incluir base 40h + fichajes; el balance semanal de extras respecto a contrato sigue la lógica en la migración vigente (ver `pg_get_functiondef`).
+  - **Manager** o **salario fijo**: `total_hours` en snapshot puede incluir base 40h + fichajes; el balance semanal de extras respecto a contrato sigue la lógica en la migración vigente (ver `pg_get_functiondef`). **Política funcional:** la jornada fija 40 h + fichajes=extras está **aprobada solo** para `hhector7722@gmail.com` — ver [`POLITICA_JORNADA_FIJA_HECTOR.md`](POLITICA_JORNADA_FIJA_HECTOR.md). No interpretar como bug genérico de rol manager ni eliminarla en convergencia Shadow.
   - **Staff normal** con `joining_date` en mitad de semana: horas **antes** de `joining_date` se tratan como extra a efectos de balance (`v_logs_prejoin`); desde `joining_date` aplica contrato sobre `v_logs_postjoin` (sin prorratear el contrato a días previos).
 - **Arrastre (`pending_balance`)** desde la semana `week_start - 7`:
   - **Deuda** (`final_balance` anterior &lt; 0): siempre entra en `pending_balance`.

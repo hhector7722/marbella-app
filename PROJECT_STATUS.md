@@ -1,6 +1,30 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-24 (Asistencia: slots fijos P/H/Ex)
+**Última actualización:** 2026-07-24 (Cierre módulo laboral SSOT — gobernanza contrato)
+
+- [x] **Cierre módulo laboral SSOT (2026-07-24)**: `/profile` deja de editar alta/baja (solo lectura). Frontera + jornada solo en `/profile/contrato`. `updateProfile` bloquea `joining_date`/`end_date`. `updateLaborConditions` dispara `fn_recalc_and_propagate_snapshots` tras guardar. Alta sigue creando tramo vía trigger. Módulo laboral **cerrado** (sin bugs; espejo profiles←terms intencional para SQL).
+
+**Última actualización anterior:** 2026-07-24 (Corrección bug Bali — fence tramos)
+
+- [x] **Corrección bug Bali (2026-07-24)**: Fence de baja en `fn_recalc` usa `hours_contract_terms` (día a día), no `profiles.contracted_hours_weekly`. Migración `20260724120000_shadow_bali_fence_contract_terms.sql`. Run `4b0b3a55-…` vs `bfdb100b-…`: EMR **82,35% → 88,24%**, Exact **14→15**, Diff **3→2**. Bali → EXACT. Fernando exact. Héctor/Pere intactos. Tests **42/42**. Productor SQL **técnicamente convergido**; pendiente solo semilla Pere. Doc: residual/validation § Corrección Bali.
+
+**Última actualización anterior:** 2026-07-24 (Validation Gate SSOT — diagnóstico final)
+
+- [x] **Validation Gate SSOT (2026-07-24)**: Revisión final sin código. Héctor = **regla de negocio validada**. Pere = **decisión funcional** (semilla HE vs banco pre-joining). Bali = **bug SQL independiente** (fence `end_date` usa perfil 0 ≠ tramos). Conclusión proyecto: **B — queda 1 bug real (Bali)**. Doc: [`SHADOW_RESIDUAL_ANALYSIS.md`](SHADOW_RESIDUAL_ANALYSIS.md) § Validation Gate.
+
+**Última actualización anterior:** 2026-07-24 (Shadow: fix adaptador SQL carryOut)
+
+- [x] **Corrección adaptador SQL Shadow — carryOut (2026-07-24)**: `carryOut` ya no = `final_balance`. Proyección = arrastre a W+1 (regla `pending` de `fn_recalc`). Run `bfdb100b-…` vs `a4db4f3e-…`: EMR **76,47% → 82,35%**, Exact **13→14**, Diff **4→3**. Fernando → EXACT. Julia/Mamadou siguen EXACT. Sin diffs nuevos. Restan Héctor/Pere/Bali. **Sin cambios SQL/HE.** Tests shadow **42/42**.
+
+**Última actualización anterior:** 2026-07-24 (Revisión Fernando — bug adaptador Shadow)
+
+- [x] **Revisión Fernando (2026-07-24)**: «Modelo diferente» **invalidado**. Sin regla especial; productores coinciden en horas/OT/`balanceFinal`/arrastre real. Único delta = SQL-adapter Shadow `carryOut ← final_balance`. Decisión: **bug adaptador Shadow**. Doc: [`SHADOW_RESIDUAL_ANALYSIS.md`](SHADOW_RESIDUAL_ANALYSIS.md) § Revisión Fernando. **Sin código.**
+
+**Última actualización anterior:** 2026-07-24 (Política jornada fija Héctor — Iter C descartada)
+
+- [x] **Política jornada fija Héctor (2026-07-24)**: Documentada en [`context/POLITICA_JORNADA_FIJA_HECTOR.md`](context/POLITICA_JORNADA_FIJA_HECTOR.md). Solo `hhector7722@gmail.com`: 40 h ordinarias/semana + fichajes = extras; impacto pleno en costes/liquidaciones/KPIs. **No** es bug SQL ni regla de rol manager. Héctor reclasificado a **Regla de negocio** en [`SHADOW_RESIDUAL_ANALYSIS.md`](SHADOW_RESIDUAL_ANALYSIS.md). **Iteración C DESCARTADA**; migración borrador no aplicada y retirada. Sin cambios de código/SQL/HE/Shadow.
+
+**Última actualización anterior:** 2026-07-24 (Asistencia: slots fijos P/H/Ex)
 
 - [x] **Asistencia celda: P no desplaza H/Ex (2026-07-24)**: Tres slots fijos `h-3` (P → H → Ex). Sin datos el slot queda vacío; al añadir P no se mueven relojes ni H/Ex.
 
@@ -13,6 +37,10 @@
 - [x] **Asistencia celda: fila P encima de H (2026-07-24)**: Si hay `justified_hours` con fichaje, fila `P` (misma tipografía que H/Ex) + valor en azul, encima de `H` (solo trabajadas). Sin `+j` en la misma línea ni badge esquina.
 
 - [x] **Zoom browser temporal solo Héctor (2026-07-24)**: `generateViewport` en `layout.tsx` habilita pinch/double-tap zoom (`userScalable`, max 5) solo si email = `hhector7722@gmail.com`; resto del staff sigue bloqueado. También se omite `touch-manipulation` en `<body>` para ese usuario. **Revertir cuando ya no haga falta.**
+
+**Última actualización anterior:** 2026-07-24 (Shadow Convergence Iteración B — end_date)
+
+- [x] **Shadow Convergence Iteración B (2026-07-24)**: Única causa — SQL ignoraba `profiles.end_date`. Fence + prorrateo semana de baja en `fn_recalc` + backfill bajas. Run `a4db4f3e-…`: EMR **52,94% → 76,47%**, CDR **47,06% → 23,53%**. Exact 9→13. Migración `20260724090000_shadow_iter_b_end_date_fence.sql`. **Sin C/D/E ni 8B.**
 
 **Última actualización anterior:** 2026-07-24 (Shadow Convergence Iteración A)
 

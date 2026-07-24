@@ -106,6 +106,28 @@ function civilDatesEqual(
 }
 
 /**
+ * Regenera weekly_snapshots SQL tras un cambio contractual.
+ * HE no necesita paso aparte: lee hours_contract_terms en cada liquidación.
+ */
+async function propagateSnapshotsAfterContractChange(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  employeeId: string,
+  startDate: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { error } = await supabase.rpc('fn_recalc_and_propagate_snapshots', {
+    p_user_id: employeeId,
+    p_start_date: startDate,
+  });
+  if (error) {
+    return {
+      ok: false,
+      error: `Contrato guardado, pero falló el recálculo de snapshots: ${error.message}`,
+    };
+  }
+  return { ok: true };
+}
+
+/**
  * Cambia condiciones laborales (fecha efectiva editable; default hoy Madrid).
  * Versiona hours_contract_terms vía splice; luego espeja profiles con el tramo abierto.
  * En reescritura de tramo: inicio y fin editables (recalcula vecinos).
@@ -244,6 +266,15 @@ export async function updateLaborConditions(
         };
       }
 
+      const recalcFrom =
+        firstFrom ??
+        effectiveFrom ??
+        formatYmdInMadrid(new Date());
+      const prop = await propagateSnapshotsAfterContractChange(supabase, id, recalcFrom);
+      if (!prop.ok) {
+        return { success: false, error: prop.error };
+      }
+
       revalidatePath('/profile');
       revalidatePath('/profile/contrato');
       revalidatePath('/staff/history');
@@ -291,6 +322,11 @@ export async function updateLaborConditions(
       success: false,
       error: `Contrato versionado, pero falló al actualizar el perfil: ${updErr.message}`,
     };
+  }
+
+  const prop = await propagateSnapshotsAfterContractChange(supabase, id, effectiveFrom);
+  if (!prop.ok) {
+    return { success: false, error: prop.error };
   }
 
   revalidatePath('/profile');

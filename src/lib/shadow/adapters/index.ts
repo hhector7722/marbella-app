@@ -11,6 +11,7 @@ export {
 export {
   createSqlAdapter,
   createSqlAdapterStub,
+  projectSqlCarryOut,
   sqlSnapshotToCanonical,
   type SqlAdapter,
   type SqlAdapterInput,

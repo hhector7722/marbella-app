@@ -116,8 +116,65 @@ describe('shadow adapters → CanonicalComparisonVector', () => {
     assert.equal(v.justifiedHours, null);
     assert.equal(v.carryIn, 2);
     assert.equal(v.balanceFinal, 7);
+    // Bolsa no pagada: crédito arrastra → carryOut = final_balance
+    assert.equal(v.carryOut, 7);
     assert.equal(v.bagModeApplied, true);
     assert.equal(v.otCost, 0);
+  });
+
+  it('SQL adapter modo Pago: carryOut ≠ final_balance (crédito liquidado)', () => {
+    const v = createSqlAdapter().toCanonical({
+      employeeId: 'e1',
+      weekStart: '2026-07-20',
+      snapshot: {
+        week_start: '2026-07-20',
+        prefer_stock_hours_override: null,
+        final_balance: 16,
+        balance_hours: 16,
+        pending_balance: 0,
+        extra_hours: 16,
+        ordinary_hours: 0,
+        total_hours: 16,
+        contracted_hours_snapshot: 0,
+        is_paid: false,
+        total_cost: 160,
+      },
+      profilePreferStock: false,
+    });
+    assert.equal(v.bagModeApplied, false);
+    assert.equal(v.balanceFinal, 16);
+    assert.equal(v.carryOut, 0);
+    assert.equal(v.payableHours, 16);
+  });
+
+  it('SQL adapter Bolsa pagada: crédito no arrastra', () => {
+    const v = sqlSnapshotToCanonical({
+      employeeId: 'e1',
+      weekStart: '2026-07-20',
+      snapshot: {
+        week_start: '2026-07-20',
+        final_balance: 10,
+        is_paid: true,
+        prefer_stock_hours_override: true,
+      },
+    });
+    assert.equal(v.balanceFinal, 10);
+    assert.equal(v.carryOut, 0);
+  });
+
+  it('SQL adapter deuda siempre arrastra (Pago o Bolsa)', () => {
+    const pay = sqlSnapshotToCanonical({
+      employeeId: 'e1',
+      weekStart: '2026-07-20',
+      snapshot: {
+        week_start: '2026-07-20',
+        final_balance: -5,
+        is_paid: false,
+        prefer_stock_hours_override: false,
+      },
+    });
+    assert.equal(pay.carryOut, -5);
+    assert.equal(pay.balanceFinal, -5);
   });
 
   it('SQL adapter usa profilePreferStock si override null', () => {
@@ -133,6 +190,7 @@ describe('shadow adapters → CanonicalComparisonVector', () => {
     });
     assert.equal(v.bagModeApplied, false);
     assert.equal(v.payableHours, 3);
+    assert.equal(v.carryOut, 0);
   });
 
   it('rechaza mismatch de identidad', () => {
