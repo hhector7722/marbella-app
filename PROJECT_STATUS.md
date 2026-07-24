@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-24 (Asistencia UI: fuente dinámica F/E/B/P)
+**Última actualización:** 2026-07-24 (Shadow Mode: scaffolding dominio Migración)
+
+- [x] **Shadow Mode Commit 1 — dominio `src/lib/shadow/` (2026-07-24)**: Bounded context de migración (SSOT Fase 1). Tipos canónicos, taxonomía D000–D017, ciclo de vida de discrepancias, stubs de adapters/comparator/runner. **No** toca Hours Engine ni SQL. Cero impacto en UI. Tests: `npm run test:shadow`.
+
+**Última actualización anterior:** 2026-07-24 (Asistencia UI: fuente dinámica F/E/B/P)
 
 - [x] **Asistencia celda: fuente dinámica etiqueta especial (2026-07-24)**: Día solo F/E/B/P → nombre completo centrado con tamaño Tailwind adaptativo (12→7px) según ancho de celda (`ResizeObserver`), para que «Baja»/«Festivo» lean más grandes y «Enfermedad» no se corte.
 

@@ -479,10 +479,11 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto "prompt-ready"**. Debe 
 
 <!-- sync:project-status:start — NO EDITAR A MANO; generado por `scripts/sync-llm-prompt-from-project-status.mjs` -->
 
-**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-24 (Asistencia UI: fuente dinámica F/E/B/P)
+**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-24 (Shadow Mode: scaffolding dominio Migración)
 
 Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; máx. 45 entradas):
 
+- **Shadow Mode Commit 1 — dominio `src/lib/shadow/` (2026-07-24)**: Bounded context de migración (SSOT Fase 1). Tipos canónicos, taxonomía D000–D017, ciclo de vida de discrepancias, stubs de adapters/comparator/runner. **No** toca Hours Engine ni SQL. Cero impacto en UI. Tests: `npm run test:shadow`.
 - **Asistencia celda: fuente dinámica etiqueta especial (2026-07-24)**: Día solo F/E/B/P → nombre completo centrado con tamaño Tailwind adaptativo (12→7px) según ancho de celda (`ResizeObserver`), para que «Baja»/«Festivo» lean más grandes y «Enfermedad» no se corte.
 - **Asistencia celda: nombre completo y H+personal (2026-07-24)**: Día solo F/E/B/P → etiqueta completa centrada (`Festivo`, `Enfermedad`, …) sin círculo/letra. Día con fichaje + `justified_hours` → sin **P** esquina; fila `H 6 +1` con el `+1` en azul personal. Regular / no registrado sin cambio.
 - **Fix horas justificadas vs `idx_one_shift_per_day` (2026-07-23)**: La BD solo permite **un** `time_logs` por empleado/día. Columna `justified_hours` (migración aplicada). El modal suma el permiso en el mismo fichaje (`total_hours = trabajadas + justificadas`). Badge **P** si `justified_hours > 0`.
@@ -527,6 +528,5 @@ Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; m
 - **Modal del día desktop (2026-07-16)**: `PavilionDayModal` + `ActivitiesTab` y vista día de `StaffScheduleModal` — utilidades `day-modal-*` (≥1024px): panel a `100dvh`, filas de hora iguales, chips/filas de turnos repartidas, dots ocultos. Smartphone/tablet sin cambios.
 - **Tramos contractuales versionados (2026-07-16)**: Tabla `hours_contract_terms` (RLS + seed desde perfil actual, 22 empleados). Contract Resolver / liquidación / Ex. diarias leen **solo** tramos versionados vía `loadEmployeeBoundaryFacts` + `employeeFactsFromContractTerms`. Eliminado `employeeFactsFromProfile`. Tarifa OT versionada en el tramo (`overtimeRatePerHour`). Tests: `npm run test:hours-engine:contract-terms` + suite **80/80**. Migración [`20260716200000_hours_contract_terms.sql`](supabase/migrations/20260716200000_hours_contract_terms.sql) **aplicada**. Inmutabilidad del pasado demostrada (cambiar tramo vigente/futuro no reinterpreta histórico).
 - **Pedido ración medio = mismo artículo TPV (2026-07-16)**: Como en TPV (opción ración), Entero/Medio sobre el mismo `articulo_id` + `override_precio_medio`. Carrito: claves `id` / `id:medio`. Resumen cliente: 2 líneas (`ENT…` y `1/2 · ENT…`). Comanda staff: mismo product_id, `notes: 1/2`, precio medio. RPC `fn_event_order_apply_racion` + `save_client` / staff create/update.
-- **Ex. diarias migradas al motor (2026-07-16)**: `LiquidationResult.dailyBreakdown` (regla running = misma funcional). UI (`StaffDashboardView`, `WorkerWeeklyHistoryModal`, `/staff/history`) pinta Ex. desde `liquidateWeek` / `patchWeeksDailyExtrasFromEngine`. RPCs `get_worker_weekly_log_grid` y `get_monthly_timesheet` ya **no calculan** `extraHours` (siempre 0). Migración [`20260716193000_daily_extras_from_hours_engine.sql`](supabase/migrations/20260716193000_daily_extras_from_hours_engine.sql) **aplicada**. Tests: `npm run test:hours-engine:daily` + suite **68/68**. Invariante runtime: Σ extras diarias = extras semanales.
 
 <!-- sync:project-status:end -->
