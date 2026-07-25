@@ -1062,9 +1062,9 @@ export default function StaffDashboardView() {
                 <div
                     role="dialog"
                     aria-label="Fichaje registrado"
-                    className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-none"
+                    className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 pointer-events-none"
                 >
-                    <div className="w-[min(90vw,90vh)] h-[min(90vw,90vh)] rounded-full overflow-hidden flex items-center justify-center">
+                    <div className="w-full h-full max-h-[100dvh] rounded-2xl overflow-hidden flex items-center justify-center bg-black shadow-sm">
                         <video
                             key={giffOverlaySrc}
                             src={giffOverlaySrc}
@@ -1072,7 +1072,7 @@ export default function StaffDashboardView() {
                             muted
                             playsInline
                             loop={false}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain"
                             onEnded={() => setShowGiffOverlay(false)}
                             onError={() => setShowGiffOverlay(false)}
                         />
