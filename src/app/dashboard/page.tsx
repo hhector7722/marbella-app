@@ -1,38 +1,58 @@
 import { redirect } from 'next/navigation';
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from '@/utils/supabase/server';
 import DashboardSwitcher from '@/components/dashboards/DashboardSwitcher';
-import { getDashboardData } from '@/app/actions/get-dashboard-data';
+import { withTimeout } from '@/lib/with-timeout';
 
+/**
+ * Admin dashboard: shell inmediata. AdminDashboardView ya hace
+ * getDashboardData() en cliente si no hay initialData (evita SSR de 60d HE).
+ */
 export default async function AdminDashboardPage() {
-    const supabase = await createClient();
+  const supabase = await createClient();
 
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user ?? null;
+  const sessionResult = await withTimeout(
+    supabase.auth.getSession(),
+    1500,
+    { data: { session: null }, error: null },
+  );
+  const user = sessionResult.data.session?.user ?? null;
 
-    if (!user) {
-        redirect('/login');
-    }
+  if (!user) {
+    redirect('/login');
+  }
 
-    const { data: profile } = await supabase.from('profiles').select('role, email').eq('id', user.id).single();
+  const profileResult = await withTimeout(
+    (async () => {
+      try {
+        return await supabase
+          .from('profiles')
+          .select('role, email')
+          .eq('id', user.id)
+          .maybeSingle();
+      } catch {
+        return { data: null, error: null };
+      }
+    })(),
+    1500,
+    { data: null, error: null },
+  );
 
-    if (profile) {
-        // Redirect logic moved to server side
-        if (profile.role !== 'manager') {
-            redirect('/staff/dashboard');
-        }
-    }
+  const profile = profileResult.data;
 
-    const email = profile?.email ?? user.email ?? '';
+  if (profile && profile.role !== 'manager') {
+    redirect('/staff/dashboard');
+  }
 
-    // Fetch dashboard data on the server
-    const dashboardData = await getDashboardData();
+  // Sin perfil a tiempo: no bloqueamos con getDashboardData; el cliente carga.
+  // Si no es manager, el proxy ya filtró la mayoría de casos.
+  const email = profile?.email ?? user.email ?? '';
+  const role = profile?.role || 'manager';
 
-    return (
-        <DashboardSwitcher
-            userRole={profile?.role || 'staff'}
-            userEmail={email}
-            initialView="admin"
-            initialData={dashboardData}
-        />
-    );
+  return (
+    <DashboardSwitcher
+      userRole={role}
+      userEmail={email}
+      initialView="admin"
+    />
+  );
 }

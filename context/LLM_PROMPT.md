@@ -479,10 +479,12 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto "prompt-ready"**. Debe 
 
 <!-- sync:project-status:start — NO EDITAR A MANO; generado por `scripts/sync-llm-prompt-from-project-status.mjs` -->
 
-**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-25 (Overlay fichaje: tamaño clásico + rounded-2xl)
+**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-25 (Overlay fichaje Hernán/Fernando → video-españa)
 
 Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; máx. 45 entradas):
 
+- **Overlay fichaje Hernán + Fernando (2026-07-25)**: `hernang6799@gmail.com` y `fggutierrez98es@gmail.com` usan `/icons/video-españa.mp4` en entrada y salida (`fichaje-overlay-videos.ts`).
+- **Arranque master/admin sin SSR pesado (2026-07-25)**: `/master/dashboard` ya **no** await `getDashboardData()` (ventas+plantilla+60d HE bloqueaban 5–15s). Shell inmediata; datos en cliente. Bugfix: timeout de `profiles` ya no redirige master→staff. `/dashboard` igual (AdminDashboardView carga en cliente). MasterView: `getSession` no `getUser`.
 - **Overlay fichaje sin fullscreen (2026-07-25)**: Vuelve el tamaño `min(90vw,90vh)` (como el círculo); ya no pantalla completa. Contenedor `rounded-2xl` + `object-cover` (no círculo).
 - **Fix pantalla blanca al iniciar/navegar (2026-07-25)**: Root layout **síncrono** (sin `await getSession`). Push/usage/display-mode resuelven auth en cliente. Proxy: `profiles` solo en `/`, `/login` y gates `/dashboard` que lo necesitan; master (Héctor) redirige home **solo con email JWT**. Timeouts proxy 1.5s/1.2s. Master/staff dashboard: `getSession`+timeout + Suspense (adiós `getUser()` que colgaba GoTrue). Elimina waterfall PostgREST en cada navegación staff.
 - **Layout más rápido — sin onboarding/zoom (2026-07-25)**: Quitado query `profiles.needs_onboarding` + `OnboardingOverlay` del root layout. Viewport estático bloqueado para todos (sin `generateViewport`/zoom Héctor). `touch-manipulation` siempre. Push prompt ya no espera onboarding.
@@ -526,7 +528,5 @@ Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; m
 - **Plantilla asistencia: ver todos los fichajes (2026-07-21)**: En vista plantilla (`PlantillaWeekCard`) se eliminó el tope `slice(0, 4)`, el `overflow-hidden` y la `opacity-45` de días de otro mes que ocultaban fichajes (el modal sí los tenía). Celdas crecen con todos los empleados. `WeekCard` individual: sin atenuar fichajes; si hay reloj en día especial (F/E/…) también se pinta. **Revertido visualmente** (ver entrada superior).
 - **Horas solo enteros o media + color Horarios (2026-07-21)**: Banco/carry y footers pasan por `roundMarbellaSigned` (nada tipo 83,7). UI (`WeekCard`, home, modal historial) formatea con `calculateRoundedHours`. Mini-calendario Horarios: revertido gris `text-gray-300` en días pasados → `text-gray-900` (igual que futuros).
 - **Semana sin fichajes consume contrato (2026-07-21)**: Eliminado el early-return de `liquidateWeek` que forzaba `weeklyBalance = 0` sin fichajes. Staff con jornada: semana vacía → `weeklyBalance = −contrato` y baja el banco. Solo sin tramos (post-baja) queda balance 0. Suite hours-engine **122/122**.
-- **Fix selección Pago/Bolsa semanal (2026-07-21)**: El motor ignoraba `weekly_snapshots.prefer_stock_hours_override` y repintaba siempre el `bagMode` del contrato. Ahora `liquidateWeek` acepta `bagModeOverride`; historial/modal/home leen el override y lo aplican en liquidación + carry. Aplicar Bolsa/Pago en WeekCard vuelve a persistir y verse.
-- **Horas contrato enteras/medias + no cobrar con deuda (2026-07-21)**:
 
 <!-- sync:project-status:end -->

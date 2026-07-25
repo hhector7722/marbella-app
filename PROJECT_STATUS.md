@@ -1,6 +1,14 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-25 (Overlay fichaje: tamaño clásico + rounded-2xl)
+**Última actualización:** 2026-07-25 (Overlay fichaje Hernán/Fernando → video-españa)
+
+- [x] **Overlay fichaje Hernán + Fernando (2026-07-25)**: `hernang6799@gmail.com` y `fggutierrez98es@gmail.com` usan `/icons/video-españa.mp4` en entrada y salida (`fichaje-overlay-videos.ts`).
+
+**Última actualización anterior:** 2026-07-25 (Master/admin: shell sin getDashboardData SSR)
+
+- [x] **Arranque master/admin sin SSR pesado (2026-07-25)**: `/master/dashboard` ya **no** await `getDashboardData()` (ventas+plantilla+60d HE bloqueaban 5–15s). Shell inmediata; datos en cliente. Bugfix: timeout de `profiles` ya no redirige master→staff. `/dashboard` igual (AdminDashboardView carga en cliente). MasterView: `getSession` no `getUser`.
+
+**Última actualización anterior:** 2026-07-25 (Overlay fichaje: tamaño clásico + rounded-2xl)
 
 - [x] **Overlay fichaje sin fullscreen (2026-07-25)**: Vuelve el tamaño `min(90vw,90vh)` (como el círculo); ya no pantalla completa. Contenedor `rounded-2xl` + `object-cover` (no círculo).
 
