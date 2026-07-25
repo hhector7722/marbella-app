@@ -1,6 +1,22 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-25 (Fix tsc Vercel overtime-weeks-ssot)
+**Última actualización:** 2026-07-25 (Sprint 4 — AppShell Playground)
+
+- [x] **Sprint 4 — AppShell Playground (2026-07-25)**: Ruta dev `/dev/app-shell` con `AppShell` + mocks en `layout-v2/demo/`. Contenido de referencia (métricas, tabla, card lateral, botones, badges, skeleton, dialog). Overlay fullscreen (sin tocar Navbar/layouts). Sin menú producción, sin Supabase/auth.
+
+**Última actualización anterior:** 2026-07-25 (Sprint 3 — AppShell V2)
+
+- [x] **Sprint 3 — AppShell V2 Architecture (2026-07-25)**: Shell presentacional en `src/components/layout-v2/` (`AppShell`, Sidebar*, Topbar*, Mobile*, Page*, `LayoutProvider`). Tipos `NavigationItem|Section|Group`, `UserSummary`. MDS + shadcn. Sin auth/Supabase/fetch. **No integrado** en layouts/páginas. Export: `@/components/layout-v2`.
+
+**Última actualización anterior:** 2026-07-25 (Sprint 2 — MDS Semantic Theme)
+
+- [x] **Sprint 2 — MDS Semantic Theme (2026-07-25)**: Temas en `themes.ts` / `css-variables.ts`. Vars `--mds-*` + aliases `--surface|--success|--warning|--danger` en `globals.css`. Tailwind `theme.extend.colors` semántico + namespace `mds`. Freeze visual de vars shadcn (oklch). Opt-in futuro `data-mds-theme` / `data-theme` dark|high-contrast. Doc en `src/components/design-system/README.md`. Sin cambios de pantallas/Navbar/layouts.
+
+**Última actualización anterior:** 2026-07-25 (Sprint 1 — MDS Foundation)
+
+- [x] **Sprint 1 — Marbella Design System Foundation (2026-07-25)**: Tokens en `src/lib/design-system/` (`tokens`, `spacing`, `radius`, `shadows`, `typography` + barrel). Placeholders README en `src/components/design-system/` y `src/components/layout-v2/` (AppShell futuro). Sin componentes visuales, sin tocar pantallas/Navbar/MainWrapper/rutas/Supabase. Convivencia con UI actual.
+
+**Última actualización anterior:** 2026-07-25 (Fix tsc Vercel overtime-weeks-ssot)
 
 - [x] **Fix build Vercel — overtime profiles select (2026-07-25)**: `PLANTILLA_EMPLOYEE_SELECT + ', role'` rompía el tipado Supabase (`GenericStringError[]`). Select literal `as const` + cast seguro. Typecheck OK.
 

@@ -1,0 +1,19 @@
+import { cn } from '@/lib/utils'
+
+type PageActionsProps = {
+  children: React.ReactNode
+  className?: string
+}
+
+export function PageActions({ children, className }: PageActionsProps) {
+  return (
+    <div
+      className={cn(
+        'flex shrink-0 flex-wrap items-center justify-end gap-2',
+        className
+      )}
+    >
+      {children}
+    </div>
+  )
+}

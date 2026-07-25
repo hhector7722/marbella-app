@@ -357,7 +357,35 @@
     --font-heading: var(--font-sans);
     --font-sans: var(--font-sans);
   }
+  /**
+   * MDS semantic theme (Sprint 2).
+   * Source of truth for hex values: `src/lib/design-system/tokens.ts` + `themes.ts`.
+   * `--mds-*` are always available. Legacy shadcn vars below stay frozen so the
+   * current UI does not change. Opt-in: `[data-mds-theme="light"]`.
+   */
   :root {
+    /* --- MDS Light (from Design System) --- */
+    --mds-background: #f8fafc;
+    --mds-surface: #ffffff;
+    --mds-foreground: #18181b;
+    --mds-border: #f4f4f5;
+    --mds-primary: #36606f;
+    --mds-primary-foreground: #ffffff;
+    --mds-secondary: #5b8fb9;
+    --mds-secondary-foreground: #ffffff;
+    --mds-muted: #71717a;
+    --mds-muted-surface: #f4f4f5;
+    --mds-success: #16a34a;
+    --mds-warning: #d97706;
+    --mds-danger: #dc2626;
+
+    /* Public aliases for NEW utilities (bg-surface, bg-success, …) */
+    --surface: var(--mds-surface);
+    --success: var(--mds-success);
+    --warning: var(--mds-warning);
+    --danger: var(--mds-danger);
+
+    /* --- Legacy shadcn / active chrome — VISUAL FREEZE --- */
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
@@ -391,6 +419,77 @@
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
   }
+
+  /**
+   * Opt-in MDS palette. Not set on <html> today — no visual change.
+   * Future: <html data-mds-theme="light"> to bind shadcn tokens to MDS.
+   */
+  [data-mds-theme="light"] {
+    --background: var(--mds-background);
+    --foreground: var(--mds-foreground);
+    --card: var(--mds-surface);
+    --card-foreground: var(--mds-foreground);
+    --popover: var(--mds-surface);
+    --popover-foreground: var(--mds-foreground);
+    --primary: var(--mds-primary);
+    --primary-foreground: var(--mds-primary-foreground);
+    --secondary: var(--mds-secondary);
+    --secondary-foreground: var(--mds-secondary-foreground);
+    --muted: var(--mds-muted-surface);
+    --muted-foreground: var(--mds-muted);
+    --accent: var(--mds-muted-surface);
+    --accent-foreground: var(--mds-foreground);
+    --destructive: var(--mds-danger);
+    --border: var(--mds-border);
+    --input: var(--mds-border);
+    --ring: var(--mds-primary);
+    --surface: var(--mds-surface);
+    --success: var(--mds-success);
+    --warning: var(--mds-warning);
+    --danger: var(--mds-danger);
+  }
+
+  /* Reserved theme hooks — values from themes.ts; not applied globally yet */
+  [data-theme="dark"] {
+    --mds-background: #0f172a;
+    --mds-surface: #1e293b;
+    --mds-foreground: #f8fafc;
+    --mds-border: #334155;
+    --mds-primary: #5b8fb9;
+    --mds-primary-foreground: #0f172a;
+    --mds-secondary: #36606f;
+    --mds-secondary-foreground: #f8fafc;
+    --mds-muted: #94a3b8;
+    --mds-muted-surface: #334155;
+    --mds-success: #22c55e;
+    --mds-warning: #fbbf24;
+    --mds-danger: #f87171;
+    --surface: var(--mds-surface);
+    --success: var(--mds-success);
+    --warning: var(--mds-warning);
+    --danger: var(--mds-danger);
+  }
+
+  [data-theme="high-contrast"] {
+    --mds-background: #ffffff;
+    --mds-surface: #ffffff;
+    --mds-foreground: #000000;
+    --mds-border: #000000;
+    --mds-primary: #000000;
+    --mds-primary-foreground: #ffffff;
+    --mds-secondary: #000000;
+    --mds-secondary-foreground: #ffffff;
+    --mds-muted: #000000;
+    --mds-muted-surface: #ffffff;
+    --mds-success: #166534;
+    --mds-warning: #92400e;
+    --mds-danger: #991b1b;
+    --surface: var(--mds-surface);
+    --success: var(--mds-success);
+    --warning: var(--mds-warning);
+    --danger: var(--mds-danger);
+  }
+
   .dark {
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
