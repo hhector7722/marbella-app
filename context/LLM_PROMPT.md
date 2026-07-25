@@ -479,10 +479,11 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto "prompt-ready"**. Debe 
 
 <!-- sync:project-status:start — NO EDITAR A MANO; generado por `scripts/sync-llm-prompt-from-project-status.mjs` -->
 
-**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-25 (Fix tsc Vercel overtime-weeks-ssot)
+**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-25 (Overlay fichaje Héctor → video-españa)
 
 Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; máx. 45 entradas):
 
+- **Overlay fichaje Héctor (2026-07-25)**: `hhector7722@gmail.com` reproduce `/icons/video-españa.mp4` en entrada y salida (`fichaje-overlay-videos.ts` + asset en `public/icons/`).
 - **Fix build Vercel — overtime profiles select (2026-07-25)**: `PLANTILLA_EMPLOYEE_SELECT + ', role'` rompía el tipado Supabase (`GenericStringError[]`). Select literal `as const` + cast seguro. Typecheck OK.
 - **Hardening productor `payroll_monthly_totals` (2026-07-24)**: Parser v1 etiquetado (sin Math.max), hash SHA-256, `payroll_import_runs` append-only, rectificaciones sin overwrite, tests 12/12. May/jun 2026 importes intactos. Migración `20260724190000_…` aplicada. Doc: [`docs/HARDENING_PRODUCTOR_PAYROLL_MONTHLY_TOTALS.md`](docs/HARDENING_PRODUCTOR_PAYROLL_MONTHLY_TOTALS.md). Sin tocar Labor/HE/Shadow.
 - **Auditoría productor `payroll_monthly_totals` FASE 1 (2026-07-24)**: Pipeline Gmail→GAS→`nominas-summary`→pdf2json→`Math.max` en ventana 300 chars. Re-parse Storage may/jun = BD exacta. Veredicto: **Sí, con reservas**. Doc: [`docs/AUDITORIA_PRODUCTOR_PAYROLL_MONTHLY_TOTALS.md`](docs/AUDITORIA_PRODUCTOR_PAYROLL_MONTHLY_TOTALS.md). Sin cambios de código.
@@ -527,6 +528,5 @@ Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; m
 - **OCR albaranes en segundo plano (2026-07-21)**: En escáner `/dashboard/scanner` (y hoja extra en `/dashboard/albaranes`), **Guardar** sube imagen + crea `purchase_invoices` con `status=processing` al instante; Gemini corre en `after()`. Fallo → `ocr_failed` + `ocr_error`, UI con **Reintentar lectura** / **Sustituir foto**. Migración [`20260721120000_purchase_invoices_ocr_background.sql`](supabase/migrations/20260721120000_purchase_invoices_ocr_background.sql) **aplicada** (`ocr_error`, adjuntos `ocr_status`/`ocr_error`, `sync_purchase_invoice_status` respeta processing/ocr_failed).
 - **Editar Efectivo en modal de cierre (2026-07-20)**: En `/dashboard/history`, al editar un cierre, **Efectivo** es editable: abre el desglose guardado (`cash_closings.breakdown`) con controles +/− táctiles. Al «Guardar desglose» se persiste `breakdown`/`cash_counted`/`cash_withdrawn` y el trigger `trg_cash_closing_to_treasury_v2` actualiza el `CLOSE_ENTRY` en `treasury_log` (importe + desglose + inventario/saldo) visible en `/dashboard/movements`.
 - **Home staff alineado al motor — PENDIENTES = banco al inicio (2026-07-20)**: `StaffDashboardView` deja `profiles.hours_balance` / `effectivePivot`. Misma orquestación que historial: `resolveOpeningCarryIn` + `liquidateWeekForCard`. Pendiente = `carryIn`; EXTRAS/IMPORTE desde el mismo `LiquidationResult`.
-- **Auditoría documental e IA (2026-07-18)**: Inventario exhaustivo solo lectura en [`AUDITORIA_DOCUMENTAL.md`](AUDITORIA_DOCUMENTAL.md) — OCR/Gemini, PDFs, Storage, Whisper, webhooks, scripts, oportunidades MinerU/VLM. Sin cambios de código ni refactor.
 
 <!-- sync:project-status:end -->

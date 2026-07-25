@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-25 (Fix tsc Vercel overtime-weeks-ssot)
+**Última actualización:** 2026-07-25 (Overlay fichaje Héctor → video-españa)
+
+- [x] **Overlay fichaje Héctor (2026-07-25)**: `hhector7722@gmail.com` reproduce `/icons/video-españa.mp4` en entrada y salida (`fichaje-overlay-videos.ts` + asset en `public/icons/`).
+
+**Última actualización anterior:** 2026-07-25 (Fix tsc Vercel overtime-weeks-ssot)
 
 - [x] **Fix build Vercel — overtime profiles select (2026-07-25)**: `PLANTILLA_EMPLOYEE_SELECT + ', role'` rompía el tipado Supabase (`GenericStringError[]`). Select literal `as const` + cast seguro. Typecheck OK.
 
