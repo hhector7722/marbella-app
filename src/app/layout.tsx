@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Geist } from "next/font/google";
 import "./globals.css";
 import { createClient } from "@/utils/supabase/server";
 import OnboardingOverlay from "@/components/OnboardingOverlay";
@@ -16,6 +16,8 @@ import { UsageAuthenticatedTracker } from "@/components/usage/UsageAuthenticated
 import { withTimeout } from "@/lib/with-timeout";
 import { isMasterDashboardUser } from "@/lib/master-dashboard";
 import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -122,7 +124,7 @@ export default async function RootLayout({
   const allowBrowserZoom = isMasterDashboardUser(user?.email);
 
   return (
-    <html lang="es" className="light">
+    <html lang="es" className={cn("light", "font-sans", geist.variable)}>
       <body
         className={cn(
           inter.className,
