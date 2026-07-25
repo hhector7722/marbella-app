@@ -37,7 +37,7 @@
 | `get_labor_cost_*`, `fn_labor_*`, `profile_labor_cost_terms`, OT tagged | `buildLaborCostPeriodFromSsot` / `buildLaborCostDayDetailFromSsot` |
 | Actions | `labor-cost-ssot.ts` |
 
-**Nota:** KPI «Fijo» = 0 (el HE de liquidación no produce € ordinario). «Extras/Coste» = prorrateo diario de `estimatedValue` por `extrasByDay`.
+**Nota:** KPI «Fijo» = prorrateo de `payroll_monthly_totals` por **días naturales** del periodo de nómina. «Extras» = prorrateo diario de `estimatedValue` HE. Ver [`COSTE_LABORAL_DIARIO_SSOT.md`](COSTE_LABORAL_DIARIO_SSOT.md).
 
 ---
 

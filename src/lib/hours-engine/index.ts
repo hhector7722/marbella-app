@@ -43,8 +43,11 @@ export {
 export {
   buildLaborCostPeriodFromSsot,
   buildLaborCostDayDetailFromSsot,
+  allocatePayrollToNaturalDays,
+  PAYROLL_ORDINARY_ROW_ID,
   type LaborDayCell,
   type LaborDayWorker,
+  type LaborCostPeriodResult,
 } from './labor-cost-ssot.ts';
 export { ordinaryHourlyRateFromSsot } from './ordinary-rate-ssot.ts';
 export {

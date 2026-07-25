@@ -1,7 +1,15 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import {
+  PAYROLL_SUMMARY_PARSER_VERSION,
+  parseCompanySummaryText,
+} from '@/lib/payroll/company-summary-parser';
+import { hashPayrollPdf } from '@/lib/payroll/content-hash';
 
+// pdf2json es CJS; mismo patrón que el productor histórico.
 const PDFParser = require('pdf2json');
+
+const SOURCE = 'gmail_summary';
 
 function getServiceSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -10,33 +18,74 @@ function getServiceSupabase() {
   return createClient(url, key);
 }
 
-function parseEuroNumber(raw: string): number | null {
-  // Acepta "11.814,03" o "11814,03" o "11 814,03"
-  const s = String(raw ?? '')
-    .trim()
-    .replace(/\s+/g, '')
-    .replace(/\./g, '')
-    .replace(',', '.');
-  if (!/^-?\d+(\.\d+)?$/.test(s)) return null;
-  const n = Number(s);
-  if (!Number.isFinite(n)) return null;
-  return n;
+async function extractPdfText(pdfBuffer: Buffer): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    const pdfParser = new PDFParser(null, 1);
+    pdfParser.on('pdfParser_dataError', (errData: { parserError?: string }) =>
+      reject(new Error(errData.parserError ?? 'pdf2json error')),
+    );
+    pdfParser.on('pdfParser_dataReady', () => {
+      try {
+        resolve(decodeURIComponent(pdfParser.getRawTextContent()));
+      } catch {
+        resolve(pdfParser.getRawTextContent());
+      }
+    });
+    pdfParser.parseBuffer(pdfBuffer);
+  });
 }
 
-function ymdFromDmy(dmy: string): string | null {
-  const m = String(dmy ?? '').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if (!m) return null;
-  const [, dd, mm, yyyy] = m;
-  return `${yyyy}-${mm}-${dd}`;
-}
+type ImportStatus =
+  | 'imported'
+  | 'skipped_duplicate'
+  | 'rejected_validation'
+  | 'rectification_pending'
+  | 'error';
 
-function periodYmFromStartDate(startYmd: string): string {
-  return startYmd.slice(0, 7);
+async function recordImportRun(
+  supabase: SupabaseClient,
+  row: {
+    status: ImportStatus;
+    content_hash?: string | null;
+    filename?: string | null;
+    period_ym?: string | null;
+    period_start?: string | null;
+    period_end?: string | null;
+    amount_detected?: number | null;
+    amount_selected?: number | null;
+    candidates?: number[];
+    label_used?: string | null;
+    validation_messages?: string[];
+    error_message?: string | null;
+  },
+) {
+  const { error } = await supabase.from('payroll_import_runs').insert({
+    source: SOURCE,
+    parser_version: PAYROLL_SUMMARY_PARSER_VERSION,
+    content_hash: row.content_hash ?? null,
+    filename: row.filename ?? null,
+    period_ym: row.period_ym ?? null,
+    period_start: row.period_start ?? null,
+    period_end: row.period_end ?? null,
+    amount_detected: row.amount_detected ?? null,
+    amount_selected: row.amount_selected ?? null,
+    candidates: row.candidates ?? [],
+    label_used: row.label_used ?? null,
+    status: row.status,
+    validation_messages: row.validation_messages ?? [],
+    error_message: row.error_message ?? null,
+  });
+  if (error) {
+    console.error('[nominas-summary] fallo audit insert:', error.message);
+  }
 }
 
 export async function POST(request: Request) {
+  const supabase = getServiceSupabase();
+  let filenameForAudit: string | null = null;
+  let contentHash: string | null = null;
+
   try {
-    const supabase = getServiceSupabase();
     const authHeader = request.headers.get('authorization');
     if (authHeader !== `Bearer ${process.env.WEBHOOK_SECRET}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -44,124 +93,255 @@ export async function POST(request: Request) {
 
     const { fileBase64, filename, emailDate } = await request.json();
     if (!fileBase64 || !filename) {
+      await recordImportRun(supabase, {
+        status: 'rejected_validation',
+        error_message: 'Payload incompleto',
+        validation_messages: ['fileBase64/filename requeridos'],
+      });
       return NextResponse.json({ error: 'Payload incompleto' }, { status: 400 });
     }
 
+    filenameForAudit = String(filename);
     const pdfBuffer = Buffer.from(fileBase64, 'base64');
+    contentHash = hashPayrollPdf(pdfBuffer);
 
-    const textContent = await new Promise<string>((resolve, reject) => {
-      const pdfParser = new PDFParser(null, 1);
-      pdfParser.on('pdfParser_dataError', (errData: any) =>
-        reject(new Error(errData.parserError)),
-      );
-      pdfParser.on('pdfParser_dataReady', () => {
-        try {
-          resolve(decodeURIComponent(pdfParser.getRawTextContent()));
-        } catch {
-          resolve(pdfParser.getRawTextContent());
-        }
+    // Duplicado exacto (mismo PDF ya importado o ya en SSOT)
+    const { data: existingByHash } = await supabase
+      .from('payroll_monthly_totals')
+      .select('period_ym, total_company_cost, content_hash')
+      .eq('content_hash', contentHash)
+      .maybeSingle();
+
+    if (existingByHash) {
+      await recordImportRun(supabase, {
+        status: 'skipped_duplicate',
+        content_hash: contentHash,
+        filename: filenameForAudit,
+        period_ym: existingByHash.period_ym,
+        amount_selected: Number(existingByHash.total_company_cost),
+        validation_messages: [
+          'PDF con mismo content_hash ya presente en payroll_monthly_totals',
+        ],
+        error_message: 'duplicate_content_hash',
       });
-      pdfParser.parseBuffer(pdfBuffer);
-    });
-
-    // Periodo: "PAGA TOTAL DEL 01/02/2026 AL 28/02/2026"
-    const periodMatch = textContent.match(
-      /PAGA\s+TOTAL\s+DEL\s+(\d{2}\/\d{2}\/\d{4})\s+AL\s+(\d{2}\/\d{2}\/\d{4})/i,
-    );
-    if (!periodMatch) {
       return NextResponse.json(
-        { error: 'No se detectó el periodo (PAGA TOTAL DEL .. AL ..)' },
-        { status: 422 },
+        {
+          success: true,
+          skipped: true,
+          reason: 'duplicate_content_hash',
+          periodYm: existingByHash.period_ym,
+          totalCompanyCost: Number(existingByHash.total_company_cost),
+          contentHash,
+          parserVersion: PAYROLL_SUMMARY_PARSER_VERSION,
+        },
+        { status: 200 },
       );
     }
 
-    const startYmd = ymdFromDmy(periodMatch[1]);
-    const endYmd = ymdFromDmy(periodMatch[2]);
-    if (!startYmd || !endYmd) {
-      return NextResponse.json(
-        { error: 'Periodo inválido en documento' },
-        { status: 422 },
-      );
+    const textContent = await extractPdfText(pdfBuffer);
+    const parsed = parseCompanySummaryText(textContent);
+
+    if (!parsed.ok) {
+      await recordImportRun(supabase, {
+        status: 'rejected_validation',
+        content_hash: contentHash,
+        filename: filenameForAudit,
+        period_ym: parsed.periodYm ?? null,
+        period_start: parsed.periodStart ?? null,
+        period_end: parsed.periodEnd ?? null,
+        candidates: parsed.candidatesNearLabel,
+        validation_messages: parsed.validationMessages,
+        error_message: parsed.error,
+      });
+      return NextResponse.json({ error: parsed.error }, { status: 422 });
     }
 
-    // Total: mayor cifra europea en los 300 caracteres previos a TOTAL CENTRO / TOTAL EMPRESA
-    // (el OCR suele poner los importes en la línea anterior, no en la misma que el rótulo)
-    const empresaIdx = textContent.search(/TOTAL\s+EMPRESA/i);
-    const centroIdx = textContent.search(/TOTAL\s+CENTRO/i);
-    const markerCandidates = [empresaIdx, centroIdx].filter((idx) => idx >= 0);
-    const markerIndex =
-      markerCandidates.length > 0 ? Math.min(...markerCandidates) : -1;
+    // Rectificación: mismo periodo, hash distinto (no sobrescribir)
+    const { data: existingByPeriod } = await supabase
+      .from('payroll_monthly_totals')
+      .select('period_ym, total_company_cost, content_hash, file_path')
+      .eq('period_ym', parsed.periodYm)
+      .maybeSingle();
 
-    if (markerIndex < 0) {
-      return NextResponse.json(
-        { error: 'No se encontró TOTAL CENTRO ni TOTAL EMPRESA en el documento' },
-        { status: 422 },
-      );
+    if (existingByPeriod) {
+      const prevHash = existingByPeriod.content_hash as string | null;
+      const prevAmount = Number(existingByPeriod.total_company_cost);
+
+      if (prevHash && prevHash !== contentHash) {
+        await recordImportRun(supabase, {
+          status: 'rectification_pending',
+          content_hash: contentHash,
+          filename: filenameForAudit,
+          period_ym: parsed.periodYm,
+          period_start: parsed.periodStart,
+          period_end: parsed.periodEnd,
+          amount_detected: parsed.totalCompanyCost,
+          amount_selected: null,
+          candidates: parsed.candidatesNearLabel,
+          label_used: parsed.labelUsed,
+          validation_messages: [
+            ...parsed.validationMessages,
+            `Rectificación detectada: period_ym=${parsed.periodYm} ya tiene hash distinto. No se sobrescribe.`,
+            `Importe vigente=${prevAmount}; importe nuevo=${parsed.totalCompanyCost}.`,
+          ],
+          error_message: 'rectification_pending_manual_review',
+        });
+        return NextResponse.json(
+          {
+            success: false,
+            reason: 'rectification_pending',
+            periodYm: parsed.periodYm,
+            existingTotalCompanyCost: prevAmount,
+            detectedTotalCompanyCost: parsed.totalCompanyCost,
+            contentHash,
+            parserVersion: PAYROLL_SUMMARY_PARSER_VERSION,
+          },
+          { status: 409 },
+        );
+      }
+
+      // Legacy sin hash: solo backfill si el importe coincide exactamente
+      if (!prevHash && prevAmount !== parsed.totalCompanyCost) {
+        await recordImportRun(supabase, {
+          status: 'rectification_pending',
+          content_hash: contentHash,
+          filename: filenameForAudit,
+          period_ym: parsed.periodYm,
+          period_start: parsed.periodStart,
+          period_end: parsed.periodEnd,
+          amount_detected: parsed.totalCompanyCost,
+          amount_selected: null,
+          candidates: parsed.candidatesNearLabel,
+          label_used: parsed.labelUsed,
+          validation_messages: [
+            ...parsed.validationMessages,
+            `Fila legacy sin hash con importe distinto (${prevAmount} vs ${parsed.totalCompanyCost}). No se sobrescribe.`,
+          ],
+          error_message: 'rectification_pending_legacy_amount_mismatch',
+        });
+        return NextResponse.json(
+          {
+            success: false,
+            reason: 'rectification_pending',
+            periodYm: parsed.periodYm,
+            existingTotalCompanyCost: prevAmount,
+            detectedTotalCompanyCost: parsed.totalCompanyCost,
+            contentHash,
+            parserVersion: PAYROLL_SUMMARY_PARSER_VERSION,
+          },
+          { status: 409 },
+        );
+      }
     }
 
-    const fragment = textContent.slice(Math.max(0, markerIndex - 300), markerIndex);
-    const numberCandidates =
-      fragment.match(/\d{1,3}(?:\.\d{3})*,\d{2}/g) ?? [];
-
-    const positiveAmounts = numberCandidates
-      .map(parseEuroNumber)
-      .filter((n): n is number => n !== null && n > 0);
-
-    if (positiveAmounts.length === 0) {
-      return NextResponse.json(
-        { error: 'No se detectó ningún importe en el bloque de totales' },
-        { status: 422 },
-      );
-    }
-
-    const totalCompanyCost = Math.max(...positiveAmounts);
-
-    const periodYm = periodYmFromStartDate(startYmd);
-
-    // Storage (auditable)
     const safeBase = String(filename).replace(/[^\w.\- ()]/g, '_');
-    const storagePath = `payroll-summary/${periodYm}/${safeBase.endsWith('.pdf') ? safeBase : `${safeBase}.pdf`}`;
+    const storagePath = `payroll-summary/${parsed.periodYm}/${
+      safeBase.endsWith('.pdf') ? safeBase : `${safeBase}.pdf`
+    }`;
 
     const { error: storageError } = await supabase.storage
       .from('nominas')
-      .upload(storagePath, pdfBuffer, { contentType: 'application/pdf', upsert: true });
-    if (storageError) throw new Error(`Fallo Storage: ${storageError.message}`);
+      .upload(storagePath, pdfBuffer, {
+        contentType: 'application/pdf',
+        upsert: true,
+      });
+    if (storageError) {
+      await recordImportRun(supabase, {
+        status: 'error',
+        content_hash: contentHash,
+        filename: filenameForAudit,
+        period_ym: parsed.periodYm,
+        period_start: parsed.periodStart,
+        period_end: parsed.periodEnd,
+        amount_detected: parsed.totalCompanyCost,
+        candidates: parsed.candidatesNearLabel,
+        label_used: parsed.labelUsed,
+        validation_messages: parsed.validationMessages,
+        error_message: `Fallo Storage: ${storageError.message}`,
+      });
+      throw new Error(`Fallo Storage: ${storageError.message}`);
+    }
 
-    // Upsert total mensual
     const { error: upsertError } = await supabase
       .from('payroll_monthly_totals')
       .upsert(
         {
-          period_ym: periodYm,
-          period_start: startYmd,
-          period_end: endYmd,
-          total_company_cost: totalCompanyCost,
+          period_ym: parsed.periodYm,
+          period_start: parsed.periodStart,
+          period_end: parsed.periodEnd,
+          total_company_cost: parsed.totalCompanyCost,
           file_path: storagePath,
           email_date: emailDate ? String(emailDate) : null,
+          content_hash: contentHash,
+          parser_version: PAYROLL_SUMMARY_PARSER_VERSION,
+          source: SOURCE,
+          updated_at: new Date().toISOString(),
         },
         { onConflict: 'period_ym' },
       );
 
     if (upsertError) {
-      throw new Error(`Fallo al registrar total de nóminas: ${upsertError.message}`);
+      await recordImportRun(supabase, {
+        status: 'error',
+        content_hash: contentHash,
+        filename: filenameForAudit,
+        period_ym: parsed.periodYm,
+        period_start: parsed.periodStart,
+        period_end: parsed.periodEnd,
+        amount_detected: parsed.totalCompanyCost,
+        candidates: parsed.candidatesNearLabel,
+        label_used: parsed.labelUsed,
+        validation_messages: parsed.validationMessages,
+        error_message: `Fallo al registrar total: ${upsertError.message}`,
+      });
+      throw new Error(
+        `Fallo al registrar total de nóminas: ${upsertError.message}`,
+      );
     }
+
+    await recordImportRun(supabase, {
+      status: 'imported',
+      content_hash: contentHash,
+      filename: filenameForAudit,
+      period_ym: parsed.periodYm,
+      period_start: parsed.periodStart,
+      period_end: parsed.periodEnd,
+      amount_detected: parsed.totalCompanyCost,
+      amount_selected: parsed.totalCompanyCost,
+      candidates: parsed.candidatesNearLabel,
+      label_used: parsed.labelUsed,
+      validation_messages: parsed.validationMessages,
+    });
 
     return NextResponse.json(
       {
         success: true,
-        periodYm,
-        periodStart: startYmd,
-        periodEnd: endYmd,
-        totalCompanyCost,
+        periodYm: parsed.periodYm,
+        periodStart: parsed.periodStart,
+        periodEnd: parsed.periodEnd,
+        totalCompanyCost: parsed.totalCompanyCost,
+        contentHash,
+        parserVersion: PAYROLL_SUMMARY_PARSER_VERSION,
+        labelUsed: parsed.labelUsed,
       },
       { status: 200 },
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error('Error procesando nómina resumen:', error);
+    try {
+      await recordImportRun(supabase, {
+        status: 'error',
+        content_hash: contentHash,
+        filename: filenameForAudit,
+        error_message: message,
+      });
+    } catch {
+      /* ignore */
+    }
     return NextResponse.json(
-      { error: 'Internal Server Error', details: error.message },
+      { error: 'Internal Server Error', details: message },
       { status: 500 },
     );
   }
 }
-

@@ -1,6 +1,22 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-24 (Migración consumidores SSOT Fase 2)
+**Última actualización:** 2026-07-24 (Hardening productor payroll_monthly_totals)
+
+- [x] **Hardening productor `payroll_monthly_totals` (2026-07-24)**: Parser v1 etiquetado (sin Math.max), hash SHA-256, `payroll_import_runs` append-only, rectificaciones sin overwrite, tests 12/12. May/jun 2026 importes intactos. Migración `20260724190000_…` aplicada. Doc: [`docs/HARDENING_PRODUCTOR_PAYROLL_MONTHLY_TOTALS.md`](docs/HARDENING_PRODUCTOR_PAYROLL_MONTHLY_TOTALS.md). Sin tocar Labor/HE/Shadow.
+
+**Última actualización anterior:** 2026-07-24 (Auditoría productor payroll_monthly_totals — solo lectura)
+
+- [x] **Auditoría productor `payroll_monthly_totals` FASE 1 (2026-07-24)**: Pipeline Gmail→GAS→`nominas-summary`→pdf2json→`Math.max` en ventana 300 chars. Re-parse Storage may/jun = BD exacta. Veredicto: **Sí, con reservas**. Doc: [`docs/AUDITORIA_PRODUCTOR_PAYROLL_MONTHLY_TOTALS.md`](docs/AUDITORIA_PRODUCTOR_PAYROLL_MONTHLY_TOTALS.md). Sin cambios de código.
+
+**Última actualización anterior:** 2026-07-24 (Diseño pipeline SSOT nóminas — sin implementar)
+
+- [x] **Diseño pipeline `payroll_monthly_totals` SSOT (2026-07-24)**: Auditoría de ingestión (Gmail/GAS + webhooks; **no hay login portal**). Huecos: hash, validación, rectificaciones, auditoría, extracción bruto/neto/SS. Doc diseño (sin código de pipeline): [`docs/PAYROLL_MONTHLY_TOTALS_SSOT_PIPELINE.md`](docs/PAYROLL_MONTHLY_TOTALS_SSOT_PIPELINE.md). Sin tocar Labor / HE / Shadow / schema.
+
+**Última actualización anterior:** 2026-07-24 (Coste laboral diario = nómina + extras SSOT)
+
+- [x] **Coste laboral diario `/dashboard/labor` (2026-07-24)**: Fijo = `payroll_monthly_totals` / **días naturales** del periodo. Extras = HE `estimatedValue` (misma liquidación History/Overtime). Total = fijo + extras. Sin `fn_labor_*` ni `profile_labor_cost_terms`. Doc: [`docs/COSTE_LABORAL_DIARIO_SSOT.md`](docs/COSTE_LABORAL_DIARIO_SSOT.md).
+
+**Última actualización anterior:** 2026-07-24 (Migración consumidores SSOT Fase 2)
 
 - [x] **Migración consumidores SSOT — pantallas (2026-07-24)**: Overtime/Dashboard/Master Extras unificados a HE (`buildOvertimeWeeksFromSsot`; adiós lista≠modal). `/dashboard/labor` sin `fn_labor_*`/`get_labor_cost_*`. Insights M.O. horaria + tarifas Horario/Schedule vía SSOT. Doc: [`docs/MIGRACION_CONSUMIDORES_SSOT_FASE2.md`](docs/MIGRACION_CONSUMIDORES_SSOT_FASE2.md). Sin tocar núcleo HE / Shadow / snapshots / payroll.
 

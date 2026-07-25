@@ -34,6 +34,7 @@ import {
     getLaborCostDayDetailSsot,
     getLaborCostPeriodSsot,
 } from '@/app/actions/labor-cost-ssot';
+import { PAYROLL_ORDINARY_ROW_ID } from '@/lib/hours-engine';
 
 type DayCell = { total: number; fixed: number; overtime: number };
 
@@ -311,6 +312,12 @@ export default function LaborHistoryPage() {
                 };
             }
 
+            if (period.missingPayrollMonths.length > 0) {
+                toast.error(
+                    `Falta nómina oficial (payroll_monthly_totals) para: ${period.missingPayrollMonths.join(', ')}. El fijo de esos meses queda a 0.`,
+                );
+            }
+
             setSummary({
                 year: start.getFullYear(),
                 month: start.getMonth() + 1,
@@ -395,9 +402,17 @@ export default function LaborHistoryPage() {
                     ? 0
                     : Number((salesRes.data as { totalNet?: number } | null)?.totalNet) || 0;
 
+                if (labor.missingPayroll) {
+                    toast.error(
+                        'Falta nómina oficial para este mes: el coste fijo del día es 0.',
+                    );
+                }
+
                 const workers: WorkerRow[] = labor.workers.map((w) => {
                     const total = Number(w.total) || 0;
                     let laborPctOfSales: number | null = null;
+                    // % por fila de empleado = extras del trabajador / ventas día.
+                    // La fila de nómina empresa usa el total del día (fijo+extras).
                     if (dayNetSales > 0) {
                         laborPctOfSales = (total / dayNetSales) * 100;
                     }
@@ -696,7 +711,10 @@ export default function LaborHistoryPage() {
                                     <div className="flex justify-center py-12">
                                         <LoadingSpinner className="text-[#36606F]" />
                                     </div>
-                                ) : dayDetail && dayDetail.workers.length > 0 ? (
+                                ) : dayDetail &&
+                                  (dayDetail.workers.length > 0 ||
+                                      dayDetail.totalCost > 0 ||
+                                      dayDetail.totalFixed > 0) ? (
                                     <>
                                         <div className="mb-4 rounded-[1.25rem] bg-[#36606F] p-3 shadow-md">
                                             <p className="mb-2 text-center text-[9px] font-black uppercase tracking-[0.2em] text-white/90">
@@ -757,7 +775,9 @@ export default function LaborHistoryPage() {
                                                     className="flex items-center justify-between py-2 px-1 border-b border-zinc-100 last:border-0 hover:bg-zinc-50/50 rounded-lg transition-colors"
                                                 >
                                                     <div className="truncate text-[13px] font-black text-zinc-800 flex-1 pr-2">
-                                                        {firstNameOnly(w.name)}
+                                                        {w.id === PAYROLL_ORDINARY_ROW_ID
+                                                            ? w.name
+                                                            : firstNameOnly(w.name)}
                                                     </div>
                                                     <div className="grid grid-cols-4 shrink-0 w-[190px] min-[400px]:w-[210px] sm:w-[240px] gap-1 text-center items-center">
                                                         <div className="min-w-0">
