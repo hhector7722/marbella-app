@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-25 (Overlay fichaje Héctor → video-españa)
+**Última actualización:** 2026-07-25 (Layout: sin onboarding ni zoom Héctor)
+
+- [x] **Layout más rápido — sin onboarding/zoom (2026-07-25)**: Quitado query `profiles.needs_onboarding` + `OnboardingOverlay` del root layout. Viewport estático bloqueado para todos (sin `generateViewport`/zoom Héctor). `touch-manipulation` siempre. Push prompt ya no espera onboarding.
+
+**Última actualización anterior:** 2026-07-25 (Overlay fichaje Héctor → video-españa)
 
 - [x] **Overlay fichaje Héctor (2026-07-25)**: `hhector7722@gmail.com` reproduce `/icons/video-españa.mp4` en entrada y salida (`fichaje-overlay-videos.ts` + asset en `public/icons/`).
 

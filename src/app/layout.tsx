@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { createClient } from "@/utils/supabase/server";
-import OnboardingOverlay from "@/components/OnboardingOverlay";
 import Navbar from "@/components/Navbar";
 import BottomNavWrapper from "@/components/BottomNavWrapper";
 import MainWrapper from "@/components/MainWrapper";
@@ -14,12 +13,11 @@ import SileoProvider from "@/components/SileoProvider";
 import ChatMarbellaLazy from "@/components/chat/ChatMarbellaLazy";
 import { UsageAuthenticatedTracker } from "@/components/usage/UsageAuthenticatedTracker";
 import { withTimeout } from "@/lib/with-timeout";
-import { isMasterDashboardUser } from "@/lib/master-dashboard";
 import { cn } from "@/lib/utils";
 
 const inter = Inter({ subsets: ["latin"] });
 
-const LOCKED_VIEWPORT: Viewport = {
+export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   minimumScale: 1,
@@ -29,31 +27,6 @@ const LOCKED_VIEWPORT: Viewport = {
   themeColor: "#ffffff",
   interactiveWidget: "overlays-content",
 };
-
-/** Temporal: permite pinch/double-tap zoom solo a Héctor (auditoría UI). */
-const ZOOMABLE_VIEWPORT: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  minimumScale: 0.5,
-  maximumScale: 5,
-  userScalable: true,
-  viewportFit: "cover",
-  themeColor: "#ffffff",
-  interactiveWidget: "overlays-content",
-};
-
-export async function generateViewport(): Promise<Viewport> {
-  const supabase = await createClient();
-  try {
-    const { data } = await supabase.auth.getSession();
-    if (isMasterDashboardUser(data.session?.user?.email)) {
-      return ZOOMABLE_VIEWPORT;
-    }
-  } catch {
-    // Sin sesión o error de auth → viewport bloqueado (resto del staff).
-  }
-  return LOCKED_VIEWPORT;
-}
 
 export const metadata: Metadata = {
   title: "Bar La Marbella",
@@ -98,37 +71,13 @@ export default async function RootLayout({
   })();
   const user = await withTimeout(userPromise, 4000, null);
 
-  let needsOnboarding = false;
-
-  if (user) {
-    // `profiles.needs_onboarding` también acotado a 4s para no bloquear
-    // el render si PostgREST está lento. Usamos `maybeSingle()` para no
-    // fallar si el perfil aún no existe (señal de onboarding).
-    const profilePromise = (async () => {
-      try {
-        const r = await supabase
-          .from('profiles')
-          .select('needs_onboarding')
-          .eq('id', user.id)
-          .maybeSingle();
-        return (r.data as { needs_onboarding?: boolean } | null)?.needs_onboarding ?? false;
-      } catch {
-        return false;
-      }
-    })();
-    needsOnboarding = await withTimeout<boolean>(profilePromise, 4000, false);
-  }
-
-  const allowBrowserZoom = isMasterDashboardUser(user?.email);
-
   return (
     <html lang="es" className="light">
       <body
         className={cn(
           inter.className,
           "bg-marbella-shell",
-          // touch-manipulation bloquea double-tap zoom; solo quitarlo para Héctor.
-          !allowBrowserZoom && "touch-manipulation",
+          "touch-manipulation",
         )}
       >
         <UnreadNotificationsShell>
@@ -137,14 +86,10 @@ export default async function RootLayout({
           <ClientDisplayModeReporter isLoggedIn={!!user} />
           <PushNotificationsPrompt
             isLoggedIn={!!user}
-            needsOnboarding={needsOnboarding}
             userEmail={user?.email ?? null}
           />
           <Navbar />
-          <MainWrapper>
-            <OnboardingOverlay needsOnboarding={needsOnboarding} />
-            {children}
-          </MainWrapper>
+          <MainWrapper>{children}</MainWrapper>
           <BottomNavWrapper />
           <UsageAuthenticatedTracker enabled={!!user} />
 

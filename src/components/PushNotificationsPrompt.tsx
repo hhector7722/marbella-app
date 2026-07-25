@@ -23,7 +23,6 @@ import { normalizeNotificationEmail } from '@/lib/notification-recipients'
 
 interface PushNotificationsPromptProps {
   isLoggedIn: boolean
-  needsOnboarding: boolean
   userEmail: string | null
 }
 
@@ -34,7 +33,6 @@ function isForcedPreviewUser(userEmail: string | null): boolean {
 
 export function PushNotificationsPrompt({
   isLoggedIn,
-  needsOnboarding,
   userEmail,
 }: PushNotificationsPromptProps) {
   const [open, setOpen] = useState(false)
@@ -54,7 +52,7 @@ export function PushNotificationsPrompt({
   }, [])
 
   useEffect(() => {
-    if (!isLoggedIn || needsOnboarding) return
+    if (!isLoggedIn) return
     if (!isPushSupported()) return
     if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) return
 
@@ -86,7 +84,7 @@ export function PushNotificationsPrompt({
     return () => {
       cancelled = true
     }
-  }, [isLoggedIn, needsOnboarding, forcedPreview])
+  }, [isLoggedIn, forcedPreview])
 
   const handleDismiss = useCallback(() => {
     if (!forcedPreview) {
