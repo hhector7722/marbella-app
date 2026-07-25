@@ -20,7 +20,6 @@ import {
 import { formatYmdInMadrid, madridRangeUtcIso } from '@/lib/madrid-date-bounds';
 import {
   filterVisiblePlantillaEmployees,
-  PLANTILLA_EMPLOYEE_SELECT,
 } from '@/lib/staff/plantilla-employees';
 
 export interface StaffWeeklyStats {
@@ -129,16 +128,19 @@ export async function buildOvertimeWeeksFromSsot(
   const lastMonday = mondays[mondays.length - 1]!;
   const lastSunday = format(addDays(parseISO(lastMonday), 6), 'yyyy-MM-dd');
 
+  const overtimeProfileSelect =
+    'id, first_name, last_name, avatar_url, role, visible_in_plantilla' as const;
+
   let profilesQuery = supabase
     .from('profiles')
-    .select(PLANTILLA_EMPLOYEE_SELECT + ', role')
+    .select(overtimeProfileSelect)
     .eq('visible_in_plantilla', true)
     .order('first_name');
 
   if (options.userId) {
     profilesQuery = supabase
       .from('profiles')
-      .select(PLANTILLA_EMPLOYEE_SELECT + ', role')
+      .select(overtimeProfileSelect)
       .eq('id', options.userId);
   }
 
@@ -146,8 +148,8 @@ export async function buildOvertimeWeeksFromSsot(
   if (profileErr) throw profileErr;
 
   const profiles = filterVisiblePlantillaEmployees(
-    (profileRows ?? []) as ProfileRow[],
-  ) as ProfileRow[];
+    (profileRows ?? []) as unknown as ProfileRow[],
+  );
 
   // weekId → staff[]
   const staffByWeek = new Map<string, StaffWeeklyStats[]>();

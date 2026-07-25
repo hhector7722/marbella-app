@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-24 (Hardening productor payroll_monthly_totals)
+**Última actualización:** 2026-07-25 (Fix tsc Vercel overtime-weeks-ssot)
+
+- [x] **Fix build Vercel — overtime profiles select (2026-07-25)**: `PLANTILLA_EMPLOYEE_SELECT + ', role'` rompía el tipado Supabase (`GenericStringError[]`). Select literal `as const` + cast seguro. Typecheck OK.
+
+**Última actualización anterior:** 2026-07-24 (Hardening productor payroll_monthly_totals)
 
 - [x] **Hardening productor `payroll_monthly_totals` (2026-07-24)**: Parser v1 etiquetado (sin Math.max), hash SHA-256, `payroll_import_runs` append-only, rectificaciones sin overwrite, tests 12/12. May/jun 2026 importes intactos. Migración `20260724190000_…` aplicada. Doc: [`docs/HARDENING_PRODUCTOR_PAYROLL_MONTHLY_TOTALS.md`](docs/HARDENING_PRODUCTOR_PAYROLL_MONTHLY_TOTALS.md). Sin tocar Labor/HE/Shadow.
 
