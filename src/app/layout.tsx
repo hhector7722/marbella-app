@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { createClient } from "@/utils/supabase/server";
 import Navbar from "@/components/Navbar";
 import BottomNavWrapper from "@/components/BottomNavWrapper";
 import MainWrapper from "@/components/MainWrapper";
@@ -12,7 +11,6 @@ import { UnreadNotificationsShell } from "@/components/UnreadNotificationsShell"
 import SileoProvider from "@/components/SileoProvider";
 import ChatMarbellaLazy from "@/components/chat/ChatMarbellaLazy";
 import { UsageAuthenticatedTracker } from "@/components/usage/UsageAuthenticatedTracker";
-import { withTimeout } from "@/lib/with-timeout";
 import { cn } from "@/lib/utils";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -52,25 +50,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+/**
+ * Layout raíz síncrono: no await de Supabase aquí.
+ * Antes `getSession` (+ cookies) bloqueaba TODO el HTML → pantalla blanca.
+ * Auth de shell (push, usage, display-mode) se resuelve en cliente.
+ */
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const supabase = await createClient();
-
-  // `auth.getSession()` con timeout corto (4s). Lee cookies locales; no
-  // bloquea en round-trip a GoTrue como `getUser()`.
-  const userPromise = (async () => {
-    try {
-      const r = await supabase.auth.getSession();
-      return r.data.session?.user ?? null;
-    } catch {
-      return null;
-    }
-  })();
-  const user = await withTimeout(userPromise, 4000, null);
-
   return (
     <html lang="es" className="light">
       <body
@@ -83,15 +72,12 @@ export default async function RootLayout({
         <UnreadNotificationsShell>
           <SileoProvider />
           <ServiceWorkerRegistration />
-          <ClientDisplayModeReporter isLoggedIn={!!user} />
-          <PushNotificationsPrompt
-            isLoggedIn={!!user}
-            userEmail={user?.email ?? null}
-          />
+          <ClientDisplayModeReporter />
+          <PushNotificationsPrompt />
           <Navbar />
           <MainWrapper>{children}</MainWrapper>
           <BottomNavWrapper />
-          <UsageAuthenticatedTracker enabled={!!user} />
+          <UsageAuthenticatedTracker />
 
           {/* LÓGICA DEL ASISTENTE (INVISIBLE HASTA QUE PULSES TU BOTÓN IA) */}
           <ChatMarbellaLazy />

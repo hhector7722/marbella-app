@@ -1,6 +1,14 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-25 (Layout: sin onboarding ni zoom Héctor)
+**Última actualización:** 2026-07-25 (Overlay fichaje: tamaño clásico + rounded-2xl)
+
+- [x] **Overlay fichaje sin fullscreen (2026-07-25)**: Vuelve el tamaño `min(90vw,90vh)` (como el círculo); ya no pantalla completa. Contenedor `rounded-2xl` + `object-cover` (no círculo).
+
+**Última actualización anterior:** 2026-07-25 (Fix pantalla blanca: layout sync + proxy sin profiles)
+
+- [x] **Fix pantalla blanca al iniciar/navegar (2026-07-25)**: Root layout **síncrono** (sin `await getSession`). Push/usage/display-mode resuelven auth en cliente. Proxy: `profiles` solo en `/`, `/login` y gates `/dashboard` que lo necesitan; master (Héctor) redirige home **solo con email JWT**. Timeouts proxy 1.5s/1.2s. Master/staff dashboard: `getSession`+timeout + Suspense (adiós `getUser()` que colgaba GoTrue). Elimina waterfall PostgREST en cada navegación staff.
+
+**Última actualización anterior:** 2026-07-25 (Layout: sin onboarding ni zoom Héctor)
 
 - [x] **Layout más rápido — sin onboarding/zoom (2026-07-25)**: Quitado query `profiles.needs_onboarding` + `OnboardingOverlay` del root layout. Viewport estático bloqueado para todos (sin `generateViewport`/zoom Héctor). `touch-manipulation` siempre. Push prompt ya no espera onboarding.
 

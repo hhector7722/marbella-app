@@ -20,25 +20,21 @@ import {
 } from '@/lib/push-notifications-client'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { normalizeNotificationEmail } from '@/lib/notification-recipients'
-
-interface PushNotificationsPromptProps {
-  isLoggedIn: boolean
-  userEmail: string | null
-}
+import { createClient } from '@/utils/supabase/client'
 
 function isForcedPreviewUser(userEmail: string | null): boolean {
   if (!PUSH_PROMPT_FORCE_PREVIEW) return false
   return normalizeNotificationEmail(userEmail) === PUSH_PROMPT_PREVIEW_EMAIL
 }
 
-export function PushNotificationsPrompt({
-  isLoggedIn,
-  userEmail,
-}: PushNotificationsPromptProps) {
+/** Prompt push: sesión en cliente para no bloquear el layout SSR. */
+export function PushNotificationsPrompt() {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [permissionDenied, setPermissionDenied] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
   const forcedPreview = isForcedPreviewUser(userEmail)
 
   useModalUsageTracking({
@@ -49,6 +45,29 @@ export function PushNotificationsPrompt({
 
   useEffect(() => {
     setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    const supabase = createClient()
+    let cancelled = false
+
+    void supabase.auth.getSession().then(({ data }) => {
+      if (cancelled) return
+      setIsLoggedIn(!!data.session?.user)
+      setUserEmail(data.session?.user?.email ?? null)
+    })
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session?.user)
+      setUserEmail(session?.user?.email ?? null)
+    })
+
+    return () => {
+      cancelled = true
+      subscription.unsubscribe()
+    }
   }, [])
 
   useEffect(() => {

@@ -479,10 +479,12 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto "prompt-ready"**. Debe 
 
 <!-- sync:project-status:start — NO EDITAR A MANO; generado por `scripts/sync-llm-prompt-from-project-status.mjs` -->
 
-**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-25 (Layout: sin onboarding ni zoom Héctor)
+**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-25 (Overlay fichaje: tamaño clásico + rounded-2xl)
 
 Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; máx. 45 entradas):
 
+- **Overlay fichaje sin fullscreen (2026-07-25)**: Vuelve el tamaño `min(90vw,90vh)` (como el círculo); ya no pantalla completa. Contenedor `rounded-2xl` + `object-cover` (no círculo).
+- **Fix pantalla blanca al iniciar/navegar (2026-07-25)**: Root layout **síncrono** (sin `await getSession`). Push/usage/display-mode resuelven auth en cliente. Proxy: `profiles` solo en `/`, `/login` y gates `/dashboard` que lo necesitan; master (Héctor) redirige home **solo con email JWT**. Timeouts proxy 1.5s/1.2s. Master/staff dashboard: `getSession`+timeout + Suspense (adiós `getUser()` que colgaba GoTrue). Elimina waterfall PostgREST en cada navegación staff.
 - **Layout más rápido — sin onboarding/zoom (2026-07-25)**: Quitado query `profiles.needs_onboarding` + `OnboardingOverlay` del root layout. Viewport estático bloqueado para todos (sin `generateViewport`/zoom Héctor). `touch-manipulation` siempre. Push prompt ya no espera onboarding.
 - **Overlay fichaje Héctor (2026-07-25)**: `hhector7722@gmail.com` reproduce `/icons/video-españa.mp4` en entrada y salida (`fichaje-overlay-videos.ts` + asset en `public/icons/`).
 - **Fix build Vercel — overtime profiles select (2026-07-25)**: `PLANTILLA_EMPLOYEE_SELECT + ', role'` rompía el tipado Supabase (`GenericStringError[]`). Select literal `as const` + cast seguro. Typecheck OK.
@@ -526,7 +528,5 @@ Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; m
 - **Semana sin fichajes consume contrato (2026-07-21)**: Eliminado el early-return de `liquidateWeek` que forzaba `weeklyBalance = 0` sin fichajes. Staff con jornada: semana vacía → `weeklyBalance = −contrato` y baja el banco. Solo sin tramos (post-baja) queda balance 0. Suite hours-engine **122/122**.
 - **Fix selección Pago/Bolsa semanal (2026-07-21)**: El motor ignoraba `weekly_snapshots.prefer_stock_hours_override` y repintaba siempre el `bagMode` del contrato. Ahora `liquidateWeek` acepta `bagModeOverride`; historial/modal/home leen el override y lo aplican en liquidación + carry. Aplicar Bolsa/Pago en WeekCard vuelve a persistir y verse.
 - **Horas contrato enteras/medias + no cobrar con deuda (2026-07-21)**:
-- **OCR albaranes en segundo plano (2026-07-21)**: En escáner `/dashboard/scanner` (y hoja extra en `/dashboard/albaranes`), **Guardar** sube imagen + crea `purchase_invoices` con `status=processing` al instante; Gemini corre en `after()`. Fallo → `ocr_failed` + `ocr_error`, UI con **Reintentar lectura** / **Sustituir foto**. Migración [`20260721120000_purchase_invoices_ocr_background.sql`](supabase/migrations/20260721120000_purchase_invoices_ocr_background.sql) **aplicada** (`ocr_error`, adjuntos `ocr_status`/`ocr_error`, `sync_purchase_invoice_status` respeta processing/ocr_failed).
-- **Editar Efectivo en modal de cierre (2026-07-20)**: En `/dashboard/history`, al editar un cierre, **Efectivo** es editable: abre el desglose guardado (`cash_closings.breakdown`) con controles +/− táctiles. Al «Guardar desglose» se persiste `breakdown`/`cash_counted`/`cash_withdrawn` y el trigger `trg_cash_closing_to_treasury_v2` actualiza el `CLOSE_ENTRY` en `treasury_log` (importe + desglose + inventario/saldo) visible en `/dashboard/movements`.
 
 <!-- sync:project-status:end -->

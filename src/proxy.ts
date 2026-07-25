@@ -8,8 +8,8 @@ import {
   getUsageTrackingFlags,
 } from "@/lib/usage/middleware-track";
 
-const PROXY_AUTH_TIMEOUT_MS = 2500;
-const PROXY_PROFILE_TIMEOUT_MS = 2500;
+const PROXY_AUTH_TIMEOUT_MS = 1500;
+const PROXY_PROFILE_TIMEOUT_MS = 1200;
 
 function isPasswordRecoveryProfileRequest(request: NextRequest) {
   if (request.nextUrl.pathname !== "/profile") return false;
@@ -44,6 +44,29 @@ function attachUsageTracking(
   if (flags.session) {
     enqueueUsageSessionRecord(supabase, profileId, pathname, request.nextUrl.search);
   }
+}
+
+/** Rutas /dashboard/* abiertas a staff/supervisor (sin consultar role). */
+function isStaffDashboardAllowed(path: string): boolean {
+  return (
+    path.startsWith("/dashboard/propinas") ||
+    path.startsWith("/dashboard/albaranes") ||
+    path.startsWith("/dashboard/scanner") ||
+    path.startsWith("/dashboard/eventos")
+  );
+}
+
+/**
+ * Solo estas rutas necesitan `profiles.role` en el proxy.
+ * El resto basta con JWT (email) o sesión presente → evita PostgREST en cada navegación.
+ */
+function pathNeedsProfileRole(path: string): boolean {
+  if (path === "/" || path.startsWith("/login")) return true;
+  if (!path.startsWith("/dashboard")) return false;
+  if (isStaffDashboardAllowed(path)) return false;
+  // /dashboard/uso y /dashboard/web se resuelven solo con email master.
+  if (path.startsWith("/dashboard/uso") || path.startsWith("/dashboard/web")) return false;
+  return true;
 }
 
 export async function proxy(request: NextRequest) {
@@ -117,9 +140,8 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  // `getUser()` hace round-trip a GoTrue y puede COLGAR el proxy
-  // (el navegador queda en "cargando" infinito). Para el guard de rutas
-  // basta la sesión del JWT en cookies — PostgREST/RLS siguen validando.
+  // `getUser()` hace round-trip a GoTrue y puede COLGAR el proxy.
+  // Para el guard de rutas basta la sesión del JWT en cookies.
   const sessionResult = await withTimeout(
     supabase.auth.getSession(),
     PROXY_AUTH_TIMEOUT_MS,
@@ -134,100 +156,109 @@ export async function proxy(request: NextRequest) {
   }
 
   if (user) {
-    const profileResult = await withTimeout(
-      (async () => {
-        try {
-          return await supabase
-            .from("profiles")
-            .select("role, email")
-            .eq("id", user.id)
-            .maybeSingle();
-        } catch {
-          return { data: null, error: null };
-        }
-      })(),
-      PROXY_PROFILE_TIMEOUT_MS,
-      { data: null, error: null }
-    );
-    const profile = profileResult.data;
+    const emailFromJwt = user.email ?? "";
 
-    const role = profile?.role;
-    const email = profile?.email ?? user.email ?? "";
+    // Gates solo por email (JWT): sin round-trip a profiles.
+    if (path.startsWith("/master") && !isMasterDashboardUser(emailFromJwt)) {
+      const masterRedirect = NextResponse.redirect(new URL("/dashboard", request.url));
+      copyResponseCookies(response, masterRedirect);
+      return masterRedirect;
+    }
 
-    // PWA abre `start_url: /` — redirect aquí evita RSC extra en page.tsx.
-    if (path === "/") {
-      const home = getHomeHrefForUser(email, role);
+    if (path.startsWith("/dashboard/uso") && !isMasterDashboardUser(emailFromJwt)) {
+      const usoRedirect = NextResponse.redirect(new URL("/dashboard", request.url));
+      copyResponseCookies(response, usoRedirect);
+      return usoRedirect;
+    }
+
+    if (path.startsWith("/dashboard/web") && !isMasterDashboardUser(emailFromJwt)) {
+      const webRedirect = NextResponse.redirect(new URL("/dashboard", request.url));
+      copyResponseCookies(response, webRedirect);
+      return webRedirect;
+    }
+
+    if (path.startsWith("/profile/contrato") && !isMasterDashboardUser(emailFromJwt)) {
+      const contratoRedirect = NextResponse.redirect(new URL("/profile", request.url));
+      copyResponseCookies(response, contratoRedirect);
+      return contratoRedirect;
+    }
+
+    // PWA start_url `/` → home. Master solo con email JWT (caso Héctor: sin profiles).
+    if (path === "/" || path.startsWith("/login")) {
+      if (isMasterDashboardUser(emailFromJwt)) {
+        const home = getHomeHrefForUser(emailFromJwt);
+        const homeRedirect = NextResponse.redirect(new URL(home, request.url));
+        copyResponseCookies(response, homeRedirect);
+        attachUsageTracking(homeRedirect, request, supabase, user.id, path);
+        return homeRedirect;
+      }
+
+      const profileResult = await withTimeout(
+        (async () => {
+          try {
+            return await supabase
+              .from("profiles")
+              .select("role, email")
+              .eq("id", user.id)
+              .maybeSingle();
+          } catch {
+            return { data: null, error: null };
+          }
+        })(),
+        PROXY_PROFILE_TIMEOUT_MS,
+        { data: null, error: null }
+      );
+      const role = profileResult.data?.role;
+      const email = profileResult.data?.email ?? emailFromJwt;
+      // Sin perfil a tiempo → staff home (fail-open; evita blanco eterno).
+      const home = getHomeHrefForUser(email, role ?? "staff");
       const homeRedirect = NextResponse.redirect(new URL(home, request.url));
       copyResponseCookies(response, homeRedirect);
       attachUsageTracking(homeRedirect, request, supabase, user.id, path);
       return homeRedirect;
     }
 
-    // Staff/supervisor solo pueden un subconjunto de `/dashboard/*`.
-    // IMPORTANTE: incluir albaranes + scanner (subida) — antes quedaban
-    // fuera y el proxy redirigía a `/staff/dashboard` o colgaba en getUser.
-    const staffDashboardAllowed =
-      path.startsWith("/dashboard/propinas") ||
-      path.startsWith("/dashboard/albaranes") ||
-      path.startsWith("/dashboard/scanner") ||
-      path.startsWith("/dashboard/eventos");
+    if (pathNeedsProfileRole(path)) {
+      const profileResult = await withTimeout(
+        (async () => {
+          try {
+            return await supabase
+              .from("profiles")
+              .select("role, email")
+              .eq("id", user.id)
+              .maybeSingle();
+          } catch {
+            return { data: null, error: null };
+          }
+        })(),
+        PROXY_PROFILE_TIMEOUT_MS,
+        { data: null, error: null }
+      );
+      const role = profileResult.data?.role;
 
-    // Insights: solo manager/admin (supervisor excluido explícitamente).
-    if (
-      path.startsWith("/dashboard/insights") &&
-      role !== "manager" &&
-      role !== "admin"
-    ) {
-      const dest =
-        role === "staff" || role === "supervisor"
-          ? "/staff/dashboard"
-          : "/dashboard";
-      const insightsRedirect = NextResponse.redirect(new URL(dest, request.url));
-      copyResponseCookies(response, insightsRedirect);
-      return insightsRedirect;
-    }
-
-    if (
-      (role === "staff" || role === "supervisor") &&
-      path.startsWith("/dashboard") &&
-      !staffDashboardAllowed
-    ) {
-      const staffRedirect = NextResponse.redirect(new URL("/staff/dashboard", request.url));
-      copyResponseCookies(response, staffRedirect);
-      return staffRedirect;
-    }
-
-    if (path.startsWith("/master")) {
-      if (!isMasterDashboardUser(email)) {
-        const masterRedirect = NextResponse.redirect(new URL("/dashboard", request.url));
-        copyResponseCookies(response, masterRedirect);
-        return masterRedirect;
+      if (
+        path.startsWith("/dashboard/insights") &&
+        role !== "manager" &&
+        role !== "admin"
+      ) {
+        const dest =
+          role === "staff" || role === "supervisor"
+            ? "/staff/dashboard"
+            : "/dashboard";
+        const insightsRedirect = NextResponse.redirect(new URL(dest, request.url));
+        copyResponseCookies(response, insightsRedirect);
+        return insightsRedirect;
       }
-    }
 
-    if (path.startsWith("/dashboard/uso") && !isMasterDashboardUser(email)) {
-      const usoRedirect = NextResponse.redirect(new URL("/dashboard", request.url));
-      copyResponseCookies(response, usoRedirect);
-      return usoRedirect;
-    }
-
-    if (path.startsWith("/dashboard/web") && !isMasterDashboardUser(email)) {
-      const webRedirect = NextResponse.redirect(new URL("/dashboard", request.url));
-      copyResponseCookies(response, webRedirect);
-      return webRedirect;
-    }
-
-    if (path.startsWith("/profile/contrato") && !isMasterDashboardUser(email)) {
-      const contratoRedirect = NextResponse.redirect(new URL("/profile", request.url));
-      copyResponseCookies(response, contratoRedirect);
-      return contratoRedirect;
-    }
-
-    if (path.startsWith("/login")) {
-      const home = getHomeHrefForUser(email, role);
-      const loginHomeRedirect = NextResponse.redirect(new URL(home, request.url));
-      copyResponseCookies(response, loginHomeRedirect);
-      return loginHomeRedirect;
+      if (
+        (role === "staff" || role === "supervisor") &&
+        path.startsWith("/dashboard") &&
+        !isStaffDashboardAllowed(path)
+      ) {
+        const staffRedirect = NextResponse.redirect(new URL("/staff/dashboard", request.url));
+        copyResponseCookies(response, staffRedirect);
+        return staffRedirect;
+      }
     }
 
     attachUsageTracking(response, request, supabase, user.id, path);
