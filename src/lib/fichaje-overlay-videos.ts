@@ -7,7 +7,7 @@ export const FICHAJE_OVERLAY_VIDEOS: Record<string, { entrada: string; salida: s
     'hugorubiolarripa@gmail.com': { entrada: '/icons/cr7.mp4', salida: '/icons/cris.mp4' },
     'marbellaremote@gmail.com': { entrada: '/icons/giff.mp4', salida: '/icons/cris.mp4' },
     'pacostaguiriguet@gmail.com': { entrada: '/icons/cr7.mp4', salida: '/icons/cris.mp4' },
-    'pereboladeres@gmail.com': { entrada: '/icons/cr7.mp4', salida: '/icons/cris.mp4' },
+    'pereboladeres@gmail.com': { entrada: '/icons/video-españa.mp4', salida: '/icons/video-españa.mp4' },
     'lurodero04@gmail.com': { entrada: '/icons/cr7.mp4', salida: '/icons/cris.mp4' },
     's29valiente@gmail.com': { entrada: '/icons/cr7.mp4', salida: '/icons/cris.mp4' },
     'aldoruggeri1512@gmail.com': { entrada: '/icons/cr7.mp4', salida: '/icons/cris.mp4' },

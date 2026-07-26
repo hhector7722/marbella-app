@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import {
@@ -110,6 +110,32 @@ export default function StaffDashboardView() {
     const [modalAction, setModalAction] = useState<'in' | 'out' | null>(null);
     const [showGiffOverlay, setShowGiffOverlay] = useState(false);
     const [giffOverlaySrc, setGiffOverlaySrc] = useState<string>('/icons/giff.mp4');
+    const [giffOverlayFading, setGiffOverlayFading] = useState(false);
+    const giffFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const giffFadingRef = useRef(false);
+    const GIFF_FADE_MS = 900;
+
+    const clearGiffFadeTimer = () => {
+        if (giffFadeTimerRef.current) {
+            clearTimeout(giffFadeTimerRef.current);
+            giffFadeTimerRef.current = null;
+        }
+    };
+
+    const beginGiffOverlayFadeOut = () => {
+        if (giffFadingRef.current) return;
+        giffFadingRef.current = true;
+        setGiffOverlayFading(true);
+        clearGiffFadeTimer();
+        giffFadeTimerRef.current = setTimeout(() => {
+            setShowGiffOverlay(false);
+            setGiffOverlayFading(false);
+            giffFadingRef.current = false;
+            giffFadeTimerRef.current = null;
+        }, GIFF_FADE_MS);
+    };
+
+    useEffect(() => () => clearGiffFadeTimer(), []);
     const [showConsumptionModal, setShowConsumptionModal] = useState(false);
     const [activeMenu, setActiveMenu] = useState<'info' | 'pedidos' | null>(null);
     const [infoSubMenu, setInfoSubMenu] = useState<'contactos' | 'web' | null>(null);
@@ -628,6 +654,14 @@ export default function StaffDashboardView() {
             const now = new Date();
             const logCoords = { input_lat: lat, input_lng: lng };
 
+            const openGiffOverlay = (src: string) => {
+                clearGiffFadeTimer();
+                giffFadingRef.current = false;
+                setGiffOverlayFading(false);
+                setGiffOverlaySrc(src);
+                setShowGiffOverlay(true);
+            };
+
             if (action === 'in') {
                 const { data, error: inErr } = await supabase.from('time_logs')
                     .insert({
@@ -649,8 +683,7 @@ export default function StaffDashboardView() {
                 const email = u?.email?.toLowerCase().trim() ?? '';
                 const overlayConfig = FICHAJE_OVERLAY_VIDEOS[email];
                 if (overlayConfig) {
-                    setGiffOverlaySrc(overlayConfig.entrada);
-                    setShowGiffOverlay(true);
+                    openGiffOverlay(overlayConfig.entrada);
                 }
             } else if (action === 'out' && todayLog) {
                 const clockIn = new Date(todayLog.clock_in);
@@ -677,8 +710,7 @@ export default function StaffDashboardView() {
                 const email = u?.email?.toLowerCase().trim() ?? '';
                 const overlayConfig = FICHAJE_OVERLAY_VIDEOS[email];
                 if (overlayConfig) {
-                    setGiffOverlaySrc(overlayConfig.salida);
-                    setShowGiffOverlay(true);
+                    openGiffOverlay(overlayConfig.salida);
                 }
             }
             setTimeout(() => initialize(), 0);
@@ -1080,10 +1112,18 @@ export default function StaffDashboardView() {
                 <div
                     role="dialog"
                     aria-label="Fichaje registrado"
-                    className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-none"
+                    className={cn(
+                        "fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-none transition-opacity ease-out",
+                        giffOverlayFading ? "opacity-0 duration-[900ms]" : "opacity-100 duration-300",
+                    )}
                 >
                     {/* Mismo tamaño que el círculo antiguo; esquinas redondeadas en lugar de círculo. */}
-                    <div className="w-[min(90vw,90vh)] h-[min(90vw,90vh)] rounded-2xl overflow-hidden flex items-center justify-center shadow-sm">
+                    <div
+                        className={cn(
+                            "w-[min(90vw,90vh)] h-[min(90vw,90vh)] rounded-2xl overflow-hidden flex items-center justify-center shadow-sm transition-[filter,transform] ease-out",
+                            giffOverlayFading ? "blur-md scale-[1.02] duration-[900ms]" : "blur-0 scale-100 duration-300",
+                        )}
+                    >
                         <video
                             key={giffOverlaySrc}
                             src={giffOverlaySrc}
@@ -1092,8 +1132,19 @@ export default function StaffDashboardView() {
                             playsInline
                             loop={false}
                             className="w-full h-full object-cover"
-                            onEnded={() => setShowGiffOverlay(false)}
-                            onError={() => setShowGiffOverlay(false)}
+                            onTimeUpdate={(e) => {
+                                const v = e.currentTarget;
+                                if (!Number.isFinite(v.duration) || v.duration <= 0) return;
+                                if (v.duration - v.currentTime > GIFF_FADE_MS / 1000) return;
+                                beginGiffOverlayFadeOut();
+                            }}
+                            onEnded={() => beginGiffOverlayFadeOut()}
+                            onError={() => {
+                                clearGiffFadeTimer();
+                                giffFadingRef.current = false;
+                                setGiffOverlayFading(false);
+                                setShowGiffOverlay(false);
+                            }}
                         />
                     </div>
                 </div>
