@@ -1,6 +1,7 @@
 /**
  * Única proyección UI de la tarjeta semanal desde LiquidationResult.
- * Sin cálculos en React ni lectura de weekly_snapshots para resultados.
+ * Dinero (estimatedValue) → Overtime Cost Engine únicamente.
+ * Horas / carry → Hours Engine (liquidateWeek); sin recalcular aquí.
  *
  * Cadena de carry: el caller DEBE pasar openingCarryIn / carryIn explícitos
  * (vía resolveOpeningCarryIn). No hay default implícito a 0.
@@ -10,6 +11,11 @@ import { liquidateWeek } from './liquidation-engine.ts';
 import { resolveEffectiveContract } from './contract-resolver.ts';
 import { roundMarbellaHours } from './marbella-round.ts';
 import { formatYmdInMadrid } from '../madrid-date-bounds.ts';
+import {
+  priceWeekOvertime,
+  type OvertimeCostSegment,
+  type PriceWeekOvertimeResult,
+} from './overtime-cost-engine.ts';
 import type {
   CivilDate,
   EmployeeBoundaryFacts,
@@ -76,6 +82,11 @@ export type WeekAdminFlags = {
    * `true`/`false` fuerza; `null`/`undefined` → bagMode del contrato.
    */
   bagModeOverride?: boolean | null;
+  /**
+   * Override €/h semanal (`overtime_price_snapshot`).
+   * `null`/`undefined` → pricing por tramos; número (incl. 0) → override.
+   */
+  overtimeRateOverride?: number | null;
 };
 
 function weekStartKey(week: { startDate: string }): CivilDate {
@@ -84,33 +95,99 @@ function weekStartKey(week: { startDate: string }): CivilDate {
   ) as CivilDate;
 }
 
-/** Tarifa OT efectiva de la semana (tramos versionados). */
+/**
+ * Tarifas contractuales alineadas 1:1 con `result.segments`
+ * (mismos índices que produce liquidateWeek).
+ */
+export function costSegmentsForLiquidation(
+  result: LiquidationResult,
+  employee: EmployeeBoundaryFacts,
+): OvertimeCostSegment[] {
+  const contract = resolveEffectiveContract(employee, result.weekStart);
+  const weekFallback = settlementRateAtWeekStart(employee, result.weekStart);
+
+  return result.segments.map((seg, i) => {
+    const termSeg = contract.segments[i];
+    const own =
+      termSeg != null &&
+      termSeg.overtimeRatePerHour != null &&
+      Number.isFinite(termSeg.overtimeRatePerHour)
+        ? Number(termSeg.overtimeRatePerHour)
+        : null;
+    return {
+      weeklyBalancePart: seg.weeklyBalancePart,
+      bagMode: seg.bagMode,
+      // pre_alta/gap sin rate propio → tarifa contractual de la semana
+      overtimeRatePerHour: own ?? weekFallback,
+    };
+  });
+}
+
+/**
+ * Tarifa contractual vigente en el lunes de la semana (política de liquidación del banco).
+ */
+export function settlementRateAtWeekStart(
+  employee: EmployeeBoundaryFacts,
+  weekStart: CivilDate,
+): number | null {
+  const contract = resolveEffectiveContract(employee, weekStart);
+  for (const s of contract.segments) {
+    if (!s.days.includes(weekStart)) continue;
+    if (s.overtimeRatePerHour != null && Number.isFinite(s.overtimeRatePerHour)) {
+      return Number(s.overtimeRatePerHour);
+    }
+    // Lunes en pre_alta/gap sin rate: no cortar; buscar tramo term abajo.
+    break;
+  }
+  for (const s of contract.segments) {
+    if (s.kind === 'term' && s.overtimeRatePerHour != null && Number.isFinite(s.overtimeRatePerHour)) {
+      return Number(s.overtimeRatePerHour);
+    }
+  }
+  return null;
+}
+
+/**
+ * @deprecated Solo display / legacy. El importe NO debe usar esta función.
+ * Preferir Overtime Cost Engine (`priceWeekOvertime`).
+ */
 export function overtimeRateForWeek(
   employee: EmployeeBoundaryFacts,
   weekStart: CivilDate,
 ): number {
-  const contract = resolveEffectiveContract(employee, weekStart);
-  for (const s of contract.segments) {
-    if (s.overtimeRatePerHour != null && Number.isFinite(s.overtimeRatePerHour)) {
-      return Number(s.overtimeRatePerHour);
-    }
-  }
-  return 0;
+  return settlementRateAtWeekStart(employee, weekStart) ?? 0;
+}
+
+export function priceLiquidationOvertime(
+  result: LiquidationResult,
+  employee: EmployeeBoundaryFacts,
+  options?: {
+    bagModeOverride?: boolean | null;
+    overrideRate?: number | null;
+  },
+): PriceWeekOvertimeResult {
+  const netPayable = netPayableHoursFromLiquidation(
+    result,
+    options?.bagModeOverride,
+  );
+  return priceWeekOvertime({
+    netPayableHours: netPayable,
+    segments: costSegmentsForLiquidation(result, employee),
+    overrideRate: options?.overrideRate,
+    settlementRateAtWeekStart: settlementRateAtWeekStart(
+      employee,
+      result.weekStart,
+    ),
+  });
 }
 
 /**
  * Proyecta LiquidationResult → footer de tarjeta.
- *
- * IMPORTE = horas realmente extraídas a cobro × tarifa (waterfall carry).
- * Nunca se cobra si queda deuda (carryOut < 0).
- *
- * EXTRAS (pago) = parte de esa liquidación que viene de la semana
- *   (netPayable − max(0, carryIn)); no el OT bruto de un tramo.
- * EXTRAS (bolsa) = overtimeHours (acumula; importe 0).
+ * IMPORTE = únicamente `pricing` del Overtime Cost Engine.
  */
 export function weekCardSummaryFromLiquidation(
   result: LiquidationResult,
-  overtimeRatePerHour: number,
+  pricing: PriceWeekOvertimeResult,
   bagModeOverride?: boolean | null,
 ): WeekCardSummaryFromEngine {
   const preferStock =
@@ -137,18 +214,22 @@ export function weekCardSummaryFromLiquidation(
     startBalance: result.carryIn,
     weeklyBalance: extrasFooter,
     finalBalance: result.balanceFinal,
-    estimatedValue: netPayable * overtimeRatePerHour,
+    estimatedValue: pricing.estimatedValue,
     isPaid: result.isPaid,
     preferStock,
     limitHours: result.contractedHoursEffective,
-    hourlyRate: overtimeRatePerHour,
+    hourlyRate: pricing.hourlyRate,
   };
 }
 
 export function assertCardMatchesLiquidation(
   summary: WeekCardSummaryFromEngine,
   result: LiquidationResult,
-  bagModeOverride?: boolean | null,
+  employee: EmployeeBoundaryFacts,
+  options?: {
+    bagModeOverride?: boolean | null;
+    overrideRate?: number | null;
+  },
 ): void {
   const eps = 1e-9;
   if (Math.abs(summary.totalHours - result.hoursWorked) > eps) {
@@ -157,9 +238,12 @@ export function assertCardMatchesLiquidation(
   if (Math.abs(summary.startBalance - result.carryIn) > eps) {
     throw new Error('Footer PENDIENTES ≠ carryIn');
   }
-  const netPayable = netPayableHoursFromLiquidation(result, bagModeOverride);
-  if (Math.abs(summary.estimatedValue - netPayable * summary.hourlyRate) > eps) {
-    throw new Error('Footer IMPORTE ≠ netPayable × tarifa');
+  const pricing = priceLiquidationOvertime(result, employee, options);
+  if (Math.abs(summary.estimatedValue - pricing.estimatedValue) > eps) {
+    throw new Error('Footer IMPORTE ≠ Overtime Cost Engine');
+  }
+  if (Math.abs(summary.hourlyRate - pricing.hourlyRate) > eps) {
+    throw new Error('Footer hourlyRate ≠ Overtime Cost Engine');
   }
   // Nunca cobrar si queda deuda pendiente.
   if (result.carryOut < -eps && summary.estimatedValue > eps) {
@@ -182,6 +266,11 @@ export function liquidateWeekForCard(input: {
   carryIn: number;
   /** Override semanal Bolsa/Pago; null → contrato. */
   bagModeOverride?: boolean | null;
+  /**
+   * Override €/h (`overtime_price_snapshot`).
+   * null/undefined → segmentos contractuales; número (incl. 0) → override.
+   */
+  overrideRate?: number | null;
 }): {
   result: LiquidationResult;
   extrasByDay: Readonly<Record<CivilDate, number>>;
@@ -195,13 +284,19 @@ export function liquidateWeekForCard(input: {
     carryIn: input.carryIn,
     bagModeOverride: input.bagModeOverride,
   });
-  const rate = overtimeRateForWeek(input.employee, input.weekStart);
+  const pricing = priceLiquidationOvertime(result, input.employee, {
+    bagModeOverride: input.bagModeOverride,
+    overrideRate: input.overrideRate,
+  });
   const summary = weekCardSummaryFromLiquidation(
     result,
-    rate,
+    pricing,
     input.bagModeOverride,
   );
-  assertCardMatchesLiquidation(summary, result, input.bagModeOverride);
+  assertCardMatchesLiquidation(summary, result, input.employee, {
+    bagModeOverride: input.bagModeOverride,
+    overrideRate: input.overrideRate,
+  });
   return {
     result,
     extrasByDay: extrasByDayFromResult(result),
@@ -212,7 +307,7 @@ export function liquidateWeekForCard(input: {
 type WeekLike = {
   startDate: string;
   days: ReadonlyArray<{ date: string; extraHours: number }>;
-  /** Solo se lee `isPaid` y override de bolsa; el resto se regenera. */
+  /** Solo se lee flags admin; el resto se regenera. */
   summary?: WeekAdminFlags;
 };
 
@@ -229,6 +324,8 @@ export function patchWeeksFromLiquidation<TWeek extends WeekLike>(
     openingCarryIn: number;
     /** Override Bolsa/Pago por weekStart; ausente → null (contrato). */
     bagModeOverrideByWeek?: (weekStart: CivilDate) => boolean | null;
+    /** Override €/h por weekStart; ausente → null (tramos). */
+    overtimeRateOverrideByWeek?: (weekStart: CivilDate) => number | null;
   },
 ): TWeek[] {
   const indexed = weeks.map((week, index) => ({ week, index }));
@@ -257,6 +354,10 @@ export function patchWeeksFromLiquidation<TWeek extends WeekLike>(
       week.summary?.bagModeOverride ??
       options.bagModeOverrideByWeek?.(weekStart) ??
       null;
+    const overrideRate =
+      week.summary?.overtimeRateOverride !== undefined
+        ? week.summary.overtimeRateOverride
+        : (options.overtimeRateOverrideByWeek?.(weekStart) ?? null);
 
     const { result, extrasByDay, summary } = liquidateWeekForCard({
       employee,
@@ -265,6 +366,7 @@ export function patchWeeksFromLiquidation<TWeek extends WeekLike>(
       isPaid,
       carryIn,
       bagModeOverride,
+      overrideRate,
     });
 
     carryIn = result.carryOut;
@@ -276,6 +378,7 @@ export function patchWeeksFromLiquidation<TWeek extends WeekLike>(
         ...summary,
         isPaid,
         bagModeOverride,
+        overtimeRateOverride: overrideRate,
       },
       days: week.days.map((day) => {
         const key =

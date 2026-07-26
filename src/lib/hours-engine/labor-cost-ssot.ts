@@ -23,6 +23,7 @@ import {
   employeeTimelineStartWeek,
   isPaidLookupFromRows,
   bagModeOverrideLookupFromRows,
+  overtimeRateOverrideLookupFromRows,
   resolveOpeningCarryIn,
 } from './opening-carry.ts';
 import { loadEmployeeBoundaryFacts } from './load-employee-facts.ts';
@@ -244,7 +245,7 @@ export async function buildLaborCostPeriodFromSsot(
       const [snapsRes, logsRes] = await Promise.all([
         supabase
           .from('weekly_snapshots')
-          .select('week_start, is_paid, prefer_stock_hours_override')
+          .select('week_start, is_paid, prefer_stock_hours_override, overtime_price_snapshot')
           .eq('user_id', profile.id)
           .gte('week_start', logsFromYmd)
           .lte('week_start', lastMonday),
@@ -264,6 +265,9 @@ export async function buildLaborCostPeriodFromSsot(
       }));
       const isPaidByWeek = isPaidLookupFromRows(snapsRes.data ?? []);
       const bagModeOverrideByWeek = bagModeOverrideLookupFromRows(
+        snapsRes.data ?? [],
+      );
+      const overtimeRateOverrideByWeek = overtimeRateOverrideLookupFromRows(
         snapsRes.data ?? [],
       );
 
@@ -289,6 +293,7 @@ export async function buildLaborCostPeriodFromSsot(
           isPaid: isPaidByWeek(weekStart),
           carryIn,
           bagModeOverride: bagModeOverrideByWeek(weekStart),
+          overrideRate: overtimeRateOverrideByWeek(weekStart),
         });
         carryIn = result.carryOut;
 
@@ -382,7 +387,7 @@ export async function buildLaborCostDayDetailFromSsot(
     const [snapsRes, logsRes] = await Promise.all([
       supabase
         .from('weekly_snapshots')
-        .select('week_start, is_paid, prefer_stock_hours_override')
+        .select('week_start, is_paid, prefer_stock_hours_override, overtime_price_snapshot')
         .eq('user_id', profile.id)
         .gte('week_start', logsFromYmd)
         .lte('week_start', weekStart),
@@ -402,6 +407,9 @@ export async function buildLaborCostDayDetailFromSsot(
     }));
     const isPaidByWeek = isPaidLookupFromRows(snapsRes.data ?? []);
     const bagModeOverrideByWeek = bagModeOverrideLookupFromRows(
+      snapsRes.data ?? [],
+    );
+    const overtimeRateOverrideByWeek = overtimeRateOverrideLookupFromRows(
       snapsRes.data ?? [],
     );
 
@@ -425,6 +433,7 @@ export async function buildLaborCostDayDetailFromSsot(
       isPaid: isPaidByWeek(weekStart),
       carryIn,
       bagModeOverride: bagModeOverrideByWeek(weekStart),
+      overrideRate: overtimeRateOverrideByWeek(weekStart),
     });
 
     const dayCosts = allocateWeekCostToDays(

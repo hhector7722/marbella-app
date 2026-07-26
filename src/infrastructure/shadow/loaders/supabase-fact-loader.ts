@@ -8,10 +8,11 @@ import {
   bagModeOverrideLookupFromRows,
   employeeTimelineStartWeek,
   isPaidLookupFromRows,
-  loadEmployeeBoundaryFacts,
-  liquidateWeek,
+  overtimeRateOverrideLookupFromRows,
   resolveOpeningCarryIn,
-} from '../../../lib/hours-engine/index.ts';
+} from '../../../lib/hours-engine/opening-carry.ts';
+import { loadEmployeeBoundaryFacts } from '../../../lib/hours-engine/load-employee-facts.ts';
+import { liquidateWeek } from '../../../lib/hours-engine/liquidation-engine.ts';
 import { weekBounds } from '../../../lib/hours-engine/week-dates.ts';
 import type {
   EmployeeBoundaryFacts,
@@ -39,6 +40,7 @@ type SnapshotRow = SqlWeeklySnapshotRow & {
   week_start: string;
   is_paid: boolean | null;
   prefer_stock_hours_override?: boolean | null;
+  overtime_price_snapshot?: number | null;
 };
 
 type EmployeeCache = {
@@ -48,11 +50,12 @@ type EmployeeCache = {
   snapRows: SnapshotRow[];
   isPaidByWeek: (weekStart: string) => boolean;
   bagModeOverrideByWeek: (weekStart: string) => boolean | null;
+  overtimeRateOverrideByWeek: (weekStart: string) => number | null;
   profilePreferStock: boolean | null;
 };
 
 const SNAPSHOT_SELECT =
-  'user_id, week_start, total_hours, balance_hours, pending_balance, final_balance, contracted_hours_snapshot, ordinary_hours, extra_hours, total_cost, is_paid, prefer_stock_hours_override';
+  'user_id, week_start, total_hours, balance_hours, pending_balance, final_balance, contracted_hours_snapshot, ordinary_hours, extra_hours, total_cost, is_paid, prefer_stock_hours_override, overtime_price_snapshot';
 
 function justifiedHoursInWeek(
   logRows: readonly LogRow[],
@@ -174,6 +177,8 @@ export function createSupabaseShadowFactLoader(
         snapRows,
         isPaidByWeek: isPaidLookupFromRows(snapRows),
         bagModeOverrideByWeek: bagModeOverrideLookupFromRows(snapRows),
+        overtimeRateOverrideByWeek:
+          overtimeRateOverrideLookupFromRows(snapRows),
         profilePreferStock: prefer,
       };
     })();
@@ -209,6 +214,8 @@ export function createSupabaseShadowFactLoader(
 
         const bagModeOverride =
           cache.bagModeOverrideByWeek(subject.weekStart) ?? null;
+        const overrideRate =
+          cache.overtimeRateOverrideByWeek(subject.weekStart) ?? null;
         const isPaid = cache.isPaidByWeek(subject.weekStart);
         const weekLogs = cache.engineLogs.filter((l) => {
           const day = formatYmdInMadrid(l.clockInIso);
@@ -231,6 +238,7 @@ export function createSupabaseShadowFactLoader(
           facts: {
             subject,
             liquidation,
+            employee: cache.facts,
             heFacts: {
               justifiedHoursWeek: justifiedHoursInWeek(
                 cache.logRows,
@@ -238,6 +246,7 @@ export function createSupabaseShadowFactLoader(
               ),
             },
             bagModeOverride,
+            overrideRate,
             snapshot: {
               ...snapshot,
               user_id: snapshot.user_id ?? subject.employeeId,

@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import type { LiquidationResult } from '../../hours-engine/types.ts';
+import type {
+  EmployeeBoundaryFacts,
+  LiquidationResult,
+} from '../../hours-engine/types.ts';
 import {
   createInMemoryShadowPersistence,
   persistShadowRunResult,
@@ -14,6 +17,24 @@ import {
 } from '../runner/run-shadow.ts';
 import type { ShadowSubjectFacts } from '../runner/ports.ts';
 import { SHADOW_DOMAIN_VERSION } from '../version.ts';
+
+function fixtureEmployee(employeeId: string): EmployeeBoundaryFacts {
+  return {
+    employeeId,
+    joiningDate: '2026-01-01',
+    endDate: null,
+    terms: [
+      {
+        effectiveFrom: '2026-01-01',
+        effectiveTo: null,
+        weeklyHours: 40,
+        bagMode: true,
+        regime: 'staff',
+        overtimeRatePerHour: 10,
+      },
+    ],
+  };
+}
 
 function liquidation(
   overrides: Partial<LiquidationResult> = {},
@@ -63,7 +84,9 @@ function facts(
   return {
     subject: { employeeId, weekStart },
     liquidation: liq,
+    employee: fixtureEmployee(employeeId),
     bagModeOverride: true,
+    overrideRate: null,
     snapshot: {
       user_id: employeeId,
       week_start: weekStart,

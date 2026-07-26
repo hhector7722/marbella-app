@@ -28,6 +28,7 @@ import { cn, calculateRoundedHours } from '@/lib/utils';
 import Image from 'next/image';
 import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, MAX_DISTANCE_METERS } from '@/lib/location';
 import { FICHAJE_OVERLAY_VIDEOS } from '@/lib/fichaje-overlay-videos';
+import { syncOvertimeCostAfterTimeLogChange } from '@/app/actions/persist-overtime-cost';
 import WorkTimer from '@/components/ui/WorkTimer';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
@@ -35,7 +36,7 @@ import { ConsumptionModal } from '@/app/staff/ConsumptionModal';
 import { STAFF_MANUAL_ASSETS, STAFF_MANUAL_MENU, STAFF_TPV_MANUAL_ITEMS, STAFF_TPV_MANUAL_VIDEOS, type StaffManualMenuId } from '@/lib/staff-manuals';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
-import { liquidateWeekForCard, loadEmployeeBoundaryFacts, resolveOpeningCarryIn, employeeTimelineStartWeek, isPaidLookupFromRows, bagModeOverrideLookupFromRows } from '@/lib/hours-engine';
+import { liquidateWeekForCard, loadEmployeeBoundaryFacts, resolveOpeningCarryIn, employeeTimelineStartWeek, isPaidLookupFromRows, bagModeOverrideLookupFromRows, overtimeRateOverrideLookupFromRows } from '@/lib/hours-engine';
 import { SpecialDayLabel, specialEventFullLabel, specialEventTextClass } from '@/components/staff/SpecialDayLabel';
 
 const CONTACTS_DATA = [
@@ -314,7 +315,7 @@ export default function StaffDashboardView() {
                 }),
                 supabase
                     .from('weekly_snapshots')
-                    .select('week_start, is_paid, prefer_stock_hours_override')
+                    .select('week_start, is_paid, prefer_stock_hours_override, overtime_price_snapshot')
                     .eq('user_id', user.id)
                     .gte('week_start', logsFromYmd)
                     .lte('week_start', weekStartYmd),
@@ -341,8 +342,12 @@ export default function StaffDashboardView() {
 
             const isPaidByWeek = isPaidLookupFromRows(snapsRes.data ?? []);
             const bagModeOverrideByWeek = bagModeOverrideLookupFromRows(snapsRes.data ?? []);
+            const overtimeRateOverrideByWeek = overtimeRateOverrideLookupFromRows(
+                snapsRes.data ?? [],
+            );
             const isPaid = isPaidByWeek(weekStartYmd);
             const bagModeOverride = bagModeOverrideByWeek(weekStartYmd);
+            const overrideRate = overtimeRateOverrideByWeek(weekStartYmd);
             const carryIn = resolveOpeningCarryIn({
                 employee: employeeFacts,
                 chainStart: weekStartYmd,
@@ -359,6 +364,7 @@ export default function StaffDashboardView() {
                 isPaid,
                 carryIn,
                 bagModeOverride,
+                overrideRate,
             });
 
             const daysStructure: DailyLog[] = (gridDays || []).map((day: any, i: number) => {
@@ -623,7 +629,7 @@ export default function StaffDashboardView() {
             const logCoords = { input_lat: lat, input_lng: lng };
 
             if (action === 'in') {
-                const { data } = await supabase.from('time_logs')
+                const { data, error: inErr } = await supabase.from('time_logs')
                     .insert({
                         user_id: userId,
                         clock_in: now.toISOString(),
@@ -632,7 +638,13 @@ export default function StaffDashboardView() {
                     })
                     .select()
                     .single();
+                if (inErr) throw inErr;
                 setTodayLog(data); setStatus('working'); toast.success("¡Jornada iniciada!");
+                const dayYmd = formatYmdInMadrid(now);
+                const sync = await syncOvertimeCostAfterTimeLogChange(userId, dayYmd);
+                if (!sync.success) {
+                    toast.error(sync.error ?? 'Fichaje OK; falló persistencia Cost Engine');
+                }
                 const { data: { user: u } } = await supabase.auth.getUser();
                 const email = u?.email?.toLowerCase().trim() ?? '';
                 const overlayConfig = FICHAJE_OVERLAY_VIDEOS[email];
@@ -644,7 +656,7 @@ export default function StaffDashboardView() {
                 const clockIn = new Date(todayLog.clock_in);
                 const diffMinutes = differenceInMinutes(now, clockIn);
                 const roundedHours = applyRoundingRule(diffMinutes);
-                const { data } = await supabase.from('time_logs')
+                const { data, error: outErr } = await supabase.from('time_logs')
                     .update({
                         clock_out: now.toISOString(),
                         total_hours: roundedHours,
@@ -653,8 +665,14 @@ export default function StaffDashboardView() {
                     .eq('id', todayLog.id)
                     .select()
                     .single();
+                if (outErr) throw outErr;
 
                 setTodayLog(data); setStatus('finished'); toast.success("Jornada finalizada.");
+                const dayYmd = formatYmdInMadrid(now);
+                const sync = await syncOvertimeCostAfterTimeLogChange(userId, dayYmd);
+                if (!sync.success) {
+                    toast.error(sync.error ?? 'Fichaje OK; falló persistencia Cost Engine');
+                }
                 const { data: { user: u } } = await supabase.auth.getUser();
                 const email = u?.email?.toLowerCase().trim() ?? '';
                 const overlayConfig = FICHAJE_OVERLAY_VIDEOS[email];

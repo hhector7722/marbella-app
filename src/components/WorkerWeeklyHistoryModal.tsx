@@ -12,7 +12,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast } from 'sonner';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { overtimeWorkerHistoryUsageLabel } from '@/lib/usage/modal-apply';
-import { liquidateWeekForCard, loadEmployeeBoundaryFacts, resolveOpeningCarryIn, employeeTimelineStartWeek, isPaidLookupFromRows, bagModeOverrideLookupFromRows } from '@/lib/hours-engine';
+import { liquidateWeekForCard, loadEmployeeBoundaryFacts, resolveOpeningCarryIn, employeeTimelineStartWeek, isPaidLookupFromRows, bagModeOverrideLookupFromRows, overtimeRateOverrideLookupFromRows } from '@/lib/hours-engine';
 import { madridRangeUtcIso } from '@/lib/madrid-date-bounds';
 
 // --- TYPES ---
@@ -140,7 +140,7 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                 }),
                 supabase
                     .from('weekly_snapshots')
-                    .select('week_start, is_paid, prefer_stock_hours_override')
+                    .select('week_start, is_paid, prefer_stock_hours_override, overtime_price_snapshot')
                     .eq('user_id', workerId)
                     .gte('week_start', logsFromYmd)
                     .lte('week_start', mondayISO),
@@ -164,8 +164,12 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
 
             const isPaidByWeek = isPaidLookupFromRows(snapsRes.data ?? []);
             const bagModeOverrideByWeek = bagModeOverrideLookupFromRows(snapsRes.data ?? []);
+            const overtimeRateOverrideByWeek = overtimeRateOverrideLookupFromRows(
+                snapsRes.data ?? [],
+            );
             const isPaid = isPaidByWeek(mondayISO);
             const bagModeOverride = bagModeOverrideByWeek(mondayISO);
+            const overrideRate = overtimeRateOverrideByWeek(mondayISO);
             const carryIn = resolveOpeningCarryIn({
                 employee: employeeFacts,
                 chainStart: mondayISO,
@@ -181,6 +185,7 @@ export default function WorkerWeeklyHistoryModal({ isOpen, onClose, workerId, we
                 isPaid,
                 carryIn,
                 bagModeOverride,
+                overrideRate,
             });
 
             const rawDays = (gridDays || []) as Array<{

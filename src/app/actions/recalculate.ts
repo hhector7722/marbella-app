@@ -1,26 +1,30 @@
 'use server';
 
-import { createClient } from "@/utils/supabase/server";
-import { revalidatePath } from "next/cache";
+import { createClient } from '@/utils/supabase/server';
+import { revalidatePath } from 'next/cache';
+import { recalculateAllBalancesAndPersist } from '@/lib/hours-engine/recalculate-and-persist-all';
 
 /**
- * Recalcula todos los balances semanales desde el inicio de los tiempos.
- * Regla de oro: Los saldos positivos NO se arrastran a la semana siguiente
- * a menos que el empleado tenga prefer_stock_hours = true.
+ * Recalcula todos los balances semanales (SQL horas) y después
+ * persiste total_cost desde Overtime Cost Engine para cada empleado.
  */
 export async function recalculateAllBalances() {
-    const supabase = await createClient();
+  const supabase = await createClient();
 
-    const { data, error } = await supabase.rpc('rpc_recalculate_all_balances');
-
-    if (error) {
-        console.error("Error al recalcular balances (RPC):", error);
-        throw new Error(`Error en RPC: ${error.message}`);
-    }
+  try {
+    const result = await recalculateAllBalancesAndPersist(supabase);
 
     revalidatePath('/dashboard/labor');
     revalidatePath('/staff/history');
     revalidatePath('/dashboard');
 
-    return { success: true, message: "Recálculo global completado con éxito." };
+    return {
+      success: true,
+      message: `Recálculo global completado. Cost Engine persistió ${result.weeksPersisted} semanas en ${result.employeeCount} empleados.`,
+      data: result.rpcData,
+    };
+  } catch (err) {
+    console.error('Error al recalcular balances:', err);
+    throw err instanceof Error ? err : new Error(String(err));
+  }
 }

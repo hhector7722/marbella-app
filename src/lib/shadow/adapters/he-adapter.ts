@@ -1,5 +1,9 @@
 import type { LiquidationResult } from '../../hours-engine/types.ts';
-import { netPayableHoursFromLiquidation } from '../../hours-engine/week-card-from-liquidation.ts';
+import type { EmployeeBoundaryFacts } from '../../hours-engine/types.ts';
+import {
+  netPayableHoursFromLiquidation,
+  priceLiquidationOvertime,
+} from '../../hours-engine/week-card-from-liquidation.ts';
 import type { CanonicalComparisonVector } from '../types/canonical-vector.ts';
 
 /**
@@ -14,9 +18,13 @@ export type HeAdapterLiquidationInput = {
   employeeId: string;
   weekStart: string;
   liquidation: LiquidationResult;
+  /** Necesario para Overtime Cost Engine (tarifas de tramo + settlement lunes). */
+  employee: EmployeeBoundaryFacts;
   facts?: HeAdapterFacts;
   /** Override bolsa/pago ya aplicado en la liquidación (mismo que liquidateWeek). */
   bagModeOverride?: boolean | null;
+  /** Override €/h semanal (`overtime_price_snapshot`). */
+  overrideRate?: number | null;
 };
 
 function resolveBagMode(
@@ -38,23 +46,15 @@ function regimeLabelFromResult(result: LiquidationResult): string | null {
   return labels.join('+');
 }
 
-function otRateFromResult(result: LiquidationResult): number | null {
-  for (const s of result.segments) {
-    // tarifa no está en SegmentLiquidation — se deriva vía estimated en UI;
-    // otCost se deja null si no hay hecho de tarifa en facts futuros.
-    void s;
-  }
-  return null;
-}
-
 /**
  * Proyecta LiquidationResult → CanonicalComparisonVector.
- * Único conocimiento de HE dentro de Shadow (anti-corruption layer).
+ * otCost = Overtime Cost Engine (mismo estimatedValue que la UI).
  */
 export function heLiquidationToCanonical(
   input: HeAdapterLiquidationInput,
 ): CanonicalComparisonVector {
-  const { liquidation: r, facts, bagModeOverride } = input;
+  const { liquidation: r, facts, bagModeOverride, employee, overrideRate } =
+    input;
   if (r.employeeId !== input.employeeId) {
     throw new Error(
       `shadow/he-adapter: employeeId mismatch (${input.employeeId} vs ${r.employeeId})`,
@@ -63,6 +63,11 @@ export function heLiquidationToCanonical(
   if (r.weekStart !== input.weekStart) {
     throw new Error(
       `shadow/he-adapter: weekStart mismatch (${input.weekStart} vs ${r.weekStart})`,
+    );
+  }
+  if (employee.employeeId !== input.employeeId) {
+    throw new Error(
+      `shadow/he-adapter: employee.employeeId mismatch (${input.employeeId} vs ${employee.employeeId})`,
     );
   }
 
@@ -81,7 +86,10 @@ export function heLiquidationToCanonical(
       : r.overtimeHours
     : 0;
 
-  void otRateFromResult;
+  const pricing = priceLiquidationOvertime(r, employee, {
+    bagModeOverride,
+    overrideRate,
+  });
 
   return {
     employeeId: input.employeeId,
@@ -103,7 +111,7 @@ export function heLiquidationToCanonical(
     compensatedHours: compensated,
     bagModeApplied: bagMode,
     isPaid: r.isPaid,
-    otCost: null,
+    otCost: pricing.estimatedValue,
     laborCost: null,
   };
 }
@@ -127,5 +135,4 @@ export function createHeAdapterStub(): HeAdapter {
   };
 }
 
-/** @deprecated alias tipado opaco del scaffolding */
 export type HeAdapterInput = HeAdapterLiquidationInput;

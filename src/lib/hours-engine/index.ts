@@ -20,20 +20,48 @@ export {
 } from './ui-bridge.ts';
 export {
   assertCardMatchesLiquidation,
+  costSegmentsForLiquidation,
   liquidateWeekForCard,
   netPayableHoursFromLiquidation,
   overtimeRateForWeek,
   patchWeeksFromLiquidation,
+  priceLiquidationOvertime,
+  settlementRateAtWeekStart,
   weekCardSummaryFromLiquidation,
 } from './week-card-from-liquidation.ts';
 export type { WeekCardSummaryFromEngine } from './week-card-from-liquidation.ts';
 export {
+  hasOvertimeRateOverride,
+  priceWeekOvertime,
+} from './overtime-cost-engine.ts';
+export type {
+  OvertimeCostSegment,
+  PriceWeekOvertimeInput,
+  PriceWeekOvertimeResult,
+} from './overtime-cost-engine.ts';
+export {
   employeeTimelineStartWeek,
   isPaidLookupFromRows,
   bagModeOverrideLookupFromRows,
+  overtimeRateOverrideLookupFromRows,
   resolveOpeningCarryIn,
 } from './opening-carry.ts';
+export { mondayOnOrBefore, nextWeekStart, previousWeekStart, weekBounds } from './week-dates.ts';
 export { loadEmployeeBoundaryFacts } from './load-employee-facts.ts';
+export {
+  persistOvertimeCostFromEngine,
+  recalcSnapshotsAndPersistOvertimeCost,
+} from './persist-overtime-cost.ts';
+export type {
+  PersistOvertimeCostResult,
+  RecalcAndPersistResult,
+} from './persist-overtime-cost.ts';
+export {
+  persistOvertimeCostForEmployees,
+  recalculateAllBalancesAndPersist,
+} from './recalculate-and-persist-all.ts';
+export type { RecalculateAllBalancesPersistResult } from './recalculate-and-persist-all.ts';
+export { COST_ENGINE_COVERAGE_MATRIX } from './cost-engine-coverage.ts';
 export {
   buildOvertimeWeeksFromSsot,
   type StaffWeeklyStats,

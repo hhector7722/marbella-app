@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import type { LiquidationResult } from '../../../lib/hours-engine/types.ts';
+import type {
+  EmployeeBoundaryFacts,
+  LiquidationResult,
+} from '../../../lib/hours-engine/types.ts';
 import {
   createInMemoryShadowPersistence,
   executeAndPersistShadowRun,
@@ -14,6 +17,24 @@ import { formatShadowRunSummary } from './format-summary.ts';
 import { runShadowOps } from './run-shadow-ops.ts';
 import { resolveHorizonBounds, listWeekStartsInclusive } from '../loaders/horizon.ts';
 import { buildSubjectsCartesian } from '../loaders/supabase-subject-loader.ts';
+
+function fixtureEmployee(employeeId: string): EmployeeBoundaryFacts {
+  return {
+    employeeId,
+    joiningDate: '2026-01-01',
+    endDate: null,
+    terms: [
+      {
+        effectiveFrom: '2026-01-01',
+        effectiveTo: null,
+        weeklyHours: 40,
+        bagMode: true,
+        regime: 'staff',
+        overtimeRatePerHour: 10,
+      },
+    ],
+  };
+}
 
 function liquidation(
   overrides: Partial<LiquidationResult> = {},
@@ -61,7 +82,9 @@ function alignedFacts(
   return {
     subject: { employeeId, weekStart },
     liquidation: liq,
+    employee: fixtureEmployee(employeeId),
     bagModeOverride: true,
+    overrideRate: null,
     snapshot: {
       user_id: employeeId,
       week_start: weekStart,

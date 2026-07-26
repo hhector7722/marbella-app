@@ -1,6 +1,26 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-25 (Overlay fichaje Hernán/Fernando → video-españa)
+**Última actualización:** 2026-07-26 (Fase 1B — cierre cobertura Cost Engine)
+
+- [x] **Fase 1B — cobertura persist Cost Engine (2026-07-26)**: Cerrados huecos vivos: `StaffDashboardView` → `syncOvertimeCostAfterTimeLogChange`; `togglePaidStatus` → `recalcSnapshotsAndPersistOvertimeCost`; cron SQL → rpc horas + pg_net `persist-only` + refuerzo Vercel `/api/cron/recalculate-balances`; `import-legacy` + `/admin/import` → `persistOvertimeCostForEmployees`. Wrapper único: `recalculateAllBalancesAndPersist` / `persistOvertimeCostFromEngine`. RPCs `*_from_week` sin caller TS documentados (`cost-engine-coverage.ts`). **Ops:** alinear `app_settings.cron_recalc_bearer` con `CRON_SECRET`. **No** Fase 2.
+
+**Última actualización anterior:** 2026-07-26 (Auditoría caminos persist Cost Engine)
+
+- [x] **Auditoría caminos `time_logs` / `fn_recalc` → persist Cost Engine (2026-07-26)**: Cubiertos: overtime actions (config/logs/fichaje manager), labor-conditions, recalculateAllBalances (UI), TimeTracker (código muerto sin imports). **Fuera (stale `total_cost` posible):** (1) `StaffDashboardView` fichaje in/out — camino vivo, solo trigger SQL; (2) cron lunes `rpc_recalculate_all_balances`; (3) `togglePaidStatus` → trigger snapshot sin persist; (4) `import-legacy` + `/admin/import` inserts. RPCs parciales `rpc_recalculate_*_from_week` sin caller TS. Ver informe en chat. Sin código de fix aún.
+
+**Última actualización anterior:** 2026-07-26 (Overtime Cost Engine — Fase 1 persistencia SQL)
+
+- [x] **Overtime Cost Engine Fase 1 — persistencia `total_cost` (2026-07-26)**: SQL `fn_recalc` ya **no calcula dinero** (sin `fn_worker_effective_overtime_rate`; INSERT omite `total_cost`→NULL; UPDATE no lo toca). Único escritor: `persistOvertimeCostFromEngine` (TS Cost Engine → `weekly_snapshots.total_cost` + validación read-back). Cableado en overtime/labor/recalculate + `TimeTracker` vía Server Action. Backfill **22/22** empleados, **0 fallos**. `total_cost` DEFAULT NULL. Tests cost/week-card/persist OK. **No** Fase 2 (consumidores).
+
+**Última actualización anterior:** 2026-07-26 (Overtime Cost Engine — política carry + cableado completo)
+
+- [x] **Overtime Cost Engine — política liquidación carry (2026-07-26)**: Aprobada: banco = solo horas; sin tarifas históricas ni ampliación HE. Cost Engine único `estimatedValue`. Internamente: waterfill P⁺ por segmentos + residual banco × `settlementRateAtWeekStart` (lunes); override semanal absoluto. Loaders leen `overtime_price_snapshot`; History vacío→NULL. Shadow HE `otCost` vía Cost Engine. Tests cost **11/11**, week-card **28/28**, shadow adapters/runner OK. SQL `total_cost` aún legacy (P1: persistir estimatedValue TS, no segundo motor SQL).
+
+**Última actualización anterior:** 2026-07-26 (Overtime Cost Engine — Fase P0 núcleo)
+
+- [x] **Overtime Cost Engine P0 — núcleo (2026-07-26)**: Nuevo `overtime-cost-engine.ts` (puro). `estimatedValue` ya no es `netPayable × overtimeRateForWeek`; sale de `priceWeekOvertime` (override semanal absoluto o Σ payable×rate por segmento post-carry). Cableado en `week-card-from-liquidation.ts`. Tests week-card/opening-carry **28/28**. Pendiente validación: loaders snapshot, UX override NULL, Shadow, SQL persist.
+
+**Última actualización anterior:** 2026-07-25 (Overlay fichaje Hernán/Fernando → video-españa)
 
 - [x] **Overlay fichaje Hernán + Fernando (2026-07-25)**: `hernang6799@gmail.com` y `fggutierrez98es@gmail.com` usan `/icons/video-españa.mp4` en entrada y salida (`fichaje-overlay-videos.ts`).
 

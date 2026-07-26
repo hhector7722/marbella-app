@@ -74,7 +74,7 @@ interface WeekCardProps {
     onApplyWeekOverrides?: (
         contractedHours: number,
         preferStock: boolean,
-        overtimeCostPerHour: number
+        overtimeCostPerHour: number | null
     ) => Promise<{ success: boolean; error?: string }>;
 }
 
@@ -118,9 +118,16 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
         setSavingOverrides(true);
         try {
             const contractedValue = localContracted === "" ? 0 : Number(localContracted);
-            const hourlyRateValue = localHourlyRate === "" ? 0 : Number(localHourlyRate);
-            if (!Number.isFinite(hourlyRateValue) || hourlyRateValue < 0) {
-                toast.error('Indica un coste por hora válido (≥ 0)');
+            // Vacío = quitar override (NULL). "0" explícito = override a 0 €/h.
+            const hourlyRateValue =
+                localHourlyRate.trim() === ''
+                    ? null
+                    : Number(localHourlyRate);
+            if (
+                hourlyRateValue !== null &&
+                (!Number.isFinite(hourlyRateValue) || hourlyRateValue < 0)
+            ) {
+                toast.error('Indica un coste por hora válido (≥ 0) o vacío para quitar el override');
                 setSavingOverrides(false);
                 return;
             }

@@ -1,4 +1,7 @@
-import type { LiquidationResult } from '../../hours-engine/types.ts';
+import type {
+  EmployeeBoundaryFacts,
+  LiquidationResult,
+} from '../../hours-engine/types.ts';
 import type { SqlWeeklySnapshotRow } from '../adapters/sql-adapter.ts';
 import type { HeAdapterFacts } from '../adapters/he-adapter.ts';
 
@@ -15,8 +18,12 @@ export type ShadowSubject = {
 export type ShadowSubjectFacts = {
   subject: ShadowSubject;
   liquidation: LiquidationResult;
+  /** Frontera contractual (tarifas de tramo + settlement lunes). */
+  employee: EmployeeBoundaryFacts;
   heFacts?: HeAdapterFacts;
   bagModeOverride?: boolean | null;
+  /** Override €/h semanal (`overtime_price_snapshot`). */
+  overrideRate?: number | null;
   snapshot: SqlWeeklySnapshotRow;
   profilePreferStock?: boolean | null;
 };

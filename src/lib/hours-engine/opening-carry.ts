@@ -129,3 +129,25 @@ export function bagModeOverrideLookupFromRows(
   }
   return (weekStart) => map.get(weekStart) ?? null;
 }
+
+/**
+ * Lookup override €/h desde weekly_snapshots.overtime_price_snapshot.
+ * Solo valores numéricos (incl. 0); `null` en BD → sin override (contrato).
+ */
+export function overtimeRateOverrideLookupFromRows(
+  rows: readonly {
+    week_start: string;
+    overtime_price_snapshot?: number | null;
+  }[],
+): (weekStart: CivilDate) => number | null {
+  const map = new Map<string, number>();
+  for (const r of rows) {
+    if (r.overtime_price_snapshot == null) continue;
+    const n = Number(r.overtime_price_snapshot);
+    if (!Number.isFinite(n)) continue;
+    const key =
+      typeof r.week_start === 'string' ? r.week_start.split('T')[0]! : String(r.week_start);
+    map.set(key, n);
+  }
+  return (weekStart) => map.get(weekStart) ?? null;
+}

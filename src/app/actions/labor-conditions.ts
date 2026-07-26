@@ -5,9 +5,11 @@ import { revalidatePath } from 'next/cache';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import { formatYmdInMadrid } from '@/lib/madrid-date-bounds';
 import {
+  mapContractTermRows,
   persistContractualChange,
   persistTermBoundsReschedule,
-  mapContractTermRows,
+  recalcSnapshotsAndPersistOvertimeCost,
+  type ContractTermFact,
   type ContractTermRow,
 } from '@/lib/hours-engine';
 import {
@@ -18,7 +20,6 @@ import {
   validateLaborConditionsForm,
   type LaborConditionsFormInput,
 } from '@/lib/hours-engine/labor-conditions';
-import type { ContractTermFact } from '@/lib/hours-engine';
 
 export type LaborTermDto = {
   effectiveFrom: string;
@@ -106,22 +107,23 @@ function civilDatesEqual(
 }
 
 /**
- * Regenera weekly_snapshots SQL tras un cambio contractual.
- * HE no necesita paso aparte: lee hours_contract_terms en cada liquidación.
+ * Regenera weekly_snapshots SQL tras un cambio contractual y persiste total_cost
+ * desde Overtime Cost Engine (TS). HE no necesita paso aparte de horas.
  */
 async function propagateSnapshotsAfterContractChange(
   supabase: Awaited<ReturnType<typeof createClient>>,
   employeeId: string,
   startDate: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { error } = await supabase.rpc('fn_recalc_and_propagate_snapshots', {
-    p_user_id: employeeId,
-    p_start_date: startDate,
-  });
-  if (error) {
+  const result = await recalcSnapshotsAndPersistOvertimeCost(
+    supabase,
+    employeeId,
+    startDate,
+  );
+  if (!result.ok) {
     return {
       ok: false,
-      error: `Contrato guardado, pero falló el recálculo de snapshots: ${error.message}`,
+      error: `Contrato guardado, pero falló el recálculo/persistencia de coste: ${result.error}`,
     };
   }
   return { ok: true };

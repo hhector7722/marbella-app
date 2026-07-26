@@ -51,6 +51,7 @@ import {
     employeeTimelineStartWeek,
     isPaidLookupFromRows,
     bagModeOverrideLookupFromRows,
+    overtimeRateOverrideLookupFromRows,
 } from '@/lib/hours-engine';
 import {
     filterVisiblePlantillaEmployees,
@@ -258,7 +259,7 @@ export default function HistoryPage() {
                 timelineStart
                     ? supabase
                           .from('weekly_snapshots')
-                          .select('week_start, is_paid, prefer_stock_hours_override')
+                          .select('week_start, is_paid, prefer_stock_hours_override, overtime_price_snapshot')
                           .eq('user_id', targetUserId)
                           .gte('week_start', timelineStart)
                           .lte('week_start', rangeEndYmd)
@@ -296,6 +297,9 @@ export default function HistoryPage() {
 
             const isPaidFromSnaps = isPaidLookupFromRows(snapsResult.data ?? []);
             const bagModeFromSnaps = bagModeOverrideLookupFromRows(snapsResult.data ?? []);
+            const overtimeRateFromSnaps = overtimeRateOverrideLookupFromRows(
+                snapsResult.data ?? [],
+            );
 
             // Misma fuente de relojes que la plantilla (time_logs + Madrid), sin RPC.
             const mappedWeeks = buildEmployeeWeeksFromTimeLogs({
@@ -327,7 +331,11 @@ export default function HistoryPage() {
                 mappedWeeks,
                 employeeFacts,
                 engineLogs,
-                { openingCarryIn, bagModeOverrideByWeek: bagModeFromSnaps },
+                {
+                    openingCarryIn,
+                    bagModeOverrideByWeek: bagModeFromSnaps,
+                    overtimeRateOverrideByWeek: overtimeRateFromSnaps,
+                },
             );
 
             setWeeksData(formattedWeeks);
@@ -563,7 +571,7 @@ export default function HistoryPage() {
             timelineStart
                 ? supabase
                       .from('weekly_snapshots')
-                      .select('week_start, is_paid, prefer_stock_hours_override')
+                      .select('week_start, is_paid, prefer_stock_hours_override, overtime_price_snapshot')
                       .eq('user_id', userId)
                       .gte('week_start', timelineStart)
                       .lte('week_start', yearEnd)
@@ -589,6 +597,7 @@ export default function HistoryPage() {
 
         const isPaidFromSnaps = isPaidLookupFromRows(yearSnaps ?? []);
         const bagModeFromSnaps = bagModeOverrideLookupFromRows(yearSnaps ?? []);
+        const overtimeRateFromSnaps = overtimeRateOverrideLookupFromRows(yearSnaps ?? []);
 
         const rangeStart = startOfWeek(new Date(year, 0, 1), { weekStartsOn: 1 });
         const rangeEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
@@ -614,7 +623,11 @@ export default function HistoryPage() {
             uniqueWeeks,
             employeeFacts,
             engineLogs,
-            { openingCarryIn, bagModeOverrideByWeek: bagModeFromSnaps },
+            {
+                openingCarryIn,
+                bagModeOverrideByWeek: bagModeFromSnaps,
+                overtimeRateOverrideByWeek: overtimeRateFromSnaps,
+            },
         );
     }
 

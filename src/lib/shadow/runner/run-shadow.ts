@@ -114,8 +114,10 @@ export async function executeShadowRun(
           employeeId: subject.employeeId,
           weekStart: subject.weekStart,
           liquidation: bundle.liquidation,
+          employee: bundle.employee,
           facts: bundle.heFacts,
           bagModeOverride: bundle.bagModeOverride,
+          overrideRate: bundle.overrideRate,
         });
 
         const sqlVector = sqlAdapter.toCanonical({

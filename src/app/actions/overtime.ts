@@ -6,6 +6,7 @@ import { calculateRoundedHours } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
 import {
     buildOvertimeWeeksFromSsot,
+    recalcSnapshotsAndPersistOvertimeCost,
     type StaffWeeklyStats,
     type WeeklyStats,
 } from '@/lib/hours-engine';
@@ -132,6 +133,19 @@ export async function togglePaidStatus(userId: string, weekStart: string, newSta
         if (error) throw error;
     }
 
+    // Trigger SQL propaga horas desde W+1; Cost Engine debe reescribir total_cost
+    // desde la semana tocada (mismo wrapper oficial que el resto de mutaciones).
+    const prop = await recalcSnapshotsAndPersistOvertimeCost(
+        supabase,
+        userId,
+        weekStart,
+    );
+    if (!prop.ok) {
+        throw new Error(
+            `is_paid actualizado; falló persistencia Cost Engine: ${prop.error}`,
+        );
+    }
+
     // 2. Revalidate paths to clear cache
     revalidatePath('/staff/history');
     revalidatePath('/dashboard/overtime');
@@ -172,15 +186,15 @@ export async function updateWeeklyContractHours(userId: string, weekStart: strin
             return { success: false, error: error.message };
         }
 
-        // 2. Trigger propagation starting from that week
-        const { error: rpcError } = await supabase.rpc('fn_recalc_and_propagate_snapshots', {
-            p_user_id: userId,
-            p_start_date: weekStart
-        });
-
-        if (rpcError) {
-            console.error('Error in RPC propagation:', rpcError);
-            return { success: false, error: rpcError.message };
+        // 2. Trigger propagation + persist Cost Engine
+        const prop = await recalcSnapshotsAndPersistOvertimeCost(
+            supabase,
+            userId,
+            weekStart,
+        );
+        if (!prop.ok) {
+            console.error('Error in RPC+persist propagation:', prop.error);
+            return { success: false, error: prop.error };
         }
 
         // 3. Revalidate paths
@@ -230,15 +244,15 @@ export async function togglePreferStockStatus(userId: string, weekStart: string,
             return { success: false, error: error.message };
         }
 
-        // 4. Disparar propagación de balances DESDE esa semana
-        const { error: rpcError } = await supabase.rpc('fn_recalc_and_propagate_snapshots', {
-            p_user_id: userId,
-            p_start_date: weekStart
-        });
-
-        if (rpcError) {
-            console.error('Error in RPC propagation (togglePreferStockStatus):', rpcError);
-            return { success: false, error: rpcError.message };
+        // 4. Disparar propagación + persist Cost Engine DESDE esa semana
+        const prop = await recalcSnapshotsAndPersistOvertimeCost(
+            supabase,
+            userId,
+            weekStart,
+        );
+        if (!prop.ok) {
+            console.error('Error in RPC+persist (togglePreferStockStatus):', prop.error);
+            return { success: false, error: prop.error };
         }
 
         // 5. Revalidar paths
@@ -259,7 +273,7 @@ export async function updateWeeklyWorkerConfig(
     updates: {
         contractedHours?: number;
         preferStock?: boolean;
-        overtimeCostPerHour?: number;
+        overtimeCostPerHour?: number | null;
         logs?: Array<{ date: string; in_time: string; out_time: string; event_type: string; id?: string; is_deleted?: boolean }>;
     }
 ) {
@@ -291,6 +305,7 @@ export async function updateWeeklyWorkerConfig(
             snapshotData.prefer_stock_hours_override = updates.preferStock;
         }
         if (updates.overtimeCostPerHour !== undefined) {
+            // null = quitar override; número (incl. 0) = override activo
             snapshotData.overtime_price_snapshot = updates.overtimeCostPerHour;
         }
 
@@ -366,13 +381,13 @@ export async function updateWeeklyWorkerConfig(
             }
         }
 
-        // 4. Trigger propagation
-        const { error: rpcError } = await supabase.rpc('fn_recalc_and_propagate_snapshots', {
-            p_user_id: userId,
-            p_start_date: weekStart
-        });
-
-        if (rpcError) throw rpcError;
+        // 4. Trigger propagation + persist Cost Engine
+        const prop = await recalcSnapshotsAndPersistOvertimeCost(
+            supabase,
+            userId,
+            weekStart,
+        );
+        if (!prop.ok) throw new Error(prop.error);
 
         revalidatePath('/staff/history');
         revalidatePath('/dashboard');
@@ -388,7 +403,7 @@ export async function updateWeeklyWorkerConfig(
 /**
  * Crea un fichaje (entrada) en nombre de un empleado. Solo managers.
  * El registro es igual que si el empleado hubiera fichado: time_logs con clock_in, clock_out null.
- * Tras insertar se ejecuta fn_recalc_and_propagate_snapshots para la semana del día.
+ * Tras insertar se recalculan snapshots (horas) y se persiste total_cost vía Cost Engine.
  */
 export async function createManagerFichaje(userId: string, dateStr: string, timeStr: string): Promise<{ success: boolean; error?: string }> {
     try {
@@ -424,11 +439,12 @@ export async function createManagerFichaje(userId: string, dateStr: string, time
             return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
         })();
 
-        const { error: rpcError } = await supabase.rpc('fn_recalc_and_propagate_snapshots', {
-            p_user_id: userId,
-            p_start_date: weekStart,
-        });
-        if (rpcError) throw rpcError;
+        const prop = await recalcSnapshotsAndPersistOvertimeCost(
+            supabase,
+            userId,
+            weekStart,
+        );
+        if (!prop.ok) throw new Error(prop.error);
 
         revalidatePath('/staff/history');
         revalidatePath('/dashboard');
@@ -442,7 +458,7 @@ export async function createManagerFichaje(userId: string, dateStr: string, time
 
 /**
  * Elimina todos los registros de asistencia de un trabajador para un día concreto. Solo managers.
- * Tras la eliminación se ejecuta fn_recalc_and_propagate_snapshots.
+ * Tras la eliminación se recalculan snapshots (horas) y se persiste total_cost vía Cost Engine.
  */
 export async function deleteManagerDayLogs(userId: string, dateStr: string): Promise<{ success: boolean; error?: string }> {
     try {
@@ -483,11 +499,12 @@ export async function deleteManagerDayLogs(userId: string, dateStr: string): Pro
             return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
         })();
 
-        const { error: rpcError } = await supabase.rpc('fn_recalc_and_propagate_snapshots', {
-            p_user_id: userId,
-            p_start_date: weekStart,
-        });
-        if (rpcError) throw rpcError;
+        const prop = await recalcSnapshotsAndPersistOvertimeCost(
+            supabase,
+            userId,
+            weekStart,
+        );
+        if (!prop.ok) throw new Error(prop.error);
 
         revalidatePath('/staff/history');
         revalidatePath('/dashboard');

@@ -48,9 +48,11 @@ function dayLog(day: string, hours: number): TimeLogFact {
 function assertCardCoherent(
   summary: ReturnType<typeof weekCardSummaryFromLiquidation>,
   result: ReturnType<typeof liquidateWeekForCard>['result'],
+  employee: EmployeeBoundaryFacts,
   daysExtra: ReadonlyArray<number>,
+  options?: { bagModeOverride?: boolean | null; overrideRate?: number | null },
 ) {
-  assertCardMatchesLiquidation(summary, result);
+  assertCardMatchesLiquidation(summary, result, employee, options);
   // Σ Ex. diarias = overtimeHours del motor (desglose operativo).
   const sumDays = daysExtra.reduce((a, b) => a + b, 0);
   assert.ok(Math.abs(sumDays - result.overtimeHours) < 1e-9);
@@ -84,7 +86,7 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
     });
     assert.equal(summary.weeklyBalance, 0);
     assert.equal(summary.totalHours, 40);
-    assertCardCoherent(summary, result, Object.values(extrasByDay));
+    assertCardCoherent(summary, result, employee, Object.values(extrasByDay));
   });
 
   it('semana con extras (pago)', () => {
@@ -106,7 +108,7 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
     assert.equal(preferStock(summary), false);
     assert.equal(extrasByDay['2026-07-15'], 8);
     assert.equal(extrasByDay['2026-07-16'], 8);
-    assertCardCoherent(summary, result, Object.values(extrasByDay));
+    assertCardCoherent(summary, result, employee, Object.values(extrasByDay));
   });
 
   it('semana sin extras (trabajado = contrato)', () => {
@@ -120,7 +122,7 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
     });
     assert.equal(summary.weeklyBalance, 0);
     assert.equal(summary.estimatedValue, 0);
-    assertCardCoherent(summary, result, Object.values(extrasByDay));
+    assertCardCoherent(summary, result, employee, Object.values(extrasByDay));
   });
 
   it('contrato 16→40 mid-week: footer coherente con liquidación', () => {
@@ -141,7 +143,7 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
       weekStart: '2026-03-02',
       logs,
     });
-    assertCardCoherent(summary, result, Object.values(extrasByDay));
+    assertCardCoherent(summary, result, employee, Object.values(extrasByDay));
     // Footer EXTRAS ≤ OT bruto; si hay cobro, coincide con netPayable.
     assert.ok(summary.weeklyBalance <= result.overtimeHours + 1e-9);
   });
@@ -165,7 +167,7 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
     assert.ok(summary.weeklyBalance > 0);
     assert.equal(summary.estimatedValue, 0);
     assert.equal(summary.preferStock, true);
-    assertCardCoherent(summary, result, Object.values(extrasByDay));
+    assertCardCoherent(summary, result, employee, Object.values(extrasByDay));
   });
 
   it('pago: extras + importe', () => {
@@ -185,7 +187,7 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
     });
     assert.equal(summary.preferStock, false);
     assert.equal(summary.estimatedValue, summary.weeklyBalance * 12);
-    assertCardCoherent(summary, result, Object.values(extrasByDay));
+    assertCardCoherent(summary, result, employee, Object.values(extrasByDay));
   });
 
   it('agosto: régimen agosto vía días del mes', () => {
@@ -205,7 +207,7 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
     });
     // Agosto: todo trabajado es extra (contrato efectivo 0 en días agosto)
     assert.ok(summary.weeklyBalance > 0);
-    assertCardCoherent(summary, result, Object.values(extrasByDay));
+    assertCardCoherent(summary, result, employee, Object.values(extrasByDay));
   });
 
   it('manager: jornada 0, extras = trabajado', () => {
@@ -221,7 +223,7 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
     });
     assert.equal(summary.totalHours, 16);
     assert.equal(summary.weeklyBalance, 16);
-    assertCardCoherent(summary, result, Object.values(extrasByDay));
+    assertCardCoherent(summary, result, employee, Object.values(extrasByDay));
   });
 
   it('deuda total absorbe extras: importe = 0', () => {
@@ -424,7 +426,7 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
       logs,
     });
     assert.equal(summary.weeklyBalance, 5);
-    assertCardCoherent(summary, result, Object.values(extrasByDay));
+    assertCardCoherent(summary, result, employee, Object.values(extrasByDay));
   });
 
   it('patchWeeksFromLiquidation: imposible Ex. diarias ≠ EXTRAS footer', () => {

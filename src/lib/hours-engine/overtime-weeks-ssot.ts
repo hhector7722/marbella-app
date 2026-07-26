@@ -12,6 +12,7 @@ import {
   employeeTimelineStartWeek,
   isPaidLookupFromRows,
   bagModeOverrideLookupFromRows,
+  overtimeRateOverrideLookupFromRows,
   loadEmployeeBoundaryFacts,
   liquidateWeekForCard,
   resolveOpeningCarryIn,
@@ -171,7 +172,7 @@ export async function buildOvertimeWeeksFromSsot(
     const [snapsRes, logsRes] = await Promise.all([
       supabase
         .from('weekly_snapshots')
-        .select('week_start, is_paid, prefer_stock_hours_override')
+        .select('week_start, is_paid, prefer_stock_hours_override, overtime_price_snapshot')
         .eq('user_id', profile.id)
         .gte('week_start', logsFromYmd)
         .lte('week_start', lastMonday),
@@ -193,7 +194,9 @@ export async function buildOvertimeWeeksFromSsot(
 
     const isPaidByWeek = isPaidLookupFromRows(snapsRes.data ?? []);
     const bagModeOverrideByWeek = bagModeOverrideLookupFromRows(snapsRes.data ?? []);
-
+    const overtimeRateOverrideByWeek = overtimeRateOverrideLookupFromRows(
+      snapsRes.data ?? [],
+    );
     const displayName =
       `${profile.first_name ?? ''} ${profile.last_name ?? ''}`.trim() || '—';
     const role = profile.role ?? 'staff';
@@ -216,6 +219,7 @@ export async function buildOvertimeWeeksFromSsot(
 
       const isPaid = isPaidByWeek(weekStart);
       const bagModeOverride = bagModeOverrideByWeek(weekStart);
+      const overrideRate = overtimeRateOverrideByWeek(weekStart);
 
       const { result, summary } = liquidateWeekForCard({
         employee,
@@ -224,6 +228,7 @@ export async function buildOvertimeWeeksFromSsot(
         isPaid,
         carryIn,
         bagModeOverride,
+        overrideRate,
       });
 
       carryIn = result.carryOut;

@@ -5,7 +5,8 @@ import { createClient } from "@/utils/supabase/client";
 import { Play, Square, Clock, Coffee } from 'lucide-react';
 import { toast } from 'sonner';
 import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, MAX_DISTANCE_METERS } from '@/lib/location';
-import { formatMadridHmFromIso } from '@/lib/madrid-date-bounds';
+import { formatMadridHmFromIso, formatYmdInMadrid } from '@/lib/madrid-date-bounds';
+import { syncOvertimeCostAfterTimeLogChange } from '@/app/actions/persist-overtime-cost';
 
 export default function TimeTracker() {
     const supabase = createClient();
@@ -87,6 +88,16 @@ export default function TimeTracker() {
                 input_lng: lng
             }).select().single();
             if (error) throw error;
+
+            // Trigger SQL ya recalculó horas; persistir importe Cost Engine (capa de datos).
+            const sync = await syncOvertimeCostAfterTimeLogChange(
+                user.id,
+                formatYmdInMadrid(data.clock_in) ?? undefined,
+            );
+            if (!sync.success) {
+                toast.error(sync.error ?? 'Fichaje OK pero falló persistencia de coste OT');
+            }
+
             setCurrentLog(data);
             toast.success("Turno iniciado");
         } catch (e: any) { toast.error(e.message); }
@@ -121,6 +132,18 @@ export default function TimeTracker() {
                 .eq('id', currentLog.id);
 
             if (error) throw error;
+
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const sync = await syncOvertimeCostAfterTimeLogChange(
+                    user.id,
+                    formatYmdInMadrid(currentLog.clock_in) ?? formatYmdInMadrid(now.toISOString()) ?? undefined,
+                );
+                if (!sync.success) {
+                    toast.error(sync.error ?? 'Salida OK pero falló persistencia de coste OT');
+                }
+            }
+
             setCurrentLog(null);
             setElapsed("00:00:00");
             toast.success(`Turno finalizado (${totalHours.toFixed(2)}h)`);
