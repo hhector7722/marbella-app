@@ -9,11 +9,17 @@ import {
 import { buildUsageRecentFeed, hasMoreUsageRecentFeed } from '@/lib/usage/present';
 import type { AppUsageEventType } from '@/lib/usage/types';
 import { createClient } from '@/utils/supabase/server';
-import { filterVisiblePlantillaEmployees } from '@/lib/staff/plantilla-employees';
+import { isHiddenPlantillaName } from '@/lib/staff/plantilla-employees';
 
 export { USAGE_RECENT_PAGE_SIZE } from '@/lib/usage/filters';
 
 const MADRID_TZ = 'Europe/Madrid';
+/** Filas por página al agregar resúmenes (PostgREST). */
+const USAGE_SUMMARY_PAGE_SIZE = 1000;
+/** Tope de seguridad al paginar resúmenes (evita bucles infinitos). */
+const USAGE_SUMMARY_MAX_ROWS = 100_000;
+/** Eventos crudos para el feed reciente (dedupe en memoria). */
+const USAGE_RECENT_FETCH_LIMIT = 2000;
 
 export type UsageFilterUser = {
   profileId: string;
@@ -136,24 +142,81 @@ export function parseUsageDashboardFilters(searchParams: {
   return { day, profileIds };
 }
 
-async function getActiveFilterUsers(): Promise<UsageFilterUser[]> {
+/**
+ * Usuarios disponibles en el filtro de analytics.
+ * Incluye inactivos / fuera de plantilla (`visible_in_plantilla = false`)
+ * para que el histórico de uso siga siendo auditable.
+ * Solo oculta placeholders de sistema (ramon, empleado).
+ */
+async function getUsageFilterUsers(): Promise<UsageFilterUser[]> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('profiles')
     .select('id, email, first_name, last_name')
-    .eq('visible_in_plantilla', true)
     .order('first_name', { ascending: true });
 
   if (error) {
     throw new Error(error.message);
   }
 
-  return filterVisiblePlantillaEmployees(data ?? []).map((profile) => ({
-    profileId: profile.id,
-    email: profile.email ?? '?',
-    displayName: profileDisplayName(profile),
-  }));
+  return (data ?? [])
+    .filter((profile) => !isHiddenPlantillaName(profile.first_name))
+    .map((profile) => ({
+      profileId: profile.id,
+      email: profile.email ?? '?',
+      displayName: profileDisplayName(profile),
+    }));
+}
+
+type UsageSummaryRow = {
+  profile_id: string;
+  event_type: AppUsageEventType;
+  created_at: string;
+};
+
+async function fetchUsageSummaryRows(
+  day: string | null,
+  profileIds: string[]
+): Promise<UsageSummaryRow[]> {
+  if (profileIds.length === 0) {
+    return [];
+  }
+
+  const supabase = await createClient();
+  const rows: UsageSummaryRow[] = [];
+  let offset = 0;
+
+  while (offset < USAGE_SUMMARY_MAX_ROWS) {
+    let eventsQuery = supabase
+      .from('app_usage_events')
+      .select('profile_id, event_type, created_at')
+      .in('profile_id', profileIds)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + USAGE_SUMMARY_PAGE_SIZE - 1);
+
+    if (day) {
+      const { start, end } = madridDayRange(day);
+      eventsQuery = eventsQuery.gte('created_at', start).lte('created_at', end);
+    }
+
+    const { data: events, error } = await eventsQuery;
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const page = (events ?? []) as UsageSummaryRow[];
+    rows.push(...page);
+
+    if (page.length < USAGE_SUMMARY_PAGE_SIZE) {
+      break;
+    }
+
+    offset += USAGE_SUMMARY_PAGE_SIZE;
+  }
+
+  return rows;
 }
 
 async function fetchUsageEventRows(
@@ -188,7 +251,7 @@ async function fetchUsageEventRows(
     )
     .in('profile_id', profileIds)
     .order('created_at', { ascending: false })
-    .limit(2000);
+    .limit(USAGE_RECENT_FETCH_LIMIT);
 
   if (day) {
     const { start, end } = madridDayRange(day);
@@ -232,7 +295,7 @@ export async function getUsageRecentEventsPage(
   offset: number,
   limit = USAGE_RECENT_PAGE_SIZE
 ): Promise<{ events: UsageRecentEvent[]; hasMore: boolean }> {
-  const filterUsers = await getActiveFilterUsers();
+  const filterUsers = await getUsageFilterUsers();
   const resolvedIds = resolveUsageProfileIds(filters.profileIds, filterUsers);
   const rows = await fetchUsageEventRows(filters.day, resolvedIds);
   const feed = buildUsageRecentFeed(rows, limit, offset);
@@ -245,9 +308,15 @@ export async function getUsageRecentEventsPage(
 export async function getUsageDashboardData(
   filters: UsageDashboardFilters
 ): Promise<UsageDashboardData> {
-  const filterUsers = await getActiveFilterUsers();
+  const filterUsers = await getUsageFilterUsers();
   const resolvedIds = resolveUsageProfileIds(filters.profileIds, filterUsers);
-  const rows = await fetchUsageEventRows(filters.day, resolvedIds);
+  const profileById = new Map(filterUsers.map((user) => [user.profileId, user]));
+
+  const [summaryRows, recentRows] = await Promise.all([
+    fetchUsageSummaryRows(filters.day, resolvedIds),
+    fetchUsageEventRows(filters.day, resolvedIds),
+  ]);
+
   const summaryMap = new Map<string, UsageUserSummary>();
 
   let eventsCount = 0;
@@ -255,10 +324,10 @@ export async function getUsageDashboardData(
   let loginsCount = 0;
   let actionsCount = 0;
 
-  for (const row of rows) {
-    const profile = resolveUsageEventProfile(row.profiles);
-    const email = profile?.email ?? '?';
-    const displayName = profileDisplayName(profile, email);
+  for (const row of summaryRows) {
+    const known = profileById.get(row.profile_id);
+    const email = known?.email ?? '?';
+    const displayName = known?.displayName ?? email;
     const existing = summaryMap.get(row.profile_id);
 
     if (!existing) {
@@ -300,9 +369,9 @@ export async function getUsageDashboardData(
     return bTime.localeCompare(aTime);
   });
 
-  const recentFeed = buildUsageRecentFeed(rows, USAGE_RECENT_PAGE_SIZE, 0);
-  const recentEvents = mapRecentFeedToEvents(rows, recentFeed);
-  const recentHasMore = hasMoreUsageRecentFeed(rows, 0, USAGE_RECENT_PAGE_SIZE);
+  const recentFeed = buildUsageRecentFeed(recentRows, USAGE_RECENT_PAGE_SIZE, 0);
+  const recentEvents = mapRecentFeedToEvents(recentRows, recentFeed);
+  const recentHasMore = hasMoreUsageRecentFeed(recentRows, 0, USAGE_RECENT_PAGE_SIZE);
 
   return {
     summaries,

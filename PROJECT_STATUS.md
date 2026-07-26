@@ -1,6 +1,14 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-26 (Fase 1B — cierre cobertura Cost Engine)
+**Última actualización:** 2026-07-26 (Uso app: inactivos + resúmenes completos)
+
+- [x] **`/dashboard/uso` incluye inactivos (2026-07-26)**: El filtro ya no se limita a `visible_in_plantilla=true` (aparecen bajas / fuera de plantilla, p.ej. Sergi). Los resúmenes agregan todos los eventos (paginación), no solo los 2000 más recientes. Placeholders (ramon/empleado) siguen ocultos. Héctor sigue fuera de la selección por defecto.
+
+**Última actualización anterior:** 2026-07-26 (Overlay fichaje: fade + vídeo Pere)
+
+- [x] **Overlay fichaje fade + Pere (2026-07-26)**: Cierre difuminado (~900 ms opacity+blur) del vídeo al fichar. `pereboladeres@gmail.com` usa `/icons/video-españa.mp4` en entrada/salida (igual que Héctor).
+
+**Última actualización anterior:** 2026-07-26 (Fase 1B — cierre cobertura Cost Engine)
 
 - [x] **Fase 1B — cobertura persist Cost Engine (2026-07-26)**: Cerrados huecos vivos: `StaffDashboardView` → `syncOvertimeCostAfterTimeLogChange`; `togglePaidStatus` → `recalcSnapshotsAndPersistOvertimeCost`; cron SQL → rpc horas + pg_net `persist-only` + refuerzo Vercel `/api/cron/recalculate-balances`; `import-legacy` + `/admin/import` → `persistOvertimeCostForEmployees`. Wrapper único: `recalculateAllBalancesAndPersist` / `persistOvertimeCostFromEngine`. RPCs `*_from_week` sin caller TS documentados (`cost-engine-coverage.ts`). **Ops:** alinear `app_settings.cron_recalc_bearer` con `CRON_SECRET`. **No** Fase 2.
 
