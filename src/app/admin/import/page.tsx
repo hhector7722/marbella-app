@@ -19,6 +19,7 @@ import Papa from 'papaparse';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { persistOvertimeCostForEmployeesAction } from '@/app/actions/persist-overtime-cost';
 
 interface CSVRow {
     email: string;
@@ -197,6 +198,25 @@ export default function BulkImportPage() {
 
                         const currentProgress = Math.min(100, Math.round(((i + batch.length) / validEntries.length) * 100));
                         setProgress(currentProgress);
+                    }
+
+                    if (successCount > 0) {
+                        const affectedUserIds = [
+                            ...new Set(
+                                validEntries
+                                    .map((e) => String(e.user_id))
+                                    .filter(Boolean),
+                            ),
+                        ];
+                        const persist = await persistOvertimeCostForEmployeesAction(
+                            affectedUserIds,
+                        );
+                        if (!persist.success) {
+                            toast.error(
+                                persist.error ??
+                                    'Importación OK; falló persistencia Cost Engine',
+                            );
+                        }
                     }
 
                     setResult({

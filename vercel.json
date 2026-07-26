@@ -7,6 +7,14 @@
         {
             "path": "/api/cron/cleanup-order-pdfs",
             "schedule": "30 3 * * *"
+        },
+        {
+            "path": "/api/cron/recalculate-balances",
+            "schedule": "0 3 * * 1"
+        },
+        {
+            "path": "/api/cron/recalculate-balances",
+            "schedule": "0 2 * * 1"
         }
     ]
 }

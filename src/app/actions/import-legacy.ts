@@ -824,6 +824,21 @@ export async function importLogs(data: Record<string, any>[], meta?: ImportMeta)
         if (logError) {
             errors.push(`Error masivo insertando registros: ${logError.message}`)
             successCount = 0
+        } else {
+            // Trigger SQL ya recalculó horas; completar con Cost Engine (patrón único).
+            const affectedUserIds = [
+                ...new Set(logsToInsert.map((l) => String(l.user_id)).filter(Boolean)),
+            ]
+            try {
+                const { persistOvertimeCostForEmployees } = await import(
+                    '@/lib/hours-engine/recalculate-and-persist-all'
+                )
+                await persistOvertimeCostForEmployees(supabase, affectedUserIds)
+            } catch (persistErr: unknown) {
+                const msg =
+                    persistErr instanceof Error ? persistErr.message : String(persistErr)
+                errors.push(`Fichajes insertados; falló persistencia Cost Engine: ${msg}`)
+            }
         }
     }
 
