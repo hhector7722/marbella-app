@@ -1,14 +1,27 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Smartphone, Globe, HelpCircle, Bell, BellOff } from 'lucide-react'
+import { ArrowLeft, Bell, BellOff, Globe, HelpCircle, Smartphone } from 'lucide-react'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import {
   fetchTeamClientInstallStatus,
   type TeamClientInstallRow,
 } from '@/app/actions/client-display-mode'
-import { cn } from '@/lib/utils'
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import {
+  Button,
+  EmptyState,
+  List,
+  ListActions,
+  ListItem,
+  LoadingBlock,
+  Metric,
+  PageActions,
+  PageHeader,
+  Section,
+  Status,
+  Text,
+} from '@/components/mds'
 
 function formatSeenAt(iso: string | null): string {
   if (!iso) return ' '
@@ -22,28 +35,28 @@ function formatSeenAt(iso: string | null): string {
   }
 }
 
-function ModeBadge({ mode }: { mode: TeamClientInstallRow['last_display_mode'] }) {
+function ModeStatus({ mode }: { mode: TeamClientInstallRow['last_display_mode'] }) {
   if (mode === 'standalone') {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-100 px-2.5 py-1 text-xs font-bold">
-        <Smartphone size={14} aria-hidden />
+      <Status.Success className="gap-1.5">
+        <Smartphone className="size-3.5" aria-hidden />
         App instalada
-      </span>
+      </Status.Success>
     )
   }
   if (mode === 'browser') {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 text-amber-900 border border-amber-100 px-2.5 py-1 text-xs font-bold">
-        <Globe size={14} aria-hidden />
+      <Status.Warning className="gap-1.5">
+        <Globe className="size-3.5" aria-hidden />
         Navegador
-      </span>
+      </Status.Warning>
     )
   }
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-50 text-zinc-500 border border-zinc-100 px-2.5 py-1 text-xs font-bold">
-      <HelpCircle size={14} aria-hidden />
+    <Status.Neutral className="gap-1.5">
+      <HelpCircle className="size-3.5" aria-hidden />
       Sin datos
-    </span>
+    </Status.Neutral>
   )
 }
 
@@ -75,61 +88,111 @@ export default function AppInstallStatusClient() {
   const noData = rows.filter((r) => !r.last_display_mode)
   const appInstalled = rows.filter((r) => r.last_display_mode === 'standalone')
 
-  if (loading) {
-    return (
-      <div className="flex flex-1 items-center justify-center py-16">
-        <LoadingSpinner size="lg" />
-      </div>
-    )
-  }
-
   return (
-    <div className="flex flex-col flex-1 min-h-0">
-      <div className="shrink-0 grid grid-cols-3 gap-2 p-4 border-b border-zinc-100 bg-zinc-50/80">
-        <div className="rounded-xl bg-white border border-zinc-100 p-3 text-center">
-          <p className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Navegador</p>
-          <p className="text-xl font-black text-amber-700 tabular-nums">{browserOnly.length || ' '}</p>
-        </div>
-        <div className="rounded-xl bg-white border border-zinc-100 p-3 text-center">
-          <p className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Sin datos</p>
-          <p className="text-xl font-black text-zinc-500 tabular-nums">{noData.length || ' '}</p>
-        </div>
-        <div className="rounded-xl bg-white border border-zinc-100 p-3 text-center">
-          <p className="text-[10px] font-black uppercase tracking-wider text-zinc-400">App</p>
-          <p className="text-xl font-black text-emerald-700 tabular-nums">{appInstalled.length || ' '}</p>
-        </div>
-      </div>
+    <>
+      <PageHeader
+        title="Instalación app"
+        description="Quién abre la app instalada vs navegador (última visita)"
+        actions={
+          <PageActions>
+            <Button variant="outline" asChild>
+              <Link href="/master/dashboard">
+                <ArrowLeft className="size-4" aria-hidden />
+                Volver
+              </Link>
+            </Button>
+          </PageActions>
+        }
+      />
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-2">
-        {rows.map((row) => (
-          <div
-            key={row.user_id}
-            className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+      {loading ? (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3" aria-busy="true">
+          <LoadingBlock lines={2} />
+          <LoadingBlock lines={2} />
+          <LoadingBlock lines={2} />
+        </div>
+      ) : (
+        <>
+          <Section
+            id="install-metrics"
+            title="Resumen"
+            description="Conteo por modo de visualización."
           >
-            <div className="min-w-0">
-              <p className="font-bold text-zinc-900 truncate">
-                {row.full_name?.trim() || row.email || ' '}
-              </p>
-              <p className="text-xs text-zinc-400 truncate">{row.email ?? ' '}</p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <Metric
+                title="Navegador"
+                value={browserOnly.length}
+                empty={browserOnly.length === 0}
+                trend={{ label: 'Última visita en browser', tone: 'warning' }}
+                icon={Globe}
+              />
+              <Metric
+                title="Sin datos"
+                value={noData.length}
+                empty={noData.length === 0}
+                trend={{ label: 'Aún no reportado', tone: 'muted' }}
+                icon={HelpCircle}
+              />
+              <Metric
+                title="App"
+                value={appInstalled.length}
+                empty={appInstalled.length === 0}
+                trend={{ label: 'Standalone / PWA', tone: 'success' }}
+                icon={Smartphone}
+              />
             </div>
-            <div className="shrink-0 flex flex-wrap items-center gap-2 sm:justify-end">
-              <ModeBadge mode={row.last_display_mode} />
-              <span
-                className={cn(
-                  'inline-flex items-center gap-1 text-xs font-semibold',
-                  row.has_push ? 'text-emerald-700' : 'text-zinc-400',
-                )}
-              >
-                {row.has_push ? <Bell size={14} aria-hidden /> : <BellOff size={14} aria-hidden />}
-                {row.has_push ? 'Push activo' : 'Sin push'}
-              </span>
-              <span className="text-[10px] text-zinc-400 tabular-nums w-full sm:w-auto sm:text-right">
-                {formatSeenAt(row.last_display_mode_at)}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+          </Section>
+
+          <Section id="install-team" title="Equipo" description="Estado por persona.">
+            {rows.length === 0 ? (
+              <EmptyState
+                icon={Smartphone}
+                title="Sin miembros"
+                description="No hay perfiles de equipo para mostrar."
+              />
+            ) : (
+              <List>
+                {rows.map((row) => {
+                  const name = row.full_name?.trim() || row.email || ' '
+                  return (
+                    <ListItem key={row.user_id} className="flex-col items-stretch sm:flex-row sm:items-center">
+                      <div className="min-w-0 flex-1">
+                        <Text as="p" variant="body" className="truncate font-bold">
+                          {name}
+                        </Text>
+                        <Text as="p" variant="body" muted className="truncate text-xs">
+                          {row.email ?? ' '}
+                        </Text>
+                      </div>
+                      <ListActions className="mt-2 w-full flex-wrap justify-start sm:mt-0 sm:w-auto sm:justify-end">
+                        <ModeStatus mode={row.last_display_mode} />
+                        <Status
+                          tone={row.has_push ? 'success' : 'neutral'}
+                          className="gap-1"
+                        >
+                          {row.has_push ? (
+                            <Bell className="size-3.5" aria-hidden />
+                          ) : (
+                            <BellOff className="size-3.5" aria-hidden />
+                          )}
+                          {row.has_push ? 'Push activo' : 'Sin push'}
+                        </Status>
+                        <Text
+                          as="span"
+                          variant="caption"
+                          className="w-full tabular-nums normal-case tracking-normal sm:w-auto sm:text-right"
+                        >
+                          {formatSeenAt(row.last_display_mode_at)}
+                        </Text>
+                      </ListActions>
+                    </ListItem>
+                  )
+                })}
+              </List>
+            )}
+          </Section>
+        </>
+      )}
+    </>
   )
 }

@@ -203,8 +203,8 @@ function LedgerIngredientCard({
       onClick={onSelect}
       className={cn(
         'flex h-full min-h-0 flex-col rounded-xl border bg-white shadow-sm overflow-hidden text-left transition-shadow',
-        'hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/30',
-        selected ? 'ring-2 ring-[#36606F]/50 border-[#36606F]/30' : 'border-zinc-100',
+        'hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mds-primary/30',
+        selected ? 'ring-2 ring-mds-primary/50 border-mds-primary/30' : 'border-zinc-100',
       )}
     >
       <div className="shrink-0 h-14 w-full flex items-center justify-center bg-zinc-50/40">
@@ -310,7 +310,7 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
               placeholder="Buscar ingrediente…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full min-h-[48px] pl-10 pr-4 rounded-xl border border-zinc-200 bg-white text-sm font-medium text-zinc-800 shadow-sm outline-none focus:ring-2 focus:ring-[#36606F]/25 focus:border-[#36606F]/40"
+              className="w-full min-h-[48px] pl-10 pr-4 rounded-xl border border-zinc-200 bg-white text-sm font-medium text-zinc-800 shadow-sm outline-none focus:ring-2 focus:ring-mds-primary/25 focus:border-mds-primary/40"
             />
           </div>
           <div className="shrink-0 relative">
@@ -320,7 +320,7 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
               className={cn(
                 'min-h-[48px] min-w-[48px] flex items-center justify-center',
                 'rounded-xl border-0 bg-transparent hover:bg-zinc-100/60 active:bg-zinc-100 transition-colors',
-                category ? 'text-[#36606F]' : 'text-zinc-400',
+                category ? 'text-mds-primary' : 'text-zinc-400',
               )}
               aria-label="Filtrar por categoría"
               title="Filtrar"
@@ -436,7 +436,7 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
             <div className="p-0 overflow-y-auto flex-1 min-h-[240px]">
               {isLoading ? (
                 <div className="flex justify-center p-10">
-                  <Loader2 className="w-8 h-8 animate-spin text-[#36606F]" />
+                  <Loader2 className="w-8 h-8 animate-spin text-mds-primary" />
                 </div>
               ) : movements.length === 0 ? (
                 <div className="p-10 text-center text-gray-500">No hay movimientos registrados.</div>

@@ -1,13 +1,34 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { BookOpen } from 'lucide-react'
 import { createClient } from '@/utils/supabase/server'
-import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
+import { V2PageShell, type BreadcrumbItem } from '@/components/layout-v2'
+import { Button, PageActions, PageHeader } from '@/components/mds'
 import { LedgerClient } from './LedgerClient'
 
 export const dynamic = 'force-dynamic'
 
+const BREADCRUMBS: BreadcrumbItem[] = [
+  { id: 'dashboard', label: 'Dashboard', href: '/dashboard' },
+  { id: 'inventory', label: 'Inventario', href: '/dashboard/inventory' },
+  { id: 'ledger', label: 'Stock' },
+]
+
 export default async function LedgerPage() {
   const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect('/login')
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, first_name, email')
+    .eq('id', user.id)
+    .maybeSingle()
 
   const { data: ingredients, error } = await supabase
     .from('ingredients')
@@ -17,23 +38,36 @@ export default async function LedgerPage() {
 
   if (error) throw new Error('Fallo al cargar base de inventario')
 
+  const role = profile?.role ?? null
+  const roleLabel =
+    role === 'admin' ? 'Admin' : role === 'manager' ? 'Manager' : 'Staff'
+
   return (
-    <DashboardDetailLayout
-      title="Stock"
-      subtitle="Historial de movimientos y trazabilidad por ingrediente"
-      maxWidthClass="max-w-7xl"
-      className="pt-6 md:pt-8"
-      rightSlot={
-        <Link
-          href="/dashboard/recetas-tpv"
-          className="min-h-[48px] px-4 rounded-xl bg-white/15 hover:bg-white/25 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-2 transition-colors"
-        >
-          <BookOpen className="w-5 h-5 shrink-0" strokeWidth={2.5} />
-          Mapeo TPV
-        </Link>
-      }
+    <V2PageShell
+      variant="manager"
+      breadcrumbs={BREADCRUMBS}
+      user={{
+        id: user.id,
+        name: profile?.first_name?.trim() || roleLabel,
+        email: profile?.email ?? user.email ?? undefined,
+        roleLabel,
+      }}
     >
+      <PageHeader
+        title="Stock"
+        description="Historial de movimientos y trazabilidad por ingrediente."
+        actions={
+          <PageActions>
+            <Button variant="outline" asChild>
+              <Link href="/dashboard/recetas-tpv">
+                <BookOpen className="size-4" strokeWidth={2.5} aria-hidden />
+                Mapeo TPV
+              </Link>
+            </Button>
+          </PageActions>
+        }
+      />
       <LedgerClient ingredients={ingredients || []} />
-    </DashboardDetailLayout>
+    </V2PageShell>
   )
 }

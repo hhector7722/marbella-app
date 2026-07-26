@@ -1,7 +1,13 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
-import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import AppInstallStatusClient from '@/components/dashboard/AppInstallStatusClient'
+import { V2PageShell, type BreadcrumbItem } from '@/components/layout-v2'
+
+const BREADCRUMBS: BreadcrumbItem[] = [
+  { id: 'master', label: 'Master', href: '/master/dashboard' },
+  { id: 'uso', label: 'Uso', href: '/dashboard/uso' },
+  { id: 'instalacion', label: 'Instalación app' },
+]
 
 export default async function AppInstallStatusPage() {
   const supabase = await createClient()
@@ -16,7 +22,7 @@ export default async function AppInstallStatusPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, first_name, email')
     .eq('id', user.id)
     .maybeSingle()
 
@@ -26,13 +32,17 @@ export default async function AppInstallStatusPage() {
   }
 
   return (
-    <DashboardDetailLayout
-      title="Instalación app"
-      subtitle="Quién abre la app instalada vs navegador (última visita)"
-      backHref="/master/dashboard"
-      maxWidthClass="max-w-3xl"
+    <V2PageShell
+      variant="manager"
+      breadcrumbs={BREADCRUMBS}
+      user={{
+        id: user.id,
+        name: profile?.first_name?.trim() || 'Manager',
+        email: profile?.email ?? user.email ?? undefined,
+        roleLabel: role === 'admin' ? 'Admin' : 'Manager',
+      }}
     >
       <AppInstallStatusClient />
-    </DashboardDetailLayout>
+    </V2PageShell>
   )
 }

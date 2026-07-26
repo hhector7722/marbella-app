@@ -17,6 +17,8 @@ import {
   PageHeader,
 } from '@/components/layout-v2'
 import { DemoCatalogTable } from './demo-catalog-table'
+import { DemoMdsFoundationII } from './demo-mds-foundation-ii'
+import { DemoMdsLibrary } from './demo-mds-library'
 import { DemoMetricGrid } from './demo-metric-grid'
 import { DemoSidePanel } from './demo-side-panel'
 import { demoPageMeta } from './page-data'
@@ -111,6 +113,9 @@ export function AppShellPlaygroundContent() {
           Destructive
         </Button>
       </section>
+
+      <DemoMdsLibrary />
+      <DemoMdsFoundationII />
     </PageContainer>
   )
 }

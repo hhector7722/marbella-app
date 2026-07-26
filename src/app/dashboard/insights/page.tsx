@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
+import { V2PageShell, type BreadcrumbItem } from '@/components/layout-v2'
+import { PageHeader } from '@/components/mds'
 import InsightsClient from './InsightsClient'
 import {
   getHourlySalesVsLabor,
@@ -23,6 +25,11 @@ export const dynamic = 'force-dynamic'
 export const metadata = {
   title: 'Insights — Bar La Marbella',
 }
+
+const BREADCRUMBS: BreadcrumbItem[] = [
+  { id: 'master', label: 'Master', href: '/master/dashboard' },
+  { id: 'insights', label: 'Insights' },
+]
 
 async function ssrWithTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout> | null = null
@@ -48,7 +55,7 @@ export default async function InsightsPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, email, first_name')
     .eq('id', user.id)
     .maybeSingle()
 
@@ -81,26 +88,44 @@ export default async function InsightsPage() {
     }),
   ])
 
+  const email = profile?.email ?? user.email ?? ''
+  const roleLabel = role === 'admin' ? 'Admin' : 'Manager'
+
   return (
-    <InsightsClient
-      initialDateFrom={dateFrom}
-      initialDateTo={dateTo}
-      initialFinancialMonth={financialMonth}
-      initialHourly={hourlyRes.success ? hourlyRes.data : ([] as HourlyProfitabilityRow[])}
-      initialWeekday={weekdayRes.success ? weekdayRes.data : ([] as WeekdayAnalysisRow[])}
-      initialProducts={productsRes.success ? productsRes.data : ([] as ProductMarginRow[])}
-      initialFinancial={
-        financialRes.success ? financialRes.data : (null as FinancialSummaryData | null)
-      }
-      initialFinancialForbidden={
-        !financialRes.success && 'forbidden' in financialRes && financialRes.forbidden === true
-      }
-      initialErrors={{
-        hourly: hourlyRes.success ? undefined : hourlyRes.error,
-        weekday: weekdayRes.success ? undefined : weekdayRes.error,
-        products: productsRes.success ? undefined : productsRes.error,
-        financial: financialRes.success ? undefined : financialRes.error,
+    <V2PageShell
+      variant="manager"
+      breadcrumbs={BREADCRUMBS}
+      user={{
+        id: user.id,
+        name: profile?.first_name?.trim() || roleLabel,
+        email: email || undefined,
+        roleLabel,
       }}
-    />
+    >
+      <PageHeader
+        title="Rentabilidad"
+        description="Ventas, coste laboral, margen por producto y resultado del periodo."
+      />
+      <InsightsClient
+        initialDateFrom={dateFrom}
+        initialDateTo={dateTo}
+        initialFinancialMonth={financialMonth}
+        initialHourly={hourlyRes.success ? hourlyRes.data : ([] as HourlyProfitabilityRow[])}
+        initialWeekday={weekdayRes.success ? weekdayRes.data : ([] as WeekdayAnalysisRow[])}
+        initialProducts={productsRes.success ? productsRes.data : ([] as ProductMarginRow[])}
+        initialFinancial={
+          financialRes.success ? financialRes.data : (null as FinancialSummaryData | null)
+        }
+        initialFinancialForbidden={
+          !financialRes.success && 'forbidden' in financialRes && financialRes.forbidden === true
+        }
+        initialErrors={{
+          hourly: hourlyRes.success ? undefined : hourlyRes.error,
+          weekday: weekdayRes.success ? undefined : weekdayRes.error,
+          products: productsRes.success ? undefined : productsRes.error,
+          financial: financialRes.success ? undefined : financialRes.error,
+        }}
+      />
+    </V2PageShell>
   )
 }

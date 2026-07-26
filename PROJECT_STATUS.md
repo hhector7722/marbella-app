@@ -1,6 +1,178 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-25 (Sprint 4 — AppShell Playground)
+**Última actualización:** 2026-07-26 (Sprint 13 — Inventory Slice I)
+
+- [x] **Sprint 13 — Inventory Slice I / Mermas + Stock (2026-07-26)**: Migración visual conjunta de waste + ledger (>80% estructura compartida).
+  - **Migrado:** `/dashboard/inventory/waste`, `/dashboard/inventory/ledger` — registry + nav sección «Inventario» + `V2PageShell` + MDS.
+  - **Intactos:** queries SSR, `processWasteEntries` / actions ledger, permisos implícitos (auth), validaciones, comportamiento de clientes.
+  - **MDS:** PageHeader, PageActions, Button (+ `asChild` link «Mapeo TPV»). Tokens `mds-primary` en clientes (sustituye `#36606F`).
+  - **Componentes MDS nuevos:** 0.
+  - Legacy eliminado en ambas vistas: `DashboardDetailLayout`, hex `#36606F` en waste/ledger clients.
+  - **Bloque Inventory:** waste + ledger V2; queda `/dashboard/inventory` (+ `InventoryPageShell`) en legacy.
+  - **DashboardDetailLayout — consumidores restantes (8 archivos):** `inventory/page.tsx`, `InventoryPageShell.tsx`, `albaranes/AlbaranesHistoricoClient.tsx`, `carta/page.tsx`, `recetas-tpv/page.tsx`, `eventos/page.tsx`, `eventos/pedidos/page.tsx`, `eventos/[eventId]/pedidos/page.tsx`.
+  - **Eliminación posible post-sprint:** ~20% de consumidores (2/10). Layout **no** eliminado.
+  - Dependencias compartidas del layout: cabecera petróleo, `maxWidthClass`, `rightSlot`, back, tarjeta blanca. Inventory principal reutiliza el mismo patrón que waste/ledger ya migraron.
+
+### Dashboard V2 — estado del módulo
+
+| Estado | Rutas |
+|--------|-------|
+| **V2** | `instalacion-app`, `uso`, `web`, `insights`, `scanner`, `inventory/waste`, `inventory/ledger` (**7**) |
+| **Pendientes (legacy shell)** | `page` (home), `albaranes`, `albaranes-precios`, `carta`, `consumo-personal`, `eventos` (+pedidos), `history`, `import`, `inventory` (conteo), `labor`, `ledger`, `movements`, `overtime`, `propinas`, `recetas-import`, `recetas-tpv`, `sala`, `ventas` |
+| **No migrar** | `kds` (redirect a `/dashboard`) |
+| **% Dashboard (aprox. rutas page)** | **~25%** (7/28 pages; kds no cuenta como producto) |
+| **MDS más reutilizados en Dashboard V2** | PageHeader, Button, Section/Surface, Metric, Alert, EmptyState, LoadingBlock, List*, DateField, ActionDialog |
+| **Deuda shell** | `DashboardDetailLayout` — 8 consumidores (inventory conteo, albaranes, carta, eventos*, recetas-tpv) |
+| **Bloque Inventory** | waste + ledger ✅ V2; conteo `/dashboard/inventory` ⏳ legacy |
+| **Simplificación** | Siguiente: migrar `/dashboard/inventory` con el mismo patrón shell; luego albaranes/carta/eventos para retirar el layout |
+
+### Métricas del rediseño (manual)
+
+| Métrica | Valor |
+|---------|------:|
+| Pantallas migradas a V2 | **7** |
+| % aproximado roadmap adopción (Fase B–C temprana) | ~40% |
+| Familias MDS | 16 |
+| MDS reutilizados en slice Inventory I | 3 (PageHeader, PageActions, Button) + tokens |
+| Componentes MDS nuevos en Sprint 13 | **0** |
+| Rutas en registro V2 | 7 |
+| Consumidores restantes `DashboardDetailLayout` | **8** |
+| % consumidores DDL retirados este sprint | ~20% (2/10) |
+
+**Última actualización anterior:** 2026-07-26 (Sprint 12 — Dashboard V2 / Escáner)
+
+- [x] **Sprint 12 — Completar módulo Dashboard V2 / `/dashboard/scanner` (2026-07-26)**: Inventario de rutas reales bajo `src/app/dashboard/` + migración de la candidata de menor riesgo.
+  - **Priorización:** scanner (DashboardDetailLayout, bajo riesgo) → waste/ledger inventario → albaranes-precios/recetas-import → propinas/ledger → albaranes/carta/eventos → overtime/labor/consumo → ventas/movements/history/import. `kds` = redirect (no migrar).
+  - **Migrado:** `/dashboard/scanner` — registry + nav «Escáner» + `V2PageShell` + MDS.
+  - **Intactos:** `processScannerImage`, `appendScannerPageToInvoiceAction`, batch de fotos, modal proveedor + tracking.
+  - **MDS:** PageHeader, Button, Surface, Alert, ActionDialog, SearchInput, EmptyState, Text.
+  - **Componentes MDS nuevos:** 0.
+  - Legacy eliminado en la vista: `DashboardDetailLayout`, hex `#36606F`, portal modal ad hoc.
+
+**Última actualización anterior:** 2026-07-26 (Sprint 11 — Migración `/dashboard/insights`)
+
+- [x] **Sprint 11 — Dashboard Suite III / Insights (2026-07-26)**: Migración visual de `/dashboard/insights` con el patrón V2 oficial.
+  - **Intactos:** role gate manager/admin, `getHourlySalesVsLabor`, `getWeekdayAnalysis`, `getProductMarginRanking`, `getFinancialSummary`, filtros sem/mes/día/periodo, modales financieros + tracking de uso.
+  - **Adopción:** ruta en `src/config/v2/registry.ts`; nav manager «Insights».
+  - **MDS:** PageHeader, Section, Metric, Alert, Button, ActionDialog, EmptyState, LoadingBlock, Surface, Text, DateField.
+  - **Componentes MDS nuevos:** 0.
+  - Legacy eliminado en la vista: shell sticky `#36606F`, portal modal ad hoc, banners/skeletons zinc.
+
+### Métricas del rediseño (manual)
+
+| Métrica | Valor |
+|---------|------:|
+| Pantallas migradas a V2 | **4** (`instalacion-app`, `uso`, `web`, `insights`) |
+| % aproximado roadmap adopción (Fase B–C temprana) | ~28% |
+| Familias MDS | 16 |
+| MDS reutilizados en slice 4 (insights) | 11 |
+| Componentes MDS nuevos en Sprint 11 | **0** |
+| Rutas en registro V2 | 4 |
+
+**Última actualización anterior:** 2026-07-26 (Sprint 10 — Migración `/dashboard/web`)
+
+- [x] **Sprint 10 — Dashboard Suite II / Analítica web (2026-07-26)**: Migración visual de `/dashboard/web` con el patrón V2 oficial.
+  - **Intactos:** `canAccessWebAnalytics`, queries, filtros `dia`, `/api/web-analytics/recent`, empty data + loadError.
+  - **Adopción:** ruta en `src/config/v2/registry.ts`; nav «Web» ya existía.
+  - **MDS:** PageHeader, PageActions, Alert, Section, Metric, Button, DateField, Toolbar*, Surface, List*, EmptyState, LoadingBlock, Text.
+  - **Componentes MDS nuevos:** 0.
+  - Legacy eliminado: header zinc/hex `#36606F`, KPIs/cards ad hoc.
+
+### Métricas del rediseño (manual)
+
+| Métrica | Valor |
+|---------|------:|
+| Pantallas migradas a V2 | **3** (`instalacion-app`, `uso`, `web`) |
+| % aproximado roadmap adopción (Fase B–C temprana) | ~22% |
+| Familias MDS | 16 |
+| MDS reutilizados en slice 3 (web) | 13 |
+| Componentes MDS nuevos en Sprint 10 | **0** |
+| Rutas en registro V2 | 3 |
+| Suite dashboard analytics V2 | completa (uso + web + instalación) |
+
+**Última actualización anterior:** 2026-07-26 (Sprint 9 — Migración `/dashboard/uso`)
+
+- [x] **Sprint 9 — Segunda migración V2 / Dashboard Uso (2026-07-26)**: Migración visual de `/dashboard/uso` con patrón oficial (registry + `V2PageShell` + MDS).
+  - **Intactos:** `canAccessUsageAnalytics`, `getUsageDashboardData`, `parseUsageDashboardFilters`, `/api/usage/recent`, lógica de filtros URL.
+  - **Adopción:** ruta en `src/config/v2/registry.ts`; nav manager ya tenía «Uso app».
+  - **MDS:** PageHeader, PageActions, Section, Button, DateField, Toolbar*, Surface, List*, EmptyState, LoadingBlock, Text.
+  - **Sin componentes MDS nuevos.** Coste centrado en UI (infra sin fricción).
+  - Legacy UI eliminado en la vista: hex `#36606F`, cards zinc ad hoc, header custom.
+
+### Métricas del rediseño (manual)
+
+| Métrica | Valor |
+|---------|------:|
+| Pantallas migradas a V2 | **2** (`instalacion-app`, `uso`) |
+| % aproximado roadmap adopción (Fase B–C temprana) | ~15% |
+| Familias MDS | 16 |
+| Componentes MDS exportados (aprox.) | ~70 |
+| MDS reutilizados en slice 2 (uso) | 14 |
+| Componentes MDS nuevos en Sprint 9 | **0** |
+| Wrappers / providers de adopción | 5 |
+| Rutas en registro V2 | 2 |
+| Hex hardcode eliminados (slice uso) | sí (`#36606F` + zinc palette ad hoc) |
+
+**Última actualización anterior:** 2026-07-26 (Sprint 8 — V2 Adoption Infrastructure)
+
+- [x] **Sprint 8 — V2 Adoption Infrastructure (2026-07-26)**: Patrón reutilizable de adopción; sin migrar pantallas nuevas.
+  - **Navigation registry:** `src/config/navigation/{shared,manager,staff,admin,registry}.ts` — `resolveNavigation(variant, pathname)`.
+  - **V2 route registry:** `src/config/v2/registry.ts` — `isV2ShellPath` solo delega.
+  - **Providers:** `MDSProvider`, `NavigationProvider`, `ShellProvider` (+ LayoutProvider existente).
+  - **Helper:** `V2PageShell` (resuelve nav por `variant` + pathname; Bridge no conoce rutas).
+  - **Slice 1 refactor:** `/dashboard/instalacion-app` usa `V2PageShell`; eliminados `v2-install-status.ts` y bridge ad hoc.
+  - **Auditoría:** `docs/redesign/SPRINT7_VERTICAL_SLICE_AUDIT.md`.
+  - Comportamiento / auth / `fetchTeamClientInstallStatus` intactos.
+
+### Métricas del rediseño (manual)
+
+| Métrica | Valor |
+|---------|------:|
+| Pantallas migradas a V2 | 1 (`/dashboard/instalacion-app`) |
+| Familias MDS | 16 |
+| Componentes MDS exportados (aprox.) | ~70 |
+| Componentes MDS reutilizados en slice 1 | 12 (Page*, Section, Metric, List*, Status, EmptyState, LoadingBlock, Button, Text) |
+| Wrappers / providers de adopción | 5 (`V2PageShell`, `ShellProvider`, `MDSProvider`, `NavigationProvider`, `isV2ShellPath`) |
+| Configs slice-específicas eliminadas | 2 (`v2-install-status`, bridge inline theme) |
+| Layouts legacy sustituidos en slice 1 | 1 (`DashboardDetailLayout`) |
+| Estilos inline en UI V2 nueva | 0 |
+| Hex hardcode en slice 1 | 0 (antes `#36606F` + badges emerald/amber/zinc) |
+| Rutas en registro V2 | 1 |
+| Variantes nav registradas | 4 (manager, master→manager, staff, admin) |
+
+**Última actualización anterior:** 2026-07-26 (Sprint 7 — Vertical Slice Instalación app)
+
+- [x] **Sprint 7 — Primera migración real / Vertical Slice (2026-07-26)**: Migración visual de `/dashboard/instalacion-app` a AppShell V2 + MDS.
+  - **Pantalla:** Informe de instalación PWA/navegador (manager/admin). Sin cambios de auth, role gate, ni `fetchTeamClientInstallStatus`.
+  - **Adopción shell:** `isV2ShellPath` oculta Navbar/BottomNav/padding legacy solo en esa ruta. `V2AppShellBridge` + nav tipada en `src/config/navigation/v2-install-status.ts`. Opt-in `data-mds-theme="light"` en el subárbol.
+  - **MDS reutilizado:** PageHeader, PageActions, Section, Metric, List/ListItem/ListActions, Status, EmptyState, LoadingBlock, Button, Text.
+  - **Nuevo (adopción, no UI genérica):** `V2AppShellBridge`, `isV2ShellPath`, config nav del slice.
+  - **Eliminado en la vista:** `DashboardDetailLayout`, hex `#36606F`, badges zinc/emerald/amber ad hoc, LoadingSpinner.
+  - Doc: actualizar `REDESIGN_CONTEXT` (primera ruta V2 en prod).
+
+**Última actualización anterior:** 2026-07-26 (Sprint 6 — MDS Foundation Components II)
+
+- [x] **Sprint 6 — MDS Foundation Components II (2026-07-26)**: Segunda capa en `src/components/mds/`.
+  - **Button:** wrapper canónico (`primary|secondary|ghost|outline|danger|success|toolbar|mobile|icon` + `loading`).
+  - **Table:** `DataTable`, `TableToolbar`, `TableFilters`, `TableSearch`, `TablePagination`, `TableEmpty`, `TableLoading`, `TableSelection`, `TableActions`, `TableColumnHeader` (+ re-export Table shadcn).
+  - **Form:** `TextField`, `NumberField`, `CurrencyField`, `DateField`, `TimeField`, `SelectField`, `TextareaField`, `CheckboxField`, `SwitchField`, `FieldGroup|Label|Description|Error|Hint|Shell`.
+  - **Dialog:** `ConfirmDialog`, `DeleteDialog`, `ActionDialog`, `FormDialog`, `SuccessDialog`.
+  - **Notification:** `Alert`, `Banner`, `InlineMessage`, `ToastLayout` (solo diseño, sin cola).
+  - **Toolbar / Search / List:** familias completas.
+  - **Playground:** sección «Foundation Components II» (`DemoMdsFoundationII`).
+  - **Decisiones:** Form nativos MDS donde no hay primitive shadcn (sin deps nuevas); Button MDS = único botón V2; Table = composites no fork.
+  - Doc: `src/components/mds/README.md` con ejemplos.
+
+**Última actualización anterior:** 2026-07-26 (Sprint 5 — MDS Components)
+
+- [x] **Sprint 5 — Marbella Design System Components (2026-07-26)**: Primera librería real en `src/components/mds/` (capa encima de shadcn, no reemplazo).
+  - **Implementados:** `Surface` (default|elevated|outlined|subtle), `Section`, `Page` (Title|Subtitle|Header|Content|Actions), `Typography`/`Text`, `Metric`, `EmptyState` (default|compact|table), `Loading` (Block|Table|Page), `Status` (Success|Warning|Danger|Info|Neutral).
+  - **Stubs pendientes:** `Button`, `Table`, `Form` (usar shadcn + skin MDS).
+  - **Playground:** catálogo vivo en `/dev/app-shell` → `DemoMdsLibrary`. Métricas demo migradas a `Metric`.
+  - **Decisiones:** (1) `src/components/mds` = capa de componentes de producto; tokens siguen en `lib/design-system`. (2) `layout-v2` Page* = chrome/shell; `mds` Page* = contenido de producto (conviven, sin fusionar aún). (3) `Status.Info` usa `mds-secondary` (no hay token `info`). (4) Skeletons = shadcn `Skeleton` + `bg-mds-muted-surface`. (5) Sin tocar AppShell, layouts, negocio ni producción.
+  - Doc: `src/components/mds/README.md`.
+
+**Última actualización anterior:** 2026-07-25 (Sprint 4 — AppShell Playground)
 
 - [x] **Sprint 4 — AppShell Playground (2026-07-25)**: Ruta dev `/dev/app-shell` con `AppShell` + mocks en `layout-v2/demo/`. Contenido de referencia (métricas, tabla, card lateral, botones, badges, skeleton, dialog). Overlay fullscreen (sin tocar Navbar/layouts). Sin menú producción, sin Supabase/auth.
 

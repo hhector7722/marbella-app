@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { ChevronLeft, ChevronRight, Loader2, Search, Truck, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Loader2, Truck, X } from 'lucide-react'
 import { assessScannerImageReadability } from '@/lib/scanner-image-quality'
 import { compressImageFileToDataUri } from '@/lib/scanner-image-compress'
 import { appendScannerPageToInvoiceAction, processScannerImage } from './actions'
@@ -11,6 +11,15 @@ import { createClient } from '@/utils/supabase/client'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
 import { namedEntitySummary } from '@/lib/usage/modal-apply'
+import {
+  ActionDialog,
+  Alert,
+  Button,
+  EmptyState,
+  SearchInput,
+  Surface,
+  Text,
+} from '@/components/mds'
 
 interface Supplier {
   id: number
@@ -314,51 +323,51 @@ export function ScannerClient({
 
       <div className="flex flex-col gap-3">
         {!pendingBatch ? (
-          <button
+          <Button
             type="button"
+            variant="primary"
+            className="w-full uppercase tracking-widest"
             onClick={openModal}
             disabled={isProcessing}
-            className={cn(
-              'min-h-12 w-full rounded-xl px-4 font-black uppercase tracking-widest',
-              'bg-[#36606F] text-white hover:bg-[#2A4C58] active:scale-[0.99] transition-all',
-              'disabled:opacity-60 disabled:pointer-events-none shrink-0'
-            )}
           >
             Escanear albarán
-          </button>
+          </Button>
         ) : (
-          <div
+          <Surface
+            variant="default"
             className={cn(
-              'flex flex-col rounded-xl bg-white p-2 md:p-3',
+              'flex flex-col p-2 md:p-3',
               pendingBatch.items.length > 1 ? 'gap-1' : 'gap-2 md:gap-3'
             )}
           >
-            {/* Carrusel: altura acotada en móvil; overflow-y visible para que la cruz que sobresale no se corte */}
             <div className="relative shrink-0 overflow-visible md:min-h-0 md:flex-1">
               {pendingBatch.items.length > 1 ? (
                 <>
-                  <button
+                  <Button
                     type="button"
+                    variant="icon"
                     className={cn(
-                      'absolute left-1 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#36606F] shadow-md ring-1 ring-zinc-200/90 hover:bg-white md:flex',
+                      'absolute left-1 top-1/2 z-20 hidden size-10 min-h-10 min-w-10 -translate-y-1/2 rounded-full bg-mds-surface/95 text-mds-primary shadow-md ring-1 ring-mds-border hover:bg-mds-surface md:flex',
                       carouselIndex <= 0 && 'pointer-events-none opacity-35'
                     )}
                     aria-label="Foto anterior"
                     onClick={() => scrollCarouselToIndex(carouselIndex - 1)}
                   >
-                    <ChevronLeft className="h-6 w-6" strokeWidth={2.5} />
-                  </button>
-                  <button
+                    <ChevronLeft className="size-6" strokeWidth={2.5} />
+                  </Button>
+                  <Button
                     type="button"
+                    variant="icon"
                     className={cn(
-                      'absolute right-1 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#36606F] shadow-md ring-1 ring-zinc-200/90 hover:bg-white md:flex',
-                      carouselIndex >= pendingBatch.items.length - 1 && 'pointer-events-none opacity-35'
+                      'absolute right-1 top-1/2 z-20 hidden size-10 min-h-10 min-w-10 -translate-y-1/2 rounded-full bg-mds-surface/95 text-mds-primary shadow-md ring-1 ring-mds-border hover:bg-mds-surface md:flex',
+                      carouselIndex >= pendingBatch.items.length - 1 &&
+                        'pointer-events-none opacity-35'
                     )}
                     aria-label="Foto siguiente"
                     onClick={() => scrollCarouselToIndex(carouselIndex + 1)}
                   >
-                    <ChevronRight className="h-6 w-6" strokeWidth={2.5} />
-                  </button>
+                    <ChevronRight className="size-6" strokeWidth={2.5} />
+                  </Button>
                 </>
               ) : null}
               <div
@@ -376,7 +385,6 @@ export function ScannerClient({
                     className="box-border flex h-full min-h-0 min-w-full shrink-0 snap-center snap-always items-center justify-center px-2 pb-1 pl-2 pr-6 pt-5"
                   >
                     <div className="relative inline-flex max-h-full max-w-full">
-                      {/* Sin overflow-hidden: la cruz puede salir sobre la tarjeta blanca sin recortarse */}
                       <div className="relative inline-block max-h-full max-w-full">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
@@ -384,20 +392,18 @@ export function ScannerClient({
                           alt=""
                           className="block h-auto max-h-[min(48dvh,calc(100svh-30rem))] w-auto max-w-full rounded-xl object-contain md:max-h-[min(52vh,calc(100vh-18rem))]"
                         />
-                        <button
+                        <Button
                           type="button"
+                          variant="danger"
+                          className="absolute left-full top-0 z-40 size-8 min-h-8 min-w-8 -translate-x-1/2 -translate-y-1/2 rounded-full p-0"
                           onClick={(e) => {
                             e.stopPropagation()
                             removePendingItemById(it.id)
                           }}
-                          className={cn(
-                            'absolute left-full top-0 z-40 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-0 bg-rose-600 text-white shadow-none ring-0 outline-none',
-                            'focus-visible:outline-none focus-visible:ring-0 active:scale-95'
-                          )}
                           aria-label="Quitar esta foto del borrador"
                         >
-                          <X className="h-3.5 w-3.5" strokeWidth={3} />
-                        </button>
+                          <X className="size-3.5" strokeWidth={3} />
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -416,13 +422,13 @@ export function ScannerClient({
                     aria-current={i === carouselIndex ? 'true' : undefined}
                     className={cn(
                       'inline-flex min-h-9 min-w-[1.125rem] shrink-0 items-center justify-center rounded-full border-0 bg-transparent p-0 shadow-none ring-0 outline-none active:scale-95',
-                      i === carouselIndex ? 'text-[#36606F]' : 'text-zinc-300'
+                      i === carouselIndex ? 'text-mds-primary' : 'text-mds-muted'
                     )}
                   >
                     <span
                       className={cn(
                         'block h-1.5 w-1.5 rounded-full transition-colors',
-                        i === carouselIndex ? 'bg-[#36606F]' : 'bg-current'
+                        i === carouselIndex ? 'bg-mds-primary' : 'bg-current'
                       )}
                     />
                   </button>
@@ -430,135 +436,123 @@ export function ScannerClient({
               </div>
             ) : null}
 
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              className="w-full uppercase tracking-wide text-mds-primary"
               onClick={triggerAnotherCapture}
               disabled={isProcessing}
-              className={cn(
-                'min-h-12 w-full shrink-0 border-0 bg-transparent p-0 text-center text-sm font-semibold uppercase tracking-wide text-[#36606F] shadow-none outline-none ring-0 hover:underline hover:underline-offset-4 active:opacity-80',
-                isProcessing && 'pointer-events-none opacity-50'
-              )}
             >
               Añadir hoja
-            </button>
+            </Button>
 
-            <button
+            <Button
               type="button"
+              variant="primary"
+              className="w-full uppercase tracking-widest"
+              loading={isProcessing}
               onClick={() => void commitPendingBatch()}
-              disabled={isProcessing}
-              className={cn(
-                'min-h-12 w-full shrink-0 rounded-xl px-4 font-black uppercase tracking-widest text-sm',
-                'bg-[#36606F] text-white hover:bg-[#2A4C58] active:scale-[0.99] transition',
-                isProcessing && 'opacity-60 pointer-events-none'
-              )}
             >
               {isProcessing ? 'Subiendo…' : 'Guardar'}
-            </button>
-          </div>
+            </Button>
+          </Surface>
         )}
 
         {preview ? (
-          <div className="w-full relative rounded-2xl overflow-hidden border border-zinc-100 bg-white">
-            <img src={preview} alt="Previsualización" className="w-full h-auto max-h-[60vh] object-cover opacity-40" />
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-900 bg-white/50 backdrop-blur-sm px-4">
-              <Loader2 className="w-10 h-10 animate-spin mb-3 text-[#36606F]" />
-              <span className="font-black text-lg text-center">Validando imagen…</span>
-              <span className="text-sm font-medium mt-1 text-center text-zinc-700">Comprobando nitidez y detalle</span>
+          <Surface variant="default" className="relative w-full overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={preview}
+              alt="Previsualización"
+              className="h-auto max-h-[60vh] w-full object-cover opacity-40"
+            />
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-mds-surface/50 px-4 text-mds-foreground backdrop-blur-sm">
+              <Loader2 className="mb-3 size-10 animate-spin text-mds-primary" />
+              <Text as="p" variant="title" className="text-center text-lg">
+                Validando imagen…
+              </Text>
+              <Text variant="body" muted className="mt-1 text-center text-sm">
+                Comprobando nitidez y detalle
+              </Text>
             </div>
-          </div>
+          </Surface>
         ) : null}
 
         {message ? (
-          <div
-            className={cn(
-              'rounded-xl border p-3 text-sm font-semibold',
-              messageTone === 'error' && 'border-rose-200 bg-rose-50 text-rose-900',
-              messageTone === 'success' && 'border-emerald-200 bg-emerald-50 text-emerald-900',
-              messageTone === 'info' && 'border-zinc-200 bg-zinc-50 text-zinc-800'
-            )}
-            role={messageTone === 'error' ? 'alert' : 'status'}
-          >
-            {message}
-          </div>
+          <Alert
+            tone={
+              messageTone === 'error'
+                ? 'danger'
+                : messageTone === 'success'
+                  ? 'success'
+                  : 'info'
+            }
+            title={message}
+          />
         ) : null}
       </div>
 
-      {showSupplierModal && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200"
-          onClick={() => closeModal()}
-        >
-          <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white shrink-0 shadow-md">
-              <div className="flex flex-col min-w-0">
-                <h3 className="text-lg font-black uppercase tracking-wider leading-none">Proveedor</h3>
-                <p className="text-white/70 text-[10px] font-black uppercase tracking-[0.2em] mt-1.5 flex items-center gap-1">
-                  <Truck size={12} />
-                  Selecciona proveedor para el albarán
-                </p>
-              </div>
-              <button
-                onClick={() => closeModal()}
-                className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90 shrink-0"
-              >
-                <X size={20} strokeWidth={3} />
-              </button>
-            </div>
+      <ActionDialog
+        open={showSupplierModal}
+        onOpenChange={(open) => {
+          if (!open) closeModal()
+        }}
+        title="Proveedor"
+        description="Selecciona proveedor para el albarán"
+        className="sm:max-w-lg"
+      >
+        <div className="flex max-h-[60vh] flex-col gap-4 overflow-hidden">
+          <SearchInput
+            placeholder="Buscar proveedor..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
 
-            <div className="p-4 bg-white flex-1 overflow-hidden flex flex-col">
-              <div className="relative mb-4 shrink-0">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Buscar proveedor..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-12 pl-10 pr-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-[#36606F] focus:border-[#36606F] outline-none transition-all placeholder:text-zinc-300"
-                />
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {loadingSuppliers ? (
+              <div className="flex justify-center py-10">
+                <Loader2 className="size-8 animate-spin text-mds-primary" />
               </div>
-
-              <div className="overflow-y-auto grid grid-cols-3 sm:grid-cols-4 gap-5 p-2">
-                {loadingSuppliers ? (
-                  <div className="col-span-full py-10 flex justify-center">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#36606F]" />
-                  </div>
-                ) : filteredSuppliers.length === 0 ? (
-                  <div className="col-span-full py-10 text-center">
-                    <span className="text-sm font-bold text-gray-400">No se encontraron proveedores</span>
-                  </div>
-                ) : (
-                  filteredSuppliers.map((s) => {
-                    const logo = getSupplierLogo(s.image_url, s.name)
-                    return (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => handleSelectSupplier(s.id)}
-                        className="p-2 flex flex-col items-center justify-center gap-1.5 aspect-square transition-all active:scale-95 hover:bg-zinc-50 rounded-xl"
-                      >
-                        <div className="w-11 h-11 flex items-center justify-center overflow-hidden shrink-0">
-                          {logo ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={logo} alt={s.name} className="w-full h-full object-contain" />
-                          ) : (
-                            <Truck className="w-6 h-6 text-gray-300" />
-                          )}
-                        </div>
-                        <span className="text-[9px] font-black uppercase text-gray-800 tracking-wider text-center line-clamp-2 leading-tight px-0.5">
-                          {s.name}
-                        </span>
-                      </button>
-                    )
-                  })
-                )}
+            ) : filteredSuppliers.length === 0 ? (
+              <EmptyState
+                variant="compact"
+                title="Sin proveedores"
+                description="No se encontraron proveedores con ese nombre."
+              />
+            ) : (
+              <div className="grid grid-cols-3 gap-5 p-2 sm:grid-cols-4">
+                {filteredSuppliers.map((s) => {
+                  const logo = getSupplierLogo(s.image_url, s.name)
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => handleSelectSupplier(s.id)}
+                      className="flex aspect-square min-h-12 flex-col items-center justify-center gap-1.5 rounded-xl p-2 transition-all hover:bg-mds-muted-surface active:scale-95"
+                    >
+                      <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden">
+                        {logo ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={logo}
+                            alt={s.name}
+                            className="size-full object-contain"
+                          />
+                        ) : (
+                          <Truck className="size-6 text-mds-muted" aria-hidden />
+                        )}
+                      </div>
+                      <span className="line-clamp-2 px-0.5 text-center text-[9px] font-black uppercase leading-tight tracking-wider text-mds-foreground">
+                        {s.name}
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
-            </div>
+            )}
           </div>
         </div>
-      )}
+      </ActionDialog>
     </div>
   )
 }

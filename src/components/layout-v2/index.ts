@@ -1,6 +1,12 @@
 export { AppShell, type AppShellProps } from './app-shell'
 
 export { LayoutProvider, useLayout } from './providers/layout-provider'
+export { MDSProvider, type MDSThemeMode } from './providers/mds-provider'
+export {
+  NavigationProvider,
+  useShellNavigation,
+} from './providers/navigation-provider'
+export { ShellProvider } from './providers/shell-provider'
 
 export { Sidebar } from './sidebar/sidebar'
 export { SidebarItem } from './sidebar/sidebar-item'
@@ -26,3 +32,5 @@ export { MobileSidebar } from './mobile/mobile-sidebar'
 export { PageContainer } from './page/page-container'
 export { PageHeader } from './page/page-header'
 export { PageActions } from './page/page-actions'
+
+export { V2PageShell, V2AppShellBridge } from './v2-page-shell'

@@ -24,7 +24,8 @@ export type AppShellProps = {
 
 /**
  * AppShell V2 — presentational chrome only.
- * No Supabase, auth, or fetch. Not mounted by app layouts yet.
+ * No Supabase, auth, or fetch.
+ * Adopción en rutas: `V2PageShell` + registro `src/config/v2`.
  */
 export function AppShell({
   children,

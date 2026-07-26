@@ -8,7 +8,6 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react'
-import { createPortal } from 'react-dom'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -25,6 +24,17 @@ import {
   YAxis,
 } from 'recharts'
 import { cn, formatDisplayValue } from '@/lib/utils'
+import {
+  ActionDialog,
+  Alert,
+  Button,
+  EmptyState,
+  LoadingBlock,
+  Metric,
+  Section,
+  Surface,
+  Text,
+} from '@/components/mds'
 import {
   getHourlySalesVsLabor,
   getWeekdayAnalysis,
@@ -68,12 +78,14 @@ type InsightsClientProps = {
   initialErrors?: Partial<Record<SectionKey, string>>
 }
 
-const PETROLEO = '#36606F'
-const LABOR_RED = '#E07070'
-const MARGIN_GREEN = '#4CAF50'
-const MARGIN_BAR_HIGH = '#2E7D32'
-const MARGIN_BAR_MID = '#66BB6A'
-const MARGIN_BAR_LOW = '#FFA726'
+/** Colores de gráfico alineados a tokens MDS (recharts necesita string). */
+const CHART_PRIMARY = 'var(--mds-primary)'
+const CHART_LABOR = 'var(--mds-danger)'
+const CHART_MARGIN = 'var(--mds-success)'
+const CHART_MARGIN_HIGH = 'var(--mds-success)'
+const CHART_MARGIN_MID = 'color-mix(in srgb, var(--mds-success) 70%, white)'
+const CHART_MARGIN_LOW = 'var(--mds-warning)'
+const CHART_UNITS = 'var(--mds-muted)'
 const HOURLY_CHART_START = 7
 const HOURLY_CHART_END = 23
 
@@ -90,16 +102,16 @@ const EXPENSE_LINE_LABELS: Record<string, string> = {
 }
 
 function signedEuroTone(value: number, positiveTone: string, negativeTone: string): string {
-  if (value === 0 || Object.is(value, -0)) return 'text-zinc-800'
+  if (value === 0 || Object.is(value, -0)) return 'text-mds-foreground'
   return value > 0 ? positiveTone : negativeTone
 }
 
 /** Rentabilidad PyG (% sobre venta neta): &lt;10 rojo, 10–20 naranja, 20–30 ámbar, ≥30 verde. */
 function profitabilityTone(pct: number): string {
-  if (pct < 10) return 'text-rose-600'
-  if (pct < 20) return 'text-orange-500'
-  if (pct < 30) return 'text-amber-500'
-  return 'text-emerald-600'
+  if (pct < 10) return 'text-mds-danger'
+  if (pct < 20) return 'text-mds-warning'
+  if (pct < 30) return 'text-mds-warning'
+  return 'text-mds-success'
 }
 
 function FinancialKpiChip({
@@ -116,7 +128,6 @@ function FinancialKpiChip({
   value: string
   valueClassName?: string
   badge?: string
-  /** Sin fondo en el chip de porcentaje (Margen PyG). */
   badgePlain?: boolean
   tooltip?: string
   className?: string
@@ -128,41 +139,32 @@ function FinancialKpiChip({
       type={onClick ? 'button' : undefined}
       onClick={onClick}
       className={cn(
-        'min-h-12 flex flex-col items-center justify-center min-w-0 text-center w-full px-1 py-2',
-        onClick &&
-          'cursor-pointer rounded-xl outline-none focus:outline-none focus-visible:outline-none hover:bg-zinc-50/80 active:scale-[0.99]',
+        'min-h-12 w-full text-left outline-none focus-visible:ring-3 focus-visible:ring-mds-primary/30',
+        onClick && 'cursor-pointer rounded-xl active:scale-[0.99]',
         className
       )}
       title={tooltip}
     >
-      <div
-        className={cn(
-          'flex min-w-0 w-full flex-col items-center justify-center gap-0.5',
-          badge && badge !== ' ' && 'gap-0'
-        )}
-      >
-        <span
-          className={cn(
-            'max-w-full text-sm sm:text-base lg:text-lg font-black tabular-nums leading-tight text-center',
-            valueClassName ?? 'text-zinc-800'
-          )}
-        >
-          {value}
-        </span>
-        {badge && badge !== ' ' && (
-          <span
-            className={cn(
-              'max-w-full text-xs lg:text-sm font-black tabular-nums leading-tight text-zinc-700 text-center',
-              !badgePlain && 'rounded-md bg-zinc-200/80 px-1.5 py-0.5'
-            )}
-          >
-            {badge}
+      <Metric
+        title={label}
+        value={
+          <span className={cn('tabular-nums', valueClassName ?? 'text-mds-foreground')}>
+            {value}
+            {badge && badge !== ' ' ? (
+              <span
+                className={cn(
+                  'mt-0.5 block text-xs font-black tabular-nums text-mds-foreground',
+                  !badgePlain && 'rounded-md bg-mds-muted-surface px-1.5 py-0.5'
+                )}
+              >
+                {badge}
+              </span>
+            ) : null}
           </span>
-        )}
-      </div>
-      <span className="mt-1 text-[10px] lg:text-xs font-bold uppercase tracking-wider text-zinc-500 leading-tight">
-        {label}
-      </span>
+        }
+        empty={value === ' '}
+        className="h-full"
+      />
     </Comp>
   )
 }
@@ -180,68 +182,23 @@ function FinancialDetailModal({
   children: ReactNode
   footnote?: string
 }) {
-  const [mounted, setMounted] = useState(false)
-
   useModalUsageTracking({
     open,
     usageId: `insights-financial-${title.toLowerCase().replace(/\s+/g, '-')}`,
     usageLabel: title,
   })
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
-
-  if (!open || !mounted || typeof document === 'undefined') return null
-
-  return createPortal(
-    <div
-      className="fixed inset-0 z-[10070] flex items-center justify-center bg-black/40 p-4 transition-opacity duration-150"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="financial-detail-title"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose()
+  return (
+    <ActionDialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose()
       }}
+      title={title}
+      description={footnote}
     >
-      <div
-        className="w-full max-w-sm bg-white shadow-xl flex flex-col max-h-[85vh] overflow-hidden rounded-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className={cn(SECTION_HEADER_CLASS, 'gap-2')}>
-          <h3
-            id="financial-detail-title"
-            className="text-[10px] lg:text-sm font-black uppercase tracking-wider text-white leading-tight shrink-0 pr-1"
-          >
-            {title}
-          </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="min-h-7 min-w-7 shrink-0 inline-flex items-center justify-center rounded-lg text-white/90 hover:bg-white/15 active:scale-95"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">{children}</div>
-        {footnote ? (
-          <p className="px-6 pb-4 text-[10px] leading-snug text-zinc-500 font-medium shrink-0">
-            {footnote}
-          </p>
-        ) : null}
-      </div>
-    </div>,
-    document.body
+      {children}
+    </ActionDialog>
   )
 }
 
@@ -257,30 +214,15 @@ function FinancialDetailRow({
   const displayed = formatEuroKpi(amount)
   return (
     <div className="flex items-baseline justify-between gap-4 py-2">
-      <span className="text-xs font-semibold text-zinc-600">{label}</span>
+      <Text variant="caption">{label}</Text>
       <span
         className={cn(
           'text-sm font-black tabular-nums whitespace-nowrap',
-          amountClassName ?? 'text-zinc-800'
+          amountClassName ?? 'text-mds-foreground'
         )}
       >
         {displayed === ' ' ? ' ' : displayed}
       </span>
-    </div>
-  )
-}
-
-function FinancialDetailBlock({
-  label,
-  children,
-}: {
-  label: string
-  children: ReactNode
-}) {
-  return (
-    <div className="flex items-baseline justify-between gap-4 py-2">
-      <span className="text-xs font-semibold text-zinc-600">{label}</span>
-      <span className="text-sm font-black tabular-nums text-zinc-800 text-right">{children}</span>
     </div>
   )
 }
@@ -305,19 +247,19 @@ function FinancialDetailGroupRow({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full min-h-12 items-baseline justify-between gap-4 py-2 text-left outline-none focus:outline-none active:bg-zinc-50/80 rounded-lg"
+        className="flex w-full min-h-12 items-baseline justify-between gap-4 py-2 text-left outline-none focus-visible:ring-3 focus-visible:ring-mds-primary/30 active:bg-mds-muted-surface/80 rounded-lg"
       >
         <span className="flex min-w-0 items-center gap-1">
-          <span className="text-xs font-semibold text-zinc-600">{label}</span>
+          <Text variant="caption">{label}</Text>
           <ChevronDown
             className={cn(
-              'h-3 w-3 shrink-0 text-zinc-300/90 transition-transform duration-150',
+              'h-3 w-3 shrink-0 text-mds-muted transition-transform duration-150',
               open && 'rotate-180'
             )}
             aria-hidden
           />
         </span>
-        <span className="text-sm font-black tabular-nums text-zinc-800 whitespace-nowrap shrink-0">
+        <span className="text-sm font-black tabular-nums text-mds-foreground whitespace-nowrap shrink-0">
           {displayed === ' ' ? ' ' : displayed}
         </span>
       </button>
@@ -393,13 +335,7 @@ function formatEuroKpi(value: number): string {
 }
 
 function SectionSkeleton({ rows = 4 }: { rows?: number }) {
-  return (
-    <div className="space-y-3 animate-pulse p-1">
-      {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="h-10 rounded-xl bg-zinc-100" />
-      ))}
-    </div>
-  )
+  return <LoadingBlock lines={rows} />
 }
 
 function SectionErrorBanner({
@@ -410,17 +346,16 @@ function SectionErrorBanner({
   onRetry: () => void
 }) {
   return (
-    <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-      <p className="text-sm font-semibold text-rose-700">{message}</p>
-      <button
-        type="button"
-        onClick={onRetry}
-        className="min-h-12 shrink-0 inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 text-sm font-black uppercase tracking-wide text-white active:scale-95"
-      >
-        <RefreshCw className="h-4 w-4" />
-        Reintentar
-      </button>
-    </div>
+    <Alert
+      tone="danger"
+      title={message}
+      action={
+        <Button variant="danger" onClick={onRetry}>
+          <RefreshCw className="size-4" aria-hidden />
+          Reintentar
+        </Button>
+      }
+    />
   )
 }
 
@@ -451,7 +386,7 @@ function ProductStat({
   const valueEl = (
     <span
       className={cn(
-        'block font-black text-zinc-800 tabular-nums leading-tight',
+        'block font-black text-mds-foreground tabular-nums leading-tight',
         prominent ? 'text-xs sm:text-sm' : 'mt-0.5 text-[8px] lg:text-[10px]'
       )}
     >
@@ -461,7 +396,7 @@ function ProductStat({
   const labelEl = (
     <span
       className={cn(
-        'block font-bold uppercase tracking-wider text-zinc-500',
+        'block font-bold uppercase tracking-wider text-mds-muted',
         prominent ? 'mt-0.5 text-[8px] sm:text-[9px]' : 'text-[8px] lg:text-[10px]'
       )}
     >
@@ -495,10 +430,10 @@ function ProductStat({
 function WeekdayDetailStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0 text-center leading-tight">
-      <span className="block text-[8px] sm:text-[9px] font-black tabular-nums text-zinc-800">
+      <span className="block text-[8px] sm:text-[9px] font-black tabular-nums text-mds-foreground">
         {value}
       </span>
-      <span className="mt-1 block text-[6px] sm:text-[7px] font-bold uppercase tracking-wide text-zinc-500">
+      <span className="mt-1 block text-[6px] sm:text-[7px] font-bold uppercase tracking-wide text-mds-muted">
         {label}
       </span>
     </div>
@@ -515,17 +450,21 @@ function WeekdayDetailCard({
   const ticketsValue = day.avg_tickets === 0 ? ' ' : day.avg_tickets.toFixed(1)
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white px-1.5 py-1.5 shadow-lg lg:flex-row lg:items-center lg:gap-4 lg:px-4 lg:py-3">
-      <button
+    <Surface
+      variant="elevated"
+      className="relative flex h-full min-h-0 flex-col overflow-hidden px-1.5 py-1.5 lg:flex-row lg:items-center lg:gap-4 lg:px-4 lg:py-3"
+    >
+      <Button
         type="button"
+        variant="icon"
         onClick={onClose}
         aria-label="Cerrar detalle del día"
-        className="absolute right-0 top-0 z-10 min-h-8 min-w-8 inline-flex shrink-0 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 lg:static lg:order-last lg:ml-1"
+        className="absolute right-0 top-0 z-10 size-8 min-h-8 min-w-8 lg:static lg:order-last lg:ml-1"
       >
-        <X className="h-3 w-3" />
-      </button>
+        <X className="size-3" />
+      </Button>
       <div className="flex min-h-0 flex-1 items-center justify-center lg:flex-none lg:shrink-0 lg:min-w-[4.5rem]">
-        <p className="w-full px-0.5 text-center text-[9px] sm:text-[10px] font-black leading-tight text-[#36606F] line-clamp-2 lg:text-xs">
+        <p className="w-full px-0.5 text-center text-[9px] sm:text-[10px] font-black leading-tight text-mds-primary line-clamp-2 lg:text-xs">
           {day.weekday_name}
         </p>
       </div>
@@ -534,7 +473,7 @@ function WeekdayDetailCard({
         <WeekdayDetailStat label="Media tickets" value={ticketsValue} />
         <WeekdayDetailStat label="Ticket medio" value={formatEuroKpi(day.avg_ticket_value)} />
       </div>
-    </div>
+    </Surface>
   )
 }
 
@@ -547,30 +486,31 @@ function ProductDetailCard({
   onClose: () => void
   onOpenRecipe: (recipeId: string | null | undefined, productName: string) => void
 }) {
-    return (
-    <div className="space-y-2 w-full max-w-full">
+  return (
+    <Surface variant="default" className="space-y-2 w-full max-w-full p-3">
       <div className="flex items-start justify-between gap-2">
         {product.recipe_id ? (
           <button
             type="button"
             onClick={() => onOpenRecipe(product.recipe_id, product.product_name)}
-            className="min-h-9 text-left text-sm sm:text-base font-black text-[#36606F] leading-snug hover:underline active:scale-[0.99]"
+            className="min-h-12 text-left text-sm sm:text-base font-black text-mds-primary leading-snug hover:underline active:scale-[0.99]"
           >
             {product.product_name}
           </button>
         ) : (
-          <p className="text-sm sm:text-base font-black text-zinc-800 leading-snug">
+          <p className="text-sm sm:text-base font-black text-mds-foreground leading-snug">
             {product.product_name}
           </p>
         )}
-        <button
+        <Button
           type="button"
+          variant="icon"
           onClick={onClose}
           aria-label="Cerrar detalle"
-          className="min-h-9 min-w-9 shrink-0 inline-flex items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-100"
+          className="size-9 min-h-9 min-w-9"
         >
-          <X className="h-4 w-4" />
-        </button>
+          <X className="size-4" />
+        </Button>
       </div>
       <div className="grid grid-cols-3 grid-rows-2 gap-x-1.5 gap-y-1">
         <ProductStat
@@ -592,25 +532,23 @@ function ProductDetailCard({
           value={formatEuroKpi(product.total_margin_contribution)}
         />
       </div>
-    </div>
+    </Surface>
   )
 }
 
-/** KPI sin marco ni relleno — flota sobre el fondo de la sección */
 function KpiFloat({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col items-center justify-center min-w-0 px-1 py-0.5 text-center w-full">
-      <span className="text-[9px] lg:text-sm font-black text-zinc-800 tabular-nums leading-snug line-clamp-2">
+      <span className="text-[9px] lg:text-sm font-black text-mds-foreground tabular-nums leading-snug line-clamp-2">
         {value}
       </span>
-      <span className="mt-1 text-[7px] lg:text-[10px] font-bold uppercase tracking-wider text-zinc-500 leading-tight">
+      <span className="mt-1 text-[7px] lg:text-[10px] font-bold uppercase tracking-wider text-mds-muted leading-tight">
         {label}
       </span>
     </div>
   )
 }
 
-/** KPI Rend. por día: valor → día → concepto (3 filas) */
 function WeekdayKpiFloat({
   value,
   dayName,
@@ -622,13 +560,13 @@ function WeekdayKpiFloat({
 }) {
   return (
     <div className="flex flex-col items-center justify-center min-w-0 px-1 py-0.5 text-center w-full">
-      <span className="text-[9px] lg:text-sm font-black text-zinc-800 tabular-nums leading-snug line-clamp-2">
+      <span className="text-[9px] lg:text-sm font-black text-mds-foreground tabular-nums leading-snug line-clamp-2">
         {value}
       </span>
-      <span className="mt-1 text-[8px] lg:text-[11px] font-bold text-[#36606F] leading-tight line-clamp-2">
+      <span className="mt-1 text-[8px] lg:text-[11px] font-bold text-mds-primary leading-tight line-clamp-2">
         {dayName}
       </span>
-      <span className="mt-1 text-[7px] lg:text-[10px] font-bold uppercase tracking-wider text-zinc-500 leading-tight">
+      <span className="mt-1 text-[7px] lg:text-[10px] font-bold uppercase tracking-wider text-mds-muted leading-tight">
         {conceptLabel}
       </span>
     </div>
@@ -639,13 +577,39 @@ type LegendItem = {
   label: string
   color: string
   variant?: 'bar' | 'line'
-  /** Contorno fino en cabecera petróleo cuando el color coincide con el fondo */
   swatchOutline?: boolean
 }
 
-/** Misma altura visual que cabeceras de sección (p. ej. Margen producto). */
-const SECTION_HEADER_CLASS =
-  'bg-[#36606F] px-3 md:px-4 py-2.5 flex h-10 min-h-10 max-h-10 items-center justify-between gap-2 shrink-0'
+function ChartLegend({ legend }: { legend: LegendItem[] }) {
+  return (
+    <div className="flex items-center gap-2 lg:gap-3 shrink-0 flex-wrap">
+      {legend.map((item) => (
+        <span
+          key={item.label}
+          className="inline-flex items-center gap-1 text-[8px] lg:text-[10px] font-bold text-mds-muted whitespace-nowrap"
+        >
+          {item.variant === 'line' ? (
+            <span
+              className="w-3 h-0.5 shrink-0 rounded-full"
+              style={{ backgroundColor: item.color }}
+              aria-hidden
+            />
+          ) : (
+            <span
+              className={cn(
+                'w-2 h-2 shrink-0 rounded-sm',
+                item.swatchOutline && 'ring-1 ring-mds-border'
+              )}
+              style={{ backgroundColor: item.color }}
+              aria-hidden
+            />
+          )}
+          {item.label}
+        </span>
+      ))}
+    </div>
+  )
+}
 
 function SectionTitleRow({
   title,
@@ -657,38 +621,14 @@ function SectionTitleRow({
   actions?: ReactNode
 }) {
   return (
-    <div className={SECTION_HEADER_CLASS}>
-      <h2 className="text-[10px] lg:text-sm font-black uppercase tracking-wider text-white leading-tight shrink-0">
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between gap-y-2 shrink-0 px-1 py-1">
+      <Text as="h2" variant="title" className="text-base lg:text-lg shrink-0">
         {title}
-      </h2>
+      </Text>
       {(actions || (legend && legend.length > 0)) && (
-        <div className="flex items-center gap-2 lg:gap-3 shrink-0 flex-nowrap ml-auto">
+        <div className="flex items-center gap-2 lg:gap-3 shrink-0 flex-wrap ml-auto">
           {actions}
-          {legend?.map((item) => (
-            <span
-              key={item.label}
-              className="inline-flex items-center gap-1 text-[8px] lg:text-[10px] font-bold text-white/90 whitespace-nowrap"
-            >
-              {item.variant === 'line' ? (
-                <span
-                  className="w-3 h-0.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: item.color }}
-                  aria-hidden
-                />
-              ) : (
-                <span
-                  className={cn(
-                    'w-2 h-2 shrink-0 rounded-sm',
-                    item.swatchOutline &&
-                      'shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.9)]'
-                  )}
-                  style={{ backgroundColor: item.color }}
-                  aria-hidden
-                />
-              )}
-              {item.label}
-            </span>
-          ))}
+          {legend ? <ChartLegend legend={legend} /> : null}
         </div>
       )}
     </div>
@@ -958,9 +898,9 @@ export default function InsightsClient({
     return rankedProducts.map((p) => {
       const marginPct =
         p.avg_sale_price > 0 ? (p.margin_per_unit / p.avg_sale_price) * 100 : 0
-      let fill = MARGIN_BAR_MID
-      if (marginPct > 60) fill = MARGIN_BAR_HIGH
-      else if (marginPct < 30) fill = MARGIN_BAR_LOW
+      let fill = CHART_MARGIN_MID
+      if (marginPct > 60) fill = CHART_MARGIN_HIGH
+      else if (marginPct < 30) fill = CHART_MARGIN_LOW
       return {
         ...p,
         shortName:
@@ -1021,12 +961,12 @@ export default function InsightsClient({
       pygNet: formatEuroKpi(pyg.net),
       marginBadge,
       rentabilidadTone:
-        marginPct === null ? 'text-zinc-800' : profitabilityTone(marginPct),
+        marginPct === null ? 'text-mds-foreground' : profitabilityTone(marginPct),
       cobrosTotales: formatEuroKpi(cobrosTotales),
-      incomeTone: signedEuroTone(pyg.income.total, 'text-emerald-600', 'text-rose-600'),
-      expensesTone: 'text-rose-600',
-      pygNetTone: signedEuroTone(pyg.net, 'text-emerald-600', 'text-rose-600'),
-      cobrosTone: signedEuroTone(cobrosTotales, 'text-emerald-600', 'text-rose-600'),
+      incomeTone: signedEuroTone(pyg.income.total, 'text-mds-success', 'text-mds-danger'),
+      expensesTone: 'text-mds-danger',
+      pygNetTone: signedEuroTone(pyg.net, 'text-mds-success', 'text-mds-danger'),
+      cobrosTone: signedEuroTone(cobrosTotales, 'text-mds-success', 'text-mds-danger'),
     }
   }, [financial.data])
 
@@ -1086,21 +1026,21 @@ export default function InsightsClient({
               <FinancialDetailRow
                 label="Venta neta"
                 amount={pyg.income.total}
-                amountClassName="text-emerald-600"
+                amountClassName="text-mds-success"
               />
               <FinancialDetailRow
                 label="Gastos"
                 amount={pyg.expenses.total}
-                amountClassName="text-rose-600"
+                amountClassName="text-mds-danger"
               />
               <FinancialDetailRow label="Margen" amount={pyg.net} />
               <div className="flex items-baseline justify-between gap-4 py-2">
-                <span className="text-xs font-semibold text-zinc-600">Rentabilidad</span>
+                <span className="text-xs font-semibold text-mds-muted">Rentabilidad</span>
                 <span
                   className={cn(
                     'text-sm font-black tabular-nums whitespace-nowrap',
                     rentabilidadPct === null
-                      ? 'text-zinc-800'
+                      ? 'text-mds-foreground'
                       : profitabilityTone(rentabilidadPct)
                   )}
                 >
@@ -1136,40 +1076,35 @@ export default function InsightsClient({
   }, [weekday.data, dateFrom, dateTo])
 
   return (
-    <div className="min-h-screen p-2 md:p-6 pb-24 text-zinc-900">
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-          <div className="sticky top-0 z-20 shadow-sm">
-            <div className="bg-[#36606F] px-3 md:px-5 py-3">
-              <h1 className="text-sm md:text-lg font-black text-white uppercase tracking-wider">
-                Rentabilidad
-              </h1>
-            </div>
-            <div className="bg-white border-b border-zinc-100 px-3 md:px-5 py-2 overflow-x-auto">
-              <InsightsMainDateFilter
-                mode={filterMode}
-                openPicker={openPicker}
-                onOpenPicker={handleOpenPicker}
-                onClosePicker={() => setOpenPicker(null)}
-                selectedWeekMonday={selectedWeekMonday}
-                selectedMonths={selectedMonths}
-                selectedDay={selectedDay}
-                periodFrom={periodFrom}
-                periodTo={periodTo}
-                onSelectWeek={handleSelectWeek}
-                onSelectMonths={handleSelectMonths}
-                onSelectDay={handleSelectDay}
-                onApplyPeriod={handleApplyPeriod}
-              />
-            </div>
-          </div>
+    <div className="flex flex-col gap-6">
+      <Section
+        id="insights-filters"
+        title="Periodo"
+        description="Semana, mes, día o rango personalizado."
+      >
+        <InsightsMainDateFilter
+          mode={filterMode}
+          openPicker={openPicker}
+          onOpenPicker={handleOpenPicker}
+          onClosePicker={() => setOpenPicker(null)}
+          selectedWeekMonday={selectedWeekMonday}
+          selectedMonths={selectedMonths}
+          selectedDay={selectedDay}
+          periodFrom={periodFrom}
+          periodTo={periodTo}
+          onSelectWeek={handleSelectWeek}
+          onSelectMonths={handleSelectMonths}
+          onSelectDay={handleSelectDay}
+          onApplyPeriod={handleApplyPeriod}
+        />
+      </Section>
 
-          <div className="p-2 md:p-6 space-y-3 md:space-y-5">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 lg:gap-5">
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 lg:gap-5">
               {/* Sección 1 — Resultado del periodo */}
               <section className={cn(
-                'col-span-1 md:col-span-12 rounded-xl border bg-white shadow-md overflow-hidden',
-                filterMode === 'mes' ? 'border-zinc-200' : 'border-zinc-100 opacity-50'
+                'col-span-1 md:col-span-12 rounded-xl border bg-mds-surface shadow-sm overflow-hidden',
+                filterMode === 'mes' ? 'border-mds-border' : 'border-mds-border opacity-50'
               )}>
                 <SectionTitleRow title="Resultado del periodo" />
                 <div className="relative p-2 lg:p-4">
@@ -1245,8 +1180,8 @@ export default function InsightsClient({
                   </div>
                 ) : null}
                 {filterMode !== 'mes' && financial.data && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white/40 rounded-xl">
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 bg-white/80 px-2 py-1 rounded-lg">
+                  <div className="absolute inset-0 flex items-center justify-center bg-mds-surface/40 rounded-xl">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-mds-muted bg-mds-surface/80 px-2 py-1 rounded-lg">
                       Solo disponible en vista mensual
                     </span>
                   </div>
@@ -1255,13 +1190,13 @@ export default function InsightsClient({
               </section>
 
               {/* Sección 2 — ancho completo, gráfico protagonista */}
-              <section className="col-span-1 md:col-span-12 rounded-xl border border-zinc-200 bg-white shadow-md overflow-hidden">
+              <section className="col-span-1 md:col-span-12 rounded-xl border border-mds-border bg-mds-surface shadow-sm overflow-hidden">
                 <SectionTitleRow
                   title="Venta vs. Coste por hora"
                   legend={[
-                    { label: 'Ventas', color: PETROLEO, variant: 'bar', swatchOutline: true },
-                    { label: 'M. obra', color: LABOR_RED, variant: 'bar' },
-                    { label: 'Margen', color: MARGIN_GREEN, variant: 'line' },
+                    { label: 'Ventas', color: CHART_PRIMARY, variant: 'bar', swatchOutline: true },
+                    { label: 'M. obra', color: CHART_LABOR, variant: 'bar' },
+                    { label: 'Margen', color: CHART_MARGIN, variant: 'line' },
                   ]}
                 />
                 <div className="p-2 lg:p-4">
@@ -1298,8 +1233,8 @@ export default function InsightsClient({
                                 if (!active || !payload?.length) return null
                                 const row = payload[0]?.payload as HourlyProfitabilityRow & { label: string }
                                 return (
-                                  <div className="rounded-xl border border-zinc-100 bg-white px-3 py-2 shadow-lg text-xs">
-                                    <p className="font-black text-[#36606F]">{row.label}</p>
+                                  <div className="rounded-xl border border-mds-border bg-mds-surface px-3 py-2 shadow-lg text-xs">
+                                    <p className="font-black text-mds-primary">{row.label}</p>
                                     <p>Ventas: {formatEuroChart(row.total_revenue)}</p>
                                     <p>M. obra: {formatEuroChart(row.labor_cost)}</p>
                                     <p>Margen: {formatEuroChart(row.margin)}</p>
@@ -1312,14 +1247,14 @@ export default function InsightsClient({
                             <Bar
                               dataKey="total_revenue"
                               name="Ventas"
-                              fill={PETROLEO}
+                              fill={CHART_PRIMARY}
                               radius={[3, 3, 0, 0]}
                               maxBarSize={48}
                             />
                             <Bar
                               dataKey="labor_cost"
                               name="M. obra"
-                              fill={LABOR_RED}
+                              fill={CHART_LABOR}
                               radius={[3, 3, 0, 0]}
                               maxBarSize={48}
                             />
@@ -1327,7 +1262,7 @@ export default function InsightsClient({
                               type="monotone"
                               dataKey="margin"
                               name="Margen"
-                              stroke={MARGIN_GREEN}
+                              stroke={CHART_MARGIN}
                               strokeWidth={2.5}
                               dot={{ r: 3 }}
                             />
@@ -1347,7 +1282,7 @@ export default function InsightsClient({
 
               {/* Rend. por día + Margen producto: fila compartida solo en escritorio (lg+) */}
               <div className="col-span-1 md:col-span-12 grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-5 min-w-0">
-              <section className="rounded-xl border border-zinc-200 bg-white shadow-md overflow-hidden min-w-0">
+              <section className="rounded-xl border border-mds-border bg-mds-surface shadow-sm overflow-hidden min-w-0">
                 <SectionTitleRow title="Rend. por día" />
                 <div className="p-2 lg:p-3">
                 {weekday.error ? (
@@ -1387,7 +1322,7 @@ export default function InsightsClient({
                             <Bar
                               dataKey="avg_revenue"
                               name="Media ventas"
-                              fill={PETROLEO}
+                              fill={CHART_PRIMARY}
                               activeBar={false}
                               radius={[0, 2, 2, 0]}
                               maxBarSize={22}
@@ -1403,9 +1338,9 @@ export default function InsightsClient({
                               {weekdayChartData.map((_, index) => (
                                 <Cell
                                   key={`wd-${index}`}
-                                  fill={PETROLEO}
+                                  fill={CHART_PRIMARY}
                                   stroke={
-                                    selectedWeekdayIdx === index ? PETROLEO : 'transparent'
+                                    selectedWeekdayIdx === index ? CHART_PRIMARY : 'transparent'
                                   }
                                   strokeWidth={selectedWeekdayIdx === index ? 2 : 0}
                                   opacity={selectedWeekdayIdx === index ? 1 : 0.82}
@@ -1434,7 +1369,7 @@ export default function InsightsClient({
                             <Bar
                               dataKey="avg_revenue"
                               name="Media ventas"
-                              fill={PETROLEO}
+                              fill={CHART_PRIMARY}
                               activeBar={false}
                               radius={[3, 3, 0, 0]}
                               maxBarSize={40}
@@ -1450,9 +1385,9 @@ export default function InsightsClient({
                               {weekdayChartData.map((_, index) => (
                                 <Cell
                                   key={`wd-m-${index}`}
-                                  fill={PETROLEO}
+                                  fill={CHART_PRIMARY}
                                   stroke={
-                                    selectedWeekdayIdx === index ? PETROLEO : 'transparent'
+                                    selectedWeekdayIdx === index ? CHART_PRIMARY : 'transparent'
                                   }
                                   strokeWidth={selectedWeekdayIdx === index ? 2 : 0}
                                   opacity={selectedWeekdayIdx === index ? 1 : 0.82}
@@ -1465,7 +1400,7 @@ export default function InsightsClient({
                     </div>
                     <div
                       className={cn(
-                        'relative shrink-0 w-[6.5rem] sm:w-[8.5rem] border-l border-zinc-100 pl-2',
+                        'relative shrink-0 w-[6.5rem] sm:w-[8.5rem] border-l border-mds-border pl-2',
                         'lg:w-full lg:border-l-0 lg:border-t lg:pl-0 lg:pt-3 lg:min-h-[4.5rem]',
                         isLgDesktop ? 'lg:h-auto' : 'h-[160px] sm:h-[180px]'
                       )}
@@ -1508,12 +1443,12 @@ export default function InsightsClient({
                 </div>
               </section>
 
-              <section className="rounded-xl border border-zinc-200 bg-white shadow-md overflow-hidden min-w-0">
+              <section className="rounded-xl border border-mds-border bg-mds-surface shadow-sm overflow-hidden min-w-0">
                 <SectionTitleRow
                   title="Margen producto"
                   legend={[
-                    { label: 'Margen total', color: MARGIN_BAR_MID, variant: 'bar' },
-                    { label: 'Unidades', color: '#9CA3AF', variant: 'line' },
+                    { label: 'Margen total', color: CHART_MARGIN_MID, variant: 'bar' },
+                    { label: 'Unidades', color: CHART_UNITS, variant: 'line' },
                   ]}
                 />
                 <div className="p-2 lg:p-4">
@@ -1525,17 +1460,16 @@ export default function InsightsClient({
                 ) : products.loading ? (
                   <SectionSkeleton rows={5} />
                 ) : products.data.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-3 lg:p-6 text-center space-y-3">
-                    <p className="text-[10px] lg:text-sm font-semibold text-zinc-600 leading-tight">
-                      Mapea recetas con coste en /recipes
-                    </p>
-                    <Link
-                      href="/recipes"
-                      className="inline-flex min-h-10 lg:min-h-12 items-center justify-center rounded-xl bg-[#36606F] px-4 lg:px-6 text-[10px] lg:text-sm font-black uppercase tracking-wide text-white active:scale-95"
-                    >
-                      Ir a recetas
-                    </Link>
-                  </div>
+                                    <EmptyState
+                    variant="compact"
+                    title="Sin márgenes de producto"
+                    description="Mapea recetas con coste en /recipes"
+                    action={
+                      <Button variant="primary" asChild>
+                        <Link href="/recipes">Ir a recetas</Link>
+                      </Button>
+                    }
+                  />
                 ) : (
                   <div className="flex flex-col gap-1 min-w-0">
                     {selectedProduct && selectedProductIdx !== null && (
@@ -1616,7 +1550,7 @@ export default function InsightsClient({
                                     key={`prod-${index}`}
                                     fill={entry.fill}
                                     stroke={
-                                      selectedProductIdx === index ? PETROLEO : 'transparent'
+                                      selectedProductIdx === index ? CHART_PRIMARY : 'transparent'
                                     }
                                     strokeWidth={selectedProductIdx === index ? 2 : 0}
                                     opacity={selectedProductIdx === index ? 1 : 0.82}
@@ -1628,7 +1562,7 @@ export default function InsightsClient({
                                 type="monotone"
                                 dataKey="total_units_sold"
                                 name="Unidades"
-                                stroke="#9CA3AF"
+                                stroke={CHART_UNITS}
                                 strokeWidth={1.5}
                                 dot={false}
                               />
@@ -1676,7 +1610,7 @@ export default function InsightsClient({
                                     key={`prod-${index}`}
                                     fill={entry.fill}
                                     stroke={
-                                      selectedProductIdx === index ? PETROLEO : 'transparent'
+                                      selectedProductIdx === index ? CHART_PRIMARY : 'transparent'
                                     }
                                     strokeWidth={selectedProductIdx === index ? 2 : 0}
                                     opacity={selectedProductIdx === index ? 1 : 0.82}
@@ -1688,7 +1622,7 @@ export default function InsightsClient({
                                 type="monotone"
                                 dataKey="total_units_sold"
                                 name="Unidades"
-                                stroke="#9CA3AF"
+                                stroke={CHART_UNITS}
                                 strokeWidth={1.5}
                                 dot={false}
                               />
@@ -1701,10 +1635,8 @@ export default function InsightsClient({
                 </div>
               </section>
             </div>
-
-          </div>
-          </div>
         </div>
+
       </div>
     </div>
   )

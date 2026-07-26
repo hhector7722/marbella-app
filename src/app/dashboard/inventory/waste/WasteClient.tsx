@@ -134,7 +134,7 @@ function QuantityStepper({
       className={cn(
         // Caja "cantidad" estilo desglose monetario (cierre de caja)
         'flex items-stretch justify-between w-full bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm',
-        'min-h-[48px] focus-within:ring-2 focus-within:ring-[#36606F]/25 focus-within:border-[#36606F]/40',
+        'min-h-[48px] focus-within:ring-2 focus-within:ring-mds-primary/25 focus-within:border-mds-primary/40',
       )}
     >
       <button
@@ -204,7 +204,7 @@ function WasteUnitSelect({
       onChange={(e) => onChange(normalizeWasteUnit(e.target.value))}
       className={cn(
         'w-full min-h-[48px] rounded-xl border border-zinc-200 bg-white px-2 py-1 text-[10px] font-black uppercase tracking-wide text-zinc-700 shadow-sm',
-        'outline-none focus:ring-2 focus:ring-[#36606F]/25 focus:border-[#36606F]/40',
+        'outline-none focus:ring-2 focus:ring-mds-primary/25 focus:border-mds-primary/40',
       )}
       aria-label="Unidad de medida"
     >
@@ -524,7 +524,7 @@ export function WasteClient({
         </p>
 
         <div className="flex shrink-0 w-full justify-start">
-          <div className="inline-flex rounded-lg overflow-hidden border border-[#36606F] shadow-sm max-w-full">
+          <div className="inline-flex rounded-lg overflow-hidden border border-mds-primary shadow-sm max-w-full">
             <button
               type="button"
               onClick={() => {
@@ -534,8 +534,8 @@ export function WasteClient({
               className={cn(
                 'px-3 py-2 min-h-[48px] h-auto inline-flex items-center justify-center text-[10px] font-black uppercase tracking-widest transition-colors outline-none whitespace-nowrap',
                 mode === 'recipes'
-                  ? 'bg-[#36606F] text-white'
-                  : 'bg-white text-[#36606F] hover:bg-[#36606F]/5',
+                  ? 'bg-mds-primary text-white'
+                  : 'bg-white text-mds-primary hover:bg-mds-primary/5',
               )}
             >
               Recetas
@@ -549,8 +549,8 @@ export function WasteClient({
               className={cn(
                 'px-3 py-2 min-h-[48px] h-auto inline-flex items-center justify-center text-[10px] font-black uppercase tracking-widest transition-colors outline-none whitespace-nowrap',
                 mode === 'ingredients'
-                  ? 'bg-[#36606F] text-white'
-                  : 'bg-white text-[#36606F] hover:bg-[#36606F]/5',
+                  ? 'bg-mds-primary text-white'
+                  : 'bg-white text-mds-primary hover:bg-mds-primary/5',
               )}
             >
               Ingredientes
@@ -570,7 +570,7 @@ export function WasteClient({
                   placeholder="Buscar receta…"
                   value={recipeQuery}
                   onChange={(e) => setRecipeQuery(e.target.value)}
-                  className="w-full min-h-[48px] pl-10 pr-4 rounded-xl border border-zinc-200 bg-white text-sm font-medium text-zinc-800 shadow-sm outline-none focus:ring-2 focus:ring-[#36606F]/25 focus:border-[#36606F]/40"
+                  className="w-full min-h-[48px] pl-10 pr-4 rounded-xl border border-zinc-200 bg-white text-sm font-medium text-zinc-800 shadow-sm outline-none focus:ring-2 focus:ring-mds-primary/25 focus:border-mds-primary/40"
                 />
               </div>
 
@@ -584,7 +584,7 @@ export function WasteClient({
                   className={cn(
                     'min-h-[48px] min-w-[48px] flex items-center justify-center',
                     'rounded-xl border-0 bg-transparent hover:bg-zinc-100/60 active:bg-zinc-100 transition-colors',
-                    recipeCategory ? 'text-[#36606F]' : 'text-zinc-400',
+                    recipeCategory ? 'text-mds-primary' : 'text-zinc-400',
                   )}
                   aria-label="Filtrar recetas por categoría"
                   title="Filtrar"
@@ -675,7 +675,7 @@ export function WasteClient({
                   placeholder="Buscar ingrediente…"
                   value={ingredientQuery}
                   onChange={(e) => setIngredientQuery(e.target.value)}
-                  className="w-full min-h-[48px] pl-10 pr-4 rounded-xl border border-zinc-200 bg-white text-sm font-medium text-zinc-800 shadow-sm outline-none focus:ring-2 focus:ring-[#36606F]/25 focus:border-[#36606F]/40"
+                  className="w-full min-h-[48px] pl-10 pr-4 rounded-xl border border-zinc-200 bg-white text-sm font-medium text-zinc-800 shadow-sm outline-none focus:ring-2 focus:ring-mds-primary/25 focus:border-mds-primary/40"
                 />
               </div>
 
@@ -689,7 +689,7 @@ export function WasteClient({
                   className={cn(
                     'min-h-[48px] min-w-[48px] flex items-center justify-center',
                     'rounded-xl border-0 bg-transparent hover:bg-zinc-100/60 active:bg-zinc-100 transition-colors',
-                    ingredientCategory ? 'text-[#36606F]' : 'text-zinc-400',
+                    ingredientCategory ? 'text-mds-primary' : 'text-zinc-400',
                   )}
                   aria-label="Filtrar ingredientes por categoría"
                   title="Filtrar"

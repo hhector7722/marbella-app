@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import BottomNavStaff from './BottomNavStaff';
 import { isFullscreenCartaPath } from '@/lib/carta-fullscreen-path';
+import { isV2ShellPath } from '@/lib/v2-shell-path';
 
 export default function BottomNavWrapper() {
     const pathname = usePathname();
@@ -16,6 +17,7 @@ export default function BottomNavWrapper() {
 
     if (pathname === '/login') return null;
     if (isFullscreenCartaPath(pathname)) return null;
+    if (isV2ShellPath(pathname)) return null;
     // Rutas /staff/* usan la barra inferior de src/app/staff/layout.tsx
     if (pathname.startsWith('/staff')) return null;
     if (pathname.startsWith('/reporte')) return null;

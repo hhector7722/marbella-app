@@ -1,20 +1,52 @@
 # layout-v2
 
-Nuevo **AppShell V2** del rediseño Marbella. Presentacional y aislado de la UI de producción.
+**AppShell V2** del rediseño Marbella. Presentacional. Adopción opt-in por ruta.
 
-## Playground (Sprint 4)
+## Adopción V2 (Sprint 8)
 
-Referencia visual: [`/dev/app-shell`](/dev/app-shell)
+Migrar una pantalla:
 
-- Datos mock en `demo/` (navegación, usuario, breadcrumbs, métricas)
-- No aparece en menús de producción
-- Overlay a pantalla completa para no mezclar con Navbar/BottomNav legacy
-- Probar aquí cada componente MDS nuevo antes de usarlo en Marbella
+1. **Registrar la ruta** en `src/config/v2/registry.ts`
+2. **Añadir/ajustar nav** en `src/config/navigation/{manager|staff|admin}.ts`
+3. **Sustituir UI** legacy por `@/components/mds`
+4. **Envolver** con el helper (lógica intacta):
+
+```tsx
+import { V2PageShell } from '@/components/layout-v2'
+
+export default async function Page() {
+  // auth / fetch / gates — sin cambios
+  return (
+    <V2PageShell variant="manager" user={userSummary} breadcrumbs={crumbs}>
+      <MyClientView />
+    </V2PageShell>
+  )
+}
+```
+
+`V2PageShell` resuelve la navegación vía registry (`variant` + `usePathname`).  
+No pasar arrays de rutas al Bridge.
+
+Chrome legacy se oculta solo si la ruta está en el registro V2 (`isV2ShellPath` → `src/config/v2`).
+
+### Providers
+
+| Provider | Rol |
+|----------|-----|
+| `MDSProvider` | `data-mds-theme` / futuros themes |
+| `NavigationProvider` | Nav resuelta en contexto |
+| `ShellProvider` | Compone MDS + Nav + AppShell + PageContainer |
+| `LayoutProvider` | Estado chrome (sidebar / mobile) — interno a AppShell |
+
+## Playground
+
+[`/dev/app-shell`](/dev/app-shell) — laboratorio visual (overlay; no usa el registro de prod).
 
 ## Import
 
 ```ts
-import { AppShell, PageContainer, PageHeader } from '@/components/layout-v2'
+import { V2PageShell, AppShell, PageContainer } from '@/components/layout-v2'
+import { resolveNavigation } from '@/config/navigation'
 ```
 
 ## Estructura
@@ -22,18 +54,26 @@ import { AppShell, PageContainer, PageHeader } from '@/components/layout-v2'
 ```
 layout-v2/
   app-shell.tsx
-  index.ts
-  demo/        fixtures + playground content
-  sidebar/     navigation types + Sidebar*
-  topbar/      Breadcrumbs, SearchButton, UserMenu
-  mobile/      MobileHeader, MobileSidebar (Sheet)
-  page/        PageContainer, PageHeader, PageActions
-  providers/   LayoutProvider
+  v2-page-shell.tsx      # helper de migración
+  providers/
+    layout-provider.tsx
+    mds-provider.tsx
+    navigation-provider.tsx
+    shell-provider.tsx
+  sidebar/ topbar/ mobile/ page/ demo/
+```
+
+## Config externa
+
+```
+src/config/navigation/   # shared, manager, staff, admin, registry
+src/config/v2/           # route registry
+src/lib/v2-shell-path.ts # thin helper → config/v2
 ```
 
 ## Reglas
 
-- Sin Supabase, auth ni fetch en el shell ni en el playground.
-- Navegación inyectada por props (sin rutas de negocio hardcodeadas en el shell).
-- Estilos MDS (`bg-mds-*`) + shadcn.
-- No cablear en layouts de producción hasta el sprint de adopción.
+- Sin Supabase / auth / fetch en el shell.
+- Nav de negocio solo en `src/config/navigation/`.
+- Rutas V2 solo en `src/config/v2/registry.ts`.
+- Compatibilidad legacy: paths no registradas siguen con Navbar/BottomNav.

@@ -1,82 +1,104 @@
-import Link from 'next/link';
-import { redirect } from 'next/navigation';
-import { Globe } from 'lucide-react';
-import { WebAnalyticsDashboard } from '@/components/web-analytics/WebAnalyticsDashboard';
-import { canAccessWebAnalytics } from '@/lib/web-analytics/access';
+import { redirect } from 'next/navigation'
+import { ExternalLink } from 'lucide-react'
+import { WebAnalyticsDashboard } from '@/components/web-analytics/WebAnalyticsDashboard'
+import { V2PageShell, type BreadcrumbItem } from '@/components/layout-v2'
+import { Alert, Button, PageActions, PageHeader } from '@/components/mds'
+import { canAccessWebAnalytics } from '@/lib/web-analytics/access'
 import {
   createEmptyWebAnalyticsDashboardData,
   getWebAnalyticsDashboardData,
   parseWebAnalyticsFilters,
-} from '@/lib/web-analytics/queries';
-import { createClient } from '@/utils/supabase/server';
+} from '@/lib/web-analytics/queries'
+import { createClient } from '@/utils/supabase/server'
 
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-dynamic'
 
 type WebAnalyticsPageProps = {
-  searchParams: Promise<{ dia?: string }>;
-};
+  searchParams: Promise<{ dia?: string }>
+}
 
-export default async function WebAnalyticsPage({ searchParams }: WebAnalyticsPageProps) {
-  const params = await searchParams;
-  const filters = parseWebAnalyticsFilters(params);
+const BREADCRUMBS: BreadcrumbItem[] = [
+  { id: 'master', label: 'Master', href: '/master/dashboard' },
+  { id: 'web', label: 'Analítica web' },
+]
 
-  const supabase = await createClient();
+export default async function WebAnalyticsPage({
+  searchParams,
+}: WebAnalyticsPageProps) {
+  const params = await searchParams
+  const filters = parseWebAnalyticsFilters(params)
+
+  const supabase = await createClient()
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/login');
+    redirect('/login')
   }
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('email')
+    .select('email, first_name')
     .eq('id', user.id)
-    .maybeSingle();
+    .maybeSingle()
 
-  const email = profile?.email ?? user.email ?? '';
+  const email = profile?.email ?? user.email ?? ''
   if (!canAccessWebAnalytics(email)) {
-    redirect('/dashboard');
+    redirect('/dashboard')
   }
 
-  let data = createEmptyWebAnalyticsDashboardData(filters);
-  let loadError: string | null = null;
+  let data = createEmptyWebAnalyticsDashboardData(filters)
+  let loadError: string | null = null
 
   try {
-    data = await getWebAnalyticsDashboardData(filters);
+    data = await getWebAnalyticsDashboardData(filters)
   } catch (error) {
-    loadError = error instanceof Error ? error.message : 'No se pudieron cargar los datos de analítica web.';
+    loadError =
+      error instanceof Error
+        ? error.message
+        : 'No se pudieron cargar los datos de analítica web.'
   }
 
   return (
-    <div className="mx-auto min-h-screen max-w-3xl space-y-4 p-4">
-      <div className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-zinc-100 bg-zinc-50">
-          <Globe className="size-6 text-[#36606F]" aria-hidden />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h1 className="text-lg font-black uppercase tracking-wide text-zinc-800">
-            Analítica web
-          </h1>
-          <p className="truncate text-xs text-zinc-500">Visitas, navegación y clics en marbella-web</p>
-        </div>
-        <Link
-          href="https://marbella-web.vercel.app"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="shrink-0 text-xs font-semibold text-[#36606F]"
-        >
-          Abrir web
-        </Link>
-      </div>
+    <V2PageShell
+      variant="manager"
+      breadcrumbs={BREADCRUMBS}
+      user={{
+        id: user.id,
+        name: profile?.first_name?.trim() || 'Manager',
+        email: email || undefined,
+        roleLabel: 'Manager',
+      }}
+    >
+      <PageHeader
+        title="Analítica web"
+        description="Visitas, navegación y clics en marbella-web"
+        actions={
+          <PageActions>
+            <Button variant="outline" asChild>
+              <a
+                href="https://marbella-web.vercel.app"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <ExternalLink className="size-4" aria-hidden />
+                Abrir web
+              </a>
+            </Button>
+          </PageActions>
+        }
+      />
+
       {loadError ? (
-        <section className="rounded-xl border border-rose-100 bg-rose-50 p-4 text-sm text-rose-800">
-          <p className="font-semibold">No se pudo cargar la analítica web</p>
-          <p className="mt-1 text-xs text-rose-700">{loadError}</p>
-        </section>
+        <Alert
+          tone="danger"
+          title="No se pudo cargar la analítica web"
+          description={loadError}
+        />
       ) : null}
+
       <WebAnalyticsDashboard data={data} />
-    </div>
-  );
+    </V2PageShell>
+  )
 }

@@ -1,20 +1,27 @@
-import { Suspense } from 'react';
-import { WebAnalyticsBreakdown } from '@/components/web-analytics/WebAnalyticsBreakdown';
-import { WebAnalyticsFilters } from '@/components/web-analytics/WebAnalyticsFilters';
-import { WebAnalyticsKpis } from '@/components/web-analytics/WebAnalyticsKpis';
-import { WebAnalyticsRecentActivity } from '@/components/web-analytics/WebAnalyticsRecentActivity';
-import type { WebAnalyticsDashboardData } from '@/lib/web-analytics/types';
+import { Suspense } from 'react'
+import { WebAnalyticsBreakdown } from '@/components/web-analytics/WebAnalyticsBreakdown'
+import { WebAnalyticsFilters } from '@/components/web-analytics/WebAnalyticsFilters'
+import { WebAnalyticsKpis } from '@/components/web-analytics/WebAnalyticsKpis'
+import { WebAnalyticsRecentActivity } from '@/components/web-analytics/WebAnalyticsRecentActivity'
+import { LoadingBlock, Section } from '@/components/mds'
+import type { WebAnalyticsDashboardData } from '@/lib/web-analytics/types'
 
-export function WebAnalyticsDashboard({ data }: { data: WebAnalyticsDashboardData }) {
+export function WebAnalyticsDashboard({
+  data,
+}: {
+  data: WebAnalyticsDashboardData
+}) {
   return (
-    <div className="space-y-4">
-      <Suspense
-        fallback={
-          <div className="h-12 rounded-xl border border-zinc-100 bg-white" aria-hidden />
-        }
+    <div className="flex flex-col gap-6">
+      <Section
+        id="web-filters"
+        title="Filtros"
+        description="Día a consultar en marbella-web."
       >
-        <WebAnalyticsFilters filters={data.filters} />
-      </Suspense>
+        <Suspense fallback={<LoadingBlock lines={1} className="min-h-12" />}>
+          <WebAnalyticsFilters filters={data.filters} />
+        </Suspense>
+      </Section>
 
       <WebAnalyticsKpis totals={data.totals} />
       <WebAnalyticsBreakdown
@@ -32,5 +39,5 @@ export function WebAnalyticsDashboard({ data }: { data: WebAnalyticsDashboardDat
         filters={data.filters}
       />
     </div>
-  );
+  )
 }

@@ -13,3 +13,5 @@ export {
   demoSideItems,
 } from './page-data'
 export { AppShellPlaygroundContent } from './playground-content'
+export { DemoMdsLibrary } from './demo-mds-library'
+export { DemoMdsFoundationII } from './demo-mds-foundation-ii'

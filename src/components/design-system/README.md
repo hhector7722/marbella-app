@@ -2,9 +2,17 @@
 
 ## Propósito
 
-Fundación visual del rediseño de Bar La Marbella. Tokens TypeScript + tema semántico CSS/Tailwind. Los componentes UI del MDS se añadirán en sprints posteriores.
+Fundación visual del rediseño de Bar La Marbella. Tokens TypeScript + tema semántico CSS/Tailwind + **componentes** en `src/components/mds/` (Sprint 5+).
 
 La UI actual (Navbar, MainWrapper, pantallas) **no** activa aún la paleta MDS. Convivencia sin ruptura visual.
+
+## Componentes UI
+
+Importar desde `@/components/mds`. Ver `src/components/mds/README.md`.
+
+- Capa **encima** de shadcn (nunca un reemplazo).
+- Gate visual: `/dev/app-shell` → sección «Librería MDS».
+- shadcn sigue en `@/components/ui/*`.
 
 ## Principios
 

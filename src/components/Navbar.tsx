@@ -11,6 +11,7 @@ import { useAIStore } from '@/store/aiStore';
 import { cn } from '@/lib/utils';
 import { getHomeHrefForUser, isMasterDashboardUser } from '@/lib/master-dashboard';
 import { isFullscreenCartaPath } from '@/lib/carta-fullscreen-path';
+import { isV2ShellPath } from '@/lib/v2-shell-path';
 
 export default function Navbar() {
     const pathname = usePathname();
@@ -20,6 +21,7 @@ export default function Navbar() {
 
     // ANÁLISIS CRÍTICO: Tienes esta función de Zustand activada en el botón.
     const toggleChat = useAIStore((state) => state.toggleChat);
+
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -59,6 +61,7 @@ export default function Navbar() {
     if (pathname === '/login') return null;
     if (isFullscreenCartaPath(pathname)) return null;
     if (pathname.startsWith('/reporte')) return null;
+    if (isV2ShellPath(pathname)) return null;
 
     const isDashboard = pathname === '/dashboard' || pathname === '/staff/dashboard' || pathname === '/master/dashboard';
     const homePath = getHomeHrefForUser(userData?.email, userData?.role);
