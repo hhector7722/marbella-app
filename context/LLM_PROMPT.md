@@ -479,10 +479,19 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto "prompt-ready"**. Debe 
 
 <!-- sync:project-status:start — NO EDITAR A MANO; generado por `scripts/sync-llm-prompt-from-project-status.mjs` -->
 
-**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-25 (Sprint 4 — AppShell Playground)
+**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-26 (Sprint 13 — Inventory Slice I)
 
 Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; máx. 45 entradas):
 
+- **Sprint 13 — Inventory Slice I / Mermas + Stock (2026-07-26)**: Migración visual conjunta de waste + ledger (>80% estructura compartida).
+- **Sprint 12 — Completar módulo Dashboard V2 / `/dashboard/scanner` (2026-07-26)**: Inventario de rutas reales bajo `src/app/dashboard/` + migración de la candidata de menor riesgo.
+- **Sprint 11 — Dashboard Suite III / Insights (2026-07-26)**: Migración visual de `/dashboard/insights` con el patrón V2 oficial.
+- **Sprint 10 — Dashboard Suite II / Analítica web (2026-07-26)**: Migración visual de `/dashboard/web` con el patrón V2 oficial.
+- **Sprint 9 — Segunda migración V2 / Dashboard Uso (2026-07-26)**: Migración visual de `/dashboard/uso` con patrón oficial (registry + `V2PageShell` + MDS).
+- **Sprint 8 — V2 Adoption Infrastructure (2026-07-26)**: Patrón reutilizable de adopción; sin migrar pantallas nuevas.
+- **Sprint 7 — Primera migración real / Vertical Slice (2026-07-26)**: Migración visual de `/dashboard/instalacion-app` a AppShell V2 + MDS.
+- **Sprint 6 — MDS Foundation Components II (2026-07-26)**: Segunda capa en `src/components/mds/`.
+- **Sprint 5 — Marbella Design System Components (2026-07-26)**: Primera librería real en `src/components/mds/` (capa encima de shadcn, no reemplazo).
 - **Sprint 4 — AppShell Playground (2026-07-25)**: Ruta dev `/dev/app-shell` con `AppShell` + mocks en `layout-v2/demo/`. Contenido de referencia (métricas, tabla, card lateral, botones, badges, skeleton, dialog). Overlay fullscreen (sin tocar Navbar/layouts). Sin menú producción, sin Supabase/auth.
 - **Sprint 3 — AppShell V2 Architecture (2026-07-25)**: Shell presentacional en `src/components/layout-v2/` (`AppShell`, Sidebar*, Topbar*, Mobile*, Page*, `LayoutProvider`). Tipos `NavigationItem|Section|Group`, `UserSummary`. MDS + shadcn. Sin auth/Supabase/fetch. **No integrado** en layouts/páginas. Export: `@/components/layout-v2`.
 - **Sprint 2 — MDS Semantic Theme (2026-07-25)**: Temas en `themes.ts` / `css-variables.ts`. Vars `--mds-*` + aliases `--surface|--success|--warning|--danger` en `globals.css`. Tailwind `theme.extend.colors` semántico + namespace `mds`. Freeze visual de vars shadcn (oklch). Opt-in futuro `data-mds-theme` / `data-theme` dark|high-contrast. Doc en `src/components/design-system/README.md`. Sin cambios de pantallas/Navbar/layouts.
@@ -519,14 +528,5 @@ Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; m
 - **Horas justificadas en asistencia (2026-07-23)**: En el modal de día (`AttendanceDetailModal`), managers pueden añadir **horas que computan** (contrato/banco) sin ser jornada trabajada — caso típico: salida anticipada por examen. Crea un segundo `time_logs` con evento `personal` (o Festivo/Enfermedad/Baja), editable en horas; se suman al total del día. No cuentan en propinas (mismo filtro tip-pool de eventos no-regular). El modal lista todos los fichajes del día (antes solo el primero). En `WeekCard` (`/staff/history`): día mixto muestra relojes reales + **H** total + badge **P** (o F/E/B); día solo justificado sigue mostrando solo la letra.
 - **Fecha de finalización editable en condiciones laborales (2026-07-22)**: En `/profile/contrato`, al editar un tramo el campo «Hasta» deja de ser solo lectura («Vigente»). `rescheduleTermEnd` / `rescheduleTermBounds` recalculan el siguiente tramo (sin huecos); vacío = vigente (solo último). Si cambia el fin del último tramo, sincroniza `profiles.end_date`. Tests versionado + labor.
 - **Fecha de inicio editable en condiciones laborales (2026-07-21)**: En `/profile/contrato`, al editar un tramo del histórico la fecha de inicio es editable. `rescheduleTermStart` recalcula el tramo anterior (sin huecos) y, si es el primer tramo, sincroniza `profiles.joining_date`. Tests versionado + labor.
-- **Fix filtro empleado bolsa+deuda (2026-07-21)**: Pere (y similares) fallaban al filtrar en `/staff/history` — assert `EXTRAS > 0 con carryOut negativo` en modo bolsa. Footer EXTRAS = 0 si queda deuda (igual que pago). Toast con detalle del error. Tests week-card **19/19**; plantilla julio OK todos.
-- **Historial filtrado alineado a plantilla (2026-07-21)**: En `/staff/history`, la vista empleado ya no usa `get_monthly_timesheet` para relojes. Semanas desde `time_logs` + TZ Madrid (`buildEmployeeWeeksFromTimeLogs`), igual que plantilla. Footer sigue con hours-engine. Export multi + simulación YTD mismo criterio. Tests: `build-employee-weeks-from-logs.test.ts` (4).
-- **Fix invariante Σ extras diarias (2026-07-21)**: Redondear OT/ordinarias en `regime-policy` rompía la coherencia con `daily-breakdown` (ej. `0.619999… ≠ 0.5`) y tumba el modal «Historial semanal» (`No data found` + toast). OT/ordinarias vuelven sin redondear ahí; el banco sigue en `.0/.5` vía carry. Assert compara en escala Marbella. Suite **122/122**.
-- **Asistencia UI restaurada a aspecto previo (2026-07-21)**: `PlantillaWeekCard` + `WeekCard` vuelven al look de antes del cambio de visibilidad (colores, opacity, layout). El modal de día sigue mostrando el detalle completo.
-- **Plantilla asistencia: ver todos los fichajes (2026-07-21)**: En vista plantilla (`PlantillaWeekCard`) se eliminó el tope `slice(0, 4)`, el `overflow-hidden` y la `opacity-45` de días de otro mes que ocultaban fichajes (el modal sí los tenía). Celdas crecen con todos los empleados. `WeekCard` individual: sin atenuar fichajes; si hay reloj en día especial (F/E/…) también se pinta. **Revertido visualmente** (ver entrada superior).
-- **Horas solo enteros o media + color Horarios (2026-07-21)**: Banco/carry y footers pasan por `roundMarbellaSigned` (nada tipo 83,7). UI (`WeekCard`, home, modal historial) formatea con `calculateRoundedHours`. Mini-calendario Horarios: revertido gris `text-gray-300` en días pasados → `text-gray-900` (igual que futuros).
-- **Semana sin fichajes consume contrato (2026-07-21)**: Eliminado el early-return de `liquidateWeek` que forzaba `weeklyBalance = 0` sin fichajes. Staff con jornada: semana vacía → `weeklyBalance = −contrato` y baja el banco. Solo sin tramos (post-baja) queda balance 0. Suite hours-engine **122/122**.
-- **Fix selección Pago/Bolsa semanal (2026-07-21)**: El motor ignoraba `weekly_snapshots.prefer_stock_hours_override` y repintaba siempre el `bagMode` del contrato. Ahora `liquidateWeek` acepta `bagModeOverride`; historial/modal/home leen el override y lo aplican en liquidación + carry. Aplicar Bolsa/Pago en WeekCard vuelve a persistir y verse.
-- **Horas contrato enteras/medias + no cobrar con deuda (2026-07-21)**:
 
 <!-- sync:project-status:end -->
