@@ -45,22 +45,14 @@ import {
     type SimulationPlantillaEmployee,
 } from '@/components/modals/SimulationPlantillaExportModal';
 import {
-    patchWeeksFromLiquidation,
-    loadEmployeeBoundaryFacts,
-    resolveOpeningCarryIn,
-    employeeTimelineStartWeek,
-    isPaidLookupFromRows,
-    bagModeOverrideLookupFromRows,
-    overtimeRateOverrideLookupFromRows,
-} from '@/lib/hours-engine';
+    getEmployeeHistoryMonth,
+    getEmployeeHistoryRange,
+} from '@/app/actions/history-read';
+import { buildEmployeeWeeksFromTimeLogs } from '@/lib/staff/build-employee-weeks-from-logs';
 import {
     filterVisiblePlantillaEmployees,
     PLANTILLA_EMPLOYEE_SELECT,
 } from '@/lib/staff/plantilla-employees';
-import {
-    buildEmployeeWeeksFromTimeLogs,
-    buildEmployeeWeeksInRange,
-} from '@/lib/staff/build-employee-weeks-from-logs';
 
 /** Línea roja fina con gradiente y difuminado en los extremos; forma parte del borde visual entre semanas (sin añadir espacio). */
 function WeekSeparator() {
@@ -234,111 +226,17 @@ export default function HistoryPage() {
         setLoading(true);
         try {
             const targetUserId = selectedEmployeeId || currentUserId;
-            const employeeFacts = await loadEmployeeBoundaryFacts(supabase, targetUserId);
-
-            const monthStart = new Date(filterYear, filterMonth, 1);
-            const monthEnd = new Date(filterYear, filterMonth + 1, 0);
-            const rangeStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-            const rangeEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
-            const rangeStartYmd = format(rangeStart, 'yyyy-MM-dd');
-            const rangeEndYmd = format(rangeEnd, 'yyyy-MM-dd');
-
-            // Logs desde el inicio de la línea temporal del empleado (carry continuo).
-            const timelineStart = employeeTimelineStartWeek(employeeFacts);
-            const logsFromYmd =
-                timelineStart && timelineStart < rangeStartYmd ? timelineStart : rangeStartYmd;
-            const { startIso, endIso } = madridRangeUtcIso(logsFromYmd, rangeEndYmd);
-
-            const [logsResult, snapsResult] = await Promise.all([
-                supabase
-                    .from('time_logs')
-                    .select('clock_in, clock_out, total_hours, justified_hours, event_type, clock_out_show_no_registrada')
-                    .eq('user_id', targetUserId)
-                    .gte('clock_in', startIso)
-                    .lte('clock_in', endIso),
-                timelineStart
-                    ? supabase
-                          .from('weekly_snapshots')
-                          .select('week_start, is_paid, prefer_stock_hours_override, overtime_price_snapshot')
-                          .eq('user_id', targetUserId)
-                          .gte('week_start', timelineStart)
-                          .lte('week_start', rangeEndYmd)
-                    : Promise.resolve({
-                        data: [] as {
-                          week_start: string;
-                          is_paid: boolean | null;
-                          prefer_stock_hours_override?: boolean | null;
-                        }[],
-                        error: null,
-                      }),
-            ]);
-
-            if (logsResult.error) {
-                console.error('Error fetching time_logs:', logsResult.error);
-                toast.error('No se pudieron cargar los fichajes del empleado.');
-                setWeeksData([]);
-                return;
-            }
-            if (snapsResult.error) {
-                console.error('Error fetching weekly_snapshots for carry:', snapsResult.error);
-                toast.warning('No se pudo cargar el sello Pagada previo; el arrastre puede ser incompleto.');
-            }
-
-            const logsRaw = logsResult.data || [];
-            const engineLogs = logsRaw.map((l: {
-                clock_in: string;
-                clock_out?: string | null;
-                total_hours?: number | null;
-            }) => ({
-                clockInIso: l.clock_in,
-                clockOutIso: l.clock_out,
-                totalHours: l.total_hours,
-            }));
-
-            const isPaidFromSnaps = isPaidLookupFromRows(snapsResult.data ?? []);
-            const bagModeFromSnaps = bagModeOverrideLookupFromRows(snapsResult.data ?? []);
-            const overtimeRateFromSnaps = overtimeRateOverrideLookupFromRows(
-                snapsResult.data ?? [],
-            );
-
-            // Misma fuente de relojes que la plantilla (time_logs + Madrid), sin RPC.
-            const mappedWeeks = buildEmployeeWeeksFromTimeLogs({
+            const res = await getEmployeeHistoryMonth({
+                userId: targetUserId,
                 filterYear,
                 filterMonth,
-                logs: logsRaw,
-                isPaidByWeek: isPaidFromSnaps,
-                bagModeOverrideByWeek: bagModeFromSnaps,
-            }) as WeekData[];
-
-            if (mappedWeeks.length === 0) {
+            });
+            if (!res.success) {
+                toast.error(res.error || 'Error al cargar el historial del empleado.');
                 setWeeksData([]);
                 return;
             }
-
-            const chainStart = [...mappedWeeks]
-                .map((w) => w.startDate)
-                .sort()[0]!;
-
-            const openingCarryIn = resolveOpeningCarryIn({
-                employee: employeeFacts,
-                chainStart,
-                logs: engineLogs,
-                isPaidByWeek: isPaidFromSnaps,
-                bagModeOverrideByWeek: bagModeFromSnaps,
-            });
-
-            const formattedWeeks = patchWeeksFromLiquidation<WeekData>(
-                mappedWeeks,
-                employeeFacts,
-                engineLogs,
-                {
-                    openingCarryIn,
-                    bagModeOverrideByWeek: bagModeFromSnaps,
-                    overtimeRateOverrideByWeek: overtimeRateFromSnaps,
-                },
-            );
-
-            setWeeksData(formattedWeeks);
+            setWeeksData(res.weeks as WeekData[]);
         } catch (err) {
             console.error('fetchCalendar error:', err);
             const detail = err instanceof Error && err.message ? err.message : '';
@@ -553,82 +451,15 @@ export default function HistoryPage() {
     }
 
     async function fetchWeeksYearToDate(userId: string, year: number): Promise<WeekData[]> {
-        const employeeFacts = await loadEmployeeBoundaryFacts(supabase, userId);
-        const timelineStart = employeeTimelineStartWeek(employeeFacts);
-
-        const yearStart = timelineStart && timelineStart < `${year}-01-01`
-            ? timelineStart
-            : `${year}-01-01`;
-        const yearEnd = format(new Date(), 'yyyy-MM-dd');
-        const { startIso, endIso } = madridRangeUtcIso(yearStart, yearEnd);
-        const [{ data: yearLogs, error: yearLogsError }, { data: yearSnaps }] = await Promise.all([
-            supabase
-                .from('time_logs')
-                .select('clock_in, clock_out, total_hours, justified_hours, event_type, clock_out_show_no_registrada')
-                .eq('user_id', userId)
-                .gte('clock_in', startIso)
-                .lte('clock_in', endIso),
-            timelineStart
-                ? supabase
-                      .from('weekly_snapshots')
-                      .select('week_start, is_paid, prefer_stock_hours_override, overtime_price_snapshot')
-                      .eq('user_id', userId)
-                      .gte('week_start', timelineStart)
-                      .lte('week_start', yearEnd)
-                : Promise.resolve({
-                    data: [] as {
-                      week_start: string;
-                      is_paid: boolean | null;
-                      prefer_stock_hours_override?: boolean | null;
-                    }[],
-                  }),
-        ]);
-
-        if (yearLogsError) {
-            console.error('fetchWeeksYearToDate time_logs:', yearLogsError);
-            throw yearLogsError;
-        }
-
-        const engineLogs = (yearLogs ?? []).map((l) => ({
-            clockInIso: l.clock_in,
-            clockOutIso: l.clock_out,
-            totalHours: l.total_hours,
-        }));
-
-        const isPaidFromSnaps = isPaidLookupFromRows(yearSnaps ?? []);
-        const bagModeFromSnaps = bagModeOverrideLookupFromRows(yearSnaps ?? []);
-        const overtimeRateFromSnaps = overtimeRateOverrideLookupFromRows(yearSnaps ?? []);
-
         const rangeStart = startOfWeek(new Date(year, 0, 1), { weekStartsOn: 1 });
         const rangeEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
-        const uniqueWeeks = buildEmployeeWeeksInRange({
-            rangeStart,
-            rangeEnd,
-            logs: yearLogs ?? [],
-            isPaidByWeek: isPaidFromSnaps,
-            bagModeOverrideByWeek: bagModeFromSnaps,
-        }) as WeekData[];
-
-        if (uniqueWeeks.length === 0) return [];
-
-        const openingCarryIn = resolveOpeningCarryIn({
-            employee: employeeFacts,
-            chainStart: uniqueWeeks[0]!.startDate,
-            logs: engineLogs,
-            isPaidByWeek: isPaidFromSnaps,
-            bagModeOverrideByWeek: bagModeFromSnaps,
+        const res = await getEmployeeHistoryRange({
+            userId,
+            rangeStartIso: rangeStart.toISOString(),
+            rangeEndIso: rangeEnd.toISOString(),
         });
-
-        return patchWeeksFromLiquidation<WeekData>(
-            uniqueWeeks,
-            employeeFacts,
-            engineLogs,
-            {
-                openingCarryIn,
-                bagModeOverrideByWeek: bagModeFromSnaps,
-                overtimeRateOverrideByWeek: overtimeRateFromSnaps,
-            },
-        );
+        if (!res.success) throw new Error(res.error);
+        return res.weeks as WeekData[];
     }
 
     const openSimulationExportModal = useCallback(async () => {

@@ -29,6 +29,7 @@ import Image from 'next/image';
 import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, MAX_DISTANCE_METERS } from '@/lib/location';
 import { FICHAJE_OVERLAY_VIDEOS } from '@/lib/fichaje-overlay-videos';
 import { syncOvertimeCostAfterTimeLogChange } from '@/app/actions/persist-overtime-cost';
+import { getWeekDetailDto } from '@/app/actions/history-read';
 import WorkTimer from '@/components/ui/WorkTimer';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
@@ -36,7 +37,6 @@ import { ConsumptionModal } from '@/app/staff/ConsumptionModal';
 import { STAFF_MANUAL_ASSETS, STAFF_MANUAL_MENU, STAFF_TPV_MANUAL_ITEMS, STAFF_TPV_MANUAL_VIDEOS, type StaffManualMenuId } from '@/lib/staff-manuals';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
-import { liquidateWeekForCard, loadEmployeeBoundaryFacts, resolveOpeningCarryIn, employeeTimelineStartWeek, isPaidLookupFromRows, bagModeOverrideLookupFromRows, overtimeRateOverrideLookupFromRows } from '@/lib/hours-engine';
 import { SpecialDayLabel, specialEventFullLabel, specialEventTextClass } from '@/components/staff/SpecialDayLabel';
 
 const CONTACTS_DATA = [
@@ -321,96 +321,41 @@ export default function StaffDashboardView() {
             setWeekNumber(wNum);
 
             const weekStartYmd = format(weekStart, 'yyyy-MM-dd');
-            const weekEndYmd = format(addDays(weekStart, 6), 'yyyy-MM-dd');
 
-            const employeeFacts = await loadEmployeeBoundaryFacts(supabase, user.id);
-            const timelineStart = employeeTimelineStartWeek(employeeFacts);
-            const logsFromYmd =
-                timelineStart && timelineStart < weekStartYmd ? timelineStart : weekStartYmd;
-            const { startIso: logsStartIso, endIso: weekEndIso } = madridRangeUtcIso(
-                logsFromYmd,
-                weekEndYmd,
-            );
-
-            const effContract = (profile?.role === 'manager' || isFixedSalary) ? 0 : contractHours;
-            const [{ data: gridDays }, snapsRes, logsRes] = await Promise.all([
-                supabase.rpc('get_worker_weekly_log_grid', {
-                    p_user_id: user.id,
-                    p_start_date: weekStartYmd,
-                    p_contracted_hours: effContract,
-                }),
-                supabase
-                    .from('weekly_snapshots')
-                    .select('week_start, is_paid, prefer_stock_hours_override, overtime_price_snapshot')
-                    .eq('user_id', user.id)
-                    .gte('week_start', logsFromYmd)
-                    .lte('week_start', weekStartYmd),
-                supabase
-                    .from('time_logs')
-                    .select('clock_in, clock_out, total_hours, event_type, clock_out_show_no_registrada')
-                    .eq('user_id', user.id)
-                    .gte('clock_in', logsStartIso)
-                    .lte('clock_in', weekEndIso),
-            ]);
-
-            if (logsRes.error) {
-                console.error('Error fetching time_logs for carry:', logsRes.error);
-            }
-            if (snapsRes.error) {
-                console.error('Error fetching weekly_snapshots for carry:', snapsRes.error);
+            const detail = await getWeekDetailDto({ userId: user.id, weekStart: weekStartYmd });
+            if (!detail.success) {
+                toast.error(detail.error || 'No se pudo cargar el resumen semanal');
             }
 
-            const engineLogs = (logsRes.data ?? []).map((l) => ({
-                clockInIso: l.clock_in,
-                clockOutIso: l.clock_out,
-                totalHours: l.total_hours,
-            }));
-
-            const isPaidByWeek = isPaidLookupFromRows(snapsRes.data ?? []);
-            const bagModeOverrideByWeek = bagModeOverrideLookupFromRows(snapsRes.data ?? []);
-            const overtimeRateOverrideByWeek = overtimeRateOverrideLookupFromRows(
-                snapsRes.data ?? [],
-            );
-            const isPaid = isPaidByWeek(weekStartYmd);
-            const bagModeOverride = bagModeOverrideByWeek(weekStartYmd);
-            const overrideRate = overtimeRateOverrideByWeek(weekStartYmd);
-            const carryIn = resolveOpeningCarryIn({
-                employee: employeeFacts,
-                chainStart: weekStartYmd,
-                logs: engineLogs,
-                isPaidByWeek,
-                bagModeOverrideByWeek,
-            });
-
-            // Misma liquidación que historial: PENDIENTES = carryIn; EXTRAS/IMPORTE desde el motor.
-            const { extrasByDay, summary } = liquidateWeekForCard({
-                employee: employeeFacts,
-                weekStart: weekStartYmd,
-                logs: engineLogs,
-                isPaid,
-                carryIn,
-                bagModeOverride,
-                overrideRate,
-            });
-
-            const daysStructure: DailyLog[] = (gridDays || []).map((day: any, i: number) => {
-                const d = realWeekDays[i];
-                const dayYmd = format(d, 'yyyy-MM-dd');
-                const dayLog = logsRes.data?.find((l) => formatYmdInMadrid(l.clock_in) === dayYmd);
+            const daysStructure: DailyLog[] = realWeekDays.map((d, i) => {
+                const dayDto = detail.success ? detail.days[i] : undefined;
                 return {
-                    ...day,
                     date: d,
                     dayName: ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'][i] || '',
                     dayNumber: parseInt(format(d, 'd'), 10),
                     isToday: isSameDay(d, today),
-                    extraHours: extrasByDay[dayYmd] ?? 0,
-                    eventType: dayLog?.event_type || day.eventType || day.event_type || 'regular',
-                    clock_out_show_no_registrada: dayLog?.clock_out_show_no_registrada === true,
+                    hasLog: dayDto?.hasLog ?? false,
+                    clockIn: dayDto?.clockIn ?? '',
+                    clockOut: dayDto?.clockOut ?? '',
+                    totalHours: dayDto?.totalHours ?? 0,
+                    extraHours: dayDto?.extraHours ?? 0,
+                    eventType: 'regular',
+                    clock_out_show_no_registrada: false,
                 };
             });
             setWeekDays(daysStructure);
 
-            // Manager / fijo: presentación de HORAS (no altera carryIn del motor).
+            const summary = detail.success
+                ? detail.summary
+                : {
+                      totalHours: 0,
+                      weeklyBalance: 0,
+                      estimatedValue: 0,
+                      startBalance: 0,
+                      preferStock: false,
+                  };
+
+            // Manager / fijo: presentación de HORAS (no altera datos persistidos).
             let displayHours = summary.totalHours;
             if (profile?.role === 'manager' || isFixedSalary) {
                 if (summary.totalHours === 0) {

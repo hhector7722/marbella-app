@@ -389,7 +389,7 @@ export default function LaborHistoryPage() {
             try {
                 const [labor, salesRes] = await Promise.all([
                     getLaborCostDayDetailSsot({
-                        date: key,
+                        dateYmd: key,
                         userId: workerFilterId ?? null,
                     }),
                     supabase.rpc('get_cash_closings_summary', {

@@ -2,9 +2,12 @@
 
 import { createClient } from '@/utils/supabase/server';
 import {
-  buildLaborCostDayDetailFromSsot,
-  buildLaborCostPeriodFromSsot,
-} from '@/lib/hours-engine/labor-cost-ssot';
+  buildLaborCostDayDetailFromSnapshots,
+  buildLaborCostPeriodFromSnapshots,
+  PAYROLL_ORDINARY_ROW_ID,
+} from '@/lib/read-models/weekly-snapshot-dto';
+
+export { PAYROLL_ORDINARY_ROW_ID };
 
 export async function getLaborCostPeriodSsot(input: {
   startDate: string;
@@ -12,7 +15,7 @@ export async function getLaborCostPeriodSsot(input: {
   userId?: string | null;
 }) {
   const supabase = await createClient();
-  return buildLaborCostPeriodFromSsot(supabase, {
+  return buildLaborCostPeriodFromSnapshots(supabase, {
     startDate: input.startDate,
     endDate: input.endDate,
     userId: input.userId ?? null,
@@ -20,13 +23,13 @@ export async function getLaborCostPeriodSsot(input: {
 }
 
 export async function getLaborCostDayDetailSsot(input: {
-  date: string;
+  dateYmd: string;
   userId?: string | null;
 }) {
   const supabase = await createClient();
-  return buildLaborCostDayDetailFromSsot(
+  return buildLaborCostDayDetailFromSnapshots(
     supabase,
-    input.date,
+    input.dateYmd,
     input.userId ?? null,
   );
 }

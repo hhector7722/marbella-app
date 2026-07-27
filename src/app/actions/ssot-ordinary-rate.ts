@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
-import { ordinaryHourlyRateFromSsot } from '@/lib/hours-engine/ordinary-rate-ssot';
+import { ordinaryHourlyRateFromTerms } from '@/lib/read-models/weekly-snapshot-dto';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 
 export async function getSsotOrdinaryHourlyRate(
@@ -16,7 +16,7 @@ export async function getSsotOrdinaryHourlyRate(
     return { success: false, error: 'Acceso denegado' };
   }
   try {
-    const rate = await ordinaryHourlyRateFromSsot(supabase, userId, onDate);
+    const rate = await ordinaryHourlyRateFromTerms(supabase, userId, onDate);
     return { success: true, rate };
   } catch (e) {
     return {

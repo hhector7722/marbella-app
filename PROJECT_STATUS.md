@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-26 (Uso app: inactivos + resúmenes completos)
+**Última actualización:** 2026-07-26 (Fase 2 — pantallas sin HE/Cost en load)
+
+- [x] **Pantallas READ sin Hours/Cost Engine (2026-07-26)**: Regla congelada: ninguna pantalla ejecuta lógica de negocio en carga. Overtime / Labor / Dashboard / Insights / History / modal semana / StaffDashboard leen DTOs desde `weekly_snapshots` (`src/lib/read-models/weekly-snapshot-dto.ts` + `history-read.ts`). Escritura (fichaje, toggle, cron, import, persist) sigue con HE/Cost Engine. **Merino:** `profiles.end_date` era igual a `joining_date` (baja ficticia) → fence post-baja; corregido a `NULL` + recalc+persist W30 (`total_hours=4`, `extra_hours=4`, `total_cost=64`). Script ops: `scripts/recalc-merino-w30.ts`.
+
+**Última actualización anterior:** 2026-07-26 (Uso app: inactivos + resúmenes completos)
 
 - [x] **`/dashboard/uso` incluye inactivos (2026-07-26)**: El filtro ya no se limita a `visible_in_plantilla=true` (aparecen bajas / fuera de plantilla, p.ej. Sergi). Los resúmenes agregan todos los eventos (paginación), no solo los 2000 más recientes. Placeholders (ramon/empleado) siguen ocultos. Héctor sigue fuera de la selección por defecto.
 
