@@ -178,7 +178,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const [actualBalance, setActualBalance] = useState<number>(initialData?.actualBalance || 0);
     const [differenceCents, setDifferenceCents] = useState<number>(initialData?.differenceCents ?? Math.round((initialData?.difference ?? 0) * 100));
     const isDifferenceZero = differenceCents === 0;
-    const [overtimeData, setOvertimeData] = useState<any[]>(initialData?.overtimeData || []);
     const [paidStatus, setPaidStatus] = useState<Record<string, boolean>>(initialData?.paidStatus || {});
     const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -203,10 +202,11 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const [selectedHistory, setSelectedHistory] = useState<{ workerId: string, weekId: string } | null>(null);
     const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
     const [isDesktop, setIsDesktop] = useState(false);
-    // Horas extras: vista mensual + modal semana
+    // Horas extras: carga independiente (no bloquea shell del dashboard)
     const [overtimeViewMonth, setOvertimeViewMonth] = useState(() => startOfMonth(new Date()));
     const [overtimeWeeksData, setOvertimeWeeksData] = useState<any[]>([]);
-    const [overtimeLoading, setOvertimeLoading] = useState(false);
+    const [overtimeLoading, setOvertimeLoading] = useState(true);
+    const [overtimeRefreshKey, setOvertimeRefreshKey] = useState(0);
     const [weekDetailModal, setWeekDetailModal] = useState<{ week: any } | null>(null);
     const [editingBox, setEditingBox] = useState<any>(null);
 
@@ -341,23 +341,33 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         if (!initialData) fetchData();
     }, []);
 
-    const toggleWeek = (weekId: string) => setOvertimeData(prev => prev.map(w => w.weekId === weekId ? { ...w, expanded: !w.expanded } : w));
-
-    // Fetch overtime por mes para la vista calendario + semanas
+    // Fetch overtime por mes — paralelo al shell (tesorería/ventas)
     useEffect(() => {
         const start = format(startOfMonth(overtimeViewMonth), 'yyyy-MM-dd');
         const end = format(endOfMonth(overtimeViewMonth), 'yyyy-MM-dd');
         let cancelled = false;
         setOvertimeLoading(true);
         getOvertimeData(start, end).then((result) => {
-            if (!cancelled && result?.weeksResult) setOvertimeWeeksData(result.weeksResult);
+            if (cancelled) return;
+            const weeks = result?.weeksResult ?? [];
+            setOvertimeWeeksData(weeks);
+            const nextPaid: Record<string, boolean> = {};
+            weeks.forEach((week: any) => {
+                week.staff?.forEach((s: any) => {
+                    nextPaid[`${week.weekId}-${s.id}`] = !!s.isPaid;
+                });
+            });
+            setPaidStatus(nextPaid);
         }).catch(() => {
-            if (!cancelled) setOvertimeWeeksData([]);
+            if (!cancelled) {
+                setOvertimeWeeksData([]);
+                toast.error('No se pudieron cargar las horas extras');
+            }
         }).finally(() => {
             if (!cancelled) setOvertimeLoading(false);
         });
         return () => { cancelled = true; };
-    }, [overtimeViewMonth]);
+    }, [overtimeViewMonth, overtimeRefreshKey]);
 
     const togglePaid = async (e: React.MouseEvent, weekId: string, staffId: string, newStatus: boolean) => {
         e.stopPropagation();
@@ -367,7 +377,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             ? { ...w, staff: w.staff?.map((s: any) => s.id === staffId ? { ...s, isPaid: newStatus } : s) }
             : w));
         try {
-            const weekData = overtimeData.find(w => w.weekId === weekId) || overtimeWeeksData.find(w => w.weekId === weekId);
+            const weekData = overtimeWeeksData.find(w => w.weekId === weekId);
             const staffData = weekData?.staff?.find((s: any) => s.id === staffId);
             const result = await togglePaidStatus(staffId, weekId, newStatus, {
                 totalHours: staffData?.hours ?? staffData?.totalHours ?? 0,
@@ -392,6 +402,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             const result = await togglePreferStockStatus(staffId, weekId, currentStatus);
             if (!result.success) throw new Error(result.error);
             toast.success(result.newStatus ? "Enviado a Bolsa de Horas" : "Cambiado a Pago en Nómina", { id: 'prefer-stock-toggle' });
+            setOvertimeRefreshKey((k) => k + 1);
             fetchData();
         } catch (error: any) {
             console.error(error);
@@ -411,8 +422,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 setTheoreticalBalance(data.theoreticalBalance || 0);
                 setActualBalance(data.actualBalance || 0);
                 setDifferenceCents(data.differenceCents ?? Math.round((data.difference ?? 0) * 100));
-                setOvertimeData(data.overtimeData);
-                setPaidStatus(data.paidStatus);
                 setAllEmployees(data.allEmployees);
             }
         } catch (error) {
@@ -676,7 +685,12 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                         </div>
                         <Link href="/dashboard/overtime" className="text-[8px] md:text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
                     </div>
-                    <div className="p-2 md:p-2">
+                    <div className="p-2 md:p-2 relative min-h-[120px]">
+                        {overtimeLoading ? (
+                            <div className="absolute inset-0 flex items-center justify-center" role="status" aria-label="Cargando horas extras">
+                                <LoadingSpinner size="md" className="text-purple-600" />
+                            </div>
+                        ) : (
                         <div className="flex gap-2">
                             {(() => {
                                 const start = startOfWeek(startOfMonth(overtimeViewMonth), { weekStartsOn: 1 });
@@ -713,10 +727,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                             ))}
                                         </div>
                                         <div className="flex-1 min-w-0 flex flex-col gap-[2px]">
-                                            {rowWeekIds.map((weekId, rowIndex) => {
-                                                if (overtimeLoading) {
-                                                    return <div key={rowIndex} className="w-5 h-5 md:w-6 md:h-6 flex-shrink-0" aria-hidden />;
-                                                }
+                                            {rowWeekIds.map((weekId) => {
                                                 if (weekId === currentWeekStart) {
                                                     return <div key={weekId} className="w-5 h-5 md:w-6 md:h-6 flex-shrink-0" aria-hidden />;
                                                 }
@@ -770,6 +781,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                 );
                             })()}
                         </div>
+                        )}
                     </div>
         </div>
     );
@@ -1084,7 +1096,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     .reduce((sum: number, s: any) => sum + (s.totalCost ?? s.amount ?? 0), 0);
                 const weekNum = getISOWeek(new Date(weekDetailModal.week.weekId));
                 const periodStr = `${format(new Date(weekDetailModal.week.weekId), 'd MMM', { locale: es })} - ${format(addDays(new Date(weekDetailModal.week.weekId), 6), 'd MMM yyyy', { locale: es })}`;
-                const allWeeks = Array.from(new Map([...(overtimeData || []), ...(overtimeWeeksData || [])].map((w: any) => [w.weekId, w])).values());
+                const allWeeks = Array.from(new Map((overtimeWeeksData || []).map((w: any) => [w.weekId, w])).values());
                 const sortedWeeks = [...allWeeks].sort((a: any, b: any) => a.weekId.localeCompare(b.weekId));
                 const currentIdx = sortedWeeks.findIndex((w: any) => w.weekId === weekDetailModal.week.weekId);
                 const prevWeek = currentIdx > 0 ? sortedWeeks[currentIdx - 1] : null;

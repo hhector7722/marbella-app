@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-27 (Fase 1d — motor SQL legacy de cierre semanal eliminado)
+**Última actualización:** 2026-07-27 (Dashboard: overtime no bloquea shell)
+
+- [x] **`/dashboard` overtime en paralelo (2026-07-27)**: `getDashboardData` ya no espera HE/60d. Tesorería/ventas pintan al llegar; sección Horas Extras con spinner propio vía `getOvertimeData`. `/master/dashboard`: spinner en tile H. extras durante la carga.
+
+**Última actualización anterior:** 2026-07-27 (Fase 1d — motor SQL legacy de cierre semanal eliminado)
 
 - [x] **Fase 1d — `close_week_for_all_users` desconectado (2026-07-27)**: Último productor SQL vivo post-Gate era pg_cron `close-previous-week` → `close_week_for_all_users` (INSERT/UPSERT columnas C desde `profiles` + `view_daily_hours_breakdown`, sin HE/Writer). Migración `20260727152000_phase1d_disable_close_week_sql_c_motor`: función → delegación HTTP Writer; job cron → `cron_close_previous_week_via_writer()`; `fn_recalc_and_propagate_snapshots` → no-op (0 funciones SQL con INSERT a `weekly_snapshots` C). Ops: `app_settings.cron_recalc_bearer` alineado con `CRON_SECRET` (antes PLACEHOLDER). Remoto: dry-run sin escritura C; smoke pg_net OK. ADR / Contract / HE / Cost **no modificados**.
 

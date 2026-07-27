@@ -1,10 +1,9 @@
 'use server';
 
 import { createClient } from "@/utils/supabase/server";
-import { getISOWeek, format, addDays, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { getBusinessHourFromTicket } from '@/lib/utils';
 import { filterVisiblePlantillaEmployees } from '@/lib/staff/plantilla-employees';
-import { buildOvertimeWeeksFromSsot } from '@/lib/hours-engine/overtime-weeks-ssot';
 
 export async function getDashboardData() {
     const supabase = await createClient();
@@ -154,39 +153,8 @@ export async function getDashboardData() {
         }
     }
 
-    // --- PROCESS OVERTIME (Last 60 days) — Hours Engine SSOT ---
-    let overtimeData: any[] = [];
-    let initialPaidStatus: Record<string, boolean> = {};
-
-    const sixtyDaysAgo = format(addDays(new Date(), -60), 'yyyy-MM-dd');
-    const todayISO = format(new Date(), 'yyyy-MM-dd');
-
-    try {
-        const ot = await buildOvertimeWeeksFromSsot(supabase, {
-            startDate: sixtyDaysAgo,
-            endDate: todayISO,
-            onlyCompletedWeeks: true,
-        });
-        overtimeData = ot.weeksResult.map((week) => ({
-            weekId: week.weekId,
-            total: week.totalAmount,
-            expanded: false,
-            staff: week.staff.map((s) => ({
-                id: s.id,
-                name: s.name.split(' ')[0],
-                amount: s.totalCost,
-                hours: s.overtimeHours,
-            })),
-        }));
-        ot.weeksResult.forEach((week) => {
-            week.staff.forEach((s) => {
-                initialPaidStatus[`${week.weekId}-${s.id}`] = s.isPaid;
-            });
-        });
-    } catch (e) {
-        console.error('Error fetching overtime SSOT in dashboard:', e);
-    }
-
+    // Overtime NO va aquí: bloqueaba 5–15s el shell. AdminDashboardView lo carga
+    // en paralelo vía getOvertimeData (sección con spinner propia).
     return {
         dailyStats,
         liveTickets: { total: salesStats?.total_ventas || 0, count: salesStats?.recuento_tickets || 0 },
@@ -200,8 +168,8 @@ export async function getDashboardData() {
         actualBalance,
         difference,
         differenceCents,
-        overtimeData,
-        paidStatus: initialPaidStatus,
+        overtimeData: [] as any[],
+        paidStatus: {} as Record<string, boolean>,
         allEmployees: filterVisiblePlantillaEmployees(allProfiles || []),
     };
 }

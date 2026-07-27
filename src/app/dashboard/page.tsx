@@ -4,8 +4,8 @@ import DashboardSwitcher from '@/components/dashboards/DashboardSwitcher';
 import { withTimeout } from '@/lib/with-timeout';
 
 /**
- * Admin dashboard: shell inmediata. AdminDashboardView ya hace
- * getDashboardData() en cliente si no hay initialData (evita SSR de 60d HE).
+ * Admin dashboard: shell inmediata. AdminDashboardView carga tesorería/ventas
+ * en cliente; overtime en paralelo (sección con spinner, no bloquea el resto).
  */
 export default async function AdminDashboardPage() {
   const supabase = await createClient();

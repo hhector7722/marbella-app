@@ -63,6 +63,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
     const [userData, setUserData] = useState<{ id: string; name: string; role: string } | null>(null);
     const [monthShifts, setMonthShifts] = useState<any[]>([]);
     const [overtimeSnapshot, setOvertimeSnapshot] = useState<OvertimeWeekSnapshot | null>(null);
+    const [overtimeLoading, setOvertimeLoading] = useState(true);
     const [pendingReservationsCount, setPendingReservationsCount] = useState(0);
 
     const changeBoxes = useMemo(
@@ -194,6 +195,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
 
     useEffect(() => {
         let cancelled = false;
+        setOvertimeLoading(true);
         const start = format(addDays(new Date(), -60), 'yyyy-MM-dd');
         const end = format(new Date(), 'yyyy-MM-dd');
         getOvertimeData(start, end)
@@ -202,7 +204,13 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                 setOvertimeSnapshot(pickLatestOvertimeWeekSnapshot(result?.weeksResult ?? []));
             })
             .catch(() => {
-                if (!cancelled) setOvertimeSnapshot(null);
+                if (!cancelled) {
+                    setOvertimeSnapshot(null);
+                    toast.error('No se pudieron cargar las horas extras');
+                }
+            })
+            .finally(() => {
+                if (!cancelled) setOvertimeLoading(false);
             });
         return () => {
             cancelled = true;
@@ -336,6 +344,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                     actualBalance={actualBalance}
                     changeBoxes={changeBoxes}
                     overtimeSnapshot={overtimeSnapshot}
+                    overtimeLoading={overtimeLoading}
                     onOpenCambio={() => setIsSwapModalOpen(true)}
                     onOpenReservas={() => router.push('/staff/reservas')}
                     onOpenHorarios={() => setIsScheduleModalOpen(true)}

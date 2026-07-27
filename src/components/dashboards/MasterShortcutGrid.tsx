@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { BarChart3, Check } from 'lucide-react';
 import PremiumCountUp from '@/components/ui/PremiumCountUp';
 import DashboardIosIcon from '@/components/dashboards/DashboardIosIcon';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { OvertimeWeekSnapshot } from '@/lib/master-overtime-snapshot';
 const WEB_URL = 'https://marbella-web.vercel.app';
 
@@ -12,6 +13,7 @@ type MasterShortcutGridProps = {
     actualBalance: number;
     changeBoxes: any[];
     overtimeSnapshot: OvertimeWeekSnapshot | null;
+    overtimeLoading?: boolean;
     onOpenCambio: () => void;
     onOpenReservas: () => void;
     onOpenHorarios: () => void;
@@ -31,6 +33,7 @@ export default function MasterShortcutGrid({
     actualBalance,
     changeBoxes,
     overtimeSnapshot,
+    overtimeLoading = false,
     onOpenCambio,
     onOpenReservas,
     onOpenHorarios,
@@ -90,7 +93,9 @@ export default function MasterShortcutGrid({
                     onClick={() => router.push('/dashboard/overtime')}
                 >
                     <div className="flex items-center justify-center gap-1 w-full h-full">
-                        {overtimeSnapshot ? (
+                        {overtimeLoading ? (
+                            <LoadingSpinner size="sm" className="text-purple-600" />
+                        ) : overtimeSnapshot ? (
                             <>
                                 {overtimeSnapshot.isFullyPaid ? (
                                     <div className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm shrink-0">
