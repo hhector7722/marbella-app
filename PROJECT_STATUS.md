@@ -1,6 +1,14 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-27 (Contrato: editar in-place + eliminar tramos)
+**Última actualización:** 2026-07-27 (Uso: incluir Ramon en filtro)
+
+- [x] **`/dashboard/uso` muestra Ramon (2026-07-27)**: El filtro de analytics ya no aplica `HIDDEN_PLANTILLA_FIRST_NAMES` (`ramon`/`empleado`). `fogotorrat@gmail.com` (Ramon Sole) aparece y su actividad se agrega. La exclusión de plantilla operativa se mantiene en propinas/horario/etc.
+
+**Última actualización anterior:** 2026-07-27 (Fix plantilla vacía en master)
+
+- [x] **Fix modal Plantilla vacío en `/master/dashboard` (2026-07-27)**: Tras quitar SSR de `getDashboardData`, `MasterDashboardView` no cargaba `allEmployees`. Ahora consulta `profiles` (`visible_in_plantilla=true`) en cliente al montar y al abrir el modal si aún está vacío.
+
+**Última actualización anterior:** 2026-07-27 (Contrato: editar in-place + eliminar tramos)
 
 - [x] **`/profile/contrato` editar/borrar tramos (2026-07-27)**: Editar un tramo (condiciones o fechas) **no crea tramos nuevos** (`persistTermBoundsReschedule` / rewrite). Eliminar tramo: `deleteContractTerm` — el anterior absorbe el rango; no se puede borrar el único. Recalc + persist Cost tras cambio. UI: «Editar condiciones vigentes» + «Nueva vigencia desde fecha» (splice opcional) + botón Eliminar. Tests versioning ampliados.
 

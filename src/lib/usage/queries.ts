@@ -9,7 +9,6 @@ import {
 import { buildUsageRecentFeed, hasMoreUsageRecentFeed } from '@/lib/usage/present';
 import type { AppUsageEventType } from '@/lib/usage/types';
 import { createClient } from '@/utils/supabase/server';
-import { isHiddenPlantillaName } from '@/lib/staff/plantilla-employees';
 
 export { USAGE_RECENT_PAGE_SIZE } from '@/lib/usage/filters';
 
@@ -144,9 +143,8 @@ export function parseUsageDashboardFilters(searchParams: {
 
 /**
  * Usuarios disponibles en el filtro de analytics.
- * Incluye inactivos / fuera de plantilla (`visible_in_plantilla = false`)
- * para que el histórico de uso siga siendo auditable.
- * Solo oculta placeholders de sistema (ramon, empleado).
+ * Incluye inactivos / fuera de plantilla y nombres ocultos en selectores
+ * de plantilla (p.ej. Ramon), para que el histórico de uso sea auditable.
  */
 async function getUsageFilterUsers(): Promise<UsageFilterUser[]> {
   const supabase = await createClient();
@@ -160,13 +158,11 @@ async function getUsageFilterUsers(): Promise<UsageFilterUser[]> {
     throw new Error(error.message);
   }
 
-  return (data ?? [])
-    .filter((profile) => !isHiddenPlantillaName(profile.first_name))
-    .map((profile) => ({
-      profileId: profile.id,
-      email: profile.email ?? '?',
-      displayName: profileDisplayName(profile),
-    }));
+  return (data ?? []).map((profile) => ({
+    profileId: profile.id,
+    email: profile.email ?? '?',
+    displayName: profileDisplayName(profile),
+  }));
 }
 
 type UsageSummaryRow = {
