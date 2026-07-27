@@ -112,7 +112,7 @@ export function validateWriterPreconditions(input: {
   timelineStart: CivilDate | null;
   /** Resultado de resolveOpeningCarryIn({ chainStart: timelineStart }). */
   openingCarryAtTimelineStart?: number;
-}): ProjectionValidationResult | null {
+}): ProjectionValidationFail | null {
   if (input.timelineStart == null) {
     return fail(
       'INV-C01',

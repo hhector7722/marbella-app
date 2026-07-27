@@ -239,7 +239,7 @@ export async function writeWeeklyProjection(
       timelineStart,
       openingCarryAtTimelineStart,
     });
-    if (pre) {
+    if (pre !== null) {
       return { ok: false, error: pre.error };
     }
 
