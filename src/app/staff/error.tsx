@@ -35,14 +35,14 @@ export default function StaffError({
             <button
               type="button"
               onClick={() => reset()}
-              className="min-h-12 flex-1 rounded-xl bg-[#36606F] px-4 font-black text-white hover:bg-[#2A4C58] active:scale-[0.99] transition-all"
+              className="min-h-12 flex-1 rounded-xl bg-mds-primary px-4 font-black text-mds-primary-foreground hover:bg-mds-primary/90 active:scale-[0.99] transition-all"
             >
               Reintentar
             </button>
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="min-h-12 flex-1 rounded-xl border border-zinc-200 bg-white px-4 font-black text-zinc-900 hover:bg-zinc-50 active:scale-[0.99] transition-all"
+              className="min-h-12 flex-1 rounded-xl border border-mds-border bg-mds-surface px-4 font-black text-mds-foreground hover:bg-mds-muted-surface active:scale-[0.99] transition-all"
             >
               Recargar
             </button>

@@ -1,35 +1,49 @@
-import { redirect } from 'next/navigation';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
-import ManagerLedgerView from '@/components/ledger/ManagerLedgerView';
+import { redirect } from 'next/navigation'
+import { createClient } from '@/utils/supabase/server'
+import { V2PageShell, type BreadcrumbItem } from '@/components/layout-v2'
+import ManagerLedgerView from '@/components/ledger/ManagerLedgerView'
 
+export const dynamic = 'force-dynamic'
+
+const BREADCRUMBS: BreadcrumbItem[] = [
+  { id: 'dashboard', label: 'Dashboard', href: '/dashboard' },
+  { id: 'ledger', label: 'Libro mayor' },
+]
+
+/**
+ * Libro mayor del manager. Gate estricto: solo role === 'manager'
+ * (igual que legacy; admin no entra por esta ruta).
+ */
 export default async function LedgerPage() {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-            cookies: {
-                get(name: string) {
-                    return cookieStore.get(name)?.value;
-                },
-            },
-        }
-    );
+  const supabase = await createClient()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+  const user = session?.user ?? null
+  if (!user) redirect('/login')
 
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user ?? null;
-    if (!user) redirect('/login');
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, first_name, email')
+    .eq('id', user.id)
+    .single()
 
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
+  if (profile?.role !== 'manager') {
+    redirect('/dashboard')
+  }
 
-    if (profile?.role !== 'manager') {
-        redirect('/dashboard');
-    }
-
-    return <ManagerLedgerView />;
+  return (
+    <V2PageShell
+      variant="manager"
+      breadcrumbs={BREADCRUMBS}
+      user={{
+        id: user.id,
+        name: profile?.first_name?.trim() || 'Manager',
+        email: profile?.email ?? user.email ?? undefined,
+        roleLabel: 'Manager',
+      }}
+    >
+      <ManagerLedgerView />
+    </V2PageShell>
+  )
 }

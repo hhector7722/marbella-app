@@ -1,17 +1,43 @@
-import { createClient } from '@/utils/supabase/server'
-import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
-import CartaEditorClient from './CartaEditorClient'
-import type { CartaEditorMappingRow, CartaOverrideRow } from './types'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { ArrowRightLeft } from 'lucide-react'
+import { createClient } from '@/utils/supabase/server'
+import { V2PageShell, type BreadcrumbItem } from '@/components/layout-v2'
+import { Button, PageActions, PageHeader } from '@/components/mds'
+import { StaffCartaInlineEditor } from '@/components/staff/StaffCartaInlineEditor'
+import CartaEditorClient from './CartaEditorClient'
 import CartaMappingCreatorClient, {
   type CartaRecipe,
   type CartaTpvArticle,
 } from './CartaMappingCreatorClient'
-import { StaffCartaInlineEditor } from '@/components/staff/StaffCartaInlineEditor'
+import type { CartaEditorMappingRow, CartaOverrideRow } from './types'
+
+export const dynamic = 'force-dynamic'
+
+const BREADCRUMBS: BreadcrumbItem[] = [
+  { id: 'dashboard', label: 'Dashboard', href: '/dashboard' },
+  { id: 'carta', label: 'Carta' },
+]
 
 export default async function CartaDashboardPage() {
   const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect('/login')
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, first_name, email')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  const role = profile?.role ?? null
+  const roleLabel =
+    role === 'admin' ? 'Admin' : role === 'manager' ? 'Manager' : 'Staff'
 
   const [
     { data: mappings, error: mappingsError },
@@ -45,7 +71,9 @@ export default async function CartaDashboardPage() {
   for (const d of (departamentos ?? []) as { id: number; nombre: string }[]) {
     deptNombreById.set(d.id, d.nombre)
   }
-  const withDeptNombre = <T extends { departamento_id?: number | null }>(row: T): T & { bdp_departamentos?: { nombre: string } | null } => {
+  const withDeptNombre = <T extends { departamento_id?: number | null }>(
+    row: T
+  ): T & { bdp_departamentos?: { nombre: string } | null } => {
     const did = row.departamento_id
     if (did == null || !deptNombreById.has(did)) {
       return { ...row, bdp_departamentos: null }
@@ -53,41 +81,60 @@ export default async function CartaDashboardPage() {
     return { ...row, bdp_departamentos: { nombre: deptNombreById.get(did) ?? '' } }
   }
 
-  const enrichedMappings = ((mappings ?? []) as any[]).map((m) => ({
+  const enrichedMappings = ((mappings ?? []) as Array<Record<string, unknown>>).map((m) => ({
     ...m,
-    bdp_articulos: m.bdp_articulos ? withDeptNombre(m.bdp_articulos) : null,
+    bdp_articulos: m.bdp_articulos
+      ? withDeptNombre(m.bdp_articulos as { departamento_id?: number | null })
+      : null,
   }))
-  const enrichedArticles = ((articles ?? []) as any[]).map((a) => withDeptNombre(a)) as unknown as CartaTpvArticle[]
+  const enrichedArticles = ((articles ?? []) as Array<{ departamento_id?: number | null }>).map(
+    (a) => withDeptNombre(a)
+  ) as unknown as CartaTpvArticle[]
 
-  const mappedIds = new Set(((mappings ?? []) as any[]).map((m) => m.articulo_id))
+  const mappedIds = new Set(
+    ((mappings ?? []) as Array<{ articulo_id: number }>).map((m) => m.articulo_id)
+  )
   const unmappedArticles = enrichedArticles.filter((a) => !mappedIds.has(a.id))
+
   return (
-    <DashboardDetailLayout
-      title="Carta"
-      subtitle="Ocultar, ordenar y sobrescribir nombre/descr/precio/foto (sin tocar TPV)"
-      maxWidthClass="max-w-7xl"
-      rightSlot={
-        <Link
-          href="/dashboard/recetas-tpv"
-          className="h-12 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white font-black uppercase tracking-wider text-[11px] flex items-center gap-2 transition-colors min-h-[48px]"
-          aria-label="Ir a Mapeo TPV"
-        >
-          <ArrowRightLeft size={18} strokeWidth={2.5} />
-          Mapeo TPV
-        </Link>
-      }
+    <V2PageShell
+      variant="manager"
+      breadcrumbs={BREADCRUMBS}
+      user={{
+        id: user.id,
+        name: profile?.first_name?.trim() || roleLabel,
+        email: profile?.email ?? user.email ?? undefined,
+        roleLabel,
+      }}
     >
+      <PageHeader
+        title="Carta"
+        description="Ocultar, ordenar y sobrescribir nombre/descr/precio/foto (sin tocar TPV)"
+        actions={
+          <PageActions>
+            <Button variant="outline" asChild>
+              <Link href="/dashboard/recetas-tpv">
+                <ArrowRightLeft className="size-4" strokeWidth={2.5} aria-hidden />
+                Mapeo TPV
+              </Link>
+            </Button>
+          </PageActions>
+        }
+      />
       <div className="space-y-6">
         <CartaMappingCreatorClient
           unmappedArticles={unmappedArticles}
           recipes={(recipes ?? []) as unknown as CartaRecipe[]}
-          departamentos={(departamentos ?? []) as any[]}
+          departamentos={(departamentos ?? []) as Array<{ id: number; nombre: string }>}
         />
 
         <div className="rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-xs font-black uppercase tracking-widest text-[#36606F]">Edición visual (nueva)</p>
+          <p className="text-xs font-black uppercase tracking-widest text-mds-primary">
+            Edición visual (nueva)
+          </p>
           <p className="mt-1 text-xs text-zinc-600">
-            Editor inline en la misma página (categorías y productos). El editor avanzado por departamento se retirará cuando el nuevo flujo esté completo.
+            Editor inline en la misma página (categorías y productos). El editor avanzado por
+            departamento se retirará cuando el nuevo flujo esté completo.
           </p>
           <div className="mt-4">
             <StaffCartaInlineEditor canEdit />
@@ -97,10 +144,9 @@ export default async function CartaDashboardPage() {
         <CartaEditorClient
           mappings={enrichedMappings as unknown as CartaEditorMappingRow[]}
           overrides={(overrides ?? []) as unknown as CartaOverrideRow[]}
-          categories={(categories ?? []) as any[]}
+          categories={(categories ?? []) as Array<Record<string, unknown>>}
         />
       </div>
-    </DashboardDetailLayout>
+    </V2PageShell>
   )
 }
-

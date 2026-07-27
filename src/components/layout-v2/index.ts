@@ -33,4 +33,4 @@ export { PageContainer } from './page/page-container'
 export { PageHeader } from './page/page-header'
 export { PageActions } from './page/page-actions'
 
-export { V2PageShell, V2AppShellBridge } from './v2-page-shell'
+export { V2PageShell } from './v2-page-shell'

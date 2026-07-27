@@ -25,6 +25,7 @@ import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { namedEntitySummary } from '@/lib/usage/modal-apply';
+import { Button, PageActions, PageHeader, Surface } from '@/components/mds';
 
 interface LedgerRow {
     id: string;
@@ -313,50 +314,51 @@ export default function ManagerLedgerView() {
     };
 
     return (
-        <div className="min-h-screen p-4 md:p-8 pb-24 text-zinc-900">
-            <div className="max-w-4xl mx-auto space-y-6">
-                <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden">
-                    {/* CABECERA (como movements: título + Nuevo apunte, sin Arqueo) */}
-                    <div className="bg-[#36606F] p-4 md:p-6 space-y-6">
-                        <div className="flex items-center justify-between gap-2 md:gap-4">
-                            <div className="flex items-center gap-3 md:gap-4 flex-1">
-                                <button
-                                    onClick={() => router.back()}
-                                    className="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 transition-all text-white border border-white/10 active:scale-95 shrink-0"
-                                >
-                                    <ArrowLeft className="w-[18px] h-[18px] md:w-5 md:h-5" strokeWidth={3} />
-                                </button>
-                                <h1 className="text-lg md:text-4xl font-black text-white uppercase tracking-tight italic truncate">Libro Mayor</h1>
-                            </div>
-                            <div className="flex items-center justify-end gap-1 md:gap-4 shrink-0">
-                                <button
-                                    onClick={openCreateModal}
-                                    className="bg-transparent hover:bg-white/10 px-1.5 md:px-3 py-1.5 rounded-xl flex flex-col items-center gap-1 transition-all active:scale-95 group"
-                                >
-                                    <div className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center bg-emerald-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
-                                        <Plus className="w-[14px] h-[14px] md:w-4 md:h-4 text-white" strokeWidth={3} />
-                                    </div>
-                                    <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest text-white/90">NUEVO APUNTE</span>
-                                </button>
-                            </div>
-                        </div>
+        <div className="mx-auto max-w-4xl space-y-4 pb-8 text-mds-foreground">
+            <PageHeader
+                title="Libro Mayor"
+                description="Apuntes del manager · ingresos, gastos y saldo"
+                actions={
+                    <PageActions>
+                        <Button
+                            type="button"
+                            variant="icon"
+                            onClick={() => router.back()}
+                            aria-label="Volver"
+                        >
+                            <ArrowLeft className="size-5" strokeWidth={3} aria-hidden />
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="primary"
+                            onClick={openCreateModal}
+                            className="gap-1.5"
+                        >
+                            <Plus className="size-4" strokeWidth={3} aria-hidden />
+                            Nuevo apunte
+                        </Button>
+                    </PageActions>
+                }
+            />
 
-                        {/* FILTROS (unificado) */}
-                        <div className="flex items-center justify-between gap-2 pb-2">
+            <Surface className="overflow-hidden p-0 shadow-sm">
+                    {/* CABECERA: filtros de periodo */}
+                    <div className="bg-mds-primary p-4 md:p-6 shrink-0">
+                        <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-0.5 md:gap-1">
-                                <button onClick={handlePrevMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none min-h-[48px] min-w-[48px] flex items-center justify-center">
+                                <button onClick={handlePrevMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-mds-primary-foreground transition-all outline-none min-h-[48px] min-w-[48px] flex items-center justify-center" aria-label="Mes anterior">
                                     <ChevronLeft size={18} />
                                 </button>
-                                <button onClick={() => setIsTimeFilterOpen(true)} className="py-1 px-1 md:px-2 text-[11px] md:text-[13px] font-black text-white uppercase tracking-widest text-center transition-all outline-none whitespace-nowrap">
+                                <button onClick={() => setIsTimeFilterOpen(true)} className="py-1 px-1 md:px-2 text-[11px] md:text-[13px] font-black text-mds-primary-foreground uppercase tracking-widest text-center transition-all outline-none whitespace-nowrap">
                                     {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(parseLocalSafe(rangeStart), parseLocalSafe(rangeEnd))
                                         ? format(parseLocalSafe(rangeStart), 'MMMM yyyy', { locale: es })
                                         : 'SELECCIONAR MES'}
                                 </button>
-                                <button onClick={handleNextMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none min-h-[48px] min-w-[48px] flex items-center justify-center">
+                                <button onClick={handleNextMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-mds-primary-foreground transition-all outline-none min-h-[48px] min-w-[48px] flex items-center justify-center" aria-label="Mes siguiente">
                                     <ChevronRight size={18} />
                                 </button>
                             </div>
-                            <div className="flex items-center gap-1.5 shrink-0 text-white">
+                            <div className="flex items-center gap-1.5 shrink-0 text-mds-primary-foreground">
                                 <TimeFilterButton
                                     onClick={() => setIsTimeFilterOpen(true)}
                                     hasActiveFilter={(() => {
@@ -391,7 +393,7 @@ export default function ManagerLedgerView() {
                                 <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">GASTOS</span>
                             </div>
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-1">
-                                <span className="text-[13px] md:text-2xl font-black text-[#36606F] line-clamp-1 tabular-nums">{formatMoney(balance)}</span>
+                                <span className="text-[13px] md:text-2xl font-black text-mds-primary line-clamp-1 tabular-nums">{formatMoney(balance)}</span>
                                 <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">SALDO ACTUAL</span>
                             </div>
                         </div>
@@ -401,7 +403,7 @@ export default function ManagerLedgerView() {
                             <div className="rounded-[1.5rem] overflow-hidden border border-zinc-100 shadow-xl">
                                 <div className="w-full">
                                     <table className="w-full text-left font-sans">
-                                        <thead className="bg-[#36606F] text-white">
+                                        <thead className="bg-mds-primary text-mds-primary-foreground">
                                             <tr className="text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em]">
                                                 <th className="px-3 md:px-6 py-4 w-[22%]">FECHA</th>
                                                 <th className="px-2 md:px-6 py-4 w-[38%]">CONCEPTO</th>
@@ -501,8 +503,7 @@ export default function ManagerLedgerView() {
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
+            </Surface>
 
             {/* Modal calendario */}
             <TimeFilterModal
@@ -549,10 +550,10 @@ export default function ManagerLedgerView() {
             {/* Modal Nuevo/Editar */}
             {(modalOpen || editModalOpen) && (
                 <div className="fixed inset-0 z-[150] flex items-center justify-center p-4" onClick={() => { setModalOpen(false); setEditModalOpen(false); }}>
-                    <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md animate-in fade-in duration-200" />
+                    <div className="absolute inset-0 bg-mds-primary/60 backdrop-blur-md animate-in fade-in duration-200" />
                     <div className="relative bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] p-6 pt-8 text-white relative shrink-0 text-center">
-                            <button onClick={() => { setModalOpen(false); setEditModalOpen(false); }} className="absolute right-4 top-4 p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all text-white active:scale-95">
+                        <div className="bg-mds-primary p-6 pt-8 text-mds-primary-foreground relative shrink-0 text-center">
+                            <button onClick={() => { setModalOpen(false); setEditModalOpen(false); }} className="absolute right-4 top-4 p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all text-mds-primary-foreground active:scale-95 min-h-12 min-w-12 flex items-center justify-center">
                                 <X size={16} strokeWidth={3} />
                             </button>
                             <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-1 block">Transcripción</span>
@@ -587,7 +588,7 @@ export default function ManagerLedgerView() {
                                 </div>
                             </div>
                             <div className="mt-8">
-                                <button type="submit" disabled={isSaving} className={`w-full h-14 rounded-2xl text-white font-black uppercase tracking-widest text-[10px] active:scale-95 transition-all shadow-xl ${type === 'entrada' ? 'bg-emerald-500 shadow-emerald-200' : 'bg-[#36606F] shadow-blue-200'} disabled:opacity-50 flex items-center justify-center gap-2`}>
+                                <button type="submit" disabled={isSaving} className={`w-full h-14 rounded-2xl text-white font-black uppercase tracking-widest text-[10px] active:scale-95 transition-all shadow-xl ${type === 'entrada' ? 'bg-emerald-500 shadow-emerald-200' : 'bg-mds-primary shadow-mds-primary/20'} disabled:opacity-50 flex items-center justify-center gap-2`}>
                                     {isSaving ? 'Guardando...' : 'Confirmar'}
                                 </button>
                             </div>

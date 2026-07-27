@@ -775,14 +775,14 @@ export default function StaffDashboardView() {
                     <div className="w-full space-y-3 md:space-y-4">
                         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                             {/* Header Estrecho - Estilo Vista Marbella Detail */}
-                            <div className="bg-[#36606F] px-4 py-1.5 md:py-1 flex justify-between items-center text-white shrink-0">
+                            <div className="bg-mds-primary px-4 py-1.5 md:py-1 flex justify-between items-center text-mds-primary-foreground shrink-0">
                                 <div className="flex items-center">
-                                    <span className="text-[10px] md:text-sm font-black uppercase tracking-widest leading-none text-white">
+                                    <span className="text-[10px] md:text-sm font-black uppercase tracking-widest leading-none text-mds-primary-foreground">
                                         {currentMonthName} {weekNumber ? `- SEMANA ${weekNumber}` : ''}
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-3 shrink-0">
-                                    <Link href="/staff/history" className="text-[10px] font-black flex items-center gap-1 hover:text-white/80 transition-colors uppercase tracking-widest">
+                                    <Link href="/staff/history" className="text-[10px] font-black flex items-center gap-1 hover:text-mds-primary-foreground/80 transition-colors uppercase tracking-widest">
                                         Historial <ArrowRight size={10} strokeWidth={3} />
                                     </Link>
                                 </div>

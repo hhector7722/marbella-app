@@ -433,7 +433,7 @@ export default function CartaEditorClient({
                           'h-12 px-5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors',
                           !changed
                             ? 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
-                            : 'bg-[#36606F] text-white hover:bg-[#2A4B57] shadow-sm'
+                            : 'bg-mds-primary text-mds-primary-foreground hover:bg-mds-primary/90 shadow-sm'
                         )}
                         title="Guardar"
                       >

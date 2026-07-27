@@ -1,9 +1,15 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
+import { V2PageShell, type BreadcrumbItem } from '@/components/layout-v2'
 import { listPurchaseInvoicesDefaultWeekAction } from './actions'
 import AlbaranesHistoricoClient from './AlbaranesHistoricoClient'
 
 export const dynamic = 'force-dynamic'
+
+const BREADCRUMBS: BreadcrumbItem[] = [
+  { id: 'dashboard', label: 'Dashboard', href: '/dashboard' },
+  { id: 'albaranes', label: 'Albaranes' },
+]
 
 /**
  * Aplica un timeout a una promesa SSR. Si la promesa no resuelve en `ms`
@@ -40,17 +46,33 @@ export default async function AlbaranesHistoricoPage() {
   // renderizamos el cliente con error visible, en lugar de colgar el SSR.
   // El builder de Supabase es `PromiseLike`, lo envolvemos en Promise para
   // habilitar `.catch()` y poder componer con `Promise.race`.
-  const profilePromise: Promise<string | null> = (async () => {
+  const profilePromise: Promise<{
+    role: string | null
+    first_name: string | null
+    email: string | null
+  } | null> = (async () => {
     try {
-      const r = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
-      return (r.data?.role as string | null) ?? null
+      const r = await supabase
+        .from('profiles')
+        .select('role, first_name, email')
+        .eq('id', user.id)
+        .maybeSingle()
+      if (!r.data) return null
+      return {
+        role: (r.data.role as string | null) ?? null,
+        first_name: (r.data.first_name as string | null) ?? null,
+        email: (r.data.email as string | null) ?? null,
+      }
     } catch {
       return null
     }
   })()
 
-  const role = await ssrWithTimeout<string | null>(profilePromise, 6000, null)
+  const profile = await ssrWithTimeout(profilePromise, 6000, null)
+  const role = profile?.role ?? null
   const isManager = role === 'manager' || role === 'admin'
+  const roleLabel =
+    role === 'admin' ? 'Admin' : role === 'manager' ? 'Manager' : 'Staff'
 
   const listFallback = {
     success: false as const,
@@ -68,15 +90,23 @@ export default async function AlbaranesHistoricoPage() {
   })()
   const res = await ssrWithTimeout(listGuarded, 8000, listFallback)
 
-  // El layout (cabecera "Albaranes" + slot derecho) se monta dentro del cliente
-  // para poder pasar como rightSlot los botones Sparkles/Refresh que dependen
-  // de su estado interno (autoMapLoading, isPending, runAutoMap, refresh).
+  // Cabecera MDS + acciones Sparkles/Refresh viven en el cliente (estado interno).
   return (
-    <AlbaranesHistoricoClient
-      initialItems={res.success ? res.items : []}
-      initialError={res.success ? null : res.message}
-      isManager={isManager}
-    />
+    <V2PageShell
+      variant="manager"
+      breadcrumbs={BREADCRUMBS}
+      user={{
+        id: user.id,
+        name: profile?.first_name?.trim() || roleLabel,
+        email: profile?.email ?? user.email ?? undefined,
+        roleLabel,
+      }}
+    >
+      <AlbaranesHistoricoClient
+        initialItems={res.success ? res.items : []}
+        initialError={res.success ? null : res.message}
+        isManager={isManager}
+      />
+    </V2PageShell>
   )
 }
-

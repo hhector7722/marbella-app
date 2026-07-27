@@ -40,7 +40,7 @@ import {
   PedidoEditorChoiceModal,
 } from '@/components/reservas/PedidoClientEditModals'
 
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { Alert, Button, LoadingBlock, PageActions, PageHeader } from '@/components/mds'
 import { cn } from '@/lib/utils'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
@@ -324,9 +324,11 @@ function ReservationDetailModal({
         className="bg-white rounded-[2rem] w-full max-w-md max-h-[85vh] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="bg-[#36606F] px-4 py-3 text-white shrink-0 flex items-center justify-between gap-2">
+        <div className="bg-mds-primary px-4 py-3 text-mds-primary-foreground shrink-0 flex items-center justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-black uppercase tracking-widest text-white/80">Reserva</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-mds-primary-foreground/80">
+              Reserva
+            </p>
             <h3 className="text-base font-black capitalize truncate">
               {formatReservationDateLabel(reservation.reservation_date)}
             </h3>
@@ -1143,55 +1145,54 @@ export default function ReservasClient() {
   const handleNextMonth = () => setViewMonth((vm) => addMonths(vm, 1))
 
   return (
-    <div className="min-h-screen px-1 py-3 sm:px-1.5 md:px-2 md:py-4 month-cal-shell">
-      <div className="bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 w-full max-w-none month-cal-card">
-          <div className="bg-[#36606F] rounded-t-2xl px-3 py-2.5 flex items-center justify-between gap-3 shrink-0 min-h-[52px]">
-            <h1 className="text-[13px] md:text-sm font-black text-white uppercase tracking-widest shrink min-w-0 truncate">
-              Reservas y encargos
-            </h1>
-            <a
-              href="https://marbella-web.vercel.app/reservas-interno"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="shrink-0 text-[10px] md:text-[11px] font-black text-white uppercase tracking-widest hover:text-white/80 transition-colors min-h-[48px] flex items-center"
+    <div className="space-y-3 month-cal-shell">
+      <PageHeader
+        title="Reservas y encargos"
+        description={
+          <span className="capitalize">
+            {format(viewMonth, 'MMMM yyyy', { locale: es })}
+          </span>
+        }
+        actions={
+          <PageActions>
+            <Button
+              type="button"
+              variant="icon"
+              onClick={handlePrevMonth}
+              aria-label="Mes anterior"
             >
-              + HACER RESERVA
-            </a>
-          </div>
+              <ChevronLeft className="size-5" aria-hidden />
+            </Button>
+            <Button
+              type="button"
+              variant="icon"
+              onClick={handleNextMonth}
+              aria-label="Mes siguiente"
+            >
+              <ChevronRight className="size-5" aria-hidden />
+            </Button>
+            <Button variant="outline" asChild className="min-h-12 px-3 text-[10px] uppercase tracking-widest">
+              <a
+                href="https://marbella-web.vercel.app/reservas-interno"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                + Hacer reserva
+              </a>
+            </Button>
+          </PageActions>
+        }
+      />
 
-          <div className="py-4 bg-zinc-50/50 flex flex-col gap-2 month-cal-body">
-            <div className="flex justify-center w-full px-2 sm:px-3 shrink-0">
-              <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
-                <button
-                  type="button"
-                  onClick={handlePrevMonth}
-                  className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-[#36606F]"
-                  aria-label="Mes anterior"
-                >
-                  <ChevronLeft size={22} />
-                </button>
-                <span className="text-base md:text-lg font-black text-[#36606F] capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,14rem)] sm:max-w-none">
-                  {format(viewMonth, 'MMMM yyyy', { locale: es })}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleNextMonth}
-                  className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-[#36606F]"
-                  aria-label="Mes siguiente"
-                >
-                  <ChevronRight size={22} />
-                </button>
-              </div>
-            </div>
-
+      <div className="overflow-hidden rounded-2xl border border-mds-border bg-mds-surface shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500 w-full max-w-none month-cal-card">
+          <div className="py-4 bg-mds-muted-surface/50 flex flex-col gap-2 month-cal-body">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4 px-2 sm:px-3 flex-1">
-                <LoadingSpinner size="lg" className="text-[#36606F]" />
+                <LoadingBlock className="w-full max-w-sm" />
               </div>
             ) : rpcError ? (
-              <div className="mx-2 sm:mx-3 rounded-xl border border-rose-100 bg-rose-50 p-4 text-rose-700">
-                <div className="text-sm font-black">Error</div>
-                <div className="text-xs font-medium">{rpcError}</div>
+              <div className="mx-2 sm:mx-3">
+                <Alert tone="danger" title="Error" description={rpcError} />
               </div>
             ) : (
               <div className="mx-auto w-[97%] min-w-0 rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white month-cal-grid-wrap">

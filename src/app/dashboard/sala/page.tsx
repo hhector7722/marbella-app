@@ -1,98 +1,52 @@
-'use client';
+import { redirect } from 'next/navigation'
+import { createClient } from '@/utils/supabase/server'
+import { V2PageShell, type BreadcrumbItem } from '@/components/layout-v2'
+import SalaClient from './SalaClient'
 
-import RadarSala from '@/components/dashboards/RadarSala';
+export const dynamic = 'force-dynamic'
 
-import { SubNavVentas } from '@/components/dashboards/SubNavVentas';
+const BREADCRUMBS: BreadcrumbItem[] = [
+  { id: 'dashboard', label: 'Dashboard', href: '/dashboard' },
+  { id: 'sala', label: 'Sala' },
+]
 
-
-
-/**
-
- * /dashboard/sala — Vista de Tiempo Real (LIVE)
-
- *
-
- * Arquitectura desacoplada:
-
- * - Este componente es el único dueño de <RadarSala /> y sus WebSockets.
-
- * - Visualmente es el "cascarón" idéntico a VentasPage pero sin selectores de fecha.
-
- * - La navegación a pestañas históricas delega en SubNavVentas → router.push('/dashboard/ventas?tab=X')
-
- */
-
-export default function SalaPage() {
-  return (
-
-    <div className="min-h-screen p-4 md:p-8 pb-24 text-zinc-900">
-
-      <div className="max-w-4xl mx-auto space-y-6">
-
-        <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden">
-
-
-
-          {/* CABECERA — sin selectores de fecha (contexto Live no los necesita) */}
-
-          <div className="bg-[#36606F] p-4 md:p-5 pb-3 md:pb-4 space-y-3">
-
-            <div className="flex items-center justify-between gap-2">
-
-              <h1 className="text-lg md:text-3xl font-black text-white uppercase tracking-tight italic shrink-0">
-
-                Sala
-
-              </h1>
-
-
-
-              <div className="flex items-center gap-4 md:gap-6">
-                <div className="flex items-center gap-1.5 px-1 shrink-0">
-
-                  <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-red-400 animate-pulse" />
-
-                  <span className="text-white text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] leading-none pt-0.5">
-
-                    Live
-
-                  </span>
-
-                </div>
-
-              </div>
-
-            </div>
-
-          </div>
-
-
-
-          {/* SUB-NAV: Tickets | LIVE (activo) | Productos | Horas */}
-
-          {/* onTabChange no se pasa → SubNavVentas usará router.push para pestañas históricas */}
-
-          <SubNavVentas activeTab="LIVE" />
-
-
-
-          {/* CONTENIDO PRINCIPAL — sólo RadarSala */}
-
-          <div className="p-4 md:p-6 bg-zinc-50/50">
-
-            <RadarSala />
-
-          </div>
-
-
-
-        </div>
-
-      </div>
-
-    </div>
-
-  );
-
+function roleLabelOf(role: string | null): string {
+  if (role === 'admin') return 'Admin'
+  if (role === 'manager') return 'Manager'
+  if (role === 'supervisor') return 'Supervisor'
+  if (role === 'staff') return 'Staff'
+  return '—'
 }
 
+export default async function SalaPage() {
+  const supabase = await createClient()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+  const user = session?.user ?? null
+  if (!user) redirect('/login')
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, first_name, email')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  const role = profile?.role ?? null
+  const roleLabel = roleLabelOf(role)
+
+  return (
+    <V2PageShell
+      variant="manager"
+      breadcrumbs={BREADCRUMBS}
+      user={{
+        id: user.id,
+        name: profile?.first_name?.trim() || roleLabel,
+        email: profile?.email ?? user.email ?? undefined,
+        roleLabel,
+      }}
+    >
+      <SalaClient />
+    </V2PageShell>
+  )
+}

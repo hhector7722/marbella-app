@@ -2,8 +2,7 @@
 
 import { useState } from 'react'
 import { Pencil } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
+import { Button, PageActions, PageHeader } from '@/components/mds'
 import { InventoryClient, type ManagerIngredientRow } from './InventoryClient'
 
 type Props = {
@@ -12,29 +11,50 @@ type Props = {
   managerEmptyHint: boolean
 }
 
-export function InventoryPageShell({ visibleIngredients, managerFullList, managerEmptyHint }: Props) {
+/**
+ * Capa cliente del inventario manager: estado de edición de visibilidad + cabecera MDS.
+ * El shell de página lo aporta V2PageShell en page.tsx.
+ */
+export function InventoryPageShell({
+  visibleIngredients,
+  managerFullList,
+  managerEmptyHint,
+}: Props) {
   const [visibilityEditMode, setVisibilityEditMode] = useState(false)
 
   return (
-    <DashboardDetailLayout
-      title="Inventario"
-      maxWidthClass="max-w-7xl"
-      className="pt-6 md:pt-8"
-      rightSlot={
-        <button
-          type="button"
-          onClick={() => setVisibilityEditMode((v) => !v)}
-          className={cn(
-            'min-h-[48px] min-w-[48px] flex items-center justify-center transition-colors shrink-0',
-            visibilityEditMode ? 'text-white' : 'text-white/90 hover:text-white',
-          )}
-          aria-label={visibilityEditMode ? 'Salir de edición de lista' : 'Editar lista de inventario'}
-          title={visibilityEditMode ? 'Cerrar edición de lista' : 'Editar lista de inventario'}
-        >
-          <Pencil className="w-6 h-6" strokeWidth={2} />
-        </button>
-      }
-    >
+    <>
+      <PageHeader
+        title="Inventario"
+        description="Conteo y ajuste de stock por ingrediente."
+        actions={
+          <PageActions>
+            <Button
+              type="button"
+              variant="icon"
+              onClick={() => setVisibilityEditMode((v) => !v)}
+              aria-label={
+                visibilityEditMode
+                  ? 'Salir de edición de lista'
+                  : 'Editar lista de inventario'
+              }
+              title={
+                visibilityEditMode
+                  ? 'Cerrar edición de lista'
+                  : 'Editar lista de inventario'
+              }
+              aria-pressed={visibilityEditMode}
+              className={
+                visibilityEditMode
+                  ? 'bg-mds-primary/10 text-mds-primary'
+                  : undefined
+              }
+            >
+              <Pencil className="size-6" strokeWidth={2} aria-hidden />
+            </Button>
+          </PageActions>
+        }
+      />
       <InventoryClient
         initialIngredients={visibleIngredients}
         managerFullList={managerFullList}
@@ -42,6 +62,6 @@ export function InventoryPageShell({ visibleIngredients, managerFullList, manage
         onCloseVisibilityEditMode={() => setVisibilityEditMode(false)}
         managerEmptyHint={managerEmptyHint}
       />
-    </DashboardDetailLayout>
+    </>
   )
 }

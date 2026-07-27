@@ -559,7 +559,7 @@ export function StaffCartaInlineEditor({
   if (loading) {
     return (
       <div className="flex min-h-[160px] items-center justify-center rounded-xl border border-zinc-100 bg-white">
-        <Loader2 className="h-5 w-5 animate-spin text-[#36606F]" />
+        <Loader2 className="h-5 w-5 animate-spin text-mds-primary" />
       </div>
     )
   }

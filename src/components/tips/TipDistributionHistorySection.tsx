@@ -138,7 +138,7 @@ export function TipDistributionHistorySection({ refreshToken = 0 }: Props) {
         className="w-full flex items-center justify-between gap-2 px-4 py-3 md:py-4 min-h-[48px] text-left hover:bg-zinc-50/80 transition-colors"
       >
         <div>
-          <p className="text-[10px] md:text-xs font-black uppercase tracking-widest text-[#36606F]">
+          <p className="text-[10px] md:text-xs font-black uppercase tracking-widest text-mds-primary">
             Historial de repartos
           </p>
           <p className="text-[11px] text-zinc-500 font-bold mt-0.5">{countLabel}</p>

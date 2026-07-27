@@ -1,9 +1,61 @@
 import { createClient } from '@/utils/supabase/server'
-import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
+import { V2PageShell, type BreadcrumbItem, type UserSummary } from '@/components/layout-v2'
+import { Alert, PageHeader } from '@/components/mds'
 import PedidosEventoClient, { type EventOrderRow, type EventRow } from './PedidosEventoClient'
 import { canManageEventos, canViewEventos } from '../../roles'
 
-export default async function PedidosEventoPage(props: { params: Promise<{ eventId: string }> }) {
+export const dynamic = 'force-dynamic'
+
+const FALLBACK_USER: UserSummary = {
+  id: 'anonymous',
+  name: 'Sesión',
+  roleLabel: '—',
+}
+
+function breadcrumbsFor(eventName?: string): BreadcrumbItem[] {
+  return [
+    { id: 'dashboard', label: 'Dashboard', href: '/dashboard' },
+    { id: 'eventos', label: 'Encargos', href: '/dashboard/eventos' },
+    { id: 'pedidos', label: eventName ? `Pedidos · ${eventName}` : 'Pedidos' },
+  ]
+}
+
+function roleLabelOf(role: string | null): string {
+  if (role === 'admin') return 'Admin'
+  if (role === 'manager') return 'Manager'
+  if (role === 'supervisor') return 'Supervisor'
+  if (role === 'staff') return 'Staff'
+  return '—'
+}
+
+function ErrorView({
+  title,
+  description,
+  message,
+  user = FALLBACK_USER,
+  eventName,
+}: {
+  title: string
+  description: string
+  message: string
+  user?: UserSummary
+  eventName?: string
+}) {
+  return (
+    <V2PageShell
+      variant="manager"
+      breadcrumbs={breadcrumbsFor(eventName)}
+      user={user}
+    >
+      <PageHeader title={title} description={description} />
+      <Alert tone="danger" title={message} />
+    </V2PageShell>
+  )
+}
+
+export default async function PedidosEventoPage(props: {
+  params: Promise<{ eventId: string }>
+}) {
   const { eventId } = await props.params
   const supabase = await createClient()
 
@@ -14,48 +66,63 @@ export default async function PedidosEventoPage(props: { params: Promise<{ event
 
   if (sessErr) {
     return (
-      <DashboardDetailLayout title="Pedidos" subtitle="Error de autenticación">
-        <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-red-700">No se pudo leer la sesión: {sessErr.message}</p>
-        </div>
-      </DashboardDetailLayout>
+      <ErrorView
+        title="Pedidos"
+        description="Error de autenticación"
+        message={`No se pudo leer la sesión: ${sessErr.message}`}
+      />
     )
   }
 
   const user = session?.user ?? null
   if (!user) {
     return (
-      <DashboardDetailLayout title="Pedidos" subtitle="Requiere login">
-        <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-red-700">No autenticado.</p>
-        </div>
-      </DashboardDetailLayout>
+      <ErrorView
+        title="Pedidos"
+        description="Requiere login"
+        message="No autenticado."
+      />
     )
   }
 
   const { data: profile, error: profileErr } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, first_name, email')
     .eq('id', user.id)
     .maybeSingle()
+
   if (profileErr) {
     return (
-      <DashboardDetailLayout title="Pedidos" subtitle="Error de permisos">
-        <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-red-700">Error leyendo perfil: {profileErr.message}</p>
-        </div>
-      </DashboardDetailLayout>
+      <ErrorView
+        title="Pedidos"
+        description="Error de permisos"
+        message={`Error leyendo perfil: ${profileErr.message}`}
+        user={{
+          id: user.id,
+          name: user.email ?? 'Usuario',
+          email: user.email ?? undefined,
+          roleLabel: '—',
+        }}
+      />
     )
   }
 
-  const role = (profile as any)?.role ?? null
+  const role = (profile as { role?: string } | null)?.role ?? null
+  const shellUser: UserSummary = {
+    id: user.id,
+    name: profile?.first_name?.trim() || roleLabelOf(role),
+    email: profile?.email ?? user.email ?? undefined,
+    roleLabel: roleLabelOf(role),
+  }
+
   if (!canViewEventos(role)) {
     return (
-      <DashboardDetailLayout title="Pedidos" subtitle="Acceso restringido">
-        <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-red-700">Sin permiso para ver pedidos del evento.</p>
-        </div>
-      </DashboardDetailLayout>
+      <ErrorView
+        title="Pedidos"
+        description="Acceso restringido"
+        message="Sin permiso para ver pedidos del evento."
+        user={shellUser}
+      />
     )
   }
 
@@ -64,16 +131,21 @@ export default async function PedidosEventoPage(props: { params: Promise<{ event
   const id = String(eventId ?? '').trim()
   if (!id) {
     return (
-      <DashboardDetailLayout title="Pedidos" subtitle="Evento inválido">
-        <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-red-700">ID inválido.</p>
-        </div>
-      </DashboardDetailLayout>
+      <ErrorView
+        title="Pedidos"
+        description="Evento inválido"
+        message="ID inválido."
+        user={shellUser}
+      />
     )
   }
 
   const [{ data: event, error: evErr }, { data: orders, error: oErr }] = await Promise.all([
-    supabase.from('events').select('id, slug, name, event_date, event_time, is_active').eq('id', id).maybeSingle(),
+    supabase
+      .from('events')
+      .select('id, slug, name, event_date, event_time, is_active')
+      .eq('id', id)
+      .maybeSingle(),
     supabase
       .from('event_orders')
       .select('id, event_id, responsible_name, items, total_amount, status, notes, created_at')
@@ -87,43 +159,48 @@ export default async function PedidosEventoPage(props: { params: Promise<{ event
 
   if (!event) {
     return (
-      <DashboardDetailLayout title="Pedidos" subtitle="No encontrado">
-        <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-red-700">Evento no encontrado.</p>
-        </div>
-      </DashboardDetailLayout>
+      <ErrorView
+        title="Pedidos"
+        description="No encontrado"
+        message="Evento no encontrado."
+        user={shellUser}
+      />
     )
   }
 
   const ev: EventRow = {
-    id: String((event as any).id),
-    slug: String((event as any).slug),
-    name: String((event as any).name),
-    event_date: String((event as any).event_date),
-    event_time: String((event as any).event_time),
-    is_active: Boolean((event as any).is_active),
+    id: String((event as { id: unknown }).id),
+    slug: String((event as { slug: unknown }).slug),
+    name: String((event as { name: unknown }).name),
+    event_date: String((event as { event_date: unknown }).event_date),
+    event_time: String((event as { event_time: unknown }).event_time),
+    is_active: Boolean((event as { is_active: unknown }).is_active),
   }
 
-  const rows: EventOrderRow[] = ((orders ?? []) as any[]).map((r) => ({
+  const rows: EventOrderRow[] = (
+    (orders ?? []) as Array<Record<string, unknown>>
+  ).map((r) => ({
     id: String(r.id),
     event_id: String(r.event_id),
     responsible_name: String(r.responsible_name ?? ''),
-    items: (r.items ?? []) as any,
+    items: (r.items ?? []) as EventOrderRow['items'],
     total_amount: r.total_amount == null ? null : Number(r.total_amount),
-    status: String(r.status ?? 'pending') as any,
+    status: String(r.status ?? 'pending') as EventOrderRow['status'],
     notes: r.notes == null ? null : String(r.notes),
     created_at: String(r.created_at),
   }))
 
   return (
-    <DashboardDetailLayout
-      title="Pedidos"
-      subtitle={`${ev.name} · ${ev.event_date} · ${String(ev.event_time).slice(0, 5)}h`}
-      maxWidthClass="max-w-7xl"
-      backHref="/dashboard/eventos"
+    <V2PageShell
+      variant="manager"
+      breadcrumbs={breadcrumbsFor(ev.name)}
+      user={shellUser}
     >
+      <PageHeader
+        title="Pedidos"
+        description={`${ev.name} · ${ev.event_date} · ${String(ev.event_time).slice(0, 5)}h`}
+      />
       <PedidosEventoClient event={ev} orders={rows} canManage={canManage} />
-    </DashboardDetailLayout>
+    </V2PageShell>
   )
 }
-

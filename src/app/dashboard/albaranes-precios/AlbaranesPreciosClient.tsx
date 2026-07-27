@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft, Camera, Check, Loader2, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { Button, PageActions, PageHeader, Surface } from '@/components/mds'
 import {
   applyAlbaranPriceUpdatesAction,
   extractAlbaranPricesFromImageAction,
@@ -227,52 +228,36 @@ export default function AlbaranesPreciosClient({
   }
 
   return (
-    <div className="min-h-screen w-full pb-24">
-      <div className="max-w-4xl mx-auto px-4 md:px-6 pt-6 space-y-6">
-        <div className="bg-[#36606F] rounded-2xl px-4 md:px-6 py-4 md:py-5 shadow-sm">
-          <div className="flex items-start gap-4">
-            <Link
-              href="/dashboard"
-              className={cn(
-                'shrink-0 inline-flex items-center justify-center min-h-12 min-w-12 rounded-xl border border-white/20 bg-white/10 shadow-sm',
-                'text-white hover:bg-white/20'
-              )}
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-xl md:text-2xl font-black tracking-tight text-white uppercase tracking-widest">
-                Precios desde albarán
-              </h1>
-              <p className="text-white/85 text-sm mt-1">
-                Sube una foto del albarán. La IA propone líneas; confirma ingrediente y precio con el mismo
-                asistente que en Ingredientes.
-              </p>
-            </div>
-          </div>
-        </div>
+    <div className="space-y-6 pb-8">
+        <PageHeader
+          title="Precios desde albarán"
+          description="Sube una foto del albarán. La IA propone líneas; confirma ingrediente y precio con el mismo asistente que en Ingredientes."
+          actions={
+            <PageActions>
+              <Button variant="icon" asChild>
+                <Link href="/dashboard" aria-label="Volver al dashboard">
+                  <ArrowLeft className="size-5" aria-hidden />
+                </Link>
+              </Button>
+            </PageActions>
+          }
+        />
 
-        <div
-          className={cn(
-            'rounded-2xl border border-zinc-100 bg-white shadow-sm p-6',
-            'flex flex-col items-center justify-center gap-4 min-h-[160px]'
-          )}
-        >
-          <div className="w-14 h-14 rounded-full bg-zinc-50 flex items-center justify-center">
-            <Camera className="w-7 h-7 text-zinc-400" />
+        <Surface className="flex min-h-[160px] flex-col items-center justify-center gap-4 p-6">
+          <div className="flex size-14 items-center justify-center rounded-full bg-mds-muted-surface">
+            <Camera className="size-7 text-mds-muted" aria-hidden />
           </div>
-          <div className="text-center space-y-1">
-            <p className="font-semibold text-zinc-800">Imagen (JPG, PNG, WebP)</p>
-            <p className="text-xs text-zinc-500">Máximo 10 MB</p>
+          <div className="space-y-1 text-center">
+            <p className="font-semibold text-mds-foreground">Imagen (JPG, PNG, WebP)</p>
+            <p className="text-xs text-mds-muted">Máximo 10 MB</p>
           </div>
           <label
             className={cn(
-              'inline-flex items-center justify-center gap-2 min-h-12 px-6 rounded-xl font-medium cursor-pointer',
-              'bg-[#36606F] text-white hover:bg-[#2A4C58] shadow-sm shrink-0',
-              extracting && 'opacity-60 pointer-events-none'
+              'inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl bg-mds-primary px-6 font-medium text-mds-primary-foreground shadow-sm hover:bg-mds-primary/90 min-h-12',
+              extracting && 'pointer-events-none opacity-60'
             )}
           >
-            {extracting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
+            {extracting ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Upload className="size-5" aria-hidden />}
             {extracting ? 'Interpretando…' : 'Seleccionar imagen'}
             <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onFile} />
           </label>
@@ -286,12 +271,12 @@ export default function AlbaranesPreciosClient({
               {statusLine}
             </p>
           ) : null}
-        </div>
+        </Surface>
 
         {rows.length > 0 && (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-lg font-black text-white uppercase tracking-widest">Líneas propuestas</h2>
+              <h2 className="text-lg font-black uppercase tracking-widest text-mds-foreground">Líneas propuestas</h2>
               <button
                 type="button"
                 onClick={applyBatch}
@@ -331,7 +316,7 @@ export default function AlbaranesPreciosClient({
                       <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Texto albarán</p>
                       <p className="font-black text-zinc-900">{row.extractedName}</p>
                       {row.wizardStep >= 2 && linkedName ? (
-                        <p className="text-xs font-bold text-[#36606F] mt-1">Ingrediente: {linkedName}</p>
+                        <p className="text-xs font-bold text-mds-primary mt-1">Ingrediente: {linkedName}</p>
                       ) : null}
                       {row.notas ? <p className="text-xs text-amber-800 mt-1">{row.notas}</p> : null}
                     </div>
@@ -408,7 +393,7 @@ export default function AlbaranesPreciosClient({
                         type="button"
                         disabled={!row.selectedIngredientId}
                         onClick={() => updateRow(row.lineId, { wizardStep: 2 })}
-                        className="w-full min-h-12 rounded-xl bg-[#36606F] text-white font-black disabled:opacity-40"
+                        className="w-full min-h-12 rounded-xl bg-mds-primary text-mds-primary-foreground font-black disabled:opacity-40"
                       >
                         Continuar
                       </button>
@@ -498,7 +483,7 @@ export default function AlbaranesPreciosClient({
                         <button
                           type="button"
                           onClick={() => updateRow(row.lineId, { showExpert: !row.showExpert })}
-                          className="text-[10px] font-black uppercase tracking-widest text-[#36606F] hover:underline shrink-0"
+                          className="text-[10px] font-black uppercase tracking-widest text-mds-primary hover:underline shrink-0"
                         >
                           {row.showExpert ? 'Ocultar experto' : 'Edición experta'}
                         </button>
@@ -588,7 +573,7 @@ export default function AlbaranesPreciosClient({
                                   className={cn(
                                     'min-h-12 rounded-xl border px-2 text-sm font-black',
                                     row.packUnits === n
-                                      ? 'border-[#36606F] bg-[#36606F]/5 text-[#36606F]'
+                                      ? 'border-mds-primary bg-mds-primary/5 text-mds-primary'
                                       : 'border-zinc-200 bg-white hover:bg-zinc-50'
                                   )}
                                 >
@@ -696,7 +681,6 @@ export default function AlbaranesPreciosClient({
             })}
           </div>
         )}
-      </div>
     </div>
   )
 }

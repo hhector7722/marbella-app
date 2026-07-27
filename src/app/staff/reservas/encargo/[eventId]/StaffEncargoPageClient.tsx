@@ -1,8 +1,10 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { ChevronLeft } from 'lucide-react'
 
 import { EncargoProductEditor } from '@/components/reservas/EncargoProductEditor'
+import { Button, PageActions, PageHeader } from '@/components/mds'
 import { orderItemsToStaffLines, parseOrderItems } from '@/lib/encargo-staff-helpers'
 
 export default function StaffEncargoPageClient({
@@ -17,20 +19,35 @@ export default function StaffEncargoPageClient({
   const router = useRouter()
   const lines = orderItemsToStaffLines(parseOrderItems(initialItems))
 
+  const goBack = () => router.push('/staff/reservas')
+
   return (
-    <main className="min-h-screen bg-zinc-50 p-4 flex items-start justify-center">
-      <div className="w-full max-w-2xl">
-        <EncargoProductEditor
-          asModal={false}
-          eventId={event.id}
-          eventName={event.name}
-          orderId={orderId}
-          initialItems={lines}
-          onClose={() => router.push('/staff/reservas')}
-          onSaved={() => router.push('/staff/reservas')}
-          onDeleted={() => router.push('/staff/reservas')}
-        />
+    <div className="space-y-3">
+      <PageHeader
+        title={event.name}
+        description="Editar encargo"
+        actions={
+          <PageActions>
+            <Button type="button" variant="icon" onClick={goBack} aria-label="Volver a reservas">
+              <ChevronLeft className="size-5" strokeWidth={2.5} aria-hidden />
+            </Button>
+          </PageActions>
+        }
+      />
+      <div className="flex w-full justify-center">
+        <div className="w-full max-w-2xl">
+          <EncargoProductEditor
+            asModal={false}
+            eventId={event.id}
+            eventName={event.name}
+            orderId={orderId}
+            initialItems={lines}
+            onClose={goBack}
+            onSaved={goBack}
+            onDeleted={goBack}
+          />
+        </div>
       </div>
-    </main>
+    </div>
   )
 }

@@ -1,7 +1,49 @@
 import { createClient } from '@/utils/supabase/server'
-import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
+import { V2PageShell, type BreadcrumbItem, type UserSummary } from '@/components/layout-v2'
+import { Alert, PageHeader } from '@/components/mds'
 import PedidosTodosClient, { type PedidoConEncargo } from './PedidosTodosClient'
 import { canViewEventos } from '../roles'
+
+export const dynamic = 'force-dynamic'
+
+const BREADCRUMBS: BreadcrumbItem[] = [
+  { id: 'dashboard', label: 'Dashboard', href: '/dashboard' },
+  { id: 'eventos', label: 'Encargos', href: '/dashboard/eventos' },
+  { id: 'pedidos', label: 'Pedidos' },
+]
+
+const FALLBACK_USER: UserSummary = {
+  id: 'anonymous',
+  name: 'Sesión',
+  roleLabel: '—',
+}
+
+function roleLabelOf(role: string | null): string {
+  if (role === 'admin') return 'Admin'
+  if (role === 'manager') return 'Manager'
+  if (role === 'supervisor') return 'Supervisor'
+  if (role === 'staff') return 'Staff'
+  return '—'
+}
+
+function ErrorView({
+  title,
+  description,
+  message,
+  user = FALLBACK_USER,
+}: {
+  title: string
+  description: string
+  message: string
+  user?: UserSummary
+}) {
+  return (
+    <V2PageShell variant="manager" breadcrumbs={BREADCRUMBS} user={user}>
+      <PageHeader title={title} description={description} />
+      <Alert tone="danger" title={message} />
+    </V2PageShell>
+  )
+}
 
 export default async function PedidosTodosPage() {
   const supabase = await createClient()
@@ -13,49 +55,63 @@ export default async function PedidosTodosPage() {
 
   if (sessErr) {
     return (
-      <DashboardDetailLayout title="Pedidos" subtitle="Error de autenticación">
-        <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-red-700">No se pudo leer la sesión: {sessErr.message}</p>
-        </div>
-      </DashboardDetailLayout>
+      <ErrorView
+        title="Pedidos"
+        description="Error de autenticación"
+        message={`No se pudo leer la sesión: ${sessErr.message}`}
+      />
     )
   }
 
   const user = session?.user ?? null
   if (!user) {
     return (
-      <DashboardDetailLayout title="Pedidos" subtitle="Requiere login">
-        <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-red-700">No autenticado.</p>
-        </div>
-      </DashboardDetailLayout>
+      <ErrorView
+        title="Pedidos"
+        description="Requiere login"
+        message="No autenticado."
+      />
     )
   }
 
   const { data: profile, error: profileErr } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, first_name, email')
     .eq('id', user.id)
     .maybeSingle()
 
   if (profileErr) {
     return (
-      <DashboardDetailLayout title="Pedidos" subtitle="Error de permisos">
-        <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-red-700">Error leyendo perfil: {profileErr.message}</p>
-        </div>
-      </DashboardDetailLayout>
+      <ErrorView
+        title="Pedidos"
+        description="Error de permisos"
+        message={`Error leyendo perfil: ${profileErr.message}`}
+        user={{
+          id: user.id,
+          name: user.email ?? 'Usuario',
+          email: user.email ?? undefined,
+          roleLabel: '—',
+        }}
+      />
     )
   }
 
   const role = (profile as { role?: string } | null)?.role ?? null
+  const shellUser: UserSummary = {
+    id: user.id,
+    name: profile?.first_name?.trim() || roleLabelOf(role),
+    email: profile?.email ?? user.email ?? undefined,
+    roleLabel: roleLabelOf(role),
+  }
+
   if (!canViewEventos(role)) {
     return (
-      <DashboardDetailLayout title="Pedidos" subtitle="Acceso restringido">
-        <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-red-700">Sin permiso para ver pedidos.</p>
-        </div>
-      </DashboardDetailLayout>
+      <ErrorView
+        title="Pedidos"
+        description="Acceso restringido"
+        message="Sin permiso para ver pedidos."
+        user={shellUser}
+      />
     )
   }
 
@@ -69,11 +125,12 @@ export default async function PedidosTodosPage() {
 
   if (oErr) {
     return (
-      <DashboardDetailLayout title="Pedidos" subtitle="Error de datos">
-        <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-red-700">Error cargando pedidos: {oErr.message}</p>
-        </div>
-      </DashboardDetailLayout>
+      <ErrorView
+        title="Pedidos"
+        description="Error de datos"
+        message={`Error cargando pedidos: ${oErr.message}`}
+        user={shellUser}
+      />
     )
   }
 
@@ -95,13 +152,12 @@ export default async function PedidosTodosPage() {
   })
 
   return (
-    <DashboardDetailLayout
-      title="Pedidos de encargos"
-      subtitle="Todos los envíos recibidos, ordenados por fecha"
-      maxWidthClass="max-w-7xl"
-      backHref="/dashboard/eventos"
-    >
+    <V2PageShell variant="manager" breadcrumbs={BREADCRUMBS} user={shellUser}>
+      <PageHeader
+        title="Pedidos de encargos"
+        description="Todos los envíos recibidos, ordenados por fecha"
+      />
       <PedidosTodosClient orders={rows} />
-    </DashboardDetailLayout>
+    </V2PageShell>
   )
 }

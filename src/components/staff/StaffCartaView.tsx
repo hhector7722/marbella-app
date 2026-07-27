@@ -2,14 +2,15 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
+import { ChevronLeft, Pencil, RefreshCw, X } from 'lucide-react'
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import { DEFAULT_CARTA_LANG, type CartaLang } from '@/lib/carta-menu-i18n'
 import { MenuAccordion, type DigitalMenuRow } from '@/components/staff/MenuAccordion'
 import type { MenuCategoryCatalogEntry } from '@/lib/carta-plato-marbella'
 import { platoMarbellaCategoryIdFromCatalog } from '@/lib/carta-plato-marbella'
-import Link from 'next/link'
-import { ChevronLeft, Pencil, RefreshCw, X } from 'lucide-react'
 import { StaffCartaInlineEditor } from '@/components/staff/StaffCartaInlineEditor'
+import { Button, PageHeader } from '@/components/mds'
 
 export function StaffCartaView({
   items,
@@ -32,66 +33,72 @@ export function StaffCartaView({
   const [editing, setEditing] = useState(false)
 
   return (
-    <div className="flex min-h-screen flex-col bg-white text-zinc-900">
-      <div className="relative mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col px-5 pb-safe pt-safe md:px-8">
-        <header className="shrink-0 bg-white pb-1 pt-1">
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2">
-            <div className="flex min-h-[52px] items-center justify-start">
-              <Link
-                href="/staff/dashboard"
-                className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center text-[#36606F] transition-colors hover:text-[#2a4a56] active:opacity-80"
-                aria-label="Volver a inicio"
-                title="Volver a inicio"
-              >
-                <ChevronLeft className="h-7 w-7 sm:h-8 sm:w-8" strokeWidth={2.5} />
-              </Link>
-            </div>
+    <div className="flex min-h-0 flex-1 flex-col bg-mds-surface text-mds-foreground">
+      <div className="relative mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col px-5 pb-safe pt-2 md:px-8">
+        <PageHeader
+          className="sm:items-center"
+          title={
+            <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-x-2">
+              <div className="flex min-h-12 items-center justify-start">
+                <Button variant="icon" asChild>
+                  <Link
+                    href="/staff/dashboard"
+                    aria-label="Volver a inicio"
+                    title="Volver a inicio"
+                  >
+                    <ChevronLeft className="size-6" strokeWidth={2.5} aria-hidden />
+                  </Link>
+                </Button>
+              </div>
 
-            <div className="flex justify-center px-1">
-              <Image
-                src="/icons/logo-white.png"
-                alt="Bar La Marbella"
-                width={320}
-                height={86}
-                className="h-10 w-auto max-w-[220px] sm:h-12 sm:max-w-[260px] md:h-14 md:max-w-[300px]"
-                priority
-              />
-            </div>
+              <div className="flex justify-center px-1">
+                <Image
+                  src="/icons/logo-white.png"
+                  alt="Bar La Marbella"
+                  width={320}
+                  height={86}
+                  className="h-10 w-auto max-w-[220px] sm:h-12 sm:max-w-[260px] md:h-14 md:max-w-[300px]"
+                  priority
+                />
+              </div>
 
-            <div className="flex min-h-[52px] items-center justify-end gap-0.5">
-              {canOpenMapeo ? (
-                <Link
-                  href="/dashboard/recetas-tpv"
-                  className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-none border-0 bg-transparent p-0 text-[#36606F] shadow-none outline-none ring-0 transition-colors hover:text-[#2a4a56] active:opacity-80"
-                  aria-label="Ir a mapeo TPV"
-                  title="Mapeo TPV"
-                >
-                  <RefreshCw className="h-6 w-6 sm:h-7 sm:h-7" strokeWidth={2.25} />
-                </Link>
-              ) : null}
-              {canEditMenu ? (
-                <button
-                  type="button"
-                  onClick={() => setEditing((v) => !v)}
-                  className="inline-flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-none border-0 bg-transparent p-0 text-[#36606F] shadow-none outline-none ring-0 transition-colors hover:text-[#2a4a56] active:opacity-80"
-                  aria-label={editing ? 'Salir de edición' : 'Entrar en edición'}
-                  title={editing ? 'Salir de edición' : 'Editar'}
-                >
-                  {editing ? (
-                    <X className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.5} />
-                  ) : (
-                    <Pencil className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.5} />
-                  )}
-                </button>
-              ) : null}
+              <div className="flex min-h-12 items-center justify-end gap-0.5">
+                {canOpenMapeo ? (
+                  <Button variant="icon" asChild>
+                    <Link
+                      href="/dashboard/recetas-tpv"
+                      aria-label="Ir a mapeo TPV"
+                      title="Mapeo TPV"
+                    >
+                      <RefreshCw className="size-5" strokeWidth={2.25} aria-hidden />
+                    </Link>
+                  </Button>
+                ) : null}
+                {canEditMenu ? (
+                  <Button
+                    type="button"
+                    variant="icon"
+                    onClick={() => setEditing((v) => !v)}
+                    aria-label={editing ? 'Salir de edición' : 'Entrar en edición'}
+                    title={editing ? 'Salir de edición' : 'Editar'}
+                  >
+                    {editing ? (
+                      <X className="size-5" strokeWidth={2.5} aria-hidden />
+                    ) : (
+                      <Pencil className="size-5" strokeWidth={2.5} aria-hidden />
+                    )}
+                  </Button>
+                ) : null}
+              </div>
             </div>
-          </div>
-          <div className="mt-1 w-full translate-y-3 px-0 sm:mt-1.5 sm:translate-y-4">
-            <CartaLangPicker lang={lang} onChange={setLang} tone="default" layout="spread" compact />
-          </div>
-        </header>
+          }
+        />
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white pb-2">
+        <div className="mt-1 w-full translate-y-2 px-0 sm:mt-1.5 sm:translate-y-3">
+          <CartaLangPicker lang={lang} onChange={setLang} tone="default" layout="spread" compact />
+        </div>
+
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-mds-surface pb-2 pt-4">
           {canEditMenu ? (
             <StaffCartaInlineEditor
               canEdit={canEditMenu}

@@ -657,6 +657,19 @@ Estilados hacia MDS con clases `mds-*` donde aplica.
 
 - Siguiente natural: `inventory/waste` o `inventory/ledger` (mismo layout legacy).
 
+### Sprint 16 — Eliminación de `DashboardDetailLayout` (2026-07-27)
+
+**Qué hizo**
+
+- Migró los últimos 3 consumidores: albaranes, carta, recetas-tpv.
+- Eliminó `src/components/dashboard/DashboardDetailLayout.tsx` (0 refs en `src/`).
+- Cierra el shell Dashboard V1: nuevas migraciones solo con `V2PageShell`.
+
+**Aprendizajes / decisiones**
+
+- Clientes con `rightSlot` stateful (p. ej. albaranes) montan `PageHeader`/`PageActions` en el client y `V2PageShell` en el server page — sin reintroducir un layout wrapper.
+- Borrar el layout solo cuando la búsqueda global en `src/` sea cero (docs históricas pueden mencionar el nombre).
+
 ---
 
 ## 8. Roadmap
@@ -901,6 +914,8 @@ Pendientes de decisión explícita del producto/equipo:
 | 2026-07-26 | Sprint 10: `/dashboard/web` — 3ª migración, 0 MDS nuevos | Suite analytics V2 cerrada; patrón estabilizado. |
 | 2026-07-26 | Sprint 11: `/dashboard/insights` — 4ª migración, 0 MDS nuevos | Charts + KPIs financieros sin infra nueva. |
 | 2026-07-26 | Sprint 12: inventario Dashboard + `/dashboard/scanner` | Primera ruta operativa (no analytics) en V2. |
+| 2026-07-27 | Sprint 16: eliminar `DashboardDetailLayout` | Fin shell Dashboard V1; migraciones nuevas = solo `V2PageShell` + registry + nav + MDS. |
+| 2026-07-27 | Sprint 33: hub `/dashboard` + registry exact-only | Alta del hub raíz; `/dashboard` no usa matching por prefijo (evita contagiar rutas no registradas p. ej. kds). Dashboard producto 100% V2 excl. kds. |
 
 ### Decisiones implícitas (documentadas a posteriori)
 

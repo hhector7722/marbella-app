@@ -104,7 +104,7 @@ export function TipOverrideModal({
         className="bg-white w-full max-w-[520px] rounded-xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] z-[10000]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="bg-[#36606F] px-3 py-2.5 md:px-6 md:py-4 flex items-center justify-between text-white shrink-0 rounded-t-xl md:rounded-t-3xl">
+        <div className="bg-mds-primary px-3 py-2.5 md:px-6 md:py-4 flex items-center justify-between text-mds-primary-foreground shrink-0 rounded-t-xl md:rounded-t-3xl">
           <div className="min-w-0 flex items-center gap-2 md:gap-3">
             <Avatar src={profile?.avatar_url ?? undefined} alt={displayName} size="sm" className="shrink-0 ring-2 ring-white/30" />
             <span className="text-sm md:text-lg font-black uppercase tracking-wider truncate">{displayName}</span>

@@ -1,6 +1,15 @@
+import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
-import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
+import { V2PageShell, type BreadcrumbItem, type UserSummary } from '@/components/layout-v2'
+import { Alert, PageHeader } from '@/components/mds'
 import MappingClient from './MappingClient'
+
+export const dynamic = 'force-dynamic'
+
+const BREADCRUMBS: BreadcrumbItem[] = [
+  { id: 'dashboard', label: 'Dashboard', href: '/dashboard' },
+  { id: 'recetas-tpv', label: 'Mapeo TPV' },
+]
 
 export type Recipe = {
   id: string
@@ -58,6 +67,29 @@ function chunkIds<T>(ids: T[], size: number): T[][] {
 
 export default async function RecetasTpvPage() {
   const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect('/login')
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, first_name, email')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  const role = profile?.role ?? null
+  const roleLabel =
+    role === 'admin' ? 'Admin' : role === 'manager' ? 'Manager' : 'Staff'
+  const shellUser: UserSummary = {
+    id: user.id,
+    name: profile?.first_name?.trim() || roleLabel,
+    email: profile?.email ?? user.email ?? undefined,
+    roleLabel,
+  }
 
   /** Sin embeds PostgREST: resolución manual de `bdp_departamentos` desde `bdp_articulos` (misma idea que otros listados TPV). */
   const [mappingsRes, articlesRes, recipesRes, deptRes, suppliersRes, ingredientsRes] = await Promise.all([
@@ -81,15 +113,17 @@ export default async function RecetasTpvPage() {
   if (ingredientsRes.error) console.error('Error fetching ingredients (recetas-tpv):', ingredientsRes.error)
   if (articlesRes.error) {
     return (
-      <DashboardDetailLayout title="Mapeo TPV" maxWidthClass="max-w-7xl">
-        <div
-          className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-900 shadow-sm"
-          role="alert"
-        >
-          <p className="text-sm font-black uppercase tracking-wide">No se pudo cargar el catálogo TPV</p>
-          <p className="mt-2 font-mono text-xs leading-relaxed text-red-800">{articlesRes.error.message}</p>
-        </div>
-      </DashboardDetailLayout>
+      <V2PageShell variant="manager" breadcrumbs={BREADCRUMBS} user={shellUser}>
+        <PageHeader
+          title="Mapeo TPV"
+          description="Enlace artículos TPV con recetas e ingredientes."
+        />
+        <Alert
+          tone="danger"
+          title="No se pudo cargar el catálogo TPV"
+          description={articlesRes.error.message}
+        />
+      </V2PageShell>
     )
   }
 
@@ -254,16 +288,18 @@ export default async function RecetasTpvPage() {
   }))
 
   return (
-    <DashboardDetailLayout title="Mapeo TPV" maxWidthClass="max-w-7xl">
+    <V2PageShell variant="manager" breadcrumbs={BREADCRUMBS} user={shellUser}>
+      <PageHeader
+        title="Mapeo TPV"
+        description="Enlace artículos TPV con recetas e ingredientes."
+      />
       {mappingsRes.error ? (
-        <div
-          className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
-          role="status"
-        >
-          <span className="font-black uppercase tracking-wide">Aviso: </span>
-          No se pudieron leer los mapeos guardados; la lista muestra todos los artículos como «sin receta». Detalle:{' '}
-          <span className="font-mono text-xs">{mappingsRes.error.message}</span>
-        </div>
+        <Alert
+          tone="warning"
+          title="Aviso: no se pudieron leer los mapeos guardados"
+          description={`La lista muestra todos los artículos como «sin receta». Detalle: ${mappingsRes.error.message}`}
+          className="mb-4"
+        />
       ) : null}
       <MappingClient
         mappings={mappings}
@@ -273,6 +309,6 @@ export default async function RecetasTpvPage() {
         ingredientsMini={ingredientsMini}
         recipeIngredientMatchByRecipeId={recipeIngredientMatchByRecipeId}
       />
-    </DashboardDetailLayout>
+    </V2PageShell>
   )
 }

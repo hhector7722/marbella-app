@@ -39,7 +39,7 @@ import {
   isInvoiceLineExcluded,
   isInvoiceLineResolved,
 } from '@/lib/albaranes-line-status'
-import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
+import { Button, PageActions, PageHeader } from '@/components/mds'
 import { IngredientWizard, type IngredientWizardInvoiceContext } from '@/components/ingredients/IngredientWizard'
 import type {
   PurchaseInvoiceDetail,
@@ -1095,41 +1095,47 @@ export default function AlbaranesHistoricoClient({
     }
   }
 
-  // Acciones de la cabecera "Albaranes" (rightSlot del layout): visibles a
-  // TODOS los authenticated. Sin contorno ni relleno; sobre fondo petróleo
-  // → iconos blancos.
+  // Acciones de cabecera (PageActions): visibles a TODOS los authenticated.
   const headerActions = (
-    <>
-      <button
+    <PageActions>
+      <Button
         type="button"
+        variant="icon"
         onClick={() => void runAutoMap()}
         disabled={autoMapLoading}
         aria-label="Auto-mapear aprendidos"
         title="Auto-mapear líneas cuyo texto ya está en el diccionario del proveedor"
-        className={cn(
-          'min-h-[40px] min-w-[40px] inline-flex items-center justify-center text-white hover:opacity-70 active:scale-[0.99] transition shrink-0',
-          autoMapLoading && 'opacity-60 pointer-events-none'
-        )}
       >
-        {autoMapLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
-      </button>
-      <button
+        {autoMapLoading ? (
+          <Loader2 className="size-5 animate-spin" aria-hidden />
+        ) : (
+          <Sparkles className="size-5" aria-hidden />
+        )}
+      </Button>
+      <Button
         type="button"
+        variant="icon"
         onClick={refresh}
         disabled={isPending}
         aria-label="Recargar"
-        className={cn(
-          'min-h-[40px] min-w-[40px] inline-flex items-center justify-center text-white hover:opacity-70 active:scale-[0.99] transition shrink-0',
-          isPending && 'opacity-60 pointer-events-none'
-        )}
+        title="Recargar"
       >
-        {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <RefreshCw className="h-5 w-5" />}
-      </button>
-    </>
+        {isPending ? (
+          <Loader2 className="size-5 animate-spin" aria-hidden />
+        ) : (
+          <RefreshCw className="size-5" aria-hidden />
+        )}
+      </Button>
+    </PageActions>
   )
 
   return (
-    <DashboardDetailLayout title="Albaranes" backHref="/dashboard" maxWidthClass="max-w-5xl" showBackButton={false} rightSlot={headerActions}>
+    <>
+      <PageHeader
+        title="Albaranes"
+        description="Histórico de compras y mapeo de líneas."
+        actions={headerActions}
+      />
     <div className="flex flex-col gap-4">
       <ScannerClient onSuccess={refresh} />
 
@@ -1155,7 +1161,7 @@ export default function AlbaranesHistoricoClient({
             }
           }}
           aria-label="Filtrar"
-          className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center text-[#36606F] hover:opacity-80 active:scale-[0.99] transition shrink-0"
+          className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center text-mds-primary hover:opacity-80 active:scale-[0.99] transition shrink-0"
         >
           <Filter className="h-5 w-5" />
         </button>
@@ -1355,7 +1361,7 @@ export default function AlbaranesHistoricoClient({
                   className="hidden"
                   onChange={handleReplaceImageFileChange}
                 />
-                <div className="bg-[#36606F] px-3 py-2.5 md:px-5 md:py-4 flex items-center justify-between gap-2 md:gap-3 text-white shrink-0">
+                <div className="bg-mds-primary px-3 py-2.5 md:px-5 md:py-4 flex items-center justify-between gap-2 md:gap-3 text-white shrink-0">
                   {/* Cabecera: por debajo de md, nombre en línea propia + metadato debajo; iconos compactos.
                       Desde md, fila única + targets 48px como antes. */}
                   <div className="min-w-0 flex-1 flex flex-col gap-0.5 md:flex-row md:items-baseline md:gap-3">
@@ -1460,7 +1466,7 @@ export default function AlbaranesHistoricoClient({
                               ? 'Ver todas las hojas: desliza o usa los puntos'
                               : 'Ver fotografía del albarán'
                           }
-                          className="relative min-h-12 w-full max-w-[10rem] overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm transition active:scale-[0.99] hover:ring-2 hover:ring-[#36606F]/25"
+                          className="relative min-h-12 w-full max-w-[10rem] overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm transition active:scale-[0.99] hover:ring-2 hover:ring-mds-primary/25"
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
@@ -1483,7 +1489,7 @@ export default function AlbaranesHistoricoClient({
                           aria-label="Añadir hoja"
                           title="Añadir otra página del mismo albarán (fotografía)"
                           className={cn(
-                            'w-full min-h-12 inline-flex items-center justify-center gap-2 rounded-xl px-4 text-xs font-medium uppercase tracking-wide text-[#36606F] hover:bg-zinc-50 active:scale-[0.99] transition border-0 bg-transparent shadow-none',
+                            'w-full min-h-12 inline-flex items-center justify-center gap-2 rounded-xl px-4 text-xs font-medium uppercase tracking-wide text-mds-primary hover:bg-zinc-50 active:scale-[0.99] transition border-0 bg-transparent shadow-none',
                             appendSheetBusy && 'opacity-60 pointer-events-none'
                           )}
                         >
@@ -1538,7 +1544,7 @@ export default function AlbaranesHistoricoClient({
                                 onClick={() => void handleRetryOcr()}
                                 disabled={ocrActionBusy}
                                 className={cn(
-                                  'min-h-12 flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[#36606F] px-4 text-xs font-black uppercase tracking-wider text-white active:scale-[0.99] transition',
+                                  'min-h-12 flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-mds-primary px-4 text-xs font-black uppercase tracking-wider text-white active:scale-[0.99] transition',
                                   ocrActionBusy && 'opacity-60 pointer-events-none'
                                 )}
                               >
@@ -1592,7 +1598,7 @@ export default function AlbaranesHistoricoClient({
 
                   {isLoadingDetail ? (
                     <div className="flex items-center gap-3 text-sm font-bold text-zinc-600">
-                      <Loader2 className="h-5 w-5 animate-spin text-[#36606F]" />
+                      <Loader2 className="h-5 w-5 animate-spin text-mds-primary" />
                       Cargando detalle…
                     </div>
                   ) : detailError ? (
@@ -1678,7 +1684,7 @@ export default function AlbaranesHistoricoClient({
                                       onClick={() => openLineEditModal(l)}
                                       disabled={stockBusy}
                                       className={cn(
-                                        'min-h-12 min-w-12 shrink-0 inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-[#36606F] hover:bg-zinc-100 active:scale-[0.99] transition',
+                                        'min-h-12 min-w-12 shrink-0 inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-mds-primary hover:bg-zinc-100 active:scale-[0.99] transition',
                                         stockBusy && 'opacity-60 pointer-events-none'
                                       )}
                                       aria-label="Editar línea"
@@ -1779,7 +1785,7 @@ export default function AlbaranesHistoricoClient({
                     }}
                   >
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
-                      <div className="bg-[#36606F] px-5 py-4 flex items-center justify-between gap-3 text-white shrink-0">
+                      <div className="bg-mds-primary px-5 py-4 flex items-center justify-between gap-3 text-white shrink-0">
                         <div className="min-w-0">
                           <p className="text-sm font-black uppercase tracking-wider truncate">Asignar proveedor</p>
                           <p className="text-[11px] font-bold text-white/70 truncate mt-1">Busca y selecciona el proveedor correcto</p>
@@ -1820,7 +1826,7 @@ export default function AlbaranesHistoricoClient({
                         <div className="flex flex-col gap-2">
                           {supplierLoading ? (
                             <div className="flex items-center gap-3 text-sm font-bold text-zinc-600 px-1">
-                              <Loader2 className="h-5 w-5 animate-spin text-[#36606F]" />
+                              <Loader2 className="h-5 w-5 animate-spin text-mds-primary" />
                               Buscando…
                             </div>
                           ) : supplierQuery.trim().length < 2 ? (
@@ -1916,7 +1922,7 @@ export default function AlbaranesHistoricoClient({
                 if (e.target === e.currentTarget) setInvoiceImageViewerOpen(false)
               }}
             >
-              <div className="shrink-0 bg-[#36606F] pt-[max(6px,env(safe-area-inset-top))] pb-3 text-white md:pb-3.5">
+              <div className="shrink-0 bg-mds-primary pt-[max(6px,env(safe-area-inset-top))] pb-3 text-white md:pb-3.5">
                 <p className="min-w-0 truncate px-4 text-center text-[11px] font-black uppercase tracking-wide text-white md:px-6 md:text-xs">
                   {invoiceImageSheetOptions[invoiceCarouselIndex]?.label ?? 'Hoja'}
                 </p>
@@ -1932,7 +1938,7 @@ export default function AlbaranesHistoricoClient({
                       <button
                         type="button"
                         className={cn(
-                          'absolute left-1 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#36606F] shadow-md ring-1 ring-zinc-200/90 hover:bg-white md:flex',
+                          'absolute left-1 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-mds-primary shadow-md ring-1 ring-zinc-200/90 hover:bg-white md:flex',
                           invoiceCarouselIndex <= 0 && 'pointer-events-none opacity-35'
                         )}
                         aria-label="Hoja anterior"
@@ -1943,7 +1949,7 @@ export default function AlbaranesHistoricoClient({
                       <button
                         type="button"
                         className={cn(
-                          'absolute right-1 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#36606F] shadow-md ring-1 ring-zinc-200/90 hover:bg-white md:flex',
+                          'absolute right-1 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-mds-primary shadow-md ring-1 ring-zinc-200/90 hover:bg-white md:flex',
                           invoiceCarouselIndex >= invoiceImageSheetOptions.length - 1 &&
                             'pointer-events-none opacity-35'
                         )}
@@ -2026,7 +2032,7 @@ export default function AlbaranesHistoricoClient({
                   <button
                     type="button"
                     onClick={() => setInvoiceImageViewerOpen(false)}
-                    className="inline-flex min-h-12 w-full max-w-xs items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-black uppercase tracking-wide text-[#36606F] shadow-md transition hover:bg-zinc-100 active:scale-[0.99] sm:w-auto"
+                    className="inline-flex min-h-12 w-full max-w-xs items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-black uppercase tracking-wide text-mds-primary shadow-md transition hover:bg-zinc-100 active:scale-[0.99] sm:w-auto"
                     aria-label="Cerrar visor de imagen"
                   >
                     <X className="h-5 w-5 shrink-0" strokeWidth={2.5} />
@@ -2047,7 +2053,7 @@ export default function AlbaranesHistoricoClient({
           }}
         >
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
-            <div className="bg-[#36606F] px-5 py-4 flex items-center justify-between gap-3 text-white">
+            <div className="bg-mds-primary px-5 py-4 flex items-center justify-between gap-3 text-white">
               <p className="text-sm font-black uppercase tracking-wider">Filtrar</p>
               <button
                 type="button"
@@ -2123,7 +2129,7 @@ export default function AlbaranesHistoricoClient({
                     )
                     setFilterOpen(false)
                   }}
-                  className="min-h-[48px] flex-1 rounded-xl bg-[#36606F] text-white text-xs font-black uppercase tracking-wider"
+                  className="min-h-[48px] flex-1 rounded-xl bg-mds-primary text-white text-xs font-black uppercase tracking-wider"
                 >
                   Aplicar
                 </button>
@@ -2133,7 +2139,7 @@ export default function AlbaranesHistoricoClient({
         </div>
       ) : null}
     </div>
-    </DashboardDetailLayout>
+    </>
   )
 }
 

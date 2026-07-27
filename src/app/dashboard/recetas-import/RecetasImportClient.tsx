@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { Button, PageActions, PageHeader, Surface } from '@/components/mds'
 import {
   applyValidatedRecipesAction,
   extractRecipesFromDocumentAction,
@@ -174,48 +175,37 @@ export default function RecetasImportClient({ allIngredients }: { allIngredients
   }
 
   return (
-    <div className="min-h-screen bg-white pb-24">
-      <div className="max-w-4xl mx-auto px-4 pt-6 space-y-6">
-        <div className="flex items-start gap-4">
-          <Link
-            href="/dashboard/import"
-            className={cn(
-              'shrink-0 inline-flex items-center justify-center min-h-12 min-w-12 rounded-xl border border-zinc-100 bg-white shadow-sm',
-              'text-[#36606F] hover:bg-zinc-50'
-            )}
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Importar recetas (IA + validación)</h1>
-            <p className="text-zinc-500 text-sm mt-1">
-              Sube un PDF o una foto de fichas de recetas. La IA extrae ingredientes, elaboración y presentación; tú
-              revisas antes de guardar. Los nombres de ingrediente deben coincidir con la base de datos.
-            </p>
-          </div>
-        </div>
+    <div className="space-y-6 pb-8 text-mds-foreground">
+      <PageHeader
+        title="Importar recetas (IA + validación)"
+        description="Sube un PDF o una foto de fichas de recetas. La IA extrae ingredientes, elaboración y presentación; tú revisas antes de guardar. Los nombres de ingrediente deben coincidir con la base de datos."
+        actions={
+          <PageActions>
+            <Button variant="icon" asChild>
+              <Link href="/dashboard/import" aria-label="Volver a importación">
+                <ArrowLeft className="size-5" aria-hidden />
+              </Link>
+            </Button>
+          </PageActions>
+        }
+      />
 
-        <div
-          className={cn(
-            'rounded-xl border border-zinc-100 bg-white shadow-sm p-6',
-            'flex flex-col items-center justify-center gap-4 min-h-[140px]'
-          )}
-        >
-          <div className="flex gap-3 text-zinc-400">
-            <FileText className="w-8 h-8" />
-            <FileImage className="w-8 h-8" />
+      <Surface className="flex min-h-[140px] flex-col items-center justify-center gap-4 p-6">
+          <div className="flex gap-3 text-mds-muted">
+            <FileText className="w-8 h-8" aria-hidden />
+            <FileImage className="w-8 h-8" aria-hidden />
           </div>
-          <p className="text-sm text-zinc-600 text-center">
-            PDF o imagen (JPG, PNG, WebP) · máx. 12 MB · requiere <code className="text-xs bg-zinc-100 px-1 rounded">GEMINI_API_KEY</code>
+          <p className="text-sm text-mds-muted text-center">
+            PDF o imagen (JPG, PNG, WebP) · máx. 12 MB · requiere <code className="text-xs bg-mds-muted-surface px-1 rounded">GEMINI_API_KEY</code>
           </p>
           <label
             className={cn(
               'inline-flex items-center justify-center gap-2 min-h-12 px-6 rounded-xl font-medium cursor-pointer',
-              'bg-[#36606F] text-white hover:bg-[#2A4C58] shadow-sm shrink-0',
+              'bg-mds-primary text-mds-primary-foreground hover:bg-mds-primary/90 shadow-sm shrink-0',
               extracting && 'opacity-60 pointer-events-none'
             )}
           >
-            {extracting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
+            {extracting ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden /> : <Upload className="w-5 h-5" aria-hidden />}
             {extracting ? 'Extrayendo…' : 'Elegir PDF o imagen'}
             <input
               type="file"
@@ -224,14 +214,14 @@ export default function RecetasImportClient({ allIngredients }: { allIngredients
               onChange={onFile}
             />
           </label>
-          {statusLine ? <p className="text-sm text-center text-zinc-700 max-w-lg">{statusLine}</p> : null}
-        </div>
+          {statusLine ? <p className="text-sm text-center text-mds-foreground max-w-lg">{statusLine}</p> : null}
+      </Surface>
 
         {rows.length > 0 && (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-zinc-900 flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-[#36606F]" />
+              <h2 className="text-lg font-semibold text-mds-foreground flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-mds-primary" aria-hidden />
                 Propuestas
               </h2>
               <button
@@ -433,7 +423,6 @@ export default function RecetasImportClient({ allIngredients }: { allIngredients
             })}
           </div>
         )}
-      </div>
     </div>
   )
 }

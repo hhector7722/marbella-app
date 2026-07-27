@@ -1,6 +1,667 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-26 (Sprint 13 — Inventory Slice I)
+**Última actualización:** 2026-07-27 (Sprint 33 — Dashboard Hub / Consolidación V2)
+
+- [x] **Sprint 33 — Dashboard Hub / Consolidación V2 (2026-07-27)**: Hub `/dashboard` migrado; **Dashboard producto 100% V2** (excl. kds).
+  - **Migrado:** `/dashboard` — `V2PageShell` + `PageHeader` + `DashboardSwitcher` (mismo patrón que `/staff/dashboard`).
+  - **Registry:** alta `/dashboard` con matching **exact-only** (no contagiar hijos no registrados; kds queda fuera).
+  - **Nav:** ítem «Inicio» → `/dashboard`.
+  - **Chrome:** cabeceras petroleum en `AdminDashboardView` → `mds-primary`. Emerald/rose de caja y `#5B8FB9` de acentos secundarios conservados.
+  - **Intactos:** gate solo manager, `getDashboardData`, swipe multi-panel, widgets/KPIs/modales/acciones.
+  - **Componentes MDS nuevos:** 0. **Infra nueva:** 0 (solo regla exact-only en registry). **Lógica:** 0.
+  - **Fuera de alcance:** `kds` (redirect; proyecto independiente).
+
+### Estado V2 consolidado
+
+| Ámbito | Valor |
+|--------|-------|
+| Staff | **9/9 (100%)** |
+| Compras · Caja · Imports · Sala/Ventas · Personal · **Hub** | **100% V2** |
+| Dashboard producto | **27 (100% excl. kds)** |
+| Total V2 | **36** |
+| Arquitectura V2 | **~100%** (estable) |
+| Design System | Estable; 0 MDS nuevos desde Sprint 17 |
+| Deuda visual | Residual hub/modales en `V2_VISUAL_DEBT.md` |
+| Roadmap global (aprox.) | **~99%** (kds excluido) |
+| Próximo bloque | — · Deuda visual residual / master si aplica |
+
+### Dominios pendientes (Dashboard)
+
+Ninguno funcional. Excepción: `kds` (no migrar).
+
+**Última actualización anterior:** 2026-07-27 (Sprint 32 — Dashboard Slice XIII / Personal · History)
+
+- [x] **Sprint 32 — Dashboard Slice XIII / Personal · History (2026-07-27)**: Dominio **Personal** cerrado en V2.
+  - **Migrado (1):** `/dashboard/history` — monolito CSR (`HistoryClient` ~2.9k LOC) + SSR `V2PageShell` + Suspense/`useSearchParams`.
+  - **Chrome:** PageHeader + Surface; toolbar/thead/modales → `mds-primary` (patrón Movements). Hex de print HTML aislado conservado.
+  - **Intactos:** queries `cash_closings`, export Excel/print, filtros, calendario/tabla, modales detalle/edición, fotos cierre, `isManager` UI. Sin role gate extra (igual que legacy).
+  - **HE / Cost / SSOT:** **0** cambios (esta pantalla no muta motores; solo presentación).
+  - **Dominio Personal:** **4/4 (100% V2)**.
+  - **Componentes MDS nuevos:** 0. **Infra nueva:** 0.
+  - **Siguiente:** Hub `/dashboard` (transversal). No migrar: `kds`.
+
+### Estado V2 consolidado (histórico Sprint 32)
+
+| Ámbito | Valor |
+|--------|-------|
+| Staff | **9/9 (100%)** |
+| Compras · Caja · Imports · Sala/Ventas · **Personal** | **100% V2** |
+| Dashboard producto | **26 (~96%)** |
+| Total V2 | **35** |
+| Arquitectura V2 | **~100%** (estable) |
+| Design System | Estable; 0 MDS nuevos desde Sprint 17 |
+| Deuda visual | Inventariada en `V2_VISUAL_DEBT.md` |
+| Roadmap global (aprox.) | **~98%** |
+| Próximo bloque | Hub `/dashboard` |
+
+### Dominios pendientes (Dashboard) — histórico Sprint 32
+
+home (`/dashboard`). No migrar: `kds`.
+
+**Última actualización anterior:** 2026-07-27 (Sprint 31 — Dashboard Slice XII / Personal · Labor + Overtime)
+
+- [x] **Sprint 31 — Dashboard Slice XII / Personal · Labor + Overtime (2026-07-27)**: Explotación HE migrada a V2 (solo chrome).
+  - **Agrupación confirmada:** migrar **juntas** `/dashboard/labor` + `/dashboard/overtime` — mismo ecosistema Hours Engine / Cost Engine / proyecciones overtime. No tocar `history` (Slice XIII).
+  - **Migrado (2):** labor (`LaborClient` + SSOT coste) · overtime (`OvertimeClient` + `getOvertimeData` / toggles).
+  - **Chrome:** PageHeader/PageActions/Surface + `mds-primary`; purple chrome overtime → tokens. Rose/amber/emerald de coste/extras/pagado y umbrales M.O. (>35%) **conservados**.
+  - **Intactos:** `labor-cost-ssot`, `PAYROLL_ORDINARY_ROW_ID`, actions overtime, toggles paid/preferStock, filtros, calendario, modales detalle. Sin role gate extra (igual que legacy).
+  - **Dominio Personal:** **3/4** (consumo ✅ · labor ✅ · overtime ✅ · history ⏳).
+  - **Componentes MDS nuevos:** 0. **Infra nueva:** 0. **Hours/Cost Engine:** 0.
+  - **Siguiente:** Slice XIII — `/dashboard/history`.
+
+### Estado V2 consolidado (histórico Sprint 31)
+
+| Ámbito | Valor |
+|--------|-------|
+| Staff | **9/9 (100%)** |
+| Compras · Caja · Imports · Sala/Ventas | **100% V2** |
+| Personal (Dashboard) | **3/4** |
+| Dashboard producto | **25 (~93%)** |
+| Total V2 | **34** |
+| Arquitectura V2 | **~100%** (estable) |
+| Design System | Estable; 0 MDS nuevos desde Sprint 17 |
+| Deuda visual | Inventariada en `V2_VISUAL_DEBT.md` |
+| Roadmap global (aprox.) | **~97%** |
+| Próximo bloque | Personal Slice XIII (`history`) |
+
+### Dominios pendientes (Dashboard) — histórico Sprint 31
+
+`history`, home (`/dashboard`). No migrar: `kds`.
+
+**Última actualización anterior:** 2026-07-27 (Sprint 30 — Dashboard Slice XI / Personal · Consumo)
+
+- [x] **Sprint 30 — Dashboard Slice XI / Personal · Consumo (2026-07-27)**: Inicio dominio **Personal** en Dashboard V2.
+  - **Agrupación (decisión):** **no** migrar Personal como un solo slice.
+    - **Slice XI (este sprint):** solo `/dashboard/consumo-personal` — consumo staff/fichaje; independiente del Hours Engine; riesgo bajo.
+    - **Slice XII (siguiente):** `/dashboard/labor` + `/dashboard/overtime` juntos — mismo origen funcional (HE / Cost Engine / proyecciones overtime).
+    - **Slice XIII (último):** `/dashboard/history` — monolito HE crítico; solo cuando el resto del dominio esté en V2.
+  - **Migrado (1):** consumo-personal (`page.tsx` SSR + `ConsumoPersonalClient` + Suspense/`useSearchParams`).
+  - **Chrome:** PageHeader/PageActions/Surface + tokens `mds-primary`. Emerald de «Importe» conservado.
+  - **Intactos:** `actions.ts`, RPC consumo, filtros tiempo/trabajador, calendario, detalle día, orden recetas, gate manager/admin (SSR + client).
+  - **Dominio Personal:** **1/4** (consumo ✅ · labor · overtime · history).
+  - **Componentes MDS nuevos:** 0. **Infra nueva:** 0. **Hours/Cost Engine:** 0.
+  - **Siguiente:** Slice XII (`labor` + `overtime`).
+
+### Estado V2 consolidado (histórico Sprint 30)
+
+| Ámbito | Valor |
+|--------|-------|
+| Staff | **9/9 (100%)** |
+| Compras · Caja · Imports · Sala/Ventas | **100% V2** |
+| Personal (Dashboard) | **1/4** |
+| Dashboard producto | **23 (~85%)** |
+| Total V2 | **32** |
+| Arquitectura V2 | **~100%** (estable) |
+| Design System | Estable; 0 MDS nuevos desde Sprint 17 |
+| Deuda visual | Inventariada en `V2_VISUAL_DEBT.md` |
+| Roadmap global (aprox.) | **~96%** |
+| Próximo bloque | Personal Slice XII (`labor` + `overtime`) |
+
+### Dominios pendientes (Dashboard) — histórico Sprint 30
+
+`labor`, `overtime`, `history`, home (`/dashboard`). No migrar: `kds`.
+
+**Última actualización anterior:** 2026-07-27 (Sprint 29 — Dashboard Slice X / Sala · Ventas)
+
+- [x] **Sprint 29 — Dashboard Slice X / Sala · Ventas (2026-07-27)**: Dominio **Sala / Ventas** cerrado en V2.
+  - **Agrupación:** migrar **juntas** `/dashboard/sala` + `/dashboard/ventas`. Mismo dominio operativo (`SubNavVentas`: LIVE ↔ Tickets/Productos/Horas); dejar una en V1 rompería chrome del puente. Cuerpos distintos (radar WS vs KPIs históricos) — criterio Actividades/Reservas/Imports.
+  - **Migrado (2):** sala (`SalaClient` + RadarSala) · ventas (`VentasClient` + Suspense/`useSearchParams`).
+  - **Chrome:** PageHeader/Surface + `mds-primary`; SubNavVentas tokens; SVG chart `var(--mds-primary)`. Emerald de totales/series conservado.
+  - **Intactos:** queries tickets/ranking/horas, filtros, paginación, export/print, `canAccessInsights`, WebSocket `estado_sala`.
+  - **Dominio Sala/Ventas:** **100% V2**.
+  - **Componentes MDS nuevos:** 0. **Infra nueva:** 0. **KPIs/agregaciones:** 0.
+  - **Siguiente:** Personal (`consumo-personal` → labor/overtime → history) o Hub `/dashboard`.
+
+### Estado V2 consolidado (histórico Sprint 29)
+
+| Ámbito | Valor |
+|--------|-------|
+| Staff | **9/9 (100%)** |
+| Compras · Caja · Imports · Sala/Ventas | **100% V2** |
+| Dashboard producto | **22 (~81%)** |
+| Total V2 | **31** |
+| Arquitectura V2 | **~100%** (estable) |
+| Design System | Estable; 0 MDS nuevos desde Sprint 17 |
+| Deuda visual | Inventariada en `V2_VISUAL_DEBT.md` |
+| Roadmap global (aprox.) | **~95%** |
+| Próximo bloque | Personal o Hub |
+
+### Dominios pendientes (Dashboard) — histórico Sprint 29
+
+`history`, `labor`, `overtime`, `consumo-personal`, home (`/dashboard`). No migrar: `kds`.
+
+**Última actualización anterior:** 2026-07-27 (Sprint 28 — Dashboard Slice IX / Imports)
+
+- [x] **Sprint 28 — Dashboard Slice IX / Imports (2026-07-27)**: Dominio **Imports** cerrado en V2.
+  - **Agrupación:** migrar **juntas** `/dashboard/import` + `/dashboard/recetas-import` (mismo dominio, enlace cruzado, ciclo de vida de datos legacy/IA; cuerpos UI distintos — criterio Actividades/Reservas).
+  - **Migrado (2):** import (SSR shell + `ImportClient`) · recetas-import (`V2PageShell` + client).
+  - **Chrome:** PageHeader + tokens `mds-primary`; emerald de éxito/import aceptadas conservado.
+  - **Intactos:** `import-legacy` actions, parsers CSV/XLSX, `actions.ts` OCR/apply recetas, gates manager/admin en recetas-import; import sin role gate extra (igual que legacy).
+  - **Dominio Imports:** **100% V2**.
+  - **Componentes MDS nuevos:** 0. **Infra nueva:** 0. **Parsers/importadores:** 0.
+  - **Siguiente:** Sala/ventas (`sala` → `ventas`) o Personal (ver `V2_VISUAL_DEBT.md`).
+
+### Estado V2 consolidado (histórico Sprint 28)
+
+| Ámbito | Valor |
+|--------|-------|
+| Staff | **9/9 (100%)** |
+| Compras Dashboard | **100% V2** |
+| Caja Dashboard | **100% V2** |
+| Imports Dashboard | **100% V2** |
+| Dashboard producto | **20 (~74%)** |
+| Total V2 | **29** |
+| Arquitectura V2 | **~100%** (estable) |
+| Design System | Estable; 0 MDS nuevos desde Sprint 17 |
+| Deuda visual | Inventariada en `V2_VISUAL_DEBT.md` |
+| Roadmap global (aprox.) | **~93%** |
+| Próximo bloque | Sala/ventas o Personal |
+
+### Dominios pendientes (Dashboard) — histórico Sprint 28
+
+`history`, `labor`, `overtime`, `consumo-personal`, `sala`, `ventas`, home (`/dashboard`). No migrar: `kds`.
+
+**Última actualización anterior:** 2026-07-27 (Sprint 27 — Dashboard Slice VIII / Caja · Ledger)
+
+- [x] **Sprint 27 — Dashboard Slice VIII / Caja · Ledger (2026-07-27)**: Cierre del dominio **Caja** en Dashboard V2.
+  - **Migrado:** `/dashboard/ledger` — registry + nav «Libro mayor» + `V2PageShell` + PageHeader/PageActions/Surface; chrome → `mds-primary`.
+  - **Gate intacto:** solo `role === 'manager'` (admin redirige a `/dashboard`, igual que legacy).
+  - **Intactos:** RPC `get_manager_ledger_balance`, queries libro, filtros, CRUD apuntes, running balance, emerald/rose semánticos.
+  - **Dominio Caja:** propinas · movements · ledger → **100% V2**.
+  - **Componentes MDS nuevos:** 0. **Infra nueva:** 0. **Lógica contable:** 0.
+  - **Siguiente bloque propuesto:** Imports (`import` → `recetas-import`) o Sala/ventas (ver `V2_VISUAL_DEBT.md`).
+
+### Estado V2 consolidado (histórico Sprint 27)
+
+| Ámbito | Valor |
+|--------|-------|
+| Staff | **9/9 (100%)** |
+| Compras Dashboard | **100% V2** |
+| Caja Dashboard | **3/3 (100%)** |
+| Dashboard producto | **18 (~67%)** |
+| Total V2 | **27** |
+| Arquitectura V2 | **~100%** (estable) |
+| Design System | Estable; 0 MDS nuevos desde Sprint 17 |
+| Deuda visual | Inventariada en `V2_VISUAL_DEBT.md` |
+| Roadmap global (aprox.) | **~90%** |
+| Próximo bloque | Imports o Sala/ventas |
+
+### Dominios pendientes (Dashboard) — histórico Sprint 27
+
+`history`, `labor`, `overtime`, `consumo-personal`, `sala`, `ventas`, `import`, `recetas-import`, home (`/dashboard`). No migrar: `kds`.
+
+**Última actualización anterior:** 2026-07-27 (Sprint 26 — Dashboard Slice VII / Caja · Movements)
+
+- [x] **Sprint 26 — Dashboard Slice VII / Caja · Movements (2026-07-27)**: Tesorería operativa migrada a V2. Solo capa visual.
+  - **Migrado:** `/dashboard/movements` — registry + nav «Movimientos» (sección Caja) + `V2PageShell` + `page.tsx` SSR + `MovementsClient` (monolito CSR intacto).
+  - **Chrome:** PageHeader + Surface; cabecera/thead/saldo → `mds-primary`. Emerald/rose/orange de ingresos/gastos/diferencia **conservados**.
+  - **Intactos:** RPCs `get_operational_box_status` / `get_treasury_period_summary`, vista `v_treasury_movements_balance`, céntimos, paginación, export Excel/print, modales caja/arqueo/detalle.
+  - **No fragmentado:** monolito ~1.3k LOC sin split (deuda documentada).
+  - **Dominio Caja:** propinas ✅ · movements ✅ · ledger ⏳ (**2/3**).
+  - **Componentes MDS nuevos:** 0. **Infra nueva:** 0. **Lógica tesorería:** 0.
+  - **Siguiente:** `/dashboard/ledger` (Caja Slice VIII — cierra dominio).
+
+### Estado V2 consolidado (histórico Sprint 26)
+
+| Ámbito | Valor |
+|--------|-------|
+| Staff | **9/9 (100%)** |
+| Dashboard producto | **17 (~63%)** |
+| Total V2 | **26** |
+| Arquitectura V2 | **~100%** (estable) |
+| Design System | Estable; 0 MDS nuevos desde Sprint 17 |
+| Dominio Compras (Dashboard) | **Cerrado (V2)** |
+| Dominio Caja (Dashboard) | **2/3** (propinas ✅ · movements ✅ · ledger) |
+| Deuda visual | Inventariada en `V2_VISUAL_DEBT.md` |
+| Roadmap global (aprox.) | **~88%** |
+| Próximo bloque | Caja Slice VIII → ledger |
+
+### Dominios pendientes (Dashboard) — histórico Sprint 26
+
+`ledger`, `history`, `labor`, `overtime`, `consumo-personal`, `sala`, `ventas`, `import`, `recetas-import`, home (`/dashboard`). No migrar: `kds`.
+
+**Última actualización anterior:** 2026-07-27 (Sprint 25 — Dashboard Slice VI / Caja · Propinas)
+
+- [x] **Sprint 25 — Dashboard Slice VI / Caja · Propinas (2026-07-27)**: Apertura del dominio Caja en Dashboard V2.
+  - **Decisión de agrupación:** **NO** migrar conjuntamente `propinas` + `movements` + `ledger`. Arquitecturas distintas (tips SSR / monolito CSR tesorería / libro manager), permisos distintos (`tip_pool_editors` vs caja operativa vs manager-only) y ~0% cuerpo UI compartido. Dominio Caja en **3 slices**.
+  - **Migrado (Slice I):** `/dashboard/propinas` — registry + nav sección «Caja» + `V2PageShell` + PageHeader/PageActions/Surface; chrome hex → `mds-primary`.
+  - **Intactos:** gates tip_pool_editors / manager-admin, preview RPC, botes, overrides, confirmación, historial; emerald de botes/banner (semántica económica).
+  - **Diferido (Caja):** `/dashboard/movements` (Slice VII), `/dashboard/ledger` (Slice VIII).
+  - **Componentes MDS nuevos:** 0. **Infra nueva:** 0. **Lógica negocio / tip math:** 0.
+  - **Siguiente:** `/dashboard/movements` (tesorería operativa).
+
+### Estado V2 consolidado (histórico Sprint 25)
+
+| Ámbito | Valor |
+|--------|-------|
+| Staff | **9/9 (100%)** |
+| Dashboard producto | **16 (~59%)** |
+| Total V2 | **25** |
+| Arquitectura V2 | **~100%** (estable) |
+| Design System | Estable; 0 MDS nuevos desde Sprint 17 |
+| Dominio Compras (Dashboard) | **Cerrado (V2)** |
+| Dominio Caja (Dashboard) | **1/3** (propinas ✅ · movements · ledger) |
+| Deuda visual | Inventariada en `V2_VISUAL_DEBT.md` |
+| Roadmap global (aprox.) | **~86%** |
+| Próximo bloque | Caja Slice VII → movements |
+
+### Dominios pendientes (Dashboard) — histórico Sprint 25
+
+`movements`, `ledger`, `history`, `labor`, `overtime`, `consumo-personal`, `sala`, `ventas`, `import`, `recetas-import`, home (`/dashboard`). No migrar: `kds`.
+
+**Última actualización anterior:** 2026-07-27 (Sprint 24 — Dashboard Slice V / Compras · Albaranes Precios)
+
+- [x] **Sprint 24 — Dashboard Slice V / Compras · Albaranes Precios (2026-07-27)**: Cierre del dominio Compras en Dashboard V2.
+  - **Agrupación:** sin satélites con el mismo ciclo de vida; solo `/dashboard/albaranes-precios` (scanner + albaranes ya V2).
+  - **Migrado:** registry manager + nav «Precios albarán» + `V2PageShell` + PageHeader/PageActions/Surface; chrome hex → `mds-primary`.
+  - **Intactos:** `actions.ts` (OCR/apply), gate manager/admin, query `ingredients`, wizard de confirmación, batch apply.
+  - **Dominio Compras Dashboard:** scanner · albaranes · albaranes-precios → **100% V2**.
+  - **Componentes MDS nuevos:** 0. **Infra nueva:** 0. **Lógica negocio:** 0.
+  - **Siguiente bloque propuesto:** Caja (`/dashboard/propinas` → movements → ledger).
+
+### Estado V2 consolidado (histórico Sprint 24)
+
+| Ámbito | Valor |
+|--------|-------|
+| Staff | **9/9 (100%)** |
+| Dashboard producto | **15 (~56%)** |
+| Total V2 | **24** |
+| Arquitectura V2 | **~100%** (estable) |
+| Design System | Estable; 0 MDS nuevos desde Sprint 17 |
+| Dominio Compras (Dashboard) | **Cerrado (V2)** |
+| Deuda visual | Inventariada en `V2_VISUAL_DEBT.md` |
+| Roadmap global (aprox.) | **~84%** |
+| Próximo bloque | Caja → … (ver `V2_VISUAL_DEBT.md`) |
+
+### Dominios pendientes (Dashboard) — histórico Sprint 24
+
+`propinas`, `ledger`, `movements`, `history`, `labor`, `overtime`, `consumo-personal`, `sala`, `ventas`, `import`, `recetas-import`, home (`/dashboard`). No migrar: `kds`.
+
+**Última actualización anterior:** 2026-07-27 (Sprint 23 — Consolidación V2 / deuda visual)
+
+- [x] **Sprint 23 — Consolidación V2 y preparación del tramo final (2026-07-27)**: Sin migraciones. Limpieza chrome + inventario.
+  - **Informe:** [`docs/redesign/V2_VISUAL_DEBT.md`](docs/redesign/V2_VISUAL_DEBT.md)
+  - **Corregido (chrome only):** `staff/error.tsx`, botones Guardar/Añadir en `CartaEditorClient` + `CartaMappingCreatorClient`.
+  - **Diferido:** `MappingClient`, modales reservas/hub, `MenuAccordion`, `ConsumptionModal`, tips manager legacy.
+  - **Negocio (no tocar):** paleta Petróleo actividades; hex densos en Dashboard no migrado.
+  - **Siguiente dominio propuesto (no migrado):** `/dashboard/albaranes-precios` (cierra Compras) → luego Caja (`propinas` → movements → ledger).
+  - **Componentes MDS nuevos:** 0. **Infra nueva:** 0. **HE / lógica:** 0.
+
+- [x] **Sprint 22 — Staff Slice Final / `/staff/history` (2026-07-27)**: Cierre del dominio Staff. Solo capa visual.
+  - **Migrado:** `/staff/history` — registry + nav «Asistencia» + `V2PageShell` + `HistoryClient` + Suspense.
+  - **HE intacto:** 0 cambios en `src/lib/hours-engine/**`, overtime actions, queries, liquidación, plantilla builders, PDF/XLSX payloads.
+  - **Chrome:** PageHeader/PageActions (mes, export, filtro empleado), LoadingBlock, EmptyState, tokens `mds-primary` en cabecera/picker; focus rings en WeekCard.
+  - **Intactos:** filtros, exports, simulación, modales asistencia/día/export, `updateWeeklyWorkerConfig`, `?id=` deep-link, roles manager/master.
+  - **Componentes MDS nuevos:** 0. **Infra nueva:** 0.
+  - **Deuda:** hex residual en modales compartidos de asistencia (fuera de este slice); cuerpo WeekCard/PlantillaWeekCard denso — sin refactor HE.
+
+### Staff V2 — estado
+
+| Estado | Valor |
+|--------|-------|
+| Plan | [`STAFF_MIGRATION_PLAN.md`](docs/redesign/STAFF_MIGRATION_PLAN.md) |
+| Pantallas Staff migradas | **9** / 9 (**100%**) |
+| V2 | **todas** las rutas Staff con `page.tsx` |
+| Pendientes | — |
+| Registry `staff` | propinas, actividades, reservas, dashboard, carta, history |
+
+### Dashboard V2 — estado del módulo (sin cambios)
+
+| Estado | Rutas |
+|--------|-------|
+| **V2** | **14** pantallas |
+| **% Dashboard producto** | **~52%** |
+| **% arquitectura V2 (infra)** | **~100%** |
+
+### Métricas del rediseño (manual)
+
+| Métrica | Valor |
+|---------|------:|
+| Pantallas V2 totales (Dashboard + Staff) | **23** |
+| Pantallas Dashboard V2 | **14** |
+| Pantallas Staff V2 | **9** |
+| % dominio Staff | **100%** |
+| % roadmap global (aprox.) | **~82%** |
+| Componentes MDS nuevos Sprint 22 | **0** |
+| Rutas en registro V2 | 18 (12 manager + 6 staff; hijos por prefijo) |
+
+**Última actualización anterior:** 2026-07-27 (Sprint 21 — Staff Slice IV / Hub + Carta)
+
+- [x] **Sprint 21 — Staff Slice IV / Hub + Carta (2026-07-27)**: Pantallas Staff «convencionales» restantes migradas; queda solo `history`.
+  - **Migrado (2):** `/staff/dashboard` (hub; no existe page en `/staff`), `/staff/carta`.
+  - **Decisión de agrupación:** hub y carta **no** comparten cuerpo UI (~80%); se migran juntas como cierre del Staff operativo (mismo shell/nav/ciclo) antes del HE.
+  - **Hub:** `V2PageShell` + PageHeader + `Suspense` (`useSearchParams` en `StaffDashboardView`) + `DashboardSwitcher` intacto. Token chrome cabecera semana → `mds-primary`.
+  - **Carta:** `V2PageShell` + `withPageContainer={false}` (conserva max-w-2xl / cuerpo menú). `StaffCartaView` → PageHeader (logo) + PageActions. BottomNav sigue oculto vía `isV2ShellPath`.
+  - **Fullscreen:** AppShell añade MobileHeader/Topbar/sidebar desktop — ya no es full-bleed legacy; documentado. Experiencia de menú/edición intacta.
+  - **Intactos:** queries carta, `canEditCartaMenu`, `carta_editors`, covers, `DashboardSwitcher` multi-rol, fichaje/modales hub.
+  - **Componentes MDS nuevos:** 0. **Infra nueva:** 0.
+  - **Pendiente Staff:** únicamente `/staff/history` (Hours Engine).
+
+### Staff V2 — estado
+
+| Estado | Valor |
+|--------|-------|
+| Plan | [`STAFF_MIGRATION_PLAN.md`](docs/redesign/STAFF_MIGRATION_PLAN.md) |
+| Pantallas Staff migradas | **8** / 9 (**~89%**) |
+| V2 | propinas + actividades* + reservas* + dashboard + carta |
+| Pendientes | **history** (HE) |
+| Registry `staff` | propinas, actividades, reservas, dashboard, carta |
+
+### Dashboard V2 — estado del módulo (sin cambios)
+
+| Estado | Rutas |
+|--------|-------|
+| **V2** | **14** pantallas |
+| **% Dashboard producto** | **~52%** |
+| **% arquitectura V2 (infra)** | **~100%** |
+
+### Métricas del rediseño (manual)
+
+| Métrica | Valor |
+|---------|------:|
+| Pantallas V2 totales (Dashboard + Staff) | **22** |
+| Pantallas Dashboard V2 | **14** |
+| Pantallas Staff V2 | **8** |
+| % dominio Staff | **~89%** (8/9) |
+| % roadmap global (aprox.) | **~78%** |
+| Componentes MDS nuevos Sprint 21 | **0** |
+| Rutas en registro V2 | 17 (12 manager + 5 staff; hijos por prefijo) |
+
+**Última actualización anterior:** 2026-07-27 (Sprint 20 — Staff Slice III / Encargos)
+
+- [x] **Sprint 20 — Staff Slice III / Encargos (2026-07-27)**: Dominio Reservas y encargos migrado a V2.
+  - **Migrado (2):** `/staff/reservas`, `/staff/reservas/encargo/[eventId]`.
+  - **Decisión de agrupación:** calendario (~1444 LOC) y detalle de encargo **no** comparten ~80% de cuerpo UI; se migran juntas porque (1) mismo dominio funcional / ciclo de vida / permisos, (2) prefijo registry `/staff/reservas` arrastra el hijo — no dejar dominio a medias V1/V2.
+  - **Patrón:** registry `staff` + nav Reservas (ya existía) + `V2PageShell variant="staff"` + PageHeader/PageActions + MDS.
+  - **Intactos:** RPCs/calendario, `createEncargoAction`, modales agenda/pedido, `canCreateEncargo`, `loadEncargoPageById`, `EncargoProductEditor` lógica, deep-links `?id=` / `?eventId=`.
+  - **Tokens:** chrome página + `EncargoProductEditor` → `mds-primary`. Hex residual en modales satélite (`DayAgendaModal`, `PedidoClientEditModals`, `EncargoOrderViewModal`) — documentado, sin cambio de lógica.
+  - **Componentes MDS nuevos:** 0.
+  - **Infra nueva:** 0.
+  - **Incidencia:** cuerpo del editor de productos sigue denso/custom; cabecera MDS + barra interna del editor conviven (acciones carrito/borrar).
+
+### Staff V2 — estado
+
+| Estado | Valor |
+|--------|-------|
+| Plan | [`STAFF_MIGRATION_PLAN.md`](docs/redesign/STAFF_MIGRATION_PLAN.md) |
+| Pantallas Staff migradas | **6** / 9 (**~67%**) |
+| V2 | propinas + actividades* + reservas + encargo |
+| Pendientes | dashboard, carta, history |
+| Registry `staff` | `/staff/propinas`, `/staff/actividades`, `/staff/reservas` (cubre `/encargo/[eventId]` por prefijo) |
+
+### Dashboard V2 — estado del módulo (sin cambios)
+
+| Estado | Rutas |
+|--------|-------|
+| **V2** | **14** pantallas |
+| **% Dashboard producto** | **~52%** |
+| **% arquitectura V2 (infra)** | **~100%** |
+
+### Métricas del rediseño (manual)
+
+| Métrica | Valor |
+|---------|------:|
+| Pantallas V2 totales (Dashboard + Staff) | **20** |
+| Pantallas Dashboard V2 | **14** |
+| Pantallas Staff V2 | **6** |
+| % dominio Staff | **~67%** (6/9) |
+| % roadmap global (aprox.) | **~72%** |
+| Componentes MDS nuevos Sprint 20 | **0** |
+| Rutas en registro V2 | 15 (12 manager + 3 staff; hijos por prefijo) |
+
+**Última actualización anterior:** 2026-07-27 (Sprint 19 — Staff Slice II / Actividades)
+
+- [x] **Sprint 19 — Staff Slice II / Actividades (2026-07-27)**: Dominio Actividades migrado a V2 con patrón propinas.
+  - **Migrado (3):** `/staff/actividades`, `/staff/actividades/gestion`, `/staff/actividades/revision`.
+  - **Decisión de agrupación:** calendario vs gestión (~tabla) vs revisión OCR **no** comparten ~80% de cuerpo UI; aun así se migran las 3 juntas porque `isRegisteredV2Path` con prefijo `/staff/actividades` arrastra hijos al chrome V2 — excluir `revision` dejaría shell V2 sin `V2PageShell`.
+  - **Patrón:** registry `staff` + nav «Actividades» + `V2PageShell variant="staff"` + PageHeader/PageActions + MDS loading/alert/button.
+  - **Intactos:** actions, merge/OCR, `isMasterDashboardUser` (gestion/revision), calendario client, `PavilionDayModal`, query params revision.
+  - **Tokens:** chrome `#36606F` → `mds-primary`. Paleta «Petróleo» en picker de gestión **conservada** (dato de color de actividad, no chrome).
+  - **Componentes MDS nuevos:** 0.
+  - **Infra nueva:** 0 (sin shells/providers/variantes nuevas).
+  - **Incidencia:** cuerpo OCR de revision sigue distinto; solo unificación de chrome/shell. Gate SSR master en gestion (antes solo en actions) — alineado con revision.
+
+### Staff V2 — estado
+
+| Estado | Valor |
+|--------|-------|
+| Plan | [`STAFF_MIGRATION_PLAN.md`](docs/redesign/STAFF_MIGRATION_PLAN.md) |
+| Pantallas Staff migradas | **4** / 9 (**~44%**) |
+| V2 | propinas + actividades (+ gestion + revision) |
+| Pendientes | dashboard, reservas, encargo, carta, history |
+| Registry `staff` | `/staff/propinas`, `/staff/actividades` (cubre hijos por prefijo) |
+
+### Dashboard V2 — estado del módulo (sin cambios)
+
+| Estado | Rutas |
+|--------|-------|
+| **V2** | **14** pantallas |
+| **% Dashboard producto** | **~52%** |
+| **% arquitectura V2 (infra)** | **~100%** |
+
+### Métricas del rediseño (manual)
+
+| Métrica | Valor |
+|---------|------:|
+| Pantallas V2 totales (Dashboard + Staff) | **18** |
+| Pantallas Dashboard V2 | **14** |
+| Pantallas Staff V2 | **4** |
+| % dominio Staff | **~44%** (4/9) |
+| % roadmap global (aprox.) | **~68%** |
+| Componentes MDS nuevos Sprint 19 | **0** |
+| Rutas en registro V2 | 14 (12 manager + 2 staff; hijos actividades por prefijo) |
+
+**Última actualización anterior:** 2026-07-27 (Sprint 18 — Staff Migration Plan)
+
+- [x] **Sprint 18 — Primer dominio fuera de Dashboard / plan Staff (2026-07-27)**: Solo planificación. Sin migraciones ni cambios de código de producto.
+  - **Informe:** [`docs/redesign/STAFF_MIGRATION_PLAN.md`](docs/redesign/STAFF_MIGRATION_PLAN.md)
+  - **Inventario:** 9 rutas reales bajo `src/app/staff`.
+  - **Dominios:** Hub, Reservas/encargos, Carta, Asistencia, Propinas, Actividades (calendario + gestión + revisión master).
+  - **Primer slice recomendado:** `/staff/propinas` (bajo riesgo relativo, alta reutilización MDS, valida `variant="staff"`).
+  - **No empezar por:** `history`, `reservas` monolito, `carta` fullscreen, `revision` OCR.
+  - **Nota chrome:** `StaffBottomNav` + layout staff — opt-in V2 pendiente en el sprint de implementación.
+
+### Staff V2 — estado
+
+| Estado | Valor |
+|--------|-------|
+| Plan | ✅ documentado |
+| Pantallas Staff migradas | **0** |
+| Primer slice | `/staff/propinas` (pendiente implementar) |
+| Registry `staff` | vacío (placeholder nav existe) |
+
+### Dashboard V2 — estado del módulo (sin cambios este sprint)
+
+| Estado | Rutas |
+|--------|-------|
+| **V2** | analytics + scanner + inventory* + eventos* + albaranes + carta + recetas-tpv (**14**) |
+| **Pendientes** | home, albaranes-precios, consumo-personal, history, import, labor, ledger (tesorería), movements, overtime, propinas, recetas-import, sala, ventas |
+| **% Dashboard producto (excl. kds)** | **~52%** |
+| **% arquitectura V2 (infra)** | **~100%** |
+
+### Métricas del rediseño (manual)
+
+| Métrica | Valor |
+|---------|------:|
+| Pantallas Dashboard V2 | **14** |
+| Pantallas Staff V2 | **0** |
+| % arquitectura V2 (infra) | **~100%** |
+| Plan Staff | `docs/redesign/STAFF_MIGRATION_PLAN.md` |
+| Componentes MDS nuevos Sprint 18 | **0** |
+| Código producto modificado Sprint 18 | **0** |
+
+**Última actualización anterior:** 2026-07-27 (Sprint 17 — V2 Architecture Audit)
+
+- [x] **Sprint 17 — V2 Architecture Audit (2026-07-27)**: Auditoría post-eliminación de `DashboardDetailLayout`. Sin migraciones ni MDS nuevos.
+  - **Informe:** [`docs/redesign/V2_ARCHITECTURE_AUDIT.md`](docs/redesign/V2_ARCHITECTURE_AUDIT.md)
+  - **Legacy:** 0 refs DDL en `src/`. Eliminado único muerto con 0 consumidores: alias `V2AppShellBridge`.
+  - **Veredicto:** infra V2 lista (~100%); cuello de botella = pantallas producto pendientes.
+  - **MDS:** top PageHeader/Button/Section/Text/Alert; cola Table/Form casi solo playground (reservar).
+  - **Providers:** `NavigationProvider` montado sin lectores del hook — propuesta, no cambio.
+  - **Registry:** consistente; entradas inventory hijas redundantes por prefijo (explícitas).
+
+### Dashboard V2 — estado del módulo
+
+| Estado | Rutas |
+|--------|-------|
+| **V2** | analytics + scanner + inventory* + eventos* + albaranes + carta + recetas-tpv (**14**) |
+| **Pendientes** | home, albaranes-precios, consumo-personal, history, import, labor, ledger (tesorería), movements, overtime, propinas, recetas-import, sala, ventas |
+| **No migrar** | `kds` |
+| **% Dashboard producto (excl. kds)** | **~52%** (14/27) |
+| **% Dashboard total** | **~50%** (14/28) |
+| **% arquitectura V2 (infra)** | **~100%** (adopción lista) |
+| **Deuda shell DDL** | **0** — eliminado |
+| **Deuda restante (alta)** | 13 pantallas legacy + hex residual en clients V2 (carta / MappingClient) |
+| **Módulos pendientes** | Caja (ledger/movements/propinas), Personal (overtime/labor/history/consumo), Ventas/sala, Imports/precios, Home |
+
+### Métricas del rediseño (manual)
+
+| Métrica | Valor |
+|---------|------:|
+| Pantallas migradas a V2 | **14** |
+| % Dashboard producto migrado | **~52%** |
+| % arquitectura V2 (infra adopción) | **~100%** |
+| % roadmap adopción (Fase B–C) | ~60% |
+| Consumidores `DashboardDetailLayout` | **0** |
+| Componentes MDS nuevos Sprint 17 | **0** |
+| Código muerto eliminado Sprint 17 | `V2AppShellBridge` |
+| Rutas en registro V2 | 12 |
+| Informe auditoría | `docs/redesign/V2_ARCHITECTURE_AUDIT.md` |
+
+**Última actualización anterior:** 2026-07-27 (Sprint 16 — Eliminación de DashboardDetailLayout)
+
+- [x] **Sprint 16 — Eliminación de `DashboardDetailLayout` (2026-07-27)**: Migración de los 3 consumidores finales + borrado del layout.
+  - **Migrado:** `/dashboard/albaranes`, `/dashboard/carta`, `/dashboard/recetas-tpv` → `V2PageShell` + MDS.
+  - **Intactos:** timeouts SSR albaranes (`getSession`), queries carta/mapeo, acciones, clients, permisos `isManager`.
+  - **Albaranes:** acciones Sparkles/Refresh pasan a `PageActions` + `Button variant="icon"` dentro del client; shell en `page.tsx`.
+  - **MDS:** PageHeader, PageActions, Button, Alert. Hex `#36606F` retirado en albaranes client + etiqueta carta.
+  - **Componentes MDS nuevos:** 0.
+  - **Búsqueda global `src/`:** 0 consumidores → eliminado `src/components/dashboard/DashboardDetailLayout.tsx`.
+  - **Hito:** fin del shell Dashboard V1. Migraciones nuevas = solo `V2PageShell`.
+  - **DDL restantes:** **0**.
+
+### Dashboard V2 — estado del módulo
+
+| Estado | Rutas |
+|--------|-------|
+| **V2** | analytics + scanner + inventory* + eventos* + **albaranes** + **carta** + **recetas-tpv** (**14**) |
+| **Pendientes (legacy shell / sin V2)** | `page` (home), `albaranes-precios`, `consumo-personal`, `history`, `import`, `labor`, `ledger`, `movements`, `overtime`, `propinas`, `recetas-import`, `sala`, `ventas` |
+| **No migrar** | `kds` (redirect) |
+| **% Dashboard (aprox. rutas page)** | **~50%** (14/28) |
+| **Deuda shell** | `DashboardDetailLayout` — **eliminado** (0 consumidores) |
+| **Bloque Inventory** | ✅ |
+| **Dominio Eventos** | ✅ |
+| **Compras / carta** | ✅ albaranes + carta + mapeo TPV |
+
+### Métricas del rediseño (manual)
+
+| Métrica | Valor |
+|---------|------:|
+| Pantallas migradas a V2 | **14** |
+| % aproximado roadmap adopción (Fase B–C temprana) | ~60% |
+| % Dashboard (aprox.) | **~50%** |
+| Componentes MDS nuevos en Sprint 16 | **0** |
+| Rutas en registro V2 | 12 |
+| Consumidores restantes `DashboardDetailLayout` | **0** |
+| `DashboardDetailLayout` en el repo (`src/`) | **eliminado** |
+
+**Última actualización anterior:** 2026-07-27 (Sprint 15 — Eventos Slice)
+
+- [x] **Sprint 15 — Eventos Slice (2026-07-27)**: Migración conjunta del dominio Eventos para reducir consumidores de `DashboardDetailLayout`.
+  - **Análisis:** las 3 pantallas comparten >80% (auth → perfil/permisos → fetch → shell + client). Migradas las tres.
+  - **Migrado:** `/dashboard/eventos`, `/dashboard/eventos/pedidos`, `/dashboard/eventos/[eventId]/pedidos`.
+  - **Intactos:** `canViewEventos` / `canManageEventos`, redirect staff→reservas, queries `events` / `event_orders`, clients, mensajes de error.
+  - **Adopción:** registry `/dashboard/eventos` (cubre hijos por prefijo); nav sección «Eventos» (Encargos + Pedidos).
+  - **MDS:** PageHeader, Alert. Tokens `mds-primary` en `EventosAdminClient` + `PedidosEventoClient`.
+  - **Componentes MDS nuevos:** 0.
+  - **DDL eliminados este sprint:** 3 (eventos ×3). **Restantes:** 3. **Retirada acumulada desde pico (10):** 70% (7/10). **Retirada este sprint:** 50% de los 6 previos.
+  - **Dominio Eventos:** ✅ V2 completo.
+
+### Dashboard V2 — estado del módulo
+
+| Estado | Rutas |
+|--------|-------|
+| **V2** | `instalacion-app`, `uso`, `web`, `insights`, `scanner`, `inventory` (+waste/ledger), `eventos` (+pedidos, +[eventId]/pedidos) (**11**) |
+| **Pendientes (legacy shell)** | `page` (home), `albaranes`, `albaranes-precios`, `carta`, `consumo-personal`, `history`, `import`, `labor`, `ledger`, `movements`, `overtime`, `propinas`, `recetas-import`, `recetas-tpv`, `sala`, `ventas` |
+| **No migrar** | `kds` (redirect a `/dashboard`) |
+| **% Dashboard (aprox. rutas page)** | **~39%** (11/28 pages; kds no cuenta) |
+| **MDS más reutilizados en Dashboard V2** | PageHeader, Button, Alert, Section/Surface, Metric, EmptyState, LoadingBlock |
+| **Deuda shell** | `DashboardDetailLayout` — **3** consumidores (albaranes, carta, recetas-tpv) |
+| **Bloque Inventory** | ✅ completo |
+| **Dominio Eventos** | ✅ completo |
+| **Simplificación** | Último tramo DDL: albaranes + carta + recetas-tpv |
+
+### Métricas del rediseño (manual)
+
+| Métrica | Valor |
+|---------|------:|
+| Pantallas migradas a V2 | **11** |
+| % aproximado roadmap adopción (Fase B–C temprana) | ~52% |
+| % Dashboard (aprox.) | **~39%** |
+| Familias MDS | 16 |
+| Componentes MDS nuevos en Sprint 15 | **0** |
+| Rutas en registro V2 | 9 (`/dashboard/eventos` + 8 previas) |
+| Consumidores restantes `DashboardDetailLayout` | **3** |
+| Consumidores DDL retirados este sprint | **3** (~50% de los 6 previos) |
+
+**Última actualización anterior:** 2026-07-27 (Sprint 14 — Inventory Slice II / conteo)
+
+- [x] **Sprint 14 — Inventory Slice II / `/dashboard/inventory` (2026-07-27)**: Cierre del bloque Inventory en V2.
+  - **Migrado:** `/dashboard/inventory` — registry + nav «Inventario» + `V2PageShell` + MDS.
+  - **Intactos:** queries SSR, `canEditInventoryList`, `InventoryClient`, visibilidad de lista, filtros/comportamiento.
+  - **InventoryPageShell:** adaptado (ya no usa `DashboardDetailLayout`); conserva estado `visibilityEditMode` + lápiz en `PageActions`.
+  - **MDS:** PageHeader, PageActions, Button (`variant="icon"`). Tokens `mds-primary` en `InventoryClient` (0 hex).
+  - **Componentes MDS nuevos:** 0.
+  - Nav anidada: `isNavItemActive` cede a href más específico (padre Inventory no activo en waste/ledger).
+  - **Bloque Inventory:** conteo + waste + ledger ✅ V2 (completo).
+  - **DashboardDetailLayout — consumidores restantes (6):** `albaranes/AlbaranesHistoricoClient.tsx`, `carta/page.tsx`, `recetas-tpv/page.tsx`, `eventos/page.tsx`, `eventos/pedidos/page.tsx`, `eventos/[eventId]/pedidos/page.tsx`.
+
+### Dashboard V2 — estado del módulo
+
+| Estado | Rutas |
+|--------|-------|
+| **V2** | `instalacion-app`, `uso`, `web`, `insights`, `scanner`, `inventory`, `inventory/waste`, `inventory/ledger` (**8**) |
+| **Pendientes (legacy shell)** | `page` (home), `albaranes`, `albaranes-precios`, `carta`, `consumo-personal`, `eventos` (+pedidos), `history`, `import`, `labor`, `ledger`, `movements`, `overtime`, `propinas`, `recetas-import`, `recetas-tpv`, `sala`, `ventas` |
+| **No migrar** | `kds` (redirect a `/dashboard`) |
+| **% Dashboard (aprox. rutas page)** | **~29%** (8/28 pages; kds no cuenta como producto) |
+| **MDS más reutilizados en Dashboard V2** | PageHeader, Button, Section/Surface, Metric, Alert, EmptyState, LoadingBlock, List*, DateField, ActionDialog |
+| **Deuda shell** | `DashboardDetailLayout` — 6 consumidores (albaranes, carta, eventos*, recetas-tpv) |
+| **Bloque Inventory** | ✅ completo (conteo + waste + ledger) |
+| **Simplificación** | Siguiente foco DDL: albaranes / carta / eventos / recetas-tpv |
+
+### Métricas del rediseño (manual)
+
+| Métrica | Valor |
+|---------|------:|
+| Pantallas migradas a V2 | **8** |
+| % aproximado roadmap adopción (Fase B–C temprana) | ~45% |
+| % Dashboard (aprox.) | **~29%** |
+| Familias MDS | 16 |
+| Componentes MDS nuevos en Sprint 14 | **0** |
+| Rutas en registro V2 | 8 |
+| Consumidores restantes `DashboardDetailLayout` | **6** |
+
+**Última actualización anterior:** 2026-07-26 (Sprint 13 — Inventory Slice I)
 
 - [x] **Sprint 13 — Inventory Slice I / Mermas + Stock (2026-07-26)**: Migración visual conjunta de waste + ledger (>80% estructura compartida).
   - **Migrado:** `/dashboard/inventory/waste`, `/dashboard/inventory/ledger` — registry + nav sección «Inventario» + `V2PageShell` + MDS.

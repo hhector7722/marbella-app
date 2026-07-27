@@ -1,9 +1,16 @@
-import { CalendarDays, LayoutDashboard, Utensils } from 'lucide-react'
+import {
+  Activity,
+  CalendarDays,
+  ClipboardList,
+  Coins,
+  LayoutDashboard,
+  Utensils,
+} from 'lucide-react'
 import type { NavigationGroup } from '@/components/layout-v2'
 
 /**
  * Navegación AppShell V2 — variante staff.
- * Placeholder mínimo hasta migrar pantallas staff.
+ * Ampliar al migrar pantallas; fuente de verdad sin isActive (lo resuelve shared).
  */
 export const staffNavigation: NavigationGroup[] = [
   {
@@ -20,6 +27,12 @@ export const staffNavigation: NavigationGroup[] = [
             icon: LayoutDashboard,
           },
           {
+            id: 'staff-history',
+            label: 'Asistencia',
+            href: '/staff/history',
+            icon: ClipboardList,
+          },
+          {
             id: 'staff-reservas',
             label: 'Reservas',
             href: '/staff/reservas',
@@ -30,6 +43,18 @@ export const staffNavigation: NavigationGroup[] = [
             label: 'Carta',
             href: '/staff/carta',
             icon: Utensils,
+          },
+          {
+            id: 'staff-propinas',
+            label: 'Propinas',
+            href: '/staff/propinas',
+            icon: Coins,
+          },
+          {
+            id: 'staff-actividades',
+            label: 'Actividades',
+            href: '/staff/actividades',
+            icon: Activity,
           },
         ],
       },

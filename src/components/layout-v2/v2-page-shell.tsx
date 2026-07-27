@@ -64,6 +64,3 @@ export function V2PageShell({
     </ShellProvider>
   )
 }
-
-/** @deprecated Usar `V2PageShell`. Alias de compatibilidad Sprint 7→8. */
-export const V2AppShellBridge = V2PageShell
