@@ -34,7 +34,9 @@ export type VersioningResult =
   | { kind: 'updated_open'; terms: readonly ContractTermFact[] }
   | { kind: 'rewritten'; terms: readonly ContractTermFact[] }
   /** Mueve el inicio de un tramo y reajusta el anterior (sin huecos). */
-  | { kind: 'rescheduled'; terms: readonly ContractTermFact[] };
+  | { kind: 'rescheduled'; terms: readonly ContractTermFact[] }
+  /** Elimina un tramo; el anterior absorbe el rango (sin huecos). */
+  | { kind: 'deleted'; terms: readonly ContractTermFact[] };
 
 function previousCivilDay(ymd: CivilDate): CivilDate {
   return addCivilDays(ymd, -1);
@@ -439,4 +441,45 @@ export function rescheduleTermBounds(
   const coalesced = coalesceIdenticalConsecutiveTerms(updated);
   assertContractTermInvariants(coalesced);
   return { kind: 'rescheduled', terms: coalesced };
+}
+
+/**
+ * Elimina un tramo por su effectiveFrom.
+ * - Si hay tramo anterior: ese absorbe el rango eliminado (su effectiveTo = al del borrado).
+ * - Si es el primero: se elimina y el siguiente pasa a ser el primero (joining se sincroniza fuera).
+ * No se permite borrar el único tramo (el trabajador quedaría sin contrato).
+ */
+export function deleteContractTerm(
+  terms: readonly ContractTermFact[],
+  termEffectiveFrom: CivilDate,
+): VersioningResult {
+  const sorted = [...terms].sort((a, b) =>
+    compareCivilDate(a.effectiveFrom, b.effectiveFrom),
+  );
+  const idx = sorted.findIndex(
+    (t) => compareCivilDate(t.effectiveFrom, termEffectiveFrom) === 0,
+  );
+  if (idx < 0) {
+    throw new Error(`No hay tramo que empiece el ${termEffectiveFrom}`);
+  }
+  if (sorted.length === 1) {
+    throw new Error(
+      'No se puede eliminar el único tramo contractual. Edítalo o crea otro antes.',
+    );
+  }
+
+  const deleted = sorted[idx]!;
+  const remaining = sorted.filter((_, i) => i !== idx).map((t) => ({ ...t }));
+
+  if (idx > 0) {
+    const prev = remaining[idx - 1]!;
+    remaining[idx - 1] = {
+      ...prev,
+      effectiveTo: deleted.effectiveTo,
+    };
+  }
+
+  const coalesced = coalesceIdenticalConsecutiveTerms(remaining);
+  assertContractTermInvariants(coalesced);
+  return { kind: 'deleted', terms: coalesced };
 }

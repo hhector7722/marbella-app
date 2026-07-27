@@ -87,6 +87,7 @@ export {
   rescheduleTermBounds,
   rescheduleTermEnd,
   rescheduleTermStart,
+  deleteContractTerm,
   snapshotFromProfileFields,
   snapshotsEqual,
 } from './contract-terms-versioning.ts';
@@ -95,6 +96,7 @@ export {
   persistHistoricalTermRewrite,
   persistTermBoundsReschedule,
   persistTermReschedule,
+  persistTermDeletion,
 } from './persist-contract-terms.ts';
 
 export type {

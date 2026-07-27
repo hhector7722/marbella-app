@@ -8,6 +8,7 @@ import {
   mapContractTermRows,
   persistContractualChange,
   persistTermBoundsReschedule,
+  persistTermDeletion,
   recalcSnapshotsAndPersistOvertimeCost,
   type ContractTermFact,
   type ContractTermRow,
@@ -130,9 +131,11 @@ async function propagateSnapshotsAfterContractChange(
 }
 
 /**
- * Cambia condiciones laborales (fecha efectiva editable; default hoy Madrid).
- * Versiona hours_contract_terms vía splice; luego espeja profiles con el tramo abierto.
- * En reescritura de tramo: inicio y fin editables (recalcula vecinos).
+ * Cambia condiciones laborales.
+ *
+ * - Con `originalEffectiveFrom` (editar tramo): **siempre** reescribe ese tramo
+ *   in-place (o reprograma fechas + vecinos). Nunca parte/crea tramos nuevos.
+ * - Sin original (nueva vigencia): splice histórico desde `effectiveFrom`.
  */
 export async function updateLaborConditions(
   employeeId: string,
@@ -190,7 +193,7 @@ export async function updateLaborConditions(
       ? parseCivilYmd(String(form.originalEffectiveFrom))
       : null;
 
-  // Reescritura de tramo: inicio y/o fin pueden moverse
+  // Edición de tramo existente: in-place / reschedule (NUNCA splice → tramo nuevo)
   if (originalFromRaw) {
     const rawTo =
       form.effectiveTo == null || String(form.effectiveTo).trim() === ''
@@ -204,86 +207,74 @@ export async function updateLaborConditions(
       return { success: false, error: 'Fecha de finalización no válida' };
     }
 
-    const startChanged = originalFromRaw !== effectiveFrom;
-    const endChanged = !civilDatesEqual(
-      form.originalEffectiveTo,
-      rawTo,
-    );
-
-    if (startChanged || endChanged) {
-      let plan: { kind: string; terms: readonly ContractTermFact[] };
-      try {
-        plan = await persistTermBoundsReschedule(
-          supabase,
-          id,
-          originalFromRaw,
-          effectiveFrom,
-          rawTo,
-          validated.snapshot,
-        );
-      } catch (e) {
-        const msg =
-          e instanceof Error ? e.message : 'Error al mover las fechas del tramo';
-        return { success: false, error: msg };
-      }
-
-      if (plan.kind === 'noop') {
-        return {
-          success: true,
-          kind: 'noop',
-          message: 'No hay cambios en este tramo',
-        };
-      }
-
-      const openSnap = openTermSnapshot(plan.terms) ?? validated.snapshot;
-      const mirror = snapshotToProfileMirror(openSnap, profile.role ?? 'staff');
-      const sortedPlan = [...plan.terms].sort((a, b) =>
-        a.effectiveFrom.localeCompare(b.effectiveFrom),
+    let plan: { kind: string; terms: readonly ContractTermFact[] };
+    try {
+      plan = await persistTermBoundsReschedule(
+        supabase,
+        id,
+        originalFromRaw,
+        effectiveFrom,
+        rawTo,
+        validated.snapshot,
       );
-      const firstFrom = sortedPlan[0]?.effectiveFrom;
-      const lastTerm = sortedPlan.at(-1);
-      const prevLast = [...currentTerms]
-        .sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom))
-        .at(-1);
-      const profilePatch: Record<string, unknown> = { ...mirror };
-      if (firstFrom) {
-        profilePatch.joining_date = firstFrom;
-      }
-      // Solo sincroniza baja si cambia el fin del último tramo
-      if (
-        lastTerm &&
-        prevLast &&
-        !civilDatesEqual(prevLast.effectiveTo, lastTerm.effectiveTo)
-      ) {
-        profilePatch.end_date = lastTerm.effectiveTo;
-      }
-      const { error: updErr } = await supabase
-        .from('profiles')
-        .update(profilePatch)
-        .eq('id', id);
-      if (updErr) {
-        return {
-          success: false,
-          error: `Contrato versionado, pero falló al actualizar el perfil: ${updErr.message}`,
-        };
-      }
-
-      const recalcFrom =
-        firstFrom ??
-        effectiveFrom ??
-        formatYmdInMadrid(new Date());
-      const prop = await propagateSnapshotsAfterContractChange(supabase, id, recalcFrom);
-      if (!prop.ok) {
-        return { success: false, error: prop.error };
-      }
-
-      revalidatePath('/profile');
-      revalidatePath('/profile/contrato');
-      revalidatePath('/staff/history');
-      revalidatePath('/dashboard');
-
-      return { success: true, kind: plan.kind };
+    } catch (e) {
+      const msg =
+        e instanceof Error ? e.message : 'Error al actualizar el tramo contractual';
+      return { success: false, error: msg };
     }
+
+    if (plan.kind === 'noop') {
+      return {
+        success: true,
+        kind: 'noop',
+        message: 'No hay cambios en este tramo',
+      };
+    }
+
+    const openSnap = openTermSnapshot(plan.terms) ?? validated.snapshot;
+    const mirror = snapshotToProfileMirror(openSnap, profile.role ?? 'staff');
+    const sortedPlan = [...plan.terms].sort((a, b) =>
+      a.effectiveFrom.localeCompare(b.effectiveFrom),
+    );
+    const firstFrom = sortedPlan[0]?.effectiveFrom;
+    const lastTerm = sortedPlan.at(-1);
+    const prevLast = [...currentTerms]
+      .sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom))
+      .at(-1);
+    const profilePatch: Record<string, unknown> = { ...mirror };
+    if (firstFrom) {
+      profilePatch.joining_date = firstFrom;
+    }
+    if (
+      lastTerm &&
+      prevLast &&
+      !civilDatesEqual(prevLast.effectiveTo, lastTerm.effectiveTo)
+    ) {
+      profilePatch.end_date = lastTerm.effectiveTo;
+    }
+    const { error: updErr } = await supabase
+      .from('profiles')
+      .update(profilePatch)
+      .eq('id', id);
+    if (updErr) {
+      return {
+        success: false,
+        error: `Contrato actualizado, pero falló al actualizar el perfil: ${updErr.message}`,
+      };
+    }
+
+    const recalcFrom = firstFrom ?? effectiveFrom ?? todayMadrid;
+    const prop = await propagateSnapshotsAfterContractChange(supabase, id, recalcFrom);
+    if (!prop.ok) {
+      return { success: false, error: prop.error };
+    }
+
+    revalidatePath('/profile');
+    revalidatePath('/profile/contrato');
+    revalidatePath('/staff/history');
+    revalidatePath('/dashboard');
+
+    return { success: true, kind: plan.kind };
   }
 
   if (laborChangeIsNoopAt(currentTerms, validated.snapshot, effectiveFrom)) {
@@ -315,7 +306,6 @@ export async function updateLaborConditions(
     };
   }
 
-  // Espejo legacy = tramo abierto tras el plan (puede no coincidir con el splice histórico)
   const openSnap = openTermSnapshot(plan.terms) ?? validated.snapshot;
   const mirror = snapshotToProfileMirror(openSnap, profile.role ?? 'staff');
   const { error: updErr } = await supabase.from('profiles').update(mirror).eq('id', id);
@@ -327,6 +317,124 @@ export async function updateLaborConditions(
   }
 
   const prop = await propagateSnapshotsAfterContractChange(supabase, id, effectiveFrom);
+  if (!prop.ok) {
+    return { success: false, error: prop.error };
+  }
+
+  revalidatePath('/profile');
+  revalidatePath('/profile/contrato');
+  revalidatePath('/staff/history');
+  revalidatePath('/dashboard');
+
+  return { success: true, kind: plan.kind };
+}
+
+/**
+ * Elimina un tramo del histórico. El anterior absorbe el rango (sin huecos).
+ * No permite borrar el único tramo. Recalcula snapshots desde el primer tramo.
+ */
+export async function deleteLaborTerm(
+  employeeId: string,
+  termEffectiveFrom: string,
+): Promise<{ success: boolean; error?: string; kind?: string }> {
+  const gate = await requireHectorSession();
+  if (!gate.ok || !gate.supabase) {
+    return { success: false, error: gate.error ?? 'Acceso denegado' };
+  }
+
+  const supabase = gate.supabase;
+  const id = String(employeeId || '').trim();
+  if (!id) return { success: false, error: 'Empleado no indicado' };
+
+  const from = parseCivilYmd(String(termEffectiveFrom || ''));
+  if (!from) return { success: false, error: 'Fecha de inicio del tramo no válida' };
+
+  const { data: profile, error: profileErr } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (profileErr) return { success: false, error: profileErr.message };
+  if (!profile) return { success: false, error: 'Empleado no encontrado' };
+
+  const { data: termRows, error: loadErr } = await supabase
+    .from('hours_contract_terms')
+    .select(
+      'effective_from, effective_to, weekly_hours, bag_mode, regime, overtime_rate_per_hour',
+    )
+    .eq('user_id', id)
+    .order('effective_from', { ascending: true });
+
+  if (loadErr) return { success: false, error: loadErr.message };
+
+  const currentTerms = mapContractTermRows((termRows ?? []) as ContractTermRow[]);
+  if (currentTerms.length === 0) {
+    return { success: false, error: 'No hay tramos que eliminar' };
+  }
+
+  let plan: { kind: string; terms: readonly ContractTermFact[] };
+  try {
+    plan = await persistTermDeletion(supabase, id, from);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Error al eliminar el tramo';
+    return { success: false, error: msg };
+  }
+
+  const openSnap = openTermSnapshot(plan.terms);
+  if (!openSnap && plan.terms.length === 0) {
+    return { success: false, error: 'El trabajador quedaría sin contrato' };
+  }
+
+  const sortedPlan = [...plan.terms].sort((a, b) =>
+    a.effectiveFrom.localeCompare(b.effectiveFrom),
+  );
+  const firstFrom = sortedPlan[0]?.effectiveFrom;
+  const lastTerm = sortedPlan.at(-1);
+  const prevLast = [...currentTerms]
+    .sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom))
+    .at(-1);
+
+  const mirror = openSnap
+    ? snapshotToProfileMirror(openSnap, profile.role ?? 'staff')
+    : snapshotToProfileMirror(
+        {
+          weeklyHours: lastTerm!.weeklyHours,
+          bagMode: lastTerm!.bagMode,
+          regime: lastTerm!.regime,
+          overtimeRatePerHour: lastTerm!.overtimeRatePerHour ?? null,
+        },
+        profile.role ?? 'staff',
+      );
+
+  const profilePatch: Record<string, unknown> = { ...mirror };
+  if (firstFrom) {
+    profilePatch.joining_date = firstFrom;
+  }
+  if (
+    lastTerm &&
+    prevLast &&
+    !civilDatesEqual(prevLast.effectiveTo, lastTerm.effectiveTo)
+  ) {
+    profilePatch.end_date = lastTerm.effectiveTo;
+  }
+
+  const { error: updErr } = await supabase
+    .from('profiles')
+    .update(profilePatch)
+    .eq('id', id);
+  if (updErr) {
+    return {
+      success: false,
+      error: `Tramo eliminado, pero falló al actualizar el perfil: ${updErr.message}`,
+    };
+  }
+
+  const recalcFrom =
+    firstFrom ??
+    formatYmdInMadrid(new Date()) ??
+    from;
+  const prop = await propagateSnapshotsAfterContractChange(supabase, id, recalcFrom);
   if (!prop.ok) {
     return { success: false, error: prop.error };
   }

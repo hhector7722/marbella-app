@@ -9,6 +9,7 @@ import {
   rewriteHistoricalTerm,
   rescheduleTermBounds,
   rescheduleTermStart,
+  deleteContractTerm,
   type ContractualSnapshot,
 } from './contract-terms-versioning.ts';
 import { mapContractTermRows, type ContractTermRow } from './ui-bridge.ts';
@@ -138,6 +139,20 @@ export async function persistTermBoundsReschedule(
   if (plan.kind === 'noop') {
     return plan;
   }
+  await replaceAllTerms(supabase, userId, plan.terms);
+  return plan;
+}
+
+/**
+ * Elimina un tramo (el anterior absorbe el rango). No permite borrar el único.
+ */
+export async function persistTermDeletion(
+  supabase: SupabaseClient,
+  userId: string,
+  termEffectiveFrom: CivilDate,
+): Promise<{ kind: string; terms: readonly ContractTermFact[] }> {
+  const current = await loadTerms(supabase, userId);
+  const plan = deleteContractTerm(current, termEffectiveFrom);
   await replaceAllTerms(supabase, userId, plan.terms);
   return plan;
 }

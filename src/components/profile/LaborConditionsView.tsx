@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
+  deleteLaborTerm,
   getEmployeeLaborConditions,
   updateLaborConditions,
   type LaborTermDto,
@@ -51,6 +52,7 @@ export default function LaborConditionsView({ employeeId }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editMode, setEditMode] = useState<EditMode>('change');
   /** Inicio original del tramo (para detectar movimiento de fecha). */
@@ -107,7 +109,17 @@ export default function LaborConditionsView({ employeeId }: Props) {
     setEditingTermOriginalTo(null);
   };
 
-  const startChange = () => {
+  /** Edita el tramo vigente in-place (no crea tramos nuevos). */
+  const startEditVigente = () => {
+    if (!vigente) {
+      startNewVigencia();
+      return;
+    }
+    startRewriteTerm(vigente);
+  };
+
+  /** Nueva vigencia desde una fecha → puede partir el tramo (splice). */
+  const startNewVigencia = () => {
     setEditMode('change');
     setEditingTermOriginalFrom(null);
     setEditingTermOriginalTo(null);
@@ -130,7 +142,7 @@ export default function LaborConditionsView({ employeeId }: Props) {
     setEditing(true);
   };
 
-  /** Corrige un tramo ya registrado (inicio y fin editables; recalcula vecinos). */
+  /** Corrige un tramo ya registrado (condiciones + fechas; sin crear tramo nuevo). */
   const startRewriteTerm = (t: LaborTermDto) => {
     setEditMode('rewrite');
     setEditingTermOriginalFrom(t.effectiveFrom);
@@ -184,13 +196,39 @@ export default function LaborConditionsView({ employeeId }: Props) {
         editMode === 'rewrite'
           ? res.kind === 'rescheduled'
             ? 'Fechas y condiciones actualizadas'
-            : 'Tramo contractual actualizado'
-          : 'Condiciones laborales actualizadas',
+            : 'Tramo actualizado (sin crear tramo nuevo)'
+          : 'Nueva vigencia contractual guardada',
       );
       closeEditor();
       await load();
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!editingTermOriginalFrom) return;
+    if (terms.length <= 1) {
+      toast.error('No se puede eliminar el único tramo. Edítalo o crea otro antes.');
+      return;
+    }
+    const ok = window.confirm(
+      `¿Eliminar el tramo que empieza el ${formatYmdEs(editingTermOriginalFrom)}?\n\nEl tramo anterior absorberá esas fechas. Se recalcularán horas y costes.`,
+    );
+    if (!ok) return;
+
+    setDeleting(true);
+    try {
+      const res = await deleteLaborTerm(employeeId, editingTermOriginalFrom);
+      if (!res.success) {
+        toast.error(res.error ?? 'No se pudo eliminar el tramo');
+        return;
+      }
+      toast.success('Tramo eliminado');
+      closeEditor();
+      await load();
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -204,7 +242,7 @@ export default function LaborConditionsView({ employeeId }: Props) {
   const editorTitle =
     editMode === 'rewrite'
       ? 'Editar tramo contractual'
-      : 'Cambiar condiciones laborales';
+      : 'Nueva vigencia contractual';
 
   const cardHeader = (title: string, opts?: { withBack?: boolean }) => (
     <div
@@ -283,15 +321,28 @@ export default function LaborConditionsView({ employeeId }: Props) {
                 )}
                 <button
                   type="button"
-                  onClick={startChange}
+                  onClick={startEditVigente}
                   className={cn(
                     'mt-4 flex w-full min-h-12 shrink-0 items-center justify-center rounded-xl',
                     'bg-[#36606F] px-4 text-[10px] font-black uppercase tracking-widest text-white',
                     'active:scale-[0.98]',
                   )}
                 >
-                  Cambiar condiciones laborales
+                  {vigente ? 'Editar condiciones vigentes' : 'Definir condiciones'}
                 </button>
+                {vigente ? (
+                  <button
+                    type="button"
+                    onClick={startNewVigencia}
+                    className={cn(
+                      'mt-2 flex w-full min-h-12 shrink-0 items-center justify-center rounded-xl',
+                      'border border-zinc-200 bg-white px-4 text-[10px] font-black uppercase tracking-widest text-zinc-700',
+                      'active:scale-[0.98]',
+                    )}
+                  >
+                    Nueva vigencia desde fecha
+                  </button>
+                ) : null}
               </div>
             </section>
 
@@ -305,8 +356,8 @@ export default function LaborConditionsView({ employeeId }: Props) {
                 ) : (
                   <>
                     <p className="mb-3 text-xs text-zinc-500">
-                      Pulsa un tramo para corregir condiciones, inicio o fin. Al cambiar
-                      fechas se recalculan los vecinos (sin huecos). Vacío en fin =
+                      Pulsa un tramo para modificarlo (condiciones o fechas) sin crear
+                      otro. Al borrar, el anterior absorbe el rango. Vacío en fin =
                       vigente.
                     </p>
                     <div className="divide-y divide-zinc-100">
@@ -364,8 +415,8 @@ export default function LaborConditionsView({ employeeId }: Props) {
             <div className="p-4">
               <p className="text-xs text-zinc-500">
                 {editMode === 'rewrite'
-                  ? 'Puedes cambiar inicio y fin; el histórico se recalcula solo. Deja fin vacío para «Vigente» (solo el último tramo).'
-                  : 'Indica desde cuándo aplican. El histórico se reconstruye solo.'}
+                  ? 'Modifica este tramo sin crear uno nuevo. Puedes cambiar inicio/fin; los vecinos se recalculan. Deja fin vacío para «Vigente» (solo el último).'
+                  : 'Crea una nueva vigencia desde la fecha indicada (puede partir el tramo actual).'}
               </p>
 
               <div className="mt-4 space-y-4">
@@ -567,32 +618,51 @@ export default function LaborConditionsView({ employeeId }: Props) {
                 </label>
               </div>
 
-              <div className="mt-6 flex shrink-0 gap-2">
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={closeEditor}
-                  className={cn(
-                    'flex min-h-12 flex-1 items-center justify-center rounded-xl border border-zinc-200',
-                    'text-[10px] font-black uppercase tracking-widest text-zinc-700',
-                    'active:scale-[0.98]',
-                  )}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={() => void handleSave()}
-                  className={cn(
-                    'flex min-h-12 flex-1 items-center justify-center rounded-xl',
-                    'bg-emerald-600 text-[10px] font-black uppercase tracking-widest text-white',
-                    'active:scale-[0.98]',
-                    saving && 'opacity-60',
-                  )}
-                >
-                  {saving ? 'Guardando…' : 'Guardar'}
-                </button>
+              <div className="mt-6 flex shrink-0 flex-col gap-2">
+                <div className="flex shrink-0 gap-2">
+                  <button
+                    type="button"
+                    disabled={saving || deleting}
+                    onClick={closeEditor}
+                    className={cn(
+                      'flex min-h-12 flex-1 items-center justify-center rounded-xl border border-zinc-200',
+                      'text-[10px] font-black uppercase tracking-widest text-zinc-700',
+                      'active:scale-[0.98]',
+                    )}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    disabled={saving || deleting}
+                    onClick={() => void handleSave()}
+                    className={cn(
+                      'flex min-h-12 flex-1 items-center justify-center rounded-xl',
+                      'bg-emerald-600 text-[10px] font-black uppercase tracking-widest text-white',
+                      'active:scale-[0.98]',
+                      (saving || deleting) && 'opacity-60',
+                    )}
+                  >
+                    {saving ? 'Guardando…' : 'Guardar'}
+                  </button>
+                </div>
+
+                {editMode === 'rewrite' && terms.length > 1 ? (
+                  <button
+                    type="button"
+                    disabled={saving || deleting}
+                    onClick={() => void handleDelete()}
+                    className={cn(
+                      'flex min-h-12 w-full shrink-0 items-center justify-center gap-2 rounded-xl',
+                      'border border-red-200 bg-red-50 text-[10px] font-black uppercase tracking-widest text-red-700',
+                      'active:scale-[0.98]',
+                      (saving || deleting) && 'opacity-60',
+                    )}
+                  >
+                    <Trash2 className="size-4 shrink-0" strokeWidth={2.25} />
+                    {deleting ? 'Eliminando…' : 'Eliminar este tramo'}
+                  </button>
+                ) : null}
               </div>
             </div>
           </section>
