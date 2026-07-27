@@ -17,6 +17,7 @@ import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
 import { useMasterTreasuryLive } from '@/hooks/useMasterTreasuryLive';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { pickLatestOvertimeWeekSnapshot, type OvertimeWeekSnapshot } from '@/lib/master-overtime-snapshot';
+import { filterVisiblePlantillaEmployees } from '@/lib/staff/plantilla-employees';
 import { cn } from '@/lib/utils';
 
 type MasterDashboardViewProps = {
@@ -208,6 +209,26 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
         };
     }, []);
 
+    // Plantilla: no llega por SSR. Se carga solo al abrir el modal (no al montar).
+    const ensureActivePlantillaEmployees = async () => {
+        if (allEmployees.length > 0) return allEmployees;
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('visible_in_plantilla', true);
+
+        if (error) {
+            console.error(error);
+            toast.error('Error al cargar plantilla');
+            return null;
+        }
+
+        const cleaned = filterVisiblePlantillaEmployees(data || []);
+        setAllEmployees(cleaned);
+        return cleaned;
+    };
+
     const ensureAllEmployeesIncludingInactive = async () => {
         if (allEmployeesIncludingInactive) return allEmployeesIncludingInactive;
         const { data, error } = await supabase.from('profiles').select('*');
@@ -318,7 +339,10 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                     onOpenCambio={() => setIsSwapModalOpen(true)}
                     onOpenReservas={() => router.push('/staff/reservas')}
                     onOpenHorarios={() => setIsScheduleModalOpen(true)}
-                    onOpenPlantilla={() => setIsStaffModalOpen(true)}
+                    onOpenPlantilla={() => {
+                        setIsStaffModalOpen(true);
+                        void ensureActivePlantillaEmployees();
+                    }}
                     onOpenCierre={() => setIsClosingModalOpen(true)}
                     onOpenChangeBoxAudit={openChangeBoxAudit}
                     pendingReservationsCount={pendingReservationsCount}

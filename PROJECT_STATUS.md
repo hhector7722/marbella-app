@@ -6,7 +6,7 @@
 
 **Última actualización anterior:** 2026-07-27 (Fix plantilla vacía en master)
 
-- [x] **Fix modal Plantilla vacío en `/master/dashboard` (2026-07-27)**: Tras quitar SSR de `getDashboardData`, `MasterDashboardView` no cargaba `allEmployees`. Ahora consulta `profiles` (`visible_in_plantilla=true`) en cliente al montar y al abrir el modal si aún está vacío.
+- [x] **Fix modal Plantilla vacío en `/master/dashboard` (2026-07-27)**: Tras quitar SSR de `getDashboardData`, `MasterDashboardView` no cargaba `allEmployees`. Carga en cliente **solo al abrir** el modal (`profiles` con `visible_in_plantilla=true`), sin impacto en el montaje de la página.
 
 **Última actualización anterior:** 2026-07-27 (Contrato: editar in-place + eliminar tramos)
 
