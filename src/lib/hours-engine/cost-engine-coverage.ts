@@ -1,10 +1,6 @@
 /**
- * Matriz de cobertura Hours Engine → Overtime Cost Engine (Fase 1B).
- *
- * Regla: todo flujo vivo que recalcule horas debe persistir total_cost
- * vía persistOvertimeCostFromEngine / wrappers oficiales.
- *
- * RPCs parciales sin caller TS: no cablear; documentados aquí.
+ * Matriz Fase 1b: flujos vivos → Writer único (writeWeeklyProjection).
+ * RPCs/SQL legacy: sin callers de producción para columnas C.
  */
 
 export const COST_ENGINE_COVERAGE_MATRIX = [
@@ -13,92 +9,91 @@ export const COST_ENGINE_COVERAGE_MATRIX = [
     recalculatesHours: true,
     persistsMoney: true,
     status: 'covered',
-    notes: 'syncOvertimeCostAfterTimeLogChange tras insert/update time_logs',
+    notes: 'syncOvertimeCostAfterTimeLogChange → writeProjectionFromWeek (Writer)',
   },
   {
     flow: 'TimeTracker',
     recalculatesHours: true,
     persistsMoney: true,
     status: 'covered_dead_code',
-    notes: 'Persiste; sin imports activos en app (código muerto)',
+    notes: 'syncOvertimeCostAfterTimeLogChange → Writer; sin imports activos en app',
   },
   {
     flow: 'overtime actions (config/logs/fichaje manager)',
     recalculatesHours: true,
     persistsMoney: true,
     status: 'covered',
-    notes: 'recalcSnapshotsAndPersistOvertimeCost',
+    notes: 'writeProjectionFromWeek tras mutación B / time_logs',
   },
   {
     flow: 'togglePaidStatus',
     recalculatesHours: true,
     persistsMoney: true,
     status: 'covered',
-    notes: 'Trigger SQL + recalcSnapshotsAndPersistOvertimeCost desde weekStart',
+    notes: 'UPDATE B (is_paid) → writeProjectionFromWeek (toggle_paid)',
   },
   {
     flow: 'labor-conditions (updateLaborConditions)',
     recalculatesHours: true,
     persistsMoney: true,
     status: 'covered',
-    notes: 'recalcSnapshotsAndPersistOvertimeCost',
+    notes: 'writeProjectionFromWeek tras cambio contractual',
   },
   {
     flow: 'recalculateAllBalances (UI)',
     recalculatesHours: true,
     persistsMoney: true,
     status: 'covered',
-    notes: 'recalculateAllBalancesAndPersist',
+    notes: 'recalculateAllBalancesAndPersist → Writer',
   },
   {
-    flow: 'cron semanal (cron_weekly_recalculate_balances_if_madrid_*)',
+    flow: 'cron semanal (pg_cron + Vercel)',
     recalculatesHours: true,
     persistsMoney: true,
     status: 'covered',
     notes:
-      'rpc horas + pg_net persist-only; refuerzo Vercel Cron full. Requiere app_settings.cron_recalc_bearer',
+      'pg_cron solo HTTP Writer; Vercel /api/cron/recalculate-balances → Writer. Sin rpc_recalculate_all_balances',
   },
   {
     flow: 'import-legacy (fichajes)',
     recalculatesHours: true,
     persistsMoney: true,
     status: 'covered',
-    notes: 'persistOvertimeCostForEmployees tras insert time_logs',
+    notes: 'writeProjectionForEmployees tras insert time_logs',
   },
   {
     flow: 'admin/import',
     recalculatesHours: true,
     persistsMoney: true,
     status: 'covered',
-    notes: 'persistOvertimeCostForEmployeesAction tras batches',
+    notes: 'persistOvertimeCostForEmployeesAction → Writer',
   },
   {
     flow: 'rpc_recalculate_user_balances_from_week',
     recalculatesHours: true,
     persistsMoney: false,
-    status: 'no_ts_caller',
-    notes: 'Sin consumidores TS; no implementar hasta exista caller',
+    status: 'legacy_inert',
+    notes: 'Sin callers TS/producción Fase 1b',
   },
   {
     flow: 'rpc_recalculate_all_users_from_week',
     recalculatesHours: true,
     persistsMoney: false,
-    status: 'no_ts_caller',
-    notes: 'Sin consumidores TS; no implementar hasta exista caller',
+    status: 'legacy_inert',
+    notes: 'Sin callers TS/producción Fase 1b',
   },
   {
     flow: 'rpc_recalculate_all_balances_from_week',
     recalculatesHours: true,
     persistsMoney: false,
-    status: 'no_ts_caller',
-    notes: 'Sin consumidores TS; no implementar hasta exista caller',
+    status: 'legacy_inert',
+    notes: 'Sin callers TS/producción Fase 1b',
   },
   {
-    flow: 'rpc_recalculate_all_balances',
+    flow: 'rpc_recalculate_all_balances / fn_recalc',
     recalculatesHours: true,
-    persistsMoney: true,
-    status: 'covered_via_wrapper',
-    notes:
-      'Solo vía recalculateAllBalancesAndPersist / cron (nunca solo como fin de flujo vivo)',
+    persistsMoney: false,
+    status: 'legacy_inert',
+    notes: 'Funciones conservadas; trigger/cron desconectados (migración phase1b)',
   },
 ] as const;

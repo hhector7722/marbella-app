@@ -699,9 +699,8 @@ export async function importLogs(data: Record<string, any>[], meta?: ImportMeta)
         )
     }
 
-    // Data structures for bulk operations
+    // Data structures for bulk operations (proyección C → Writer, no upsert de C)
     const logsToInsertMap = new Map<string, any>()
-    const snapshotsToUpsertMap = new Map<string, any>()
 
     // Process data locally first
     for (const row of data) {
@@ -720,7 +719,6 @@ export async function importLogs(data: Record<string, any>[], meta?: ImportMeta)
 
             const clockInRaw = row.entrada || row.clock_in || row.inicio
             const clockOutRaw = row.salida || row.clock_out || row.fin
-            const contractHours = parseFloat(row.horas_contrato || row.contract_hours || '40')
 
             if (!clockInRaw) {
                 errors.push(`Falta hora de entrada para ${empIdentifier}`)
@@ -746,22 +744,8 @@ export async function importLogs(data: Record<string, any>[], meta?: ImportMeta)
                 totalHours = (clockOut.getTime() - clockIn.getTime()) / (1000 * 60 * 60)
             }
 
-            // Prepare Snapshot data
             const dateObj = new Date(clockIn)
             const dateStr = dateObj.toISOString().split('T')[0]
-            const day = dateObj.getDay()
-            const diffToMonday = dateObj.getDate() - day + (day === 0 ? -6 : 1)
-            const weekStart = new Date(dateObj.setDate(diffToMonday))
-            weekStart.setHours(0, 0, 0, 0)
-            const weekStartStr = weekStart.toISOString().split('T')[0]
-
-            const snapshotKey = `${profile.id}-${weekStartStr}`
-            snapshotsToUpsertMap.set(snapshotKey, {
-                user_id: profile.id,
-                week_start: weekStartStr,
-                contracted_hours_snapshot: contractHours,
-                week_end: new Date(new Date(weekStart).setDate(weekStart.getDate() + 6)).toISOString().split('T')[0]
-            })
 
             // Deduplicate Log data (one shift per day per user)
             const logKey = `${profile.id}-${dateStr}`
@@ -792,17 +776,6 @@ export async function importLogs(data: Record<string, any>[], meta?: ImportMeta)
 
     const logsToInsert = Array.from(logsToInsertMap.values())
 
-    // Execute Bulk Operations
-    if (snapshotsToUpsertMap.size > 0) {
-        const { error: snapshotError } = await supabase
-            .from('weekly_snapshots')
-            .upsert(Array.from(snapshotsToUpsertMap.values()), { onConflict: 'user_id, week_start' })
-
-        if (snapshotError) {
-            errors.push(`Error masivo actualizando horas de contrato: ${snapshotError.message}`)
-        }
-    }
-
     if (logsToInsert.length > 0) {
         // OVERWRITE LOGIC: Delete existing logs for the days we are importing
         // Since logsToInsert is now deduplicated by day, this runs once per day/user
@@ -825,19 +798,19 @@ export async function importLogs(data: Record<string, any>[], meta?: ImportMeta)
             errors.push(`Error masivo insertando registros: ${logError.message}`)
             successCount = 0
         } else {
-            // Trigger SQL ya recalculó horas; completar con Cost Engine (patrón único).
+            // Writer único: regenera columnas C (HE+Cost).
             const affectedUserIds = [
                 ...new Set(logsToInsert.map((l) => String(l.user_id)).filter(Boolean)),
             ]
             try {
-                const { persistOvertimeCostForEmployees } = await import(
+                const { writeProjectionForEmployees } = await import(
                     '@/lib/hours-engine/recalculate-and-persist-all'
                 )
-                await persistOvertimeCostForEmployees(supabase, affectedUserIds)
+                await writeProjectionForEmployees(supabase, affectedUserIds, 'import')
             } catch (persistErr: unknown) {
                 const msg =
                     persistErr instanceof Error ? persistErr.message : String(persistErr)
-                errors.push(`Fichajes insertados; falló persistencia Cost Engine: ${msg}`)
+                errors.push(`Fichajes insertados; falló Writer de proyección: ${msg}`)
             }
         }
     }

@@ -1,8 +1,7 @@
 /**
- * Persistencia de weekly_snapshots.total_cost desde Overtime Cost Engine.
- *
- * Único escritor monetario. SQL no calcula ni sobrescribe total_cost.
- * NULL en BD = aún no persistido; 0 = estimatedValue real de 0 €.
+ * @deprecated Fase 1b — LEGADO INERTE.
+ * No usar en producción. Columnas C (incl. total_cost) → writeWeeklyProjection.
+ * Definiciones conservadas solo por compatibilidad de exports; sin callers vivos.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';

@@ -25,14 +25,14 @@ function madridUtcOffsetHours(at: Date = new Date()): number {
 }
 
 /**
- * Cron: Overtime Cost Engine + (opcional) recálculo SQL de horas.
+ * Cron: Writer único de proyección (HE+Cost → weekly_snapshots).
  *
  * Auth: Authorization Bearer CRON_SECRET.
  *
  * Query:
  * - slot=winter|summer → guarda DST Madrid (CET=1 / CEST=2)
- * - mode=persist-only → solo Cost Engine (SQL ya hizo rpc_recalculate_all_balances)
- * - mode omitido → rpc horas + persist (flujo completo, p.ej. Vercel Cron)
+ * - mode=persist-only → Writer para empleados con snapshots (sin RPC SQL)
+ * - mode omitido → mismo Writer global (compat. schedule Vercel)
  */
 export async function GET(request: NextRequest) {
   const supabaseUrl =
@@ -58,7 +58,6 @@ export async function GET(request: NextRequest) {
   let slot = request.nextUrl.searchParams.get('slot');
   const mode = request.nextUrl.searchParams.get('mode');
 
-  // Vercel Cron no admite query en path: inferir slot por hora UTC del schedule.
   if (!slot) {
     const hourUtc = new Date().getUTCHours();
     if (hourUtc === 3) slot = 'winter';
@@ -85,7 +84,7 @@ export async function GET(request: NextRequest) {
 
   try {
     if (mode === 'persist-only') {
-      console.log('[CRON_RECALC] persist-only Cost Engine', { slot });
+      console.log('[CRON_RECALC] Writer (persist-only)', { slot });
       const { data: users, error: usersErr } = await supabase
         .from('weekly_snapshots')
         .select('user_id')
@@ -97,11 +96,11 @@ export async function GET(request: NextRequest) {
         ...new Set((users ?? []).map((r) => r.user_id).filter(Boolean)),
       ] as string[];
       const result = await persistOvertimeCostForEmployees(supabase, userIds);
-      console.log('[CRON_RECALC] persist-only OK', result);
+      console.log('[CRON_RECALC] Writer OK', result);
       return NextResponse.json({ success: true, mode: 'persist-only', ...result });
     }
 
-    console.log('[CRON_RECALC] flujo completo (rpc + persist)', { slot });
+    console.log('[CRON_RECALC] Writer global', { slot });
     const result = await recalculateAllBalancesAndPersist(supabase);
     console.log('[CRON_RECALC] OK', result);
     return NextResponse.json({

@@ -5,8 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { recalculateAllBalancesAndPersist } from '@/lib/hours-engine/recalculate-and-persist-all';
 
 /**
- * Recalcula todos los balances semanales (SQL horas) y después
- * persiste total_cost desde Overtime Cost Engine para cada empleado.
+ * Regenera proyección global vía Writer único (writeWeeklyProjection).
  */
 export async function recalculateAllBalances() {
   const supabase = await createClient();
@@ -20,7 +19,7 @@ export async function recalculateAllBalances() {
 
     return {
       success: true,
-      message: `Recálculo global completado. Cost Engine persistió ${result.weeksPersisted} semanas en ${result.employeeCount} empleados.`,
+      message: `Writer global: ${result.weeksPersisted} semanas en ${result.employeeCount} empleados.`,
       data: result.rpcData,
     };
   } catch (err) {

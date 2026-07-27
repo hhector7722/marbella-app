@@ -1,18 +1,15 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
+import { formatYmdInMadrid } from '@/lib/madrid-date-bounds';
 import {
   mondayOnOrBefore,
-  persistOvertimeCostFromEngine,
-  recalcSnapshotsAndPersistOvertimeCost,
+  writeProjectionFromWeek,
+  writeProjectionForEmployees,
 } from '@/lib/hours-engine';
-import { formatYmdInMadrid } from '@/lib/madrid-date-bounds';
 
 /**
- * Tras un cambio de time_logs (p.ej. fichaje cliente):
- * el trigger SQL ya recalculó horas sin tocar total_cost.
- * Esta action solo persiste estimatedValue → total_cost.
- *
+ * Tras un cambio de time_logs (fichaje): regenera proyección C vía Writer.
  * Auth: el propio usuario o manager.
  */
 export async function syncOvertimeCostAfterTimeLogChange(
@@ -48,19 +45,22 @@ export async function syncOvertimeCostAfterTimeLogChange(
   }
 
   const fromWeekStart = mondayOnOrBefore(day);
-  const result = await persistOvertimeCostFromEngine(supabase, {
-    userId: uid,
+  const result = await writeProjectionFromWeek(
+    supabase,
+    uid,
     fromWeekStart,
-  });
+    'fichaje',
+  );
 
   if (!result.ok) {
     return { success: false, error: result.error };
   }
-  return { success: true, weeksPersisted: result.weeksPersisted };
+  return { success: true, weeksPersisted: result.weeksWritten };
 }
 
 /**
- * Recalc SQL (horas) + persist Cost Engine. Para Server Actions que mutan snapshots/logs.
+ * Regenera proyección desde startDate vía Writer.
+ * Nombre legacy conservado para callers existentes.
  */
 export async function recalcAndPersistOvertimeCostAction(
   userId: string,
@@ -72,20 +72,20 @@ export async function recalcAndPersistOvertimeCostAction(
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'No autenticado' };
 
-  const result = await recalcSnapshotsAndPersistOvertimeCost(
+  const result = await writeProjectionFromWeek(
     supabase,
     userId,
     startDate,
+    'recalc',
   );
   if (!result.ok) {
     return { success: false, error: result.error };
   }
-  return { success: true, weeksPersisted: result.weeksPersisted };
+  return { success: true, weeksPersisted: result.weeksWritten };
 }
 
 /**
- * Tras importaciones masivas de time_logs (p.ej. /admin/import):
- * el trigger SQL ya recalculó horas; aquí solo persiste Cost Engine.
+ * Tras importaciones masivas: Writer completo por empleado.
  * Auth: manager.
  */
 export async function persistOvertimeCostForEmployeesAction(
@@ -106,13 +106,9 @@ export async function persistOvertimeCostForEmployeesAction(
     return { success: false, error: 'Sin permiso (solo manager)' };
   }
 
-  const { persistOvertimeCostForEmployees } = await import(
-    '@/lib/hours-engine/recalculate-and-persist-all'
-  );
-
   try {
-    const result = await persistOvertimeCostForEmployees(supabase, userIds);
-    return { success: true, weeksPersisted: result.weeksPersisted };
+    const result = await writeProjectionForEmployees(supabase, userIds, 'import');
+    return { success: true, weeksPersisted: result.weeksWritten };
   } catch (err) {
     return {
       success: false,

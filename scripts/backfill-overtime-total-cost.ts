@@ -1,5 +1,5 @@
 /**
- * Backfill: weekly_snapshots.total_cost ← Overtime Cost Engine estimatedValue.
+ * Backfill / regeneración: columnas C vía Writer único (writeWeeklyProjection).
  *
  * Uso:
  *   npm run backfill:overtime-cost
@@ -14,7 +14,8 @@ import {
   employeeTimelineStartWeek,
 } from '../src/lib/hours-engine/opening-carry.ts';
 import { loadEmployeeBoundaryFacts } from '../src/lib/hours-engine/load-employee-facts.ts';
-import { persistOvertimeCostFromEngine } from '../src/lib/hours-engine/persist-overtime-cost.ts';
+import { writeWeeklyProjection } from '../src/lib/hours-engine/projection/write-weekly-projection.ts';
+import type { CivilDate } from '../src/lib/hours-engine/types.ts';
 
 function loadEnvLocal() {
   const envPath = path.join(process.cwd(), '.env.local');
@@ -60,7 +61,7 @@ async function main() {
     ...new Set((rows ?? []).map((r) => r.user_id).filter(Boolean)),
   ] as string[];
 
-  console.log(`Backfill Cost Engine: ${userIds.length} empleados`);
+  console.log(`Backfill Writer: ${userIds.length} empleados`);
 
   let okUsers = 0;
   let weeks = 0;
@@ -80,8 +81,6 @@ async function main() {
         ? String(first.week_start).split('T')[0]!
         : null;
 
-      // Preferir el más antiguo entre timeline contractual y primer snapshot
-      // para no dejar filas históricas con total_cost legacy.
       try {
         const employee = await loadEmployeeBoundaryFacts(client, userId);
         const timeline = employeeTimelineStartWeek(employee);
@@ -99,9 +98,10 @@ async function main() {
         continue;
       }
 
-      const result = await persistOvertimeCostFromEngine(client, {
+      const result = await writeWeeklyProjection(client, {
         userId,
-        fromWeekStart,
+        fromWeekStart: fromWeekStart as CivilDate,
+        processKind: 'recalc',
       });
       if (!result.ok) {
         failures.push(`${userId}: ${result.error}`);
@@ -109,9 +109,9 @@ async function main() {
         continue;
       }
       okUsers += 1;
-      weeks += result.weeksPersisted;
+      weeks += result.weeksWritten;
       console.log(
-        `  OK ${userId}: ${result.weeksPersisted} semanas (${result.fromWeekStart} → ${result.toWeekStart})`,
+        `  OK ${userId}: ${result.weeksWritten} semanas (${result.fromWeekStart} → ${result.toWeekStart})`,
       );
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -122,7 +122,7 @@ async function main() {
 
   console.log('---');
   console.log(`OK empleados: ${okUsers}/${userIds.length}`);
-  console.log(`Semanas persistidas: ${weeks}`);
+  console.log(`Semanas escritas: ${weeks}`);
   console.log(`Fallos: ${failures.length}`);
   if (failures.length > 0) {
     console.log('Primeros fallos:');

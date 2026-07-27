@@ -1,17 +1,17 @@
 /**
- * One-shot: tras corregir profiles.end_date de Guillem Merino,
- * recalcula horas SQL + persiste total_cost Cost Engine hasta W30.
+ * One-shot: regenera proyección Merino hasta W30 vía Writer único.
  *
  *   npx tsx scripts/recalc-merino-w30.ts
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { createClient } from '@supabase/supabase-js';
-import { persistOvertimeCostFromEngine } from '../src/lib/hours-engine/persist-overtime-cost.ts';
+import { writeWeeklyProjection } from '../src/lib/hours-engine/projection/write-weekly-projection.ts';
+import type { CivilDate } from '../src/lib/hours-engine/types.ts';
 
 const USER = '97034f1a-0664-49c1-b62a-5bf3b09cc945';
-const FROM_WEEK = '2026-02-09';
-const TO_WEEK = '2026-07-20';
+const FROM_WEEK = '2026-02-09' as CivilDate;
+const TO_WEEK = '2026-07-20' as CivilDate;
 
 function loadEnvLocal() {
   const envPath = path.join(process.cwd(), '.env.local');
@@ -58,22 +58,16 @@ async function main() {
   }
   console.log('Perfil OK', profile);
 
-  const { error: rpcErr } = await client.rpc(
-    'rpc_recalculate_user_balances_from_week',
-    { p_user_id: USER, p_week_start: FROM_WEEK },
-  );
-  if (rpcErr) throw new Error(`RPC: ${rpcErr.message}`);
-  console.log('RPC horas OK');
-
-  const persist = await persistOvertimeCostFromEngine(client, {
+  const write = await writeWeeklyProjection(client, {
     userId: USER,
     fromWeekStart: FROM_WEEK,
     toWeekStart: TO_WEEK,
+    processKind: 'recalc',
   });
-  if (!persist.ok) {
-    throw new Error(`persist: ${persist.error}`);
+  if (!write.ok) {
+    throw new Error(`Writer: ${write.error}`);
   }
-  console.log('persist OK', persist);
+  console.log('Writer OK', write);
 
   const { data: snap, error: snapErr } = await client
     .from('weekly_snapshots')

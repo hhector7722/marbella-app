@@ -1,6 +1,34 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-27 (ADR-HE-SSOT-001 CONGELADO)
+**Última actualización:** 2026-07-27 (Fase 1d — motor SQL legacy de cierre semanal eliminado)
+
+- [x] **Fase 1d — `close_week_for_all_users` desconectado (2026-07-27)**: Último productor SQL vivo post-Gate era pg_cron `close-previous-week` → `close_week_for_all_users` (INSERT/UPSERT columnas C desde `profiles` + `view_daily_hours_breakdown`, sin HE/Writer). Migración `20260727152000_phase1d_disable_close_week_sql_c_motor`: función → delegación HTTP Writer; job cron → `cron_close_previous_week_via_writer()`; `fn_recalc_and_propagate_snapshots` → no-op (0 funciones SQL con INSERT a `weekly_snapshots` C). Ops: `app_settings.cron_recalc_bearer` alineado con `CRON_SECRET` (antes PLACEHOLDER). Remoto: dry-run sin escritura C; smoke pg_net OK. ADR / Contract / HE / Cost **no modificados**.
+
+**Última actualización anterior:** 2026-07-27 (Fase 1c — último productor SQL de columnas C desconectado)
+
+- [x] **Fase 1c — `trigger_recalc_snapshots` eliminado (2026-07-27)**: Único productor SQL residual post-1b era `time_logs.trigger_recalc_snapshots` → `recalc_snapshots_on_log_change` → `fn_recalc`. Migración `20260727145300_phase1c_disable_time_logs_recalc_trigger`: DROP trigger + función no-op. Remoto verificado: 0 triggers recalc/propagate activos; cron sin `perform rpc_recalculate_all_balances`. Columnas C → único escritor efectivo: Writer TS (`writeWeeklyProjection`). ADR / Contract / HE / Cost **no modificados**.
+
+**Última actualización anterior:** 2026-07-27 (Fase 1b — migración completa al Writer único)
+
+- [x] **Fase 1b — Writer único cableado (2026-07-27)**: Todos los flujos funcionales escriben columnas C solo vía `writeWeeklyProjection` (wrappers `writeProjectionFromWeek` / `writeProjectionForEmployees` / `recalculateAllBalancesAndPersist`). Migrados: cron, fichajes, imports, toggle paid/prefer stock, config semanal, contratos, scripts. Overrides B se escriben directo + Writer regenera C. Legacy inerte: `persistOvertimeCostFromEngine`, `recalcSnapshotsAndPersistOvertimeCost`, RPCs `fn_recalc`/`rpc_recalculate_*` (sin callers app). Migración SQL `20260727135641_phase1b_disable_sql_c_producers`: trigger propagate no-op + pg_cron solo HTTP Writer. ADR / Projection Contract / HE / Cost / Mapper / Validator **no modificados**.
+
+**Última actualización anterior:** 2026-07-27 (Gate Fase 1 — cierre contractual validate-projection)
+
+- [x] **Gate Fase 1 — validaciones pre-commit completadas (2026-07-27)**: `validate-projection` cubre INV-C01 (semilla 0), C02, C03–C09 (C04 vía oráculo `computeCarry` sobre partes del resultado), L01–L04 (coherencia del `LiquidationResult`; L05 documentada como exclusiva HE). Sin cambios de mapping/payload/HE/Cost/dryRun. Tests writer **26/26**. **Sin Fase 1b.**
+
+**Última actualización anterior:** 2026-07-27 (Fase 1 — Writer único de proyección)
+
+- [x] **Fase 1 — Writer único `writeWeeklyProjection` (2026-07-27)**: Orquestador HE + Cost → validación contrato → persistencia columnas C de `weekly_snapshots` (UPSERT por `user_id`+`week_start`; no toca overrides B). Metadata conceptual en retorno (`he-1.0.0` / `cost-1.0.0` / `projection-contract-v1`); sin columnas físicas nuevas. Módulo: `src/lib/hours-engine/projection/`. Tests writer **10/10**. **Sin** cablear cron/fichajes/imports/toggle/contratos (**Fase 1b pendiente**). ADR y Projection Contract **no modificados**.
+
+**Última actualización anterior:** 2026-07-27 (Fase 0b — PROJECTION CONTRACT v1)
+
+- [x] **Fase 0b — PROJECTION CONTRACT v1 (2026-07-27)**: Especificación funcional del contrato Hours/Cost → Writer → `weekly_snapshots` (mapeo, autoridades, idempotencia, versionado conceptual, validación/errores). Subordinado a ADR-HE-SSOT-001. Doc: [`docs/PROJECTION_CONTRACT_v1.md`](docs/PROJECTION_CONTRACT_v1.md). **Sin Writer ni migraciones.**
+
+**Última actualización anterior:** 2026-07-27 (ADR-HE-SSOT-001 DEFINITIVAMENTE CONGELADO)
+
+- [x] **ADR-HE-SSOT-001 definitivamente congelado (2026-07-27)**: Refuerzo documental: trazabilidad de proyección (metadata), INV-J06/J07 regenerabilidad, INV-D01 determinismo, separación dominio↔metadata. Sin cambio de reglas de negocio ni del plan Fases 0b–5. Doc: [`docs/ADR-HE-SSOT-001.md`](docs/ADR-HE-SSOT-001.md). **Sin implementación de cutover.**
+
+**Última actualización anterior:** 2026-07-27 (ADR-HE-SSOT-001 CONGELADO)
 
 - [x] **ADR-HE-SSOT-001 congelado (2026-07-27)**: Hours Engine = único productor. `weekly_snapshots` = proyección persistida. Lectura oficial: hechos → HE (write) → snapshots → Read Model → DTO → UI. Semilla global: `carryIn(timelineStart)=0`. Plan cutover Fases 0b–5. Doc: [`docs/ADR-HE-SSOT-001.md`](docs/ADR-HE-SSOT-001.md). **Sin implementación de cutover aún.**
 

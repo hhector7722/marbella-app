@@ -9,7 +9,7 @@ import {
   persistContractualChange,
   persistTermBoundsReschedule,
   persistTermDeletion,
-  recalcSnapshotsAndPersistOvertimeCost,
+  writeProjectionFromWeek,
   type ContractTermFact,
   type ContractTermRow,
 } from '@/lib/hours-engine';
@@ -108,23 +108,23 @@ function civilDatesEqual(
 }
 
 /**
- * Regenera weekly_snapshots SQL tras un cambio contractual y persiste total_cost
- * desde Overtime Cost Engine (TS). HE no necesita paso aparte de horas.
+ * Regenera weekly_snapshots vía Writer tras un cambio contractual.
  */
 async function propagateSnapshotsAfterContractChange(
   supabase: Awaited<ReturnType<typeof createClient>>,
   employeeId: string,
   startDate: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const result = await recalcSnapshotsAndPersistOvertimeCost(
+  const result = await writeProjectionFromWeek(
     supabase,
     employeeId,
     startDate,
+    'recalc',
   );
   if (!result.ok) {
     return {
       ok: false,
-      error: `Contrato guardado, pero falló el recálculo/persistencia de coste: ${result.error}`,
+      error: `Contrato guardado, pero falló el Writer de proyección: ${result.error}`,
     };
   }
   return { ok: true };

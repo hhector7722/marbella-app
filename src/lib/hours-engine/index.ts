@@ -49,6 +49,22 @@ export {
 export { mondayOnOrBefore, nextWeekStart, previousWeekStart, weekBounds } from './week-dates.ts';
 export { loadEmployeeBoundaryFacts } from './load-employee-facts.ts';
 export {
+  persistOvertimeCostForEmployees,
+  recalculateAllBalancesAndPersist,
+  writeProjectionFromWeek,
+  writeProjectionForEmployees,
+} from './recalculate-and-persist-all.ts';
+export type {
+  RecalculateAllBalancesPersistResult,
+  WriteProjectionForEmployeesResult,
+} from './recalculate-and-persist-all.ts';
+
+/**
+ * @deprecated Fase 1b: sin callers de producción. Usar writeWeeklyProjection /
+ * writeProjectionFromWeek. Se mantienen las definiciones en persist-overtime-cost.ts
+ * solo como legado inerte.
+ */
+export {
   persistOvertimeCostFromEngine,
   recalcSnapshotsAndPersistOvertimeCost,
 } from './persist-overtime-cost.ts';
@@ -56,11 +72,27 @@ export type {
   PersistOvertimeCostResult,
   RecalcAndPersistResult,
 } from './persist-overtime-cost.ts';
+
+/** Writer único de proyección HE+Cost → weekly_snapshots. */
 export {
-  persistOvertimeCostForEmployees,
-  recalculateAllBalancesAndPersist,
-} from './recalculate-and-persist-all.ts';
-export type { RecalculateAllBalancesPersistResult } from './recalculate-and-persist-all.ts';
+  writeWeeklyProjection,
+  mapEnginesToProjectionRow,
+  validateProjectionBatch,
+  validateWriterPreconditions,
+  HOURS_ENGINE_VERSION,
+  COST_ENGINE_VERSION,
+  PROJECTION_CONTRACT_VERSION,
+  buildProjectionMetadata,
+} from './projection/index.ts';
+export type {
+  WriteWeeklyProjectionInput,
+  WriteWeeklyProjectionResult,
+  WeeklyProjectionDomainRow,
+  ProjectionProcessKind,
+  ProjectionGenerationMetadata,
+  ProjectionWeekCandidate,
+} from './projection/index.ts';
+
 export { COST_ENGINE_COVERAGE_MATRIX } from './cost-engine-coverage.ts';
 export {
   buildOvertimeWeeksFromSsot,

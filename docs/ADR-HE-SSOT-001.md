@@ -2,8 +2,9 @@
 
 | Campo | Valor |
 |---|---|
-| Estado | **CONGELADO** |
+| Estado | **DEFINITIVAMENTE CONGELADO** |
 | Fecha | 2026-07-27 |
+| Revisión documental final | 2026-07-27 (trazabilidad / regeneración / determinismo / metadata) |
 | Skills | `architect-horas-nominas`, `auditor-horas-nominas`, `db-supabase-master` |
 | Alcance | Dominio Liquidation / Carry / Coste OT |
 | Fuera de alcance | Implementación inmediata (ver plan Fases 0b–5) |
@@ -20,7 +21,7 @@ Hoy coexisten dos cadenas internamente coherentes:
 Producen valores distintos cuando la **apertura histórica** difiere (caso Pere: gap estable ≈ 5,5 h).  
 La decisión previa ya fija: **Hours Engine = único productor de negocio**.
 
-Este ADR congela lectura, semilla, invariantes, prohibiciones, responsabilidades, plan y criterios de aceptación **antes** de implementar el cutover.
+Este ADR congela lectura, semilla, invariantes, prohibiciones, responsabilidades, plan, criterios de aceptación y **trazabilidad de la proyección** **antes** de implementar el cutover.
 
 ---
 
@@ -28,7 +29,8 @@ Este ADR congela lectura, semilla, invariantes, prohibiciones, responsabilidades
 
 > Existe **un único productor** de magnitudes de liquidación: el **Hours Engine**.  
 > `weekly_snapshots` **no calcula**; solo **persiste la proyección** del vector HE (+ hechos admin).  
-> La UI **nunca** ejecuta ni reinterpreta lógica de negocio.
+> La UI **nunca** ejecuta ni reinterpreta lógica de negocio.  
+> Toda proyección persistida debe ser **trazable**, **determinista** y **regenerable**.
 
 ---
 
@@ -96,7 +98,7 @@ Hechos (time_logs, hours_contract_terms, frontera, flags)
 ### Definición oficial (única)
 
 **C) Proyección persistida** del vector de liquidación del Hours Engine  
-(+ hechos administrativos / overrides).
+(+ hechos administrativos / overrides + **metadata de generación**).
 
 No es:
 
@@ -107,16 +109,38 @@ No es:
 
 Nombre canónico: **proyección persistida de liquidación semanal**.
 
-### Clasificación de columnas
+### Separación formal: dominio vs metadata
 
-#### Hechos de identidad / periodo
+La proyección tiene **dos capas lógicas** obligatorias. No se decide aquí el esquema físico de columnas; sí la separación:
+
+| Capa | Contenido | ¿Entra en liquidación? |
+|---|---|---|
+| **A) Datos del dominio** | Resultados calculados (carry, balances, horas, importe) + identidad + **overrides de proceso** (hechos de entrada) | Sí (overrides como input; resultados como output) |
+| **B) Metadata de generación** | Quién/qué/cuándo/con qué versión produjo la fila | **Nunca**. No alimenta HE ni Cost Engine ni UI de negocio |
+
+La metadata **pertenece exclusivamente a la proyección**, no al dominio de liquidación.
+
+### Principio: trazabilidad de la proyección
+
+Toda fila de `weekly_snapshots` debe poder responder, vía **metadata de generación**:
+
+1. con qué **versión del Hours Engine** se generaron los resultados de horas/carry;  
+2. con qué **versión del Cost Engine** se calculó `total_cost`;  
+3. **cuándo** fue generada o regenerada;  
+4. qué **proceso** la escribió (writer, cron, importación, backfill, recálculo manual, etc.).
+
+Esta información **nunca** forma parte del dominio ni altera `computeCarry` / `liquidateWeek` / pricing.
+
+### Clasificación de columnas (lógica)
+
+#### Hechos de identidad / periodo (dominio — entrada)
 
 | Columna | Clase |
 |---|---|
 | `user_id` | hecho / clave |
 | `week_start` | hecho / clave (lunes ISO) |
 
-#### Overrides / hechos de proceso (entrada al HE; no derivados)
+#### Overrides / hechos de proceso (dominio — entrada al HE; no derivados)
 
 | Columna | Clase |
 |---|---|
@@ -124,7 +148,7 @@ Nombre canónico: **proyección persistida de liquidación semanal**.
 | `prefer_stock_hours_override` | override (null = contrato) |
 | `overtime_price_snapshot` | override de tarifa OT (null = contrato) |
 
-#### Resultados calculados (solo escritos por HE / Cost Engine)
+#### Resultados calculados (dominio — salida; solo escritos por HE / Cost Engine)
 
 | Columna | Magnitud HE / Cost |
 |---|---|
@@ -137,14 +161,19 @@ Nombre canónico: **proyección persistida de liquidación semanal**.
 | `contracted_hours_snapshot` | `contractedHoursEffective` |
 | `total_cost` | `estimatedValue` (Cost Engine) |
 
-> Nota: el **footer UI “Extras”** puede ser una proyección de display (`extrasFooter`) distinta de `extra_hours` bruto; ver invariantes Punto 4. La columna SQL `extra_hours` almacena el **resultado de liquidación** `overtimeHours`, no la reinterpretación de UI.
+> Nota: el **footer UI “Extras”** puede ser una proyección de display (`extrasFooter`) distinta de `extra_hours` bruto; ver invariantes. La columna SQL `extra_hours` almacena el **resultado de liquidación** `overtimeHours`, no la reinterpretación de UI.
 
-#### Metadata
+#### Metadata de generación (no dominio)
 
-| Campo / concepto | Clase |
+Conceptos lógicos (nombres físicos a decidir en Fase 0b/1; **no** se fijan columnas aquí):
+
+| Concepto lógico | Propósito |
 |---|---|
-| `created_at` / `updated_at` (si existen) | metadata |
-| origen de escritura / versión de motor (recomendado añadir en implementación futura) | metadata de proyección |
+| versión Hours Engine | trazabilidad del cálculo de horas/carry |
+| versión Cost Engine | trazabilidad de `total_cost` |
+| instante de generación / regeneración | cuándo se escribió |
+| proceso escritor | writer / cron / import / backfill / recálculo |
+| versión de proyección / writer (opcional) | compatibilidad del contrato de filas |
 
 ---
 
@@ -204,7 +233,7 @@ Notación: semana `W`, siguiente `W+1`. Redondeo Marbella `R(·)` (solo .0 / .5)
 | INV-L02 | `weeklyBalance = Σ weeklyBalancePart(segmentos)` |
 | INV-L03 | `ordinaryHours + overtimeHours` coherente con régimen/contrato efectivo |
 | INV-L04 | Días `pre_alta` / `post_baja` no aportan jornada ordinaria de contrato |
-| INV-L05 | Determinismo: mismos hechos + mismos flags ⇒ mismo `LiquidationResult` |
+| INV-L05 | Determinismo de liquidación: mismos hechos + mismos overrides ⇒ mismo `LiquidationResult` **para una versión dada del Hours Engine** |
 
 ### Preferencia bolsa / payable / display
 
@@ -225,8 +254,15 @@ Notación: semana `W`, siguiente `W+1`. Redondeo Marbella `R(·)` (solo .0 / .5)
 | INV-$01 | `estimatedValue = priceWeekOvertime(...)` únicamente |
 | INV-$02 | `weekly_snapshots.total_cost ≡ estimatedValue` tras persist Cost |
 | INV-$03 | SQL **no** calcula dinero |
+| INV-$04 | Determinismo de coste: mismo `LiquidationResult` + mismos overrides de tarifa + misma versión Cost Engine ⇒ mismo `estimatedValue` |
 
-### Proyección
+### Determinismo de proyección (explícito)
+
+| ID | Invariante |
+|---|---|
+| INV-D01 | **Mismos hechos** + **mismos overrides** + **misma versión Hours Engine** + **misma versión Cost Engine** ⇒ **misma proyección de resultados calculados** |
+
+### Proyección / regeneración
 
 | ID | Invariante |
 |---|---|
@@ -234,7 +270,10 @@ Notación: semana `W`, siguiente `W+1`. Redondeo Marbella `R(·)` (solo .0 / .5)
 | INV-J02 | Tras writer: `final_balance = balanceFinal` |
 | INV-J03 | Tras writer: `balance_hours = weeklyBalance` |
 | INV-J04 | Tras writer: `ordinary_hours / extra_hours / total_hours / contracted_hours_snapshot` = campos HE |
-| INV-J05 | Shadow post-cutover: vector HE ≡ proyección (identidad), no “dos motores” |
+| INV-J05 | Shadow post-cutover: vector HE ≡ proyección de resultados (identidad), no “dos motores” |
+| INV-J06 | **Regenerabilidad:** los **resultados calculados** de la proyección son completamente regenerables a partir de: `time_logs` + `hours_contract_terms` + `joining_date` / `end_date` + **overrides de proceso** + versión de motores. Tras regenerar con las **mismas** versiones de motor y los **mismos** overrides, los resultados coinciden exactamente con la proyección anterior (salvo metadata de generación, que refleja el nuevo write). |
+| INV-J07 | Los **overrides** (`is_paid`, `prefer_stock_hours_override`, `overtime_price_snapshot`) son **hechos de entrada**, no regenerables desde fichajes/contrato. Un wipe de `weekly_snapshots` exige **preservar o reinyectar** overrides antes de regenerar resultados. |
+| INV-J08 | La **metadata de generación** no participa en INV-D01 / INV-J06 como input de liquidación; puede cambiar en cada write sin alterar el dominio. |
 
 ### Tests automáticos obligatorios
 
@@ -243,8 +282,8 @@ Notación: semana `W`, siguiente `W+1`. Redondeo Marbella `R(·)` (solo .0 / .5)
 | Unit `computeCarry` | INV-C03–C09 |
 | Unit `liquidateWeek` / gate | INV-L01–L05, INV-C02 en cadenas cortas |
 | Unit opening | INV-C01, INV-C02 |
-| Unit week-card / cost | INV-P01–P07, INV-$01, INV-$03 |
-| Persist / read-model proyección | INV-J01–J04, INV-$02 |
+| Unit week-card / cost | INV-P01–P07, INV-$01, INV-$03–$04 |
+| Persist / regeneración proyección | INV-J01–J04, INV-J06–J08, INV-D01, INV-$02 |
 | Shadow identidad (post Fase 4) | INV-J05 |
 
 ---
@@ -266,7 +305,9 @@ Notación: semana `W`, siguiente `W+1`. Redondeo Marbella `R(·)` (solo .0 / .5)
 13. No hay excepciones por `user_id` / email en reglas de carry.  
 14. Shadow **no** compara dos motores tras el cutover; solo HE ↔ proyección.  
 15. Imports / cron / triggers **no** pueden escribir resultados de liquidación sin pasar por el writer HE.  
-16. Prohibido “arreglar” divergencias parcheando solo la UI.
+16. Prohibido “arreglar” divergencias parcheando solo la UI.  
+17. La **metadata de generación** **nunca** se usa como input de liquidación ni de pricing.  
+18. Prohibido tratar overrides como “regenerables” desde `time_logs`.
 
 ---
 
@@ -275,11 +316,11 @@ Notación: semana `W`, siguiente `W+1`. Redondeo Marbella `R(·)` (solo .0 / .5)
 | Capa | Puede | Prohibido |
 |---|---|---|
 | **Hechos** (`time_logs`, terms, joining/end, flags) | Representar realidad operativa | Contener balances calculados |
-| **Hours Engine** | Único cálculo de carry/balances/ordinary/OT/payable/display footer horas | Escribir UI; calcular €; leer “verdad” desde snapshot como input de liquidación (salvo flags) |
+| **Hours Engine** | Único cálculo de carry/balances/ordinary/OT/payable/display footer horas | Escribir UI; calcular €; leer “verdad” desde snapshot como input de liquidación (salvo flags/overrides); escribir metadata |
 | **Cost Engine** | Único `estimatedValue` / pricing OT | Calcular horas/carry; vivir en SQL |
-| **Persistencia / Writer** | Orquestar HE(+Cost) → UPSERT proyección | Fórmulas propias de liquidación |
-| **`weekly_snapshots`** | Almacenar proyección + overrides | Calcular |
-| **Read Models** | Leer proyección → ensamblar DTO | `liquidateWeek`, reinterpretar bolsa/carry |
+| **Persistencia / Writer** | Orquestar HE(+Cost) → UPSERT proyección **incluyendo metadata de generación** | Fórmulas propias de liquidación |
+| **`weekly_snapshots`** | Almacenar proyección de dominio + overrides + metadata | Calcular |
+| **Read Models** | Leer proyección → ensamblar DTO (dominio para UI; metadata solo si la UI/auditoría lo pide explícitamente) | `liquidateWeek`, reinterpretar bolsa/carry |
 | **DTO** | Contratos de pintura | Derivaciones de negocio |
 | **React** | Render + capturar hechos (fichaje, toggles) vía actions | Cualquier lógica de liquidación |
 | **SQL** | RLS, integridad, almacenamiento, RPCs de orquestación delgadas | `fn_recalc` como motor de liquidación |
@@ -293,17 +334,19 @@ Notación: semana `W`, siguiente `W+1`. Redondeo Marbella `R(·)` (solo .0 / .5)
 | Fase | Contenido |
 |---|---|
 | **0** | Congelar ADR + política semilla **A** (este documento) |
-| **0b** | **Contrato de proyección**: mapa columna ↔ campo HE; versión de motor en escritura |
-| **1** | Writer único HE(+Cost) → `weekly_snapshots` |
+| **0b** | **Contrato de proyección**: mapa columna ↔ campo HE; **contrato de metadata**; versión de motor en escritura |
+| **1** | Writer único HE(+Cost) → `weekly_snapshots` (+ metadata) |
 | **1b** | Cablear todos los *write paths* (fichaje, toggle paid, contrato, import, cron) al writer; dejar de llamar motor SQL |
-| **2** | Backfill total desde `timelineStart` (carry 0) |
-| **2b** | Gate de paridad: muestra + plantilla completa HE vs proyección = identidad |
+| **2** | Backfill total desde `timelineStart` (carry 0), **preservando/reinyectando overrides** |
+| **2b** | Gate de paridad: muestra + plantilla completa HE vs proyección = identidad (**INV-D01 / INV-J06**) |
 | **3** | Eliminar/neutralizar productor SQL (`fn_recalc` sin liquidación) |
 | **3b** | Cortar read-path HE en caliente: Read Model **solo** proyección (quitar HE en load) |
 | **4** | Shadow = identidad HE ↔ proyección |
 | **5** | Retirada: código muerto SQL liquidación, docs legacy “SQL SSOT”, prohibiciones en CI/review |
 
 No hay fase de “convivencia permanente”. La ventana dual es solo hasta completar **3b**.
+
+**Este refuerzo documental no añade fases ni altera el orden.** Solo aclara que 0b/1/2 incluyen metadata y preservación de overrides.
 
 ---
 
@@ -314,7 +357,7 @@ La migración se da por **cerrada** solo si se cumplen **todos**:
 1. Existe **un único productor** de liquidación: Hours Engine.  
 2. Existe **un único algoritmo de carry**: `computeCarry`.  
 3. Existe **una única cadena histórica** por empleado, con `openingCarryIn(timelineStart) = 0`.  
-4. `weekly_snapshots` es **únicamente** proyección persistida (+ overrides).  
+4. `weekly_snapshots` es **únicamente** proyección persistida (+ overrides + metadata).  
 5. Toda la UI consume **exclusivamente** DTOs derivados de la **proyección** (no HE en read).  
 6. No existen reglas duplicadas de extras/importe/bolsa en React, SQL ni read-models.  
 7. Dinero OT solo vía Cost Engine; SQL no calcula `total_cost`.  
@@ -322,8 +365,27 @@ La migración se da por **cerrada** solo si se cumplen **todos**:
 9. Cron / fichaje / contrato / import escriben **solo** vía writer HE.  
 10. `fn_recalc` **no** implementa liquidación (o no existe como motor).  
 11. Cero excepciones por empleado en código de carry.  
-12. Invariantes INV-C/L/P/$/J tienen tests automatizados en verde.  
-13. Documentación operativa deja de llamar “SSOT” a `fn_recalc` / columnas crudas como motor.
+12. Invariantes INV-C/L/P/$/J/D tienen tests automatizados en verde.  
+13. Documentación operativa deja de llamar “SSOT” a `fn_recalc` / columnas crudas como motor.  
+14. Toda fila de proyección es **trazable** (versión HE, versión Cost, cuándo, qué proceso).  
+15. La proyección de **resultados** es **regenerable** (INV-J06) preservando overrides (INV-J07).  
+16. Rige el **determinismo** INV-D01.
+
+---
+
+## Capacidad de auditoría futura
+
+Con este ADR, una auditoría **debe** poder responder siempre:
+
+| Pregunta | Cómo se responde |
+|---|---|
+| ¿Por qué esta semana tiene este carry? | Hechos + overrides + INV-C* / cadena desde `timelineStart` con semilla 0; reproducible con la versión HE registrada en metadata |
+| ¿Por qué este importe es ese? | Cost Engine sobre la liquidación HE + override de tarifa; versión Cost en metadata |
+| ¿Qué versión del motor produjo este resultado? | Metadata de generación de la fila |
+| ¿Qué proceso escribió la proyección? | Metadata de generación de la fila |
+| ¿Puede regenerarse exactamente? | Sí para **resultados**, con mismos hechos + overrides + mismas versiones de motor (INV-J06 / INV-D01) |
+
+**Única salvedad explícita (no es hueco de diseño):** los overrides no se inventan al regenerar; deben existir como hechos de entrada (INV-J07).
 
 ---
 
@@ -333,13 +395,24 @@ La migración se da por **cerrada** solo si se cumplen **todos**:
 
 - Fin de la doble verdad (−29,5 vs −35).  
 - Lecturas rápidas y auditables.  
-- Alineación con Cost Engine y con la regla “pantallas sin negocio”.
+- Alineación con Cost Engine y con la regla “pantallas sin negocio”.  
+- Trazabilidad y regenerabilidad de la proyección a largo plazo.
 
 ### Negativas / costes
 
 - Backfill obligatorio y ventana de cutover.  
 - Pere (y cualquiera con deuda SQL pre-alta) **pierde** esa semilla al regenerar con política A — es decisión de dominio, no bug.  
-- Hasta Fase 3b, el sistema puede seguir mostrando HE-en-read (deuda); no es estado final.
+- Hasta Fase 3b, el sistema puede seguir mostrando HE-en-read (deuda); no es estado final.  
+- La metadata de generación requiere contrato físico en Fase 0b/1 (sin fijar columnas en este ADR).
+
+### Confirmación: este refuerzo documental
+
+- **NO** modifica reglas de negocio.  
+- **NO** modifica `computeCarry`.  
+- **NO** modifica `liquidateWeek`.  
+- **NO** modifica Cost Engine.  
+- **NO** modifica el plan de migración (fases/orden).  
+- **Únicamente** mejora trazabilidad, regenerabilidad y determinismo documentados.
 
 ### No negociable
 
@@ -353,13 +426,18 @@ Cualquier PR que reintroduzca cálculo de carry/balances/OT/importe fuera del Ho
 |---|---|
 | SSOT | **Hours Engine** |
 | Lectura oficial | **Hechos → HE (write) → `weekly_snapshots` → Read Model → DTO → UI** |
-| `weekly_snapshots` | **C) Proyección persistida** |
+| `weekly_snapshots` | **C) Proyección persistida** (+ overrides + metadata) |
 | Semilla | **A) carry = 0 en timelineStart** |
 | Doble cadena | **Eliminada** tras plan Fases 0–5 |
+| Trazabilidad | **Obligatoria** vía metadata de generación |
+| Regenerabilidad | **INV-J06** (+ **INV-J07** overrides) |
+| Determinismo | **INV-D01** (explícito) |
 
 ---
 
 ## Estado del documento
 
-**CONGELADO** como especificación oficial del cierre SSOT.  
-Siguiente paso de implementación: **Fase 0b** (contrato de proyección), solo tras orden explícita de ejecución.
+**ADR DEFINITIVAMENTE CONGELADO.**
+
+Siguiente paso de implementación: **Fase 0b** (contrato de proyección + metadata), **solo** tras orden explícita de ejecución.  
+Esta revisión **no** inicia ninguna fase.

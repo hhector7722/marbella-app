@@ -9,7 +9,12 @@ import {
     type StaffWeeklyStats,
     type WeeklyStats,
 } from '@/lib/hours-engine/overtime-weeks-ssot';
-import { recalcSnapshotsAndPersistOvertimeCost } from '@/lib/hours-engine';
+import {
+    writeProjectionFromWeek,
+    weekBounds,
+    mondayOnOrBefore,
+} from '@/lib/hours-engine';
+import type { CivilDate } from '@/lib/hours-engine/types';
 
 export type { StaffWeeklyStats, WeeklyStats };
 
@@ -98,15 +103,16 @@ export async function getOvertimeData(startDate: string, endDate: string, userId
     }
 }
 
-export async function togglePaidStatus(userId: string, weekStart: string, newStatus: boolean, stats?: { totalHours: number, overtimeHours: number }) {
+export async function togglePaidStatus(userId: string, weekStart: string, newStatus: boolean, _stats?: { totalHours: number, overtimeHours: number }) {
     const supabase = await createClient();
+    const weekMonday = mondayOnOrBefore(weekStart.split('T')[0]! as CivilDate);
+    const { weekEnd } = weekBounds(weekMonday);
 
-    // 1. Check if snapshot exists
     const { data: existing } = await supabase
         .from('weekly_snapshots')
         .select('id')
         .eq('user_id', userId)
-        .eq('week_start', weekStart)
+        .eq('week_start', weekMonday)
         .maybeSingle();
 
     if (existing) {
@@ -116,36 +122,32 @@ export async function togglePaidStatus(userId: string, weekStart: string, newSta
             .eq('id', existing.id);
         if (error) throw error;
     } else {
-        // Create with provided stats or defaults
+        // Registro mínimo (B + identidad). contracted_hours_snapshot NOT NULL → placeholder;
+        // Writer sobrescribe todas las columnas C.
         const { error } = await supabase
             .from('weekly_snapshots')
             .insert({
                 user_id: userId,
-                week_start: weekStart,
+                week_start: weekMonday,
+                week_end: weekEnd,
                 is_paid: newStatus,
-                total_hours: stats?.totalHours || 0,
-                balance_hours: stats?.overtimeHours || 0,
-                pending_balance: 0,
-                final_balance: stats?.overtimeHours || 0,
-                contracted_hours_snapshot: 40 // Default, trigger will fix it
+                contracted_hours_snapshot: 0,
             });
         if (error) throw error;
     }
 
-    // Trigger SQL propaga horas desde W+1; Cost Engine debe reescribir total_cost
-    // desde la semana tocada (mismo wrapper oficial que el resto de mutaciones).
-    const prop = await recalcSnapshotsAndPersistOvertimeCost(
+    const prop = await writeProjectionFromWeek(
         supabase,
         userId,
-        weekStart,
+        weekMonday,
+        'toggle_paid',
     );
     if (!prop.ok) {
         throw new Error(
-            `is_paid actualizado; falló persistencia Cost Engine: ${prop.error}`,
+            `is_paid actualizado; falló Writer de proyección: ${prop.error}`,
         );
     }
 
-    // 2. Revalidate paths to clear cache
     revalidatePath('/staff/history');
     revalidatePath('/dashboard/overtime');
     revalidatePath('/dashboard');
@@ -153,50 +155,22 @@ export async function togglePaidStatus(userId: string, weekStart: string, newSta
     return { success: true };
 }
 
-export async function updateWeeklyContractHours(userId: string, weekStart: string, newHours: number) {
+export async function updateWeeklyContractHours(userId: string, weekStart: string, _newHours: number) {
     const supabase = await createClient();
 
     try {
-        // Calcular fin de semana para el insert (si no existe)
-        const startDate = new Date(weekStart);
-        const endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + 6);
-        const weekEnd = endDate.toISOString().split('T')[0];
-
-        // 1. Upsert snapshot with new contracted hours
-        // Incluimos week_end para evitar fallos si el registro es nuevo
-        const { error } = await supabase
-            .from('weekly_snapshots')
-            .upsert({
-                user_id: userId,
-                week_start: weekStart,
-                week_end: weekEnd,
-                contracted_hours_snapshot: newHours,
-                // Ponemos valores por defecto mínimos si es un INSERT
-                total_hours: 0,
-                balance_hours: 0,
-                pending_balance: 0,
-                final_balance: 0,
-                is_paid: false
-            }, { onConflict: 'user_id, week_start' });
-
-        if (error) {
-            console.error('Error in upsert:', error);
-            return { success: false, error: error.message };
-        }
-
-        // 2. Trigger propagation + persist Cost Engine
-        const prop = await recalcSnapshotsAndPersistOvertimeCost(
+        // contracted_hours_snapshot es columna C: solo Writer (HE). Regenerar proyección.
+        const weekMonday = mondayOnOrBefore(weekStart.split('T')[0]! as CivilDate);
+        const prop = await writeProjectionFromWeek(
             supabase,
             userId,
-            weekStart,
+            weekMonday,
+            'recalc',
         );
         if (!prop.ok) {
-            console.error('Error in RPC+persist propagation:', prop.error);
             return { success: false, error: prop.error };
         }
 
-        // 3. Revalidate paths
         revalidatePath('/staff/history');
         revalidatePath('/dashboard/overtime');
         revalidatePath('/dashboard');
@@ -212,49 +186,50 @@ export async function togglePreferStockStatus(userId: string, weekStart: string,
     const supabase = await createClient();
 
     try {
-        // 1. Calcular fin de semana para el insert (si no existe)
-        const startDate = new Date(weekStart);
-        const endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + 6);
-        const weekEnd = endDate.toISOString().split('T')[0];
-
-        // 2. Invertimos el estado (si era true pasa a false, si era false pasa a true)
+        const weekMonday = mondayOnOrBefore(weekStart.split('T')[0]! as CivilDate);
+        const { weekEnd } = weekBounds(weekMonday);
         const newStatus = !currentStatus;
 
-        // 3. Upsert snapshot con el override
-        const { error } = await supabase
+        const { data: existing } = await supabase
             .from('weekly_snapshots')
-            .upsert({
-                user_id: userId,
-                week_start: weekStart,
-                week_end: weekEnd,
-                prefer_stock_hours_override: newStatus,
-                // Valores mínimos de seguridad para evitar errores de restricción
-                total_hours: 0,
-                balance_hours: 0,
-                pending_balance: 0,
-                final_balance: 0,
-                is_paid: false,
-                contracted_hours_snapshot: 0 // Se corregirá en la propagación
-            }, { onConflict: 'user_id, week_start' });
+            .select('id')
+            .eq('user_id', userId)
+            .eq('week_start', weekMonday)
+            .maybeSingle();
 
-        if (error) {
-            console.error('Error in togglePreferStockStatus upsert:', error);
-            return { success: false, error: error.message };
+        if (existing) {
+            const { error } = await supabase
+                .from('weekly_snapshots')
+                .update({ prefer_stock_hours_override: newStatus })
+                .eq('id', existing.id);
+            if (error) {
+                return { success: false, error: error.message };
+            }
+        } else {
+            const { error } = await supabase
+                .from('weekly_snapshots')
+                .insert({
+                    user_id: userId,
+                    week_start: weekMonday,
+                    week_end: weekEnd,
+                    prefer_stock_hours_override: newStatus,
+                    contracted_hours_snapshot: 0,
+                });
+            if (error) {
+                return { success: false, error: error.message };
+            }
         }
 
-        // 4. Disparar propagación + persist Cost Engine DESDE esa semana
-        const prop = await recalcSnapshotsAndPersistOvertimeCost(
+        const prop = await writeProjectionFromWeek(
             supabase,
             userId,
-            weekStart,
+            weekMonday,
+            'recalc',
         );
         if (!prop.ok) {
-            console.error('Error in RPC+persist (togglePreferStockStatus):', prop.error);
             return { success: false, error: prop.error };
         }
 
-        // 5. Revalidar paths
         revalidatePath('/staff/history');
         revalidatePath('/dashboard/overtime');
         revalidatePath('/dashboard');
@@ -279,57 +254,60 @@ export async function updateWeeklyWorkerConfig(
     const supabase = await createClient();
 
     try {
-        // 1. Prepare Snapshot Data
-        const startDate = new Date(weekStart);
-        const endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + 6);
-        const weekEnd = endDate.toISOString().split('T')[0];
+        const weekMonday = mondayOnOrBefore(weekStart.split('T')[0]! as CivilDate);
+        const { weekEnd } = weekBounds(weekMonday);
 
-        const snapshotData: any = {
-            user_id: userId,
-            week_start: weekStart,
-            week_end: weekEnd,
-            // Fallbacks for insert
-            total_hours: 0,
-            balance_hours: 0,
-            pending_balance: 0,
-            final_balance: 0,
-            is_paid: false
-        };
+        // Solo columnas B (overrides). contractedHours es C → lo materializa el Writer/HE.
+        const hasB =
+            updates.preferStock !== undefined ||
+            updates.overtimeCostPerHour !== undefined;
 
-        if (updates.contractedHours !== undefined) {
-            snapshotData.contracted_hours_snapshot = updates.contractedHours;
-        }
-        if (updates.preferStock !== undefined) {
-            snapshotData.prefer_stock_hours_override = updates.preferStock;
-        }
-        if (updates.overtimeCostPerHour !== undefined) {
-            // null = quitar override; número (incl. 0) = override activo
-            snapshotData.overtime_price_snapshot = updates.overtimeCostPerHour;
-        }
-
-        // 2. Perform upsert if there are overrides
-        if (Object.keys(snapshotData).length > 8) { // basic fields count + overrides
-            const { error: snapshotError } = await supabase
+        if (hasB) {
+            const { data: existing } = await supabase
                 .from('weekly_snapshots')
-                .upsert(snapshotData, { onConflict: 'user_id, week_start' });
+                .select('id')
+                .eq('user_id', userId)
+                .eq('week_start', weekMonday)
+                .maybeSingle();
 
-            if (snapshotError) throw snapshotError;
+            const bPatch: Record<string, unknown> = {};
+            if (updates.preferStock !== undefined) {
+                bPatch.prefer_stock_hours_override = updates.preferStock;
+            }
+            if (updates.overtimeCostPerHour !== undefined) {
+                bPatch.overtime_price_snapshot = updates.overtimeCostPerHour;
+            }
+
+            if (existing) {
+                const { error: snapshotError } = await supabase
+                    .from('weekly_snapshots')
+                    .update(bPatch)
+                    .eq('id', existing.id);
+                if (snapshotError) throw snapshotError;
+            } else {
+                const { error: snapshotError } = await supabase
+                    .from('weekly_snapshots')
+                    .insert({
+                        user_id: userId,
+                        week_start: weekMonday,
+                        week_end: weekEnd,
+                        contracted_hours_snapshot: 0,
+                        ...bPatch,
+                    });
+                if (snapshotError) throw snapshotError;
+            }
         }
 
-        // 3. Process logs: batch delete + single upsert (escalabilidad)
+        // Process logs: batch delete + single upsert (escalabilidad)
         if (updates.logs && updates.logs.length > 0) {
             const logs = updates.logs as any[];
 
-            // 3a. Batch delete de registros marcados como eliminados
             const idsToDelete = logs.filter((l) => l.is_deleted && l.id).map((l) => l.id);
             if (idsToDelete.length > 0) {
                 const { error: delErr } = await supabase.from('time_logs').delete().in('id', idsToDelete);
                 if (delErr) throw delErr;
             }
 
-            // 3b. Separar updates (con id) e inserts (sin id → DEFAULT gen_random_uuid()).
-            // Upsert con id:null viola NOT NULL y anula el default de la columna.
             const toUpdate: Record<string, unknown>[] = [];
             const toInsert: Record<string, unknown>[] = [];
 
@@ -380,11 +358,11 @@ export async function updateWeeklyWorkerConfig(
             }
         }
 
-        // 4. Trigger propagation + persist Cost Engine
-        const prop = await recalcSnapshotsAndPersistOvertimeCost(
+        const prop = await writeProjectionFromWeek(
             supabase,
             userId,
-            weekStart,
+            weekMonday,
+            'recalc',
         );
         if (!prop.ok) throw new Error(prop.error);
 
@@ -401,8 +379,6 @@ export async function updateWeeklyWorkerConfig(
 
 /**
  * Crea un fichaje (entrada) en nombre de un empleado. Solo managers.
- * El registro es igual que si el empleado hubiera fichado: time_logs con clock_in, clock_out null.
- * Tras insertar se recalculan snapshots (horas) y se persiste total_cost vía Cost Engine.
  */
 export async function createManagerFichaje(userId: string, dateStr: string, timeStr: string): Promise<{ success: boolean; error?: string }> {
     try {
@@ -429,19 +405,12 @@ export async function createManagerFichaje(userId: string, dateStr: string, time
 
         if (insertErr) throw insertErr;
 
-        const weekStart = (() => {
-            const date = new Date(y, m - 1, d);
-            const dayOfWeek = date.getDay();
-            const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-            const monday = new Date(date);
-            monday.setDate(date.getDate() - daysToMonday);
-            return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
-        })();
-
-        const prop = await recalcSnapshotsAndPersistOvertimeCost(
+        const weekMonday = mondayOnOrBefore(dateStr as CivilDate);
+        const prop = await writeProjectionFromWeek(
             supabase,
             userId,
-            weekStart,
+            weekMonday,
+            'fichaje',
         );
         if (!prop.ok) throw new Error(prop.error);
 
@@ -457,7 +426,6 @@ export async function createManagerFichaje(userId: string, dateStr: string, time
 
 /**
  * Elimina todos los registros de asistencia de un trabajador para un día concreto. Solo managers.
- * Tras la eliminación se recalculan snapshots (horas) y se persiste total_cost vía Cost Engine.
  */
 export async function deleteManagerDayLogs(userId: string, dateStr: string): Promise<{ success: boolean; error?: string }> {
     try {
@@ -471,8 +439,6 @@ export async function deleteManagerDayLogs(userId: string, dateStr: string): Pro
         const [y, m, d] = dateStr.split('-').map(Number);
         if (!y || !m || !d) return { success: false, error: 'Fecha inválida' };
 
-        // Mismo criterio de día que get_monthly_timesheet / get_worker_weekly_log_grid (Europe/Madrid).
-        // En Vercel el servidor usa UTC; new Date(y,m-1,d) no coincide con el día civil de Madrid.
         const { startIso, endIso } = madridDayUtcRangeIso(dateStr);
 
         const { data: deletedRows, error: deleteErr } = await supabase
@@ -488,20 +454,12 @@ export async function deleteManagerDayLogs(userId: string, dateStr: string): Pro
             return { success: false, error: 'No se encontró ningún fichaje para ese día' };
         }
 
-        // Calcular el lunes de esa semana para la propagación
-        const weekStart = (() => {
-            const date = new Date(y, m - 1, d);
-            const dayOfWeek = date.getDay();
-            const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-            const monday = new Date(date);
-            monday.setDate(date.getDate() - daysToMonday);
-            return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
-        })();
-
-        const prop = await recalcSnapshotsAndPersistOvertimeCost(
+        const weekMonday = mondayOnOrBefore(dateStr as CivilDate);
+        const prop = await writeProjectionFromWeek(
             supabase,
             userId,
-            weekStart,
+            weekMonday,
+            'fichaje',
         );
         if (!prop.ok) throw new Error(prop.error);
 
