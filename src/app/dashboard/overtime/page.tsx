@@ -264,7 +264,7 @@ export default function OvertimePage() {
                                             }
                                             const isFullyPaid = week.staff?.every((s: any) => {
                                                 const cost = (s.totalCost ?? (s as any).amount ?? 0);
-                                                return cost < 0.05 || !!s.isPaid || s.preferStock === true;
+                                                return cost < 0.05 || !!s.isPaid;
                                             });
                                             const weekTotal = week.totalAmount ?? 0;
                                             const weekStart = parseLocalYmd(week.weekId);
@@ -314,7 +314,7 @@ export default function OvertimePage() {
             {weekDetailModal && (() => {
                 const weekStaff = (weekDetailModal.week.staff ?? []).filter((s: any) => {
                     const cost = (s.totalCost ?? s.amount ?? 0);
-                    return cost > 0.05 && s.preferStock !== true;
+                    return cost > 0.05;
                 });
                 const weekTotal = weekStaff.reduce((sum: number, s: any) => sum + (s.totalCost ?? s.amount ?? 0), 0);
                 const modalWeekStart = parseLocalYmd(weekDetailModal.week.weekId);

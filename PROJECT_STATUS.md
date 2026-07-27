@@ -1,6 +1,18 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-27 (Uso: incluir Ramon en filtro)
+**Última actualización:** 2026-07-27 (ADR-HE-SSOT-001 CONGELADO)
+
+- [x] **ADR-HE-SSOT-001 congelado (2026-07-27)**: Hours Engine = único productor. `weekly_snapshots` = proyección persistida. Lectura oficial: hechos → HE (write) → snapshots → Read Model → DTO → UI. Semilla global: `carryIn(timelineStart)=0`. Plan cutover Fases 0b–5. Doc: [`docs/ADR-HE-SSOT-001.md`](docs/ADR-HE-SSOT-001.md). **Sin implementación de cutover aún.**
+
+**Última actualización anterior:** 2026-07-27 (Dashboard semana = WeekCard history)
+
+- [x] **Vista semana Dashboard = `/staff/history` (2026-07-27)**: Una sola representación visual (`WeekCard`). `WorkerWeeklyHistoryModal` deja de pintar UI propia; carga `HistoryWeekDto` vía `getEmployeeHistoryWeek` (mismo read-model HE que history) y renderiza `WeekCard` con `readOnly`. Sin editar/overrides/clics. Sin WeekCardLite/Dashboard/Readonly duplicados.
+
+**Última actualización anterior:** 2026-07-27 (Read-model semana = Hours Engine SSOT)
+
+- [x] **Read-model semana unificado con HE/Cost (2026-07-27)**: Eliminado `footerFromSnapshot` (derivaba extras/importe/bolsa desde columnas crudas). DTO de pintura vía `week-display-from-engine.ts` ← `liquidateWeekForCard`. History/Overtime/Dashboard/Labor/Insights leen HE. UI pinta sin interpretar bolsa/carry. Invariantes: `carryOut<0` ⇒ extras=importe=0. Caso Pere W30 (deuda+bolsa) resuelto sin parche.
+
+**Última actualización anterior:** 2026-07-27 (Uso: incluir Ramon en filtro)
 
 - [x] **`/dashboard/uso` muestra Ramon (2026-07-27)**: El filtro de analytics ya no aplica `HIDDEN_PLANTILLA_FIRST_NAMES` (`ramon`/`empleado`). `fogotorrat@gmail.com` (Ramon Sole) aparece y su actividad se agrega. La exclusión de plantilla operativa se mantiene en propinas/horario/etc.
 

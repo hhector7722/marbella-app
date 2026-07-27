@@ -4,7 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { getISOWeek, format, addDays, parseISO } from 'date-fns';
 import { getBusinessHourFromTicket } from '@/lib/utils';
 import { filterVisiblePlantillaEmployees } from '@/lib/staff/plantilla-employees';
-import { buildOvertimeWeeksFromSnapshots } from '@/lib/read-models/weekly-snapshot-dto';
+import { buildOvertimeWeeksFromSsot } from '@/lib/hours-engine/overtime-weeks-ssot';
 
 export async function getDashboardData() {
     const supabase = await createClient();
@@ -162,7 +162,7 @@ export async function getDashboardData() {
     const todayISO = format(new Date(), 'yyyy-MM-dd');
 
     try {
-        const ot = await buildOvertimeWeeksFromSnapshots(supabase, {
+        const ot = await buildOvertimeWeeksFromSsot(supabase, {
             startDate: sixtyDaysAgo,
             endDate: todayISO,
             onlyCompletedWeeks: true,

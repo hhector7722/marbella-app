@@ -479,10 +479,13 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto "prompt-ready"**. Debe 
 
 <!-- sync:project-status:start — NO EDITAR A MANO; generado por `scripts/sync-llm-prompt-from-project-status.mjs` -->
 
-**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-27 (Uso: incluir Ramon en filtro)
+**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-27 (ADR-HE-SSOT-001 CONGELADO)
 
 Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; máx. 45 entradas):
 
+- **ADR-HE-SSOT-001 congelado (2026-07-27)**: Hours Engine = único productor. `weekly_snapshots` = proyección persistida. Lectura oficial: hechos → HE (write) → snapshots → Read Model → DTO → UI. Semilla global: `carryIn(timelineStart)=0`. Plan cutover Fases 0b–5. Doc: [`docs/ADR-HE-SSOT-001.md`](docs/ADR-HE-SSOT-001.md). **Sin implementación de cutover aún.**
+- **Vista semana Dashboard = `/staff/history` (2026-07-27)**: Una sola representación visual (`WeekCard`). `WorkerWeeklyHistoryModal` deja de pintar UI propia; carga `HistoryWeekDto` vía `getEmployeeHistoryWeek` (mismo read-model HE que history) y renderiza `WeekCard` con `readOnly`. Sin editar/overrides/clics. Sin WeekCardLite/Dashboard/Readonly duplicados.
+- **Read-model semana unificado con HE/Cost (2026-07-27)**: Eliminado `footerFromSnapshot` (derivaba extras/importe/bolsa desde columnas crudas). DTO de pintura vía `week-display-from-engine.ts` ← `liquidateWeekForCard`. History/Overtime/Dashboard/Labor/Insights leen HE. UI pinta sin interpretar bolsa/carry. Invariantes: `carryOut<0` ⇒ extras=importe=0. Caso Pere W30 (deuda+bolsa) resuelto sin parche.
 - **`/dashboard/uso` muestra Ramon (2026-07-27)**: El filtro de analytics ya no aplica `HIDDEN_PLANTILLA_FIRST_NAMES` (`ramon`/`empleado`). `fogotorrat@gmail.com` (Ramon Sole) aparece y su actividad se agrega. La exclusión de plantilla operativa se mantiene en propinas/horario/etc.
 - **Fix modal Plantilla vacío en `/master/dashboard` (2026-07-27)**: Tras quitar SSR de `getDashboardData`, `MasterDashboardView` no cargaba `allEmployees`. Carga en cliente **solo al abrir** el modal (`profiles` con `visible_in_plantilla=true`), sin impacto en el montaje de la página.
 - **`/profile/contrato` editar/borrar tramos (2026-07-27)**: Editar un tramo (condiciones o fechas) **no crea tramos nuevos** (`persistTermBoundsReschedule` / rewrite). Eliminar tramo: `deleteContractTerm` — el anterior absorbe el rango; no se puede borrar el único. Recalc + persist Cost tras cambio. UI: «Editar condiciones vigentes» + «Nueva vigencia desde fecha» (splice opcional) + botón Eliminar. Tests versioning ampliados.
@@ -525,8 +528,5 @@ Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; m
 - **Shadow Mode Commit 6 — Runner in-memory (2026-07-24)**: `executeShadowRun` orquesta subjects→facts→adapters→compare→classify→`ShadowRunResult` sin persistir. Puertos inyectables + fixtures. Determinista con clock/runId fijos.
 - **Shadow Mode Commits 1–5 (2026-07-24)**: Dominio `src/lib/shadow/` — Canonical Vector, adapters HE/SQL, Discrepancy+lifecycle, comparator, classifier D000–D017.
 - **Asistencia celda: fuente dinámica etiqueta especial (2026-07-24)**: Día solo F/E/B/P → nombre completo centrado con tamaño Tailwind adaptativo (12→7px) según ancho de celda (`ResizeObserver`), para que «Baja»/«Festivo» lean más grandes y «Enfermedad» no se corte.
-- **Asistencia celda: nombre completo y H+personal (2026-07-24)**: Día solo F/E/B/P → etiqueta completa centrada (`Festivo`, `Enfermedad`, …) sin círculo/letra. Día con fichaje + `justified_hours` → sin **P** esquina; fila `H 6 +1` con el `+1` en azul personal. Regular / no registrado sin cambio.
-- **Fix horas justificadas vs `idx_one_shift_per_day` (2026-07-23)**: La BD solo permite **un** `time_logs` por empleado/día. Columna `justified_hours` (migración aplicada). El modal suma el permiso en el mismo fichaje (`total_hours = trabajadas + justificadas`). Badge **P** si `justified_hours > 0`.
-- **Fix guardar horas justificadas (2026-07-23)**: El upsert de `time_logs` enviaba `id: null` en registros nuevos → `NOT NULL` y no persistían. Separados update (con id) e insert (sin id, usa `gen_random_uuid()`). Reloj sintético de justificadas a las 20:00 Madrid vía `fromZonedTime`.
 
 <!-- sync:project-status:end -->

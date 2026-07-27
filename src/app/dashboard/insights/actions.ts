@@ -2,7 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { z } from 'zod'
-import { buildLaborCostPeriodFromSnapshots } from '@/lib/read-models/weekly-snapshot-dto'
+import { buildLaborCostPeriodFromSsot } from '@/lib/hours-engine'
 import { getBusinessHourFromTicket } from '@/lib/utils'
 import {
   hourlyProfitabilityRowSchema,
@@ -188,7 +188,7 @@ export async function getHourlySalesVsLabor(
       .select('total_documento, fecha, hora_cierre, fecha_real')
       .gte('fecha', from)
       .lte('fecha', to),
-    buildLaborCostPeriodFromSnapshots(gate.supabase, {
+    buildLaborCostPeriodFromSsot(gate.supabase, {
       startDate: from,
       endDate: to,
     }),

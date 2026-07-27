@@ -76,9 +76,26 @@ interface WeekCardProps {
         preferStock: boolean,
         overtimeCostPerHour: number | null
     ) => Promise<{ success: boolean; error?: string }>;
+    /**
+     * Solo lectura: misma pintura que history; sin clics de día ni overrides.
+     * Usado por Dashboard → Horas Extras → empleado.
+     */
+    readOnly?: boolean;
 }
 
-export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showWeekOverrides, userId, onApplyWeekOverrides }: WeekCardProps) {
+export function WeekCard({
+    week,
+    idx,
+    filterMonth,
+    filterYear,
+    onDayClick,
+    showWeekOverrides,
+    userId,
+    onApplyWeekOverrides,
+    readOnly = false,
+}: WeekCardProps) {
+    const interactive = !readOnly;
+    const overridesEnabled = interactive && !!showWeekOverrides;
     const [managerOverridesOpen, setManagerOverridesOpen] = useState(false);
     const [localContracted, setLocalContracted] = useState<string>(
         week.summary.limitHours !== undefined && week.summary.limitHours !== null 
@@ -110,11 +127,11 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
     const weekStartKey = typeof week.startDate === 'string' ? week.startDate.split('T')[0] : String(week.startDate);
     React.useEffect(() => {
         setManagerOverridesOpen(false);
-    }, [weekStartKey, week.weekNumber, showWeekOverrides, userId]);
+    }, [weekStartKey, week.weekNumber, overridesEnabled, userId]);
 
 
     const handleApplyOverrides = async () => {
-        if (!userId || !onApplyWeekOverrides) return;
+        if (!interactive || !userId || !onApplyWeekOverrides) return;
         setSavingOverrides(true);
         try {
             const contractedValue = localContracted === "" ? 0 : Number(localContracted);
@@ -192,10 +209,11 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                     return (
                         <div
                             key={di}
-                            onClick={() => onDayClick(day.date)}
+                            onClick={interactive ? () => onDayClick(day.date) : undefined}
                             className={cn(
-                                "relative border-r border-gray-100 last:border-r-0 min-h-[85px] flex flex-col items-center p-1 pb-1 cursor-pointer transition-colors",
-                                "bg-white hover:bg-zinc-50",
+                                "relative border-r border-gray-100 last:border-r-0 min-h-[85px] flex flex-col items-center p-1 pb-1 transition-colors",
+                                "bg-white",
+                                interactive ? "cursor-pointer hover:bg-zinc-50" : "cursor-default",
                                 day.isToday && !isOtherMonth && "bg-blue-50/10"
                             )}
                         >
@@ -301,7 +319,7 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
             <div
                 className={cn(
                     'bg-white border-t border-gray-100 relative z-10 flex w-full items-stretch pr-14 md:pr-16',
-                    showWeekOverrides ? 'min-h-[48px]' : 'min-h-8 py-0.5'
+                    overridesEnabled ? 'min-h-[48px]' : 'min-h-8 py-0.5'
                 )}
             >
                 {week.summary.isPaid && (
@@ -313,7 +331,7 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                 )}
                 {/* «SEMANA N»: solo esta etiqueta, centrada en vertical en toda la altura de la fila */}
                 <div className="flex min-h-0 shrink-0 items-center self-stretch pl-3 min-w-[6.5rem]">
-                    {showWeekOverrides ? (
+                    {overridesEnabled ? (
                         <button
                             type="button"
                             onClick={() => setManagerOverridesOpen((o) => !o)}
@@ -365,7 +383,7 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                         </div>
                         <div className="row-start-1 col-start-4 flex items-end justify-center self-stretch">
                             <span className="pb-0.5 text-[11px] md:text-[12px] font-black leading-none text-emerald-600 tabular-nums">
-                                {(week.summary.estimatedValue ?? 0) > 0.05 && week.summary.preferStock !== true
+                                {(week.summary.estimatedValue ?? 0) > 0.05
                                     ? fmtMoney(week.summary.estimatedValue)
                                     : '\u00a0'}
                             </span>
@@ -386,7 +404,7 @@ export function WeekCard({ week, idx, filterMonth, filterYear, onDayClick, showW
                 </div>
             </div>
 
-            {showWeekOverrides && managerOverridesOpen && userId && onApplyWeekOverrides && (
+            {overridesEnabled && managerOverridesOpen && userId && onApplyWeekOverrides && (
                 <div className="bg-zinc-50 border-t border-gray-100 flex flex-wrap items-center gap-2 px-3 py-2 shrink-0">
                     <div className="flex items-center gap-1.5">
                         <span className="text-[7px] font-black text-zinc-500 uppercase tracking-widest">Overtime</span>

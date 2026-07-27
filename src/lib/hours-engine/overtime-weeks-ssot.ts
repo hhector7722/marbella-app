@@ -19,9 +19,8 @@ import {
   type EmployeeBoundaryFacts,
 } from '@/lib/hours-engine';
 import { formatYmdInMadrid, madridRangeUtcIso } from '@/lib/madrid-date-bounds';
-import {
-  filterVisiblePlantillaEmployees,
-} from '@/lib/staff/plantilla-employees';
+import { filterVisiblePlantillaEmployees } from '@/lib/staff/plantilla-employees';
+import { weekDisplayFromEngine } from '@/lib/read-models/week-display-from-engine';
 
 export interface StaffWeeklyStats {
   id: string;
@@ -231,13 +230,16 @@ export async function buildOvertimeWeeksFromSsot(
         overrideRate,
       });
 
+      // Invariantes display (carryOut<0 → extras/importe 0; bolsa → importe 0)
+      const display = weekDisplayFromEngine(result, summary, bagModeOverride);
+
       carryIn = result.carryOut;
 
       const hasActivity =
         weekLogs.length > 0 ||
-        Math.abs(summary.estimatedValue) > 0.005 ||
-        Math.abs(summary.weeklyBalance) > 0.005 ||
-        Math.abs(summary.finalBalance) > 0.005 ||
+        Math.abs(display.estimatedValue) > 0.005 ||
+        Math.abs(display.weeklyBalance) > 0.005 ||
+        Math.abs(display.finalBalance) > 0.005 ||
         (snapsRes.data ?? []).some(
           (s) => String(s.week_start).split('T')[0] === weekStart,
         );
@@ -248,17 +250,17 @@ export async function buildOvertimeWeeksFromSsot(
         id: profile.id,
         name: displayName,
         role,
-        totalHours: summary.totalHours,
+        totalHours: display.totalHours,
         regularHours: Math.max(
           0,
-          summary.totalHours - Math.max(0, summary.weeklyBalance),
+          display.totalHours - Math.max(0, display.weeklyBalance),
         ),
-        overtimeHours: Math.max(0, summary.weeklyBalance),
-        totalCost: summary.estimatedValue,
+        overtimeHours: Math.max(0, display.weeklyBalance),
+        totalCost: display.estimatedValue,
         regularCost: 0,
-        overtimeCost: summary.estimatedValue,
-        isPaid: summary.isPaid,
-        preferStock: summary.preferStock,
+        overtimeCost: display.estimatedValue,
+        isPaid: display.isPaid,
+        preferStock: display.preferStock,
       };
 
       staffByWeek.get(weekStart)!.push(row);

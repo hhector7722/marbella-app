@@ -5,10 +5,10 @@ import { madridDayUtcRangeIso } from "@/lib/madrid-date-bounds";
 import { calculateRoundedHours } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
 import {
-    buildOvertimeWeeksFromSnapshots,
-    type StaffWeeklyStatsDto as StaffWeeklyStats,
-    type WeeklyStatsDto as WeeklyStats,
-} from '@/lib/read-models/weekly-snapshot-dto';
+    buildOvertimeWeeksFromSsot,
+    type StaffWeeklyStats,
+    type WeeklyStats,
+} from '@/lib/hours-engine/overtime-weeks-ssot';
 import { recalcSnapshotsAndPersistOvertimeCost } from '@/lib/hours-engine';
 
 export type { StaffWeeklyStats, WeeklyStats };
@@ -81,12 +81,12 @@ const EMPTY_OVERTIME = {
 
 /**
  * Listado de horas extras / nómina semanal.
- * Fuente: weekly_snapshots persistidos (sin Hours/Cost Engine en lectura).
+ * Fuente: Hours Engine + Cost Engine (liquidateWeekForCard) vía read-model SSOT.
  */
 export async function getOvertimeData(startDate: string, endDate: string, userId?: string) {
     try {
         const supabase = await createClient();
-        return await buildOvertimeWeeksFromSnapshots(supabase, {
+        return await buildOvertimeWeeksFromSsot(supabase, {
             startDate,
             endDate,
             userId: userId ?? null,
