@@ -568,7 +568,8 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 <div className="flex items-center justify-center min-h-[88px] py-4" role="status" aria-label="Cargando caja">
                     <LoadingSpinner size="md" className="text-emerald-600" />
                 </div>
-            ) : boxes.filter(b => b.type === 'operational').map(box => (
+            ) : (
+                boxes.filter(b => b.type === 'operational').map(box => (
                         <div key={box.id} className="flex flex-col h-full">
                             <div className="flex flex-row gap-1.5 md:gap-2 items-center">
                                 <div className="flex items-center gap-1 shrink-0">
@@ -655,7 +656,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                 </div>
                             </div>
                         </div>
-                    ))}
+                ))
             )}
         </div>
     );
