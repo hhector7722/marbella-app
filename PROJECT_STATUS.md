@@ -1,6 +1,22 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-28 (Dashboards: shell instantáneo + OT master 1 semana)
+**Última actualización:** 2026-07-28 (Cierre caja: Esperado no se anula a 0)
+
+- [x] **Cierre caja — Esperado con fallback BDP (2026-07-28)**: Si `ventas − tarjeta − pendiente` queda negativo (p.ej. Ventas/Tarjeta del papel + Pendiente BDP), ya no se clampa a 0 ni el descuadre = efectivo entero. Fallback a `cobro_efectivo` del RPC `get_closing_sales_breakdown`. Paso 1 vuelve a mostrar **Pendiente** y **Cobros**. Toast al avanzar si se usa el fallback. [`CashClosingModal.tsx`](src/components/CashClosingModal.tsx).
+
+**Última actualización anterior:** 2026-07-28 (Pedido proveedor: se mantiene estilo legacy)
+
+- [x] **Pedido a proveedor — estilo legacy confirmado (2026-07-28)**: Preview DS v2 **rechazado**. Producción sigue en [`pdf-generator.ts`](src/utils/orders/pdf-generator.ts) (petroleum). Variante preview eliminada. Jornada/encargos permanecen en DS v2.
+
+**Última actualización anterior:** 2026-07-28 (PDFs → Design System v2; pedido proveedor en preview)
+
+- [x] **Migración PDF → Design System v2.0 (2026-07-28)**: Jornada/plantilla/simulación (`timesheet-pdf.ts`) y encargos/factura (`print-encargo-document.ts`) usan el kit DS v2. **Pedido a proveedor** sigue en legacy (`pdf-generator.ts`); preview visual en `tmp/preview-pedido-proveedor-ds-v2.pdf` vía `scripts/preview-order-pdf-ds-v2.ts` + `pdf-generator-ds-v2.ts` — pendiente aceptación. Preview jornada: `tmp/preview-jornada-ds-v2.pdf`.
+
+**Última actualización anterior:** 2026-07-28 (PDF Design System v2.0 — kit para PDFs nuevos)
+
+- [x] **PDF Design System v2.0 (2026-07-28)**: Kit reutilizable para **PDFs nuevos** según manual editorial (`#1F5FAF`, retícula 8pt, A4/pt, cabecera/pie, KPI, tablas, alertas). Código: [`src/lib/pdf/design-system-v2/`](src/lib/pdf/design-system-v2/). Manual: [`docs/design-system/Marbella-PDF-Design-System-v2.0.pdf`](docs/design-system/Marbella-PDF-Design-System-v2.0.pdf). Regla Cursor: [`.cursor/rules/pdf-design-system-v2.mdc`](.cursor/rules/pdf-design-system-v2.mdc). Preview: `scripts/preview-pdf-design-system-v2.ts` → `tmp/preview-design-system-v2.pdf`. **Legacy intacto** (pedidos, timesheet, encargos).
+
+**Última actualización anterior:** 2026-07-28 (Dashboards: shell instantáneo + OT master 1 semana)
 
 - [x] **Shell instantáneo en `/dashboard`, `/master/dashboard`, `/staff/dashboard` (2026-07-28)**: Sin spinner a pantalla completa. Admin: tesorería/ventas/OT con spinner por sección. Master: OT solo última semana completada (no 60d); spinner en C INICIAL / H. extras / ventas. Staff: calendario+HE y fichaje cargan en paralelo; spinner en tarjeta semana y botón fichaje; atajos usables al montar.
 
