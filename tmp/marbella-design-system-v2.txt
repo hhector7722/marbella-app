@@ -1,0 +1,463 @@
+Barcelona
+Editorial       de mando
+24 páginas
+2.0 —   2026    Informes & cuadros
+VERSIÓN     PUBLICACIÓN   ALCANCE
+y el rigor de una marca de primer nivel. 
+mando y documentos de Bar La Marbella con la claridad
+Un sistema editorial para diseñar informes, cuadros de
+System 
+MANUAL DE IDENTIDAD VISUAL CORPORATIVA
+Design
+MARBELLA
+----------------Page (0) Break----------------
+Marbella PDF Design System                                       02
+Contraportada
+24
+Checklist final
+23
+Composición de páginas
+11
+Errores comunes
+22
+Portadas de sección
+10
+Buenas prácticas
+21
+Cabeceras y pies
+09
+Ejemplos de informes
+20
+Retícula
+08
+04 · APLICACIÓN Y CIERRE
+Sistema de espaciado
+07
+Fotografía
+19
+02 · ESTRUCTURA
+Iconografía
+18
+Tipografía
+06
+Líneas temporales
+17
+Paleta de color
+05
+Checklists
+16
+Identidad de marca             Alertas
+04                15
+Gráficos
+14
+Filosofía visual
+03
+Tablas
+13
+Índice
+02
+Portada                  Tarjetas KPI
+01                12
+01 · FUNDAMENTOS                   03 · COMPONENTES
+aplicación y cierre.
+24 páginas organizadas en cuatro bloques: fundamentos, componentes,
+Índice
+SUMARIO
+MARBELLA                                     DESIGN SYSTEM · V2.0
+----------------Page (1) Break----------------
+Filosofía visual                                            03
+empezar.                      evidente.
+Bloques apilados sin aire. La vista no sabe dónde Un único mensaje por bloque, mucho margen, jerarquía
+Denso            EVITAR       Editorial         MARBELLA
+ANTES / DESPUÉS
+Menos es más    Espacio en blanco Paleta acotada   Datos primero   Consistencia total
+jerarquía visual, espacio en blanco y una paleta contenida.
+Cada documento debe leerse en menos de 30 segundos. El diseño elimina lo innecesario y prioriza
+Claridad antes que decoración
+FILOSOFÍA VISUAL
+MARBELLA                                      01 · FUNDAMENTOS
+----------------Page (2) Break----------------
+Identidad de marca                                           04
+Minimalismo    Consistencia    Legibilidad    Profesionalidad  Corporativo
+NO DEFORMAR       NO RECOLOREAR        NO ROTAR       NO BAJO CONTRASTE
+MARBELLA
+MARBELLA        MARBELLA                 MARBELLA
+USO INCORRECTO DEL LOGOTIPO
+"M".
+Nunca reducir por debajo de la versión izquierda.
+El espacio libre mínimo equivale a la altura de la marca
+MARBELLA
+MARBELLA
+MARBELLA                 MARBELLA
+Área de resguardo    CLEARSPACE        Tamaño mínimo         10 MM
+El logotipo, el color y la tipografía deben repetirse exactamente igual en cada informe, sin excepción.
+Un mismo ecosistema visual
+IDENTIDAD DE MARCA
+MARBELLA                                      01 · FUNDAMENTOS
+----------------Page (3) Break----------------
+Paleta de color                                            05
+posible.                      importa.
+Cada tarjeta compite por la atención. No hay jerarquíaEl azul aparece una sola vez, en el dato que de verdad
+KPI   KPI   KPI   KPI   KPI        KPI   KPI   KPI   KPI   KPI
+Demasiados acentos      EVITAR       Un único énfasis      MARBELLA
+APLICACIÓN CORRECTA VS. INCORRECTA
+El azul corporativo nunca supera el 10% de la superficie de una página.
+62% blanco                 22% gris claro   9%    7%
+PROPORCIÓN REAL DE USO EN UNA PÁGINA
+#1F5FAF       #4F8EDC     #2F3A45     #6B7280     #D9E2EC     #FFFFFF
+Azul corporativo  Azul claro   Gris oscuro  Gris medio   Gris claro   Blanco
+El azul corporativo se reserva para lo esencial. El resto del sistema vive en tonos neutros.
+Un azul, muchos grises, todo el blanco necesario
+PALETA DE COLOR
+MARBELLA                                      01 · FUNDAMENTOS
+----------------Page (4) Break----------------
+Tipografía                                               06
+Tres familias tipográficas distintas en un mismo bloque.Inter en todos los pesos: solo cambia el peso y el tamaño.
+Comparativa frente a la semana anterior   Comparativa frente a la semana anterior
+Ventas totales: 4.280 €
+Ventas totales: 4.280 €
+Informe Semanal     Informe Semanal
+Mezcla de familias      EVITAR       Una sola familia      MARBELLA
+COHERENCIA TIPOGRÁFICA
+10 pt · Regular
+Texto de párrafo para lectura continua
+14 pt · Medium
+Subtítulo de bloque
+18 pt · Bold · cabeceras
+Título de sección
+28 pt · Bold · portadas
+Título principal
+ESCALA TIPOGRÁFICA
+Regular · 400      Medium · 500       SemiBold · 600      Bold · 700
+Aa  Aa  Aa  Aa
+Inter en toda la documentación. Cinco niveles de jerarquía, nunca más.
+Una sola familia, jerarquía marcada
+TIPOGRAFÍA
+MARBELLA                                      01 · FUNDAMENTOS
+----------------Page (5) Break----------------
+Sistema de espaciado                                          07
+16 pt de separación constante entre tarjetas.
+Tarjetas pegadas entre sí, sin separación perceptible.
+312
+31%
+TICKETS
+MARGEN
+312
+TICKETS
+2.480 €
+2.480€
+VENTAS
+VENTAS
+Sin aire           EVITAR       Retícula de 8pt      MARBELLA
+DENSIDAD CORRECTA
+contenido
+Párrafo Tarjetas Bloques Título → Secciones Portadas Márgenes
+8
+12
+16
+24
+32
+48
+64
+ESCALA DE ESPACIADO
+Una unidad base de 8 pt gobierna cada margen, cada separación y cada tarjeta del sistema.
+Todo se mide en múltiplos de 8
+SISTEMA DE ESPACIADO
+MARBELLA                                       02 · ESTRUCTURA
+----------------Page (6) Break----------------
+Retícula                                                08
+Ancho máximo de texto
+8 columnas
+Márgenes laterales / verticales
+36 / 32 pt
+8 columnas de ancho de texto máx.
+Gutter entre columnas
+16 pt
+margen superior 32pt
+Retícula base
+12 columnas
+Formato de página
+A4 vertical
+Cada elemento se alinea a la misma retícula. El lector nunca la ve, pero la nota en la calma del documento.
+12 columnas, invisibles para el lector
+RETÍCULA
+MARBELLA                                       02 · ESTRUCTURA
+----------------Page (7) Break----------------
+Cabeceras y pies                                            09
+esquina inferior izquierda                    siempre a la derecha
+1               2 Versión, opcional, centrada 3
+Nombre del documento en la                    Numeración de página,
+Marbella PDF Design System               v2.0                  09
+ANATOMÍA DEL PIE
+la izquierda           a la derecha           gris claro
+1               2               3
+Logotipo discreto, alineado a  Título del documento, alineado  Línea divisoria de 0,5 pt en
+MARBELLA                              INFORME SEMANAL · 20-26 JUL
+logotipo
+ANATOMÍA DE LA CABECERA
+La cabecera y el pie nunca compiten con el contenido. Son un hilo conductor silencioso.
+Continuidad discreta en cada página
+CABECERAS Y PIES
+MARBELLA                                       02 · ESTRUCTURA
+----------------Page (8) Break----------------
+Portadas de sección                                          10
+secciones
+Un único título por página Sin tablas ni gráficos Fondo blanco o tinta planaMismo layout en todas las
+REGLAS
+comparativa          rendimiento
+Evolución semanal y      Turnos, propinas y       Consumo, mermas y pedidos
+Ventas    Personal   Inventario
+BLOQUE 01              BLOQUE 02              BLOQUE 03
+nada más.
+Cada bloque importante del informe se abre con una página de sección: título grande, un solo mensaje,
+Un respiro entre bloques de contenido
+PORTADAS DE SECCIÓN
+MARBELLA                                       02 · ESTRUCTURA
+----------------Page (9) Break----------------
+Composición de páginas                                         11
+Seis páginas de seis informes distintos. La retícula, la cabecera y el pie son siempre idénticos.
+La misma estructura, distinto contenido
+COMPOSICIÓN DE PÁGINAS
+MARBELLA                                       02 · ESTRUCTURA
+----------------Page (10) Break----------------
+Tarjetas KPI                                              12
+El detalle vive en la tabla de abajo, no en la tarjeta.
+Cuatro mensajes distintos en una sola tarjeta.
+▲ 12,4%
+7,95€
++12,4% vs ayer · +4,1% vs media · 312 tickets · ticket medio
+2.480,32 €
+2.480 €
+AYER Y LA MEDIA MENSUAL
+VENTAS HOY
+VENTAS TOTALES DEL DÍA DE HOY COMPARADAS CON
+Tarjeta sobrecargada     EVITAR       Un único mensaje      MARBELLA
+DENSIDAD DE INFORMACIÓN
+18.240 €
+SEMANAL      8,6%
+1,18     24,1%    1,9%
+FACTURACIÓN    ▲
+TJI EQUIPO       COSTE PERSONAL     MERMAS
+▲ 12,4%
+▼ 3,1%         ▲ 1,2 pp
+Pendiente de cierre
+2.480 €  312    31,4%   —
+VENTAS HOY        TICKETS         MARGEN BRUTO       SIN DATOS
+Ocho variantes reales: tamaños, estados y contextos distintos de la misma tarjeta base.
+Un indicador, una lectura, sin ambigüedad
+TARJETAS KPI
+MARBELLA                                      03 · COMPONENTES
+----------------Page (11) Break----------------
+Tablas                                                 13
+de totales.
+Sin jerarquía en cabecera · mayúsculas inconsistentes · decimales sin formato local · bordes gruesos que compiten con los datos · sin fila
+tapas y raciones variadas de cocina        204     1428.6   31,09%
+CAFETERIA                     311     932.1   20%
+bebidas frías                   482     1920.4   41,8%!!
+categoria                   UNIDADES    Importe      %
+EVITAR
+INCORRECTA
+Cabecera con contraste · filas alternadas · cifras alineadas a la derecha · totales con regla superior.
+Total                           1.093          4.593,10 €
+Postres                           96            312,00 €
+Tapas y raciones                      204           1.428,60 €
+Cafetería                         311           932,10 €
+Bebidas frías                       482           1.920,40 €
+Categoría                 Unidades                      Importe
+CORRECTA
+Cabecera azul, cifras a la derecha, zebra rows sutiles y una fila de totales que cierra la lectura.
+Datos alineados, sin ruido visual
+TABLAS
+MARBELLA                                      03 · COMPONENTES
+----------------Page (12) Break----------------
+Gráficos                                                14
+EVITAR
+MARBELLA
+etiquetas.
+6 8 %
+leyenda si no aporta valor.
+colores sin jerarquía, sin
+Un único dato protagonista, sin
+Relleno completo sin agujero, 4
+Donut
+Donut
+destacado.                     saber qué se compara.
+Una sola tendencia, sin grid dominante, punto finalCuatro series sin leyenda, rejilla saturada, imposible
+Líneas           MARBELLA        Líneas            EVITAR
+azul.                       flotantes sin criterio.
+Una serie, sin leyenda innecesaria, mes destacado enColores arbitrarios por barra, falso efecto 3D, etiquetas
+3DFX
++120%
+Barras           MARBELLA        Barras            EVITAR
+Barras, líneas y donuts en su versión editorial frente a los errores más frecuentes.
+Una idea por gráfico
+GRÁFICOS
+MARBELLA                                      03 · COMPONENTES
+----------------Page (13) Break----------------
+Alertas                                                15
+Revisar stock mínimo               Fallo de sincronización
+Datos provisionales               Cierre validado
+TAMAÑO COMPACTO — PARA TABLAS Y LISTAS
+No se ha podido completar la conexión con el TPV.
+Error
+Existen 3 valores pendientes de validar antes del cierre.
+Advertencia
+Sincronización completada sin incidencias.
+Éxito
+El informe contiene datos provisionales sujetos a revisión.
+Información
+TAMAÑO ESTÁNDAR
+Cuatro tipos, dos tamaños. Icono, color de fondo suave y texto breve orientado a la acción.
+Atención inmediata, sin romper la calma
+ALERTAS
+MARBELLA                                      03 · COMPONENTES
+----------------Page (14) Break----------------
+Checklists                                               16
+Gráficos consistentes
+Confirmar versión
+Revisión finalPendiente
+Tablas alineadas
+Comprobar ortografía
+mermas
+Pendiente
+DISEÑO
+Informe de
+Validar tablas y gráficos
+Cálculos revisados
+Cierre de cajaEn proceso
+Revisar cálculos y KPIs
+Fuentes verificadas
+ventas
+Completado
+Verificar fuentes de datos
+Datos de
+DATOS
+Simple             Agrupada            Con estado
+Tres formatos según el contexto: verificación simple, agrupada por bloques y con estado explícito.
+Revisar de un vistazo, sin ambigüedad
+CHECKLISTS
+MARBELLA                                      03 · COMPONENTES
+----------------Page (15) Break----------------
+Líneas temporales                                           17
+Pendiente
+Q4   Pedidos auto.
+Recepción
+Estimado mañana
+En tránsito                Q3   Copiloto IA
+Entrega prevista jueves · 09:40
+Q2   Escandallos
+Confirmado
+Proveedor de bebidas · 09:12
+Q1   Fichajes
+Pedido enviado
+VERTICAL                      ROADMAP TRIMESTRAL
+01 jul        04 jul        11 jul        18 jul        25 jul
+Inicio       Análisis      Diseño      Validación      Entrega
+HORIZONTAL
+Horizontal para procesos cortos, vertical para hitos detallados, roadmap para planificación trimestral.
+La secuencia, siempre visible
+LÍNEAS TEMPORALES
+MARBELLA                                      03 · COMPONENTES
+----------------Page (16) Break----------------
+Iconografía                                              18
+32 símbolos · grid de 24 × 24 pt · trazo 1,6 pt · esquinas redondeadas, coherentes con la retícula tipográfica.
+Compartir   Imprimir    Correo    Teléfono   Ubicación  Destacado   Archivo    Panel
+Alerta     Aviso    Seguridad   Buscar     Filtro    Ajustes   Descargar    Subir
+Tendencia    Caja     Inventario   Pedido     Bebida     Cocina     Chef     Validado
+Inicio    Calendario   Turnos     Equipo    Empleado    Ingresos    Ticket    Estadística
+32 símbolos lineales de 1,6 pt de grosor, esquinas redondeadas, estilo consistente en todo el sistema.
+Una familia, un solo trazo
+ICONOGRAFÍA
+MARBELLA                                      03 · COMPONENTES
+----------------Page (17) Break----------------
+Fotografía                                               19
+Con aire — composición equilibrada, sin recortes forzados.Pixelada — baja resolución, sin definición ni foco claro.
+Correcta                       Incorrecta
+Editorial — un único sujeto, mucho espacio negativo, tono natural.Saturada — colores intensos compitiendo, marca de agua visible.
+MUESTRA · STOCK
+Correcta                       Incorrecta
+La imagen apoya el dato, nunca lo decora. Composición limpia, alta resolución, tonos reales.
+Espacio, autenticidad, propósito
+FOTOGRAFÍA
+MARBELLA                                      03 · COMPONENTES
+----------------Page (18) Break----------------
+Ejemplos de informes                                          20
+2 referencias con stock por debajo del mínimo — revisar antes del pedido del lunes.
+Total semana                      2.184            18.240,00 €
+Cafetería                       311             932,10 €
+Bebidas frías                     482            1.920,40 €
+Categoría              Unidades                        Importe
+Sábado destacado como pico de la semana.
+Otros · 23%
+Cocina · 35%
+42%
+Bebidas ·
+Ventas por día                 Mix de ventas
+▲ 8,6%                      ▼ 1,1%
+▲ 3,2%                      ▲ 1,2 pp
+18.240 €  2.184   8,35 €   31,4%
+VENTAS SEMANA      TICKETS         TICKET MEDIO       MARGEN BRUTO
+20–26 de julio de 2026 · Página de ejemplo a escala real, no un esquema.
+Informe Semanal · Bar La Marbella
+EJEMPLOS DE INFORMES
+MARBELLA                                        04 · APLICACIÓN
+----------------Page (19) Break----------------
+Buenas prácticas                                            21
+publicar.        principales.
+comprensión, se elimina. mismo grosor y tamaño.  comprobadas antes de   las conclusiones
+Si un elemento no aporta Una sola familia lineal, Cifras y ortografía   Todo informe abre con
+Claridad ante todo   Iconos coherentes   Revisión de datos   Resumen ejecutivo
+documento.        familias.                     de la unidad base.
+idénticos en todo el   máximo, nunca mezclar  una sola vez por página. separación es múltiplo
+Cabecera, pie y retícula Cinco niveles como    El azul Marbella aparece Todo margen y
+Mismo estilo siempre  Jerarquía tipográfica Un color de énfasis  Retícula de 8 pt
+Consistencia, simplicidad, legibilidad y jerarquía visual — en cada página, sin excepción.
+Ocho hábitos antes de publicar
+BUENAS PRÁCTICAS
+MARBELLA                                        04 · APLICACIÓN
+----------------Page (20) Break----------------
+Errores comunes                                            22
+excesivas
+EVITAR
+efecto 3D
+Sombras
+EVITAR
+distintos
+EVITAR                                       Gráficos con
+Iconos de estilos
+tipografías
+EVITAR                                  EVITAR  Saturar la página
+Mezclar             colores
+EVITAR
+Demasiados
++ Poppins
+Serif
+Ante cualquier duda: simplicidad, consistencia y claridad frente al efecto decorativo.
+Seis formas de romper el sistema
+ERRORES COMUNES
+MARBELLA                                        04 · APLICACIÓN
+----------------Page (21) Break----------------
+Checklist final                                            23
+El documento solo se publica cuando el 100% de los puntos anteriores están validados.
+Criterio de aceptación
+Colores corporativos correctamente aplicados  Estructura idéntica a informes anteriores
+Jerarquía tipográfica respetada        Cifras verificadas contra el origen
+TIPOGRAFÍA Y COLOR                  DATOS
+Paginación y numeración correctas       Ortografía y redacción revisadas
+Logotipo dentro del área de resguardo     Imágenes de calidad y bien alineadas
+Portada y datos identificativos correctos   Tablas y gráficos consistentes entre sí
+IDENTIDAD                      CONTENIDO
+El documento solo se considera terminado cuando cada punto está validado.
+Última revisión antes de publicar
+CHECKLIST FINAL
+MARBELLA                                        04 · APLICACIÓN
+----------------Page (22) Break----------------
+Marbella PDF Design System · v2.0                         Barcelona · 2026
+profesional. 
+cada informe habla el mismo idioma: claro, coherente y
+documentos generados en el ecosistema Marbella. Aplicándolo,
+Este manual establece la identidad visual para todos los
+con claridad. 
+Gracias por diseñar
+MARBELLA
+----------------Page (23) Break----------------

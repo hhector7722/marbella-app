@@ -1,0 +1,31 @@
+---
+description: PDFs usan Design System v2.0 excepto pedido a proveedor (legacy confirmado).
+globs: src/lib/pdf/**/*.{ts,tsx},src/lib/staff/timesheet-pdf*.ts,src/lib/reservas/print-*.ts,src/utils/orders/pdf*.ts,scripts/**/*pdf*.ts
+alwaysApply: false
+---
+
+# Marbella PDF Design System v2.0
+
+## Fuente de verdad
+
+Manual: [`docs/design-system/Marbella-PDF-Design-System-v2.0.pdf`](docs/design-system/Marbella-PDF-Design-System-v2.0.pdf)  
+Kit: [`src/lib/pdf/design-system-v2/`](src/lib/pdf/design-system-v2/)
+
+## Estado de migración
+
+| Documento | Estado |
+|-----------|--------|
+| Jornada / plantilla / simulación | **Migrado** → `timesheet-pdf.ts` |
+| Encargo + factura encargo | **Migrado** → `print-encargo-document.ts` |
+| Pedido a proveedor | **Legacy confirmado** (`pdf-generator.ts`). DS v2 rechazado — no migrar |
+| PDF nuevos futuros | Obligatorio kit DS v2 |
+
+## Reglas
+
+1. Usar `createDsDocument` + helpers del kit.
+2. No mezclar `#36606F` / petroleum en documentos migrados o nuevos.
+3. Pedido a proveedor: **permanece en estilo legacy** (decisión 2026-07-28). No sustituir por DS v2.
+
+## Tokens
+
+Azul `#1F5FAF` (≤10% superficie) · A4 `pt` · márgenes 36/32 · retícula 8pt · tipografía Inter→Helvetica

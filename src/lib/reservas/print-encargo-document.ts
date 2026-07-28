@@ -59,55 +59,81 @@ export function buildEncargoPrintHtml(meta: EncargoPrintMeta, items: EventOrderI
   <title>Pedido por encargo</title>
   <style>
     * { box-sizing: border-box; }
-    @page { size: auto; margin: 4mm; }
+    @page { size: auto; margin: 10mm 12mm; }
     html, body {
       margin: 0;
       padding: 0;
       height: auto;
       min-height: 0;
-      color: #000000;
+      color: #2F3A45;
       background: #ffffff;
-      font-family: system-ui, -apple-system, sans-serif;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
     }
-    .print-doc { padding: 2mm 3mm; }
-    .doc-header { margin: 0 0 16px; }
-    h1 { font-size: 16px; margin: 0; font-weight: 800; color: #000000; }
+    .print-doc { padding: 0; }
+    .doc-chrome {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+      border-bottom: 0.5pt solid #D9E2EC;
+    }
+    .doc-brand {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: #2F3A45;
+    }
+    .doc-chrome-title {
+      font-size: 8px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #6B7280;
+    }
+    h1 {
+      font-size: 18px;
+      margin: 0 0 16px;
+      font-weight: 700;
+      color: #2F3A45;
+    }
     .doc-meta { margin: 0 0 20px; }
     .meta-row {
       display: table;
       width: 100%;
       table-layout: auto;
       font-size: 10px;
-      line-height: 1.2;
+      line-height: 1.35;
       white-space: nowrap;
     }
     .meta-item {
       display: table-cell;
-      padding-right: 10px;
+      padding-right: 12px;
       vertical-align: baseline;
       white-space: nowrap;
     }
     .meta-label {
       font-size: 8px;
-      font-weight: 800;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: #52525b;
+      color: #6B7280;
       margin-right: 4px;
     }
-    .meta-value { font-weight: 800; color: #000000; }
+    .meta-value { font-weight: 700; color: #2F3A45; }
     table.order-table {
       width: 100%;
       border-collapse: collapse;
-      color: #000000;
+      color: #2F3A45;
       table-layout: auto;
     }
     th {
-      background: #fafafa;
+      background: #1F5FAF;
       font-size: 8px;
       text-transform: uppercase;
       letter-spacing: 0.06em;
-      color: #52525b;
+      color: #FFFFFF;
       padding: 8px;
       text-align: left;
       white-space: nowrap;
@@ -122,50 +148,54 @@ export function buildEncargoPrintHtml(meta: EncargoPrintMeta, items: EventOrderI
       width: auto;
       text-align: left;
       white-space: nowrap;
-      font-size: 12px;
-      font-weight: 600;
+      font-size: 10px;
+      font-weight: 500;
       text-transform: lowercase;
       padding-left: 10px;
       padding-right: 10px;
+      color: #6B7280;
     }
     th.col-qty, td.col-qty {
       width: 1%;
       text-align: center;
       font-weight: 700;
-      font-family: monospace;
+      font-variant-numeric: tabular-nums;
       white-space: nowrap;
     }
     td {
-      padding: 12px 8px;
-      color: #000000;
+      padding: 10px 8px;
+      color: #2F3A45;
       vertical-align: middle;
+      font-size: 10px;
     }
-    tr + tr { border-top: 1px solid #e4e4e7; }
+    tbody tr:nth-child(even) { background: #F8FAFC; }
+    tbody tr + tr { border-top: 0.5pt solid #D9E2EC; }
     @media print {
       html, body {
         height: auto !important;
         min-height: 0 !important;
         overflow: visible !important;
         background: #ffffff !important;
-        color: #000000 !important;
+        color: #2F3A45 !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
-      .print-doc {
-        padding: 0;
-        page-break-after: avoid;
-      }
+      .print-doc { padding: 0; page-break-after: avoid; }
       table.order-table { page-break-inside: avoid; }
-      h1, .meta-value, td, th, span { color: #000000 !important; }
-      .meta-label { color: #52525b !important; }
+      th { background: #1F5FAF !important; color: #FFFFFF !important; }
+      tbody tr:nth-child(even) { background: #F8FAFC !important; }
+      .meta-label, .doc-chrome-title, td.col-note { color: #6B7280 !important; }
+      .meta-value, h1, td { color: #2F3A45 !important; }
     }
   </style>
 </head>
 <body>
   <div class="print-doc">
-    <header class="doc-header">
-      <h1>Pedido por encargo</h1>
+    <header class="doc-chrome">
+      <span class="doc-brand">MARBELLA</span>
+      <span class="doc-chrome-title">Pedido por encargo</span>
     </header>
+    <h1>Pedido por encargo</h1>
     <section class="doc-meta">
       <div class="meta-row">
         <div class="meta-item">
@@ -284,23 +314,23 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
   <title>Factura — ${escapeHtml(INVOICE_COMPANY.tradeName)}</title>
   <style>
     * { box-sizing: border-box; }
-    @page { size: auto; margin: 8mm; }
+    @page { size: auto; margin: 10mm 12mm; }
     html, body {
       margin: 0;
       padding: 0;
       height: auto;
       min-height: 0;
-      color: #18181b;
+      color: #2F3A45;
       background: #ffffff;
-      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
     }
-    .print-doc { padding: 4mm 3mm; max-width: 180mm; margin: 0 auto; }
+    .print-doc { padding: 0; max-width: 180mm; margin: 0 auto; }
     .brand {
       display: flex;
       align-items: flex-start;
       gap: 12px;
-      margin-bottom: 14px;
-      border-bottom: 2px solid #36606F;
+      margin-bottom: 16px;
+      border-bottom: 0.5pt solid #D9E2EC;
       padding-bottom: 12px;
     }
     .brand-logo {
@@ -308,46 +338,49 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
       height: 48px;
       object-fit: contain;
       flex-shrink: 0;
+      background: #D9E2EC;
+      border-radius: 4px;
+      padding: 4px;
     }
     .brand-text { min-width: 0; flex: 1; }
     .brand-name {
       margin: 0;
       font-size: 18px;
-      font-weight: 800;
-      color: #36606F;
+      font-weight: 700;
+      color: #2F3A45;
       letter-spacing: -0.02em;
     }
     .brand-legal {
       margin: 2px 0 0;
       font-size: 10px;
-      font-weight: 600;
-      color: #52525b;
+      font-weight: 500;
+      color: #6B7280;
     }
     .brand-details {
       margin: 6px 0 0;
       font-size: 9px;
       line-height: 1.45;
-      color: #3f3f46;
+      color: #6B7280;
     }
     .doc-title-row {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
       gap: 12px;
-      margin: 0 0 12px;
+      margin: 0 0 16px;
     }
     .doc-title {
       margin: 0;
-      font-size: 15px;
-      font-weight: 800;
+      font-size: 14px;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.04em;
-      color: #18181b;
+      color: #2F3A45;
     }
     .doc-ref {
       font-size: 10px;
-      font-weight: 700;
-      color: #52525b;
+      font-weight: 600;
+      color: #6B7280;
       white-space: nowrap;
     }
     .meta-grid {
@@ -360,13 +393,13 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
     .meta-block label {
       display: block;
       font-size: 8px;
-      font-weight: 800;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.06em;
-      color: #71717a;
+      color: #6B7280;
       margin-bottom: 2px;
     }
-    .meta-block .value { font-weight: 700; color: #18181b; }
+    .meta-block .value { font-weight: 700; color: #2F3A45; }
     table.invoice-table {
       width: 100%;
       border-collapse: collapse;
@@ -374,26 +407,27 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
       margin-bottom: 14px;
     }
     th {
-      background: #f4f4f5;
+      background: #1F5FAF;
       font-size: 8px;
       text-transform: uppercase;
       letter-spacing: 0.06em;
-      color: #52525b;
+      color: #FFFFFF;
       padding: 7px 6px;
       text-align: left;
-      border-bottom: 1px solid #e4e4e7;
     }
     td {
       padding: 8px 6px;
-      font-size: 11px;
+      font-size: 10px;
       vertical-align: middle;
-      border-bottom: 1px solid #f4f4f5;
+      border-bottom: 0.5pt solid #D9E2EC;
+      color: #2F3A45;
     }
+    tbody tr:nth-child(even) { background: #F8FAFC; }
     th.col-product, td.col-product { font-weight: 700; text-align: left; }
     th.col-note, td.col-note {
       font-size: 10px;
-      font-weight: 600;
-      color: #52525b;
+      font-weight: 500;
+      color: #6B7280;
       text-transform: lowercase;
     }
     th.col-qty, td.col-qty,
@@ -404,7 +438,7 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
       white-space: nowrap;
       width: 1%;
     }
-    td.col-qty, td.col-unit, td.col-amount { font-weight: 700; font-family: ui-monospace, monospace; }
+    td.col-qty, td.col-unit, td.col-amount { font-weight: 700; }
     .totals {
       width: 100%;
       max-width: 220px;
@@ -417,45 +451,45 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
       justify-content: space-between;
       gap: 16px;
       padding: 4px 0;
-      color: #3f3f46;
+      color: #6B7280;
     }
     .totals-row span:last-child {
       font-weight: 700;
       font-variant-numeric: tabular-nums;
-      font-family: ui-monospace, monospace;
+      color: #2F3A45;
     }
-    .totals-row.iva-rate { font-size: 10px; color: #71717a; }
+    .totals-row.iva-rate { font-size: 10px; color: #6B7280; }
     .totals-row.total {
       margin-top: 4px;
       padding-top: 8px;
-      border-top: 2px solid #36606F;
+      border-top: 1.5pt solid #1F5FAF;
       font-size: 13px;
-      font-weight: 800;
-      color: #18181b;
+      font-weight: 700;
+      color: #2F3A45;
     }
-    .totals-row.total span:last-child { color: #36606F; }
+    .totals-row.total span:last-child { color: #1F5FAF; }
     .thanks {
       text-align: center;
       margin-top: 20px;
       padding-top: 14px;
-      border-top: 1px dashed #d4d4d8;
+      border-top: 0.5pt solid #D9E2EC;
     }
     .thanks p {
       margin: 0;
       font-size: 13px;
-      font-weight: 800;
-      color: #36606F;
+      font-weight: 700;
+      color: #1F5FAF;
     }
     .thanks .sub {
       margin-top: 4px;
       font-size: 10px;
-      font-weight: 600;
-      color: #71717a;
+      font-weight: 500;
+      color: #6B7280;
     }
     .legal-note {
       margin-top: 10px;
       font-size: 8px;
-      color: #a1a1aa;
+      color: #6B7280;
       text-align: center;
       line-height: 1.4;
     }
@@ -470,7 +504,8 @@ export function buildEncargoInvoiceHtml(meta: EncargoInvoiceMeta, items: EventOr
       }
       .print-doc { padding: 0; page-break-after: avoid; }
       table.invoice-table { page-break-inside: avoid; }
-      th { background: #f4f4f5 !important; }
+      th { background: #1F5FAF !important; color: #FFFFFF !important; }
+      tbody tr:nth-child(even) { background: #F8FAFC !important; }
     }
   </style>
 </head>

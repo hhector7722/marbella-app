@@ -1,688 +1,330 @@
 /**
- * Generador de PDF oficial de jornada laboral — Inspección de Trabajo.
- *
- * Diseño: minimalista, corporativo, apto para auditorías e inspecciones.
- * Inspiración: Factorial, Sesame HR, Personio, Holded.
- *
- * Paleta: únicamente blanco, negro y grises muy suaves.
- * Sin bloques de color, sin degradados, sin sombras.
- * Legible impreso en blanco y negro.
- *
- * Orientación: A4 portrait (210 × 297 mm)
- * Dependencias: jspdf ^4, jspdf-autotable ^5
+ * PDF oficial de jornada laboral — Design System v2.0
+ * Registro conforme al art. 34.9 ET. Simulación plantilla reutiliza este generador.
  */
 
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import type { TimesheetExportPayload } from './timesheet-export-payload';
+import autoTable from 'jspdf-autotable'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
+import type { jsPDF } from 'jspdf'
+import {
+  createDsDocument,
+  drawKpiRow,
+  dsTableStyles,
+  DS_COMPANY,
+  DS_RGB,
+  DS_SPACE,
+  DS_TYPE,
+  type PageGeom,
+} from '../pdf/design-system-v2/index.ts'
+import type { TimesheetExportPayload } from './timesheet-export-payload'
 
-// ---------------------------------------------------------------------------
-// Datos de empresa (fuente única — mismo origen que pdf-generator.ts)
-// ---------------------------------------------------------------------------
+const WORK_CENTER = 'Bar La Marbella — Barcelona'
 
-const COMPANY = {
-    tradeName: 'Bar La Marbella',
-    legalName: 'Fogo Torrat S.L.',
-    cif: 'B-09761628',
-    address: 'Av. Litoral 86, 08005 Barcelona',
-    workCenter: 'Bar La Marbella — Barcelona',
-} as const;
+const LEGAL_FOOTER =
+  'Documento generado por Marbella OS. Registro de jornada conforme al art. 34.9 del Estatuto de los Trabajadores.'
 
-// ---------------------------------------------------------------------------
-// Sistema de diseño
-// ---------------------------------------------------------------------------
+const WEEKDAY_ES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
-const DS = {
-    // Página (A4 portrait)
-    pageW: 210,
-    pageH: 297,
-    marginH: 18,   // margen horizontal
-    marginV: 14,   // margen vertical superior
-    contentW: 174, // 210 - 2 * 18
-
-    // Paleta
-    black:    [15,  15,  15]  as [number, number, number],
-    gray700:  [80,  80,  80]  as [number, number, number],
-    gray500:  [130, 130, 130] as [number, number, number],
-    gray300:  [200, 200, 200] as [number, number, number],
-    gray100:  [234, 234, 234] as [number, number, number],  // #EAEAEA
-    gray050:  [245, 245, 245] as [number, number, number],  // #F5F5F5
-    white:    [255, 255, 255] as [number, number, number],
-
-    // Tipografía
-    font: 'helvetica' as const,
-} as const;
-
-// ---------------------------------------------------------------------------
-// Helpers de formato
-// ---------------------------------------------------------------------------
-
-/** "2026-07-10" → "10/07/2026" */
 function isoToDisplay(isoDate: string): string {
-    const [y, m, d] = isoDate.split('-');
-    return `${d}/${m}/${y}`;
+  const [y, m, d] = isoDate.split('-')
+  return `${d}/${m}/${y}`
 }
 
-/** Minutos → "08 h 00 min" — vacío si es 0 */
 function fmtMinutes(minutes: number): string {
-    if (minutes <= 0) return '';
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return `${String(h).padStart(2, '0')} h ${String(m).padStart(2, '0')} min`;
+  if (minutes <= 0) return ' '
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  return `${String(h).padStart(2, '0')} h ${String(m).padStart(2, '0')} min`
 }
 
-/** Total de minutos → "Xh Ymin" compacto para el resumen */
 function fmtMinutesCompact(minutes: number): string {
-    if (minutes <= 0) return '0 h';
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return m === 0 ? `${h} h` : `${h} h ${m} min`;
+  if (minutes <= 0) return '0 h'
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  return m === 0 ? `${h} h` : `${h} h ${m} min`
 }
 
-/** Mes y año largo: "Julio 2026" */
 function fmtMonthYear(year: number, month0: number): string {
-    const d = new Date(year, month0, 1);
-    const raw = format(d, 'MMMM yyyy', { locale: es });
-    return raw.charAt(0).toUpperCase() + raw.slice(1);
+  const d = new Date(year, month0, 1)
+  const raw = format(d, 'MMMM yyyy', { locale: es })
+  return raw.charAt(0).toUpperCase() + raw.slice(1)
 }
 
-/** "EXP-20260710-082105" */
 function buildExportId(date: Date): string {
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `EXP-${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `EXP-${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`
 }
 
-/** Carga imagen como dataURL para jsPDF */
 function loadImageAsDataUrl(url: string): Promise<string | null> {
-    return new Promise((resolve) => {
-        const img = new Image();
-        img.crossOrigin = 'Anonymous';
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) { resolve(null); return; }
-            ctx.drawImage(img, 0, 0);
-            resolve(canvas.toDataURL('image/png'));
-        };
-        img.onerror = () => resolve(null);
-        img.src = url;
-    });
-}
-
-/** Dibuja una línea horizontal fina gris */
-function hLine(doc: jsPDF, y: number, x1 = DS.marginH, x2 = DS.pageW - DS.marginH) {
-    doc.setDrawColor(...DS.gray300);
-    doc.setLineWidth(0.2);
-    doc.line(x1, y, x2, y);
-}
-
-// ---------------------------------------------------------------------------
-// Sección: Cabecera del documento
-// ---------------------------------------------------------------------------
-
-/**
- * Dibuja la cabecera sobre fondo blanco.
- * Devuelve la Y donde acaba la cabecera.
- */
-async function drawHeader(
-    doc: jsPDF,
-    payload: TimesheetExportPayload,
-    logoDataUrl: string | null,
-): Promise<number> {
-    const L = DS.marginH;
-    const R = DS.pageW - DS.marginH;
-    let y = DS.marginV;
-
-    // ── COLUMNA IZQUIERDA: logotipo + empresa ─────────────────────────────
-
-    // Logo pequeño (si disponible) — negro sobre blanco no sirve, lo cargamos
-    // pero lo renderizamos sobre blanco con un borde gris sutil
-    const LOGO_SIZE = 9;
-
-    if (logoDataUrl) {
-        // Pequeño recuadro con fondo gris muy suave para que el logo blanco sea visible
-        doc.setFillColor(...DS.gray050);
-        doc.roundedRect(L, y, LOGO_SIZE, LOGO_SIZE, 1, 1, 'F');
-        doc.addImage(logoDataUrl, 'PNG', L, y, LOGO_SIZE, LOGO_SIZE);
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.crossOrigin = 'Anonymous'
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = img.width
+      canvas.height = img.height
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        resolve(null)
+        return
+      }
+      ctx.drawImage(img, 0, 0)
+      resolve(canvas.toDataURL('image/png'))
     }
-
-    const textX = logoDataUrl ? L + LOGO_SIZE + 3.5 : L;
-    let textY = y + 3;
-
-    // Nombre comercial
-    doc.setFont(DS.font, 'bold');
-    doc.setFontSize(11);
-    doc.setTextColor(...DS.black);
-    doc.text(COMPANY.tradeName, textX, textY);
-
-    // Razón social
-    doc.setFont(DS.font, 'normal');
-    doc.setFontSize(7.5);
-    doc.setTextColor(...DS.gray700);
-    doc.text(COMPANY.legalName, textX, textY + 4.5);
-
-    // CIF
-    doc.setFontSize(7);
-    doc.setTextColor(...DS.gray500);
-    doc.text(`CIF: ${COMPANY.cif}`, textX, textY + 8.5);
-
-    // Dirección
-    doc.text(COMPANY.address, textX, textY + 12);
-
-    // ── COLUMNA DERECHA: período y generación ─────────────────────────────
-
-    // Mes y año — prominente
-    doc.setFont(DS.font, 'bold');
-    doc.setFontSize(14);
-    doc.setTextColor(...DS.black);
-    doc.text(fmtMonthYear(payload.periodYear, payload.periodMonth), R, y + 5, { align: 'right' });
-
-    // "Generado:"
-    doc.setFont(DS.font, 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(...DS.gray500);
-    doc.text('Generado:', R, y + 11, { align: 'right' });
-
-    const genDate = isoToDisplay(payload.generatedAt.toISOString().slice(0, 10));
-    const genTime = `${String(payload.generatedAt.getHours()).padStart(2, '0')}:${String(payload.generatedAt.getMinutes()).padStart(2, '0')}`;
-    doc.setFontSize(7.5);
-    doc.setTextColor(...DS.gray700);
-    doc.text(`${genDate}  ${genTime} h`, R, y + 15, { align: 'right' });
-
-    // ── TÍTULO DEL DOCUMENTO ──────────────────────────────────────────────
-
-    const titleY = y + 23;
-
-    doc.setFont(DS.font, 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(...DS.black);
-    doc.text('INFORME DE REGISTRO DE JORNADA LABORAL', L, titleY);
-
-    // Línea fina bajo el título
-    hLine(doc, titleY + 2.5, L, R);
-
-    // ── DATOS DEL EMPLEADO ────────────────────────────────────────────────
-
-    const empY = titleY + 7;
-    const labelW = 22;
-    const col1 = L;
-    const col2 = L + 90;
-
-    // Fila 1
-    doc.setFont(DS.font, 'normal');
-    doc.setFontSize(6.5);
-    doc.setTextColor(...DS.gray500);
-    doc.text('Empleado:', col1, empY);
-    doc.setFont(DS.font, 'bold');
-    doc.setFontSize(7.5);
-    doc.setTextColor(...DS.black);
-    doc.text(payload.employeeFullName, col1 + labelW, empY);
-
-    // DNI (solo si existe)
-    if (payload.employeeDni) {
-        doc.setFont(DS.font, 'normal');
-        doc.setFontSize(6.5);
-        doc.setTextColor(...DS.gray500);
-        doc.text('DNI / NIE:', col2, empY);
-        doc.setFont(DS.font, 'bold');
-        doc.setFontSize(7.5);
-        doc.setTextColor(...DS.black);
-        doc.text(payload.employeeDni, col2 + labelW, empY);
-    }
-
-    // Fila 2
-    const empY2 = empY + 5;
-    doc.setFont(DS.font, 'normal');
-    doc.setFontSize(6.5);
-    doc.setTextColor(...DS.gray500);
-    doc.text('Centro de trabajo:', col1, empY2);
-    doc.setFont(DS.font, 'normal');
-    doc.setFontSize(7.5);
-    doc.setTextColor(...DS.gray700);
-    doc.text(COMPANY.workCenter, col1 + labelW, empY2);
-
-    return empY2 + 5; // Y final de la cabecera
+    img.onerror = () => resolve(null)
+    img.src = url
+  })
 }
-
-// ---------------------------------------------------------------------------
-// Sección: Resumen (2 tarjetas horizontales — sin primera/última jornada)
-// ---------------------------------------------------------------------------
-
-function drawSummaryCompact(doc: jsPDF, payload: TimesheetExportPayload, startY: number): number {
-    const L = DS.marginH;
-    const R = DS.pageW - DS.marginH;
-    const y = startY + 4;
-
-    // Grupo izquierdo: "JORNADAS TRABAJADAS 33"
-    doc.setFont(DS.font, 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(...DS.gray500);
-    const label1 = 'JORNADAS TRABAJADAS';
-    doc.text(label1, L, y);
-
-    const label1W = doc.getTextWidth(label1);
-    doc.setFont(DS.font, 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(...DS.black);
-    doc.text(String(payload.totalDays), L + label1W + 2, y);
-
-    // Grupo derecho: "TOTAL HORAS 266 h 30 min"
-    const value2 = fmtMinutesCompact(payload.totalDisplayMinutes);
-    doc.setFont(DS.font, 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(...DS.black);
-    const value2W = doc.getTextWidth(value2);
-
-    doc.setFont(DS.font, 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(...DS.gray500);
-    const label2 = 'TOTAL HORAS';
-    const label2W = doc.getTextWidth(label2);
-
-    const rightW = label2W + 2 + value2W;
-    const label2X = R - rightW;
-
-    doc.text(label2, label2X, y);
-    doc.setFont(DS.font, 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(...DS.black);
-    doc.text(value2, label2X + label2W + 2, y);
-
-    return y + 3;
-}
-
-// ---------------------------------------------------------------------------
-// Sección: Tabla principal
-// ---------------------------------------------------------------------------
-
-const WEEKDAY_ES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
 function estadoLabel(eventType: string): string {
-    return eventType === 'adjustment' ? 'Baja' : 'Regular';
+  return eventType === 'adjustment' ? 'Baja' : 'Regular'
 }
 
-function drawTable(doc: jsPDF, payload: TimesheetExportPayload, startY: number): number {
-    const head = [['Fecha', 'Día', 'Estado', 'Entrada', 'Salida', 'Horas computadas']];
-
-    const body = payload.rows.map((row) => [
-        isoToDisplay(row.date),
-        WEEKDAY_ES[row.weekday] ?? '',
-        estadoLabel(row.eventType),
-        row.eventType === 'adjustment' ? '' : (row.clockIn ?? ''),
-        row.eventType === 'adjustment' ? '' : (row.clockOut ?? ''),
-        fmtMinutes(row.displayMinutes),
-    ]);
-
-    autoTable(doc, {
-        startY: startY + 5,
-        head,
-        body,
-        theme: 'plain',
-
-        headStyles: {
-            fillColor: DS.white,
-            textColor: DS.gray700,
-            fontSize: 7.5,
-            fontStyle: 'bold',
-            valign: 'middle',
-            cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 3 },
-            minCellHeight: 8,
-            lineWidth: { bottom: 0.3 },
-            lineColor: DS.gray300,
-        },
-
-        bodyStyles: {
-            fontSize: 7.5,
-            textColor: DS.black,
-            cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 3 },
-            valign: 'middle',
-            minCellHeight: 8,
-            lineWidth: 0,
-        },
-
-        alternateRowStyles: {
-            fillColor: DS.gray050,
-        },
-
-        columnStyles: {
-            0: { cellWidth: 31 },  // Fecha
-            1: { cellWidth: 35 },  // Día
-            2: { cellWidth: 31 },  // Estado
-            3: { cellWidth: 21 },  // Entrada
-            4: { cellWidth: 21 },  // Salida
-            5: { cellWidth: 35 },  // Horas computadas
-        },
-
-        styles: {
-            font: DS.font,
-            overflow: 'linebreak',
-        },
-
-        didParseCell: (data) => {
-            const align = (['left', 'left', 'left', 'center', 'center', 'right'] as const)[data.column.index];
-            data.cell.styles.halign = align;
-        },
-
-        // Línea horizontal muy fina entre filas
-        didDrawCell: (data) => {
-            if (data.section === 'body') {
-                doc.setDrawColor(...DS.gray100);
-                doc.setLineWidth(0.15);
-                doc.line(
-                    data.cell.x,
-                    data.cell.y + data.cell.height,
-                    data.cell.x + data.cell.width,
-                    data.cell.y + data.cell.height,
-                );
-            }
-        },
-
-        // Línea bajo la cabecera ya la dibuja headStyles.lineWidth, pero
-        // también añadimos borde superior de la primera fila body
-        willDrawCell: (data) => {
-            if (data.section === 'body' && data.row.index === 0 && data.column.index === 0) {
-                // nada adicional necesario
-            }
-        },
-
-        margin: { left: DS.marginH, right: DS.marginH },
-    });
-
-    return (doc as any).lastAutoTable?.finalY ?? startY + 5;
+function periodTitle(payload: TimesheetExportPayload): string {
+  return (
+    payload.periodLabel ??
+    fmtMonthYear(payload.periodYear, payload.periodMonth)
+  ).toUpperCase()
 }
 
-// ---------------------------------------------------------------------------
-// Sección: Pie de página
-// ---------------------------------------------------------------------------
+function drawEmployeeMeta(
+  doc: jsPDF,
+  geom: PageGeom,
+  y: number,
+  fullName: string,
+  dni: string | null,
+): number {
+  const labelW = 72
+  const col2 = geom.contentLeft + geom.contentW / 2
 
-function drawFooter(
-    doc: jsPDF,
-    payload: TimesheetExportPayload,
-    exportId: string,
-    pageNum: number,
-    totalPages: number,
+  doc.setFont(DS_TYPE.fontFamily, 'normal')
+  doc.setFontSize(DS_TYPE.caption)
+  doc.setTextColor(...DS_RGB.grayMid)
+  doc.text('EMPLEADO', geom.contentLeft, y)
+  doc.setFont(DS_TYPE.fontFamily, 'bold')
+  doc.setFontSize(DS_TYPE.body)
+  doc.setTextColor(...DS_RGB.grayDark)
+  doc.text(fullName, geom.contentLeft + labelW, y)
+
+  if (dni) {
+    doc.setFont(DS_TYPE.fontFamily, 'normal')
+    doc.setFontSize(DS_TYPE.caption)
+    doc.setTextColor(...DS_RGB.grayMid)
+    doc.text('DNI / NIE', col2, y)
+    doc.setFont(DS_TYPE.fontFamily, 'bold')
+    doc.setFontSize(DS_TYPE.body)
+    doc.setTextColor(...DS_RGB.grayDark)
+    doc.text(dni, col2 + labelW, y)
+  }
+
+  const y2 = y + DS_SPACE.sm
+  doc.setFont(DS_TYPE.fontFamily, 'normal')
+  doc.setFontSize(DS_TYPE.caption)
+  doc.setTextColor(...DS_RGB.grayMid)
+  doc.text('CENTRO', geom.contentLeft, y2)
+  doc.setFont(DS_TYPE.fontFamily, 'normal')
+  doc.setFontSize(DS_TYPE.body)
+  doc.setTextColor(...DS_RGB.grayDark)
+  doc.text(WORK_CENTER, geom.contentLeft + labelW, y2)
+
+  return y2 + DS_SPACE.md
+}
+
+function drawTimesheetTable(
+  doc: jsPDF,
+  geom: PageGeom,
+  payload: TimesheetExportPayload,
+  startY: number,
+): number {
+  const body = payload.rows.map((row) => [
+    isoToDisplay(row.date),
+    WEEKDAY_ES[row.weekday] ?? '',
+    estadoLabel(row.eventType),
+    row.eventType === 'adjustment' ? ' ' : (row.clockIn ?? ' '),
+    row.eventType === 'adjustment' ? ' ' : (row.clockOut ?? ' '),
+    fmtMinutes(row.displayMinutes),
+  ])
+
+  autoTable(doc, {
+    ...dsTableStyles({
+      headStyles: {
+        fillColor: DS_RGB.brand,
+        textColor: DS_RGB.white,
+        fontStyle: 'bold',
+        fontSize: DS_TYPE.caption,
+        cellPadding: { top: 5, bottom: 5, left: 6, right: 6 },
+      },
+      styles: {
+        font: DS_TYPE.fontFamily,
+        fontSize: 8,
+        textColor: DS_RGB.grayDark,
+        cellPadding: { top: 4, bottom: 4, left: 6, right: 6 },
+        valign: 'middle',
+        overflow: 'linebreak',
+      },
+    }),
+    startY,
+    margin: { left: geom.contentLeft, right: geom.marginX, bottom: geom.pageH - geom.contentBottom + 8 },
+    head: [['Fecha', 'Día', 'Estado', 'Entrada', 'Salida', 'Horas']],
+    body,
+    columnStyles: {
+      0: { cellWidth: 70, halign: 'left' },
+      1: { cellWidth: 90, halign: 'left' },
+      2: { cellWidth: 70, halign: 'left' },
+      3: { cellWidth: 55, halign: 'center' },
+      4: { cellWidth: 55, halign: 'center' },
+      5: { cellWidth: 'auto' as unknown as number, halign: 'right' },
+    },
+  })
+
+  return (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? startY
+}
+
+function stampContinuation(
+  doc: jsPDF,
+  geom: PageGeom,
+  label: string,
 ): void {
-    const FOOTER_Y = DS.pageH - 10;
-    const L = DS.marginH;
-    const R = DS.pageW - DS.marginH;
-
-    hLine(doc, FOOTER_Y - 3, L, R);
-
-    const genDate = isoToDisplay(payload.generatedAt.toISOString().slice(0, 10));
-    const genTime = `${String(payload.generatedAt.getHours()).padStart(2, '0')}:${String(payload.generatedAt.getMinutes()).padStart(2, '0')}`;
-
-    const lines = [
-        'Documento generado automáticamente por el sistema de gestión laboral Marbella OS.',
-        `Registro de jornada conforme al artículo 34.9 del Estatuto de los Trabajadores.  ·  Generado el ${genDate} a las ${genTime} h.`,
-    ];
-
-    doc.setFont(DS.font, 'normal');
-    doc.setFontSize(5.8);
-    doc.setTextColor(...DS.gray500);
-
-    lines.forEach((line, i) => {
-        doc.text(line, L, FOOTER_Y - 0.5 + i * 3.8);
-    });
-
-    // Paginación — derecha
-    doc.setFont(DS.font, 'normal');
-    doc.setFontSize(5.8);
-    doc.setTextColor(...DS.gray500);
-    doc.text(`${exportId}  ·  Página ${pageNum} de ${totalPages}`, R, FOOTER_Y + 3.3, { align: 'right' });
+  doc.setFont(DS_TYPE.fontFamily, 'normal')
+  doc.setFontSize(DS_TYPE.caption)
+  doc.setTextColor(...DS_RGB.grayMid)
+  doc.text(label, geom.contentLeft, geom.contentTop - 10)
 }
-
-// ---------------------------------------------------------------------------
-// Función principal exportada
-// ---------------------------------------------------------------------------
 
 /**
  * Construye el documento PDF de jornada (sin guardar).
- * Útil para descarga en navegador o guardado en Node.
  */
 export async function createTimesheetPdfDocument(
-    payload: TimesheetExportPayload,
-    logoDataUrl: string | null,
+  payload: TimesheetExportPayload,
+  logoDataUrl: string | null,
 ): Promise<jsPDF> {
-    const exportId = buildExportId(payload.generatedAt);
+  const exportId = buildExportId(payload.generatedAt)
+  const period = periodTitle(payload)
+  const genDate = isoToDisplay(payload.generatedAt.toISOString().slice(0, 10))
+  const genTime = `${String(payload.generatedAt.getHours()).padStart(2, '0')}:${String(payload.generatedAt.getMinutes()).padStart(2, '0')}`
 
-    const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-    });
+  const { doc, geom, cursorY, paintChromeAll } = createDsDocument({
+    documentTitle: `JORNADA · ${period}`,
+    footerLabel: `${exportId} · ${DS_COMPANY.tradeName}`,
+    footerSubline: `${LEGAL_FOOTER} Generado el ${genDate} a las ${genTime} h.`,
+    logoDataUrl,
+    logoOnPlate: true,
+  })
 
-    const afterHeader = await drawHeader(doc, payload, logoDataUrl);
-    const afterSummary = drawSummaryCompact(doc, payload, afterHeader + 3);
-    drawTable(doc, payload, afterSummary);
+  let y = cursorY
+  doc.setFont(DS_TYPE.fontFamily, 'bold')
+  doc.setFontSize(DS_TYPE.section)
+  doc.setTextColor(...DS_RGB.grayDark)
+  doc.text('Informe de registro de jornada laboral', geom.contentLeft, y)
+  y += DS_SPACE.lg
 
-    const totalPages = (doc as any).internal.getNumberOfPages();
-    for (let p = 1; p <= totalPages; p++) {
-        doc.setPage(p);
-        drawFooter(doc, payload, exportId, p, totalPages);
+  y = drawEmployeeMeta(doc, geom, y, payload.employeeFullName, payload.employeeDni)
 
-        if (p > 1) {
-            doc.setFont(DS.font, 'normal');
-            doc.setFontSize(6.5);
-            doc.setTextColor(...DS.gray500);
-            doc.text(
-                `${payload.employeeFullName}  ·  ${fmtMonthYear(payload.periodYear, payload.periodMonth)}  (cont.)`,
-                DS.marginH,
-                DS.marginV,
-            );
-            hLine(doc, DS.marginV + 2, DS.marginH, DS.pageW - DS.marginH);
-        }
-    }
+  y =
+    drawKpiRow(doc, y, [
+      { label: 'Jornadas trabajadas', value: String(payload.totalDays) },
+      { label: 'Total horas', value: fmtMinutesCompact(payload.totalDisplayMinutes) },
+    ]) + DS_SPACE.md
 
-    return doc;
+  drawTimesheetTable(doc, geom, payload, y)
+  paintChromeAll()
+
+  const totalPages = doc.getNumberOfPages()
+  for (let p = 2; p <= totalPages; p++) {
+    doc.setPage(p)
+    stampContinuation(
+      doc,
+      geom,
+      `${payload.employeeFullName} · ${period} (cont.)`,
+    )
+  }
+
+  return doc
 }
 
-/**
- * Genera y descarga el PDF oficial de jornada laboral.
- * Diseño minimalista corporativo — apto para inspecciones de trabajo.
- */
 export async function generateTimesheetPdf(payload: TimesheetExportPayload): Promise<void> {
-    const logoDataUrl = await loadImageAsDataUrl('/icons/logo-white.png');
-    const doc = await createTimesheetPdfDocument(payload, logoDataUrl);
+  const logoDataUrl = await loadImageAsDataUrl('/icons/logo-white.png')
+  const doc = await createTimesheetPdfDocument(payload, logoDataUrl)
 
-    const monthLabel = format(new Date(payload.periodYear, payload.periodMonth, 1), 'yyyy-MM');
-    const employeeSlug = payload.employeeFullName
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/\p{Diacritic}/gu, '')
-        .replace(/\s+/g, '_')
-        .replace(/[^a-z0-9_]/g, '');
+  const monthLabel = format(new Date(payload.periodYear, payload.periodMonth, 1), 'yyyy-MM')
+  const employeeSlug = payload.employeeFullName
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .replace(/\s+/g, '_')
+    .replace(/[^a-z0-9_]/g, '')
 
-    doc.save(`jornada_${employeeSlug}_${monthLabel}.pdf`);
+  doc.save(`jornada_${employeeSlug}_${monthLabel}.pdf`)
 }
 
-// ---------------------------------------------------------------------------
-// Multi‑empleado: exporta todos los empleados seleccionados en un solo PDF
-// ---------------------------------------------------------------------------
-
-/**
- * Genera y descarga un PDF combinado con la jornada de varios empleados.
- *
- * Cada empleado se muestra en una sección independiente dentro del mismo
- * documento, con su cabecera, resumen y tabla de fichajes.
- */
 export async function generateTimesheetPdfMulti(
-    payloads: Array<{
-        employee: { fullName: string; dni: string | null };
-        payload: TimesheetExportPayload;
-    }>,
+  payloads: Array<{
+    employee: { fullName: string; dni: string | null }
+    payload: TimesheetExportPayload
+  }>,
 ): Promise<void> {
-    if (payloads.length === 0) return;
+  if (payloads.length === 0) return
 
-    const firstPayload = payloads[0].payload;
-    const exportId = buildExportId(firstPayload.generatedAt);
-    const periodLabel = firstPayload.periodLabel ?? fmtMonthYear(firstPayload.periodYear, firstPayload.periodMonth);
-    const logoDataUrl = await loadImageAsDataUrl('/icons/logo-white.png');
+  const firstPayload = payloads[0].payload
+  const exportId = buildExportId(firstPayload.generatedAt)
+  const periodLabel = firstPayload.periodLabel ?? fmtMonthYear(firstPayload.periodYear, firstPayload.periodMonth)
+  const period = periodLabel.toUpperCase()
+  const logoDataUrl = await loadImageAsDataUrl('/icons/logo-white.png')
+  const genDate = isoToDisplay(firstPayload.generatedAt.toISOString().slice(0, 10))
+  const genTime = `${String(firstPayload.generatedAt.getHours()).padStart(2, '0')}:${String(firstPayload.generatedAt.getMinutes()).padStart(2, '0')}`
 
-    const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-    });
+  const { doc, geom, cursorY, addPage, paintChromeAll, chrome } = createDsDocument({
+    documentTitle: `JORNADA PLANTILLA · ${period}`,
+    footerLabel: `${exportId} · ${DS_COMPANY.tradeName}`,
+    footerSubline: `${LEGAL_FOOTER} Generado el ${genDate} a las ${genTime} h.`,
+    logoDataUrl,
+    logoOnPlate: true,
+  })
 
-    // ── CABECERA GENERAL (empresa + período) ─────────────────────────────
+  let y = cursorY
+  doc.setFont(DS_TYPE.fontFamily, 'bold')
+  doc.setFontSize(DS_TYPE.section)
+  doc.setTextColor(...DS_RGB.grayDark)
+  doc.text('Informe de registro de jornada laboral — Plantilla', geom.contentLeft, y)
+  y += DS_SPACE.lg
 
-    const L = DS.marginH;
-    const R = DS.pageW - DS.marginH;
-    let y = DS.marginV;
+  for (let i = 0; i < payloads.length; i++) {
+    const { employee, payload } = payloads[i]
 
-    const LOGO_SIZE = 9;
-    if (logoDataUrl) {
-        doc.setFillColor(...DS.gray050);
-        doc.roundedRect(L, y, LOGO_SIZE, LOGO_SIZE, 1, 1, 'F');
-        doc.addImage(logoDataUrl, 'PNG', L, y, LOGO_SIZE, LOGO_SIZE);
+    if (i > 0) {
+      y = addPage()
+      stampContinuation(doc, geom, `${DS_COMPANY.tradeName} · ${period} · Plantilla (cont.)`)
+      y += DS_SPACE.xs
     }
 
-    const textX = logoDataUrl ? L + LOGO_SIZE + 3.5 : L;
-    let textY = y + 3;
+    doc.setFont(DS_TYPE.fontFamily, 'bold')
+    doc.setFontSize(DS_TYPE.subtitle)
+    doc.setTextColor(...DS_RGB.brand)
+    doc.text(`${i + 1}. ${employee.fullName}`, geom.contentLeft, y)
+    y += DS_SPACE.md
 
-    doc.setFont(DS.font, 'bold');
-    doc.setFontSize(11);
-    doc.setTextColor(...DS.black);
-    doc.text(COMPANY.tradeName, textX, textY);
+    y = drawEmployeeMeta(doc, geom, y, employee.fullName, employee.dni)
+    y =
+      drawKpiRow(doc, y, [
+        { label: 'Jornadas trabajadas', value: String(payload.totalDays) },
+        { label: 'Total horas', value: fmtMinutesCompact(payload.totalDisplayMinutes) },
+      ]) + DS_SPACE.md
 
-    doc.setFont(DS.font, 'normal');
-    doc.setFontSize(7.5);
-    doc.setTextColor(...DS.gray700);
-    doc.text(COMPANY.legalName, textX, textY + 4.5);
+    y = drawTimesheetTable(doc, geom, payload, y) + DS_SPACE.lg
+  }
 
-    doc.setFontSize(7);
-    doc.setTextColor(...DS.gray500);
-    doc.text(`CIF: ${COMPANY.cif}`, textX, textY + 8.5);
-    doc.text(COMPANY.address, textX, textY + 12);
+  // Re-aplicar chrome con el mismo título (addPage ya pintó páginas intermedias)
+  Object.assign(chrome, {
+    documentTitle: `JORNADA PLANTILLA · ${period}`,
+  })
+  paintChromeAll()
 
-    doc.setFont(DS.font, 'bold');
-    doc.setFontSize(14);
-    doc.setTextColor(...DS.black);
-    doc.text(periodLabel, R, y + 5, { align: 'right' });
-
-    doc.setFont(DS.font, 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(...DS.gray500);
-    doc.text('Generado:', R, y + 11, { align: 'right' });
-
-    const genDate = isoToDisplay(firstPayload.generatedAt.toISOString().slice(0, 10));
-    const genTime = `${String(firstPayload.generatedAt.getHours()).padStart(2, '0')}:${String(firstPayload.generatedAt.getMinutes()).padStart(2, '0')}`;
-    doc.setFontSize(7.5);
-    doc.setTextColor(...DS.gray700);
-    doc.text(`${genDate}  ${genTime} h`, R, y + 15, { align: 'right' });
-
-    // Título
-    const titleY = y + 23;
-    doc.setFont(DS.font, 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(...DS.black);
-    doc.text('INFORME DE REGISTRO DE JORNADA LABORAL — PLANTILLA', L, titleY);
-
-    hLine(doc, titleY + 2.5, L, R);
-
-    let lastY = titleY + 7;
-
-    // ── SECCIÓN POR CADA EMPLEADO ────────────────────────────────────────
-
-    for (let i = 0; i < payloads.length; i++) {
-        const { employee, payload } = payloads[i];
-
-        // Si no es el primero y queda poco espacio, nueva página
-        if (i > 0) {
-            doc.addPage();
-            lastY = DS.marginV;
-
-            // Mini‑cabecera de continuación
-            doc.setFont(DS.font, 'normal');
-            doc.setFontSize(6.5);
-            doc.setTextColor(...DS.gray500);
-            doc.text(
-                `${COMPANY.tradeName}  ·  ${periodLabel}  ·  Plantilla (cont.)`,
-                DS.marginH,
-                lastY,
-            );
-            hLine(doc, lastY + 2, DS.marginH, DS.pageW - DS.marginH);
-            lastY += 7;
-        }
-
-        // ── Empieza sección del empleado ──────────────────────────────────
-
-        // Título del empleado
-        const secY = lastY + 2;
-
-        doc.setFont(DS.font, 'bold');
-        doc.setFontSize(10);
-        doc.setTextColor(...DS.black);
-        doc.text(`${i + 1}.  ${employee.fullName}`, L, secY);
-
-        let empInfoY = secY + 6;
-        const labelW = 22;
-        const col1 = L;
-        const col2 = L + 90;
-
-        doc.setFont(DS.font, 'normal');
-        doc.setFontSize(6.5);
-        doc.setTextColor(...DS.gray500);
-        doc.text('Empleado:', col1, empInfoY);
-        doc.setFont(DS.font, 'bold');
-        doc.setFontSize(7.5);
-        doc.setTextColor(...DS.black);
-        doc.text(employee.fullName, col1 + labelW, empInfoY);
-
-        if (employee.dni) {
-            doc.setFont(DS.font, 'normal');
-            doc.setFontSize(6.5);
-            doc.setTextColor(...DS.gray500);
-            doc.text('DNI / NIE:', col2, empInfoY);
-            doc.setFont(DS.font, 'bold');
-            doc.setFontSize(7.5);
-            doc.setTextColor(...DS.black);
-            doc.text(employee.dni, col2 + labelW, empInfoY);
-        }
-
-        doc.setFont(DS.font, 'normal');
-        doc.setFontSize(6.5);
-        doc.setTextColor(...DS.gray500);
-        doc.text('Centro de trabajo:', col1, empInfoY + 5);
-        doc.setFont(DS.font, 'normal');
-        doc.setFontSize(7.5);
-        doc.setTextColor(...DS.gray700);
-        doc.text(COMPANY.workCenter, col1 + labelW, empInfoY + 5);
-
-        const afterEmp = empInfoY + 10;
-
-        // Resumen (sin primera/última jornada)
-        const afterSummary = drawSummaryCompact(doc, payload, afterEmp + 1);
-
-        // Tabla
-        drawTable(doc, payload, afterSummary);
-
-        lastY = (doc as any).lastAutoTable?.finalY ?? afterSummary + 5;
-        lastY += 6;
-    }
-
-    // ── PIE DE PÁGINA ─────────────────────────────────────────────────────
-
-    const totalPages = (doc as any).internal.getNumberOfPages();
-    for (let p = 1; p <= totalPages; p++) {
-        doc.setPage(p);
-        drawFooter(doc, firstPayload, exportId, p, totalPages);
-
-        // En páginas adicionales, repetir cabecera mínima
-        if (p > 1) {
-            // Ya dibujamos mini‑cabeceras manualmente
-        }
-    }
-
-    const fileSlug = periodLabel
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/\p{Diacritic}/gu, '')
-        .replace(/[^a-z0-9_]+/g, '_')
-        .replace(/^_|_$/g, '');
-    doc.save(`jornada_plantilla_${fileSlug}.pdf`);
+  const fileSlug = periodLabel
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .replace(/[^a-z0-9_]+/g, '_')
+    .replace(/^_|_$/g, '')
+  doc.save(`jornada_plantilla_${fileSlug}.pdf`)
 }

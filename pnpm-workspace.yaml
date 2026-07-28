@@ -1,0 +1,7 @@
+allowBuilds:
+  canvas: true
+  core-js: true
+  sharp: true
+  tesseract.js: true
+  unrs-resolver: true
+  vue-demi: true
