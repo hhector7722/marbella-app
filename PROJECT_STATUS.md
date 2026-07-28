@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-27 (Dashboard: overtime no bloquea shell)
+**Última actualización:** 2026-07-28 (Dashboards: shell instantáneo + OT master 1 semana)
+
+- [x] **Shell instantáneo en `/dashboard`, `/master/dashboard`, `/staff/dashboard` (2026-07-28)**: Sin spinner a pantalla completa. Admin: tesorería/ventas/OT con spinner por sección. Master: OT solo última semana completada (no 60d); spinner en C INICIAL / H. extras / ventas. Staff: calendario+HE y fichaje cargan en paralelo; spinner en tarjeta semana y botón fichaje; atajos usables al montar.
+
+**Última actualización anterior:** 2026-07-27 (Dashboard: overtime no bloquea shell)
 
 - [x] **`/dashboard` overtime en paralelo (2026-07-27)**: `getDashboardData` ya no espera HE/60d. Tesorería/ventas pintan al llegar; sección Horas Extras con spinner propio vía `getOvertimeData`. `/master/dashboard`: spinner en tile H. extras durante la carga.
 

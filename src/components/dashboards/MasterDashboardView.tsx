@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { addDays, format } from 'date-fns';
+import { endOfWeek, format, startOfWeek, subWeeks } from 'date-fns';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'sonner';
 import { getOvertimeData } from '@/app/actions/overtime';
@@ -33,7 +33,7 @@ type MasterDashboardViewProps = {
 export default function MasterDashboardView({ initialData }: MasterDashboardViewProps) {
     const router = useRouter();
     const supabase = createClient();
-    const { actualBalance, boxes, refresh } = useMasterTreasuryLive({
+    const { actualBalance, boxes, loading: treasuryLoading, refresh } = useMasterTreasuryLive({
         actualBalance: initialData?.actualBalance,
         boxes: initialData?.boxes,
     });
@@ -196,8 +196,10 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
     useEffect(() => {
         let cancelled = false;
         setOvertimeLoading(true);
-        const start = format(addDays(new Date(), -60), 'yyyy-MM-dd');
-        const end = format(new Date(), 'yyyy-MM-dd');
+        // Solo la última semana completada (el tile muestra ese snapshot).
+        const lastWeekStart = startOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 });
+        const start = format(lastWeekStart, 'yyyy-MM-dd');
+        const end = format(endOfWeek(lastWeekStart, { weekStartsOn: 1 }), 'yyyy-MM-dd');
         getOvertimeData(start, end)
             .then((result) => {
                 if (cancelled) return;
@@ -343,6 +345,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                 <MasterShortcutGrid
                     actualBalance={actualBalance}
                     changeBoxes={changeBoxes}
+                    treasuryLoading={treasuryLoading}
                     overtimeSnapshot={overtimeSnapshot}
                     overtimeLoading={overtimeLoading}
                     onOpenCambio={() => setIsSwapModalOpen(true)}

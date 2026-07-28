@@ -479,10 +479,11 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto "prompt-ready"**. Debe 
 
 <!-- sync:project-status:start — NO EDITAR A MANO; generado por `scripts/sync-llm-prompt-from-project-status.mjs` -->
 
-**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-27 (Dashboard: overtime no bloquea shell)
+**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-28 (Dashboards: shell instantáneo + OT master 1 semana)
 
 Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; máx. 45 entradas):
 
+- **Shell instantáneo en `/dashboard`, `/master/dashboard`, `/staff/dashboard` (2026-07-28)**: Sin spinner a pantalla completa. Admin: tesorería/ventas/OT con spinner por sección. Master: OT solo última semana completada (no 60d); spinner en C INICIAL / H. extras / ventas. Staff: calendario+HE y fichaje cargan en paralelo; spinner en tarjeta semana y botón fichaje; atajos usables al montar.
 - **`/dashboard` overtime en paralelo (2026-07-27)**: `getDashboardData` ya no espera HE/60d. Tesorería/ventas pintan al llegar; sección Horas Extras con spinner propio vía `getOvertimeData`. `/master/dashboard`: spinner en tile H. extras durante la carga.
 - **Fase 1d — `close_week_for_all_users` desconectado (2026-07-27)**: Último productor SQL vivo post-Gate era pg_cron `close-previous-week` → `close_week_for_all_users` (INSERT/UPSERT columnas C desde `profiles` + `view_daily_hours_breakdown`, sin HE/Writer). Migración `20260727152000_phase1d_disable_close_week_sql_c_motor`: función → delegación HTTP Writer; job cron → `cron_close_previous_week_via_writer()`; `fn_recalc_and_propagate_snapshots` → no-op (0 funciones SQL con INSERT a `weekly_snapshots` C). Ops: `app_settings.cron_recalc_bearer` alineado con `CRON_SECRET` (antes PLACEHOLDER). Remoto: dry-run sin escritura C; smoke pg_net OK. ADR / Contract / HE / Cost **no modificados**.
 - **Fase 1c — `trigger_recalc_snapshots` eliminado (2026-07-27)**: Único productor SQL residual post-1b era `time_logs.trigger_recalc_snapshots` → `recalc_snapshots_on_log_change` → `fn_recalc`. Migración `20260727145300_phase1c_disable_time_logs_recalc_trigger`: DROP trigger + función no-op. Remoto verificado: 0 triggers recalc/propagate activos; cron sin `perform rpc_recalculate_all_balances`. Columnas C → único escritor efectivo: Writer TS (`writeWeeklyProjection`). ADR / Contract / HE / Cost **no modificados**.
@@ -527,6 +528,5 @@ Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; m
 - **Asistencia celda: P no desplaza H/Ex (2026-07-24)**: Tres slots fijos `h-3` (P → H → Ex). Sin datos el slot queda vacío; al añadir P no se mueven relojes ni H/Ex.
 - **Asistencia etiqueta especial visible (2026-07-24)**: El calendario del **dashboard staff** seguía con círculo F/E/B/P (por eso «no había cambio»). Ahora usa `SpecialDayLabel` compartido (historial + dashboard): nombre completo centrado, tamaño por longitud + measure con probe (sin `max-w-full`).
 - **Asistencia celda: fila P encima de H (2026-07-24)**: Si hay `justified_hours` con fichaje, fila `P` (misma tipografía que H/Ex) + valor en azul, encima de `H` (solo trabajadas). Sin `+j` en la misma línea ni badge esquina.
-- **Zoom browser temporal solo Héctor (2026-07-24)**: `generateViewport` en `layout.tsx` habilita pinch/double-tap zoom (`userScalable`, max 5) solo si email = `hhector7722@gmail.com`; resto del staff sigue bloqueado. También se omite `touch-manipulation` en `<body>` para ese usuario. **Revertir cuando ya no haga falta.**
 
 <!-- sync:project-status:end -->

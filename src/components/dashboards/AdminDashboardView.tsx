@@ -168,7 +168,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         const prefix = neg ? '-' : (showPlus && cents > 0 ? '+' : '');
         return `${prefix}${euros}.${String(c).padStart(2, '0')}€`;
     };
-    const [loading, setLoading] = useState(!initialData);
+    const [treasuryLoading, setTreasuryLoading] = useState(!initialData);
     const [dailyStats, setDailyStats] = useState<any>(initialData?.dailyStats || null);
     const [closingSalesSummary, setClosingSalesSummary] = useState(initialData?.liveTickets || { total: 0, count: 0 });
     const [isMovementsExpanded, setIsMovementsExpanded] = useState(false);
@@ -412,7 +412,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
 
     async function fetchData() {
         try {
-            setLoading(true);
+            setTreasuryLoading(true);
             const data = await getDashboardData();
             if (data) {
                 setDailyStats(data.dailyStats);
@@ -428,7 +428,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             console.error(error);
             toast.error('Error al actualizar datos');
         } finally {
-            setLoading(false);
+            setTreasuryLoading(false);
         }
     }
 
@@ -555,25 +555,20 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         setCashModalMode(mode);
     };
 
-    if (loading) return (
-        <div className="min-h-screen flex items-center justify-center p-4">
-            <LoadingSpinner size="xl" className="text-white" />
-        </div>
-    );
+    // Shell inmediato: tesorería/ventas/OT cargan por sección con spinner propio.
 
     // ====== BLOQUES REUTILIZABLES (para móvil / escritorio) ======
 
     const ventasSection = (
-        <DashboardVentasSection
-            initialData={{
-                liveTickets: initialData?.liveTickets,
-                salesChartData: initialData?.salesChartData,
-            }}
-        />
+        <DashboardVentasSection />
     );
     const cajaInicialSection = (
         <div className={cn("bg-white rounded-2xl shadow-xl border border-gray-100 flex flex-col transition-all duration-300", isMovementsExpanded ? "p-3" : "p-2 pb-0.5")}>
-            {boxes.filter(b => b.type === 'operational').map(box => (
+            {treasuryLoading ? (
+                <div className="flex items-center justify-center min-h-[88px] py-4" role="status" aria-label="Cargando caja">
+                    <LoadingSpinner size="md" className="text-emerald-600" />
+                </div>
+            ) : boxes.filter(b => b.type === 'operational').map(box => (
                         <div key={box.id} className="flex flex-col h-full">
                             <div className="flex flex-row gap-1.5 md:gap-2 items-center">
                                 <div className="flex items-center gap-1 shrink-0">
@@ -661,6 +656,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                             </div>
                         </div>
                     ))}
+            )}
         </div>
     );
 
@@ -797,6 +793,18 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         v > 0.005 ? (Math.abs(v - Math.round(v)) < 0.005 ? `${Math.round(v)}€` : `${v.toFixed(2)}€`) : " ";
 
     const renderDashboardChangeCard = (title: string, idx: number) => {
+        if (treasuryLoading) {
+            return (
+                <div key={`change-loading-${idx}`} className="bg-white rounded-xl shadow-sm flex flex-col overflow-hidden h-full min-h-[72px] w-full min-w-0 border border-zinc-100">
+                    <div className="bg-[#36606F] pl-3 pr-2 py-0.5 flex items-center justify-between text-white shrink-0">
+                        <h3 className="text-[8px] md:text-[9px] font-black uppercase tracking-wider truncate">{title}</h3>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center min-h-[48px]" role="status" aria-label={`Cargando ${title}`}>
+                        <LoadingSpinner size="sm" className="text-[#36606F]" />
+                    </div>
+                </div>
+            );
+        }
         const box = dashboardChangeBoxes[idx];
         if (!box) return null;
         return (

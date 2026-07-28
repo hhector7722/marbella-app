@@ -12,6 +12,7 @@ const WEB_URL = 'https://marbella-web.vercel.app';
 type MasterShortcutGridProps = {
     actualBalance: number;
     changeBoxes: any[];
+    treasuryLoading?: boolean;
     overtimeSnapshot: OvertimeWeekSnapshot | null;
     overtimeLoading?: boolean;
     onOpenCambio: () => void;
@@ -32,6 +33,7 @@ function formatBoxEur(v: number) {
 export default function MasterShortcutGrid({
     actualBalance,
     changeBoxes,
+    treasuryLoading = false,
     overtimeSnapshot,
     overtimeLoading = false,
     onOpenCambio,
@@ -58,12 +60,16 @@ export default function MasterShortcutGrid({
                     onClick={() => router.push('/dashboard/movements')}
                     className="bg-emerald-600 shadow-md border-2 border-white"
                 >
-                    <PremiumCountUp
-                        value={actualBalance}
-                        suffix="€"
-                        decimals={2}
-                        className="text-sm font-black leading-none text-white tabular-nums whitespace-nowrap md:text-[11px]"
-                    />
+                    {treasuryLoading ? (
+                        <LoadingSpinner size="sm" className="text-white" />
+                    ) : (
+                        <PremiumCountUp
+                            value={actualBalance}
+                            suffix="€"
+                            decimals={2}
+                            className="text-sm font-black leading-none text-white tabular-nums whitespace-nowrap md:text-[11px]"
+                        />
+                    )}
                 </DashboardIosIcon>
             ),
         },

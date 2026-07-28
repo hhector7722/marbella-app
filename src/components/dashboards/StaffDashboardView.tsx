@@ -86,10 +86,45 @@ const roundHoursValue = (hours: number): number => {
     return applyRoundingRule(minutes);
 };
 
+const WEEK_DAY_NAMES = ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'] as const;
+
+function buildWeekSkeleton(today: Date): DailyLog[] {
+    const weekStart = startOfWeek(today, { weekStartsOn: 1 });
+    return Array.from({ length: 7 }).map((_, i) => {
+        const d = addDays(weekStart, i);
+        return {
+            date: d,
+            dayName: WEEK_DAY_NAMES[i] || '',
+            dayNumber: parseInt(format(d, 'd'), 10),
+            isToday: isSameDay(d, today),
+            hasLog: false,
+            clockIn: '',
+            clockOut: '',
+            totalHours: 0,
+            extraHours: 0,
+            eventType: 'regular',
+            clock_out_show_no_registrada: false,
+        };
+    });
+}
+
+function computeIsoWeekNumber(weekStart: Date): number {
+    const target = new Date(weekStart.valueOf());
+    const dayNr = (weekStart.getDay() + 6) % 7;
+    target.setDate(target.getDate() - dayNr + 3);
+    const firstThursday = target.valueOf();
+    target.setMonth(0, 1);
+    if (target.getDay() !== 4) {
+        target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
+    }
+    return 1 + Math.ceil((firstThursday - target.valueOf()) / 604800000);
+}
+
 export default function StaffDashboardView() {
     const supabase = createClient();
     const router = useRouter();
-    const [loading, setLoading] = useState(true);
+    const [weekLoading, setWeekLoading] = useState(true);
+    const [clockLoading, setClockLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
     const [userRole, setUserRole] = useState<'staff' | 'manager' | 'supervisor'>('staff');
@@ -97,15 +132,21 @@ export default function StaffDashboardView() {
     const [status, setStatus] = useState<WorkStatus>('idle');
     const [todayLog, setTodayLog] = useState<any>(null);
 
-    const [weekDays, setWeekDays] = useState<DailyLog[]>([]);
+    const [weekDays, setWeekDays] = useState<DailyLog[]>(() => buildWeekSkeleton(new Date()));
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
     const [weeklySummary, setWeeklySummary] = useState<WeeklySummary>({
         totalHours: 0, hoursDifference: 0, currentBalance: 0, estimatedPayout: 0, status: 'pending', startBalance: 0
     });
     const [monthShifts, setMonthShifts] = useState<ShiftMock[]>([]);
     const [nextShifts, setNextShifts] = useState<ShiftMock[]>([]);
-    const [currentMonthName, setCurrentMonthName] = useState('');
-    const [weekNumber, setWeekNumber] = useState<number | null>(null);
+    const [currentMonthName, setCurrentMonthName] = useState(() =>
+        startOfWeek(new Date(), { weekStartsOn: 1 })
+            .toLocaleDateString('es-ES', { month: 'long' })
+            .replace(/^\w/, (c) => c.toUpperCase())
+    );
+    const [weekNumber, setWeekNumber] = useState<number | null>(() =>
+        computeIsoWeekNumber(startOfWeek(new Date(), { weekStartsOn: 1 }))
+    );
     const [showModal, setShowModal] = useState(false);
     const [modalAction, setModalAction] = useState<'in' | 'out' | null>(null);
     const [showGiffOverlay, setShowGiffOverlay] = useState(false);
@@ -266,7 +307,11 @@ export default function StaffDashboardView() {
     async function initialize() {
         try {
             const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+            if (!user) {
+                setClockLoading(false);
+                setWeekLoading(false);
+                return;
+            }
             setUserId(user.id);
             setUserEmail(user.email ?? '');
 
@@ -302,139 +347,126 @@ export default function StaffDashboardView() {
             if (log) {
                 setTodayLog(log);
                 setStatus(log.clock_out ? 'finished' : 'working');
-            } else { setTodayLog(null); setStatus('idle'); }
+            } else {
+                setTodayLog(null);
+                setStatus('idle');
+            }
+            setClockLoading(false);
 
             const weekStart = startOfWeek(today, { weekStartsOn: 1 });
-            const realWeekDays = Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i));
-
-            setCurrentMonthName(weekStart.toLocaleDateString('es-ES', { month: 'long' }).replace(/^\w/, c => c.toUpperCase()));
-
-            const target = new Date(weekStart.valueOf());
-            const dayNr = (weekStart.getDay() + 6) % 7;
-            target.setDate(target.getDate() - dayNr + 3);
-            const firstThursday = target.valueOf();
-            target.setMonth(0, 1);
-            if (target.getDay() !== 4) {
-                target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
-            }
-            const wNum = 1 + Math.ceil((firstThursday - target.valueOf()) / 604800000);
-            setWeekNumber(wNum);
-
+            setCurrentMonthName(
+                weekStart.toLocaleDateString('es-ES', { month: 'long' }).replace(/^\w/, (c) => c.toUpperCase())
+            );
+            setWeekNumber(computeIsoWeekNumber(weekStart));
             const weekStartYmd = format(weekStart, 'yyyy-MM-dd');
 
-            const detail = await getWeekDetailDto({ userId: user.id, weekStart: weekStartYmd });
-            if (!detail.success) {
-                toast.error(detail.error || 'No se pudo cargar el resumen semanal');
-            }
-
-            const daysStructure: DailyLog[] = realWeekDays.map((d, i) => {
-                const dayDto = detail.success ? detail.days[i] : undefined;
-                return {
-                    date: d,
-                    dayName: ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'][i] || '',
-                    dayNumber: parseInt(format(d, 'd'), 10),
-                    isToday: isSameDay(d, today),
-                    hasLog: dayDto?.hasLog ?? false,
-                    clockIn: dayDto?.clockIn ?? '',
-                    clockOut: dayDto?.clockOut ?? '',
-                    totalHours: dayDto?.totalHours ?? 0,
-                    extraHours: dayDto?.extraHours ?? 0,
-                    eventType: 'regular',
-                    clock_out_show_no_registrada: false,
-                };
-            });
-            setWeekDays(daysStructure);
-
-            const summary = detail.success
-                ? detail.summary
-                : {
-                      totalHours: 0,
-                      weeklyBalance: 0,
-                      estimatedValue: 0,
-                      startBalance: 0,
-                      preferStock: false,
-                  };
-
-            // Manager / fijo: presentación de HORAS (no altera datos persistidos).
-            let displayHours = summary.totalHours;
-            if (profile?.role === 'manager' || isFixedSalary) {
-                if (summary.totalHours === 0) {
-                    displayHours = contractHours;
-                } else {
-                    displayHours = contractHours + summary.totalHours;
+            const weekTask = (async () => {
+                const detail = await getWeekDetailDto({ userId: user.id, weekStart: weekStartYmd });
+                if (!detail.success) {
+                    toast.error(detail.error || 'No se pudo cargar el resumen semanal');
+                    return;
                 }
-            }
 
-            setWeeklySummary({
-                totalHours: displayHours,
-                hoursDifference: summary.weeklyBalance,
-                currentBalance: summary.weeklyBalance,
-                estimatedPayout: summary.estimatedValue,
-                status: 'pending',
-                startBalance: summary.startBalance,
-            });
-            setPreferStock(summary.preferStock);
-
-            // Cargar cajas de forma más robusta (Consolidación de Tesorería)
-            const { data: allBoxes, error: boxError } = await supabase.from('cash_boxes').select('*').order('name');
-            console.log("Initialize Boxes Data:", allBoxes);
-            if (boxError) console.error("Initialize Boxes Error:", boxError);
-
-            if (allBoxes && allBoxes.length > 0) {
-                setAllBoxes(allBoxes);
-                const cBox = allBoxes.find(b => b.type === 'change') || allBoxes[0];
-                const oBox = allBoxes.find(b => b.type === 'operational') || allBoxes[0];
-                setChangeBox(cBox);
-                setOperationalBox(oBox);
-            } else {
-                console.warn("No cash boxes found or accessible via RLS for this user.");
-            }
-
-            const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-            const { data: realShifts } = await supabase
-                .from('shifts')
-                .select('start_time, end_time, activity, activity_2')
-                .eq('user_id', user.id)
-                .eq('is_published', true)
-                .gte('start_time', startOfMonth.toISOString())
-                .order('start_time', { ascending: true });
-
-            if (realShifts && realShifts.length > 0) {
-                const formattedShifts: ShiftMock[] = realShifts.map(s => {
-                    const start = new Date(s.start_time);
-                    const end = new Date(s.end_time);
+                const daysStructure: DailyLog[] = buildWeekSkeleton(today).map((base, i) => {
+                    const dayDto = detail.days[i];
                     return {
-                        date: start,
-                        startTime: start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-                        endTime: end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-                        activity: s.activity || s.activity_2 || undefined
+                        ...base,
+                        hasLog: dayDto?.hasLog ?? false,
+                        clockIn: dayDto?.clockIn || '',
+                        clockOut: dayDto?.clockOut || '',
+                        totalHours: dayDto?.totalHours ?? 0,
+                        extraHours: dayDto?.extraHours ?? 0,
                     };
                 });
-                setMonthShifts(formattedShifts);
-                const todayStart = new Date(today);
-                todayStart.setHours(0, 0, 0, 0);
-                setNextShifts(formattedShifts.filter(s => s.date >= todayStart).slice(0, 2));
-            } else {
-                setMonthShifts([]);
-                setNextShifts([]);
-            }
+                setWeekDays(daysStructure);
 
-            // --- FETCH LIVE TICKETS FOR CLOSING (día negocio TPV `fecha`) ---
-            const { data: ticketsToday } = await supabase.from('tickets_marbella')
-                .select('total_documento')
-                .eq('fecha', todayYmd);
+                const summary = detail.summary;
+                let displayHours = summary.totalHours;
+                if (profile?.role === 'manager' || isFixedSalary) {
+                    if (summary.totalHours === 0) {
+                        displayHours = contractHours;
+                    } else {
+                        displayHours = contractHours + summary.totalHours;
+                    }
+                }
 
-            const totalVentas = ticketsToday?.reduce((sum, t) => sum + (Number(t.total_documento) || 0), 0) || 0;
-            const countVentas = ticketsToday?.reduce((count, t) => {
-                const val = Number(t.total_documento) || 0;
-                if (val > 0) return count + 1;
-                if (val < 0) return count - 1;
-                return count;
-            }, 0) || 0;
-            setLiveTickets({ total: totalVentas, count: Math.max(0, countVentas) });
+                setWeeklySummary({
+                    totalHours: displayHours,
+                    hoursDifference: summary.weeklyBalance,
+                    currentBalance: summary.weeklyBalance,
+                    estimatedPayout: summary.estimatedValue,
+                    status: 'pending',
+                    startBalance: summary.startBalance,
+                });
+                setPreferStock(summary.preferStock);
+            })().catch((e) => {
+                console.error(e);
+                toast.error('No se pudo cargar el resumen semanal');
+            }).finally(() => setWeekLoading(false));
 
-        } catch (error) { console.error(error); }
-        finally { setLoading(false); }
+            const boxesTask = (async () => {
+                const { data: allBoxesData, error: boxError } = await supabase.from('cash_boxes').select('*').order('name');
+                if (boxError) console.error("Initialize Boxes Error:", boxError);
+                if (allBoxesData && allBoxesData.length > 0) {
+                    setAllBoxes(allBoxesData);
+                    const cBox = allBoxesData.find((b: any) => b.type === 'change') || allBoxesData[0];
+                    const oBox = allBoxesData.find((b: any) => b.type === 'operational') || allBoxesData[0];
+                    setChangeBox(cBox);
+                    setOperationalBox(oBox);
+                }
+            })().catch(console.error);
+
+            const shiftsTask = (async () => {
+                const startOfMonthDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                const { data: realShifts } = await supabase
+                    .from('shifts')
+                    .select('start_time, end_time, activity, activity_2')
+                    .eq('user_id', user.id)
+                    .eq('is_published', true)
+                    .gte('start_time', startOfMonthDate.toISOString())
+                    .order('start_time', { ascending: true });
+
+                if (realShifts && realShifts.length > 0) {
+                    const formattedShifts: ShiftMock[] = realShifts.map((s) => {
+                        const start = new Date(s.start_time);
+                        const end = new Date(s.end_time);
+                        return {
+                            date: start,
+                            startTime: start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                            endTime: end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                            activity: s.activity || s.activity_2 || undefined,
+                        };
+                    });
+                    setMonthShifts(formattedShifts);
+                    const todayStart = new Date(today);
+                    todayStart.setHours(0, 0, 0, 0);
+                    setNextShifts(formattedShifts.filter((s) => s.date >= todayStart).slice(0, 2));
+                } else {
+                    setMonthShifts([]);
+                    setNextShifts([]);
+                }
+            })().catch(console.error);
+
+            const ticketsTask = (async () => {
+                const { data: ticketsToday } = await supabase.from('tickets_marbella')
+                    .select('total_documento')
+                    .eq('fecha', todayYmd);
+                const totalVentas = ticketsToday?.reduce((sum, t) => sum + (Number(t.total_documento) || 0), 0) || 0;
+                const countVentas = ticketsToday?.reduce((count, t) => {
+                    const val = Number(t.total_documento) || 0;
+                    if (val > 0) return count + 1;
+                    if (val < 0) return count - 1;
+                    return count;
+                }, 0) || 0;
+                setLiveTickets({ total: totalVentas, count: Math.max(0, countVentas) });
+            })().catch(console.error);
+
+            await Promise.all([weekTask, boxesTask, shiftsTask, ticketsTask]);
+        } catch (error) {
+            console.error(error);
+            setClockLoading(false);
+            setWeekLoading(false);
+        }
     }
 
     const openTreasuryModal = async (box: any, mode: 'out') => {
@@ -757,12 +789,6 @@ export default function StaffDashboardView() {
         }
     };
 
-    if (loading) return (
-        <div className="min-h-screen flex items-center justify-center p-4">
-            <LoadingSpinner size="xl" className="text-white" />
-        </div>
-    );
-
     return (
         <div className="pt-3 md:pt-3 animate-in fade-in duration-500 pb-8">
             <div className="px-4 md:px-0 w-full max-w-lg md:max-w-2xl mx-auto space-y-3 md:space-y-4">
@@ -783,7 +809,12 @@ export default function StaffDashboardView() {
                                 </div>
                             </div>
 
-                            <div className="p-4">
+                            <div className="p-4 relative min-h-[200px]">
+                                {weekLoading ? (
+                                    <div className="absolute inset-0 flex items-center justify-center z-10 bg-white/80" role="status" aria-label="Cargando semana">
+                                        <LoadingSpinner size="md" className="text-[#36606F]" />
+                                    </div>
+                                ) : null}
 
                                 <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
                                     <div className="grid grid-cols-7">
@@ -924,18 +955,19 @@ export default function StaffDashboardView() {
                                     openConfirmation();
                                 }
                             }}
-                            disabled={status === 'finished' || actionLoading}
+                            disabled={clockLoading || status === 'finished' || actionLoading}
                             className={cn(
                                 "w-full h-16 md:h-8 rounded-2xl md:rounded-xl shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95 duration-150",
-                                status === 'idle' && "bg-emerald-500 hover:bg-emerald-600 text-white",
-                                status === 'working' && "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-200",
-                                status === 'finished' && "bg-zinc-100 text-zinc-400 cursor-not-allowed border-zinc-100"
+                                clockLoading && "bg-zinc-200 text-zinc-500",
+                                !clockLoading && status === 'idle' && "bg-emerald-500 hover:bg-emerald-600 text-white",
+                                !clockLoading && status === 'working' && "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-200",
+                                !clockLoading && status === 'finished' && "bg-zinc-100 text-zinc-400 cursor-not-allowed border-zinc-100"
                             )}>
-                            {actionLoading ? (
+                            {clockLoading || actionLoading ? (
                                 <>
-                                    <LoadingSpinner size="sm" className="text-white" />
+                                    <LoadingSpinner size="sm" className={clockLoading ? "text-[#36606F]" : "text-white"} />
                                     <span className="text-xl md:text-sm font-black uppercase tracking-wider">
-                                        {modalAction === 'in' ? 'Iniciando...' : 'Cerrando...'}
+                                        {clockLoading ? 'Cargando...' : (modalAction === 'in' ? 'Iniciando...' : 'Cerrando...')}
                                     </span>
                                 </>
                             ) : (

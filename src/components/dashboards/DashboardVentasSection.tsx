@@ -56,6 +56,9 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
     const [selectedChartHour, setSelectedChartHour] = useState<number | null>(null);
     const chartContainerRef = useRef<HTMLDivElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
+    const [salesLoading, setSalesLoading] = useState(
+        !(initialData?.liveTickets != null && initialData?.salesChartData != null)
+    );
     const [filterHourRange, setFilterHourRange] = useState<{ start: number; end: number } | null>(null);
 
     const getTicketHour = (ticket: { hora_cierre?: string; fecha?: string }): number =>
@@ -93,15 +96,20 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
     };
 
     const fetchSalesForDate = async (dateStr: string) => {
-        await fetchHourlySales(dateStr);
+        setSalesLoading(true);
         try {
-            const { data: salesStats } = await supabase.rpc('get_daily_sales_stats', { target_date: dateStr });
-            setLiveTickets({
-                total: salesStats?.total_ventas ?? 0,
-                count: salesStats?.recuento_tickets ?? 0,
-            });
-        } catch {
-            setLiveTickets({ total: 0, count: 0 });
+            await fetchHourlySales(dateStr);
+            try {
+                const { data: salesStats } = await supabase.rpc('get_daily_sales_stats', { target_date: dateStr });
+                setLiveTickets({
+                    total: salesStats?.total_ventas ?? 0,
+                    count: salesStats?.recuento_tickets ?? 0,
+                });
+            } catch {
+                setLiveTickets({ total: 0, count: 0 });
+            }
+        } finally {
+            setSalesLoading(false);
         }
     };
 
@@ -341,7 +349,13 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     </Link>
                 </div>
 
-                <div className={cn('p-3 md:p-2.5 grid grid-cols-3 gap-2 md:gap-4 items-center shrink-0 transition-all duration-300', isSalesExpanded ? 'pb-1' : 'pb-0')}>
+                <div className={cn('p-3 md:p-2.5 grid grid-cols-3 gap-2 md:gap-4 items-center shrink-0 transition-all duration-300 relative min-h-[72px]', isSalesExpanded ? 'pb-1' : 'pb-0')}>
+                    {salesLoading ? (
+                        <div className="col-span-3 flex items-center justify-center py-2" role="status" aria-label="Cargando ventas">
+                            <LoadingSpinner size="md" className="text-[#36606F]" />
+                        </div>
+                    ) : (
+                    <>
                     <button
                         onClick={() => setIsSalesExpanded(!isSalesExpanded)}
                         className="flex flex-col items-center justify-center text-center min-h-[48px] w-full rounded-xl hover:bg-zinc-50/50 active:scale-[0.98] transition-all cursor-pointer group"
@@ -360,9 +374,11 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                         <PremiumCountUp value={displaySummary.count > 0 ? displaySummary.total / displaySummary.count : 0} suffix="€" decimals={2} className="text-lg md:text-3xl font-black text-blue-600 leading-none" />
                         <span className="text-[7px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Ticket Medio</span>
                     </div>
+                    </>
+                    )}
                 </div>
 
-                {(() => {
+                {salesLoading ? null : (() => {
                     const chartData = salesChartData;
                     const rangeData = chartData.slice(BUSINESS_HOURS.start, BUSINESS_HOURS.end + 1);
                     const maxMain = Math.max(...rangeData.map((d) => d.total), 0);
