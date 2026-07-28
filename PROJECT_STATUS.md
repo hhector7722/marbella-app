@@ -1,15 +1,13 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-27 (Sprint 33 — Dashboard Hub / Consolidación V2)
+**Última actualización:** 2026-07-28 (Sprint — AppShell V2 móvil / chrome)
 
-- [x] **Sprint 33 — Dashboard Hub / Consolidación V2 (2026-07-27)**: Hub `/dashboard` migrado; **Dashboard producto 100% V2** (excl. kds).
-  - **Migrado:** `/dashboard` — `V2PageShell` + `PageHeader` + `DashboardSwitcher` (mismo patrón que `/staff/dashboard`).
-  - **Registry:** alta `/dashboard` con matching **exact-only** (no contagiar hijos no registrados; kds queda fuera).
-  - **Nav:** ítem «Inicio» → `/dashboard`.
-  - **Chrome:** cabeceras petroleum en `AdminDashboardView` → `mds-primary`. Emerald/rose de caja y `#5B8FB9` de acentos secundarios conservados.
-  - **Intactos:** gate solo manager, `getDashboardData`, swipe multi-panel, widgets/KPIs/modales/acciones.
-  - **Componentes MDS nuevos:** 0. **Infra nueva:** 0 (solo regla exact-only en registry). **Lógica:** 0.
-  - **Fuera de alcance:** `kds` (redirect; proyecto independiente).
+- [x] **Sprint — Corrección AppShell V2 móvil (2026-07-28)**: Solo layout/chrome; 0 lógica de negocio.
+  - **P0 Safe-area:** `MobileHeader` con `pt-safe` + fila `h-12` + `sticky z-[100]`; drawer Sheet con `pt-safe`.
+  - **P0 Bottom nav:** `StaffBottomNav` montado en `AppShell` (paridad producción); wrappers legacy siguen null en V2 (sin duplicar). Excluye fullscreen carta.
+  - **P1 Densidad:** header sin Search placeholder; `PageContainer` / `PageHeader` compactos en móvil; shell `h-dvh` + un scroller.
+  - **P2 Offsets:** token `--marbella-bottom-nav-offset`; `DashboardSwitcher` dots alineados.
+  - **Decisión:** bottom nav vive dentro de AppShell en rutas V2; `BottomNavWrapper` / `staff/layout` no remontan en V2.
 
 ### Estado V2 consolidado
 
@@ -21,6 +19,7 @@
 | Total V2 | **36** |
 | Arquitectura V2 | **~100%** (estable) |
 | Design System | Estable; 0 MDS nuevos desde Sprint 17 |
+| Chrome móvil V2 | Safe-area + bottom nav producción + densidad compacta |
 | Deuda visual | Residual hub/modales en `V2_VISUAL_DEBT.md` |
 | Roadmap global (aprox.) | **~99%** (kds excluido) |
 | Próximo bloque | — · Deuda visual residual / master si aplica |
@@ -29,7 +28,16 @@
 
 Ninguno funcional. Excepción: `kds` (no migrar).
 
-**Última actualización anterior:** 2026-07-27 (Sprint 32 — Dashboard Slice XIII / Personal · History)
+**Última actualización anterior:** 2026-07-27 (Sprint 33 — Dashboard Hub / Consolidación V2)
+
+- [x] **Sprint 33 — Dashboard Hub / Consolidación V2 (2026-07-27)**: Hub `/dashboard` migrado; **Dashboard producto 100% V2** (excl. kds).
+  - **Migrado:** `/dashboard` — `V2PageShell` + `PageHeader` + `DashboardSwitcher` (mismo patrón que `/staff/dashboard`).
+  - **Registry:** alta `/dashboard` con matching **exact-only** (no contagiar hijos no registrados; kds queda fuera).
+  - **Nav:** ítem «Inicio» → `/dashboard`.
+  - **Chrome:** cabeceras petroleum en `AdminDashboardView` → `mds-primary`. Emerald/rose de caja y `#5B8FB9` de acentos secundarios conservados.
+  - **Intactos:** gate solo manager, `getDashboardData`, swipe multi-panel, widgets/KPIs/modales/acciones.
+  - **Componentes MDS nuevos:** 0. **Infra nueva:** 0 (solo regla exact-only en registry). **Lógica:** 0.
+  - **Fuera de alcance:** `kds` (redirect; proyecto independiente).
 
 - [x] **Sprint 32 — Dashboard Slice XIII / Personal · History (2026-07-27)**: Dominio **Personal** cerrado en V2.
   - **Migrado (1):** `/dashboard/history` — monolito CSR (`HistoryClient` ~2.9k LOC) + SSR `V2PageShell` + Suspense/`useSearchParams`.

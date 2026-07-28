@@ -31,7 +31,7 @@ export function MobileSidebar({
       <SheetContent
         side="left"
         showCloseButton
-        className="w-[min(100%,20rem)] border-mds-border bg-mds-surface p-0"
+        className="w-[min(100%,20rem)] border-mds-border bg-mds-surface p-0 pt-safe"
       >
         <SheetHeader className="sr-only">
           <SheetTitle>Menú de navegación</SheetTitle>

@@ -30,7 +30,7 @@ export function MDSProvider({
       data-mds-theme={mdsTheme}
       data-theme={dataTheme}
       className={cn(
-        'min-h-screen bg-mds-background text-mds-foreground',
+        'h-full min-h-0 bg-mds-background text-mds-foreground',
         className
       )}
     >

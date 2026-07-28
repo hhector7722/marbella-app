@@ -9,7 +9,7 @@ function PageTitle({ className, ...props }: PageTitleProps) {
       as="h1"
       variant="display"
       data-slot="mds-page-title"
-      className={cn('text-xl font-black md:text-2xl', className)}
+      className={cn('text-lg font-black md:text-xl lg:text-2xl', className)}
       {...props}
     />
   )
@@ -24,7 +24,7 @@ function PageSubtitle({ className, ...props }: PageSubtitleProps) {
       variant="body"
       muted
       data-slot="mds-page-subtitle"
-      className={cn('mt-1', className)}
+      className={cn('mt-0.5 text-xs md:mt-1 md:text-sm', className)}
       {...props}
     />
   )
@@ -66,7 +66,7 @@ function PageHeader({
     <header
       data-slot="mds-page-header"
       className={cn(
-        'flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between',
+        'flex flex-col gap-1.5 sm:flex-row sm:items-start sm:justify-between sm:gap-3',
         className
       )}
     >

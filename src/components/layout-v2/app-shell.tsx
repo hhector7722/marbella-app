@@ -1,6 +1,9 @@
 'use client'
 
+import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import StaffBottomNav from '@/components/StaffBottomNav'
+import { isFullscreenCartaPath } from '@/lib/carta-fullscreen-path'
 import { LayoutProvider } from './providers/layout-provider'
 import { Sidebar } from './sidebar/sidebar'
 import { Topbar } from './topbar/topbar'
@@ -35,12 +38,15 @@ export function AppShell({
   breadcrumbs,
   className,
 }: AppShellProps) {
+  const pathname = usePathname()
+  const showBottomNav = !isFullscreenCartaPath(pathname)
+
   return (
     <LayoutProvider>
       <div
         data-shell-variant={variant}
         className={cn(
-          'flex h-full min-h-screen w-full bg-mds-background text-mds-foreground',
+          'flex h-dvh max-h-dvh w-full overflow-hidden bg-mds-background text-mds-foreground',
           className
         )}
       >
@@ -48,10 +54,16 @@ export function AppShell({
           <Sidebar navigation={navigation} user={user} variant={variant} />
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <MobileHeader user={user} />
           <Topbar breadcrumbs={breadcrumbs} user={user} />
-          <main className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <main
+            className={cn(
+              'flex min-h-0 flex-1 flex-col overflow-y-auto',
+              showBottomNav &&
+                'pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-[calc(4rem+env(safe-area-inset-bottom,0px))]'
+            )}
+          >
             {children}
           </main>
         </div>
@@ -61,6 +73,8 @@ export function AppShell({
           user={user}
           variant={variant}
         />
+
+        {showBottomNav ? <StaffBottomNav /> : null}
       </div>
     </LayoutProvider>
   )

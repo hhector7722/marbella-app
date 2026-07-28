@@ -916,6 +916,7 @@ Pendientes de decisión explícita del producto/equipo:
 | 2026-07-26 | Sprint 12: inventario Dashboard + `/dashboard/scanner` | Primera ruta operativa (no analytics) en V2. |
 | 2026-07-27 | Sprint 16: eliminar `DashboardDetailLayout` | Fin shell Dashboard V1; migraciones nuevas = solo `V2PageShell` + registry + nav + MDS. |
 | 2026-07-27 | Sprint 33: hub `/dashboard` + registry exact-only | Alta del hub raíz; `/dashboard` no usa matching por prefijo (evita contagiar rutas no registradas p. ej. kds). Dashboard producto 100% V2 excl. kds. |
+| 2026-07-28 | Bottom nav V2 vive en `AppShell` (`StaffBottomNav`) | Paridad producción; `BottomNavWrapper` / `staff/layout` siguen null en V2 (sin duplicar). Safe-area en `MobileHeader`. |
 
 ### Decisiones implícitas (documentadas a posteriori)
 

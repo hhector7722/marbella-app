@@ -4,6 +4,24 @@
 @tailwind components;
 @tailwind utilities;
 
+/**
+ * Offset de StaffBottomNav (móvil 5rem / md 4rem + safe-area).
+ * Usar en FABs, dots y chrome V2 que floten sobre la barra.
+ */
+:root {
+  --marbella-bottom-nav-offset: calc(
+    5rem + env(safe-area-inset-bottom, 0px)
+  );
+}
+
+@media (min-width: 768px) {
+  :root {
+    --marbella-bottom-nav-offset: calc(
+      4rem + env(safe-area-inset-bottom, 0px)
+    );
+  }
+}
+
 @layer utilities {
   /**
    * Fondo de app: azul corporativo (#5B8FB9) con difuminado sutil —

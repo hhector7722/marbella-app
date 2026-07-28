@@ -44,7 +44,7 @@ export function ShellProvider({
           navigation={navigation}
           user={user}
           breadcrumbs={breadcrumbs}
-          className={className ?? 'min-h-screen'}
+          className={className}
         >
           {withPageContainer ? (
             <PageContainer>{children}</PageContainer>
