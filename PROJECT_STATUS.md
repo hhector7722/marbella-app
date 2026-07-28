@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-28 (Cierre caja: Esperado no se anula a 0)
+**Última actualización:** 2026-07-29 (Fix tsc Vercel: getPageGeom width/height)
+
+- [x] **Fix build Vercel — `getPageGeom` literales `as const` (2026-07-29)**: `DS_PAGE.width/height` inferían `595.28`/`841.89` y `doc.internal.pageSize.getWidth()` (`number`) fallaba en `chrome.ts` (y callers). Parámetros tipados como `number` en [`layout.ts`](src/lib/pdf/design-system-v2/layout.ts).
+
+**Última actualización anterior:** 2026-07-28 (Cierre caja: Esperado no se anula a 0)
 
 - [x] **Cierre caja — Esperado con fallback BDP (2026-07-28)**: Si `ventas − tarjeta − pendiente` queda negativo (p.ej. Ventas/Tarjeta del papel + Pendiente BDP), ya no se clampa a 0 ni el descuadre = efectivo entero. Fallback a `cobro_efectivo` del RPC `get_closing_sales_breakdown`. Paso 1 vuelve a mostrar **Pendiente** y **Cobros**. Toast al avanzar si se usa el fallback. [`CashClosingModal.tsx`](src/components/CashClosingModal.tsx).
 
