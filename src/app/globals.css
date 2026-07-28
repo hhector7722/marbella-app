@@ -524,7 +524,9 @@
     --sidebar-ring: oklch(0.556 0 0);
   }
   * {
-    @apply border-border outline-ring/50;
+    /* TW3: outline-ring/50 no existe con colors.ring = var(--ring) (patrón shadcn/TW4). */
+    @apply border-border;
+    outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
   }
   body {
     @apply bg-background text-foreground;
