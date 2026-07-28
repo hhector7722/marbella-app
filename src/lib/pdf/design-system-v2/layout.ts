@@ -31,8 +31,8 @@ const HEADER_BLOCK = 40
 const FOOTER_BLOCK = 36
 
 export function getPageGeom(
-  pageW = DS_PAGE.width,
-  pageH = DS_PAGE.height,
+  pageW: number = DS_PAGE.width,
+  pageH: number = DS_PAGE.height,
 ): PageGeom {
   const { marginX, marginY, columns, gutter, textColumns } = DS_PAGE
   const contentW = pageW - marginX * 2
