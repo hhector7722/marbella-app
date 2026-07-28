@@ -5,16 +5,11 @@ import { toast } from 'sonner'
 import { Check, Loader2, Search, Trash2, Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { deleteMenuOverride, upsertMenuOverride } from './actions'
-import type { CartaEditorMappingRow, CartaOverrideRow } from './types'
-
-type MenuCategory = {
-  id: string
-  name: string
-  parent_id: string | null
-  sort_order: number | null
-  scope?: string | null
-  slug?: string | null
-}
+import type {
+  CartaEditorMappingRow,
+  CartaMenuCategory,
+  CartaOverrideRow,
+} from './types'
 
 type UiRow = {
   articulo_id: number
@@ -32,7 +27,7 @@ export default function CartaEditorClient({
 }: {
   mappings: CartaEditorMappingRow[]
   overrides: CartaOverrideRow[]
-  categories: MenuCategory[]
+  categories: CartaMenuCategory[]
 }) {
   const [query, setQuery] = useState('')
   const [isPending, startTransition] = useTransition()
@@ -63,7 +58,7 @@ export default function CartaEditorClient({
   }, [categories])
 
   const childrenByParent = useMemo(() => {
-    const m = new Map<string, MenuCategory[]>()
+    const m = new Map<string, CartaMenuCategory[]>()
     for (const c of categories) {
       if (!c.parent_id) continue
       const list = m.get(c.parent_id) ?? []

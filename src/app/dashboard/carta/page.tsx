@@ -10,7 +10,11 @@ import CartaMappingCreatorClient, {
   type CartaRecipe,
   type CartaTpvArticle,
 } from './CartaMappingCreatorClient'
-import type { CartaEditorMappingRow, CartaOverrideRow } from './types'
+import type {
+  CartaEditorMappingRow,
+  CartaMenuCategory,
+  CartaOverrideRow,
+} from './types'
 
 export const dynamic = 'force-dynamic'
 
@@ -144,7 +148,7 @@ export default async function CartaDashboardPage() {
         <CartaEditorClient
           mappings={enrichedMappings as unknown as CartaEditorMappingRow[]}
           overrides={(overrides ?? []) as unknown as CartaOverrideRow[]}
-          categories={(categories ?? []) as Array<Record<string, unknown>>}
+          categories={(categories ?? []) as unknown as CartaMenuCategory[]}
         />
       </div>
     </V2PageShell>

@@ -24,3 +24,12 @@ export type CartaOverrideRow = {
   override_photo_url: string | null
 }
 
+export type CartaMenuCategory = {
+  id: string
+  name: string
+  parent_id: string | null
+  sort_order: number | null
+  scope?: string | null
+  slug?: string | null
+}
+
