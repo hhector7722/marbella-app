@@ -24,9 +24,12 @@ const textVariants = cva('text-mds-foreground', {
   },
 })
 
-type TextProps = React.ComponentProps<'p'> &
+type TextTag = 'p' | 'span' | 'h1' | 'h2' | 'h3' | 'h4' | 'label'
+
+type TextProps = Omit<React.ComponentPropsWithoutRef<'p'>, 'className'> &
   VariantProps<typeof textVariants> & {
-    as?: 'p' | 'span' | 'h1' | 'h2' | 'h3' | 'h4' | 'label'
+    as?: TextTag
+    className?: string
   }
 
 /**
@@ -36,9 +39,12 @@ function Text({
   className,
   variant,
   muted,
-  as: Comp = 'p',
+  as = 'p',
   ...props
 }: TextProps) {
+  // ElementType evita conflicto de ref entre <p> y <label> en el polimorfismo `as`.
+  const Comp = as as React.ElementType
+
   return (
     <Comp
       data-slot="mds-text"
