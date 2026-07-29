@@ -3,6 +3,8 @@ documento: DOCUMENTOS-IMPRESOS
 clase: vivo
 estado: vigente
 capa: diseno
+normativo: true
+precedencia: 20
 responsable: propiedad del producto
 revisado: 2026-07-29
 caducidad: 12 meses

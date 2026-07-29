@@ -1,4 +1,23 @@
+---
+documento: SPIKE-HARDENING-PRODUCTOR-NOMINAS
+clase: inmutable
+estado: archivado
+capa: investigacion
+normativo: false
+precedencia: 0
+responsable: propiedad del producto
+fechado: 2026-07-24
+caducidad: no aplica
+supersede: —
+---
+
 # Hardening del productor `payroll_monthly_totals`
+
+> **MATERIAL NO NORMATIVO — SPIKE-HARDENING-PRODUCTOR-NOMINAS**
+>
+> Esto es un análisis fechado el 2026-07-24, no una norma. **No autoriza ninguna decisión** y puede describir un sistema que ya no existe.
+>
+> La norma vigente vive en `marbella-os/`; la jerarquía que la ordena, en `marbella-os/CANON.md`. Ante cualquier discrepancia gana el documento normativo, sin discusión.
 
 **Fecha:** 2026-07-24  
 **Skills:** `gestor-nominas` + `auditor-payroll` + `db-supabase-master`  
@@ -139,3 +158,7 @@ Verificación Storage real:
 **Nivel: Alto**
 
 Justificación: productor único endurecido, importes may/jun reproducidos al céntimo con parser etiquetado, hash + auditoría + no overwrite de rectificaciones. Queda fuera de “Muy alto” mientras el transporte dependa de Gmail/GAS y no haya golden tests binarios en CI con los PDF reales versionados en repo (hoy se verificaron desde Storage).
+
+---
+
+> **Fin de SPIKE-HARDENING-PRODUCTOR-NOMINAS · material no normativo del 2026-07-24.** Nada de lo anterior autoriza decisiones. La norma vigente está en `marbella-os/README.md`.

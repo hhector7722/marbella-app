@@ -37,6 +37,7 @@ Las alternativas descartadas son la parte más valiosa y la que más se omite. S
 | Número | Decisión | Estado |
 |---|---|---|
 | [0001](./ADR-0001-hours-engine-productor-unico.md) | Hours Engine como productor único del dominio de horas | Vigente |
+| [0002](./ADR-0002-metadatos-operables-y-validador.md) | Metadatos operables y validador del corpus | Vigente |
 
 ## Decisiones tomadas sin registrar
 

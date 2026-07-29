@@ -3,6 +3,8 @@ documento: CHANGELOG
 clase: inmutable
 estado: vigente
 capa: estado
+normativo: true
+precedencia: 20
 responsable: propiedad del producto
 revisado: 2026-07-29
 caducidad: no aplica

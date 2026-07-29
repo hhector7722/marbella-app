@@ -1,4 +1,23 @@
+---
+documento: SPIKE-PLAN-ASISTENCIA-UNIFICADA
+clase: inmutable
+estado: archivado
+capa: investigacion
+normativo: false
+precedencia: 0
+responsable: propiedad del producto
+fechado: 2026-07-16
+caducidad: no aplica
+supersede: —
+---
+
 # Plan: Asistencia unificada (History + Registros) — Estética única
+
+> **MATERIAL NO NORMATIVO — SPIKE-PLAN-ASISTENCIA-UNIFICADA**
+>
+> Esto es un análisis fechado el 2026-07-16, no una norma. **No autoriza ninguna decisión** y puede describir un sistema que ya no existe.
+>
+> La norma vigente vive en `marbella-os/`; la jerarquía que la ordena, en `marbella-os/CANON.md`. Ante cualquier discrepancia gana el documento normativo, sin discusión.
 
 ## Principio de estética única
 
@@ -62,3 +81,7 @@ Todo sigue dentro de la misma estética history.
 4. **Registros:** redirect a `/staff/history`; todas las referencias apuntan a `/staff/history`. No se usa la estética antigua de registros en ninguna vista.
 
 Con esto se cumple que la página general para managers tenga desde el principio la estética de history, y que filtrar por empleado o entrar en edición no suponga ningún cambio de estética.
+
+---
+
+> **Fin de SPIKE-PLAN-ASISTENCIA-UNIFICADA · material no normativo del 2026-07-16.** Nada de lo anterior autoriza decisiones. La norma vigente está en `marbella-os/README.md`.

@@ -1,4 +1,23 @@
+---
+documento: SPIKE-SHADOW-VALIDACION
+clase: inmutable
+estado: archivado
+capa: investigacion
+normativo: false
+precedencia: 0
+responsable: propiedad del producto
+fechado: 2026-07-26
+caducidad: no aplica
+supersede: —
+---
+
 # Shadow Validation Report
+
+> **MATERIAL NO NORMATIVO — SPIKE-SHADOW-VALIDACION**
+>
+> Esto es un análisis fechado el 2026-07-26, no una norma. **No autoriza ninguna decisión** y puede describir un sistema que ya no existe.
+>
+> La norma vigente vive en `marbella-os/`; la jerarquía que la ordena, en `marbella-os/CANON.md`. Ante cualquier discrepancia gana el documento normativo, sin discusión.
 
 **Proyecto:** Bar La Marbella — migración SSOT Hours Engine  
 **Skill:** `auditor-horas-nominas`  
@@ -632,3 +651,7 @@ Evidencia persistida: tablas `shadow_parity_*` run `7e73bfc9-…`.
 ---
 
 *Fin del Shadow Validation Report. Sin código de automatización. Sin 8B.*
+
+---
+
+> **Fin de SPIKE-SHADOW-VALIDACION · material no normativo del 2026-07-26.** Nada de lo anterior autoriza decisiones. La norma vigente está en `marbella-os/README.md`.

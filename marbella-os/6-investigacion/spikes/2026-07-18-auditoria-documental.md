@@ -1,4 +1,23 @@
+---
+documento: SPIKE-AUDITORIA-DOCUMENTAL
+clase: inmutable
+estado: archivado
+capa: investigacion
+normativo: false
+precedencia: 0
+responsable: propiedad del producto
+fechado: 2026-07-18
+caducidad: no aplica
+supersede: —
+---
+
 # Auditoría documental e IA — Bar La Marbella
+
+> **MATERIAL NO NORMATIVO — SPIKE-AUDITORIA-DOCUMENTAL**
+>
+> Esto es un análisis fechado el 2026-07-18, no una norma. **No autoriza ninguna decisión** y puede describir un sistema que ya no existe.
+>
+> La norma vigente vive en `marbella-os/`; la jerarquía que la ordena, en `marbella-os/CANON.md`. Ante cualquier discrepancia gana el documento normativo, sin discusión.
 
 **Fecha:** 2026-07-18  
 **Alcance:** repositorio completo (`marbella-app`) — solo análisis, sin cambios de código  
@@ -1007,3 +1026,7 @@ Coincide con el estado documentado del producto:
 ---
 
 *Fin del documento de auditoría. No se ha modificado código de aplicación; solo se ha añadido este informe.*
+
+---
+
+> **Fin de SPIKE-AUDITORIA-DOCUMENTAL · material no normativo del 2026-07-18.** Nada de lo anterior autoriza decisiones. La norma vigente está en `marbella-os/README.md`.

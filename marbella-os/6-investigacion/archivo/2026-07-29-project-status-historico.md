@@ -1,4 +1,23 @@
+---
+documento: ARCHIVO-PROJECT-STATUS-HISTORICO
+clase: inmutable
+estado: archivado
+capa: investigacion
+normativo: false
+precedencia: 0
+responsable: propiedad del producto
+fechado: 2026-07-29
+caducidad: no aplica
+supersede: —
+---
+
 # BAR LA MARBELLA - PROJECT STATUS
+
+> **MATERIAL NO NORMATIVO — ARCHIVO-PROJECT-STATUS-HISTORICO**
+>
+> Esto es un documento histórico congelado el 2026-07-29, no una norma. **No autoriza ninguna decisión** y puede describir un sistema que ya no existe. Sus enlaces internos no resuelven: apuntan a rutas anteriores a la reorganización y no se corrigen.
+>
+> La norma vigente vive en `marbella-os/`; la jerarquía que la ordena, en `marbella-os/CANON.md`. Ante cualquier discrepancia gana el documento normativo, sin discusión.
 
 **Última actualización:** 2026-07-29 (Label fichaje: Enfermo)
 
@@ -1286,3 +1305,7 @@ El sistema ha sido estabilizado para su despliegue en Vercel.
 - **Database Rules:** Seguir el protocolo `db-supabase-master`.
 - **Naming Convention:** Se mantienen nombres actuales de DB para evitar roturas de esquema.
 - **Regla Zero-Display:** En vistas de lectura (no formularios), cualquier valor igual a 0 debe mostrarse como un espacio vacío " ".
+
+---
+
+> **Fin de ARCHIVO-PROJECT-STATUS-HISTORICO · material no normativo del 2026-07-29.** Nada de lo anterior autoriza decisiones. La norma vigente está en `marbella-os/README.md`.

@@ -3,6 +3,8 @@ documento: ADR-0001
 clase: inmutable
 estado: vigente
 capa: decisiones
+normativo: true
+precedencia: 80
 responsable: propiedad del producto
 decidido: 2026-07-27
 promovido: 2026-07-29

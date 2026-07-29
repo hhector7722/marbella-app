@@ -1,4 +1,23 @@
+---
+documento: ARCHIVO-HORAS-SNAPSHOTS-Y-ARRASTRE
+clase: inmutable
+estado: archivado
+capa: investigacion
+normativo: false
+precedencia: 0
+responsable: propiedad del producto
+fechado: 2026-07-24
+caducidad: no aplica
+supersede: —
+---
+
 # Horas trabajadas, contrato, extras y arrastre (SSOT vs UI)
+
+> **MATERIAL NO NORMATIVO — ARCHIVO-HORAS-SNAPSHOTS-Y-ARRASTRE**
+>
+> Esto es un documento histórico congelado el 2026-07-24, no una norma. **No autoriza ninguna decisión** y puede describir un sistema que ya no existe. Sus enlaces internos no resuelven: apuntan a rutas anteriores a la reorganización y no se corrigen.
+>
+> La norma vigente vive en `marbella-os/`; la jerarquía que la ordena, en `marbella-os/CANON.md`. Ante cualquier discrepancia gana el documento normativo, sin discusión.
 
 Este documento describe el flujo real del código en migraciones Supabase y cómo auditar discrepancias entre **calendario (extras por día)** y **balances semanales (snapshots)**.
 
@@ -84,3 +103,7 @@ flowchart TD
   weeklySnap --> weeklyStats[get_weekly_worker_stats]
   weeklySnap --> profileBal[profiles.hours_balance]
 ```
+
+---
+
+> **Fin de ARCHIVO-HORAS-SNAPSHOTS-Y-ARRASTRE · material no normativo del 2026-07-24.** Nada de lo anterior autoriza decisiones. La norma vigente está en `marbella-os/README.md`.

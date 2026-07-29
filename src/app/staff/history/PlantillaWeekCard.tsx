@@ -112,7 +112,7 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
                                     return (
                                         <div
                                             key={log.id}
-                                            className="flex w-full min-w-0 flex-row items-center justify-start gap-1"
+                                            className="flex w-full min-w-0 flex-row items-center justify-between"
                                         >
                                             <span className="shrink-0 text-[7px] font-normal leading-none text-zinc-600">
                                                 {initials}
@@ -122,12 +122,12 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
                                                     {special.label}
                                                 </span>
                                             ) : (
-                                                <span className="flex min-w-0 items-center gap-0.5 truncate font-mono text-[7px] font-bold leading-none">
-                                                    <span className={cn("shrink-0", isNoRegistered ? "text-rose-600" : "text-emerald-600")}>
+                                                <span className="flex shrink-0 items-center gap-0 font-mono text-[7px] font-bold leading-none">
+                                                    <span className={cn("", isNoRegistered ? "text-rose-600" : "text-emerald-600")}>
                                                         {inHour || '—'}
                                                     </span>
                                                     <span className="font-normal text-zinc-600">/</span>
-                                                    <span className="shrink-0 text-rose-600">{outHour || '—'}</span>
+                                                    <span className="text-rose-600">{outHour || '—'}</span>
                                                 </span>
                                             )}
                                         </div>

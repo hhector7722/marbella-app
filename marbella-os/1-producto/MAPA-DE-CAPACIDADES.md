@@ -3,6 +3,8 @@ documento: MAPA-DE-CAPACIDADES
 clase: vivo
 estado: vigente
 capa: producto
+normativo: true
+precedencia: 20
 responsable: propiedad del producto
 revisado: 2026-07-29
 caducidad: 3 meses

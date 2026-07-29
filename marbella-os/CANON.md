@@ -84,6 +84,8 @@ documento: NOMBRE-CORTO
 clase: constitucional | vivo | inmutable
 estado: borrador | propuesto | vigente | superado | archivado
 capa: raiz | producto | diseno | ingenieria | decisiones | estado | investigacion
+normativo: true | false
+precedencia: 0 | 20 | 40 | 60 | 80 | 100
 responsable: quién responde de que sea verdad
 revisado: YYYY-MM-DD
 caducidad: N meses | no aplica
@@ -99,6 +101,27 @@ Reglas de los campos:
 - `estado: superado` — sustituido por otro documento, que debe estar nombrado en el campo `supersede` del sustituto.
 - `estado: archivado` — solo valor histórico. **Explícitamente no normativo.**
 - `caducidad` — plazo tras el cual el documento se considera sospechoso si no se ha revisado. Los inmutables llevan `no aplica`.
+
+### Los dos campos que declaran autoridad
+
+Añadidos por [ADR-0002](4-decisiones/ADR-0002-metadatos-operables-y-validador.md). Existen porque este corpus se lee también por máquinas, y una máquina recibe fragmentos de texto sin la carpeta que los contiene ni el índice que los presenta. **Lo que no viaje dentro del documento, no llega.**
+
+`normativo` declara si el documento autoriza decisiones. Es independiente de `clase` y de `estado`, y esa independencia es su motivo: `clase: inmutable` agrupa a los ADR, a los contratos versionados, al changelog y a los análisis fechados, que tienen rangos de autoridad muy distintos.
+
+`precedencia` proyecta el orden de prevalencia de la sección 6 a un entero comparable sin razonar:
+
+| Valor | Corresponde a |
+|---|---|
+| `100` | `CANON` |
+| `80` | ADR vigente |
+| `60` | constitucional |
+| `40` | contrato versionado |
+| `20` | vivo |
+| `0` | cualquier documento con `normativo: false` |
+
+La norma sigue siendo la sección 6. Este campo es su proyección operable, no su sustituto: si ambos discrepan, manda la sección 6 y el campo está mal.
+
+**Un documento con `normativo: false` no autoriza nada**, con independencia de lo que afirme su texto y de lo asertivo que suene. Todo `6-investigacion/` lo lleva.
 
 ---
 
@@ -224,10 +247,13 @@ Marbella OS está escrito para ser leído tanto por personas como por modelos. U
 
 1. **Leer `README.md` primero.** Es el índice y declara qué documento gobierna cada materia.
 2. **No citar documentos que no estén `vigente`.** Un documento `archivado`, `superado`, `borrador` o `propuesto` no autoriza ninguna decisión.
-3. **No inventar.** Si un hecho no está en Marbella OS ni en el código, decirlo explícitamente en lugar de rellenar el hueco.
-4. **No duplicar.** Ante la tentación de repetir un hecho «para que se entienda», enlazar.
-5. **Respetar la puerta de cambio** de la sección 9 en cada modificación de comportamiento.
-6. **Preferir corregir la frontera antes que añadir un documento.** El corpus crece por necesidad, no por acumulación.
+3. **No citar nada con `normativo: false`.** Por asertivo que suene su texto, no autoriza nada. Si es la única fuente disponible, decir que es material no normativo al usarlo.
+4. **Ante dos documentos que se contradigan, gana el de `precedencia` mayor.** Si empatan, decide la sección 6 y hay que resolver la duplicación, no elegir.
+5. **No inventar.** Si un hecho no está en Marbella OS ni en el código, decirlo explícitamente en lugar de rellenar el hueco.
+6. **No duplicar.** Ante la tentación de repetir un hecho «para que se entienda», enlazar.
+7. **Respetar la puerta de cambio** de la sección 9 en cada modificación de comportamiento.
+8. **Preferir corregir la frontera antes que añadir un documento.** El corpus crece por necesidad, no por acumulación.
+9. **No editar `marbella-os/.generated/`.** Se regenera; lo que se edite a mano se pierde y además hace fallar el validador.
 
 ---
 
@@ -241,3 +267,11 @@ Cuatro señales de que esta arquitectura está degradándose. Cualquiera de ella
 - Existe una norma que solo vive en configuración de herramienta o en la cabeza de alguien.
 
 El coste real de esta arquitectura no está en escribirla, está en mantenerla. Si las reglas 5, 9 y 10 no se cumplen, el corpus volverá exactamente al estado anterior, solo mejor ordenado al principio.
+
+### Qué se comprueba solo
+
+`npm run validate:corpus` verifica las reglas de este documento que una máquina puede verificar: front-matter presente y bien formado, vocabulario de los campos, coherencia entre `precedencia` y la sección 6, integridad de los enlaces de los documentos normativos, `supersede` apuntando a algo que existe, numeración de ADR sin huecos, convención de nombres de la sección 7 y existencia de los directorios que los índices anuncian. Falla el cambio si algo de eso se rompe. La caducidad excedida avisa, no falla.
+
+Decidido en [ADR-0002](4-decisiones/ADR-0002-metadatos-operables-y-validador.md), que también explica lo que **no** comprueba.
+
+Lo que ninguna máquina comprueba hoy es la regla 5, la de dueño único por hecho, porque detectar que dos documentos afirman lo mismo exige entender lo que dicen. Sigue dependiendo de quien escribe, y sigue siendo la más importante.

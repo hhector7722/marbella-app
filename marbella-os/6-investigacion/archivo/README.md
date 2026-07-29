@@ -19,7 +19,7 @@ Material histórico. **No es norma, no se actualiza y no se corrige.**
 | [2026-07-29 · Estado del proyecto histórico](./2026-07-29-project-status-historico.md) | El documento que hacía de todo: bitácora, estado, registro de decisiones y contexto para modelos. Su descomposición es el motivo de que exista Marbella OS |
 | [2026-07-24 · Snapshots de horas y arrastre](./2026-07-24-horas-snapshots-y-arrastre.md) | Descripción de la lógica de horas en base de datos, **desconectada** desde el 27 de julio de 2026. Contradice [ADR-0001](../../4-decisiones/ADR-0001-hours-engine-productor-unico.md) |
 | [2026-07-24 · Migración de consumidores](./2026-07-24-migracion-consumidores-ssot.md) | Plan de migración completado. Todas las pantallas leen ya del productor único |
-| [2026-05 · Migración de avatares](./2026-05-avatars-migracion.md) | Instrucciones de una migración puntual ya aplicada |
+| [2026-03-10 · Migración de avatares](./2026-03-10-avatars-migracion.md) | Instrucciones de una migración puntual ya aplicada |
 
 ## Por qué se conserva
 

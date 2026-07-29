@@ -1,4 +1,24 @@
+---
+documento: SPIKE-MAPEO-CODIGO-ESQUEMA
+clase: inmutable
+estado: archivado
+capa: investigacion
+normativo: false
+precedencia: 0
+responsable: propiedad del producto
+fechado: 2026-07-18
+caducidad: no aplica
+supersede: —
+---
+
 # MAPEO DE REALIDAD — Bar La Marbella
+
+> **MATERIAL NO NORMATIVO — SPIKE-MAPEO-CODIGO-ESQUEMA**
+>
+> Esto es un análisis fechado el 2026-07-18, no una norma. **No autoriza ninguna decisión** y puede describir un sistema que ya no existe.
+>
+> La norma vigente vive en `marbella-os/`; la jerarquía que la ordena, en `marbella-os/CANON.md`. Ante cualquier discrepancia gana el documento normativo, sin discusión.
+
 ## Análisis Crítico Codebase Next.js ↔ Esquema Supabase
 
 **Fecha:** 2026-03-09  
@@ -167,3 +187,7 @@ Hay referencias duplicadas con `src\app\...` y `src/app/...` en resultados de b�
 2. ~~Cambiar `ManagerLedgerView` a `profiles(first_name, last_name)` o añadir `full_name` en BD~~ **HECHO** — Columna `full_name` generada + fallback first_name/last_name.
 3. ~~Verificar que el JWT incluya el claim `role`~~ **HECHO** — Trigger `sync_profile_role_to_auth` inyecta role en `raw_app_meta_data`.
 4. Revisar si `employee-documents` es el nombre real del bucket de Storage.
+
+---
+
+> **Fin de SPIKE-MAPEO-CODIGO-ESQUEMA · material no normativo del 2026-07-18.** Nada de lo anterior autoriza decisiones. La norma vigente está en `marbella-os/README.md`.

@@ -3,6 +3,8 @@ documento: README
 clase: vivo
 estado: vigente
 capa: raiz
+normativo: true
+precedencia: 20
 responsable: propiedad del producto
 revisado: 2026-07-29
 caducidad: 3 meses
@@ -30,6 +32,33 @@ Antes de leer cualquier otra cosa: [CANON.md](CANON.md) explica cómo funciona e
 | Vas a tocar datos o integraciones | [ARQUITECTURA](3-ingenieria/ARQUITECTURA.md) → [MODELO-DE-DATOS](3-ingenieria/MODELO-DE-DATOS.md) → [SEGURIDAD](3-ingenieria/SEGURIDAD.md) → [integraciones](3-ingenieria/integraciones/README.md) |
 | Necesitas saber cómo está el proyecto | [ESTADO](5-estado/ESTADO.md) → [DEUDA](5-estado/DEUDA.md) → [ROADMAP](5-estado/ROADMAP.md) |
 | Eres un agente de IA | [CANON §12](CANON.md#12-reglas-para-agentes-de-ia) |
+
+## Qué leer según lo que vas a tocar
+
+La tabla anterior es un itinerario de entrada. Esta responde a otra pregunta: ya sabes qué vas a cambiar y necesitas saber **qué lo gobierna**. Nadie tiene que leer el corpus entero para tocar una pantalla.
+
+Es la fuente única de esta correspondencia. La regla de agente de `.cursor/rules/` no la copia: la deriva a `marbella-os/.generated/`.
+
+| Vas a tocar | Lee |
+|---|---|
+| Cualquier cosa, para situarte | [ARQUITECTURA](3-ingenieria/ARQUITECTURA.md) |
+| Cualquier cosa, para saber cómo está | [ESTADO](5-estado/ESTADO.md), [DEUDA](5-estado/DEUDA.md) |
+| Una pantalla o un componente | [EXPERIENCIA](2-diseno/EXPERIENCIA.md), [TOKENS](2-diseno/TOKENS.md), [PATRONES](2-diseno/PATRONES.md), [SISTEMA-DE-COMPONENTES](2-diseno/SISTEMA-DE-COMPONENTES.md) |
+| Código de interfaz | [FRONTEND](3-ingenieria/FRONTEND.md) |
+| Textos, etiquetas, formatos numéricos | [CONTENIDO-Y-TONO](2-diseno/CONTENIDO-Y-TONO.md) |
+| Un documento impreso | [DOCUMENTOS-IMPRESOS](2-diseno/DOCUMENTOS-IMPRESOS.md) |
+| Datos: leer, escribir, migrar | [MODELO-DE-DATOS](3-ingenieria/MODELO-DE-DATOS.md) |
+| Permisos, políticas de acceso, secretos, archivos | [SEGURIDAD](3-ingenieria/SEGURIDAD.md) |
+| Roles o quién puede hacer qué | [ACTORES-Y-ROLES](1-producto/ACTORES-Y-ROLES.md) |
+| Pruebas o verificación de un cambio | [CALIDAD](3-ingenieria/CALIDAD.md) |
+| Una fórmula de negocio | [dominio/](3-ingenieria/dominio/README.md), [4-decisiones/](4-decisiones/README.md) |
+| Horas, nóminas o coste laboral | [ADR-0001](4-decisiones/ADR-0001-hours-engine-productor-unico.md), [COSTE-LABORAL](3-ingenieria/dominio/COSTE-LABORAL.md), [JORNADA-FIJA](3-ingenieria/dominio/JORNADA-FIJA.md) |
+| Precios de ingredientes o albaranes | [PRECIOS-Y-COMPRAS](3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md) |
+| Un sistema externo | [integraciones/](3-ingenieria/integraciones/README.md) |
+| Un despliegue o una tarea programada | [operacion/](3-ingenieria/operacion/README.md) |
+| La propia documentación | [CANON](CANON.md) |
+
+Dos comprobaciones que no dependen de la materia: que la dirección que vas a proponer no esté ya descartada en [VISION](1-producto/VISION.md), y que, ante dos soluciones válidas, arbitre [PRINCIPIOS](1-producto/PRINCIPIOS.md), que además fija el orden de prioridad.
 
 ---
 
@@ -81,6 +110,7 @@ Registro de decisiones de arquitectura. Inmutables, numeración global, secuenci
 | Número | Decisión | Estado |
 |---|---|---|
 | [0001](4-decisiones/ADR-0001-hours-engine-productor-unico.md) | Hours Engine como productor único del dominio de horas | vigente |
+| [0002](4-decisiones/ADR-0002-metadatos-operables-y-validador.md) | Metadatos operables y validador del corpus | vigente |
 
 Hay **cuatro decisiones tomadas y no registradas**, listadas en ese índice. Están vigentes en el código sin que nadie pueda saber por qué se tomaron.
 
@@ -97,7 +127,8 @@ Hay **cuatro decisiones tomadas y no registradas**, listadas en ese índice. Est
 
 | Ubicación | Contenido |
 |---|---|
-| [6-investigacion/](6-investigacion/README.md) | Índice de la capa y reglas. Propuestas abiertas en `rfc/` |
+| [6-investigacion/](6-investigacion/README.md) | Índice de la capa y reglas |
+| [6-investigacion/rfc/](6-investigacion/rfc/README.md) | Propuestas abiertas a discusión. Ninguna ahora mismo |
 | [6-investigacion/spikes/](6-investigacion/spikes/README.md) | Siete análisis y auditorías con fecha. **No normativos** |
 | [6-investigacion/archivo/](6-investigacion/archivo/README.md) | Corpus histórico congelado, incluido el antiguo estado del proyecto. **No normativo** |
 

@@ -1,4 +1,23 @@
+---
+documento: SPIKE-AUDITORIA-PRODUCTOR-NOMINAS
+clase: inmutable
+estado: archivado
+capa: investigacion
+normativo: false
+precedencia: 0
+responsable: propiedad del producto
+fechado: 2026-07-24
+caducidad: no aplica
+supersede: —
+---
+
 # FASE 1 — Validación del productor de `payroll_monthly_totals`
+
+> **MATERIAL NO NORMATIVO — SPIKE-AUDITORIA-PRODUCTOR-NOMINAS**
+>
+> Esto es un análisis fechado el 2026-07-24, no una norma. **No autoriza ninguna decisión** y puede describir un sistema que ya no existe.
+>
+> La norma vigente vive en `marbella-os/`; la jerarquía que la ordena, en `marbella-os/CANON.md`. Ante cualquier discrepancia gana el documento normativo, sin discusión.
 
 **Fecha:** 2026-07-24  
 **Skills:** `gestor-nominas` + `auditor-payroll` + `db-supabase-master`  
@@ -213,3 +232,7 @@ Solo lo que aumenta fiabilidad del productor (no cosmética):
 - Antes de “cerrar” el pipeline SSOT definitivo, la mejora **#1 (anclar a etiqueta) + #2 (hash/rectificación)** son el mínimo de ingeniería; el resto del pipeline (portal, líneas por trabajador) no sustituye este refuerzo.
 
 **Siguiente fase recomendada (cuando se autorice implementar):** parser etiquetado + tests golden sobre los PDF `payroll-summary/2026-05` y `2026-06` — sin tocar Labor / HE / Shadow.
+
+---
+
+> **Fin de SPIKE-AUDITORIA-PRODUCTOR-NOMINAS · material no normativo del 2026-07-24.** Nada de lo anterior autoriza decisiones. La norma vigente está en `marbella-os/README.md`.

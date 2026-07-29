@@ -1,4 +1,23 @@
+---
+documento: ARCHIVO-MIGRACION-CONSUMIDORES-SSOT
+clase: inmutable
+estado: archivado
+capa: investigacion
+normativo: false
+precedencia: 0
+responsable: propiedad del producto
+fechado: 2026-07-24
+caducidad: no aplica
+supersede: —
+---
+
 # Migración consumidores SSOT — Fase 2 (pantallas)
+
+> **MATERIAL NO NORMATIVO — ARCHIVO-MIGRACION-CONSUMIDORES-SSOT**
+>
+> Esto es un documento histórico congelado el 2026-07-24, no una norma. **No autoriza ninguna decisión** y puede describir un sistema que ya no existe. Sus enlaces internos no resuelven: apuntan a rutas anteriores a la reorganización y no se corrigen.
+>
+> La norma vigente vive en `marbella-os/`; la jerarquía que la ordena, en `marbella-os/CANON.md`. Ante cualquier discrepancia gana el documento normativo, sin discusión.
 
 **Fecha:** 2026-07-24  
 **Alcance:** Solo consumidores UI. Sin cambios en Hours Engine núcleo, Shadow, snapshots ni payroll.
@@ -80,3 +99,7 @@ Candidatos a DROP cuando se confirme que ningún job externo los usa:
 **Migración estimada consumidores laborales UI:** ~100% de las pantallas listadas.
 
 **¿Una sola fuente de verdad visible?** Sí para horas extras / liquidación semanal (HE) y para coste extras diario/periodo (mismo `estimatedValue`). Tarifas ordinarias de planificación usan el mismo modelo de tramos + `monthly_cost`. PyG Insights extras sigue el snapshot SQL (`weekly_snapshots.total_cost`), alineado al productor oficial persistido — no a un segundo cálculo en cliente.
+
+---
+
+> **Fin de ARCHIVO-MIGRACION-CONSUMIDORES-SSOT · material no normativo del 2026-07-24.** Nada de lo anterior autoriza decisiones. La norma vigente está en `marbella-os/README.md`.

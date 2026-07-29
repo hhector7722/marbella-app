@@ -1,4 +1,23 @@
+---
+documento: SPIKE-SHADOW-RESIDUALES
+clase: inmutable
+estado: archivado
+capa: investigacion
+normativo: false
+precedencia: 0
+responsable: propiedad del producto
+fechado: 2026-07-26
+caducidad: no aplica
+supersede: —
+---
+
 # SHADOW — Análisis residual post Iteraciones A/B
+
+> **MATERIAL NO NORMATIVO — SPIKE-SHADOW-RESIDUALES**
+>
+> Esto es un análisis fechado el 2026-07-26, no una norma. **No autoriza ninguna decisión** y puede describir un sistema que ya no existe.
+>
+> La norma vigente vive en `marbella-os/`; la jerarquía que la ordena, en `marbella-os/CANON.md`. Ante cualquier discrepancia gana el documento normativo, sin discusión.
 
 **Fecha:** 2026-07-24  
 **Skill:** `auditor-horas-nominas` + `db-supabase-master`  
@@ -804,3 +823,7 @@ Luego HE arrastra −1; SQL queda en 0. W20 solo refleja ese −1.
 *(Tras corrección Bali `4b0b3a55-…`:)* **B)** SSOT **técnicamente convergido**; única decisión funcional documentada pendiente = semilla histórica de Pere. **Sin bugs abiertos.**
 
 Sin implementación en este Validation Gate (histórico).
+
+---
+
+> **Fin de SPIKE-SHADOW-RESIDUALES · material no normativo del 2026-07-26.** Nada de lo anterior autoriza decisiones. La norma vigente está en `marbella-os/README.md`.

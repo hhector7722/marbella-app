@@ -3,6 +3,8 @@ documento: ESTADO
 clase: vivo
 estado: vigente
 capa: estado
+normativo: true
+precedencia: 20
 responsable: propiedad del producto
 revisado: 2026-07-29
 caducidad: 1 mes

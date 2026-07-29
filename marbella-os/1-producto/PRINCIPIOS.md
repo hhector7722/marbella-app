@@ -3,6 +3,8 @@ documento: PRINCIPIOS
 clase: constitucional
 estado: vigente
 capa: producto
+normativo: true
+precedencia: 60
 responsable: propiedad del producto
 revisado: 2026-07-29
 caducidad: 12 meses

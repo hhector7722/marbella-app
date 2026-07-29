@@ -24,28 +24,13 @@ Lee primero:
 
 # CARGA DE CONTEXTO SEGÚN LA TAREA
 
-No leas todo el corpus. Lee lo que gobierna lo que vas a tocar:
+No leas todo el corpus. Lee lo que gobierna lo que vas a tocar.
 
-| Vas a tocar | Lee |
-|---|---|
-| Cualquier cosa, para situarte | `3-ingenieria/ARQUITECTURA.md` |
-| Una pantalla o un componente | `2-diseno/EXPERIENCIA.md`, `2-diseno/TOKENS.md`, `2-diseno/PATRONES.md`, `2-diseno/SISTEMA-DE-COMPONENTES.md` |
-| Código de interfaz | `3-ingenieria/FRONTEND.md` |
-| Textos, etiquetas, formatos numéricos | `2-diseno/CONTENIDO-Y-TONO.md` |
-| Datos: leer, escribir, migrar | `3-ingenieria/MODELO-DE-DATOS.md` |
-| Permisos, políticas de acceso, secretos, archivos | `3-ingenieria/SEGURIDAD.md` |
-| Pruebas o verificación de un cambio | `3-ingenieria/CALIDAD.md` |
-| Una fórmula de negocio | `3-ingenieria/dominio/` y `4-decisiones/` |
-| Horas, nóminas o coste laboral | `4-decisiones/ADR-0001-...md`, `3-ingenieria/dominio/COSTE-LABORAL.md`, `3-ingenieria/dominio/JORNADA-FIJA.md` |
-| Precios de ingredientes o albaranes | `3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md` |
-| Un sistema externo | `3-ingenieria/integraciones/` |
-| Un documento impreso | `2-diseno/DOCUMENTOS-IMPRESOS.md` |
-| Roles o permisos | `1-producto/ACTORES-Y-ROLES.md` |
-| Cualquier cosa, para saber cómo está | `5-estado/ESTADO.md` y `5-estado/DEUDA.md` |
+**La tabla está en `marbella-os/.generated/CARGA-DE-CONTEXTO.md`**, junto con la de precedencia que resuelve los conflictos entre documentos. Se genera desde el corpus y `npm run validate:corpus` comprueba que no se ha quedado atrás. Esta regla no la copia: una copia a mano se desincroniza y acaba mandando leer ficheros que ya no existen.
 
-Antes de proponer una dirección, comprueba que no está descartada en `1-producto/VISION.md`. **Hay direcciones explícitamente rechazadas** y proponerlas es perder el tiempo de todos.
+Antes de proponer una dirección, comprueba que no está descartada en `marbella-os/1-producto/VISION.md`. **Hay direcciones explícitamente rechazadas** y proponerlas es perder el tiempo de todos.
 
-Cuando dos soluciones son válidas, arbitra con `1-producto/PRINCIPIOS.md`, que además fija su orden de prioridad.
+Cuando dos soluciones son válidas, arbitra con `marbella-os/1-producto/PRINCIPIOS.md`, que además fija su orden de prioridad.
 
 ---
 

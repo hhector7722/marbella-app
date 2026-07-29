@@ -3,6 +3,8 @@ documento: CONTRATO-PROYECCION-v1
 clase: inmutable
 estado: vigente
 capa: ingenieria
+normativo: true
+precedencia: 40
 responsable: propiedad del producto
 publicado: 2026-07-27
 revisado: 2026-07-29

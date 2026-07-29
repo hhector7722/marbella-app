@@ -3,6 +3,8 @@ documento: FRONTEND
 clase: vivo
 estado: vigente
 capa: ingenieria
+normativo: true
+precedencia: 20
 responsable: propiedad del producto
 revisado: 2026-07-29
 caducidad: 6 meses

@@ -3,6 +3,8 @@ documento: INVESTIGACION-INDICE
 clase: vivo
 estado: vigente
 capa: investigacion
+normativo: true
+precedencia: 20
 responsable: propiedad del producto
 revisado: 2026-07-29
 caducidad: 12 meses
@@ -24,7 +26,7 @@ Esta capa existe porque el corpus anterior no distinguía informe de norma, y va
 
 | Carpeta | Contenido | Ciclo de vida |
 |---|---|---|
-| `rfc/` | Propuestas abiertas a discusión | Se aprueban y generan decisión, o se archivan con el motivo |
+| [`rfc/`](./rfc/) | Propuestas abiertas a discusión | Se aprueban y generan decisión, o se archivan con el motivo |
 | [`spikes/`](./spikes/) | Exploraciones acotadas y auditorías con fecha | Se congelan al terminar |
 | [`archivo/`](./archivo/) | Material histórico sin valor normativo | No se toca |
 
