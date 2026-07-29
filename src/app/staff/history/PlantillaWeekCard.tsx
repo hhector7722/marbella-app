@@ -118,15 +118,15 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
                                                 {initials}
                                             </span>
                                             {special ? (
-                                                <span className={cn("truncate text-[8px] font-black leading-none", special.text)}>
+                                                <span className={cn("truncate text-[7px] font-black leading-none", special.text)}>
                                                     {special.label}
                                                 </span>
                                             ) : (
-                                                <span className="flex min-w-0 items-center gap-0.5 truncate font-mono text-[8px] font-bold leading-none">
+                                                <span className="flex min-w-0 items-center gap-0.5 truncate font-mono text-[7px] font-bold leading-none">
                                                     <span className={cn("shrink-0", isNoRegistered ? "text-rose-600" : "text-emerald-600")}>
                                                         {inHour || '—'}
                                                     </span>
-                                                    <span className={isNoRegistered ? "text-rose-600" : "text-black"}>/</span>
+                                                    <span className="font-normal text-zinc-600">/</span>
                                                     <span className="shrink-0 text-rose-600">{outHour || '—'}</span>
                                                 </span>
                                             )}
