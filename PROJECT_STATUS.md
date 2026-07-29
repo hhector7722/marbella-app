@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-29 (Fix realtime dashboard subscribe)
+**Última actualización:** 2026-07-29 (Fix COMPROBANTE en cierre caja)
+
+- [x] **Fix COMPROBANTE contado como venta/pendiente (2026-07-29)**: Indexx genera `Numero_Documento='COMPROBANTE'` (no es ticket). Excluido en bridge [`context/index.txt`](context/index.txt) (`VENTAS_WHERE` + `enviarTicket`), gateway [`context/server.txt`](context/server.txt), webhook [`ventas/route.ts`](src/app/api/webhooks/bdp/ventas/route.ts). RPC `get_closing_sales_breakdown` filtra COMPROBANTE; migracion limpia fila huerfana. Ops: pegar `index.js` en TPV y `server.js` en Proxmox + reiniciar.
+
+**Última actualización anterior:** 2026-07-29 (Fix realtime dashboard subscribe)
 
 - [x] **Fix `/dashboard` crash realtime (2026-07-29)**: Error `cannot add postgres_changes callbacks ... after subscribe()` en canal fijo `realtime_tickets_dashboard` (remount Strict Mode / canal ya subscribed). Canal con UUID único + `useMemo` del client en [`DashboardVentasSection.tsx`](src/components/dashboards/DashboardVentasSection.tsx); mismo patrón en reservas master.
 

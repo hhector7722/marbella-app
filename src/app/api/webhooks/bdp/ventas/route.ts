@@ -22,6 +22,11 @@ function roundMoney(n: number): number {
   return Math.round(n * 100) / 100
 }
 
+/** Indexx imprime comprobantes con numero_documento literal "COMPROBANTE" (no es venta). */
+function isComprobanteDocumento(numeroDocumento: unknown): boolean {
+  return String(numeroDocumento ?? '').trim().toUpperCase() === 'COMPROBANTE'
+}
+
 /** Día contable desde fecha_sistema; hora desde hora_cierre TPV (no recepción). */
 function resolveVentaTimestamps(v: {
   fecha?: string
@@ -62,6 +67,11 @@ export async function POST(req: Request) {
     if (!ventas.length) return NextResponse.json({ error: 'Vacío' }, { status: 400 })
 
     for (const v of ventas) {
+      if (isComprobanteDocumento(v.numero_documento)) {
+        console.log(`[BDP Webhook] Omitido COMPROBANTE (no es venta)`)
+        continue
+      }
+
       const ts = resolveVentaTimestamps(v)
       const cobroEfectivo = roundMoney(Number(v.cobro_efectivo) || 0)
       const cobroTarjeta = roundMoney(Number(v.cobro_tarjeta) || 0)

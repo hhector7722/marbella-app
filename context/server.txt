@@ -28,6 +28,11 @@ function roundMoney(n) {
     return Math.round((Number(n) || 0) * 100) / 100;
 }
 
+/** Indexx imprime comprobantes con numero_documento literal "COMPROBANTE" (no es venta). */
+function isComprobanteDocumento(numeroDocumento) {
+    return String(numeroDocumento ?? '').trim().toUpperCase() === 'COMPROBANTE';
+}
+
 function parseIso(value) {
     if (value == null || value === '') return null;
     const d = new Date(value);
@@ -104,6 +109,11 @@ app.post('/api/ventas', async (req, res) => {
         console.log(`[VENTAS] Recibidos ${ventas.length} tickets cerrados.`);
 
         for (const v of ventas) {
+            if (isComprobanteDocumento(v.numero_documento)) {
+                console.log(`[VENTAS] ⏭ Omitido COMPROBANTE (no es venta)`);
+                continue;
+            }
+
             const ts = resolveVentaTimestamps(v);
             const cobroEfectivo = roundMoney(v.cobro_efectivo);
             const cobroTarjeta = roundMoney(v.cobro_tarjeta);

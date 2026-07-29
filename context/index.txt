@@ -37,6 +37,7 @@ const VENTAS_WHERE = `
     OR (Fecha_Sistema IS NULL AND CAST(Fecha AS DATE) >= DATEADD(day, -1, CAST(GETDATE() AS DATE)))
   )
   AND (Hora_Cierre IS NOT NULL OR Pendiente = 1)
+  AND LTRIM(RTRIM(ISNULL(Numero_Documento, ''))) <> 'COMPROBANTE'
 `;
 
 const CABECERA_SELECT = `
@@ -73,6 +74,11 @@ function webhookHeaders() {
 
 function ticketKey(numeroDocumento) {
     return String(numeroDocumento ?? '').trim();
+}
+
+/** Indexx imprime comprobantes con Numero_Documento literal "COMPROBANTE" (no es venta). */
+function isComprobanteDocumento(numeroDocumento) {
+    return ticketKey(numeroDocumento).toUpperCase() === 'COMPROBANTE';
 }
 
 function roundMoney(n) {
@@ -220,6 +226,10 @@ async function buildPayloadVenta(pool, t) {
 
 async function enviarTicket(pool, t) {
     const key = ticketKey(t.Numero_Documento);
+    if (isComprobanteDocumento(key)) {
+        console.log('⏭ Omitido COMPROBANTE (no es venta / no contabilizar)');
+        return false;
+    }
     const payload = await buildPayloadVenta(pool, t);
     const sig = ticketPaymentSignature(payload);
 
