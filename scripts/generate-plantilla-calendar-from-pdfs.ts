@@ -44,7 +44,7 @@ async function parsePdfTimesheet(filePath: string): Promise<{ employeeName: stri
     const employeeName = (nameMatch?.[1] ?? path.basename(filePath)).trim();
 
     const rowRe =
-        /(\d{2})\/(\d{2})\/(\d{4})\s+\S+\s+(Regular|Festivo|Baja|Personal|Enfermedad|Fin de semana|Weekend|Overtime)\s+(\d{2}:\d{2})\s+(\d{2}:\d{2})\s+(\d{2})\s+h\s+(\d{2})\s+min/gi;
+        /(\d{2})\/(\d{2})\/(\d{4})\s+\S+\s+(Regular|Festivo|Baja|Personal|Enfermedad|Enfermo|Fin de semana|Weekend|Overtime)\s+(\d{2}:\d{2})\s+(\d{2}:\d{2})\s+(\d{2})\s+h\s+(\d{2})\s+min/gi;
     const bajaRowRe =
         /(\d{2})\/(\d{2})\/(\d{4})\s+\S+\s+Baja\s+(\d{2})\s+h\s+(\d{2})\s+min/gi;
 
@@ -103,7 +103,7 @@ function normalizeEventType(raw: string): string {
     if (lower.includes('festivo')) return 'holiday';
     if (lower.includes('baja')) return 'adjustment';
     if (lower.includes('personal')) return 'personal';
-    if (lower.includes('enfermedad')) return 'weekend';
+    if (lower.includes('enfermedad') || lower.includes('enfermo')) return 'weekend';
     return 'regular';
 }
 

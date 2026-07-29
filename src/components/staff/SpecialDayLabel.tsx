@@ -19,7 +19,7 @@ function initialSizeForLabel(label: string): (typeof SIZE_STEPS)[number] {
     if (n <= 4) return 'text-[13px]'; // Baja
     if (n <= 7) return 'text-[11px]'; // Festivo
     if (n <= 8) return 'text-[10px]'; // Personal
-    return 'text-[8px]'; // Enfermedad
+    return 'text-[8px]';
 }
 
 export function specialEventFullLabel(eventType: string): string | null {
@@ -27,7 +27,7 @@ export function specialEventFullLabel(eventType: string): string | null {
         case 'holiday':
             return 'Festivo';
         case 'weekend':
-            return 'Enfermedad';
+            return 'Enfermo';
         case 'adjustment':
             return 'Baja';
         case 'personal':

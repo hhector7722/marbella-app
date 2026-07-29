@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-29 (Fix modal crear fichaje en history)
+**Última actualización:** 2026-07-29 (Label fichaje: Enfermo)
+
+- [x] **Label `weekend` → «Enfermo» (2026-07-29)**: En UI (WeekCard, PlantillaWeekCard, AttendanceDetailModal, SpecialDayLabel) el tipo de fichaje `weekend` muestra **Enfermo** en lugar de «Enfermedad». Valor DB sin cambio. Script plantilla PDF acepta ambas etiquetas.
+
+**Última actualización anterior:** 2026-07-29 (Fix modal crear fichaje en history)
 
 - [x] **Fix `/staff/history` — botones Crear cortados al 2º fichaje (2026-07-29)**: Overlay absoluto dentro de `DaySummaryModal` se recortaba con `overflow-hidden` al crecer la lista. «Nuevo fichaje» pasa a `Modal` propio (portal, z-150) con footer `shrink-0`; lista del resumen con `flex-1 min-h-0 overflow-y-auto`. [`DaySummaryModal.tsx`](src/components/modals/DaySummaryModal.tsx).
 

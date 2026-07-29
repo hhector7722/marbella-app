@@ -12,7 +12,7 @@ const DAY_HEADERS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 const EVENT_TYPES = [
     { value: 'regular', label: 'Regular' },
     { value: 'holiday', label: 'Festivo', initial: 'F', color: 'bg-red-500 text-white', text: 'text-red-500', border: 'border-red-200 bg-red-50' },
-    { value: 'weekend', label: 'Enfermedad', initial: 'E', color: 'bg-yellow-400 text-white', text: 'text-yellow-500', border: 'border-yellow-200 bg-yellow-50' },
+    { value: 'weekend', label: 'Enfermo', initial: 'E', color: 'bg-yellow-400 text-white', text: 'text-yellow-500', border: 'border-yellow-200 bg-yellow-50' },
     { value: 'adjustment', label: 'Baja', initial: 'B', color: 'bg-orange-500 text-white', text: 'text-orange-500', border: 'border-orange-200 bg-orange-50' },
     { value: 'personal', label: 'Personal', initial: 'P', color: 'bg-blue-500 text-white', text: 'text-blue-500', border: 'border-blue-200 bg-blue-50' },
     { value: 'no_registered', label: 'No registrado', initial: 'NR', showCross: true, color: 'bg-red-600 text-white', text: 'text-red-600', border: 'border-red-200 bg-red-50' },

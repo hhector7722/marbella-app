@@ -479,10 +479,11 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto "prompt-ready"**. Debe 
 
 <!-- sync:project-status:start — NO EDITAR A MANO; generado por `scripts/sync-llm-prompt-from-project-status.mjs` -->
 
-**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-29 (Fix modal crear fichaje en history)
+**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-29 (Label fichaje: Enfermo)
 
 Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; máx. 45 entradas):
 
+- **Label `weekend` → «Enfermo» (2026-07-29)**: En UI (WeekCard, PlantillaWeekCard, AttendanceDetailModal, SpecialDayLabel) el tipo de fichaje `weekend` muestra **Enfermo** en lugar de «Enfermedad». Valor DB sin cambio. Script plantilla PDF acepta ambas etiquetas.
 - **Fix `/staff/history` — botones Crear cortados al 2º fichaje (2026-07-29)**: Overlay absoluto dentro de `DaySummaryModal` se recortaba con `overflow-hidden` al crecer la lista. «Nuevo fichaje» pasa a `Modal` propio (portal, z-150) con footer `shrink-0`; lista del resumen con `flex-1 min-h-0 overflow-y-auto`. [`DaySummaryModal.tsx`](src/components/modals/DaySummaryModal.tsx).
 - **Fix COMPROBANTE contado como venta/pendiente (2026-07-29)**: Indexx genera `Numero_Documento='COMPROBANTE'` (no es ticket). Excluido en bridge [`context/index.txt`](context/index.txt) (`VENTAS_WHERE` + `enviarTicket`), gateway [`context/server.txt`](context/server.txt), webhook [`ventas/route.ts`](src/app/api/webhooks/bdp/ventas/route.ts). RPC `get_closing_sales_breakdown` filtra COMPROBANTE; migracion limpia fila huerfana. Ops: pegar `index.js` en TPV y `server.js` en Proxmox + reiniciar.
 - **Fix `/dashboard` crash realtime (2026-07-29)**: Error `cannot add postgres_changes callbacks ... after subscribe()` en canal fijo `realtime_tickets_dashboard` (remount Strict Mode / canal ya subscribed). Canal con UUID único + `useMemo` del client en [`DashboardVentasSection.tsx`](src/components/dashboards/DashboardVentasSection.tsx); mismo patrón en reservas master.
@@ -527,6 +528,5 @@ Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; m
 - **Coste laboral diario `/dashboard/labor` (2026-07-24)**: Fijo = `payroll_monthly_totals` / **días naturales** del periodo. Extras = HE `estimatedValue` (misma liquidación History/Overtime). Total = fijo + extras. Sin `fn_labor_*` ni `profile_labor_cost_terms`. Doc: [`docs/COSTE_LABORAL_DIARIO_SSOT.md`](docs/COSTE_LABORAL_DIARIO_SSOT.md).
 - **Migración consumidores SSOT — pantallas (2026-07-24)**: Overtime/Dashboard/Master Extras unificados a HE (`buildOvertimeWeeksFromSsot`; adiós lista≠modal). `/dashboard/labor` sin `fn_labor_*`/`get_labor_cost_*`. Insights M.O. horaria + tarifas Horario/Schedule vía SSOT. Doc: [`docs/MIGRACION_CONSUMIDORES_SSOT_FASE2.md`](docs/MIGRACION_CONSUMIDORES_SSOT_FASE2.md). Sin tocar núcleo HE / Shadow / snapshots / payroll.
 - **Filtro empleado cabecera solo nombre (2026-07-24)**: En `/staff/history`, al filtrar por empleado la cabecera muestra solo `first_name` (sin apellidos). Export PDF/Excel sigue con nombre completo.
-- **Cierre módulo laboral SSOT (2026-07-24)**: `/profile` deja de editar alta/baja (solo lectura). Frontera + jornada solo en `/profile/contrato`. `updateProfile` bloquea `joining_date`/`end_date`. `updateLaborConditions` dispara `fn_recalc_and_propagate_snapshots` tras guardar. Alta sigue creando tramo vía trigger. Módulo laboral **cerrado** (sin bugs; espejo profiles←terms intencional para SQL).
 
 <!-- sync:project-status:end -->
