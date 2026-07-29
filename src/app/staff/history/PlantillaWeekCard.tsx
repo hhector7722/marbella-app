@@ -1,19 +1,17 @@
 'use client';
 
 import React from 'react';
-import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const DAY_HEADERS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 
-const EVENT_TYPES = [
-    { value: 'regular', label: 'Regular' },
-    { value: 'holiday', label: 'Festivo', initial: 'F', color: 'bg-red-500 text-white', border: 'border-red-200 bg-red-50' },
-    { value: 'weekend', label: 'Enfermo', initial: 'E', color: 'bg-yellow-400 text-white', border: 'border-yellow-200 bg-yellow-50' },
-    { value: 'adjustment', label: 'Baja', initial: 'B', color: 'bg-orange-500 text-white', border: 'border-orange-200 bg-orange-50' },
-    { value: 'personal', label: 'Personal', initial: 'P', color: 'bg-blue-500 text-white', border: 'border-blue-200 bg-blue-50' },
-    { value: 'no_registered', label: 'No registrado', initial: 'NR', showCross: true, color: 'bg-red-600 text-white', border: 'border-red-200 bg-red-50' },
-];
+/** Tipos con etiqueta de texto (sin reloj). `regular` y `no_registered` pintan horas. */
+const SPECIAL_EVENTS: Record<string, { label: string; text: string }> = {
+    holiday: { label: 'Festivo', text: 'text-red-500' },
+    weekend: { label: 'Enfermo', text: 'text-yellow-500' },
+    adjustment: { label: 'Baja', text: 'text-orange-500' },
+    personal: { label: 'Personal', text: 'text-blue-500' },
+};
 
 export type PlantillaDayLog = {
     id: string;
@@ -53,6 +51,15 @@ function getInitials(log: PlantillaDayLog): string {
     const f = (log.first_name || '').trim().charAt(0).toUpperCase() || '?';
     const l = (log.last_name || '').trim().charAt(0).toUpperCase() || '';
     return f + l;
+}
+
+/** "08:30" → "8" · "14:00" → "14". Solo la hora, sin minutos ni cero inicial. */
+function formatHourOnly(time: string | null | undefined): string {
+    if (!time) return '';
+    // ANTI-ISO-SLICE: si llega un DateTime completo, quedarse con la parte horaria.
+    const clean = time.includes('T') ? (time.split('T')[1] ?? '') : time;
+    const hour = Number.parseInt(clean.split(':')[0] ?? '', 10);
+    return Number.isFinite(hour) ? String(hour) : '';
 }
 
 export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardProps) {
@@ -95,43 +102,34 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
                             </span>
                             <div className={cn("flex-1 flex flex-col items-stretch justify-center mt-3 w-full min-h-[52px] space-y-0.5 overflow-hidden", day.isOtherMonth && "opacity-45")}>
                                 {(day.logs || []).slice(0, 4).map((log) => {
-                                    const eventConfig = EVENT_TYPES.find(t => t.value === (log.event_type || 'regular'));
-                                    const isRegular = !log.event_type || log.event_type === 'regular';
-                                    const isComplete = !!log.clock_out && !log.clock_out_show_no_registrada;
+                                    const special = SPECIAL_EVENTS[log.event_type || 'regular'];
+                                    const isNoRegistered =
+                                        log.event_type === 'no_registered' || log.clock_out_show_no_registrada === true;
                                     const initials = getInitials(log);
+                                    const inHour = formatHourOnly(log.in_time);
+                                    const outHour = formatHourOnly(log.out_time);
 
                                     return (
                                         <div
                                             key={log.id}
-                                            className={cn(
-                                                "flex flex-row items-center gap-1 w-full min-w-0",
-                                                !isRegular && eventConfig && cn("rounded-md border p-[1px]", eventConfig.border)
-                                            )}
+                                            className="flex w-full min-w-0 flex-row items-center justify-start gap-1"
                                         >
-                                            <div className={cn(
-                                                "w-[14px] h-[14px] rounded-full flex items-center justify-center shrink-0 flex-shrink-0 text-[6.5px] leading-none font-black",
-                                                eventConfig?.showCross ? "bg-red-600 text-white" : (isComplete ? "bg-emerald-600 text-white" : "bg-rose-600 text-white")
-                                            )}>
-                                                {eventConfig?.showCross && log.event_type !== 'no_registered' ? <X size={8} strokeWidth={2.5} className="text-white" /> : initials}
-                                            </div>
-                                            <div className="min-w-0 flex-1 flex items-center gap-0.5 truncate">
-                                                {isRegular ? (
-                                                    <>
-                                                        <span className="text-[8px] font-mono font-bold text-emerald-600 shrink-0">{log.in_time || '—'}</span>
-                                                        <span className="text-gray-300 text-[7px]">-</span>
-                                                        <span className={cn(
-                                                            "text-[8px] font-mono font-bold shrink-0",
-                                                            log.clock_out_show_no_registrada ? "text-rose-600" : "text-rose-600"
-                                                        )}>
-                                                            {log.clock_out_show_no_registrada ? 'No reg.' : (log.out_time || '—')}
-                                                        </span>
-                                                    </>
-                                                ) : (
-                                                    <span className={cn("text-[8px] font-black", eventConfig?.color || "text-gray-500")}>
-                                                        {eventConfig?.initial || '?'}
+                                            <span className="shrink-0 text-[8px] font-black leading-none text-black">
+                                                {initials}
+                                            </span>
+                                            {special ? (
+                                                <span className={cn("truncate text-[8px] font-black leading-none", special.text)}>
+                                                    {special.label}
+                                                </span>
+                                            ) : (
+                                                <span className="flex min-w-0 items-center gap-0.5 truncate font-mono text-[8px] font-bold leading-none">
+                                                    <span className={cn("shrink-0", isNoRegistered ? "text-rose-600" : "text-emerald-600")}>
+                                                        {inHour || '—'}
                                                     </span>
-                                                )}
-                                            </div>
+                                                    <span className={isNoRegistered ? "text-rose-600" : "text-black"}>-</span>
+                                                    <span className="shrink-0 text-rose-600">{outHour || '—'}</span>
+                                                </span>
+                                            )}
                                         </div>
                                     );
                                 })}
