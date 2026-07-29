@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-29 (Fix COMPROBANTE en cierre caja)
+**Última actualización:** 2026-07-29 (Fix modal crear fichaje en history)
+
+- [x] **Fix `/staff/history` — botones Crear cortados al 2º fichaje (2026-07-29)**: Overlay absoluto dentro de `DaySummaryModal` se recortaba con `overflow-hidden` al crecer la lista. «Nuevo fichaje» pasa a `Modal` propio (portal, z-150) con footer `shrink-0`; lista del resumen con `flex-1 min-h-0 overflow-y-auto`. [`DaySummaryModal.tsx`](src/components/modals/DaySummaryModal.tsx).
+
+**Última actualización anterior:** 2026-07-29 (Fix COMPROBANTE en cierre caja)
 
 - [x] **Fix COMPROBANTE contado como venta/pendiente (2026-07-29)**: Indexx genera `Numero_Documento='COMPROBANTE'` (no es ticket). Excluido en bridge [`context/index.txt`](context/index.txt) (`VENTAS_WHERE` + `enviarTicket`), gateway [`context/server.txt`](context/server.txt), webhook [`ventas/route.ts`](src/app/api/webhooks/bdp/ventas/route.ts). RPC `get_closing_sales_breakdown` filtra COMPROBANTE; migracion limpia fila huerfana. Ops: pegar `index.js` en TPV y `server.js` en Proxmox + reiniciar.
 
