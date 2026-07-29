@@ -7,10 +7,10 @@ const DAY_HEADERS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 
 /** Tipos con etiqueta de texto (sin reloj). `regular` y `no_registered` pintan horas. */
 const SPECIAL_EVENTS: Record<string, { label: string; text: string }> = {
-    holiday: { label: 'Festivo', text: 'text-red-500' },
-    weekend: { label: 'Enfermo', text: 'text-yellow-500' },
-    adjustment: { label: 'Baja', text: 'text-orange-500' },
-    personal: { label: 'Personal', text: 'text-blue-500' },
+    holiday: { label: 'F', text: 'text-red-500' },
+    weekend: { label: 'E', text: 'text-yellow-500' },
+    adjustment: { label: 'B', text: 'text-orange-500' },
+    personal: { label: 'P', text: 'text-blue-500' },
 };
 
 export type PlantillaDayLog = {
@@ -114,7 +114,7 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
                                             key={log.id}
                                             className="flex w-full min-w-0 flex-row items-center justify-start gap-1"
                                         >
-                                            <span className="shrink-0 text-[8px] font-black leading-none text-black">
+                                            <span className="shrink-0 text-[7px] font-normal leading-none text-zinc-600">
                                                 {initials}
                                             </span>
                                             {special ? (
@@ -126,7 +126,7 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
                                                     <span className={cn("shrink-0", isNoRegistered ? "text-rose-600" : "text-emerald-600")}>
                                                         {inHour || '—'}
                                                     </span>
-                                                    <span className={isNoRegistered ? "text-rose-600" : "text-black"}>-</span>
+                                                    <span className={isNoRegistered ? "text-rose-600" : "text-black"}>/</span>
                                                     <span className="shrink-0 text-rose-600">{outHour || '—'}</span>
                                                 </span>
                                             )}
