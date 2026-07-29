@@ -17,7 +17,7 @@ const SIZE_STEPS = [
 function initialSizeForLabel(label: string): (typeof SIZE_STEPS)[number] {
     const n = label.length;
     if (n <= 4) return 'text-[13px]'; // Baja
-    if (n <= 7) return 'text-[11px]'; // Festivo
+    if (n <= 7) return 'text-[11px]'; // Festivo / Enfermo
     if (n <= 8) return 'text-[10px]'; // Personal
     return 'text-[8px]';
 }
@@ -47,6 +47,8 @@ export function specialEventTextClass(eventType: string): string {
             return 'text-orange-500';
         case 'personal':
             return 'text-blue-500';
+        case 'no_registered':
+            return 'text-red-600';
         default:
             return 'text-zinc-500';
     }

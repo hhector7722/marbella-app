@@ -819,9 +819,10 @@ export default function StaffDashboardView() {
                                 <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
                                     <div className="grid grid-cols-7">
                                         {weekDays.map((day, i) => {
-                                            const specialLabel = day.eventType
-                                                ? specialEventFullLabel(day.eventType)
-                                                : null;
+                                            const eventType = day.eventType ?? 'regular';
+                                            const specialLabel = specialEventFullLabel(eventType);
+                                            // Sin fichaje de entrada no hay horas que mostrar: la cruz ocupa la celda centrada.
+                                            const showCenteredCross = eventType === 'no_registered' && !day.hasLog;
                                             return (
                                             <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[108px] bg-white relative">
                                                 <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center relative z-10">
@@ -840,8 +841,17 @@ export default function StaffDashboardView() {
                                                         {specialLabel ? (
                                                             <SpecialDayLabel
                                                                 label={specialLabel}
-                                                                className={specialEventTextClass(day.eventType!)}
+                                                                className={specialEventTextClass(eventType)}
                                                             />
+                                                        ) : showCenteredCross ? (
+                                                            <div className="flex min-h-[40px] w-full min-w-0 flex-1 items-center justify-center">
+                                                                <X
+                                                                    size={22}
+                                                                    strokeWidth={2.5}
+                                                                    className={specialEventTextClass(eventType)}
+                                                                    aria-label="No registrado"
+                                                                />
+                                                            </div>
                                                         ) : (
                                                             <>
                                                                 {/* Fila entrada: misma altura en todos los días para alinear círculos verdes */}
@@ -855,7 +865,7 @@ export default function StaffDashboardView() {
                                                                 </div>
                                                                 {/* Fila salida: misma altura en todos los días para alinear círculos rojos */}
                                                                 <div className="h-5 flex items-center justify-center gap-1 shrink-0">
-                                                                    {day.eventType === 'no_registered' ? (
+                                                                    {eventType === 'no_registered' ? (
                                                                         <X size={14} strokeWidth={2.5} className="text-red-600 shrink-0" />
                                                                     ) : day.hasLog && day.clockOut ? (
                                                                         day.clock_out_show_no_registrada ? (
