@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
-const outPath = join(root, 'docs/propuestas/vales-bebida-cena-monitores.pdf');
+const outPath = join(root, 'assets/propuestas/vales-bebida-cena-monitores.pdf');
 const publicOut = join(root, 'public/propuestas/vales-bebida-cena-monitores.pdf');
 const logoSrc = join(root, 'public/icons/logo-white.png');
 

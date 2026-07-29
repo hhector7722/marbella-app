@@ -45,3 +45,41 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# trabajo temporal y salidas locales
+/tmp/
+/scratch/
+*.log
+
+# Skills de agentes: la copia canónica es /.agents/skills, declarada en skills-lock.json.
+# Cada herramienta instala su propio duplicado y ninguno se versiona.
+/skills/
+/.adal/
+/.augment/
+/.bob/
+/.claude/
+/.codebuddy/
+/.commandcode/
+/.continue/
+/.cortex/
+/.crush/
+/.factory/
+/.goose/
+/.iflow/
+/.junie/
+/.kilocode/
+/.kiro/
+/.kode/
+/.mcpjam/
+/.mux/
+/.neovate/
+/.openhands/
+/.pi/
+/.pochi/
+/.qoder/
+/.qwen/
+/.roo/
+/.trae/
+/.vibe/
+/.windsurf/
+/.zencoder/

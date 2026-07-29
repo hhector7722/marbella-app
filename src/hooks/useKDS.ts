@@ -129,7 +129,7 @@ export function useKDS() {
 
                 const startOfToday = getStartOfEuropeMadridToday();
                 const isFromToday = (o: KDSOrder) => {
-                    // Regla operativa (ver PROJECT_STATUS): día en curso por medianoche local.
+                    // Regla operativa: día en curso por medianoche local.
                     // - Activas: si cabecera creada hoy o existe alguna línea creada hoy.
                     // - Completadas: si completed_at es de hoy.
                     try {

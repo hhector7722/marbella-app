@@ -1,69 +1,98 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Marbella
 
-## Getting Started
+Sistema operativo del negocio de Bar La Marbella: asistencia, caja, coste laboral, compras, cocina, carta y eventos en una sola aplicación instalable.
 
-First, run the development server:
+## La documentación está en Marbella OS
+
+**Antes de cambiar cualquier cosa, [`marbella-os/`](./marbella-os/README.md).**
+
+Ahí vive la única fuente de verdad sobre qué es el producto, cómo se comporta, cómo se ve y cómo se construye. Este README solo explica cómo arrancar el proyecto.
+
+| Si buscas | Ve a |
+|---|---|
+| Qué es Marbella y para quién | [VISION](./marbella-os/1-producto/VISION.md) |
+| Cómo debe comportarse la interfaz | [EXPERIENCIA](./marbella-os/2-diseno/EXPERIENCIA.md) |
+| Colores, tipografía y medidas | [TOKENS](./marbella-os/2-diseno/TOKENS.md) |
+| Reglas de código del frontend | [FRONTEND](./marbella-os/3-ingenieria/FRONTEND.md) |
+| Cómo se calcula el coste de personal | [dominio/COSTE-LABORAL](./marbella-os/3-ingenieria/dominio/COSTE-LABORAL.md) |
+| Cómo está el sistema hoy | [ESTADO](./marbella-os/5-estado/ESTADO.md) |
+| Qué está mal a propósito | [DEUDA](./marbella-os/5-estado/DEUDA.md) |
+
+---
+
+## Arranque
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+En [http://localhost:3000](http://localhost:3000).
 
-## Voz (STT) para el chat IA
+### Requisitos
 
-La app soporta grabación de voz en el cliente (MediaRecorder) y transcripción en servidor vía `/api/ai/stt`.
-
-### Requisitos servidor
-
-- **ffmpeg** instalado (para convertir `webm` → `wav` 16k mono).
-  - Debian/Ubuntu: `apt install ffmpeg`
+- Node.js 20 o superior.
+- Proyecto de Supabase con las migraciones de [`supabase/migrations`](./supabase/migrations/README_MIGRACIONES.md) aplicadas.
+- `ffmpeg` instalado, solo si se usa dictado por voz.
 
 ### Variables de entorno
 
-- `STT_PROVIDER=openai` + `OPENAI_API_KEY=...`
-  - Usa OpenAI Audio Transcriptions con `whisper-1` (puede tener coste).
-- `STT_PROVIDER=whisper_local` + `WHISPER_COMMAND="... {file} ..."`
-  - Ejecuta un comando local. Debe aceptar `{file}` como placeholder al `.wav` y devolver el texto por stdout (o generar un `.txt`).
+Necesarias para arrancar:
 
-### STT file size limit
+| Variable | Para qué |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Dirección del proyecto de Supabase |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clave pública de Supabase |
+| `SUPABASE_SERVICE_ROLE_KEY` | Operaciones de servidor con permisos elevados |
+| `CRON_SECRET` | Autenticación de las tareas programadas |
 
-- **Variable**: `MAX_STT_FILE_MB` (MB)
-- **Default**: 10
-- **Uso**: ajusta este valor si envías audios muy largos; valores pequeños reducen uso de disco/CPU. Reinicia la app tras cambiarlo.
+Opcionales, cada una habilita una función concreta:
 
-## Llamada de voz (WebSocket streaming)
+| Variable | Habilita |
+|---|---|
+| `GEMINI_API_KEY` | Lectura de albaranes y documentos por visión artificial |
+| `STT_PROVIDER`, `OPENAI_API_KEY` | Dictado por voz mediante servicio externo |
+| `STT_PROVIDER=whisper_local`, `WHISPER_COMMAND` | Dictado por voz con proceso local |
+| `MAX_STT_FILE_MB` | Límite de tamaño del audio, 10 MB por omisión |
+| `VOICE_WS_SECRET` | Llamada de voz en tiempo real |
 
-Opcional: puedes ejecutar un servidor WS independiente para “llamada” en tiempo real (baja latencia).
+`VOICE_WS_SECRET` **solo existe en servidor**. Nunca se expone como variable pública.
 
-- **Token efímero**: el cliente pide un token a `POST /api/ai/voice-token` (requiere sesión) y abre WS con `?token=...`.
-- **Identidad + RBAC**: el `voice-server` envía ese token como `Authorization: Bearer <token>` a `POST /api/ai/voice-chat`, que valida firma/expiración y ejecuta el agente con `userId/userRole` reales.
-- **Secret**: `VOICE_WS_SECRET` existe solo en servidor (Next + voice-server). No se expone en `NEXT_PUBLIC_*`.
-- **Arranque voice-server**:
-  - `cd voice-server && npm install && npm run build && npm start`
-  - Requiere `ffmpeg` instalado y `STT_PROVIDER` configurado (igual que `/api/ai/stt`).
+## Comandos
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run dev            # Desarrollo
+npm run build          # Compilación de producción
+npm run lint           # Análisis estático
+node --test test/      # Pruebas de la lógica de negocio crítica
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Estructura del repositorio
 
-## Learn More
+| Carpeta | Contenido |
+|---|---|
+| [`marbella-os/`](./marbella-os/README.md) | **Documentación oficial del producto** |
+| `src/` | Aplicación: rutas, componentes, motores de cálculo |
+| [`supabase/`](./supabase/migrations/README_MIGRACIONES.md) | Migraciones y configuración de la base de datos |
+| [`integrations/`](./integrations/README.md) | Código que se ejecuta fuera de la aplicación |
+| `sql/` | Consultas de diagnóstico, no migraciones |
+| [`reference/`](./reference/legacy-bdp/README.md) | Material del sistema heredado, congelado |
+| `test/` | Pruebas de la lógica de negocio |
 
-To learn more about Next.js, take a look at the following resources:
+## Llamada de voz
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Servidor independiente y opcional, para conversación en tiempo real:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+cd voice-server && npm install && npm run build && npm start
+```
 
-## Deploy on Vercel
+El cliente pide un token efímero, que el servidor de voz reenvía a la aplicación para validar identidad y permisos reales. Requiere `ffmpeg` y `STT_PROVIDER` configurados.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Antes de tocar código
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Lee el documento de Marbella OS que gobierna lo que vas a cambiar.
+2. Si el cambio contradice ese documento, **cambia primero el documento** o justifica la excepción.
+3. Si el cambio altera comportamiento visible, anótalo en [CHANGELOG](./marbella-os/5-estado/CHANGELOG.md).
+
+La razón es directa: cuando el código y la documentación divergen, el trabajo siguiente se hace sobre información falsa. Es lo que se acaba de arreglar y no conviene repetir.

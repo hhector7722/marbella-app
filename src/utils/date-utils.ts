@@ -76,7 +76,7 @@ export function parseTPVDate(dateStr: string | null | undefined): Date {
 }
 
 /**
- * Timestamps en `estado_sala.radiografia_completa` (ver `context/index.txt`):
+ * Timestamps en `estado_sala.radiografia_completa` (ver `integrations/tpv-bridge/index.js`):
  * - El bridge Node usa `new Date(row.Hora).toISOString()` → **ISO UTC con Z real** (hay que usar `new Date(iso)`).
  * - Otros emisores pueden mandar “hora local con Z mentirosa” → `parseTPVDate` (componentes literales).
  */

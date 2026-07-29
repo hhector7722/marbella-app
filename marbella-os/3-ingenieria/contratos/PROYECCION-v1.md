@@ -1,11 +1,28 @@
-# PROJECTION CONTRACT v1
+---
+documento: CONTRATO-PROYECCION-v1
+clase: inmutable
+estado: vigente
+capa: ingenieria
+responsable: propiedad del producto
+publicado: 2026-07-27
+revisado: 2026-07-29
+supersede: docs/PROJECTION_CONTRACT_v1.md
+---
+
+# Contrato de proyección semanal · v1
+
+> **Nota de reconciliación (2026-07-29).** El documento original se quedó marcado como «propuesto para aprobación», pero el escritor que implementa este contrato **está en producción y es el único productor de las columnas calculadas** desde el 27 de julio de 2026: se cablearon todos los flujos y se desconectaron los productores SQL residuales, incluido el motor de cierre semanal.
+>
+> El estado real es **vigente**, no propuesto. La divergencia era un residuo de la forma antigua de documentar, donde el estado de un documento se escribía a mano y nadie lo volvía a tocar. Es exactamente el problema que el [front-matter obligatorio](../../CANON.md) viene a resolver.
+>
+> **Este contrato es inmutable.** Un cambio de comportamiento exige una versión 2, no una edición de esta página.
 
 | Campo | Valor |
 |---|---|
-| Estado | **PROPUESTO PARA APROBACIÓN** (entrada a Fase 1) |
+| Estado original del documento | «PROPUESTO PARA APROBACIÓN» — corregido arriba |
 | Fecha | 2026-07-27 |
 | Fase ADR | **0b — Contrato de proyección** |
-| Norma superior | [`ADR-HE-SSOT-001`](ADR-HE-SSOT-001.md) (**DEFINITIVAMENTE CONGELADO**) |
+| Norma superior | [ADR-0001](../../4-decisiones/ADR-0001-hours-engine-productor-unico.md) |
 | Skills | `architect-horas-nominas`, `auditor-horas-nominas`, `db-supabase-master` |
 | Alcance | Contrato funcional Hours Engine + Cost Engine → Writer → `weekly_snapshots` |
 | Fuera de alcance | Código, migraciones, columnas físicas nuevas, writer, backfill |

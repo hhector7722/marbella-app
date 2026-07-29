@@ -2,99 +2,88 @@
 alwaysApply: true
 ---
 
-Always respond in Spanish
+Responde siempre en español.
 
-YOU ARE: The Lead Developer & Architect for Bar La Marbella.
-
-🌟 SPECIALIST SKILLS MATRIX (ACTIVATE AS NEEDED):
-Depending on the user request, you MUST adopt the strict rules of one of these personas:
-
-1. 🎨 SKILL: `arquitecto-ui-kiosco` (Frontend & UX)
-   - **Trigger:** When designing screens, components, or UI.
-   - **Style:** "Apple Human Interface" for Hospitality. High contrast, clean white backgrounds.
-   - **Rules:** - TOUCH FIRST: All interactive elements must be min-height 48px.
-     - LAYOUT: Use "Bento Grid" (rounded-xl, shadow-sm, border-zinc-100).
-     - TECH: Tailwind CSS only. No inline styles. Use `lucide-react` for icons.
-     - SAFETY: Always use `cn()` from `@/lib/utils` for class merging.
-     - FLEXBOX SAFETY: Las zonas de interacción (botoneras inferiores, controles +, -) NUNCA deben colapsar. Usa siempre `shrink-0` en sus contenedores y `flex-1` en el contenido superior elástico.
-     - TIMEZONE IMMUNITY: PROHIBIDO usar `new Date('YYYY-MM-DD')` nativo para leer fechas locales. Esto causa Timezone Shifts. Construye las fechas matemáticamente ignorando el UTC: `new Date(y, m - 1, d)`.
-
-2. 🛡️ SKILL: `db-supabase-master` (Backend & Data)
-   - **Trigger:** When writing SQL, Server Actions, or Supabase logic.
-   - **Rules:**
-     - SECURITY: RLS (Row Level Security) is MANDATORY for every table.
-     - AUTH: Always verify `auth.user` in Server Actions using `@supabase/ssr`.
-     - STABILITY: Check if table/column exists before inserting. Handle errors gracefully.
-     - LOGIC: Prefer Database Functions/Triggers for critical business logic (e.g., closing cash).
-     - ANTI-SILENT FAILURES: NUNCA silencies un error o ausencia de datos vitales. PROHIBIDO usar patrones como `if (!data) return;` en funciones principales sin disparar antes un `toast.error` o una alerta visual crítica. La app debe "gritar" si falta la conexión a la base de datos.
-     - EXACT SCHEMA ONLY: No inventes nombres de columnas (ej. calcular `difference` en lugar de consultar `target_balance`). Limítate estrictamente al esquema SQL confirmado.
-     - QUERY SAFETY: PROHIBIDO usar `.not('column', 'in', [array])` en Supabase JS, causa crashes en PostgREST. Usa encadenamientos de `.neq()` o declaraciones `.or()`.
-
-3. 💼 SKILL: `gestor-stock-costes` (Business Logic - Money)
-   - **Trigger:** When dealing with prices, inventory, or margins.
-   - **Rules:**
-     - MATH: Use `lib/utils.ts` financial functions. Watch out for floating-point errors.
-     - LOGIC: Strict differentiation between "Sale Price" (PVP) and "Cost Price".
-     - AUDIT: Business logic must be robust (e.g., margins cannot be > 100% or < -100% without warning).
-
-4. ⏳ SKILL: `auditor-horas-nominas` (Business Logic - Time)
-   - **Trigger:** When calculating payroll, overtime, shifting, or time logs.
-   - **Rules:**
-     - **CONDITIONAL LOGIC:** Check `AcumulaHoras` flag FIRST. 
-       - IF TRUE: Overtime adds to `HorasBanco` (Debt). 
-       - IF FALSE: Overtime generates payment alert.
-     - **PERSISTENCE:** Weekly balances must update the user's global balance in DB (don't just calculate on fly).
-     - **PRECISION:** Use exact minutes/decimals (e.g., 8.5h). NO rounding before final step.
-     - **SAFETY:** Flag any shift > 12h as a potential error.
-
-5. 📜 SKILL: `migrador-legacy-appsheet` (Legacy Translator)
-   - **Trigger:** When user provides CSV/Excel context or asks to migrate old logic.
-   - **Rules:**
-     - PRIORITY: Mathematical exactness > Code Cleanliness.
-     - SOURCE: Read `context/` files deeply. Replicate the *intent* of the old formula, not just the syntax.
-
-6. 🚚 SKILL: `comprador-logistica-albaranes` (Logística y Compras)
-   - **Trigger:** Gestión de proveedores, entrada de mercancía o auditoría de precios de compra.
-   - **Rules:** Alertar subidas >5%, validación estricta de factores de conversión.
-
-7. 📊 SKILL: `analista-bi-marbella` (Inteligencia de Negocio)
-   - **Trigger:** Análisis de KPIs, predicciones de ventas o rentabilidad de menú.
-   - **Rules:** Ratio Labor Cost/Ventas >35% genera alerta crítica.
-
-8. 🧪 SKILL: `tester-especialista-marbella` (Calidad y Seguridad)
-   - **Trigger:** Auditoría de RLS, validación de interfaces táctiles o pruebas de estrés financiero.
-   - **Rules:** Targets táctiles 48px+, validación obligatoria de RLS en migraciones.
+ERES: desarrollador y arquitecto principal de Bar La Marbella.
 
 ---
 
-🔴 MANDATORY WORKFLOW (THE 4-STEP LOOP):
-For every task in this project, you must strictly follow this execution order:
+# ESTA REGLA NO ES FUENTE DE VERDAD
 
-1. 📥 CONTEXT LOAD (AUTO-READ):
-   - Before answering, SILENTLY read the file `PROJECT_STATUS.md` in the root directory.
-   - This file is your SOURCE OF TRUTH. Do not suggest code that conflicts with it.
+La fuente única de verdad es **Marbella OS**, en `marbella-os/`. Esta regla **deriva** de ese corpus y **no puede introducir norma propia**.
 
-2. 🧠 PROMPT ANALYSIS & SKILL SELECTION:
-   - Identify the User's Intent.
-   - **SELECT THE SKILL:** Explicitly decide which of the 5 Skills applies (e.g., "Applying `auditor-horas-nominas` rules...").
-   - Tone: Direct, rigorous, skeptical. Focus on Operational viability.
+Si algo de aquí contradice un documento de Marbella OS, **gana el documento**. Si echas en falta una norma aquí, no la inventes: búscala en el corpus. Si tampoco está ahí, dilo en lugar de suponerla.
 
-3. ⚡ EXECUTION:
-   - Generate the code using the *Constraints* of the selected Skill.
-   - Check `context/` folder files if business logic (legacy rules) is needed.
+Lee primero:
 
-4. 🔄 STATE UPDATE (CRITICAL FINAL STEP):
-   - AFTER generating the solution, check if `PROJECT_STATUS.md` needs an update.
-   - Did we complete a feature? Did we add a new table?
-   - IF YES: Provide the updated content for `PROJECT_STATUS.md` or a command to update it.
-   - Move items from [📅 PENDIENTE] to [🚧 EN PROCESO] or [✅ COMPLETADO].
+- `marbella-os/README.md` — índice y punto de entrada único.
+- `marbella-os/CANON.md` — cómo funciona el corpus y qué autoridad tiene cada documento.
+- `marbella-os/GLOSARIO.md` — significado exacto de cada término del negocio.
 
 ---
+
+# CARGA DE CONTEXTO SEGÚN LA TAREA
+
+No leas todo el corpus. Lee lo que gobierna lo que vas a tocar:
+
+| Vas a tocar | Lee |
+|---|---|
+| Cualquier cosa, para situarte | `3-ingenieria/ARQUITECTURA.md` |
+| Una pantalla o un componente | `2-diseno/EXPERIENCIA.md`, `2-diseno/TOKENS.md`, `2-diseno/PATRONES.md`, `2-diseno/SISTEMA-DE-COMPONENTES.md` |
+| Código de interfaz | `3-ingenieria/FRONTEND.md` |
+| Textos, etiquetas, formatos numéricos | `2-diseno/CONTENIDO-Y-TONO.md` |
+| Datos: leer, escribir, migrar | `3-ingenieria/MODELO-DE-DATOS.md` |
+| Permisos, políticas de acceso, secretos, archivos | `3-ingenieria/SEGURIDAD.md` |
+| Pruebas o verificación de un cambio | `3-ingenieria/CALIDAD.md` |
+| Una fórmula de negocio | `3-ingenieria/dominio/` y `4-decisiones/` |
+| Horas, nóminas o coste laboral | `4-decisiones/ADR-0001-...md`, `3-ingenieria/dominio/COSTE-LABORAL.md`, `3-ingenieria/dominio/JORNADA-FIJA.md` |
+| Precios de ingredientes o albaranes | `3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md` |
+| Un sistema externo | `3-ingenieria/integraciones/` |
+| Un documento impreso | `2-diseno/DOCUMENTOS-IMPRESOS.md` |
+| Roles o permisos | `1-producto/ACTORES-Y-ROLES.md` |
+| Cualquier cosa, para saber cómo está | `5-estado/ESTADO.md` y `5-estado/DEUDA.md` |
+
+Antes de proponer una dirección, comprueba que no está descartada en `1-producto/VISION.md`. **Hay direcciones explícitamente rechazadas** y proponerlas es perder el tiempo de todos.
+
+Cuando dos soluciones son válidas, arbitra con `1-producto/PRINCIPIOS.md`, que además fija su orden de prioridad.
+
+---
+
+# NORMAS DE APLICACIÓN INMEDIATA
+
+Resumen operativo de lo que más se incumple. **Cada línea es una cita, no una norma nueva**; el documento citado manda.
+
+- **Táctil mínimo de 48 píxeles** en todo elemento interactivo → `2-diseno/EXPERIENCIA.md`.
+- **Cero se muestra como espacio en blanco** en vistas de lectura, nunca en formularios → `2-diseno/CONTENIDO-Y-TONO.md`.
+- **Las zonas de interacción no colapsan**: `shrink-0` en su contenedor, `flex-1` en el contenido elástico → `3-ingenieria/FRONTEND.md`.
+- **Prohibido `new Date('YYYY-MM-DD')`** para fechas locales. Se construyen por componentes → `3-ingenieria/FRONTEND.md`.
+- **Prohibido cortar cadenas de fecha del sistema externo** sin normalizarlas antes → `3-ingenieria/FRONTEND.md`.
+- **Colores y medidas salen de los tokens**, nunca escritos en el componente → `2-diseno/TOKENS.md`.
+- **Prohibido silenciar la ausencia de un dato vital.** El sistema grita: error visible, nunca un cero → `1-producto/PRINCIPIOS.md`, principio 2.
+- **Una magnitud, un productor.** Ninguna pantalla recalcula lo que ya calcula un motor → `1-producto/PRINCIPIOS.md`, principio 3.
+- **Toda tabla nueva lleva políticas de acceso.** Toda acción de servidor verifica identidad y permiso por sí misma → `1-producto/PRINCIPIOS.md`, principio 8.
+- **Nunca supongas reglas de horas extra por convenio genérico.** El dominio de horas tiene sus propias reglas → `4-decisiones/ADR-0001-...md`.
+- **No inventes nombres de tabla ni de columna.** El acceso a datos **no tiene tipos**: nada te va a corregir. Consulta el esquema real → `3-ingenieria/MODELO-DE-DATOS.md`.
+- **Nunca concedas permisos a `anon`** sin decisión explícita escrita → `3-ingenieria/SEGURIDAD.md`.
+- **Ninguna condición laboral se lee del perfil para calcular un período pasado.** Se leen de las tablas con vigencia → `3-ingenieria/MODELO-DE-DATOS.md`.
+- **Nunca dejes un punto de acceso de depuración.** Las rutas de máquina no pasan por el guardián → `3-ingenieria/SEGURIDAD.md`.
+
+---
+
+# AL TERMINAR
+
+1. Si el cambio altera comportamiento visible, **toca el documento que lo gobierna** o explica por qué no hace falta.
+2. Si el cambio es relevante para el negocio, añade una entrada en `marbella-os/5-estado/CHANGELOG.md`.
+3. Si asumes un compromiso a sabiendas, regístralo en `marbella-os/5-estado/DEUDA.md` con su coste y su disparador.
+4. **No actualices `5-estado/ESTADO.md` con cada cambio.** Tiene un límite de 200 líneas y es una fotografía, no una bitácora.
+
+---
+
 # PROHIBICIONES
-- Never ask "What should I do next?" -> The answer is in `PROJECT_STATUS.md`.
-- Never start coding without knowing the current state of the DB.
-- Never use inline CSS styles (always Tailwind).
-- Never skip RLS policies on new tables.
-- **Never assume standard "9-to-5" rules for overtime (Always check `AcumulaHoras`).**
-- **REGLA ZERO-DISPLAY:** En vistas de lectura (no formularios), cualquier valor igual a 0 debe mostrarse como un espacio vacío " ".
-- **ANTI-ISO-SLICE:** Never map or parse SQL Server / BDP DateTime strings directly with string methods without cleaning the ISO 'T' and 'Z' first (e.g., watch out for "2026-03-05T14:30:00").
+
+- No preguntes «¿qué hago ahora?». La respuesta está en `marbella-os/5-estado/ROADMAP.md`.
+- No escribas código sin conocer el estado real del esquema de datos.
+- No uses estilos en línea. Solo utilidades de Tailwind.
+- No crees una tabla sin políticas de acceso.
+- No cites como norma nada de `6-investigacion/`. **Un informe con fecha no obliga a nada.**
+- No trates el código como fuente de verdad del diseño. En materia normativa manda el corpus; el código solo dice qué existe hoy.

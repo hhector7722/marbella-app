@@ -1,8 +1,25 @@
-# ADR-HE-SSOT-001 — Cierre del dominio de horas: Hours Engine como único productor
+---
+documento: ADR-0001
+clase: inmutable
+estado: vigente
+capa: decisiones
+responsable: propiedad del producto
+decidido: 2026-07-27
+promovido: 2026-07-29
+supersede: docs/ADR-HE-SSOT-001.md
+---
+
+# ADR-0001 · Hours Engine como productor único del dominio de horas
+
+> **Nota de promoción (2026-07-29).** Esta decisión se escribió como `ADR-HE-SSOT-001` en `docs/`, con numeración propia del dominio. Se promueve a `ADR-0001` de Marbella OS sin alterar su contenido: es la primera decisión formal del producto y la única que existía documentada como tal.
+>
+> El cuerpo original se conserva íntegro, incluida su terminología interna. La forma canónica de las decisiones futuras está en [4-decisiones/README](./README.md); esta no la sigue porque es anterior a ella.
+>
+> Su consecuencia normativa está resumida en el [principio 3](../1-producto/PRINCIPIOS.md) y en [dominio/COSTE-LABORAL](../3-ingenieria/dominio/COSTE-LABORAL.md). El contrato que la implementa es [contratos/PROYECCION-v1](../3-ingenieria/contratos/PROYECCION-v1.md).
 
 | Campo | Valor |
 |---|---|
-| Estado | **DEFINITIVAMENTE CONGELADO** |
+| Estado original | **DEFINITIVAMENTE CONGELADO** |
 | Fecha | 2026-07-27 |
 | Revisión documental final | 2026-07-27 (trazabilidad / regeneración / determinismo / metadata) |
 | Skills | `architect-horas-nominas`, `auditor-horas-nominas`, `db-supabase-master` |

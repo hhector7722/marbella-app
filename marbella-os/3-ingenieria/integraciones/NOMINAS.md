@@ -1,9 +1,25 @@
-# Diseño: `payroll_monthly_totals` como SSOT definitivo de nóminas
+---
+documento: INTEGRACION-NOMINAS
+clase: vivo
+estado: vigente
+capa: ingenieria
+responsable: propiedad del producto
+revisado: 2026-07-29
+caducidad: 6 meses
+supersede: docs/PAYROLL_MONTHLY_TOTALS_SSOT_PIPELINE.md
+---
 
-**Fecha:** 2026-07-24  
-**Estado:** Solo diseño — **sin implementación**  
-**Alcance:** Pipeline de ingestión automática → `payroll_monthly_totals`  
-**Fuera de alcance (prohibido en esta fase):** modificar `/dashboard/labor`, Hours Engine, Shadow, esquema en producción.
+# INTEGRACIÓN · Nóminas
+
+Cómo entra en Marbella el coste de personal que calcula la gestoría. Es el origen único del coste ordinario definido en [dominio/COSTE-LABORAL](../dominio/COSTE-LABORAL.md).
+
+> **Nota de reconciliación (2026-07-29).** El documento original se declaraba «solo diseño, sin implementación». **Parte del diseño está implementada** y parte no. Lo implementado, verificado sobre el código y las migraciones: el analizador con versión etiquetada, la huella de contenido para evitar duplicados, la tabla de ejecuciones de importación con sus políticas de acceso, y las validaciones previas a la escritura. Lo que sigue siendo solo diseño está marcado en el cuerpo.
+>
+> El texto original se conserva porque su razonamiento sigue siendo válido. Su encabezado de estado no lo era.
+
+**Alcance:** cadena de ingestión desde el correo de la gestoría hasta el total mensual consumible.
+**Cadena:** correo entrante → script de Google → webhook → huella de contenido → lectura del documento → validaciones → registro de ejecución y total mensual.
+**Código de la parte externa:** [`integrations/apps-script/nominas.gs`](../../../integrations/apps-script/nominas.gs).
 
 ---
 

@@ -1,7 +1,0 @@
-#!/bin/sh
-# Auto-sync context/LLM_PROMPT.md cuando cambia PROJECT_STATUS.md
-STAGED=$(git diff --cached --name-only)
-echo "$STAGED" | grep -qx 'PROJECT_STATUS.md' || exit 0
-
-node scripts/sync-llm-prompt-from-project-status.mjs || exit 1
-git add context/LLM_PROMPT.md

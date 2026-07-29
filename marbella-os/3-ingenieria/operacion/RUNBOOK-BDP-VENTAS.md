@@ -1,8 +1,23 @@
-# Despliegue bridge BDP (ventas + telemetría)
+---
+documento: RUNBOOK-BDP-VENTAS
+clase: vivo
+estado: vigente
+capa: ingenieria
+responsable: propiedad del producto
+revisado: 2026-07-29
+caducidad: 6 meses
+supersede: context/DEPLOY_BDP_VENTAS.txt
+---
 
-## Archivos fuente (repo)
-- context/index.txt  → copiar como index.js en el PC TPV (ej. C:\Users\Pos\Desktop\AgenteBDP\index.js)
-- context/server.txt → copiar como server.js en erp-gateway (/root/server-receptor/server.js)
+# RUNBOOK · Despliegue del puente con el punto de venta
+
+Procedimiento para desplegar el extractor y el receptor de ventas y telemetría. Arquitectura en [integraciones/BDP-TPV](../integraciones/BDP-TPV.md).
+
+> **Este despliegue es manual y no es reproducible.** Se copia un archivo a su destino, sin versión desplegada conocida ni forma de volver atrás. Registrado como [D6](../../5-estado/DEUDA.md) y previsto en el [ROADMAP](../../5-estado/ROADMAP.md).
+
+## Archivos fuente
+- `integrations/tpv-bridge/index.js` → copiar como `index.js` en el equipo del punto de venta (por ejemplo `C:\Users\Pos\Desktop\AgenteBDP\index.js`)
+- `integrations/gateway/server.js` → copiar como `server.js` en la pasarela (`/root/server-receptor/server.js`)
 
 ## PC del TPV (PowerShell en carpeta AgenteBDP)
 

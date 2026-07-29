@@ -1,0 +1,65 @@
+---
+documento: CHANGELOG
+clase: inmutable
+estado: vigente
+capa: estado
+responsable: propiedad del producto
+revisado: 2026-07-29
+caducidad: no aplica
+supersede: PROJECT_STATUS.md (función de historial)
+---
+
+# CHANGELOG
+
+Historial cronológico de Marbella. **Append-only**: se añade arriba y nunca se edita ni se reordena lo anterior.
+
+Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el producto hoy?» está [ESTADO](ESTADO.md). Separar esas dos preguntas es la corrección estructural de mayor impacto de toda la arquitectura documental: antes compartían un fichero de 1.288 líneas donde la segunda era irrespondible.
+
+## Qué se anota aquí
+
+- Capacidades que nacen, cambian de comportamiento visible o se retiran.
+- Reglas de negocio que cambian.
+- Decisiones estructurales, con enlace a su ADR.
+- Deuda pagada y deuda aceptada.
+- Cambios de terminología de uso frecuente.
+- Cambios en el propio corpus documental.
+
+## Qué no se anota
+
+- Correcciones de defectos sin consecuencia visible.
+- Refactorizaciones internas sin cambio de comportamiento.
+- Detalle de implementación. Eso está en git.
+
+## Formato
+
+Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
+
+---
+
+## 2026-07-29
+
+- **La rejilla de asistencia de plantilla pasa a lectura tipográfica.** En `/staff/history`, cuando el responsable ve los fichajes de todo el equipo, cada registro se lee como iniciales en negro seguidas del tramo horario: sin círculos de color, sin tarjetas con marco ni relleno para los tipos especiales, y con la hora sin minutos ni cero inicial (`08:30` se lee `8`). El tipo se comunica solo con color y palabra: entrada en verde y salida en roja para lo regular, todo en rojo si falta el registro, y **Festivo**, **Enfermo**, **Baja** o **Personal** escritos completos en lugar de las letras `F`, `E`, `B` y `P`.
+- **Se crea Marbella OS**, el corpus documental oficial, en `marbella-os/`. Sustituye a la documentación dispersa de `docs/` y `context/` y establece la fuente única de verdad para producto, diseño e implementación. Su constitución está en [CANON](../CANON.md).
+- **Se congela el historial anterior.** Las 1.288 líneas de `PROJECT_STATUS.md` se archivan como corpus histórico no normativo. Desde esta fecha, el historial se escribe aquí y el estado en [ESTADO](ESTADO.md).
+- **Se promueve la decisión del dominio de horas a [ADR-0001](../4-decisiones/ADR-0001-hours-engine-productor-unico.md)**, con numeración global y separando explícitamente la inmutabilidad de su texto de la vigencia de su decisión.
+- **Se declaran como norma de producto las reglas que vivían únicamente en la configuración de las herramientas de desarrollo**: mínimo táctil, indeformabilidad de las zonas de acción, inmunidad de zona horaria, prohibición de fallos silenciosos y regla del valor vacío. Ahora están en [PRINCIPIOS](../1-producto/PRINCIPIOS.md), [EXPERIENCIA](../2-diseno/EXPERIENCIA.md) y [CONTENIDO-Y-TONO](../2-diseno/CONTENIDO-Y-TONO.md).
+- **Se publica el contrato de tokens visuales** en [TOKENS](../2-diseno/TOKENS.md), normalizando los valores que el producto ya usa. Es el paso previo indispensable para tener componentes base.
+- **Se registra la deuda del producto con dueño y disparador** en [DEUDA](DEUDA.md), extraída de informes de auditoría que nadie mantenía. De los cinco hallazgos «críticos» del informe de mapeo con la realidad, cuatro ya no existían en el código: quedan documentados como prueba de que un informe con fecha no es norma.
+- **El código de integración deja de ser documentación.** El extractor del punto de venta, la pasarela y los tres scripts de correo estaban versionados como archivos de texto dentro de `context/`. Ahora son código en [`integrations/`](../../integrations/README.md), con su documentación en [3-ingenieria/integraciones](../3-ingenieria/integraciones/README.md).
+- **Se corrige el estado del [contrato de proyección](../3-ingenieria/contratos/PROYECCION-v1.md)**, que seguía marcado como propuesto cuando su escritor llevaba dos días siendo el único productor en producción. Es el motivo de que el front-matter con estado y fecha de revisión sea obligatorio.
+- **Se desconecta la maquinaria del documento de estado antiguo**: el gancho de Cursor, el gancho de confirmación y el guion que copiaba el historial a un documento de contexto para modelos. Ese mecanismo duplicaba cientos de líneas por diseño. La regla de las herramientas de IA ahora **deriva** de Marbella OS y no puede introducir norma propia.
+- **Se sanea el repositorio.** Se expulsan diecinueve guiones de depuración desechables, seis artefactos generados, dos activos sueltos, el material de referencia del sistema ajeno —a [`reference/legacy-bdp/`](../../reference/legacy-bdp/README.md)— y **1.100 archivos de documentación de terceros duplicada** en veintinueve carpetas, una por herramienta de IA. La copia canónica es `.agents/skills`, declarada en el manifiesto de instalación.
+- **Se completa la capa de ingeniería** con [ARQUITECTURA](../3-ingenieria/ARQUITECTURA.md), [MODELO-DE-DATOS](../3-ingenieria/MODELO-DE-DATOS.md), [SEGURIDAD](../3-ingenieria/SEGURIDAD.md) y [CALIDAD](../3-ingenieria/CALIDAD.md), verificados contra el código y las 290 migraciones. Con ellos, Marbella OS cubre las seis capas y deja de ser solo documentación de producto y diseño.
+- **Se eliminan dos puntos de acceso de depuración sin autenticar**, `api/test-db` y `api/test-db2`, alcanzables en producción porque las rutas de máquina no pasan por el guardián. El segundo usaba la clave de servicio, que ignora todas las políticas de acceso.
+- **Se descubren cuatro agujeros de acceso abiertos**, registrados como [D23](DEUDA.md#d23--las-tareas-programadas-fallan-abiertas) a [D26](DEUDA.md#d26--contenedor-de-fotos-de-caja-público): tres tablas con escritura anónima desde abril, cinco funciones que exponen la facturación sin sesión, el contenedor de fotos de recuentos de caja marcado como público, y las tareas programadas que solo comprueban su secreto si la variable existe. Ninguno lo detectó nada automático; aparecieron leyendo migraciones, que es exactamente el argumento de [CALIDAD](../3-ingenieria/CALIDAD.md).
+- **Se corrige [D11](DEUDA.md#d11--una-tabla-con-políticas-que-leen-el-rol-del-identificador-de-sesión) a la baja.** No son cinco tablas dependientes del identificador de sesión, es una, y existe un disparador que sincroniza el rol: el fallo real es un desfase hasta que la sesión se renueva, no un bloqueo total. Se registró con más gravedad de la que tenía y se rebaja tras verificarlo.
+- **Se descubre que los tipos de la base de datos no se usan.** Hay dos definiciones del esquema en el repositorio y ninguna se importa en ningún fichero: todo el acceso a datos es sin comprobación de tipos. Registrado como [D19](DEUDA.md#d19--los-tipos-de-la-base-de-datos-no-se-usan). Se elimina además un `types_db.ts` vacío en la raíz.
+- **Se fija la autoridad de las condiciones laborales.** Las tablas con vigencia temporal mandan sobre las columnas equivalentes del perfil, porque leerlas del perfil para calcular una semana pasada devuelve un resultado plausible y equivocado. Registrado como [D20](DEUDA.md#d20--condiciones-laborales-duplicadas-entre-el-perfil-y-las-tablas-con-vigencia).
+
+---
+
+## Antes de 2026-07-29
+
+El historial anterior a esta fecha está congelado en [6-investigacion/archivo/2026-07-29-project-status-historico.md](../6-investigacion/archivo/2026-07-29-project-status-historico.md).
+
+**Es material histórico y no es normativo.** Contiene 628 entradas entre marzo de 2026 y julio de 2026, con detalle de implementación, decisiones ya superadas y afirmaciones que el código ha invalidado. Se consulta para entender por qué algo es como es, nunca para saber cómo debe ser.

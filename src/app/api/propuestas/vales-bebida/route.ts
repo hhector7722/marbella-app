@@ -16,7 +16,7 @@ export async function GET() {
 
   const pdfPath = join(
     process.cwd(),
-    "docs/propuestas/vales-bebida-cena-monitores.pdf"
+    "assets/propuestas/vales-bebida-cena-monitores.pdf"
   );
 
   try {

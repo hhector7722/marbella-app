@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
   // Incluir PDF de vales en el bundle del API route (no va en /public).
   outputFileTracingIncludes: {
     "/api/propuestas/vales-bebida": [
-      "./docs/propuestas/vales-bebida-cena-monitores.pdf",
+      "./assets/propuestas/vales-bebida-cena-monitores.pdf",
     ],
   },
   // 🧠 AISLAMIENTO ESTRICTO: Evita que Webpack/Turbopack minifique y rompa la librería

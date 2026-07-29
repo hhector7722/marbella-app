@@ -22,10 +22,7 @@
     "test:shadow": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/lib/shadow/shadow.scaffold.test.ts src/lib/shadow/adapters/adapters.test.ts src/lib/shadow/discrepancy/discrepancy.test.ts src/lib/shadow/comparator/comparator.test.ts src/lib/shadow/classifier/classifier.test.ts src/lib/shadow/runner/runner.test.ts src/lib/shadow/persistence/persistence.test.ts src/infrastructure/shadow/ops/shadow-cli.test.ts src/infrastructure/shadow/loaders/horizon.test.ts",
     "shadow": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/shadow-run.ts",
     "backfill:overtime-cost": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/backfill-overtime-total-cost.ts",
-    "check:copilot-voice-schemas": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-copilot-voice-schemas.mjs",
-    "sync:llm-prompt": "node scripts/sync-llm-prompt-from-project-status.mjs",
-    "sync:llm-prompt:check": "node scripts/sync-llm-prompt-from-project-status.mjs --check",
-    "setup:githooks": "node scripts/setup-githooks.mjs"
+    "check:copilot-voice-schemas": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-copilot-voice-schemas.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.63",
