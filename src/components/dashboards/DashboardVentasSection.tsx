@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { ChevronDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
@@ -28,7 +28,7 @@ type DashboardVentasSectionProps = {
 };
 
 export default function DashboardVentasSection({ initialData }: DashboardVentasSectionProps) {
-    const supabase = createClient();
+    const supabase = useMemo(() => createClient(), []);
 
     const [liveTickets, setLiveTickets] = useState(initialData?.liveTickets || { total: 0, count: 0 });
     const [salesChartData, setSalesChartData] = useState<{ hora: number; total: number }[]>(
@@ -126,8 +126,11 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
         }, 60000);
 
         const todayStr = format(new Date(), 'yyyy-MM-dd');
+        // Nombre único: reutilizar el mismo topic tras subscribe() (Strict Mode / remount)
+        // lanza "cannot add postgres_changes callbacks ... after subscribe()".
+        const channelName = `realtime_tickets_dashboard:${crypto.randomUUID()}`;
         const channel = supabase
-            .channel('realtime_tickets_dashboard')
+            .channel(channelName)
             .on(
                 'postgres_changes',
                 {
@@ -157,12 +160,13 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
             .subscribe();
 
         return () => {
-            supabase.removeChannel(channel);
+            void supabase.removeChannel(channel);
             clearInterval(dayCheckInterval);
             if (hourlyFetchDebounceRef.current) {
                 clearTimeout(hourlyFetchDebounceRef.current);
             }
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- suscripción única al montar
     }, [supabase]);
 
     salesViewDateRef.current = salesViewDate;

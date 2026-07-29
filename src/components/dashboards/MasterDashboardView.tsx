@@ -177,7 +177,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
         void fetchPendingReservationsCount(true);
 
         const channel = supabase
-            .channel('master:reservations-pending')
+            .channel(`master:reservations-pending:${crypto.randomUUID()}`)
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'reservations' },

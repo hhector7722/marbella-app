@@ -1,6 +1,10 @@
 # BAR LA MARBELLA - PROJECT STATUS
 
-**Última actualización:** 2026-07-29 (Fix tsc Vercel: getPageGeom width/height)
+**Última actualización:** 2026-07-29 (Fix realtime dashboard subscribe)
+
+- [x] **Fix `/dashboard` crash realtime (2026-07-29)**: Error `cannot add postgres_changes callbacks ... after subscribe()` en canal fijo `realtime_tickets_dashboard` (remount Strict Mode / canal ya subscribed). Canal con UUID único + `useMemo` del client en [`DashboardVentasSection.tsx`](src/components/dashboards/DashboardVentasSection.tsx); mismo patrón en reservas master.
+
+**Última actualización anterior:** 2026-07-29 (Fix tsc Vercel: getPageGeom width/height)
 
 - [x] **Fix build Vercel — `getPageGeom` literales `as const` (2026-07-29)**: `DS_PAGE.width/height` inferían `595.28`/`841.89` y `doc.internal.pageSize.getWidth()` (`number`) fallaba en `chrome.ts` (y callers). Parámetros tipados como `number` en [`layout.ts`](src/lib/pdf/design-system-v2/layout.ts).
 

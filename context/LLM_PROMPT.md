@@ -479,10 +479,11 @@ Este archivo (`context/LLM_PROMPT.md`) es un **artefacto "prompt-ready"**. Debe 
 
 <!-- sync:project-status:start — NO EDITAR A MANO; generado por `scripts/sync-llm-prompt-from-project-status.mjs` -->
 
-**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-29 (Fix tsc Vercel: getPageGeom width/height)
+**Fuente**: `PROJECT_STATUS.md` — **última actualización:** 2026-07-29 (Fix realtime dashboard subscribe)
 
 Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; máx. 45 entradas):
 
+- **Fix `/dashboard` crash realtime (2026-07-29)**: Error `cannot add postgres_changes callbacks ... after subscribe()` en canal fijo `realtime_tickets_dashboard` (remount Strict Mode / canal ya subscribed). Canal con UUID único + `useMemo` del client en [`DashboardVentasSection.tsx`](src/components/dashboards/DashboardVentasSection.tsx); mismo patrón en reservas master.
 - **Fix build Vercel — `getPageGeom` literales `as const` (2026-07-29)**: `DS_PAGE.width/height` inferían `595.28`/`841.89` y `doc.internal.pageSize.getWidth()` (`number`) fallaba en `chrome.ts` (y callers). Parámetros tipados como `number` en [`layout.ts`](src/lib/pdf/design-system-v2/layout.ts).
 - **Cierre caja — Esperado con fallback BDP (2026-07-28)**: Si `ventas − tarjeta − pendiente` queda negativo (p.ej. Ventas/Tarjeta del papel + Pendiente BDP), ya no se clampa a 0 ni el descuadre = efectivo entero. Fallback a `cobro_efectivo` del RPC `get_closing_sales_breakdown`. Paso 1 vuelve a mostrar **Pendiente** y **Cobros**. Toast al avanzar si se usa el fallback. [`CashClosingModal.tsx`](src/components/CashClosingModal.tsx).
 - **Pedido a proveedor — estilo legacy confirmado (2026-07-28)**: Preview DS v2 **rechazado**. Producción sigue en [`pdf-generator.ts`](src/utils/orders/pdf-generator.ts) (petroleum). Variante preview eliminada. Jornada/encargos permanecen en DS v2.
@@ -527,6 +528,5 @@ Hitos recientes (mismo orden que el changelog superior de `PROJECT_STATUS.md`; m
 - **Cierre módulo laboral SSOT (2026-07-24)**: `/profile` deja de editar alta/baja (solo lectura). Frontera + jornada solo en `/profile/contrato`. `updateProfile` bloquea `joining_date`/`end_date`. `updateLaborConditions` dispara `fn_recalc_and_propagate_snapshots` tras guardar. Alta sigue creando tramo vía trigger. Módulo laboral **cerrado** (sin bugs; espejo profiles←terms intencional para SQL).
 - **Corrección bug Bali (2026-07-24)**: Fence de baja en `fn_recalc` usa `hours_contract_terms` (día a día), no `profiles.contracted_hours_weekly`. Migración `20260724120000_shadow_bali_fence_contract_terms.sql`. Run `4b0b3a55-…` vs `bfdb100b-…`: EMR **82,35% → 88,24%**, Exact **14→15**, Diff **3→2**. Bali → EXACT. Fernando exact. Héctor/Pere intactos. Tests **42/42**. Productor SQL **técnicamente convergido**; pendiente solo semilla Pere. Doc: residual/validation § Corrección Bali.
 - **Validation Gate SSOT (2026-07-24)**: Revisión final sin código. Héctor = **regla de negocio validada**. Pere = **decisión funcional** (semilla HE vs banco pre-joining). Bali = **bug SQL independiente** (fence `end_date` usa perfil 0 ≠ tramos). Conclusión proyecto: **B — queda 1 bug real (Bali)**. Doc: [`SHADOW_RESIDUAL_ANALYSIS.md`](SHADOW_RESIDUAL_ANALYSIS.md) § Validation Gate.
-- **Corrección adaptador SQL Shadow — carryOut (2026-07-24)**: `carryOut` ya no = `final_balance`. Proyección = arrastre a W+1 (regla `pending` de `fn_recalc`). Run `bfdb100b-…` vs `a4db4f3e-…`: EMR **76,47% → 82,35%**, Exact **13→14**, Diff **4→3**. Fernando → EXACT. Julia/Mamadou siguen EXACT. Sin diffs nuevos. Restan Héctor/Pere/Bali. **Sin cambios SQL/HE.** Tests shadow **42/42**.
 
 <!-- sync:project-status:end -->
