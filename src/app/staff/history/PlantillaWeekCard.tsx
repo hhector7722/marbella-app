@@ -100,8 +100,8 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
                             )}>
                                 {day.dayNumber}
                             </span>
-                            <div className={cn("flex-1 flex flex-col items-stretch mt-3 w-full min-h-[106px] overflow-hidden", day.isOtherMonth && "opacity-45")}>
-                                <div className="flex flex-col items-stretch justify-center w-full space-y-0.5" style={{ height: '106px' }}>
+                            <div className={cn("flex-1 flex flex-col items-stretch mt-3 w-full overflow-hidden", day.isOtherMonth && "opacity-45")}>
+                                <div className="flex flex-col items-stretch justify-start w-full space-y-0.5 min-h-[106px]">
                                     {(() => {
                                         const logs = day.logs || [];
                                         const MAX_ROWS = 12;
@@ -132,7 +132,7 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
                                                                     {special.label}
                                                                 </span>
                                                                 {needsLineBelow && (
-                                                                    <div className="absolute bottom-0 left-0.5 right-0.5 h-px bg-gray-200" />
+                                                                    <div className="absolute h-px bg-gray-200 left-0.5 right-0.5" style={{ top: 'calc(100% + 0.5px)' }} />
                                                                 )}
                                                             </div>
                                                         );
@@ -154,7 +154,7 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
                                                                 <span className="text-rose-600">{outHour || ''}</span>
                                                             </span>
                                                             {needsLineBelow && (
-                                                                <div className="absolute bottom-0 left-0.5 right-0.5 h-px bg-gray-200" />
+                                                                <div className="absolute h-px bg-gray-200 left-0.5 right-0.5" style={{ top: 'calc(100% + 0.5px)' }} />
                                                             )}
                                                         </div>
                                                     );
