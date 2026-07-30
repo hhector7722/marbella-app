@@ -100,8 +100,8 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
                             )}>
                                 {day.dayNumber}
                             </span>
-                            <div className={cn("flex-1 flex flex-col items-stretch justify-start mt-1.5 w-full min-h-[82px] space-y-0.5 overflow-hidden", day.isOtherMonth && "opacity-45")}>
-                                {(day.logs || []).slice(0, 7).map((log) => {
+                            <div className={cn("flex-1 flex flex-col items-stretch justify-start mt-2.5 w-full min-h-[98px] space-y-0.5 overflow-hidden", day.isOtherMonth && "opacity-45")}>
+                                {(day.logs || []).slice(0, 9).map((log) => {
                                     const special = SPECIAL_EVENTS[log.event_type || 'regular'];
                                     const isNoRegistered =
                                         log.event_type === 'no_registered' || log.clock_out_show_no_registrada === true;
@@ -141,8 +141,8 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
                                         </div>
                                     );
                                 })}
-                                {(day.logs?.length || 0) > 7 && (
-                                    <div className="mt-auto text-[7px] font-bold text-gray-400">+{(day.logs?.length || 0) - 7} más</div>
+                                {(day.logs?.length || 0) > 9 && (
+                                    <div className="mt-auto text-[7px] font-bold text-gray-400">+{(day.logs?.length || 0) - 9} más</div>
                                 )}
                             </div>
                         </div>

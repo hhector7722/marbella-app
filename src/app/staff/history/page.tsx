@@ -752,7 +752,7 @@ export default function HistoryPage() {
                 <div className="bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto">
 
                     {/* CABECERA AZUL MES/AÑO (NAVEGACIÓN) */}
-                    <div className="bg-[#36606F] rounded-t-2xl px-4 py-2.5 flex items-center justify-between min-h-[52px]">
+                    <div className="bg-[#36606F] rounded-t-2xl px-4 py-0.5 flex items-center justify-between">
                         {/* Izquierda: Mes y Flechas (Agrupado y Cercano) */}
                         <div className="flex items-center gap-1">
                             <button onClick={prevMonth} className="text-white hover:text-white/70 transition-colors p-1.5 active:scale-90 opacity-80 hover:opacity-100">
@@ -893,7 +893,7 @@ export default function HistoryPage() {
                                         className={cn(
                                             "flex items-center justify-center text-[8px] font-black uppercase tracking-widest transition-all active:scale-95 text-white shrink-0",
                                             isPlantilla
-                                                ? "min-h-[48px] px-1 py-1 bg-transparent border-0 shadow-none rounded-none hover:bg-transparent hover:text-white/85"
+                                                ? "min-h-0 px-1 py-0 bg-transparent border-0 shadow-none rounded-none hover:bg-transparent hover:text-white/85"
                                                 : "h-8 px-3 bg-white/10 hover:bg-white/20 rounded-lg border border-white/10 shadow-sm",
                                             viewingOther && !isPlantilla && "bg-white/20 border-white/30"
                                         )}
