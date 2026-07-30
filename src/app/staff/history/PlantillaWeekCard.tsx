@@ -100,8 +100,8 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
                             )}>
                                 {day.dayNumber}
                             </span>
-                            <div className={cn("flex-1 flex flex-col items-stretch justify-start mt-1 w-full min-h-[68px] space-y-0.5 overflow-hidden", day.isOtherMonth && "opacity-45")}>
-                                {(day.logs || []).slice(0, 5).map((log) => {
+                            <div className={cn("flex-1 flex flex-col items-stretch justify-start mt-1.5 w-full min-h-[82px] space-y-0.5 overflow-hidden", day.isOtherMonth && "opacity-45")}>
+                                {(day.logs || []).slice(0, 7).map((log) => {
                                     const special = SPECIAL_EVENTS[log.event_type || 'regular'];
                                     const isNoRegistered =
                                         log.event_type === 'no_registered' || log.clock_out_show_no_registrada === true;
@@ -111,12 +111,15 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
 
                                     if (special) {
                                         return (
-                                            <span
+                                            <div
                                                 key={log.id}
-                                                className={cn("w-full text-center text-[7px] font-black leading-none", special.text)}
+                                                className="flex w-full min-w-0 flex-row items-center justify-between"
                                             >
-                                                {special.label}
-                                            </span>
+                                                <span className="shrink-0" />
+                                                <span className={cn("text-[7px] font-black leading-none", special.text)}>
+                                                    {special.label}
+                                                </span>
+                                            </div>
                                         );
                                     }
 
@@ -138,8 +141,8 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
                                         </div>
                                     );
                                 })}
-                                {(day.logs?.length || 0) > 5 && (
-                                    <div className="mt-auto text-[7px] font-bold text-gray-400">+{(day.logs?.length || 0) - 5} más</div>
+                                {(day.logs?.length || 0) > 7 && (
+                                    <div className="mt-auto text-[7px] font-bold text-gray-400">+{(day.logs?.length || 0) - 7} más</div>
                                 )}
                             </div>
                         </div>
