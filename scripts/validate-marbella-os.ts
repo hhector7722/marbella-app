@@ -18,12 +18,27 @@ import {
   ESTADOS,
   GENERATED_DIR,
   PRECEDENCIA,
+  calcularVigencia,
   esNormativo,
   existe,
+  hoyLocal,
   leerCorpus,
   precedenciaEsperada,
   type DocumentoCorpus,
 } from './marbella-os/corpus.ts'
+import {
+  PATRON_ID,
+  extraerDeclaraciones,
+  extraerReferencias,
+  type Declaracion,
+} from './marbella-os/afirmaciones.ts'
+import { buscarCiclo, construirAristas } from './marbella-os/grafo.ts'
+import {
+  RAIZ_REPO,
+  contieneMarkdown,
+  directoriosDePrimerNivel,
+  leerManifiesto,
+} from './marbella-os/manifiesto.ts'
 import { construirDerivados } from './generate-marbella-os-derived.ts'
 
 interface Hallazgo {
@@ -255,37 +270,31 @@ for (const doc of conFrontMatter) {
 }
 
 // ---------------------------------------------------------------------------
-// 7. Caducidad — CANON §4. Avisa, no falla.
+// 7. Caducidad — CANON §4.
+//
+// En una rama avisa: un cambio no debe bloquearse por un documento ajeno sin
+// revisar. En main falla, porque lo que se integra no arrastra deuda de
+// revisión. La diferencia la marca MARBELLA_OS_ESTRICTO, que activa CI.
 // ---------------------------------------------------------------------------
 
-const hoy = new Date()
+const ESTRICTO = (process.env.MARBELLA_OS_ESTRICTO ?? '') !== ''
+const hoy = hoyLocal()
 
 for (const doc of conFrontMatter) {
-  const caducidad = doc.campos.get('caducidad')
-  const revisado = doc.campos.get('revisado')
-  if (caducidad === undefined || caducidad === 'no aplica' || revisado === undefined) continue
-
-  const meses = /^(\d+)\s+(?:mes|meses)$/.exec(caducidad)
-  if (meses === null) {
-    error('7 · caducidad', doc.ruta, `\`caducidad: ${caducidad}\` no es \`N meses\` ni \`no aplica\``)
+  const vigencia = calcularVigencia(doc)
+  if (vigencia === null) continue
+  if (typeof vigencia === 'string') {
+    error('7 · caducidad', doc.ruta, vigencia)
     continue
   }
 
-  const fecha = /^(\d{4})-(\d{2})-(\d{2})$/.exec(revisado)
-  if (fecha === null) {
-    error('7 · caducidad', doc.ruta, `\`revisado: ${revisado}\` no es \`YYYY-MM-DD\``)
-    continue
-  }
-
-  // Construcción local deliberada: `new Date('YYYY-MM-DD')` interpreta UTC y
-  // desplaza el día en nuestra zona horaria.
-  const limite = new Date(Number(fecha[1]), Number(fecha[2]) - 1 + Number(meses[1]), Number(fecha[3]))
-  if (hoy > limite) {
-    aviso(
-      '7 · caducidad',
-      doc.ruta,
-      `revisado el ${revisado} con caducidad de ${caducidad}: toca revisarlo`,
-    )
+  if (hoy > vigencia.limite) {
+    const detalle = `revisado el ${vigencia.revisado} con caducidad de ${vigencia.caducidad}: venció el ${vigencia.limite}`
+    if (ESTRICTO) {
+      error('7 · caducidad', doc.ruta, detalle)
+    } else {
+      aviso('7 · caducidad', doc.ruta, detalle)
+    }
   }
 }
 
@@ -428,6 +437,210 @@ if (!existe(GENERATED_DIR)) {
       '11 · derivados',
       `marbella-os/.generated/${sobrante}`,
       'ningún generador lo produce: es un fichero huérfano',
+    )
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 12. Cobertura del manifiesto de indexación — CANON §11
+//
+// Un directorio con markdown que nadie ha clasificado acaba en el índice de
+// cualquier agente. El manifiesto obliga a decidirlo una vez, por escrito.
+// ---------------------------------------------------------------------------
+
+const manifiesto = leerManifiesto()
+
+if (manifiesto.error !== null) {
+  error('12 · manifiesto', 'INDEXACION.md', manifiesto.error)
+} else {
+  for (const directorio of directoriosDePrimerNivel()) {
+    if (manifiesto.declaradas.has(directorio)) continue
+    if (contieneMarkdown(join(RAIZ_REPO, directorio))) {
+      error(
+        '12 · manifiesto',
+        `${directorio}/`,
+        'contiene markdown y no está clasificado en INDEXACION.md: decide si es corpus, satélite, derivado o ruido',
+      )
+    }
+  }
+
+  for (const ruta of manifiesto.declaradas) {
+    if (!existe(resolve(RAIZ_REPO, ruta))) {
+      error('12 · manifiesto', 'INDEXACION.md', `clasifica \`${ruta}/\` y no existe`)
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 13. Identidad de afirmación — ADR-0003
+//
+// Un identificador que se puede citar tiene que existir, ser único y vivir en
+// un documento que autorice algo. Si no, citar deja de ser más barato que
+// copiar, y CANON §5 pierde su única alternativa práctica.
+// ---------------------------------------------------------------------------
+
+const declaraciones = new Map<string, Declaracion>()
+
+for (const doc of conFrontMatter) {
+  for (const declaracion of extraerDeclaraciones(doc)) {
+    if (!PATRON_ID.test(declaracion.id)) {
+      error(
+        '13 · afirmaciones',
+        `${doc.ruta}:${declaracion.linea}`,
+        `\`${declaracion.id}\` no tiene la forma \`INV-X00\` ni \`AF-NOMBRE-EN-MAYUSCULAS\``,
+      )
+      continue
+    }
+
+    if (!esNormativo(doc)) {
+      error(
+        '13 · afirmaciones',
+        `${doc.ruta}:${declaracion.linea}`,
+        `declara \`${declaracion.id}\` sin ser normativo: lo que no autoriza nada no puede citarse`,
+      )
+      continue
+    }
+
+    const previa = declaraciones.get(declaracion.id)
+    if (previa !== undefined) {
+      error(
+        '13 · afirmaciones',
+        `${doc.ruta}:${declaracion.linea}`,
+        `\`${declaracion.id}\` ya está declarado en ${previa.documento.ruta}:${previa.linea}`,
+      )
+      continue
+    }
+
+    declaraciones.set(declaracion.id, declaracion)
+  }
+}
+
+for (const doc of conFrontMatter) {
+  if (!esNormativo(doc)) continue
+  const yaAvisadas = new Set<string>()
+
+  for (const referencia of extraerReferencias(doc)) {
+    if (declaraciones.has(referencia.id) || yaAvisadas.has(referencia.id)) continue
+    yaAvisadas.add(referencia.id)
+    error(
+      '13 · afirmaciones',
+      `${doc.ruta}:${referencia.linea}`,
+      `cita \`${referencia.id}\` y nadie lo declara`,
+    )
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 14. Grafo de dependencias — ADR-0004
+// ---------------------------------------------------------------------------
+
+const porNombre = new Map<string, DocumentoCorpus>()
+
+for (const doc of conFrontMatter) {
+  const nombre = doc.campos.get('documento')
+  if (nombre === undefined) continue
+
+  const previo = porNombre.get(nombre)
+  if (previo !== undefined) {
+    // El nombre es la clave con la que unos documentos citan a otros. Si se
+    // repite, «depende_de: X» deja de tener un destino determinado.
+    error('14 · grafo', doc.ruta, `\`documento: ${nombre}\` ya lo usa ${previo.ruta}`)
+    continue
+  }
+  porNombre.set(nombre, doc)
+}
+
+const aristas = construirAristas(conFrontMatter)
+
+for (const arista of aristas) {
+  if (arista.hacia === arista.desde) {
+    error('14 · grafo', arista.origen.ruta, 'declara depender de sí mismo')
+    continue
+  }
+
+  const destino = porNombre.get(arista.hacia)
+  if (destino === undefined) {
+    error('14 · grafo', arista.origen.ruta, `depende de \`${arista.hacia}\`, que no existe`)
+    continue
+  }
+  if (destino.campos.get('estado') !== 'vigente') {
+    error(
+      '14 · grafo',
+      arista.origen.ruta,
+      `depende de \`${arista.hacia}\`, que está en \`estado: ${destino.campos.get('estado')}\``,
+    )
+  }
+  // Apoyarse en algo que no autoriza nada convierte la norma propia en
+  // consecuencia de un material que el propio corpus declara no vinculante.
+  if (esNormativo(arista.origen) && !esNormativo(destino)) {
+    error(
+      '14 · grafo',
+      arista.origen.ruta,
+      `es normativo y depende de \`${arista.hacia}\`, que no lo es`,
+    )
+  }
+}
+
+const ciclo = buscarCiclo(aristas)
+if (ciclo !== null) {
+  error(
+    '14 · grafo',
+    '(dependencias)',
+    `ciclo de dependencias: ${ciclo.join(' → ')}. Decide cuál de ellos es dueño del hecho compartido`,
+  )
+}
+
+// ---------------------------------------------------------------------------
+// 15 · limbo — un documento propuesto que nadie aprueba ni descarta
+//
+// CANON §8 admite `propuesto` como paso, no como destino. Un documento que
+// lleva meses ahí no es una propuesta: es una decisión que nadie quiere tomar,
+// y mientras tanto no gobierna nada. Es aviso, porque la respuesta correcta
+// puede ser aprobarlo o retirarlo, y ninguna máquina puede elegir por nadie.
+// ---------------------------------------------------------------------------
+
+const DIAS_DE_LIMBO = 90
+
+for (const doc of conFrontMatter) {
+  if (doc.campos.get('estado') !== 'propuesto') continue
+
+  const desde = doc.campos.get('revisado') ?? doc.campos.get('publicado')
+  if (desde === undefined || !/^\d{4}-\d{2}-\d{2}$/.test(desde)) continue
+
+  const dias = Math.floor(
+    (Date.parse(`${hoy}T00:00:00Z`) - Date.parse(`${desde}T00:00:00Z`)) / 86_400_000,
+  )
+  if (dias > DIAS_DE_LIMBO) {
+    aviso(
+      '15 · limbo',
+      doc.ruta,
+      `lleva ${dias} días en \`propuesto\`: apruébalo, retíralo o admite que no era una propuesta`,
+    )
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 16 · norma huérfana — reglas de agente que legislan por su cuenta
+//
+// CANON §13 clasifica como degradación que una norma viva solo en la
+// configuración de una herramienta: no la ve quien no usa esa herramienta y no
+// la gobierna nadie. La señal comprobable es que una regla no cite el corpus:
+// si no apunta a ningún documento, o repite lo que ya está escrito, o legisla.
+// ---------------------------------------------------------------------------
+
+const DIRECTORIO_REGLAS = join(RAIZ_REPO, '.cursor/rules')
+
+if (existe(DIRECTORIO_REGLAS)) {
+  for (const nombre of readdirSync(DIRECTORIO_REGLAS).sort()) {
+    if (!nombre.endsWith('.mdc')) continue
+
+    const contenido = readFileSync(join(DIRECTORIO_REGLAS, nombre), 'utf8')
+    if (contenido.includes('marbella-os/')) continue
+
+    aviso(
+      '16 · norma huérfana',
+      `.cursor/rules/${nombre}`,
+      'no cita ningún documento del corpus: o la norma que aplica está en Marbella OS y debe enlazarla, o solo vive aquí',
     )
   }
 }

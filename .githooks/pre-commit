@@ -1,0 +1,34 @@
+#!/bin/sh
+#
+# Puerta local de Marbella OS.
+#
+# Valida el corpus antes de crear el commit, pero solo cuando el commit toca
+# algo que puede romperlo. Un cambio de código de la aplicación no paga el
+# coste de esta comprobación.
+#
+# Se activa una vez por clon:  npm run hooks:install
+
+set -e
+
+TOCADO=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '^(marbella-os/|INDEXACION\.md$|scripts/marbella-os/|scripts/(validate|generate)-marbella-os.*\.ts$)' || true)
+
+if [ -z "$TOCADO" ]; then
+  exit 0
+fi
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "aviso: no hay node en el PATH; el corpus no se ha validado en local."
+  echo "       La integración continua sí lo hará."
+  exit 0
+fi
+
+echo "Validando Marbella OS…"
+
+if ! node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/validate-marbella-os.ts; then
+  echo ""
+  echo "El corpus no cumple CANON. El commit se ha cancelado."
+  echo ""
+  echo "Si el fallo es de derivados desincronizados:  npm run generate:corpus"
+  echo "Las reglas están en marbella-os/CANON.md; el porqué, en ADR-0002."
+  exit 1
+fi

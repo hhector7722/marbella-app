@@ -3,6 +3,8 @@ documento: DECISIONES-INDICE
 clase: vivo
 estado: vigente
 capa: decisiones
+normativo: true
+precedencia: 20
 responsable: propiedad del producto
 revisado: 2026-07-29
 caducidad: 12 meses
@@ -38,6 +40,8 @@ Las alternativas descartadas son la parte más valiosa y la que más se omite. S
 |---|---|---|
 | [0001](./ADR-0001-hours-engine-productor-unico.md) | Hours Engine como productor único del dominio de horas | Vigente |
 | [0002](./ADR-0002-metadatos-operables-y-validador.md) | Metadatos operables y validador del corpus | Vigente |
+| [0003](./ADR-0003-identidad-de-afirmacion.md) | Identidad de afirmación: hechos citables sin copiarlos | Vigente |
+| [0004](./ADR-0004-grafo-de-dependencias.md) | Grafo de dependencias: qué revisar cuando algo cambia | Vigente |
 
 ## Decisiones tomadas sin registrar
 

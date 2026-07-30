@@ -28,6 +28,14 @@ No leas todo el corpus. Lee lo que gobierna lo que vas a tocar.
 
 **La tabla está en `marbella-os/.generated/CARGA-DE-CONTEXTO.md`**, junto con la de precedencia que resuelve los conflictos entre documentos. Se genera desde el corpus y `npm run validate:corpus` comprueba que no se ha quedado atrás. Esta regla no la copia: una copia a mano se desincroniza y acaba mandando leer ficheros que ya no existen.
 
+Los otros tres derivados responden a preguntas concretas, y ninguno es norma:
+
+- `marbella-os/.generated/AFIRMACIONES.md` — hechos con identificador estable. **Antes de escribir un hecho que sospeches que ya está escrito, búscalo aquí y cítalo.**
+- `marbella-os/.generated/GRAFO.md` — qué documentos hay que revisar cuando cambia otro.
+- `marbella-os/.generated/OBSOLESCENCIA.md` — cuándo caduca cada documento vivo.
+
+Antes de indexar o recorrer el repositorio, lee `INDEXACION.md`: el 95 % de los ficheros markdown son copias de skills de terceros y no hablan de este producto.
+
 Antes de proponer una dirección, comprueba que no está descartada en `marbella-os/1-producto/VISION.md`. **Hay direcciones explícitamente rechazadas** y proponerlas es perder el tiempo de todos.
 
 Cuando dos soluciones son válidas, arbitra con `marbella-os/1-producto/PRINCIPIOS.md`, que además fija su orden de prioridad.

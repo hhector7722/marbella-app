@@ -285,6 +285,16 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 
 ---
 
+## D27 · Dos reglas de agente legislan por su cuenta
+
+**Prioridad: media.** `modals.mdc` fija el comportamiento obligatorio de los modales —centrado, fondo, bloqueo de desplazamiento— y `pdf-design-system-v2.mdc` define un sistema visual de documentos imprimibles con su estado de migración. Ninguna de las dos cita a Marbella OS, así que esa norma solo existe dentro de la configuración de una herramienta concreta.
+
+**Coste**: quien no use esa herramienta no ve la norma, y nadie la revisa cuando el producto cambia. Es la degradación que [CANON §13](../CANON.md) describe: una regla que no gobierna a todos deja de gobernar a nadie. Ya la detecta `npm run validate:corpus`, que avisa por cada regla que no cite el corpus.
+
+**Disparador de pago**: la próxima vez que se toque un modal o un documento imprimible. El comportamiento de los modales pertenece a [EXPERIENCIA](../2-diseno/EXPERIENCIA.md) y el sistema visual de impresos a [TOKENS](../2-diseno/TOKENS.md); la regla debe quedarse con el puntero, no con la norma.
+
+---
+
 ## Cómo se usa esta lista
 
 - **Antes de empezar algo grande**, se comprueba si su disparador ya se cumplió.

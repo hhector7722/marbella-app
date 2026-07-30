@@ -105,14 +105,9 @@ La revisión que produjo estos cuatro documentos encontró **cuatro agujeros de 
 
 ## 4. Decisiones — por qué es así
 
-Registro de decisiones de arquitectura. Inmutables, numeración global, secuencial y sin huecos. Índice completo y reglas en [4-decisiones/README.md](4-decisiones/README.md).
+Registro de decisiones de arquitectura. Inmutables, numeración global, secuencial y sin huecos.
 
-| Número | Decisión | Estado |
-|---|---|---|
-| [0001](4-decisiones/ADR-0001-hours-engine-productor-unico.md) | Hours Engine como productor único del dominio de horas | vigente |
-| [0002](4-decisiones/ADR-0002-metadatos-operables-y-validador.md) | Metadatos operables y validador del corpus | vigente |
-
-Hay **cuatro decisiones tomadas y no registradas**, listadas en ese índice. Están vigentes en el código sin que nadie pueda saber por qué se tomaron.
+**La lista está en [4-decisiones/README.md](4-decisiones/README.md)**, junto con las reglas de cuándo se escribe una decisión y las **cuatro decisiones tomadas y no registradas**, que están vigentes en el código sin que nadie pueda saber por qué se tomaron. Aquí no se repite: mantener la misma tabla en dos sitios ya la desincronizó una vez.
 
 ## 5. Estado — dónde estamos
 
@@ -145,6 +140,7 @@ Por decisión explícita de [CANON §11](CANON.md#11-qué-no-entra-en-marbella-o
 - `assets/` — Material comercial y activos que consume la aplicación.
 - [.cursor/rules/](../.cursor/rules/) — Reglas ejecutables para agentes. **Derivan** de Marbella OS y no pueden introducir norma propia.
 - `marbella-os/.generated/` — Artefactos derivados. Nunca se editan a mano y no son fuente de nada.
+- [INDEXACION.md](../INDEXACION.md) — Manifiesto que declara qué directorios del repositorio son conocimiento y cuáles ruido. Léelo antes de indexar nada.
 
 ---
 

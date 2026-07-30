@@ -1,0 +1,39 @@
+name: Marbella OS
+
+# Puerta documental. No comprueba la aplicación: comprueba que el corpus
+# cumple las reglas de marbella-os/CANON.md, según autoriza ADR-0002.
+#
+# No instala dependencias a propósito: el validador solo usa módulos de Node.
+# Esa restricción es de diseño y este workflow es donde se nota.
+
+on:
+  pull_request:
+    paths:
+      - 'marbella-os/**'
+      - 'INDEXACION.md'
+      - 'scripts/marbella-os/**'
+      - 'scripts/validate-marbella-os.ts'
+      - 'scripts/generate-marbella-os-derived.ts'
+      - '.github/workflows/marbella-os.yml'
+  push:
+    branches:
+      - main
+
+jobs:
+  corpus:
+    name: Validar el corpus
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      # En main la caducidad excedida es un error: lo que se integra no puede
+      # arrastrar documentos sin revisar. En una rama solo avisa, para no
+      # bloquear un cambio por un documento ajeno.
+      - name: Validar
+        env:
+          MARBELLA_OS_ESTRICTO: ${{ github.ref == 'refs/heads/main' && '1' || '' }}
+        run: node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/validate-marbella-os.ts

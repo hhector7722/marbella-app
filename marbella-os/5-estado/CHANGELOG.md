@@ -38,6 +38,17 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ---
 
+## 2026-07-30
+
+- **Las reglas de CANON que una máquina puede comprobar las comprueba una máquina.** `npm run validate:corpus` verifica catorce invariantes del corpus y falla el cambio que los rompa: se ejecuta en el hook local, que se activa una vez por clon con `npm run hooks:install`, y en integración continua. En `main`, un documento vivo que supere su caducidad **bloquea**; en una rama solo avisa, para no frenar un cambio por un documento ajeno.
+- **Se declara qué parte del repositorio es conocimiento.** [`INDEXACION.md`](../../INDEXACION.md) clasifica todo directorio con markdown como corpus, derivado, satélite o ruido. Existía un motivo medido: de los 1.395 ficheros markdown del repositorio, 1.325 son copias de skills de terceros que instalan treinta herramientas de agente. Un directorio nuevo sin clasificar falla la validación.
+- **Un hecho se puede citar sin copiarlo.** [ADR-0003](../4-decisiones/ADR-0003-identidad-de-afirmacion.md) formaliza los identificadores estables de afirmación, generalizando la notación que `ADR-0001` ya usaba para sus treinta y cinco invariantes de dominio. El registro está en `.generated/AFIRMACIONES.md`, y el más citado del corpus resulta ser `INV-D01`, el determinismo de la proyección, con diez citas.
+- **Un documento puede declarar en qué se apoya.** [ADR-0004](../4-decisiones/ADR-0004-grafo-de-dependencias.md) añade el campo opcional `depende_de` y publica el grafo invertido en `.generated/GRAFO.md`, que responde a la pregunta que surge al cambiar algo: qué hay que revisar. La subordinación de `contratos/PROYECCION-v1` a `ADR-0001`, que solo estaba escrita en prosa, pasa a ser comprobable.
+- **Se detecta la norma que vive fuera del corpus.** La validación avisa cuando una regla de herramienta de agente no cita ningún documento de Marbella OS, y cuando un documento lleva más de noventa días sin salir de `propuesto`. La primera ejecución encontró dos reglas que fijan comportamiento obligatorio de modales y de documentos imprimibles sin que eso esté escrito en ninguna parte del corpus: queda registrado en [DEUDA](DEUDA.md) como `D27`.
+- **La regla del dueño único deja de ser invisible.** `npm run report:overlap` compara el vocabulario de los párrafos de documentos normativos y lista los que más se parecen. No bloquea nada: parecerse no es afirmar lo mismo. Su primera ejecución encontró que la tabla de decisiones vivía duplicada en dos índices, y se ha resuelto dejándola en uno solo.
+
+---
+
 ## 2026-07-29
 
 - **La rejilla de asistencia de plantilla pasa a lectura tipográfica.** En `/staff/history`, cuando el responsable ve los fichajes de todo el equipo, cada registro se lee como iniciales en negro seguidas del tramo horario: sin círculos de color, sin tarjetas con marco ni relleno para los tipos especiales, y con la hora sin minutos ni cero inicial (`08:30` se lee `8`). El tipo se comunica solo con color y palabra: entrada en verde y salida en roja para lo regular, todo en rojo si falta el registro, y **Festivo**, **Enfermo**, **Baja** o **Personal** escritos completos en lugar de las letras `F`, `E`, `B` y `P`.

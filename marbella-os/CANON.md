@@ -3,8 +3,10 @@ documento: CANON
 clase: constitucional
 estado: vigente
 capa: raiz
+normativo: true
+precedencia: 100
 responsable: propiedad del producto
-revisado: 2026-07-29
+revisado: 2026-07-30
 caducidad: 24 meses
 supersede: context/LLM_PROMPT.md §0 (jerarquía de fuentes), context/README.md (convenciones de carpeta)
 ---
@@ -89,18 +91,21 @@ precedencia: 0 | 20 | 40 | 60 | 80 | 100
 responsable: quién responde de que sea verdad
 revisado: YYYY-MM-DD
 caducidad: N meses | no aplica
+depende_de: documento(s) en los que este se apoya, o nada
 supersede: documento(s) que este sustituye, o —
 ---
 ```
 
 Reglas de los campos:
 
+- `documento` — nombre corto. Es **único en todo el corpus**: es la clave con la que unos documentos nombran a otros.
 - `estado: borrador` — se está escribiendo. No es citable.
 - `estado: propuesto` — completo, pendiente de aprobación. No es normativo todavía.
 - `estado: vigente` — normativo. Es la única palabra que autoriza a citarlo como verdad.
 - `estado: superado` — sustituido por otro documento, que debe estar nombrado en el campo `supersede` del sustituto.
 - `estado: archivado` — solo valor histórico. **Explícitamente no normativo.**
 - `caducidad` — plazo tras el cual el documento se considera sospechoso si no se ha revisado. Los inmutables llevan `no aplica`.
+- `depende_de` — opcional. Lista de documentos en los que este se apoya: si cambian, este hay que revisarlo. No dice quién manda —eso es `precedencia`— sino qué se arrastra. Lo gobierna [ADR-0004](4-decisiones/ADR-0004-grafo-de-dependencias.md) y el grafo resultante se publica en [`.generated/GRAFO.md`](.generated/GRAFO.md).
 
 ### Los dos campos que declaran autoridad
 
@@ -121,13 +126,15 @@ Añadidos por [ADR-0002](4-decisiones/ADR-0002-metadatos-operables-y-validador.m
 
 La norma sigue siendo la sección 6. Este campo es su proyección operable, no su sustituto: si ambos discrepan, manda la sección 6 y el campo está mal.
 
-**Un documento con `normativo: false` no autoriza nada**, con independencia de lo que afirme su texto y de lo asertivo que suene. Todo `6-investigacion/` lo lleva.
+**Un documento con `normativo: false` no autoriza nada**, con independencia de lo que afirme su texto y de lo asertivo que suene. Todo `6-investigacion/` lo lleva. <!-- af: AF-NO-NORMATIVO-NO-AUTORIZA -->
 
 ---
 
 ## 5. Dueño único por hecho
 
-**Cada hecho vive en exactamente un documento. Los demás enlazan, no copian.**
+**Cada hecho vive en exactamente un documento. Los demás enlazan, no copian.** <!-- af: AF-DUENO-UNICO -->
+
+Cuando un hecho lleva identificador estable, enlazar es citarlo. El registro de los que existen está en [`.generated/AFIRMACIONES.md`](.generated/AFIRMACIONES.md); la regla que los gobierna, en [ADR-0003](4-decisiones/ADR-0003-identidad-de-afirmacion.md).
 
 No hay excepciones, ni siquiera «por comodidad de lectura». Duplicar un hecho garantiza que las dos copias divergirán, y entonces el corpus deja de ser fuente de verdad y pasa a ser un conjunto de opiniones fechadas.
 
@@ -223,7 +230,19 @@ Los artefactos derivados se generan **desde** Marbella OS y viven en `marbella-o
 
 La dirección importa. El mecanismo anterior iba al revés: `context/LLM_PROMPT.md` se mantenía a mano y su sección 17 se rellenaba automáticamente copiando el changelog de `PROJECT_STATUS.md`, duplicando cientos de líneas por diseño. El resultado inevitable fue un documento que nadie podía verificar.
 
-Regla: si un fichero se puede derivar, se deriva; si se deriva, no se edita; si no se edita, no se discute.
+Regla: si un fichero se puede derivar, se deriva; si se deriva, no se edita; si no se edita, no se discute. <!-- af: AF-DERIVADO-NO-SE-EDITA -->
+
+Cada derivado responde a una pregunta, y ninguno es norma:
+
+| Derivado | Responde a |
+|---|---|
+| [`CARGA-DE-CONTEXTO.md`](.generated/CARGA-DE-CONTEXTO.md) | Qué debo leer para tocar esto |
+| [`AFIRMACIONES.md`](.generated/AFIRMACIONES.md) | Dónde vive este hecho y cómo lo cito |
+| [`GRAFO.md`](.generated/GRAFO.md) | Qué se rompe si cambio esto |
+| [`OBSOLESCENCIA.md`](.generated/OBSOLESCENCIA.md) | Qué toca revisar y cuándo |
+| `PRECEDENCIA.json` | Lo mismo, para una máquina que no lee markdown |
+
+Que sean baratos de regenerar es lo que permite que existan. Un derivado que hubiera que mantener a mano sería una copia, y una copia diverge.
 
 ---
 
@@ -238,6 +257,12 @@ Regla: si un fichero se puede derivar, se deriva; si se deriva, no se edita; si 
 - **Registros de actividad.** Trazas, logs, informes de ejecución.
 
 La regla de decisión, cuando haya duda: si el fichero no se puede leer para tomar una decisión sobre el producto, no es documentación.
+
+### Dónde está escrita esa frontera
+
+Excluir algo de Marbella OS no basta para que deje de estorbar: sigue en el repositorio, y cualquier indexador lo encuentra. El 95 % de los ficheros markdown de este repositorio son copias de skills de terceros que treinta herramientas de agente instalan por su cuenta.
+
+Por eso la frontera se declara además en un manifiesto ejecutable, [`INDEXACION.md`](../INDEXACION.md), en la raíz del repositorio. Clasifica todo directorio que contenga markdown como corpus, derivado, satélite o ruido, y `npm run validate:corpus` falla si aparece uno sin clasificar. Vive fuera de `marbella-os/` porque no es norma de producto: es configuración de la frontera, y por tanto queda excluida por esta misma sección.
 
 ---
 
@@ -254,6 +279,7 @@ Marbella OS está escrito para ser leído tanto por personas como por modelos. U
 7. **Respetar la puerta de cambio** de la sección 9 en cada modificación de comportamiento.
 8. **Preferir corregir la frontera antes que añadir un documento.** El corpus crece por necesidad, no por acumulación.
 9. **No editar `marbella-os/.generated/`.** Se regenera; lo que se edite a mano se pierde y además hace fallar el validador.
+10. **No indexar el repositorio entero.** [`INDEXACION.md`](../INDEXACION.md) declara qué directorios son conocimiento. Lo demás es documentación de terceros y no habla de este producto.
 
 ---
 
@@ -270,8 +296,33 @@ El coste real de esta arquitectura no está en escribirla, está en mantenerla. 
 
 ### Qué se comprueba solo
 
-`npm run validate:corpus` verifica las reglas de este documento que una máquina puede verificar: front-matter presente y bien formado, vocabulario de los campos, coherencia entre `precedencia` y la sección 6, integridad de los enlaces de los documentos normativos, `supersede` apuntando a algo que existe, numeración de ADR sin huecos, convención de nombres de la sección 7 y existencia de los directorios que los índices anuncian. Falla el cambio si algo de eso se rompe. La caducidad excedida avisa, no falla.
+`npm run validate:corpus` verifica las reglas de este documento que una máquina puede verificar: front-matter presente y bien formado, vocabulario de los campos, coherencia entre `precedencia` y la sección 6, integridad de los enlaces de los documentos normativos, `supersede` apuntando a algo que existe, numeración de ADR sin huecos, convención de nombres de la sección 7, existencia de los directorios que los índices anuncian, sincronía de los derivados de la sección 10, cobertura del manifiesto de la sección 11, unicidad e integridad de los identificadores de afirmación y coherencia del grafo de dependencias. Falla el cambio si algo de eso se rompe.
 
 Decidido en [ADR-0002](4-decisiones/ADR-0002-metadatos-operables-y-validador.md), que también explica lo que **no** comprueba.
 
-Lo que ninguna máquina comprueba hoy es la regla 5, la de dueño único por hecho, porque detectar que dos documentos afirman lo mismo exige entender lo que dicen. Sigue dependiendo de quien escribe, y sigue siendo la más importante.
+Dos señales de esta misma sección avisan sin bloquear, porque su respuesta correcta no la puede elegir una máquina:
+
+- **Un documento que lleva más de noventa días en `propuesto`.** La sección 8 admite ese estado como paso, no como destino. Aprobarlo o retirarlo son decisiones legítimas; dejarlo ahí no lo es.
+- **Una regla de agente que no cita ningún documento del corpus.** O aplica una norma que está escrita aquí y debe enlazarla, o la norma solo vive dentro de la configuración de una herramienta, que es el caso que esta sección describe. Las dos que hay hoy están registradas en [DEUDA](5-estado/DEUDA.md).
+
+### Dónde se comprueba
+
+En tres sitios, con exigencia creciente:
+
+| Momento | Qué lo ejecuta | Caducidad excedida |
+|---|---|---|
+| Al escribir | `npm run validate:corpus` | avisa |
+| Al confirmar un cambio que toca el corpus | `.githooks/pre-commit` | avisa |
+| Al integrar en `main` | `.github/workflows/marbella-os.yml` | **falla** |
+
+La caducidad es lo único que cambia de severidad. Bloquear una rama porque un documento ajeno lleva un mes sin revisar entorpece sin proteger nada; permitir que eso entre en `main` es exactamente cómo un corpus empieza a mentir. Qué documento vence y cuándo está en [`.generated/OBSOLESCENCIA.md`](.generated/OBSOLESCENCIA.md).
+
+La puerta local se activa una vez por clon con `npm run hooks:install`.
+
+### La regla 5 no se comprueba, se hace visible
+
+Ninguna máquina puede decidir si dos documentos afirman lo mismo, porque eso exige entender lo que dicen. La regla 5 sigue dependiendo de quien escribe y sigue siendo la más importante. Lo que sí existe es ayuda para verla, en tres formas de coste creciente:
+
+1. **Darle nombre al hecho.** Una afirmación con identificador se cita en lugar de reescribirse ([ADR-0003](4-decisiones/ADR-0003-identidad-de-afirmacion.md)). Mientras enlazar sea más caro que copiar, se copiará.
+2. **`npm run report:overlap`.** Compara el vocabulario de los párrafos de documentos normativos distintos y lista los que más se parecen. No es una puerta y no forma parte de la validación: parecerse no es afirmar lo mismo, y ningún umbral automático puede distinguirlo. Es una lista de preguntas.
+3. **La revisión.** La plantilla de propuesta de cambio pregunta expresamente si se ha enlazado en lugar de copiar cuando el cambio toca dos o más documentos normativos.

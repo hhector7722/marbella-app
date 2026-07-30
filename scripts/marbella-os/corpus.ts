@@ -191,6 +191,54 @@ export function precedenciaEsperada(documento: DocumentoCorpus): number | null {
   return null
 }
 
+export interface Vigencia {
+  /** Fecha en la que el documento deja de estar revisado, en `YYYY-MM-DD`. */
+  readonly limite: string
+  readonly revisado: string
+  readonly caducidad: string
+}
+
+/**
+ * Fecha en la que un documento vivo pide revisión. Determinista: depende solo
+ * del front-matter, nunca de cuándo se ejecute. Eso permite publicarla en un
+ * derivado sin que el fichero cambie con el paso del tiempo.
+ *
+ * Devuelve `null` si el documento no caduca, y una cadena de error si los
+ * campos no tienen la forma que exige CANON §4.
+ */
+export function calcularVigencia(documento: DocumentoCorpus): Vigencia | null | string {
+  const caducidad = documento.campos.get('caducidad')
+  const revisado = documento.campos.get('revisado')
+  if (caducidad === undefined || caducidad === 'no aplica' || revisado === undefined) return null
+
+  const meses = /^(\d+)\s+(?:mes|meses)$/.exec(caducidad)
+  if (meses === null) return `\`caducidad: ${caducidad}\` no es \`N meses\` ni \`no aplica\``
+
+  const fecha = /^(\d{4})-(\d{2})-(\d{2})$/.exec(revisado)
+  if (fecha === null) return `\`revisado: ${revisado}\` no es \`YYYY-MM-DD\``
+
+  // Construcción por componentes: `new Date('YYYY-MM-DD')` interpreta UTC y
+  // desplaza el día en nuestra zona horaria.
+  const limite = new Date(Number(fecha[1]), Number(fecha[2]) - 1 + Number(meses[1]), Number(fecha[3]))
+  const iso = [
+    limite.getFullYear(),
+    String(limite.getMonth() + 1).padStart(2, '0'),
+    String(limite.getDate()).padStart(2, '0'),
+  ].join('-')
+
+  return { limite: iso, revisado, caducidad }
+}
+
+/** Fecha de hoy en `YYYY-MM-DD` local, comparable con `Vigencia.limite`. */
+export function hoyLocal(): string {
+  const hoy = new Date()
+  return [
+    hoy.getFullYear(),
+    String(hoy.getMonth() + 1).padStart(2, '0'),
+    String(hoy.getDate()).padStart(2, '0'),
+  ].join('-')
+}
+
 /**
  * Huella del estado de los documentos de los que se deriva un artefacto.
  * CANON §10 exige que los derivados no se editen a mano; la huella es lo que

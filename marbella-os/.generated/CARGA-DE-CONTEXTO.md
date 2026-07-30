@@ -1,5 +1,5 @@
-<!-- Generado desde 45 documentos de marbella-os/.
-     Huella del origen: 8d7e812ad0f3579b
+<!-- Generado desde 47 documentos de marbella-os/.
+     Huella del origen: 5f446c94ff35fbb5
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -39,6 +39,8 @@ es `CANON §5`.
 | 100 | `marbella-os/CANON.md` |
 | 80 | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` |
 | 80 | `marbella-os/4-decisiones/ADR-0002-metadatos-operables-y-validador.md` |
+| 80 | `marbella-os/4-decisiones/ADR-0003-identidad-de-afirmacion.md` |
+| 80 | `marbella-os/4-decisiones/ADR-0004-grafo-de-dependencias.md` |
 | 60 | `marbella-os/1-producto/PRINCIPIOS.md` |
 | 60 | `marbella-os/1-producto/VISION.md` |
 | 60 | `marbella-os/2-diseno/EXPERIENCIA.md` |

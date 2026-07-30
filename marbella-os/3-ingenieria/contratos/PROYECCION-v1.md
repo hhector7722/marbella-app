@@ -8,6 +8,7 @@ precedencia: 40
 responsable: propiedad del producto
 publicado: 2026-07-27
 revisado: 2026-07-29
+depende_de: ADR-0001
 supersede: docs/PROJECTION_CONTRACT_v1.md
 ---
 

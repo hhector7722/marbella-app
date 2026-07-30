@@ -24,7 +24,9 @@
     "backfill:overtime-cost": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/backfill-overtime-total-cost.ts",
     "check:copilot-voice-schemas": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-copilot-voice-schemas.mjs",
     "validate:corpus": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/validate-marbella-os.ts",
-    "generate:corpus": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/generate-marbella-os-derived.ts"
+    "generate:corpus": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/generate-marbella-os-derived.ts",
+    "report:overlap": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/report-marbella-os-overlap.ts",
+    "hooks:install": "git config core.hooksPath .githooks && chmod +x .githooks/* && echo \"Puerta local activada: .githooks/\""
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.63",
