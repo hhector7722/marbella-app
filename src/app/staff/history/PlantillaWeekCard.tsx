@@ -100,8 +100,8 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
                             )}>
                                 {day.dayNumber}
                             </span>
-                            <div className={cn("flex-1 flex flex-col items-stretch justify-center mt-3 w-full min-h-[52px] space-y-0.5 overflow-hidden", day.isOtherMonth && "opacity-45")}>
-                                {(day.logs || []).slice(0, 4).map((log) => {
+                            <div className={cn("flex-1 flex flex-col items-stretch justify-start mt-1 w-full min-h-[68px] space-y-0.5 overflow-hidden", day.isOtherMonth && "opacity-45")}>
+                                {(day.logs || []).slice(0, 5).map((log) => {
                                     const special = SPECIAL_EVENTS[log.event_type || 'regular'];
                                     const isNoRegistered =
                                         log.event_type === 'no_registered' || log.clock_out_show_no_registrada === true;
@@ -109,32 +109,37 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
                                     const inHour = formatHourOnly(log.in_time);
                                     const outHour = formatHourOnly(log.out_time);
 
+                                    if (special) {
+                                        return (
+                                            <span
+                                                key={log.id}
+                                                className={cn("w-full text-center text-[7px] font-black leading-none", special.text)}
+                                            >
+                                                {special.label}
+                                            </span>
+                                        );
+                                    }
+
                                     return (
                                         <div
                                             key={log.id}
                                             className="flex w-full min-w-0 flex-row items-center justify-between"
                                         >
-                                            <span className="shrink-0 text-[7px] font-normal leading-none text-zinc-600">
+                                            <span className="shrink-0 text-[7px] font-bold leading-none text-zinc-600">
                                                 {initials}
                                             </span>
-                                            {special ? (
-                                                <span className={cn("truncate text-[7px] font-black leading-none", special.text)}>
-                                                    {special.label}
+                                            <span className="flex shrink-0 items-center gap-0 font-mono text-[7px] font-bold leading-none">
+                                                <span className={cn("", isNoRegistered ? "text-rose-600" : "text-emerald-600")}>
+                                                    {inHour || '—'}
                                                 </span>
-                                            ) : (
-                                                <span className="flex shrink-0 items-center gap-0 font-mono text-[7px] font-bold leading-none">
-                                                    <span className={cn("", isNoRegistered ? "text-rose-600" : "text-emerald-600")}>
-                                                        {inHour || '—'}
-                                                    </span>
-                                                    <span className="font-normal text-zinc-600">/</span>
-                                                    <span className="text-rose-600">{outHour || '—'}</span>
-                                                </span>
-                                            )}
+                                                <span className="font-normal text-zinc-600">/</span>
+                                                <span className="text-rose-600">{outHour || ''}</span>
+                                            </span>
                                         </div>
                                     );
                                 })}
-                                {(day.logs?.length || 0) > 4 && (
-                                    <div className="text-[7px] font-bold text-gray-400">+{(day.logs?.length || 0) - 4} más</div>
+                                {(day.logs?.length || 0) > 5 && (
+                                    <div className="mt-auto text-[7px] font-bold text-gray-400">+{(day.logs?.length || 0) - 5} más</div>
                                 )}
                             </div>
                         </div>
