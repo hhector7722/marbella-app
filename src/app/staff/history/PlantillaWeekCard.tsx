@@ -100,65 +100,74 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
                             )}>
                                 {day.dayNumber}
                             </span>
-                            <div className={cn("flex-1 flex flex-col items-stretch justify-start mt-3 w-full min-h-[98px] space-y-0.5 overflow-hidden", day.isOtherMonth && "opacity-45")}>
-                                {(() => {
-                                    const logs = day.logs || [];
-                                    const MAX_ROWS = 12;
-                                    const overflow = logs.length > MAX_ROWS ? logs.length - MAX_ROWS + 1 : 0;
-                                    const displayLogs = overflow > 0 ? logs.slice(0, MAX_ROWS - 1) : logs.slice(0, MAX_ROWS);
+                            <div className={cn("flex-1 flex flex-col items-stretch mt-3 w-full min-h-[106px] overflow-hidden", day.isOtherMonth && "opacity-45")}>
+                                <div className="flex flex-col items-stretch justify-center w-full space-y-0.5" style={{ height: '106px' }}>
+                                    {(() => {
+                                        const logs = day.logs || [];
+                                        const MAX_ROWS = 12;
+                                        const overflow = logs.length > MAX_ROWS ? logs.length - MAX_ROWS + 1 : 0;
+                                        const displayLogs = overflow > 0 ? logs.slice(0, MAX_ROWS - 1) : logs.slice(0, MAX_ROWS);
 
-                                    return (
-                                        <>
-                                            {displayLogs.map((log) => {
-                                                const special = SPECIAL_EVENTS[log.event_type || 'regular'];
-                                                const isNoRegistered =
-                                                    log.event_type === 'no_registered' || log.clock_out_show_no_registrada === true;
-                                                const initials = getInitials(log);
-                                                const inHour = formatHourOnly(log.in_time);
-                                                const outHour = formatHourOnly(log.out_time);
+                                        return (
+                                            <>
+                                                {displayLogs.map((log, idx) => {
+                                                    const special = SPECIAL_EVENTS[log.event_type || 'regular'];
+                                                    const isNoRegistered =
+                                                        log.event_type === 'no_registered' || log.clock_out_show_no_registrada === true;
+                                                    const initials = getInitials(log);
+                                                    const inHour = formatHourOnly(log.in_time);
+                                                    const outHour = formatHourOnly(log.out_time);
+                                                    const needsLineBelow = idx < displayLogs.length - 1 || overflow > 0;
 
-                                                if (special) {
+                                                    if (special) {
+                                                        return (
+                                                            <div
+                                                                key={log.id}
+                                                                className="relative flex w-full min-w-0 flex-row items-center"
+                                                            >
+                                                                <span className="shrink-0 text-[7px] font-bold leading-none text-zinc-600">
+                                                                    {initials}
+                                                                </span>
+                                                                <span className={cn("absolute left-3/4 -translate-x-1/2 text-[7px] font-black leading-none", special.text)}>
+                                                                    {special.label}
+                                                                </span>
+                                                                {needsLineBelow && (
+                                                                    <div className="absolute bottom-0 left-0.5 right-0.5 h-px bg-gray-200" />
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    }
+
                                                     return (
                                                         <div
                                                             key={log.id}
-                                                            className="relative flex w-full min-w-0 flex-row items-center"
+                                                            className="relative flex w-full min-w-0 flex-row items-center justify-between"
                                                         >
                                                             <span className="shrink-0 text-[7px] font-bold leading-none text-zinc-600">
                                                                 {initials}
                                                             </span>
-                                                            <span className={cn("absolute left-3/4 -translate-x-1/2 text-[7px] font-black leading-none", special.text)}>
-                                                                {special.label}
+                                                            <span className="flex shrink-0 items-center gap-0 font-mono text-[7px] font-bold leading-none">
+                                                                <span className={cn("", isNoRegistered ? "text-rose-600" : "text-emerald-600")}>
+                                                                    {inHour || '—'}
+                                                                </span>
+                                                                <span className="font-normal text-zinc-600">/</span>
+                                                                <span className="text-rose-600">{outHour || ''}</span>
                                                             </span>
+                                                            {needsLineBelow && (
+                                                                <div className="absolute bottom-0 left-0.5 right-0.5 h-px bg-gray-200" />
+                                                            )}
                                                         </div>
                                                     );
-                                                }
-
-                                                return (
-                                                    <div
-                                                        key={log.id}
-                                                        className="flex w-full min-w-0 flex-row items-center justify-between"
-                                                    >
-                                                        <span className="shrink-0 text-[7px] font-bold leading-none text-zinc-600">
-                                                            {initials}
-                                                        </span>
-                                                        <span className="flex shrink-0 items-center gap-0 font-mono text-[7px] font-bold leading-none">
-                                                            <span className={cn("", isNoRegistered ? "text-rose-600" : "text-emerald-600")}>
-                                                                {inHour || '—'}
-                                                            </span>
-                                                            <span className="font-normal text-zinc-600">/</span>
-                                                            <span className="text-rose-600">{outHour || ''}</span>
-                                                        </span>
+                                                })}
+                                                {overflow > 0 && (
+                                                    <div className="flex w-full min-w-0 flex-row items-center justify-start">
+                                                        <span className="text-[7px] font-bold text-gray-400">+{overflow} más</span>
                                                     </div>
-                                                );
-                                            })}
-                                            {overflow > 0 && (
-                                                <div className="flex w-full min-w-0 flex-row items-center justify-start">
-                                                    <span className="text-[7px] font-bold text-gray-400">+{overflow} más</span>
-                                                </div>
-                                            )}
-                                        </>
-                                    );
-                                })()}
+                                                )}
+                                            </>
+                                        );
+                                    })()}
+                                </div>
                             </div>
                         </div>
                     );
