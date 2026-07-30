@@ -222,7 +222,8 @@ export function WeekCard({
                             </span>
                             <div className={cn("flex-1 flex flex-col items-stretch justify-center mt-2.5 w-full min-h-[52px]", isOtherMonth && "opacity-45")}>
                                 {isSpecialOnly ? (
-                                    <div className="flex min-h-[52px] w-full min-w-0 flex-1 items-center justify-center">
+                                    <div className="flex min-h-[52px] w-full min-w-0 flex-1 flex-col items-center">
+                                        <div className="flex-1 mt-[14px]" />
                                         {eventConfig!.showCross ? (
                                             <X size={22} strokeWidth={2.5} className={cn(eventConfig!.text, isOtherMonth && 'opacity-60')} />
                                         ) : (
@@ -231,6 +232,7 @@ export function WeekCard({
                                                 className={cn(eventConfig!.text, isOtherMonth && 'opacity-60')}
                                             />
                                         )}
+                                        <div className="flex-1" />
                                     </div>
                                 ) : day.eventType === 'no_registered' ? (
                                     <div className="flex min-h-[52px] w-full min-w-0 flex-1 flex-col items-center">
