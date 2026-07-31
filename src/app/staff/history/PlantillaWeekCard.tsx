@@ -5,6 +5,13 @@ import { cn } from '@/lib/utils';
 
 const DAY_HEADERS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 
+const MAX_ROWS = 12;
+const LOG_ROW_HEIGHT = 7;
+const LOG_ROW_GAP = 3;
+const DAY_VERTICAL_PAD = 4;
+const DAY_HEADER_HEIGHT = 9;
+const DAY_CONTENT_TOP_OFFSET = 12;
+
 /** Tipos con etiqueta de texto (sin reloj). `regular` y `no_registered` pintan horas. */
 const SPECIAL_EVENTS: Record<string, { label: string; text: string }> = {
     holiday: { label: 'F', text: 'text-red-500' },
@@ -63,6 +70,17 @@ function formatHourOnly(time: string | null | undefined): string {
 }
 
 export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardProps) {
+    const maxDisplayedLogs = Math.max(
+        0,
+        ...week.days.map((day) => Math.min((day.logs || []).length, MAX_ROWS)),
+    );
+    const contentHeight =
+        maxDisplayedLogs === 0
+            ? DAY_HEADER_HEIGHT
+            : maxDisplayedLogs * LOG_ROW_HEIGHT + (maxDisplayedLogs - 1) * LOG_ROW_GAP;
+    const dayHeight =
+        DAY_VERTICAL_PAD + DAY_CONTENT_TOP_OFFSET + contentHeight + DAY_VERTICAL_PAD;
+
     return (
         <div className="rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white">
             {idx === 0 && (
@@ -88,8 +106,9 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
                         <div
                             key={di}
                             onClick={() => onDayClick(day.date)}
+                            style={{ height: dayHeight }}
                             className={cn(
-                                "relative border-r border-gray-100 last:border-r-0 min-h-[85px] flex flex-col p-1 pb-1 cursor-pointer transition-colors",
+                                "relative border-r border-gray-100 last:border-r-0 flex flex-col p-1 pb-1 cursor-pointer transition-colors",
                                 "bg-white hover:bg-zinc-50",
                                 day.isToday && !day.isOtherMonth && "bg-blue-50/10"
                             )}
@@ -101,10 +120,9 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
                                 {day.dayNumber}
                             </span>
                             <div className={cn("flex-1 flex flex-col items-stretch justify-center mt-3 w-full overflow-hidden", day.isOtherMonth && "opacity-45")}>
-                                <div className="flex flex-col items-stretch justify-center w-full space-y-[3px] min-h-[117px]">
+                                <div className="flex flex-col items-stretch justify-center w-full space-y-[3px]">
                                     {(() => {
                                         const logs = day.logs || [];
-                                        const MAX_ROWS = 12;
                                         const overflow = logs.length > MAX_ROWS ? logs.length - MAX_ROWS + 1 : 0;
                                         const displayLogs = overflow > 0 ? logs.slice(0, MAX_ROWS - 1) : logs.slice(0, MAX_ROWS);
 
