@@ -935,7 +935,7 @@ export default function HistoryPage() {
                                 <p className="text-sm font-bold">No hay registros este mes</p>
                             </div>
                         ) : (
-                            <div className="p-4 bg-zinc-50/50">
+                            <div className="px-4 pt-8 pb-8 bg-zinc-50/50">
                                 {plantillaWeeksData.map((week, idx) => (
                                     <PlantillaWeekCard
                                         key={week.weekNumber}
