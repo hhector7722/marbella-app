@@ -115,12 +115,16 @@ export function domainRowToInsertPayload(
   };
 }
 
-/** Comparación de columnas C (+ week_end) para idempotencia / read-back. */
+/**
+ * Comparación de columnas C (+ week_end) para idempotencia / read-back.
+ * Las horas también se persisten en numeric(10,2): la tolerancia refleja
+ * el redondeo de PostgreSQL (máx. error 0.005), igual que total_cost.
+ */
 export function projectionDomainEquals(
   a: WeeklyProjectionDomainRow,
   b: WeeklyProjectionDomainRow,
   moneyEps: number = MONEY_EPS,
-  hoursEps: number = 1e-9,
+  hoursEps: number = MONEY_EPS,
 ): boolean {
   if (a.user_id !== b.user_id) return false;
   if (a.week_start !== b.week_start) return false;

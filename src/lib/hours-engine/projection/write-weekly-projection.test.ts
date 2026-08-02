@@ -585,6 +585,88 @@ describe('Projection Writer — validación de invariantes', () => {
   });
 });
 
+describe('Projection Writer — semana mixta julio/agosto (numeric(10,2))', () => {
+  /** Simula numeric(10,2): redondeo de PostgreSQL al persistir. */
+  function roundDb(v: number): number {
+    return Math.round(v * 100) / 100;
+  }
+
+  it('read-back tolera el redondeo numeric(10,2) de ordinary/extra (regresión 2026-07-27)', () => {
+    const employee = emp();
+    const logs = [
+      { clockInIso: '2026-07-27T08:00:00.000Z', totalHours: 8.5 },
+      { clockInIso: '2026-07-28T08:00:00.000Z', totalHours: 8 },
+      { clockInIso: '2026-07-29T08:00:00.000Z', totalHours: 8 },
+      { clockInIso: '2026-07-30T08:00:00.000Z', totalHours: 8 },
+    ];
+    const liquidation = liquidateWeek({
+      employee,
+      weekStart: '2026-07-27',
+      logs,
+      isPaid: false,
+      carryIn: 0,
+    });
+
+    // Semana 27-jul → 2-ago cruza a agosto: sub-prorrateo staff/agosto produce
+    // ordinary/extra con >2 decimales (5/7×40 = 28.571428…).
+    assert.equal(liquidation.ordinaryHours, 28.571428571428573);
+    assert.equal(liquidation.overtimeHours, 3.928571428571427);
+
+    const row = mapEnginesToProjectionRow(
+      liquidation,
+      priceLiquidationOvertime(liquidation, employee).estimatedValue,
+    );
+
+    // Payload persistido (dominio sin tocar) vs fila leída de BD tras numeric(10,2).
+    const persisted = {
+      ...row,
+      ordinary_hours: roundDb(row.ordinary_hours),
+      extra_hours: roundDb(row.extra_hours),
+    };
+
+    assert.equal(persisted.ordinary_hours, 28.57);
+    assert.equal(persisted.extra_hours, 3.93);
+
+    // Con hoursEps=1e-9 (antiguo) esto divergía; con la tolerancia numeric(10,2)
+    // de 0.005 el read-back es coherente con el tipo SQL.
+    assert.ok(projectionDomainEquals(row, persisted));
+
+    // Todos los campos respetan el contrato del payload (delta ≤ 0.005).
+    const pairs: [number, number][] = [
+      [row.total_hours, persisted.total_hours],
+      [row.ordinary_hours, persisted.ordinary_hours],
+      [row.extra_hours, persisted.extra_hours],
+      [row.pending_balance, persisted.pending_balance],
+      [row.balance_hours, persisted.balance_hours],
+      [row.final_balance, persisted.final_balance],
+      [row.contracted_hours_snapshot, persisted.contracted_hours_snapshot],
+      [row.total_cost, persisted.total_cost],
+    ];
+    for (const [x, y] of pairs) {
+      assert.ok(Math.abs(x - y) <= 0.005, `${x} vs ${y}`);
+    }
+  });
+
+  it('proyección de dominio intacta para semana mixta (no se altera el motor)', () => {
+    const employee = emp();
+    const liquidation = liquidateWeek({
+      employee,
+      weekStart: '2026-07-27',
+      logs: [{ clockInIso: '2026-07-27T08:00:00.000Z', totalHours: 8.5 }],
+      isPaid: false,
+      carryIn: 0,
+    });
+    const row = mapEnginesToProjectionRow(
+      liquidation,
+      priceLiquidationOvertime(liquidation, employee).estimatedValue,
+    );
+    assert.equal(row.ordinary_hours, liquidation.ordinaryHours);
+    assert.equal(row.extra_hours, liquidation.overtimeHours);
+    assert.equal(row.total_hours, liquidation.hoursWorked);
+    assert.equal(row.contracted_hours_snapshot, liquidation.contractedHoursEffective);
+  });
+});
+
 describe('Projection Writer — idempotencia de dominio', () => {
   it('mismo HE+Cost ⇒ mismo payload tras N mapeos', () => {
     const employee = emp();
