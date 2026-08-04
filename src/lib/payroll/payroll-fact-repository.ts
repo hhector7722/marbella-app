@@ -48,8 +48,7 @@ export class PayrollFactRepository {
   }
 
   /**
-   * Obtiene el coste empresa mensual consolidado (suma de liquidaciones ordinarias, complementarias, finiquitos)
-   * devuelto como Value Object `Money`.
+   * Obtiene el coste empresa mensual consolidado.
    */
   async getMonthlyCompanyCostConsolidated(userId: string, periodYm: string): Promise<Money> {
     const facts = await this.getActiveFactsForUser(userId, periodYm);
@@ -61,7 +60,7 @@ export class PayrollFactRepository {
   }
 
   /**
-   * Obtiene todo el historial de hechos contables (active, superseded, cancelled) para auditoría.
+   * Obtiene todo el historial de hechos contables.
    */
   async getFactHistory(userId: string, periodYm: string): Promise<EmployeePayrollFactRow[]> {
     const { data, error } = await this.supabase

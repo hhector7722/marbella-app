@@ -1,14 +1,13 @@
 /**
- * LaborCostMonthReadModelProjector (FASE 10 - Optimización Batch).
+ * LaborCostMonthReadModelProjector (FASE 10 - Corrección Batch Loading Definitiva).
  *
  * Proyector encargado de construir el resumen mensual para el calendario del Dashboard.
- * Optimizado para ejecutar consultas en lote (Batch Processing) en lugar de bucles secuenciales N+1.
- * Pasa de ~3.720 peticiones HTTP a ~6 peticiones totales para todo el mes.
+ * Cumple estrictamente la regla de 1 ÚNICA consulta SQL a `hours_contract_terms` por mes.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { addDays, format, parseISO } from 'date-fns';
-import { ContractTermsService } from '../payroll/contract-terms-service.ts';
+import { ContractTermsService, type ContractTermsStore } from '../payroll/contract-terms-service.ts';
 import type { LaborCostDayReadModelProjector } from './labor-cost-day-projector.ts';
 import type { PayrollFactRepository } from '../payroll/payroll-fact-repository.ts';
 import type { LaborCostMonthSummaryDTO } from './labor-cost-dtos.ts';
@@ -46,7 +45,7 @@ export class LaborCostMonthReadModelProjector {
   ) {}
 
   /**
-   * Proyecta el calendario mensual con fijos, extras, totales y porcentajes por día mediante consultas batch.
+   * Proyecta el calendario mensual ejecutando 1 ÚNICA consulta SQL a hours_contract_terms.
    */
   async projectMonthSummary(
     periodYm: string,
@@ -57,18 +56,17 @@ export class LaborCostMonthReadModelProjector {
     const endDate = monthDays[monthDays.length - 1]!;
     const includeAll = options?.includeAllContracted ?? false;
 
-    // 1. Cargar hechos de nómina para el mes (Consulta Batch 1)
+    // 1. Cargar hechos de nómina para el mes (Consulta 1: employee_payroll_facts)
     const activeFacts = await this.payrollRepo.getActiveFactsForPeriod(periodYm);
     const isPayrollPending = activeFacts.length === 0;
 
-    // Agrupar coste empresa por trabajador
     const companyCostByWorker: Record<string, number> = {};
     for (const fact of activeFacts) {
       companyCostByWorker[fact.user_id] =
         (companyCostByWorker[fact.user_id] ?? 0) + fact.total_company_cost;
     }
 
-    // 2. Cargar ventas diarias netas (Consulta Batch 2)
+    // 2. Cargar ventas diarias netas (Consulta 2: daily_sales)
     const { data: salesRows } = await this.supabase
       .from('daily_sales')
       .select('date, total_net_amount')
@@ -82,32 +80,34 @@ export class LaborCostMonthReadModelProjector {
       }
     }
 
-    // 3. Cargar plantilla de trabajadores (Consulta Batch 3)
+    // 3. Cargar plantilla de trabajadores (Consulta 3: profiles)
     const { data: profileRows } = await this.supabase
       .from('profiles')
       .select(PLANTILLA_EMPLOYEE_SELECT);
     const profiles = filterVisiblePlantillaEmployees(profileRows ?? []);
+    const workerIds = profiles.map((p) => p.id);
 
-    // 4. Calcular días vigentes y coste fijo diario por trabajador en paralelo
-    const dailyFixedByWorker: Record<string, Money> = {};
-    if (!isPayrollPending && this.contractTermsService) {
-      await Promise.all(
-        profiles.map(async (p) => {
-          const cost = companyCostByWorker[p.id] ?? 0;
-          if (cost > 0) {
-            const activeDays = await this.contractTermsService!.getActiveContractDays(
-              p.id,
-              periodYm,
-            );
-            if (activeDays > 0) {
-              dailyFixedByWorker[p.id] = Money.from(cost).divide(activeDays);
-            }
-          }
-        }),
-      );
+    // 4. Cargar tramos contractuales en 1 SOLA CONSULTA SQL (Consulta 4: hours_contract_terms)
+    let contractStore: ContractTermsStore | null = null;
+    if (this.contractTermsService) {
+      contractStore = await this.contractTermsService.loadTermsForMonth(workerIds, periodYm);
     }
 
-    // 5. Procesar horas extras y contratos por trabajador en paralelo para todo el mes
+    // 5. Calcular días vigentes y coste fijo diario POR TRABAJADOR en memoria
+    const dailyFixedByWorker: Record<string, Money> = {};
+    if (!isPayrollPending && contractStore) {
+      for (const p of profiles) {
+        const cost = companyCostByWorker[p.id] ?? 0;
+        if (cost > 0) {
+          const activeDays = contractStore.getActiveContractDays(p.id, periodYm);
+          if (activeDays > 0) {
+            dailyFixedByWorker[p.id] = Money.from(cost).divide(activeDays);
+          }
+        }
+      }
+    }
+
+    // 6. Procesar horas extras y vigencia contractual en memoria sin ninguna consulta SQL a horas de contrato
     const workerDailyCosts: Record<
       string,
       Record<string, { fixed: Money; overtime: Money; hasActivity: boolean; hasActiveContract: boolean }>
@@ -117,17 +117,12 @@ export class LaborCostMonthReadModelProjector {
       profiles.map(async (profile) => {
         workerDailyCosts[profile.id] = {};
 
-        // Cargar vigencia contractual en el mes
+        // Evaluación de vigencia en MEMORIA (0 consultas SQL)
         const contractActiveMap: Record<string, boolean> = {};
-        if (this.contractTermsService) {
-          await Promise.all(
-            monthDays.map(async (dayYmd) => {
-              contractActiveMap[dayYmd] = await this.contractTermsService!.isContractActiveOn(
-                profile.id,
-                dayYmd,
-              );
-            }),
-          );
+        for (const dayYmd of monthDays) {
+          contractActiveMap[dayYmd] = contractStore
+            ? contractStore.isContractActiveOn(profile.id, dayYmd)
+            : false;
         }
 
         // Cargar timelogs y snapshots para el mes
@@ -167,7 +162,6 @@ export class LaborCostMonthReadModelProjector {
           const bagModeOverrideByWeek = bagModeOverrideLookupFromRows(snapsRes.data ?? []);
           const overtimeRateOverrideByWeek = overtimeRateOverrideLookupFromRows(snapsRes.data ?? []);
 
-          // Agrupar extras por día de todo el mes
           const overtimeByDay: Record<string, number> = {};
           const clockInDays = new Set(engineLogs.map((l) => formatYmdInMadrid(l.clockInIso)));
 
@@ -238,7 +232,7 @@ export class LaborCostMonthReadModelProjector {
       }),
     );
 
-    // 6. Construir DTO final indexando en memoria sin ninguna consulta HTTP
+    // 7. Construir DTO final en memoria
     const byDate: LaborCostMonthSummaryDTO['byDate'] = {};
     let totalFixedMoney = Money.zero();
     let totalOvertimeMoney = Money.zero();

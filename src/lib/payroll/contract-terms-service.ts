@@ -1,21 +1,54 @@
 /**
- * ContractTermsService (FASE 3).
+ * ContractTermsService (FASE 10 - Batch Loading Cierre definitivo).
  *
  * Encapsula la fuente única de verdad contractual (`hours_contract_terms`).
- * Calcula los días de contrato vigentes (D_vigentes) dentro de un mes determinado
- * a partir de la unión de tramos activos (`effective_from` y `effective_to`).
- *
- * Ninguna otra clase ni servicio debe conocer o manipular las fechas de vigencia.
+ * Soporta carga masiva en lote (Batch Loading) con evaluación 100% en memoria
+ * para garantizar la regla de 1 ÚNICA consulta SQL por mes.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { addDays, format, parseISO } from 'date-fns';
 
 export type ContractTermBoundaryRow = {
   user_id: string;
   effective_from: string;
   effective_to: string | null;
 };
+
+/**
+ * Almacén en memoria de tramos contractuales para evaluación sincrónica sin I/O.
+ */
+export class ContractTermsStore {
+  constructor(private readonly terms: ContractTermBoundaryRow[]) {}
+
+  isContractActiveOn(userId: string, dateYmd: string): boolean {
+    const day = dateYmd.split('T')[0]!;
+    const userTerms = this.terms.filter((t) => t.user_id === userId);
+    return userTerms.some((t) => {
+      const from = t.effective_from.split('T')[0]!;
+      const to = t.effective_to ? t.effective_to.split('T')[0]! : '9999-12-31';
+      return day >= from && day <= to;
+    });
+  }
+
+  getActiveContractDays(userId: string, periodYm: string): number {
+    const monthDays = ContractTermsService.listMonthDays(periodYm);
+    const userTerms = this.terms.filter((t) => t.user_id === userId);
+    if (userTerms.length === 0) return 0;
+
+    let activeDaysCount = 0;
+    for (const dayYmd of monthDays) {
+      const isCovered = userTerms.some((t) => {
+        const from = t.effective_from.split('T')[0]!;
+        const to = t.effective_to ? t.effective_to.split('T')[0]! : '9999-12-31';
+        return dayYmd >= from && dayYmd <= to;
+      });
+      if (isCovered) {
+        activeDaysCount++;
+      }
+    }
+    return activeDaysCount;
+  }
+}
 
 export class ContractTermsService {
   constructor(private readonly supabase: SupabaseClient) {}
@@ -38,26 +71,14 @@ export class ContractTermsService {
   }
 
   /**
-   * Calcula D_vigentes: número de días naturales del mes en los que el contrato estuvo realmente vigente.
+   * Carga en LOTE (1 sola consulta SQL) todos los tramos de contrato de los usuarios para el mes.
    */
-  async getActiveContractDays(userId: string, periodYm: string): Promise<number> {
-    const batchMap = await this.getActiveContractDaysBatch([userId], periodYm);
-    return batchMap[userId] ?? 0;
-  }
-
-  /**
-   * Obtiene en lote el número de días de contrato vigentes (D_vigentes) para múltiples usuarios en un mes.
-   */
-  async getActiveContractDaysBatch(
-    userIds: string[],
-    periodYm: string,
-  ): Promise<Record<string, number>> {
-    if (userIds.length === 0) return {};
+  async loadTermsForMonth(userIds: string[], periodYm: string): Promise<ContractTermsStore> {
+    if (userIds.length === 0) return new ContractTermsStore([]);
 
     const monthDays = ContractTermsService.listMonthDays(periodYm);
-    if (monthDays.length === 0) return {};
+    if (monthDays.length === 0) return new ContractTermsStore([]);
 
-    const monthStart = monthDays[0]!;
     const monthEnd = monthDays[monthDays.length - 1]!;
 
     const { data: terms, error } = await this.supabase
@@ -67,54 +88,42 @@ export class ContractTermsService {
       .lte('effective_from', monthEnd);
 
     if (error) {
-      throw new Error(`Error en ContractTermsService.getActiveContractDaysBatch: ${error.message}`);
+      throw new Error(`Error en ContractTermsService.loadTermsForMonth: ${error.message}`);
     }
 
-    const rows = (terms ?? []) as ContractTermBoundaryRow[];
+    return new ContractTermsStore((terms ?? []) as ContractTermBoundaryRow[]);
+  }
+
+  /**
+   * Calcula D_vigentes: número de días naturales del mes en los que el contrato estuvo realmente vigente.
+   */
+  async getActiveContractDays(userId: string, periodYm: string): Promise<number> {
+    const store = await this.loadTermsForMonth([userId], periodYm);
+    return store.getActiveContractDays(userId, periodYm);
+  }
+
+  /**
+   * Obtiene en lote el número de días de contrato vigentes (D_vigentes) para múltiples usuarios en un mes.
+   */
+  async getActiveContractDaysBatch(
+    userIds: string[],
+    periodYm: string,
+  ): Promise<Record<string, number>> {
+    const store = await this.loadTermsForMonth(userIds, periodYm);
     const result: Record<string, number> = {};
-
-    for (const userId of userIds) {
-      const userTerms = rows.filter((r) => r.user_id === userId);
-      if (userTerms.length === 0) {
-        result[userId] = 0;
-        continue;
-      }
-
-      let activeDaysCount = 0;
-      for (const dayYmd of monthDays) {
-        const isCovered = userTerms.some((t) => {
-          const from = t.effective_from.split('T')[0]!;
-          const to = t.effective_to ? t.effective_to.split('T')[0]! : '9999-12-31';
-          return dayYmd >= from && dayYmd <= to;
-        });
-
-        if (isCovered) {
-          activeDaysCount++;
-        }
-      }
-      result[userId] = activeDaysCount;
+    for (const id of userIds) {
+      result[id] = store.getActiveContractDays(id, periodYm);
     }
-
     return result;
   }
 
   /**
-   * Verifica si un usuario tenía contrato vigente en una fecha concreta.
+   * Verifica en memoria si un usuario tenía contrato vigente en una fecha concreta.
    */
   async isContractActiveOn(userId: string, dateYmd: string): Promise<boolean> {
-    const day = dateYmd.split('T')[0]!;
-    const { data, error } = await this.supabase
-      .from('hours_contract_terms')
-      .select('id')
-      .eq('user_id', userId)
-      .lte('effective_from', day)
-      .or(`effective_to.is.null,effective_to.gte.${day}`);
-
-    if (error) {
-      throw new Error(`Error en ContractTermsService.isContractActiveOn: ${error.message}`);
-    }
-
-    return (data ?? []).length > 0;
+    const periodYm = dateYmd.substring(0, 7);
+    const store = await this.loadTermsForMonth([userId], periodYm);
+    return store.isContractActiveOn(userId, dateYmd);
   }
 
   /**
