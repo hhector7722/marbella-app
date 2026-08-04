@@ -190,7 +190,7 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
     assertCardCoherent(summary, result, employee, Object.values(extrasByDay));
   });
 
-  it('agosto: régimen agosto vía días del mes', () => {
+  it('agosto: aplica reglas de contrato estándar (40h trabajadas / 40h contrato → extras = 0)', () => {
     const employee = emp([term('2026-01-01', null, 40, { bagMode: false })]);
     const logs = [
       dayLog('2026-08-03', 8),
@@ -205,8 +205,10 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
       weekStart: '2026-08-03',
       logs,
     });
-    // Agosto: todo trabajado es extra (contrato efectivo 0 en días agosto)
-    assert.ok(summary.weeklyBalance > 0);
+    // Agosto: contrato 40h, trabajadas 40h → 40 ordinarias, 0 extras
+    assert.equal(summary.weeklyBalance, 0);
+    assert.equal(result.ordinaryHours, 40);
+    assert.equal(result.overtimeHours, 0);
     assertCardCoherent(summary, result, employee, Object.values(extrasByDay));
   });
 

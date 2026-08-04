@@ -5,7 +5,6 @@ import type {
   SegmentRegime,
 } from './types.ts';
 import { roundMarbellaSigned } from './marbella-round.ts';
-import { isAugustCivilDate } from './week-dates.ts';
 
 export type RegimeSegmentInput = {
   days: readonly CivilDate[];
@@ -28,7 +27,7 @@ function hoursOnDays(
 }
 
 /**
- * Balance de un bucket homogéneo (mismo régimen aplicado).
+ * Balance de un segmento homogéneo (mismo régimen contractual o pre_alta).
  * Staff: horas − contrato (ya resuelto). Sin tope: balance = horas.
  */
 function balanceForRegime(
@@ -51,23 +50,15 @@ function balanceForRegime(
   };
 }
 
-function resolveDayRegime(
-  day: CivilDate,
-  kind: 'term' | 'pre_alta',
-  termRegime: ContractRegime,
-): SegmentRegime {
-  if (kind === 'pre_alta') return 'pre_alta';
-  if (isAugustCivilDate(day)) return 'agosto';
-  return termRegime;
-}
-
 /**
- * Única política de régimen. Compone por días/tramo:
- * agosto por calendario del día; manager/fixed/staff del tramo; pre-alta = todo extra.
- * El contrato efectivo llega resuelto; solo se reparte entre buckets por proporción de días.
+ * Única política de régimen. Aplica el régimen contractual del segmento
+ * (manager/fixed/staff o pre_alta).
+ * El contrato efectivo llega resuelto por Contract Resolver.
  */
 export function applyRegimeToSegment(input: RegimeSegmentInput): SegmentLiquidation {
   const { days, hoursByDay, contractedHours, bagMode, termRegime, kind } = input;
+
+  const regimeApplied: SegmentRegime = kind === 'pre_alta' ? 'pre_alta' : termRegime;
 
   if (days.length === 0) {
     return {
@@ -75,7 +66,7 @@ export function applyRegimeToSegment(input: RegimeSegmentInput): SegmentLiquidat
       hoursWorked: 0,
       contractedHours: 0,
       bagMode,
-      regimeApplied: kind === 'pre_alta' ? 'pre_alta' : termRegime,
+      regimeApplied,
       weeklyBalancePart: 0,
       ordinaryHours: 0,
       overtimeHours: 0,
@@ -83,53 +74,18 @@ export function applyRegimeToSegment(input: RegimeSegmentInput): SegmentLiquidat
     };
   }
 
-  type Bucket = { regime: SegmentRegime; days: CivilDate[] };
-  const buckets: Bucket[] = [];
-  let current: Bucket | null = null;
+  const hoursWorked = hoursOnDays(days, hoursByDay);
+  const part = balanceForRegime(regimeApplied, hoursWorked, contractedHours);
 
-  for (const day of days) {
-    const regime = resolveDayRegime(day, kind, termRegime);
-    if (!current || current.regime !== regime) {
-      current = { regime, days: [day] };
-      buckets.push(current);
-    } else {
-      current.days.push(day);
-    }
-  }
-
-  const segmentDayCount = days.length;
-  let hoursWorked = 0;
-  let contractedHoursOut = 0;
-  let weeklyBalancePart = 0;
-  let ordinaryHours = 0;
-  let overtimeHours = 0;
-
-  for (const bucket of buckets) {
-    const h = hoursOnDays(bucket.days, hoursByDay);
-    // Reparto del contrato ya resuelto (equivalente a sub-prorrateo, sin jornada ni /7).
-    const bucketContracted = (bucket.days.length / segmentDayCount) * contractedHours;
-    const part = balanceForRegime(bucket.regime, h, bucketContracted);
-    hoursWorked += h;
-    contractedHoursOut += part.contractedHours;
-    weeklyBalancePart += part.weeklyBalancePart;
-    ordinaryHours += part.ordinaryHours;
-    overtimeHours += part.overtimeHours;
-  }
-
-  const regimeApplied =
-    buckets.length === 1 ? buckets[0]!.regime : kind === 'pre_alta' ? 'pre_alta' : termRegime;
-
-  // Ordinarias/extras/horas: sin redondear aquí (deben coincidir Σ con daily-breakdown).
-  // Solo el balance de banco se normaliza a .0/.5 (carry).
   return {
     days,
     hoursWorked,
-    contractedHours: contractedHoursOut,
+    contractedHours,
     bagMode,
     regimeApplied,
-    weeklyBalancePart: roundMarbellaSigned(weeklyBalancePart),
-    ordinaryHours,
-    overtimeHours,
+    weeklyBalancePart: roundMarbellaSigned(part.weeklyBalancePart),
+    ordinaryHours: part.ordinaryHours,
+    overtimeHours: part.overtimeHours,
     kind,
   };
 }

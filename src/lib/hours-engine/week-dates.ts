@@ -65,10 +65,6 @@ export function weekBounds(weekStart: CivilDate): {
   return { weekStart, weekEnd: days[6]!, days };
 }
 
-export function isAugustCivilDate(ymd: CivilDate): boolean {
-  return civilDateToParts(ymd).m === 8;
-}
-
 /** Lunes de la semana civil que contiene `day`. */
 export function mondayOnOrBefore(day: CivilDate): CivilDate {
   const { y, m, d } = civilDateToParts(day);

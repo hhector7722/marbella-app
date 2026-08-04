@@ -121,7 +121,13 @@ describe('Fase 1b — integración Writer único', () => {
   });
 
   it('ADR y Projection Contract no se modifican en este árbol de tests (existencia)', () => {
-    assert.ok(fs.existsSync(path.join(root, 'docs/ADR-HE-SSOT-001.md')));
-    assert.ok(fs.existsSync(path.join(root, 'docs/PROJECTION_CONTRACT_v1.md')));
+    assert.ok(
+      fs.existsSync(path.join(root, 'docs/ADR-HE-SSOT-001.md')) ||
+        fs.existsSync(path.join(root, 'marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md')),
+    );
+    assert.ok(
+      fs.existsSync(path.join(root, 'docs/PROJECTION_CONTRACT_v1.md')) ||
+        fs.existsSync(path.join(root, 'marbella-os/3-ingenieria/contratos/PROYECCION-v1.md')),
+    );
   });
 });

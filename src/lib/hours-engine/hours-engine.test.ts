@@ -213,16 +213,18 @@ describe('Liquidation Engine', () => {
     assert.ok(Math.abs(r.weeklyBalance - expectedWeekly) < 1e-9);
   });
 
-  it('agosto: balance = horas (sin restar contrato)', () => {
-    // Lunes 3 agosto 2026
+  it('agosto: aplica reglas estándar de contrato (no genera automáticamente extras)', () => {
+    // Lunes 3 agosto 2026: contrato 40h, trabajadas 50h -> 40 ord, 10 ext, balance = 10
     const r = liquidateWeek(
       input({
         weekStart: '2026-08-03',
         logs: [{ clockInIso: '2026-08-03T08:00:00.000Z', totalHours: 50 }],
       }),
     );
-    assert.equal(r.weeklyBalance, 50);
     assert.equal(r.contractedHoursEffective, 40);
+    assert.equal(r.ordinaryHours, 40);
+    assert.equal(r.overtimeHours, 10);
+    assert.equal(r.weeklyBalance, 10);
   });
 
   it('manager: sin tope staff', () => {
@@ -310,5 +312,111 @@ describe('Liquidation Engine', () => {
     const b = liquidateWeek(payload);
     assert.deepEqual(a, b);
     assert.deepEqual(liquidateWeek(payload), a);
+  });
+});
+
+describe('Nueva Política Funcional — Eliminación Régimen Agosto (Invariantes INV-R01 a INV-R06)', () => {
+  it('Caso 1: Contrato 40h, trabajadas 40.5h en semana julio/agosto -> 40 ordinarias, 0.5 extras', () => {
+    const r = liquidateWeek(
+      input({
+        weekStart: '2026-07-27',
+        logs: [{ clockInIso: '2026-07-27T08:00:00.000Z', totalHours: 40.5 }],
+      }),
+    );
+    assert.equal(r.contractedHoursEffective, 40);
+    assert.equal(r.hoursWorked, 40.5);
+    assert.equal(r.ordinaryHours, 40);
+    assert.equal(r.overtimeHours, 0.5);
+  });
+
+  it('Caso 2: Mismo contrato (40h) y mismas horas (40.5h) en distintos años produce resultado idéntico', () => {
+    const r2026 = liquidateWeek(
+      input({
+        weekStart: '2026-07-27',
+        logs: [{ clockInIso: '2026-07-27T08:00:00.000Z', totalHours: 40.5 }],
+      }),
+    );
+    const r2029 = liquidateWeek(
+      input({
+        weekStart: '2029-07-30',
+        logs: [{ clockInIso: '2029-07-30T08:00:00.000Z', totalHours: 40.5 }],
+      }),
+    );
+    const r2033 = liquidateWeek(
+      input({
+        weekStart: '2033-08-01',
+        logs: [{ clockInIso: '2033-08-01T08:00:00.000Z', totalHours: 40.5 }],
+      }),
+    );
+
+    assert.equal(r2026.ordinaryHours, 40);
+    assert.equal(r2026.overtimeHours, 0.5);
+    assert.equal(r2029.ordinaryHours, 40);
+    assert.equal(r2029.overtimeHours, 0.5);
+    assert.equal(r2033.ordinaryHours, 40);
+    assert.equal(r2033.overtimeHours, 0.5);
+  });
+
+  it('Caso 3: Alta a mitad de semana mantiene el prorrateo contractual', () => {
+    const emp = employeeBase({
+      joiningDate: '2026-07-29',
+      terms: [
+        {
+          effectiveFrom: '2026-07-29',
+          effectiveTo: null,
+          weeklyHours: 40,
+          bagMode: false,
+          regime: 'staff',
+        },
+      ],
+    });
+    const r = liquidateWeek(
+      input({
+        employee: emp,
+        weekStart: '2026-07-27',
+        logs: [{ clockInIso: '2026-07-29T08:00:00.000Z', totalHours: 30 }],
+      }),
+    );
+    // 5 días / 7 * 40h = 28.5714... -> redondeado Marbella (enteros/medias) = 28.5h
+    const expectedContract = 28.5;
+    assert.equal(r.contractedHoursEffective, expectedContract);
+    assert.equal(r.ordinaryHours, expectedContract);
+    assert.equal(r.overtimeHours, 1.5);
+  });
+
+  it('Caso 4: Cambio de contrato a mitad de semana mantiene el prorrateo contractual', () => {
+    const emp = employeeBase({
+      terms: [
+        {
+          effectiveFrom: '2026-01-01',
+          effectiveTo: '2026-07-28',
+          weeklyHours: 16,
+          bagMode: false,
+          regime: 'staff',
+        },
+        {
+          effectiveFrom: '2026-07-29',
+          effectiveTo: null,
+          weeklyHours: 40,
+          bagMode: false,
+          regime: 'staff',
+        },
+      ],
+    });
+    const r = liquidateWeek(
+      input({
+        employee: emp,
+        weekStart: '2026-07-27',
+        logs: [
+          { clockInIso: '2026-07-27T08:00:00.000Z', totalHours: 5 },
+          { clockInIso: '2026-07-29T08:00:00.000Z', totalHours: 30 },
+        ],
+      }),
+    );
+    // 2/7 * 16 (4.5h) + 5/7 * 40 (28.5h) = 33h
+    const expectedContract = 33;
+    assert.equal(r.contractedHoursEffective, expectedContract);
+    assert.equal(r.ordinaryHours, expectedContract);
+    assert.equal(r.overtimeHours, 2);
   });
 });

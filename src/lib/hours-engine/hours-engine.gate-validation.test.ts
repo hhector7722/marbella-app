@@ -393,14 +393,16 @@ describe('Gate V1 — Golden Tests (especificación v1.0)', () => {
     assert.equal(reopened.carryOut, 8);
   });
 
-  it('GT-15 Agosto — balance = horas (sin tope staff)', () => {
+  it('GT-15 Agosto — reglas estándar de contrato (contrato 40h, trabajadas 50h → balance = 10)', () => {
     const r = liquidateWeek(
       liq({
         weekStart: '2026-08-03',
         logs: [{ clockInIso: '2026-08-03T08:00:00.000Z', totalHours: 50 }],
       }),
     );
-    assert.equal(r.weeklyBalance, 50);
+    assert.equal(r.weeklyBalance, 10);
+    assert.equal(r.ordinaryHours, 40);
+    assert.equal(r.overtimeHours, 10);
   });
 
   it('GT-16 Fixed — régimen fijo sin tope staff', () => {

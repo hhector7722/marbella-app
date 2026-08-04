@@ -11,7 +11,7 @@ import type {
   DailyBreakdownDay,
   SegmentRegime,
 } from './types.ts';
-import { isAugustCivilDate, weekBounds } from './week-dates.ts';
+import { weekBounds } from './week-dates.ts';
 
 export type DailyBreakdownSegmentInput = {
   days: readonly CivilDate[];
@@ -21,20 +21,9 @@ export type DailyBreakdownSegmentInput = {
   kind: 'term' | 'pre_alta';
 };
 
-function resolveDayRegime(
-  day: CivilDate,
-  kind: 'term' | 'pre_alta',
-  termRegime: ContractRegime,
-): SegmentRegime {
-  if (kind === 'pre_alta') return 'pre_alta';
-  if (isAugustCivilDate(day)) return 'agosto';
-  return termRegime;
-}
-
 function isAllOvertimeRegime(regime: SegmentRegime): boolean {
   return (
     regime === 'pre_alta' ||
-    regime === 'agosto' ||
     regime === 'manager' ||
     regime === 'fixed'
   );
@@ -42,7 +31,7 @@ function isAllOvertimeRegime(regime: SegmentRegime): boolean {
 
 /**
  * Regla funcional inmutable (running):
- * acumulado semanal (dentro del bucket homogéneo) vs cupo ordinario;
+ * acumulado semanal (dentro del segmento) vs cupo ordinario contratado;
  * el exceso pertenece al día donde se supera el límite.
  */
 function attributeRunningStaff(
@@ -112,30 +101,12 @@ export function buildDailyBreakdown(
   for (const seg of segments) {
     if (seg.days.length === 0) continue;
 
-    type Bucket = { regime: SegmentRegime; days: CivilDate[] };
-    const buckets: Bucket[] = [];
-    let current: Bucket | null = null;
+    const regime: SegmentRegime = seg.kind === 'pre_alta' ? 'pre_alta' : seg.termRegime;
 
-    for (const day of seg.days) {
-      const regime = resolveDayRegime(day, seg.kind, seg.termRegime);
-      if (!current || current.regime !== regime) {
-        current = { regime, days: [day] };
-        buckets.push(current);
-      } else {
-        current.days.push(day);
-      }
-    }
-
-    const segmentDayCount = seg.days.length;
-    for (const bucket of buckets) {
-      const bucketContracted =
-        (bucket.days.length / segmentDayCount) * seg.contractedHours;
-
-      if (isAllOvertimeRegime(bucket.regime)) {
-        attributeAllOvertime(bucket.days, hoursByDay, byDay);
-      } else {
-        attributeRunningStaff(bucket.days, hoursByDay, bucketContracted, byDay);
-      }
+    if (isAllOvertimeRegime(regime)) {
+      attributeAllOvertime(seg.days, hoursByDay, byDay);
+    } else {
+      attributeRunningStaff(seg.days, hoursByDay, seg.contractedHours, byDay);
     }
   }
 

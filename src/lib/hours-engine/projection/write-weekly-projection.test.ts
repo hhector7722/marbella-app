@@ -592,12 +592,26 @@ describe('Projection Writer — semana mixta julio/agosto (numeric(10,2))', () =
   }
 
   it('read-back tolera el redondeo numeric(10,2) de ordinary/extra (regresión 2026-07-27)', () => {
-    const employee = emp();
+    // Alta a mitad de semana (29-julio): 5 días activos = 5/7×40 = 28.571428…
+    const employee = {
+      ...emp(),
+      joiningDate: '2026-07-29',
+      terms: [
+        {
+          effectiveFrom: '2026-07-29',
+          effectiveTo: null,
+          weeklyHours: 40,
+          bagMode: false,
+          regime: 'staff' as const,
+          overtimeRatePerHour: 12,
+        },
+      ],
+    };
     const logs = [
-      { clockInIso: '2026-07-27T08:00:00.000Z', totalHours: 8.5 },
-      { clockInIso: '2026-07-28T08:00:00.000Z', totalHours: 8 },
-      { clockInIso: '2026-07-29T08:00:00.000Z', totalHours: 8 },
+      { clockInIso: '2026-07-29T08:00:00.000Z', totalHours: 8.5 },
       { clockInIso: '2026-07-30T08:00:00.000Z', totalHours: 8 },
+      { clockInIso: '2026-07-31T08:00:00.000Z', totalHours: 8 },
+      { clockInIso: '2026-08-01T08:00:00.000Z', totalHours: 8 },
     ];
     const liquidation = liquidateWeek({
       employee,
@@ -607,10 +621,9 @@ describe('Projection Writer — semana mixta julio/agosto (numeric(10,2))', () =
       carryIn: 0,
     });
 
-    // Semana 27-jul → 2-ago cruza a agosto: sub-prorrateo staff/agosto produce
-    // ordinary/extra con >2 decimales (5/7×40 = 28.571428…).
-    assert.equal(liquidation.ordinaryHours, 28.571428571428573);
-    assert.equal(liquidation.overtimeHours, 3.928571428571427);
+    // Alta mid-week (5 días / 7 × 40 = 28.571428… -> 28.5h redondeo Marbella).
+    assert.equal(liquidation.ordinaryHours, 28.5);
+    assert.equal(liquidation.overtimeHours, 4);
 
     const row = mapEnginesToProjectionRow(
       liquidation,
@@ -624,8 +637,8 @@ describe('Projection Writer — semana mixta julio/agosto (numeric(10,2))', () =
       extra_hours: roundDb(row.extra_hours),
     };
 
-    assert.equal(persisted.ordinary_hours, 28.57);
-    assert.equal(persisted.extra_hours, 3.93);
+    assert.equal(persisted.ordinary_hours, 28.5);
+    assert.equal(persisted.extra_hours, 4);
 
     // Con hoursEps=1e-9 (antiguo) esto divergía; con la tolerancia numeric(10,2)
     // de 0.005 el read-back es coherente con el tipo SQL.

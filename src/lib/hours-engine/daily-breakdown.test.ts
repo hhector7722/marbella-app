@@ -318,7 +318,7 @@ describe('Daily Breakdown — regla running + coherencia semanal', () => {
         logs: [log('2026-03-02', 12), log('2026-03-06', 12)],
       }),
       input({
-        weekStart: '2026-08-03', // agosto → todo extra
+        weekStart: '2026-08-03', // semana de agosto
         logs: [log('2026-08-03', 5), log('2026-08-04', 5)],
       }),
       input({

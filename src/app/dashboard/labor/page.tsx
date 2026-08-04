@@ -149,49 +149,36 @@ function LaborPctRing({
                 cy={size / 2}
                 r={r}
                 fill="none"
-                className={cn('transition-[stroke-dashoffset] duration-300', colorClass)}
+                className={cn('transition-all duration-500 ease-out', colorClass)}
                 strokeWidth={strokeWidth}
-                strokeLinecap="round"
                 strokeDasharray={c}
                 strokeDashoffset={offset}
+                strokeLinecap="round"
             />
         </svg>
     );
 }
 
-/** Anillo con el % en el hueco central (texto legible, sin rotar) */
 function LaborPctRingCentered({
     percentRaw,
-    size = 48,
+    size = 36,
 }: {
-    /** null = sin ventas; número = % real (puede ser >100) */
     percentRaw: number | null;
     size?: number;
 }) {
-    const stroke = Math.max(4, Math.round(size / 9));
-    const arcFill = percentRaw === null ? 0 : Math.min(100, Math.max(0, percentRaw));
-    const label =
-        percentRaw === null
-            ? '—'
-            : `${new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1, minimumFractionDigits: 0 }).format(percentRaw)}%`;
-    const textCls =
-        percentRaw === null ? 'text-zinc-400' : laborPctIndicatorClass(percentRaw).split(' ')[0];
+    const pct = percentRaw === null || Number.isNaN(percentRaw) ? null : Math.round(percentRaw * 10) / 10;
+    const isOverCap = pct !== null && pct > 100;
+    const pctDisplay = isOverCap ? 100 : (pct ?? 0);
+    const textClass = laborPctTextClass(pct);
 
     return (
-        <div
-            className="relative flex items-center justify-center shrink-0"
-            style={{ width: size, height: size }}
-        >
-            <LaborPctRing percent={arcFill} size={size} strokeWidth={stroke} />
-            <span
-                className={cn(
-                    'absolute left-1/2 top-1/2 w-[min(72%,2.5rem)] -translate-x-1/2 -translate-y-1/2 text-center font-black tabular-nums leading-tight pointer-events-none',
-                    size <= 38 ? 'text-[6px]' : 'text-[8px] sm:text-[9px]',
-                    textCls,
-                )}
-            >
-                {label}
-            </span>
+        <div className="relative inline-flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
+            <LaborPctRing percent={pctDisplay} size={size} strokeWidth={4} />
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className={cn('text-[9px] font-black tabular-nums leading-none tracking-tight sm:text-[10px]', textClass)}>
+                    {pct === null ? '—' : `${pct}%`}
+                </span>
+            </div>
         </div>
     );
 }
@@ -204,7 +191,7 @@ type ProfileOption = {
 };
 
 export default function LaborHistoryPage() {
-    const supabase = createClient();
+    const supabase = useMemo(() => createClient(), []);
     const pathname = usePathname();
 
     const def = defaultFullMonthPeriod();
@@ -266,6 +253,7 @@ export default function LaborHistoryPage() {
     const todayStr = format(new Date(), 'yyyy-MM-dd');
 
     useEffect(() => {
+        console.log("[EFFECT] profiles fetch useEffect");
         let cancelled = false;
         void (async () => {
             const { data, error } = await supabase
@@ -274,6 +262,7 @@ export default function LaborHistoryPage() {
                 .eq('visible_in_plantilla', true)
                 .order('first_name');
             if (cancelled || error) return;
+            console.log("[STATE] setEmployees");
             setEmployees(filterVisiblePlantillaEmployees((data || []) as ProfileOption[]));
         })();
         return () => {
@@ -301,6 +290,7 @@ export default function LaborHistoryPage() {
                 endDate: periodEnd.split('T')[0],
                 userId: workerFilterId ?? null,
             });
+
             for (const [iso, cell] of Object.entries(period.byDate)) {
                 if (iso > todayStr) continue;
                 if (!dayInPeriod(iso, periodStart, periodEnd)) continue;
@@ -382,12 +372,40 @@ export default function LaborHistoryPage() {
         });
     };
 
+    const handleApplyTimeFilter = (val: TimeFilterValue) => {
+        setAppliedFilter(val);
+        const curYear = new Date().getFullYear();
+
+        if (val.kind === 'month') {
+            const dt = new Date(val.year, val.month - 1, 1);
+            setViewMonth(dt);
+            setPeriodStart(format(startOfMonth(dt), 'yyyy-MM-dd'));
+            setPeriodEnd(format(endOfMonth(dt), 'yyyy-MM-dd'));
+        } else if (val.kind === 'year') {
+            const dt = new Date(val.year, 0, 1);
+            setViewMonth(dt);
+            setPeriodStart(`${val.year}-01-01`);
+            setPeriodEnd(`${val.year}-12-31`);
+        } else if (val.kind === 'range' || val.kind === 'week') {
+            const s = parseLocalSafe(val.startDate);
+            const e = parseLocalSafe(val.endDate);
+            setViewMonth(startOfMonth(s));
+            setPeriodStart(format(s, 'yyyy-MM-dd'));
+            setPeriodEnd(format(e, 'yyyy-MM-dd'));
+        } else if (val.kind === 'date') {
+            const s = parseLocalSafe(val.date);
+            setViewMonth(startOfMonth(s));
+            setPeriodStart(format(s, 'yyyy-MM-dd'));
+            setPeriodEnd(format(s, 'yyyy-MM-dd'));
+        }
+    };
+
     const clearTimeFilter = () => {
         const cur = defaultFullMonthPeriod();
+        const n = new Date();
+        setViewMonth(startOfMonth(n));
         setPeriodStart(cur.start);
         setPeriodEnd(cur.end);
-        setViewMonth(startOfMonth(new Date()));
-        const n = new Date();
         setAppliedFilter({ kind: 'month', year: n.getFullYear(), month: n.getMonth() + 1 });
     };
 
@@ -473,24 +491,11 @@ export default function LaborHistoryPage() {
                                 <button
                                     type="button"
                                     onClick={() => setIsWorkerModalOpen(true)}
-                                    className="relative p-2 text-white/90 hover:text-white transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl hover:bg-white/10"
+                                    className="relative p-2 text-[#36606F] bg-white rounded-xl shadow-xs hover:bg-white/90"
                                     aria-label="Filtrar por trabajador"
                                 >
                                     <User size={24} strokeWidth={2.25} />
                                 </button>
-                                {workerFilterId ? (
-                                    <button
-                                        type="button"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setWorkerFilterId(null);
-                                        }}
-                                        className="absolute -right-0.5 -top-0.5 z-10 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 text-white shadow-sm ring-2 ring-[#36606F]"
-                                        aria-label="Quitar filtro de trabajador"
-                                    >
-                                        <X size={9} strokeWidth={3} className="text-white" />
-                                    </button>
-                                ) : null}
                             </div>
                         </div>
                     </div>
@@ -649,187 +654,65 @@ export default function LaborHistoryPage() {
             {detailOpen &&
                 typeof document !== 'undefined' &&
                 createPortal(
-                    <div
-                        className="fixed inset-0 z-[10050] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200"
-                        onClick={(e) => {
-                            if (e.target === e.currentTarget) closeDetail();
-                        }}
-                        role="presentation"
-                    >
-                        <div
-                            className="bg-white rounded-[2rem] w-full max-w-md max-h-[85vh] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="bg-[#36606F] px-4 py-2 text-white shrink-0 flex items-center justify-between gap-1">
-                                <div className="flex-1" />
-                                <div className="flex items-center justify-center gap-1 sm:gap-2 shrink-0">
-                                    <button
-                                        type="button"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (selectedDayStr) {
-                                                const d = parseLocalSafe(selectedDayStr);
-                                                d.setDate(d.getDate() - 1);
-                                                openDayDetail(d);
-                                            }
-                                        }}
-                                        className="p-1 sm:p-2 hover:bg-white/10 rounded-full transition-colors flex items-center justify-center"
-                                        aria-label="Día anterior"
-                                    >
-                                        <ChevronLeft size={20} />
-                                    </button>
-                                    <h3 className="text-base sm:text-lg font-black uppercase tracking-tight text-center">
-                                        {selectedDayStr
-                                            ? format(parseLocalSafe(selectedDayStr), 'EEEE d MMM', { locale: es })
-                                            : ''}
-                                    </h3>
-                                    <button
-                                        type="button"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (selectedDayStr) {
-                                                const d = parseLocalSafe(selectedDayStr);
-                                                d.setDate(d.getDate() + 1);
-                                                openDayDetail(d);
-                                            }
-                                        }}
-                                        className="p-1 sm:p-2 hover:bg-white/10 rounded-full transition-colors flex items-center justify-center"
-                                        aria-label="Día siguiente"
-                                    >
-                                        <ChevronRight size={20} />
-                                    </button>
-                                </div>
-                                <div className="flex-1 flex justify-end">
-                                    <button
-                                        type="button"
-                                        onClick={closeDetail}
-                                        className="p-2 hover:bg-white/10 rounded-xl transition-colors flex items-center justify-center -mr-2"
-                                        aria-label="Cerrar"
-                                    >
-                                        <X size={20} />
-                                    </button>
-                                </div>
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+                        <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] flex flex-col overflow-hidden">
+                            <div className="bg-[#36606F] text-white p-4 flex items-center justify-between shrink-0">
+                                <h3 className="font-bold text-lg">
+                                    {selectedDayStr ? format(parseLocalSafe(selectedDayStr), 'EEEE d MMMM yyyy', { locale: es }) : ''}
+                                </h3>
+                                <button type="button" onClick={closeDetail} className="p-1 hover:bg-white/10 rounded-lg">
+                                    <X size={20} />
+                                </button>
                             </div>
-                            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 flex flex-col min-h-0">
+                            <div className="p-4 overflow-y-auto flex-1">
                                 {detailLoading ? (
                                     <div className="flex justify-center py-12">
-                                        <LoadingSpinner className="text-[#36606F]" />
+                                        <LoadingSpinner size="lg" className="text-[#36606F]" />
                                     </div>
-                                ) : dayDetail &&
-                                  (dayDetail.workers.length > 0 ||
-                                      dayDetail.totalCost > 0 ||
-                                      dayDetail.totalFixed > 0) ? (
-                                    <>
-                                        <div className="mb-4 rounded-[1.25rem] bg-[#36606F] p-3 shadow-md">
-                                            <p className="mb-2 text-center text-[9px] font-black uppercase tracking-[0.2em] text-white/90">
-                                                Resumen del día
-                                            </p>
-                                            <div className="grid grid-cols-4 gap-1 sm:gap-2">
-                                                <div className="bg-white rounded-xl p-1.5 sm:p-2 flex flex-col items-center justify-center text-center">
-                                                    <span className="block text-[7px] font-black uppercase tracking-wider text-zinc-500 mb-0.5">
-                                                        Coste total
-                                                    </span>
-                                                    <span className="text-[11px] font-black tabular-nums text-rose-600 sm:text-[12px] leading-none">
-                                                        {formatEuroRead(dayDetail.totalCost)}
-                                                    </span>
-                                                </div>
-                                                <div className="bg-white rounded-xl p-1.5 sm:p-2 flex flex-col items-center justify-center text-center">
-                                                    <span className="block text-[7px] font-black uppercase tracking-wider text-zinc-500 mb-0.5">
-                                                        Fijo
-                                                    </span>
-                                                    <span className="text-[11px] font-black tabular-nums text-zinc-800 sm:text-[12px] leading-none">
-                                                        {formatEuroRead(dayDetail.totalFixed)}
-                                                    </span>
-                                                </div>
-                                                <div className="bg-white rounded-xl p-1.5 sm:p-2 flex flex-col items-center justify-center text-center">
-                                                    <span className="block text-[7px] font-black uppercase tracking-wider text-zinc-500 mb-0.5">
-                                                        Extras
-                                                    </span>
-                                                    <span className="text-[11px] font-black tabular-nums text-amber-600 sm:text-[12px] leading-none">
-                                                        {formatEuroRead(dayDetail.totalOvertime)}
-                                                    </span>
-                                                </div>
-                                                <div className="bg-white rounded-xl p-1.5 sm:p-2 flex flex-col items-center justify-center text-center">
-                                                    <span className="block text-[7px] font-black uppercase tracking-wider text-zinc-500 mb-0.5">
-                                                        %
-                                                    </span>
-                                                    <span
-                                                        className={cn(
-                                                            'text-[11px] font-black tabular-nums sm:text-[12px] leading-none',
-                                                            laborPctTextClass(
-                                                                dayDetail.dayNetSales > 0
-                                                                    ? (dayDetail.totalCost / dayDetail.dayNetSales) * 100
-                                                                    : null,
-                                                            ),
-                                                        )}
-                                                    >
-                                                        {formatWorkerPctLine(
-                                                            dayDetail.dayNetSales > 0
-                                                                ? (dayDetail.totalCost / dayDetail.dayNetSales) * 100
-                                                                : null,
-                                                        )}
-                                                    </span>
-                                                </div>
+                                ) : dayDetail ? (
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-4 gap-2 bg-zinc-50 p-3 rounded-xl text-center text-xs">
+                                            <div>
+                                                <div className="text-zinc-400 font-medium">Coste</div>
+                                                <div className="font-black text-rose-500">{formatEuroRead(dayDetail.totalCost)}</div>
+                                            </div>
+                                            <div>
+                                                <div className="text-zinc-400 font-medium">Fijo</div>
+                                                <div className="font-bold text-zinc-700">{formatEuroRead(dayDetail.totalFixed)}</div>
+                                            </div>
+                                            <div>
+                                                <div className="text-zinc-400 font-medium">Extras</div>
+                                                <div className="font-bold text-amber-600">{formatEuroRead(dayDetail.totalOvertime)}</div>
+                                            </div>
+                                            <div>
+                                                <div className="text-zinc-400 font-medium">Ventas</div>
+                                                <div className="font-bold text-emerald-600">{formatEuroRead(dayDetail.dayNetSales)}</div>
                                             </div>
                                         </div>
-                                        <div className="mb-4 flex flex-col relative gap-1 pb-4">
+
+                                        <div className="flex items-center justify-between px-2 pt-2 text-xs font-bold text-zinc-500">
+                                            <span>Trabajador</span>
+                                            <div className="flex gap-4">
+                                                <span>Fijo / Extras</span>
+                                                <span>Total</span>
+                                            </div>
+                                        </div>
+                                        <div className="divide-y divide-zinc-100">
                                             {dayDetail.workers.map((w) => (
-                                                <div
-                                                    key={w.id}
-                                                    className="flex items-center justify-between py-2 px-1 border-b border-zinc-100 last:border-0 hover:bg-zinc-50/50 rounded-lg transition-colors"
-                                                >
-                                                    <div className="truncate text-[13px] font-black text-zinc-800 flex-1 pr-2">
-                                                        {firstNameOnly(w.name)}
-                                                    </div>
-                                                    <div className="grid grid-cols-4 shrink-0 w-[190px] min-[400px]:w-[210px] sm:w-[240px] gap-1 text-center items-center">
-                                                        <div className="min-w-0">
-                                                            <span className="block text-[6px] sm:text-[7px] font-black uppercase text-zinc-400 mb-1 tracking-wider">
-                                                                Fijo
-                                                            </span>
-                                                            <span className="text-[10px] font-black tabular-nums text-zinc-700 sm:text-[11px] leading-none">
-                                                                {formatEuroRead(w.fixed)}
-                                                            </span>
-                                                        </div>
-                                                        <div className="min-w-0">
-                                                            <span className="block text-[6px] sm:text-[7px] font-black uppercase text-zinc-400 mb-1 tracking-wider">
-                                                                Extras
-                                                            </span>
-                                                            <span className="text-[10px] font-black tabular-nums text-amber-600 sm:text-[11px] leading-none">
-                                                                {formatEuroRead(w.overtime)}
-                                                            </span>
-                                                        </div>
-                                                        <div className="min-w-0">
-                                                            <span className="block text-[6px] sm:text-[7px] font-black uppercase text-zinc-400 mb-1 tracking-wider">
-                                                                Total
-                                                            </span>
-                                                            <span className="text-[10px] font-black tabular-nums text-[#36606F] sm:text-[11px] leading-none">
-                                                                {formatEuroRead(w.total)}
-                                                            </span>
-                                                        </div>
-                                                        <div className="min-w-0">
-                                                            <span className="block text-[6px] sm:text-[7px] font-black uppercase text-zinc-400 mb-1 tracking-wider">
-                                                                %
-                                                            </span>
-                                                            <span
-                                                                className={cn(
-                                                                    'text-[10px] block font-black tabular-nums sm:text-[11px] leading-none',
-                                                                    laborPctTextClass(w.laborPctOfSales),
-                                                                )}
-                                                            >
-                                                                {formatWorkerPctLine(w.laborPctOfSales)}
-                                                            </span>
-                                                        </div>
+                                                <div key={w.id} className="py-2.5 flex items-center justify-between text-sm">
+                                                    <div className="font-medium text-zinc-800">{firstNameOnly(w.name)}</div>
+                                                    <div className="flex items-center gap-4 text-xs font-mono">
+                                                        <span className="text-zinc-500">
+                                                            {formatEuroRead(w.fixed)} / {formatEuroRead(w.overtime)}
+                                                        </span>
+                                                        <span className="font-bold text-zinc-900 w-16 text-right">
+                                                            {formatEuroRead(w.total)}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
-                                    </>
-                                ) : dayDetail ? (
-                                    <p className="text-center text-zinc-400 font-bold text-sm py-8">
-                                        {workerFilterId
-                                            ? 'Sin coste registrado para este trabajador este día'
-                                            : 'Sin coste registrado este día'}
-                                    </p>
+                                    </div>
                                 ) : null}
                             </div>
                         </div>
@@ -837,54 +720,18 @@ export default function LaborHistoryPage() {
                     document.body
                 )}
 
+            <TimeFilterModal
+                isOpen={isTimeFilterOpen}
+                onClose={() => setIsTimeFilterOpen(false)}
+                onApply={handleApplyTimeFilter}
+                allowedKinds={['month', 'year', 'range', 'week', 'date']}
+                initialValue={appliedFilter}
+            />
             <StaffSelectionModal
                 isOpen={isWorkerModalOpen}
                 onClose={() => setIsWorkerModalOpen(false)}
                 employees={employees}
-                title="Trabajador"
-                variant="profile-list"
-                onSelect={(emp) => {
-                    setWorkerFilterId(emp.id);
-                    setIsWorkerModalOpen(false);
-                }}
-            />
-
-            <TimeFilterModal
-                isOpen={isTimeFilterOpen}
-                onClose={() => setIsTimeFilterOpen(false)}
-                allowedKinds={['date', 'range', 'week', 'month', 'year']}
-                initialValue={appliedFilter}
-                onApply={(v: TimeFilterValue) => {
-                    setAppliedFilter(v);
-                    if (v.kind === 'month') {
-                        const s = new Date(v.year, v.month - 1, 1);
-                        const e = endOfMonth(s);
-                        setPeriodStart(format(s, 'yyyy-MM-dd'));
-                        setPeriodEnd(format(e, 'yyyy-MM-dd'));
-                        setViewMonth(startOfMonth(s));
-                        return;
-                    }
-                    if (v.kind === 'year') {
-                        setPeriodStart(`${v.year}-01-01`);
-                        setPeriodEnd(`${v.year}-12-31`);
-                        setViewMonth(new Date(v.year, 0, 1));
-                        return;
-                    }
-                    if (v.kind === 'range' || v.kind === 'week') {
-                        const a = v.startDate.split('T')[0];
-                        const b = v.endDate.split('T')[0];
-                        setPeriodStart(a);
-                        setPeriodEnd(b);
-                        setViewMonth(startOfMonth(parseLocalSafe(a)));
-                        return;
-                    }
-                    if (v.kind === 'date') {
-                        const d = v.date.split('T')[0];
-                        setPeriodStart(d);
-                        setPeriodEnd(d);
-                        setViewMonth(startOfMonth(parseLocalSafe(d)));
-                    }
-                }}
+                onSelect={(emp) => setWorkerFilterId(emp.id)}
             />
         </div>
     );

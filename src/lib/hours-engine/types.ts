@@ -11,8 +11,8 @@ export type CivilDate = string;
 
 export type ContractRegime = 'staff' | 'manager' | 'fixed';
 
-/** Régimen efectivo de un segmento de liquidación (agosto es calendario, no campo de tramo). */
-export type SegmentRegime = ContractRegime | 'agosto' | 'pre_alta';
+/** Régimen efectivo de un segmento de liquidación. */
+export type SegmentRegime = ContractRegime | 'pre_alta';
 
 /**
  * Tramo contractual versionado (hecho).
@@ -79,7 +79,7 @@ export type ContractSegment = {
   /** Única resolución: days.length / 7 × jornada del tramo (Contract Resolver). */
   contractedHours: number;
   bagMode: boolean;
-  /** Régimen del tramo (sin agosto; agosto se aplica en Regime Policy por día). */
+  /** Régimen del tramo. */
   termRegime: ContractRegime;
   /** Tarifa OT del tramo vigente en esos días (passthrough del hecho). */
   overtimeRatePerHour: number | null;
