@@ -15,11 +15,15 @@ describe('FASE 10: GetMonthlyLaborCostSummaryUseCase', () => {
           or: () => Promise.resolve({ data: [{ id: 'term_1' }], error: null }),
           maybeSingle: () => Promise.resolve({ data: { total_net_amount: 1200 } }),
           order: () => Promise.resolve({ data: [], error: null }),
+          then: (resolve: any) => resolve({ data: [], error: null }),
         };
 
         if (table === 'daily_sales') {
           return {
             select: () => ({
+              gte: () => ({
+                lte: () => Promise.resolve({ data: [{ date: '2026-07-15', total_net_amount: 1200 }], error: null }),
+              }),
               eq: () => ({ maybeSingle: () => Promise.resolve({ data: { total_net_amount: 1200 } }) }),
             }),
           };

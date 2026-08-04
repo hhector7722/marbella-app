@@ -40,6 +40,9 @@ export type LaborCostMonthSummaryDTO = {
       totalCost: number;
       totalFixed: number;
       totalOvertime: number;
+      total?: number;
+      fixed?: number;
+      overtime?: number;
       laborPctOfSales: number | null;
     }
   >;

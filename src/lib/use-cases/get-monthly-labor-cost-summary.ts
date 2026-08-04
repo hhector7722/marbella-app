@@ -51,7 +51,12 @@ export class GetMonthlyLaborCostSummaryUseCase {
       contractTermsService,
       payrollRepo,
     );
-    this.monthProjector = new LaborCostMonthReadModelProjector(this.dayProjector, payrollRepo);
+    this.monthProjector = new LaborCostMonthReadModelProjector(
+      supabase,
+      this.dayProjector,
+      payrollRepo,
+      contractTermsService,
+    );
   }
 
   /**
