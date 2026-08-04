@@ -1,13 +1,8 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
-import {
-  buildLaborCostDayDetailFromSsot,
-  buildLaborCostPeriodFromSsot,
-  PAYROLL_ORDINARY_ROW_ID,
-} from '@/lib/hours-engine';
-
-export { PAYROLL_ORDINARY_ROW_ID };
+import { GetDailyLaborCostUseCase } from '@/lib/use-cases/get-daily-labor-cost';
+import { GetMonthlyLaborCostSummaryUseCase } from '@/lib/use-cases/get-monthly-labor-cost-summary';
 
 export async function getLaborCostPeriodSsot(input: {
   startDate: string;
@@ -15,7 +10,8 @@ export async function getLaborCostPeriodSsot(input: {
   userId?: string | null;
 }) {
   const supabase = await createClient();
-  return buildLaborCostPeriodFromSsot(supabase, {
+  const useCase = new GetMonthlyLaborCostSummaryUseCase(supabase);
+  return useCase.execute({
     startDate: input.startDate,
     endDate: input.endDate,
     userId: input.userId ?? null,
@@ -25,11 +21,12 @@ export async function getLaborCostPeriodSsot(input: {
 export async function getLaborCostDayDetailSsot(input: {
   dateYmd: string;
   userId?: string | null;
+  includeAllContracted?: boolean;
 }) {
   const supabase = await createClient();
-  return buildLaborCostDayDetailFromSsot(
-    supabase,
-    input.dateYmd,
-    input.userId ?? null,
-  );
+  const useCase = new GetDailyLaborCostUseCase(supabase);
+  return useCase.execute(input.dateYmd, {
+    userId: input.userId ?? null,
+    includeAllContracted: input.includeAllContracted ?? false,
+  });
 }

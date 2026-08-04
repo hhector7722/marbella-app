@@ -100,14 +100,10 @@ export {
   type WeeklyStats,
   type BuildOvertimeWeeksOptions,
 } from './overtime-weeks-ssot.ts';
-export {
-  buildLaborCostPeriodFromSsot,
-  buildLaborCostDayDetailFromSsot,
-  allocatePayrollToNaturalDays,
-  PAYROLL_ORDINARY_ROW_ID,
-  type LaborDayCell,
-  type LaborDayWorker,
-  type LaborCostPeriodResult,
+export type {
+  LaborDayCell,
+  LaborDayWorker,
+  LaborCostPeriodResult,
 } from './labor-cost-ssot.ts';
 export { ordinaryHourlyRateFromSsot } from './ordinary-rate-ssot.ts';
 export {

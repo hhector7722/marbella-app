@@ -34,7 +34,6 @@ import {
     getLaborCostDayDetailSsot,
     getLaborCostPeriodSsot,
 } from '@/app/actions/labor-cost-ssot';
-import { PAYROLL_ORDINARY_ROW_ID } from '@/lib/hours-engine';
 
 type DayCell = { total: number; fixed: number; overtime: number };
 
@@ -211,7 +210,7 @@ export default function LaborHistoryPage() {
     const def = defaultFullMonthPeriod();
     const [periodStart, setPeriodStart] = useState<string>(def.start);
     const [periodEnd, setPeriodEnd] = useState<string>(def.end);
-    /** Mes del calendario (solo vista; las flechas lo mueven sin cambiar el periodo filtrado) */
+    /** Mes del calendario (sincronizado con el período consultado) */
     const [viewMonth, setViewMonth] = useState<Date>(() => startOfMonth(new Date()));
     const [loading, setLoading] = useState(true);
     const [summary, setSummary] = useState<MonthSummaryPayload | null>(null);
@@ -313,7 +312,7 @@ export default function LaborHistoryPage() {
             }
 
             if (period.missingPayrollMonths.length > 0) {
-                toast.error(
+                toast.warning(
                     `Falta nómina oficial (payroll_monthly_totals) para: ${period.missingPayrollMonths.join(', ')}. El fijo de esos meses queda a 0.`,
                 );
             }
@@ -356,11 +355,31 @@ export default function LaborHistoryPage() {
     }, [fetchPeriodSummary]);
 
     const handlePrevMonth = () => {
-        setViewMonth((vm) => subMonths(vm, 1));
+        const newMonth = subMonths(viewMonth, 1);
+        const s = startOfMonth(newMonth);
+        const e = endOfMonth(newMonth);
+        setViewMonth(s);
+        setPeriodStart(format(s, 'yyyy-MM-dd'));
+        setPeriodEnd(format(e, 'yyyy-MM-dd'));
+        setAppliedFilter({
+            kind: 'month',
+            year: s.getFullYear(),
+            month: s.getMonth() + 1,
+        });
     };
 
     const handleNextMonth = () => {
-        setViewMonth((vm) => addMonths(vm, 1));
+        const newMonth = addMonths(viewMonth, 1);
+        const s = startOfMonth(newMonth);
+        const e = endOfMonth(newMonth);
+        setViewMonth(s);
+        setPeriodStart(format(s, 'yyyy-MM-dd'));
+        setPeriodEnd(format(e, 'yyyy-MM-dd'));
+        setAppliedFilter({
+            kind: 'month',
+            year: s.getFullYear(),
+            month: s.getMonth() + 1,
+        });
     };
 
     const clearTimeFilter = () => {
@@ -372,66 +391,51 @@ export default function LaborHistoryPage() {
         setAppliedFilter({ kind: 'month', year: n.getFullYear(), month: n.getMonth() + 1 });
     };
 
+    const [includeAllContracted, setIncludeAllContracted] = useState(false);
+
     const openDayDetail = useCallback(
-        async (day: Date) => {
+        async (day: Date, optionsOverride?: { includeAll?: boolean }) => {
             const key = format(day, 'yyyy-MM-dd');
+            const showAll = optionsOverride?.includeAll ?? includeAllContracted;
             trackUsageModalApply(
                 'labor-day-detail',
                 'Detalle día laboral',
                 pathname,
                 format(day, 'd MMM yyyy', { locale: es }),
-                { selectedDate: key }
+                { selectedDate: key, includeAllContracted: String(showAll) }
             );
             setSelectedDayStr(key);
             setDetailOpen(true);
             setDetailLoading(true);
             setDayDetail(null);
             try {
-                const [labor, salesRes] = await Promise.all([
-                    getLaborCostDayDetailSsot({
-                        dateYmd: key,
-                        userId: workerFilterId ?? null,
-                    }),
-                    supabase.rpc('get_cash_closings_summary', {
-                        p_start_date: key,
-                        p_end_date: key,
-                    }),
-                ]);
-                if (salesRes.error) console.warn(salesRes.error);
-                const dayNetSales = salesRes.error
-                    ? 0
-                    : Number((salesRes.data as { totalNet?: number } | null)?.totalNet) || 0;
+                const labor = await getLaborCostDayDetailSsot({
+                    dateYmd: key,
+                    userId: workerFilterId ?? null,
+                    includeAllContracted: showAll,
+                });
 
-                if (labor.missingPayroll) {
-                    toast.error(
-                        'Falta nómina oficial para este mes: el coste fijo del día es 0.',
+                if (labor.isPayrollPending) {
+                    toast.warning(
+                        'Falta nómina oficial para este mes: el coste fijo del día es 0 €.',
                     );
                 }
 
-                const workers: WorkerRow[] = labor.workers.map((w) => {
-                    const total = Number(w.total) || 0;
-                    let laborPctOfSales: number | null = null;
-                    // % por fila de empleado = extras del trabajador / ventas día.
-                    // La fila de nómina empresa usa el total del día (fijo+extras).
-                    if (dayNetSales > 0) {
-                        laborPctOfSales = (total / dayNetSales) * 100;
-                    }
-                    return {
-                        id: w.id,
-                        name: w.name,
-                        fixed: Number(w.fixed) || 0,
-                        overtime: Number(w.overtime) || 0,
-                        total,
-                        laborPctOfSales,
-                    };
-                });
+                const workers: WorkerRow[] = labor.workers.map((w) => ({
+                    id: w.id,
+                    name: w.name,
+                    fixed: w.fixed,
+                    overtime: w.overtime,
+                    total: w.total,
+                    laborPctOfSales: w.laborPctOfSales,
+                }));
 
                 setDayDetail({
                     date: key,
                     totalFixed: labor.totalFixed,
                     totalOvertime: labor.totalOvertime,
                     totalCost: labor.totalCost,
-                    dayNetSales,
+                    dayNetSales: labor.netSales,
                     workers,
                 });
             } catch (e) {
@@ -442,7 +446,7 @@ export default function LaborHistoryPage() {
                 setDetailLoading(false);
             }
         },
-        [supabase, workerFilterId, pathname],
+        [workerFilterId, pathname, includeAllContracted],
     );
 
     const closeDetail = () => {
@@ -775,9 +779,7 @@ export default function LaborHistoryPage() {
                                                     className="flex items-center justify-between py-2 px-1 border-b border-zinc-100 last:border-0 hover:bg-zinc-50/50 rounded-lg transition-colors"
                                                 >
                                                     <div className="truncate text-[13px] font-black text-zinc-800 flex-1 pr-2">
-                                                        {w.id === PAYROLL_ORDINARY_ROW_ID
-                                                            ? w.name
-                                                            : firstNameOnly(w.name)}
+                                                        {firstNameOnly(w.name)}
                                                     </div>
                                                     <div className="grid grid-cols-4 shrink-0 w-[190px] min-[400px]:w-[210px] sm:w-[240px] gap-1 text-center items-center">
                                                         <div className="min-w-0">
