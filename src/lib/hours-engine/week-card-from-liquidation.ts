@@ -10,6 +10,7 @@
 import { liquidateWeek } from './liquidation-engine.ts';
 import { resolveEffectiveContract } from './contract-resolver.ts';
 import { roundMarbellaHours } from './marbella-round.ts';
+import { compareCivilDate } from './week-dates.ts';
 import { formatYmdInMadrid } from '../madrid-date-bounds.ts';
 import {
   priceWeekOvertime,
@@ -117,7 +118,7 @@ export function costSegmentsForLiquidation(
     return {
       weeklyBalancePart: seg.weeklyBalancePart,
       bagMode: seg.bagMode,
-      // pre_alta/gap sin rate propio → tarifa contractual de la semana
+      // pre_alta/gap sin rate → tarifa contractual de la semana o última conocida del historial
       overtimeRatePerHour: own ?? weekFallback,
     };
   });
@@ -125,6 +126,7 @@ export function costSegmentsForLiquidation(
 
 /**
  * Tarifa contractual vigente en el lunes de la semana (política de liquidación del banco).
+ * Si la semana no dispone de tarifa, recupera la última overtimeRatePerHour conocida del historial.
  */
 export function settlementRateAtWeekStart(
   employee: EmployeeBoundaryFacts,
@@ -144,6 +146,28 @@ export function settlementRateAtWeekStart(
       return Number(s.overtimeRatePerHour);
     }
   }
+
+  // Buscar última tarifa conocida en el historial del trabajador (orden descendente por fecha de inicio)
+  const sortedTerms = [...employee.terms].sort((a, b) =>
+    compareCivilDate(b.effectiveFrom, a.effectiveFrom),
+  );
+
+  for (const t of sortedTerms) {
+    if (
+      compareCivilDate(t.effectiveFrom, weekStart) <= 0 &&
+      t.overtimeRatePerHour != null &&
+      Number.isFinite(t.overtimeRatePerHour)
+    ) {
+      return Number(t.overtimeRatePerHour);
+    }
+  }
+
+  for (const t of sortedTerms) {
+    if (t.overtimeRatePerHour != null && Number.isFinite(t.overtimeRatePerHour)) {
+      return Number(t.overtimeRatePerHour);
+    }
+  }
+
   return null;
 }
 

@@ -24,7 +24,8 @@ function term(
     weeklyHours,
     bagMode: opts.bagMode ?? false,
     regime: opts.regime ?? 'staff',
-    overtimeRatePerHour: opts.overtimeRatePerHour ?? 10,
+    overtimeRatePerHour:
+      'overtimeRatePerHour' in opts ? (opts.overtimeRatePerHour ?? null) : 10,
   };
 }
 
@@ -374,6 +375,84 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
     assert.equal(summary.weeklyBalance, 0); // no se muestran extras a cobro
     assert.equal(summary.estimatedValue, 0); // no se cobra
     assert.equal(result.contractedHoursEffective, 26); // enteros/medias, no 26.285
+  });
+
+  it('semana con contractedHoursEffective = 0 y trabajadas > 0: ordinary=0, overtime=trabajadas, importe calculado', () => {
+    const employee = emp([
+      term('2026-01-01', null, 0, { bagMode: false, overtimeRatePerHour: 15 }),
+    ]);
+    const logs = [dayLog('2026-08-03', 8)];
+    const { summary, result, extrasByDay } = liquidateWeekForCard({
+      carryIn: 0,
+      employee,
+      weekStart: '2026-08-03',
+      logs,
+    });
+    assert.equal(result.contractedHoursEffective, 0);
+    assert.equal(result.hoursWorked, 8);
+    assert.equal(result.ordinaryHours, 0);
+    assert.equal(result.overtimeHours, 8);
+    assert.equal(extrasByDay['2026-08-03'], 8);
+    assert.equal(summary.weeklyBalance, 8);
+    assert.equal(summary.estimatedValue, 120);
+  });
+
+  it('Caso A: Semana sin tarifa propia + historial con tarifa 15 €/h → usa 15 €/h', () => {
+    const employee = emp([
+      term('2026-01-01', '2026-06-30', 40, { bagMode: false, overtimeRatePerHour: 15 }),
+      term('2026-07-01', null, 0, { bagMode: false, overtimeRatePerHour: null }),
+    ]);
+    const logs = [dayLog('2026-08-03', 8)];
+    const { summary, result } = liquidateWeekForCard({
+      carryIn: 0,
+      employee,
+      weekStart: '2026-08-03',
+      logs,
+    });
+    assert.equal(result.contractedHoursEffective, 0);
+    assert.equal(result.overtimeHours, 8);
+    assert.equal(summary.hourlyRate, 15);
+    assert.equal(summary.estimatedValue, 120);
+  });
+
+  it('Caso B: Semana sin tarifa propia + historial con varias tarifas → usa la más reciente anterior', () => {
+    const employee = emp([
+      term('2026-01-01', '2026-03-31', 40, { bagMode: false, overtimeRatePerHour: 12 }),
+      term('2026-04-01', '2026-06-30', 40, { bagMode: false, overtimeRatePerHour: 18 }),
+      term('2026-07-01', null, 0, { bagMode: false, overtimeRatePerHour: null }),
+    ]);
+    const logs = [dayLog('2026-08-03', 8)];
+    const { summary, result } = liquidateWeekForCard({
+      carryIn: 0,
+      employee,
+      weekStart: '2026-08-03',
+      logs,
+    });
+    assert.equal(result.contractedHoursEffective, 0);
+    assert.equal(result.overtimeHours, 8);
+    assert.equal(summary.hourlyRate, 18);
+    assert.equal(summary.estimatedValue, 144);
+  });
+
+  it('Caso C: Trabajador sin ninguna tarifa en toda su historia → lanza excepción explícita', () => {
+    const employee = emp([
+      term('2026-01-01', '2026-06-30', 40, { bagMode: false, overtimeRatePerHour: null }),
+      term('2026-07-01', null, 0, { bagMode: false, overtimeRatePerHour: null }),
+    ]);
+    const logs = [dayLog('2026-08-03', 8)];
+    assert.throws(
+      () => {
+        liquidateWeekForCard({
+          carryIn: 0,
+          employee,
+          weekStart: '2026-08-03',
+          logs,
+        });
+      },
+      (err: unknown) =>
+        err instanceof Error &&
+        err.message.includes('Overtime Cost Engine: segmento cobrable sin overtimeRatePerHour'),
+    );
   });
 
   it('override semanal BOLSA: no cobra e importa preferStock', () => {
