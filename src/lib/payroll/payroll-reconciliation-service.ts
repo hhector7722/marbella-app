@@ -1,14 +1,10 @@
 /**
- * PayrollReconciliationService (FASE 3).
+ * PayrollReconciliationService.
  *
- * Implementa los 4 niveles de conciliación contable y auditoría del SSOT:
- *
- * - Nivel 1: Suma de hechos individuales (employee_payroll_facts) vs Resumen gestoría (payroll_monthly_totals).
- * - Nivel 2: Suma de fijos diarios del mes de un trabajador vs su nómina individual consolidada.
- * - Nivel 3: Suma de costes diarios de toda la plantilla vs total nóminas individuales del mes.
- * - Nivel 4: Cobertura contractual (Todo empleado con nómina activa posee tramos en hours_contract_terms).
- *
- * Devuelve DTOs de auditoría sin intervenir en la UI.
+ * Servicio de conciliación contable de coste laboral SSOT:
+ * - Conciliación Colectiva Informativa (payroll_monthly_totals vs employee_payroll_facts).
+ * - Garantiza strictly non-blocking behavior (jamás lanza excepciones ni bloquea flujos).
+ * - Calcula automáticamente los estados: NO_SUMMARY, WAITING_PAYROLLS, RECONCILED, PENDING_RECONCILIATION.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -16,6 +12,10 @@ import type { PayrollFactRepository } from './payroll-fact-repository.ts';
 import { ContractTermsService } from './contract-terms-service.ts';
 import type { PayrollAllocationService } from './payroll-allocation-service.ts';
 import { Money } from './value-objects.ts';
+import type {
+  PayrollReconciliationStatus,
+  PayrollReconciliationSummaryDTO,
+} from '../../types/payroll-import.ts';
 
 export type ReconciliationLevelResult = {
   level: number;
@@ -40,6 +40,54 @@ export type PayrollReconciliationReportDTO = {
   };
 };
 
+/**
+ * Función pura estricta para calcular la conciliación informativa entre el resumen oficial de empresa
+ * y la suma de nóminas individuales activas.
+ *
+ * Invariante: Jamás lanza excepciones ni modifica datos.
+ */
+export function computePeriodReconciliation(input: {
+  summaryCost: number | null | undefined;
+  activeFacts: Array<{ user_id: string; total_company_cost: number }>;
+}): PayrollReconciliationSummaryDTO {
+  const activeFacts = input.activeFacts ?? [];
+  const totalPayrolls = Number(
+    activeFacts.reduce((sum, f) => sum + (Number(f.total_company_cost) || 0), 0).toFixed(2),
+  );
+  const importedCount = new Set(activeFacts.map((f) => f.user_id)).size;
+
+  if (input.summaryCost === null || input.summaryCost === undefined) {
+    return {
+      status: 'NO_SUMMARY',
+      totalSummary: 0,
+      totalPayrolls,
+      difference: 0,
+      importedCount,
+    };
+  }
+
+  const totalSummary = Number(Number(input.summaryCost).toFixed(2));
+  const diffRaw = Number((totalSummary - totalPayrolls).toFixed(2));
+  const isZeroDiff = Math.abs(diffRaw) < 0.01;
+
+  let status: PayrollReconciliationStatus = 'PENDING_RECONCILIATION';
+  if (activeFacts.length === 0) {
+    status = 'WAITING_PAYROLLS';
+  } else if (isZeroDiff) {
+    status = 'RECONCILED';
+  } else {
+    status = 'PENDING_RECONCILIATION';
+  }
+
+  return {
+    status,
+    totalSummary,
+    totalPayrolls,
+    difference: isZeroDiff ? 0 : diffRaw,
+    importedCount,
+  };
+}
+
 export class PayrollReconciliationService {
   constructor(
     private readonly supabase: SupabaseClient,
@@ -47,6 +95,37 @@ export class PayrollReconciliationService {
     private readonly contractTermsService: ContractTermsService,
     private readonly allocationService: PayrollAllocationService,
   ) {}
+
+  /**
+   * Obtiene la conciliación colectiva rápida (Nivel 1 Informativo) de forma segura sin lanzar.
+   */
+  async getQuickReconciliation(periodYm: string): Promise<PayrollReconciliationSummaryDTO> {
+    try {
+      const [activeFacts, summaryRes] = await Promise.all([
+        this.payrollRepo.getActiveFactsForPeriod(periodYm),
+        this.supabase
+          .from('payroll_monthly_totals')
+          .select('total_company_cost')
+          .eq('period_ym', periodYm)
+          .maybeSingle(),
+      ]);
+
+      const summaryCost =
+        summaryRes.data?.total_company_cost != null
+          ? Number(summaryRes.data.total_company_cost)
+          : null;
+
+      return computePeriodReconciliation({ summaryCost, activeFacts });
+    } catch {
+      return {
+        status: 'NO_SUMMARY',
+        totalSummary: 0,
+        totalPayrolls: 0,
+        difference: 0,
+        importedCount: 0,
+      };
+    }
+  }
 
   /**
    * Ejecuta el informe completo de auditoría y conciliación de 4 niveles para un mes.

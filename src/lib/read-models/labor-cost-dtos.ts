@@ -6,6 +6,7 @@
  */
 
 import type { PayrollReconciliationReportDTO } from '../payroll/payroll-reconciliation-service.ts';
+import type { PayrollReconciliationSummaryDTO } from '../../types/payroll-import.ts';
 
 export type WorkerLaborCostDTO = {
   id: string;
@@ -51,6 +52,7 @@ export type LaborCostMonthSummaryDTO = {
   totalCost: number;
   isPayrollPending: boolean;
   missingPayrollMonths: string[];
+  reconciliation: PayrollReconciliationSummaryDTO;
 };
 
 export type ReadModelComparisonReport = {

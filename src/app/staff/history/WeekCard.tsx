@@ -6,6 +6,7 @@ import { parseISO, startOfWeek } from 'date-fns';
 import { cn, calculateRoundedHours } from '@/lib/utils';
 import { toast } from 'sonner';
 import { SpecialDayLabel } from '@/components/staff/SpecialDayLabel';
+import LaborConditionsView from '@/components/profile/LaborConditionsView';
 
 const DAY_HEADERS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 
@@ -109,6 +110,7 @@ export function WeekCard({
             : ''
     );
     const [savingOverrides, setSavingOverrides] = useState(false);
+    const [contractModalOpen, setContractModalOpen] = useState(false);
 
     React.useEffect(() => {
         console.log('[TRACE 6] Valor recibido por el componente tras el refresh:', {
@@ -459,13 +461,19 @@ export function WeekCard({
                         <span className="text-[7px] font-black text-zinc-500 uppercase tracking-widest">Contrato</span>
                         <input
                             type="number"
-                            min={0}
-                            step={0.5}
+                            readOnly
                             value={localContracted}
-                            onChange={(e) => setLocalContracted(e.target.value)}
-                            className="w-10 h-6 text-center text-[10px] font-black bg-white border border-zinc-200 rounded focus:outline-none focus:ring-1 focus:ring-[#36606F]"
+                            className="w-10 h-6 text-center text-[10px] font-black bg-zinc-100 border border-zinc-200 rounded text-zinc-500 cursor-not-allowed"
+                            title="Ver/Editar contrato en Condiciones Laborales"
                         />
                         <span className="text-[8px] text-zinc-400 font-bold">H</span>
+                        <button
+                            type="button"
+                            onClick={() => setContractModalOpen(true)}
+                            className="px-1.5 py-0.5 rounded bg-blue-600 hover:bg-blue-700 text-white text-[8px] font-black uppercase tracking-wider transition-colors shrink-0"
+                        >
+                            Contrato
+                        </button>
                     </div>
                     <div className="flex items-center gap-1.5">
                         <span className="text-[7px] font-black text-zinc-500 uppercase tracking-widest">€/H</span>
@@ -495,6 +503,43 @@ export function WeekCard({
                             </>
                         )}
                     </button>
+                </div>
+            )}
+
+            {contractModalOpen && userId && (
+                <div
+                    className="fixed inset-0 z-[220] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+                    onClick={() => setContractModalOpen(false)}
+                >
+                    <div
+                        className="w-full max-w-3xl max-h-[90vh] bg-white rounded-3xl shadow-2xl overflow-y-auto p-4 relative"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex justify-between items-center mb-2 px-2 pt-1 border-b pb-2">
+                            <span className="text-xs font-black text-zinc-700 uppercase tracking-wider">
+                                Condiciones Laborales y Contrato
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => setContractModalOpen(false)}
+                                className="w-7 h-7 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400 hover:text-zinc-600 text-xs font-bold"
+                            >
+                                <X size={14} />
+                            </button>
+                        </div>
+                        <LaborConditionsView
+                            employeeId={userId}
+                            onSaveSuccess={async () => {
+                                setContractModalOpen(false);
+                                if (onApplyWeekOverrides) {
+                                    const contractedValue = localContracted === "" ? 0 : Number(localContracted);
+                                    const hourlyRateValue = localHourlyRate.trim() === '' ? null : Number(localHourlyRate);
+                                    await onApplyWeekOverrides(contractedValue, localPreferStock, hourlyRateValue);
+                                }
+                            }}
+                            onClose={() => setContractModalOpen(false)}
+                        />
+                    </div>
                 </div>
             )}
         </div>

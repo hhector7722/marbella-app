@@ -46,9 +46,11 @@ type EditMode = 'change' | 'rewrite';
 
 type Props = {
   employeeId: string;
+  onSaveSuccess?: () => void;
+  onClose?: () => void;
 };
 
-export default function LaborConditionsView({ employeeId }: Props) {
+export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -227,17 +229,23 @@ export default function LaborConditionsView({ employeeId }: Props) {
       toast.success('Tramo eliminado');
       closeEditor();
       await load();
+      onSaveSuccess?.();
     } finally {
       setDeleting(false);
     }
   };
 
   if (loading) {
-    return <div className="min-h-screen" />;
+    return <div className="min-h-[200px] flex items-center justify-center text-xs font-medium text-zinc-400">Cargando condiciones laborales...</div>;
   }
 
-  const backToProfile = () =>
-    router.push(`/profile?id=${encodeURIComponent(employeeId)}`);
+  const backToProfile = () => {
+    if (onClose) {
+      onClose();
+    } else {
+      router.push(`/profile?id=${encodeURIComponent(employeeId)}`);
+    }
+  };
 
   const editorTitle =
     editMode === 'rewrite'

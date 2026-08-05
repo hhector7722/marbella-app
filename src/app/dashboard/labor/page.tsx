@@ -45,6 +45,13 @@ type MonthSummaryPayload = {
     totalOvertime: number;
     totalCost: number;
     byDate: Record<string, DayCell>;
+    reconciliation?: {
+        status: 'NO_SUMMARY' | 'WAITING_PAYROLLS' | 'RECONCILED' | 'PENDING_RECONCILIATION';
+        totalSummary: number;
+        totalPayrolls: number;
+        difference: number;
+        importedCount: number;
+    };
 };
 
 type WorkerRow = {
@@ -183,6 +190,57 @@ function LaborPctRingCentered({
     );
 }
 
+function ReconciliationBadge({
+    reconciliation,
+}: {
+    reconciliation?: MonthSummaryPayload['reconciliation'];
+}) {
+    if (!reconciliation) return null;
+
+    const { status, totalSummary, totalPayrolls, difference, importedCount } = reconciliation;
+
+    if (status === 'RECONCILED') {
+        return (
+            <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200/80 rounded-xl text-emerald-800 text-xs font-semibold">
+                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                <span>🟢 Conciliado</span>
+                <span className="text-emerald-700 font-mono">
+                    ({formatEuroRead(totalPayrolls)} / {formatEuroRead(totalSummary)})
+                </span>
+            </div>
+        );
+    }
+
+    if (status === 'PENDING_RECONCILIATION') {
+        return (
+            <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200/80 rounded-xl text-amber-900 text-xs font-semibold">
+                <span className="inline-block w-2 h-2 rounded-full bg-amber-500 shrink-0 animate-pulse" />
+                <span>🟡 Pendiente de conciliar</span>
+                <span className="text-amber-800 font-mono">
+                    Importadas {importedCount} nóminas | Dif. pendiente: {formatEuroRead(difference)}
+                </span>
+            </div>
+        );
+    }
+
+    if (status === 'WAITING_PAYROLLS') {
+        return (
+            <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-sky-50 border border-sky-200/80 rounded-xl text-sky-900 text-xs font-semibold">
+                <span className="inline-block w-2 h-2 rounded-full bg-sky-500 shrink-0" />
+                <span>⚪ Resumen Gestoría ({formatEuroRead(totalSummary)})</span>
+                <span className="text-sky-700 font-normal">| Esperando nóminas individuales</span>
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-zinc-100 border border-zinc-200 rounded-xl text-zinc-600 text-xs font-medium">
+            <span className="inline-block w-2 h-2 rounded-full bg-zinc-400 shrink-0" />
+            <span>⚪ Sin nómina oficial de gestoría</span>
+        </div>
+    );
+}
+
 type ProfileOption = {
     id: string;
     first_name: string;
@@ -315,6 +373,7 @@ export default function LaborHistoryPage() {
                 totalOvertime: period.totalOvertime,
                 totalCost: period.totalCost,
                 byDate,
+                reconciliation: period.reconciliation,
             });
 
             const effectiveSalesEnd =
@@ -527,7 +586,7 @@ export default function LaborHistoryPage() {
                     </div>
 
                     <div className="p-4 md:p-8 flex flex-col month-cal-body min-h-0">
-                        <div className="grid grid-cols-4 gap-0.5 sm:gap-1 mb-4 py-2 shrink-0 min-w-0">
+                        <div className="grid grid-cols-4 gap-0.5 sm:gap-1 mb-3 py-2 shrink-0 min-w-0">
                             <div className="flex min-w-0 flex-col items-center justify-center px-0.5 text-center">
                                 <span className="text-[6px] font-black uppercase leading-tight text-gray-400 sm:text-[7px]">
                                     Coste
@@ -558,6 +617,10 @@ export default function LaborHistoryPage() {
                                 </span>
                                 <LaborPctRingCentered percentRaw={laborPctOfPeriod} size={36} />
                             </div>
+                        </div>
+
+                        <div className="mb-4 shrink-0">
+                            <ReconciliationBadge reconciliation={summary?.reconciliation} />
                         </div>
 
                         {loading ? (

@@ -58,10 +58,23 @@ describe('FASE 2: Payroll Write Model Transaccional Atómico (employee_payroll_f
   });
 
   it('maneja y captura errores transaccionales en PostgreSQL sin dejar estado inconsistente', async () => {
+    const eqObj: any = {
+      eq: () => eqObj,
+      maybeSingle: () => Promise.resolve({ data: null, error: null }),
+    };
+
     const mockSupabase: any = {
       rpc: () => Promise.resolve({
         data: null,
         error: { message: 'unique_violation on active status' },
+      }),
+      from: () => ({
+        select: () => eqObj,
+        insert: () => ({
+          select: () => ({
+            single: () => Promise.resolve({ data: null, error: { message: 'unique_violation on active status' } }),
+          }),
+        }),
       }),
     };
 

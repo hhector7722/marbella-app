@@ -6,6 +6,8 @@ import { format, startOfWeek, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { fromZonedTime } from 'date-fns-tz';
 import { updateWeeklyWorkerConfig, createManagerFichaje, deleteManagerDayLogs } from '@/app/actions/overtime';
+import { createClient } from '@/utils/supabase/client';
+import LaborConditionsView from '@/components/profile/LaborConditionsView';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn, calculateRoundedHours } from '@/lib/utils';
@@ -126,10 +128,11 @@ interface EditWeekModalProps {
 }
 
 function EditWeekModal({ isOpen, onClose, date, userId, onSuccess }: EditWeekModalProps) {
-    const [contractedHours, setContractedHours] = useState(40);
-    const [preferStock, setPreferStock] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [contractedHours, setContractedHours] = useState<number>(40);
+    const [preferStock, setPreferStock] = useState<boolean>(false);
+    const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [contractModalOpen, setContractModalOpen] = useState(false);
 
     useModalUsageTracking({
         open: isOpen,
@@ -257,14 +260,22 @@ function EditWeekModal({ isOpen, onClose, date, userId, onSuccess }: EditWeekMod
                             </div>
                             <div>
                                 <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest block mb-1.5">Horas contratadas (semana)</span>
-                                <input
-                                    type="number"
-                                    min={0}
-                                    step={0.5}
-                                    value={contractedHours !== undefined && contractedHours !== null ? contractedHours : ''}
-                                    onChange={(e) => setContractedHours(e.target.value === '' ? 0 : Number(e.target.value))}
-                                    className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-black text-zinc-800 bg-white focus:ring-2 focus:ring-[#36606F] focus:border-[#36606F] outline-none"
-                                />
+                                <div className="flex gap-2 items-center">
+                                    <input
+                                        type="number"
+                                        readOnly
+                                        value={contractedHours !== undefined && contractedHours !== null ? contractedHours : 0}
+                                        className="flex-1 h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-black text-zinc-500 bg-zinc-100 cursor-not-allowed outline-none"
+                                        aria-label="Horas contratadas (semana)"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setContractModalOpen(true)}
+                                        className="h-12 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-wider flex items-center justify-center transition-colors shrink-0 shadow-sm"
+                                    >
+                                        Contrato
+                                    </button>
+                                </div>
                             </div>
                             <div className="flex gap-2 pt-2 shrink-0">
                                 <button
@@ -288,6 +299,49 @@ function EditWeekModal({ isOpen, onClose, date, userId, onSuccess }: EditWeekMod
                     )}
                 </div>
             </div>
+
+            {contractModalOpen && userId && (
+                <div
+                    className="fixed inset-0 z-[220] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+                    onClick={() => setContractModalOpen(false)}
+                >
+                    <div
+                        className="w-full max-w-3xl max-h-[90vh] bg-white rounded-3xl shadow-2xl overflow-y-auto p-4 relative"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex justify-between items-center mb-2 px-2 pt-1 border-b pb-2">
+                            <span className="text-xs font-black text-zinc-700 uppercase tracking-wider">
+                                Condiciones Laborales y Contrato
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => setContractModalOpen(false)}
+                                className="w-7 h-7 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400 hover:text-zinc-600 text-xs font-bold"
+                            >
+                                <X size={14} />
+                            </button>
+                        </div>
+                        <LaborConditionsView
+                            employeeId={userId}
+                            onSaveSuccess={async () => {
+                                setContractModalOpen(false);
+                                onSuccess();
+                                const supabase = createClient();
+                                const { data: snap } = await supabase
+                                    .from('weekly_snapshots')
+                                    .select('contracted_hours_snapshot')
+                                    .eq('user_id', userId)
+                                    .eq('week_start', weekStart)
+                                    .maybeSingle();
+                                if (snap && typeof snap.contracted_hours_snapshot === 'number') {
+                                    setContractedHours(snap.contracted_hours_snapshot);
+                                }
+                            }}
+                            onClose={() => setContractModalOpen(false)}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -4,7 +4,7 @@
  * Caso de uso de aplicación Clean Architecture / CQRS para la proyección de periodo / resumen mensual de coste laboral V2:
  * - Sustituye definitivamente a `buildLaborCostPeriodFromSsot`.
  * - Consume el Read Model V2 (`LaborCostMonthReadModelProjector` y `LaborCostDayReadModelProjector`).
- * - Retorna los totales consolidados (`totalFixed`, `totalOvertime`, `totalCost`), `byDate` y estados de nómina.
+ * - Retorna los totales consolidados (`totalFixed`, `totalOvertime`, `totalCost`), `byDate`, estados de nómina y conciliación informativa.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -14,6 +14,7 @@ import { PayrollAllocationService } from '../payroll/payroll-allocation-service.
 import { ContractTermsService } from '../payroll/contract-terms-service.ts';
 import { PayrollFactRepository } from '../payroll/payroll-fact-repository.ts';
 import { Money } from '../payroll/value-objects.ts';
+import type { PayrollReconciliationSummaryDTO } from '../../types/payroll-import.ts';
 
 export interface MonthlyLaborCostSummaryDTO {
   startDate: string;
@@ -35,6 +36,7 @@ export interface MonthlyLaborCostSummaryDTO {
   totalCost: number;
   isPayrollPending: boolean;
   missingPayrollMonths: string[];
+  reconciliation: PayrollReconciliationSummaryDTO;
 }
 
 export class GetMonthlyLaborCostSummaryUseCase {
@@ -96,6 +98,7 @@ export class GetMonthlyLaborCostSummaryUseCase {
         totalCost: monthDto.totalCost,
         isPayrollPending: monthDto.isPayrollPending,
         missingPayrollMonths: monthDto.missingPayrollMonths,
+        reconciliation: monthDto.reconciliation,
       };
     }
 
@@ -132,6 +135,9 @@ export class GetMonthlyLaborCostSummaryUseCase {
 
     const totalCostMoney = totalFixedMoney.add(totalOvertimeMoney);
 
+    // Conciliación del mes inicial en rangos multi-mes
+    const startMonthDto = await this.monthProjector.projectMonthSummary(startMonth);
+
     return {
       startDate: input.startDate,
       endDate: input.endDate,
@@ -141,6 +147,7 @@ export class GetMonthlyLaborCostSummaryUseCase {
       totalCost: totalCostMoney.amount,
       isPayrollPending: missingMonths.size > 0,
       missingPayrollMonths: Array.from(missingMonths),
+      reconciliation: startMonthDto.reconciliation,
     };
   }
 }

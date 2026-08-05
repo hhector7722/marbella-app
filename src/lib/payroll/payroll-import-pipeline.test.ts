@@ -189,7 +189,6 @@ describe('FASE 8: Pipeline Oficial de Importación de Nóminas (SSOT)', () => {
       assert.notEqual(monthlyTotalsRow, null);
       assert.equal(monthlyTotalsRow.period_ym, '2026-07');
       assert.equal(monthlyTotalsRow.total_company_cost, 3450.5);
-      assert.equal(monthlyTotalsRow.is_final, true);
     });
   });
 });

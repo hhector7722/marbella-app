@@ -3,6 +3,7 @@
  *
  * Proyector encargado de construir el resumen mensual para el calendario del Dashboard.
  * Cumple estrictamente la regla de 1 ÚNICA consulta SQL a `hours_contract_terms` por mes.
+ * Incorpora conciliación contable puramente informativa (computePeriodReconciliation).
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -26,6 +27,7 @@ import {
   filterVisiblePlantillaEmployees,
   PLANTILLA_EMPLOYEE_SELECT,
 } from '../staff/plantilla-employees.ts';
+import { computePeriodReconciliation } from '../payroll/payroll-reconciliation-service.ts';
 
 function mondayOf(ymd: string): string {
   const [y, m, d] = ymd.split('-').map(Number);
@@ -58,7 +60,24 @@ export class LaborCostMonthReadModelProjector {
 
     // 1. Cargar hechos de nómina para el mes (Consulta 1: employee_payroll_facts)
     const activeFacts = await this.payrollRepo.getActiveFactsForPeriod(periodYm);
-    const isPayrollPending = activeFacts.length === 0;
+
+    // Cargar resumen oficial gestoría (Consulta 1b: payroll_monthly_totals) para conciliación puramente informativa
+    let summaryCost: number | null = null;
+    try {
+      const { data: summaryRow } = await this.supabase
+        .from('payroll_monthly_totals')
+        .select('total_company_cost')
+        .eq('period_ym', periodYm)
+        .maybeSingle();
+      if (summaryRow?.total_company_cost != null) {
+        summaryCost = Number(summaryRow.total_company_cost);
+      }
+    } catch {
+      summaryCost = null;
+    }
+
+    const reconciliation = computePeriodReconciliation({ summaryCost, activeFacts });
+    const isPayrollPending = summaryCost === null;
 
     const companyCostByWorker: Record<string, number> = {};
     for (const fact of activeFacts) {
@@ -283,6 +302,7 @@ export class LaborCostMonthReadModelProjector {
       totalCost: totalCostMoney.amount,
       isPayrollPending,
       missingPayrollMonths: isPayrollPending ? [periodYm] : [],
+      reconciliation,
     };
   }
 }

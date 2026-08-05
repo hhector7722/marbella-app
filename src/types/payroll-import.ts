@@ -1,80 +1,61 @@
 /**
-/**
- * Tipos DTO e interfaces para el Pipeline Oficial de Importación de Nóminas (SSOT)
+ * DTOs e Interfaces SSOT para el Pipeline Oficial de Importación de Nóminas y Conciliación Contable.
  */
 
-export type PayrollSettlementType = 'ordinary' | 'complementary' | 'severance' | 'adjustment';
+import type { SettlementType } from './payroll-facts.ts';
 
-export type PayrollImportRecordStatus =
-  | 'imported'
-  | 'updated'
-  | 'skipped_duplicate'
-  | 'rejected_validation'
-  | 'unmatched_employee'
-  | 'error';
+export type { SettlementType };
 
-/**
- * Datos individuales de nómina extraídos por empleado
- */
-export interface IndividualPayrollImportInput {
+export type PayrollImportRecordInput = {
+  userId?: string;
+  dni?: string;
+  email?: string;
+  name?: string;
+  periodYm: string; // Formato YYYY-MM
+  settlementType?: SettlementType;
+  grossSalary?: number;
+  netSalary?: number;
+  totalCompanyCost: number;
+  companySocialSecurity?: number;
+  workerSocialSecurity?: number;
+  irpf?: number;
+  documentId?: string;
+};
+
+export type IndividualPayrollImportInput = PayrollImportRecordInput;
+
+export type PayrollBatchImportInput = {
+  periodYm: string; // Formato YYYY-MM
+  source?: string; // p.ej. 'pdf_extractor', 'excel_importer', 'gmail_summary'
+  filename?: string;
+  contentHash?: string; // Para deduplicación de lote
+  records: PayrollImportRecordInput[];
+  createdBy?: string;
+};
+
+export type EmployeeMatchResult = {
+  matched: boolean;
   userId?: string | null;
+  fullName?: string | null;
   dni?: string | null;
   email?: string | null;
-  name?: string | null;
-  periodYm: string; // Formato 'YYYY-MM'
-  settlementType?: PayrollSettlementType;
-  grossSalary?: number | null;
-  netSalary?: number | null;
-  totalCompanyCost: number;
-  companySocialSecurity?: number | null;
-  workerSocialSecurity?: number | null;
-  irpf?: number | null;
-  documentId?: string | null;
-}
-
-/**
- * Lote de nóminas de un periodo determinado
- */
-export interface PayrollBatchImportInput {
-  periodYm: string;
-  source?: string;
-  filename?: string;
-  contentHash?: string;
-  createdBy?: string | null;
-  records: IndividualPayrollImportInput[];
-}
-
-/**
- * Resultado de la coincidencia y resolución de un trabajador contra `profiles`
- */
-export interface EmployeeMatchResult {
-  matched: boolean;
-  userId: string | null;
-  fullName: string | null;
-  dni: string | null;
-  email: string | null;
-  matchMethod: 'userId' | 'dni' | 'email' | 'fullName' | 'none';
+  matchType?: 'id' | 'dni' | 'email' | 'name';
+  matchMethod?: string;
   errorMessage?: string;
-}
+};
 
-/**
- * Resultado individual de procesar un registro del lote
- */
-export interface PayrollImportRecordResult {
-  userId?: string | null;
+export type PayrollImportRecordResult = {
+  userId?: string;
   rawIdentifier: string;
-  status: PayrollImportRecordStatus;
+  status: 'imported' | 'updated' | 'unmatched_employee' | 'rejected_validation' | 'error';
   companyCost: number;
-  settlementType: PayrollSettlementType;
-  message?: string;
+  settlementType: SettlementType;
   factId?: string;
   version?: number;
-}
+  message?: string;
+};
 
-/**
- * Informe final del Pipeline de Importación SSOT
- */
-export interface PayrollImportReportDTO {
+export type PayrollImportReportDTO = {
   success: boolean;
   periodYm: string;
   totalRecordsInBatch: number;
@@ -86,4 +67,18 @@ export interface PayrollImportReportDTO {
   records: PayrollImportRecordResult[];
   validationMessages: string[];
   errors: string[];
+};
+
+export type PayrollReconciliationStatus =
+  | 'NO_SUMMARY'
+  | 'WAITING_PAYROLLS'
+  | 'RECONCILED'
+  | 'PENDING_RECONCILIATION';
+
+export interface PayrollReconciliationSummaryDTO {
+  status: PayrollReconciliationStatus;
+  totalSummary: number; // Resumen gestoría (payroll_monthly_totals)
+  totalPayrolls: number; // Suma nóminas individuales activas (employee_payroll_facts)
+  difference: number; // totalSummary - totalPayrolls
+  importedCount: number; // Trabajadores únicos con hechos activos importados
 }
