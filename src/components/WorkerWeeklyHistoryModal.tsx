@@ -124,7 +124,7 @@ export default function WorkerWeeklyHistoryModal({
           ) : week ? (
             <div className="p-4 bg-zinc-50/50">
               <WeekCard
-                week={week}
+                week={week as any}
                 idx={0}
                 filterMonth={filterMonth}
                 filterYear={filterYear}

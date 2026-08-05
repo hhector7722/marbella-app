@@ -210,7 +210,7 @@ export class LaborCostMonthReadModelProjector {
               overrideRate: overtimeRateOverrideByWeek(currentWeek),
             });
 
-            if (summary.estimatedValue > 0) {
+            if ((summary.estimatedValue ?? 0) > 0) {
               for (const [d, ot] of Object.entries(extrasByDay)) {
                 if (ot > 0) overtimeByDay[d] = (overtimeByDay[d] ?? 0) + ot;
               }

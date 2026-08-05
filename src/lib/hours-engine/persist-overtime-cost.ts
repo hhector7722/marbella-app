@@ -193,7 +193,7 @@ export async function persistOvertimeCostFromEngine(
     const bagModeOverride = bagModeOverrideByWeek(weekStart);
     const overrideRate = overtimeRateOverrideByWeek(weekStart);
 
-    let estimatedValue: number;
+    let estimatedValue: number | null;
     try {
       const result = liquidateWeek({
         employee,
@@ -239,7 +239,7 @@ export async function persistOvertimeCostFromEngine(
     }
 
     // Redondeo a céntimos (columna numeric(10,2)).
-    const persisted = Math.round(estimatedValue * 100) / 100;
+    const persisted = estimatedValue == null ? null : Math.round(estimatedValue * 100) / 100;
 
     const { error: updErr } = await client
       .from('weekly_snapshots')
@@ -274,19 +274,21 @@ export async function persistOvertimeCostFromEngine(
       };
     }
 
-    const stored =
-      readBack.total_cost == null ? null : Number(readBack.total_cost);
-    if (stored == null || !Number.isFinite(stored)) {
-      return {
-        ok: false,
-        error: `persistOvertimeCostFromEngine: validación ${weekStart}: total_cost quedó NULL/ inválido tras UPDATE (esperado ${persisted})`,
-      };
-    }
-    if (Math.abs(stored - persisted) > MONEY_EPS) {
-      return {
-        ok: false,
-        error: `persistOvertimeCostFromEngine: inconsistencia ${weekStart}: total_cost=${stored} ≠ estimatedValue=${persisted}`,
-      };
+    if (persisted != null) {
+      const stored =
+        readBack.total_cost == null ? null : Number(readBack.total_cost);
+      if (stored == null || !Number.isFinite(stored)) {
+        return {
+          ok: false,
+          error: `persistOvertimeCostFromEngine: validación ${weekStart}: total_cost quedó NULL/ inválido tras UPDATE (esperado ${persisted})`,
+        };
+      }
+      if (Math.abs(stored - persisted) > MONEY_EPS) {
+        return {
+          ok: false,
+          error: `persistOvertimeCostFromEngine: inconsistencia ${weekStart}: total_cost=${stored} ≠ estimatedValue=${persisted}`,
+        };
+      }
     }
 
     weeksPersisted += 1;

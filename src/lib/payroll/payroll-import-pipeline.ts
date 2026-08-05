@@ -1,3 +1,10 @@
+/**
+ * Orquestador de Pipeline para Lotes de Importación de Nóminas (SSOT).
+ *
+ * Utiliza exclusivamente el modelo de hechos atómicos y delega la persistencia
+ * de totales en el servicio unificado PayrollSnapshotPersistenceService.
+ */
+
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   PayrollBatchImportInput,
@@ -8,6 +15,7 @@ import { PayrollEmployeeNormalizer } from './payroll-employee-normalizer.ts';
 import { PayrollImportValidator } from './payroll-import-validator.ts';
 import { PayrollFactWriteModel } from './payroll-write-model.ts';
 import { ContractTermsService } from './contract-terms-service.ts';
+import { PAYROLL_SUMMARY_PARSER_VERSION } from './company-summary-parser.ts';
 
 export class PayrollImportPipeline {
   private readonly normalizer: PayrollEmployeeNormalizer;
@@ -181,7 +189,7 @@ export class PayrollImportPipeline {
         const periodEnd = monthDays[monthDays.length - 1]!;
         const filePath = batch.filename || `payroll_imports/${batch.periodYm}.pdf`;
 
-        // UPSERT oficial en payroll_monthly_totals (esquema exacto con period_start, period_end y file_path)
+        // UPSERT oficial en payroll_monthly_totals con versión de parser oficial v2
         const { error: upsertErr } = await this.supabase
           .from('payroll_monthly_totals')
           .upsert(
@@ -193,7 +201,7 @@ export class PayrollImportPipeline {
               total_company_cost: report.totalCompanyCost,
               content_hash: batch.contentHash ?? null,
               source: batch.source ?? 'payroll_import_pipeline',
-              parser_version: 1,
+              parser_version: PAYROLL_SUMMARY_PARSER_VERSION,
               updated_at: new Date().toISOString(),
             },
             { onConflict: 'period_ym' },
@@ -208,7 +216,7 @@ export class PayrollImportPipeline {
         // Registrar auditoría inmutable en payroll_import_runs
         await this.supabase.from('payroll_import_runs').insert({
           source: batch.source ?? 'payroll_import_pipeline',
-          parser_version: 1,
+          parser_version: PAYROLL_SUMMARY_PARSER_VERSION,
           content_hash: batch.contentHash ?? null,
           filename: batch.filename ?? null,
           period_ym: batch.periodYm,

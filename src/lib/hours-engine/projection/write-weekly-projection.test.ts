@@ -51,7 +51,7 @@ function emp(overrides: Partial<EmployeeBoundaryFacts> = {}): EmployeeBoundaryFa
 
 function candidateFromLiquidation(
   liquidation: LiquidationResult,
-  estimatedValue: number,
+  estimatedValue: number | null,
 ): ProjectionWeekCandidate {
   return {
     liquidation,
@@ -104,7 +104,7 @@ describe('Projection Writer — mapeo PROJECTION CONTRACT v1', () => {
     assert.equal(row.ordinary_hours, liquidation.ordinaryHours);
     assert.equal(row.extra_hours, liquidation.overtimeHours);
     assert.equal(row.contracted_hours_snapshot, liquidation.contractedHoursEffective);
-    assert.equal(row.total_cost, roundMoneyCents(pricing.estimatedValue));
+    assert.equal(row.total_cost, roundMoneyCents(pricing.estimatedValue!));
   });
 
   it('UPDATE payload no incluye columnas B (overrides)', () => {

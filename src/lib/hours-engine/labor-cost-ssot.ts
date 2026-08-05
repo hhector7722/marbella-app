@@ -299,7 +299,7 @@ export async function buildLaborCostPeriodFromSsot(
 
         const dayCosts = allocateWeekCostToDays(
           extrasByDay,
-          summary.estimatedValue,
+          summary.estimatedValue ?? 0,
           weekStart,
           weekEnd,
         );
@@ -438,7 +438,7 @@ export async function buildLaborCostDayDetailFromSsot(
 
     const dayCosts = allocateWeekCostToDays(
       extrasByDay,
-      summary.estimatedValue,
+      summary.estimatedValue ?? 0,
       weekStart,
       weekEnd,
     );

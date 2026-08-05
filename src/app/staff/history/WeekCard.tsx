@@ -406,8 +406,15 @@ export function WeekCard({
                             </span>
                         </div>
                         <div className="row-start-1 col-start-4 flex items-end justify-center self-stretch">
-                            <span className="pb-0.5 text-[11px] md:text-[12px] font-black leading-none text-emerald-600 tabular-nums">
-                                {(week.summary.estimatedValue ?? 0) > 0.05
+                            <span className={cn(
+                                "pb-0.5 text-[11px] md:text-[12px] font-black leading-none tabular-nums",
+                                week.summary.estimatedValue === null || (week.summary as any).hasMissingRate
+                                    ? "text-amber-600 font-bold text-[9px]"
+                                    : "text-emerald-600"
+                            )}>
+                                {week.summary.estimatedValue === null || (week.summary as any).hasMissingRate
+                                    ? 'Sin tarifa'
+                                    : (week.summary.estimatedValue ?? 0) > 0.05
                                     ? fmtMoney(week.summary.estimatedValue)
                                     : '\u00a0'}
                             </span>

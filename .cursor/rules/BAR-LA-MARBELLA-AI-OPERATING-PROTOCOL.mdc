@@ -2,49 +2,20 @@
 alwaysApply: true
 ---
 
-Responde siempre en español.
+# ESTA REGLA ES UN ADAPTADOR (NO ES FUENTE DE VERDAD)
 
-ERES: desarrollador y arquitecto principal de Bar La Marbella.
+Las instrucciones completas y agnósticas de herramienta están en **`AGENTS.md`** en la raíz del repositorio. Léelo íntegramente.
 
----
+Este fichero existe para que Cursor reconozca las reglas base, pero **no introduce norma propia**. Si este fichero y `AGENTS.md` o Marbella OS discrepan, **gana Marbella OS**.
 
-# ESTA REGLA NO ES FUENTE DE VERDAD
+## Protocolo Operativo Obligatorio
 
-La fuente única de verdad es **Marbella OS**, en `marbella-os/`. Esta regla **deriva** de ese corpus y **no puede introducir norma propia**.
+Antes de modificar código, estás obligado a leer y seguir el protocolo en:
+`marbella-os/3-ingenieria/PROTOCOLO-AGENTES.md`
 
-Si algo de aquí contradice un documento de Marbella OS, **gana el documento**. Si echas en falta una norma aquí, no la inventes: búscala en el corpus. Si tampoco está ahí, dilo en lugar de suponerla.
+## Normas de aplicación inmediata
 
-Lee primero:
-
-- `marbella-os/README.md` — índice y punto de entrada único.
-- `marbella-os/CANON.md` — cómo funciona el corpus y qué autoridad tiene cada documento.
-- `marbella-os/GLOSARIO.md` — significado exacto de cada término del negocio.
-
----
-
-# CARGA DE CONTEXTO SEGÚN LA TAREA
-
-No leas todo el corpus. Lee lo que gobierna lo que vas a tocar.
-
-**La tabla está en `marbella-os/.generated/CARGA-DE-CONTEXTO.md`**, junto con la de precedencia que resuelve los conflictos entre documentos. Se genera desde el corpus y `npm run validate:corpus` comprueba que no se ha quedado atrás. Esta regla no la copia: una copia a mano se desincroniza y acaba mandando leer ficheros que ya no existen.
-
-Los otros tres derivados responden a preguntas concretas, y ninguno es norma:
-
-- `marbella-os/.generated/AFIRMACIONES.md` — hechos con identificador estable. **Antes de escribir un hecho que sospeches que ya está escrito, búscalo aquí y cítalo.**
-- `marbella-os/.generated/GRAFO.md` — qué documentos hay que revisar cuando cambia otro.
-- `marbella-os/.generated/OBSOLESCENCIA.md` — cuándo caduca cada documento vivo.
-
-Antes de indexar o recorrer el repositorio, lee `INDEXACION.md`: el 95 % de los ficheros markdown son copias de skills de terceros y no hablan de este producto.
-
-Antes de proponer una dirección, comprueba que no está descartada en `marbella-os/1-producto/VISION.md`. **Hay direcciones explícitamente rechazadas** y proponerlas es perder el tiempo de todos.
-
-Cuando dos soluciones son válidas, arbitra con `marbella-os/1-producto/PRINCIPIOS.md`, que además fija su orden de prioridad.
-
----
-
-# NORMAS DE APLICACIÓN INMEDIATA
-
-Resumen operativo de lo que más se incumple. **Cada línea es una cita, no una norma nueva**; el documento citado manda.
+Resumen operativo de lo que más se incumple (derivado de Marbella OS):
 
 - **Táctil mínimo de 48 píxeles** en todo elemento interactivo → `2-diseno/EXPERIENCIA.md`.
 - **Cero se muestra como espacio en blanco** en vistas de lectura, nunca en formularios → `2-diseno/CONTENIDO-Y-TONO.md`.
@@ -61,22 +32,8 @@ Resumen operativo de lo que más se incumple. **Cada línea es una cita, no una 
 - **Ninguna condición laboral se lee del perfil para calcular un período pasado.** Se leen de las tablas con vigencia → `3-ingenieria/MODELO-DE-DATOS.md`.
 - **Nunca dejes un punto de acceso de depuración.** Las rutas de máquina no pasan por el guardián → `3-ingenieria/SEGURIDAD.md`.
 
----
+## Validación
 
-# AL TERMINAR
+Si modificas el corpus, debes ejecutar: `npm run validate:corpus`
 
-1. Si el cambio altera comportamiento visible, **toca el documento que lo gobierna** o explica por qué no hace falta.
-2. Si el cambio es relevante para el negocio, añade una entrada en `marbella-os/5-estado/CHANGELOG.md`.
-3. Si asumes un compromiso a sabiendas, regístralo en `marbella-os/5-estado/DEUDA.md` con su coste y su disparador.
-4. **No actualices `5-estado/ESTADO.md` con cada cambio.** Tiene un límite de 200 líneas y es una fotografía, no una bitácora.
-
----
-
-# PROHIBICIONES
-
-- No preguntes «¿qué hago ahora?». La respuesta está en `marbella-os/5-estado/ROADMAP.md`.
-- No escribas código sin conocer el estado real del esquema de datos.
-- No uses estilos en línea. Solo utilidades de Tailwind.
-- No crees una tabla sin políticas de acceso.
-- No cites como norma nada de `6-investigacion/`. **Un informe con fecha no obliga a nada.**
-- No trates el código como fuente de verdad del diseño. En materia normativa manda el corpus; el código solo dice qué existe hoy.
+Responde siempre en español.

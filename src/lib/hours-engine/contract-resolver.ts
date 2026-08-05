@@ -155,3 +155,48 @@ export function resolveEffectiveContract(
     contractedHoursEffective,
   };
 }
+
+export function resolveEffectiveOvertimeRate(
+  employee: EmployeeBoundaryFacts,
+  weekStart: CivilDate,
+  overrideRate?: number | null,
+): number | null {
+  if (overrideRate != null && Number.isFinite(overrideRate)) {
+    return Number(overrideRate);
+  }
+  const contract = resolveEffectiveContract(employee, weekStart);
+  // First, try to find a segment that includes the Monday with a defined rate
+  for (const s of contract.segments) {
+    if (!s.days.includes(weekStart)) continue;
+    if (s.overtimeRatePerHour != null && Number.isFinite(s.overtimeRatePerHour)) {
+      return Number(s.overtimeRatePerHour);
+    }
+    // If pre_alta or segment without rate, stop scanning further segments for this week
+    break;
+  }
+  // Fallback: any term segment with a rate
+  for (const s of contract.segments) {
+    if (s.kind === 'term' && s.overtimeRatePerHour != null && Number.isFinite(s.overtimeRatePerHour)) {
+      return Number(s.overtimeRatePerHour);
+    }
+  }
+  // Historical fallback from employee terms, newest first
+  const sortedTerms = [...employee.terms].sort((a, b) =>
+    compareCivilDate(b.effectiveFrom, a.effectiveFrom),
+  );
+  for (const t of sortedTerms) {
+    if (
+      compareCivilDate(t.effectiveFrom, weekStart) <= 0 &&
+      t.overtimeRatePerHour != null && Number.isFinite(t.overtimeRatePerHour)
+    ) {
+      return Number(t.overtimeRatePerHour);
+    }
+  }
+  // Any known historical rate
+  for (const t of sortedTerms) {
+    if (t.overtimeRatePerHour != null && Number.isFinite(t.overtimeRatePerHour)) {
+      return Number(t.overtimeRatePerHour);
+    }
+  }
+  return null;
+}

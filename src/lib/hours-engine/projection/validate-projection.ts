@@ -30,7 +30,7 @@ const HOURS_EPS = 1e-6;
 
 export type ProjectionWeekCandidate = {
   liquidation: LiquidationResult;
-  estimatedValue: number;
+  estimatedValue: number | null;
   /** Overrides leídos como input (no se escriben). */
   overrides: {
     isPaid: boolean;
@@ -422,7 +422,11 @@ export function validateProjectionBatch(
     }
 
     // INV-P04 / INV-$01: carryOut < 0 ⇒ estimatedValue = 0
-    if (liq.carryOut < -HOURS_EPS && Math.abs(c.estimatedValue) > MONEY_EPS) {
+    if (
+      liq.carryOut < -HOURS_EPS &&
+      c.estimatedValue != null &&
+      Math.abs(c.estimatedValue) > MONEY_EPS
+    ) {
       return fail(
         'INV-P04',
         `INV-P04/INV-$01: carryOut=${liq.carryOut} pero estimatedValue=${c.estimatedValue} @ ${liq.weekStart}`,
@@ -431,8 +435,9 @@ export function validateProjectionBatch(
 
     // INV-$02: total_cost es estimatedValue redondeado (ya en row)
     if (
+      c.estimatedValue != null &&
       Math.abs(row.total_cost - Math.round(c.estimatedValue * 100) / 100) >
-      MONEY_EPS
+        MONEY_EPS
     ) {
       return fail(
         'INV-$02',

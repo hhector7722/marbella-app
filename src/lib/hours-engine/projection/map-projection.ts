@@ -40,7 +40,7 @@ export type WeeklyProjectionDomainRow = {
  */
 export function mapEnginesToProjectionRow(
   liquidation: LiquidationResult,
-  estimatedValue: number,
+  estimatedValue: number | null,
 ): WeeklyProjectionDomainRow {
   return {
     user_id: liquidation.employeeId,
@@ -53,7 +53,7 @@ export function mapEnginesToProjectionRow(
     ordinary_hours: liquidation.ordinaryHours,
     extra_hours: liquidation.overtimeHours,
     contracted_hours_snapshot: liquidation.contractedHoursEffective,
-    total_cost: roundMoneyCents(estimatedValue),
+    total_cost: estimatedValue != null ? roundMoneyCents(estimatedValue) : 0,
   };
 }
 

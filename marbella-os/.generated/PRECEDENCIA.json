@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "ca4386e90cd908cd",
+  "_huella": "f6ca76a821c236c8",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -57,6 +57,21 @@
     {
       "ruta": "marbella-os/4-decisiones/ADR-0004-grafo-de-dependencias.md",
       "documento": "ADR-0004",
+      "clase": "inmutable",
+      "estado": "vigente",
+      "capa": "decisiones",
+      "normativo": true,
+      "citable": true,
+      "precedencia": 80,
+      "vence": null,
+      "depende_de": [
+        "CANON",
+        "ADR-0002"
+      ]
+    },
+    {
+      "ruta": "marbella-os/4-decisiones/ADR-0005-protocolo-operativo-de-agentes.md",
+      "documento": "ADR-0005",
       "clase": "inmutable",
       "estado": "vigente",
       "capa": "decisiones",
@@ -406,6 +421,20 @@
       "precedencia": 20,
       "vence": "2027-01-29",
       "depende_de": []
+    },
+    {
+      "ruta": "marbella-os/3-ingenieria/PROTOCOLO-AGENTES.md",
+      "documento": "PROTOCOLO-AGENTES",
+      "clase": "vivo",
+      "estado": "vigente",
+      "capa": "ingenieria",
+      "normativo": true,
+      "citable": true,
+      "precedencia": 20,
+      "vence": "2027-08-05",
+      "depende_de": [
+        "CANON"
+      ]
     },
     {
       "ruta": "marbella-os/3-ingenieria/README.md",

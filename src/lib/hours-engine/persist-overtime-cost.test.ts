@@ -10,25 +10,20 @@ describe('persist overtime cost — contrato de valor', () => {
   it('estimatedValue se redondea a céntimos como la columna SQL', () => {
     const r = priceWeekOvertime({
       netPayableHours: 1,
-      segments: [
-        { weeklyBalancePart: 1, bagMode: false, overtimeRatePerHour: 10.125 },
-      ],
-      settlementRateAtWeekStart: 10.125,
+      effectiveOvertimeRate: 10.125,
     });
-    const persisted = Math.round(r.estimatedValue * 100) / 100;
+    const persisted = Math.round(r.estimatedValue! * 100) / 100;
     assert.equal(persisted, 10.13);
   });
 
   it('0 € es un importe válido (no se confunde con no persistido)', () => {
     const r = priceWeekOvertime({
       netPayableHours: 0,
-      segments: [
-        { weeklyBalancePart: 5, bagMode: true, overtimeRatePerHour: 10 },
-      ],
-      settlementRateAtWeekStart: 10,
+      effectiveOvertimeRate: 10,
     });
     assert.equal(r.estimatedValue, 0);
-    const persisted = Math.round(r.estimatedValue * 100) / 100;
+    const persisted = Math.round(r.estimatedValue! * 100) / 100;
     assert.equal(persisted, 0);
   });
 });
+

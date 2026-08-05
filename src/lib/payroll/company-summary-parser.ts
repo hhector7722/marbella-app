@@ -382,25 +382,3 @@ export async function parseCompanySummaryPdfBuffer(
     pdfParser.parseBuffer(pdfBuffer);
   });
 }
-
-/**
- * Función PURA: Retrocompatible para parsear JSON de pdf2json.
- */
-export function parseCompanySummaryText(textContentOrJson: string): PayrollSummaryParseResult {
-  const str = String(textContentOrJson ?? '').trim();
-  if (str.startsWith('{') && str.endsWith('}')) {
-    try {
-      const pdfData = JSON.parse(str);
-      return parseCompanySummaryPdfData(pdfData);
-    } catch {
-      /* ignore */
-    }
-  }
-
-  return {
-    ok: false,
-    error: 'El parser v2 requiere estructura de coordenadas de PDF (pdf2json / parseCompanySummaryPdfBuffer)',
-    validationMessages: ['Texto plano no compatible con parser v2 de coordenadas'],
-    candidatesNearLabel: [],
-  };
-}

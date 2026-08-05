@@ -1,5 +1,5 @@
-<!-- Generado desde 40 documentos de marbella-os/.
-     Huella del origen: 1b2d1c42bab8b54d
+<!-- Generado desde 41 documentos de marbella-os/.
+     Huella del origen: fe1c66d9ffa05dc8
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -57,6 +57,7 @@ siendo verdad y dejar constancia de la revisión en el cambio que la hace.
 | 2027-07-29 | `marbella-os/6-investigacion/README.md` | 2026-07-29 | 12 meses | propiedad del producto |
 | 2027-07-29 | `marbella-os/6-investigacion/rfc/README.md` | 2026-07-29 | 12 meses | propiedad del producto |
 | 2027-07-29 | `marbella-os/6-investigacion/spikes/README.md` | 2026-07-29 | 12 meses | propiedad del producto |
+| 2027-08-05 | `marbella-os/3-ingenieria/PROTOCOLO-AGENTES.md` | 2026-08-05 | 12 meses | propiedad del producto |
 | 2028-07-30 | `marbella-os/CANON.md` | 2026-07-30 | 24 meses | propiedad del producto |
 
 Los 12 documentos con `caducidad: no aplica` no aparecen aquí: son

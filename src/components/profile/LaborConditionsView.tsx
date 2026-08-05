@@ -203,6 +203,8 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
       );
       closeEditor();
       await load();
+      // Notify parent that save succeeded so UI can refresh
+      if (onSaveSuccess) onSaveSuccess();
     } finally {
       setSaving(false);
     }

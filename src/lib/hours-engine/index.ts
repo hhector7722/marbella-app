@@ -3,7 +3,10 @@
  * Único punto de importación recomendado para consumidores internos futuros.
  */
 
-export { resolveEffectiveContract } from './contract-resolver.ts';
+export {
+  resolveEffectiveContract,
+  resolveEffectiveOvertimeRate,
+} from './contract-resolver.ts';
 export { aggregateWeekAttendance } from './attendance-aggregator.ts';
 export { applyRegimeToSegment } from './regime-policy.ts';
 export { computeCarry } from './carry-engine.ts';
@@ -20,22 +23,18 @@ export {
 } from './ui-bridge.ts';
 export {
   assertCardMatchesLiquidation,
-  costSegmentsForLiquidation,
   liquidateWeekForCard,
   netPayableHoursFromLiquidation,
   overtimeRateForWeek,
   patchWeeksFromLiquidation,
   priceLiquidationOvertime,
-  settlementRateAtWeekStart,
   weekCardSummaryFromLiquidation,
 } from './week-card-from-liquidation.ts';
 export type { WeekCardSummaryFromEngine } from './week-card-from-liquidation.ts';
 export {
-  hasOvertimeRateOverride,
   priceWeekOvertime,
 } from './overtime-cost-engine.ts';
 export type {
-  OvertimeCostSegment,
   PriceWeekOvertimeInput,
   PriceWeekOvertimeResult,
 } from './overtime-cost-engine.ts';

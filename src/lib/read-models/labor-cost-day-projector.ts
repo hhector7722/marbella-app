@@ -177,7 +177,7 @@ export class LaborCostDayReadModelProjector {
           });
 
           const dayOtShare = extrasByDay[day] ?? 0;
-          if (Math.abs(dayOtShare) >= 0.005 && summary.estimatedValue > 0) {
+          if (Math.abs(dayOtShare) >= 0.005 && (summary.estimatedValue ?? 0) > 0) {
             overtimeMoney = Money.from(dayOtShare);
           }
         }

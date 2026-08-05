@@ -237,7 +237,7 @@ export async function buildOvertimeWeeksFromSsot(
 
       const hasActivity =
         weekLogs.length > 0 ||
-        Math.abs(display.estimatedValue) > 0.005 ||
+        Math.abs(display.estimatedValue ?? 0) > 0.005 ||
         Math.abs(display.weeklyBalance) > 0.005 ||
         Math.abs(display.finalBalance) > 0.005 ||
         (snapsRes.data ?? []).some(
@@ -256,9 +256,9 @@ export async function buildOvertimeWeeksFromSsot(
           display.totalHours - Math.max(0, display.weeklyBalance),
         ),
         overtimeHours: Math.max(0, display.weeklyBalance),
-        totalCost: display.estimatedValue,
+        totalCost: display.estimatedValue ?? 0,
         regularCost: 0,
-        overtimeCost: display.estimatedValue,
+        overtimeCost: display.estimatedValue ?? 0,
         isPaid: display.isPaid,
         preferStock: display.preferStock,
       };

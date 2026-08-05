@@ -23,6 +23,7 @@ Cómo se construye Marbella. Esta capa responde **cómo**, nunca **qué** ni **p
 | [SEGURIDAD](./SEGURIDAD.md) | Identidad, autorización, políticas de acceso, secretos y archivos |
 | [CALIDAD](./CALIDAD.md) | Qué se prueba, qué se comprueba a mano y qué no existe |
 | [FRONTEND](./FRONTEND.md) | Reglas de construcción de la interfaz: servidor y cliente, estado, estilos, límites de complejidad |
+| [PROTOCOLO-AGENTES](./PROTOCOLO-AGENTES.md) | Protocolo operativo de lectura y modificación para agentes de IA |
 | [dominio/](./dominio/README.md) | Fórmulas de negocio: coste laboral, jornada fija, precios y compras |
 | [contratos/](./contratos/README.md) | Acuerdos formales entre piezas del sistema |
 | [integraciones/](./integraciones/README.md) | Sistemas externos: punto de venta y nóminas |

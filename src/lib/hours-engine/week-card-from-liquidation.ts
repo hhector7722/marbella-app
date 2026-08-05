@@ -8,13 +8,13 @@
  */
 
 import { liquidateWeek } from './liquidation-engine.ts';
-import { resolveEffectiveContract } from './contract-resolver.ts';
+import { resolveEffectiveContract, resolveEffectiveOvertimeRate } from './contract-resolver.ts';
 import { roundMarbellaHours } from './marbella-round.ts';
 import { compareCivilDate } from './week-dates.ts';
 import { formatYmdInMadrid } from '../madrid-date-bounds.ts';
 import {
   priceWeekOvertime,
-  type OvertimeCostSegment,
+  MissingOvertimeRateError,
   type PriceWeekOvertimeResult,
 } from './overtime-cost-engine.ts';
 import type {
@@ -46,11 +46,12 @@ export type WeekCardSummaryFromEngine = {
    */
   weeklyBalance: number;
   finalBalance: number;
-  estimatedValue: number;
+  estimatedValue: number | null;
   isPaid: boolean;
   preferStock: boolean;
   limitHours: number;
-  hourlyRate: number;
+  hourlyRate: number | null;
+  hasMissingRate?: boolean;
 };
 
 /**
@@ -96,79 +97,34 @@ function weekStartKey(week: { startDate: string }): CivilDate {
   ) as CivilDate;
 }
 
-/**
- * Tarifas contractuales alineadas 1:1 con `result.segments`
- * (mismos índices que produce liquidateWeek).
- */
-export function costSegmentsForLiquidation(
+export function priceLiquidationOvertime(
   result: LiquidationResult,
   employee: EmployeeBoundaryFacts,
-): OvertimeCostSegment[] {
-  const contract = resolveEffectiveContract(employee, result.weekStart);
-  const weekFallback = settlementRateAtWeekStart(employee, result.weekStart);
-
-  return result.segments.map((seg, i) => {
-    const termSeg = contract.segments[i];
-    const own =
-      termSeg != null &&
-      termSeg.overtimeRatePerHour != null &&
-      Number.isFinite(termSeg.overtimeRatePerHour)
-        ? Number(termSeg.overtimeRatePerHour)
-        : null;
-    return {
-      weeklyBalancePart: seg.weeklyBalancePart,
-      bagMode: seg.bagMode,
-      // pre_alta/gap sin rate → tarifa contractual de la semana o última conocida del historial
-      overtimeRatePerHour: own ?? weekFallback,
-    };
-  });
-}
-
-/**
- * Tarifa contractual vigente en el lunes de la semana (política de liquidación del banco).
- * Si la semana no dispone de tarifa, recupera la última overtimeRatePerHour conocida del historial.
- */
-export function settlementRateAtWeekStart(
-  employee: EmployeeBoundaryFacts,
-  weekStart: CivilDate,
-): number | null {
-  const contract = resolveEffectiveContract(employee, weekStart);
-  for (const s of contract.segments) {
-    if (!s.days.includes(weekStart)) continue;
-    if (s.overtimeRatePerHour != null && Number.isFinite(s.overtimeRatePerHour)) {
-      return Number(s.overtimeRatePerHour);
-    }
-    // Lunes en pre_alta/gap sin rate: no cortar; buscar tramo term abajo.
-    break;
-  }
-  for (const s of contract.segments) {
-    if (s.kind === 'term' && s.overtimeRatePerHour != null && Number.isFinite(s.overtimeRatePerHour)) {
-      return Number(s.overtimeRatePerHour);
-    }
-  }
-
-  // Buscar última tarifa conocida en el historial del trabajador (orden descendente por fecha de inicio)
-  const sortedTerms = [...employee.terms].sort((a, b) =>
-    compareCivilDate(b.effectiveFrom, a.effectiveFrom),
+  options?: {
+    bagModeOverride?: boolean | null;
+    overrideRate?: number | null;
+  },
+): PriceWeekOvertimeResult {
+  const netPayableHours = netPayableHoursFromLiquidation(
+    result,
+    options?.bagModeOverride,
   );
-
-  for (const t of sortedTerms) {
-    if (
-      compareCivilDate(t.effectiveFrom, weekStart) <= 0 &&
-      t.overtimeRatePerHour != null &&
-      Number.isFinite(t.overtimeRatePerHour)
-    ) {
-      return Number(t.overtimeRatePerHour);
+  const effectiveOvertimeRate = resolveEffectiveOvertimeRate(
+    employee,
+    result.weekStart,
+    options?.overrideRate,
+  );
+  try {
+    return priceWeekOvertime({
+      netPayableHours,
+      effectiveOvertimeRate,
+    });
+  } catch (err) {
+    if (err instanceof MissingOvertimeRateError) {
+      return { estimatedValue: null, hourlyRate: null, hasMissingRate: true };
     }
+    throw err;
   }
-
-  for (const t of sortedTerms) {
-    if (t.overtimeRatePerHour != null && Number.isFinite(t.overtimeRatePerHour)) {
-      return Number(t.overtimeRatePerHour);
-    }
-  }
-
-  return null;
 }
 
 /**
@@ -179,31 +135,11 @@ export function overtimeRateForWeek(
   employee: EmployeeBoundaryFacts,
   weekStart: CivilDate,
 ): number {
-  return settlementRateAtWeekStart(employee, weekStart) ?? 0;
+  return resolveEffectiveOvertimeRate(employee, weekStart) ?? 0;
 }
 
-export function priceLiquidationOvertime(
-  result: LiquidationResult,
-  employee: EmployeeBoundaryFacts,
-  options?: {
-    bagModeOverride?: boolean | null;
-    overrideRate?: number | null;
-  },
-): PriceWeekOvertimeResult {
-  const netPayable = netPayableHoursFromLiquidation(
-    result,
-    options?.bagModeOverride,
-  );
-  return priceWeekOvertime({
-    netPayableHours: netPayable,
-    segments: costSegmentsForLiquidation(result, employee),
-    overrideRate: options?.overrideRate,
-    settlementRateAtWeekStart: settlementRateAtWeekStart(
-      employee,
-      result.weekStart,
-    ),
-  });
-}
+
+
 
 /**
  * Proyecta LiquidationResult → footer de tarjeta.
@@ -243,6 +179,7 @@ export function weekCardSummaryFromLiquidation(
     preferStock,
     limitHours: result.contractedHoursEffective,
     hourlyRate: pricing.hourlyRate,
+    hasMissingRate: pricing.hasMissingRate,
   };
 }
 
@@ -263,14 +200,22 @@ export function assertCardMatchesLiquidation(
     throw new Error('Footer PENDIENTES ≠ carryIn');
   }
   const pricing = priceLiquidationOvertime(result, employee, options);
-  if (Math.abs(summary.estimatedValue - pricing.estimatedValue) > eps) {
+  if (
+    summary.estimatedValue != null &&
+    pricing.estimatedValue != null &&
+    Math.abs(summary.estimatedValue - pricing.estimatedValue) > eps
+  ) {
     throw new Error('Footer IMPORTE ≠ Overtime Cost Engine');
   }
-  if (Math.abs(summary.hourlyRate - pricing.hourlyRate) > eps) {
+  if (
+    summary.hourlyRate != null &&
+    pricing.hourlyRate != null &&
+    Math.abs(summary.hourlyRate - pricing.hourlyRate) > eps
+  ) {
     throw new Error('Footer hourlyRate ≠ Overtime Cost Engine');
   }
   // Nunca cobrar si queda deuda pendiente.
-  if (result.carryOut < -eps && summary.estimatedValue > eps) {
+  if (summary.estimatedValue != null && result.carryOut < -eps && summary.estimatedValue > eps) {
     throw new Error('IMPORTE > 0 con carryOut negativo (deuda)');
   }
   if (result.carryOut < -eps && summary.weeklyBalance > eps) {

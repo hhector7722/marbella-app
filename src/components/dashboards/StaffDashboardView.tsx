@@ -394,7 +394,7 @@ export default function StaffDashboardView() {
                     totalHours: displayHours,
                     hoursDifference: summary.weeklyBalance,
                     currentBalance: summary.weeklyBalance,
-                    estimatedPayout: summary.estimatedValue,
+                    estimatedPayout: summary.estimatedValue ?? 0,
                     status: 'pending',
                     startBalance: summary.startBalance,
                 });

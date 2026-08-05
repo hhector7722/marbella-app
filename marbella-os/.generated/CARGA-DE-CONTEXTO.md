@@ -1,5 +1,5 @@
-<!-- Generado desde 47 documentos de marbella-os/.
-     Huella del origen: 5f446c94ff35fbb5
+<!-- Generado desde 49 documentos de marbella-os/.
+     Huella del origen: ceee2801b3ed5d0f
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -41,6 +41,7 @@ es `CANON §5`.
 | 80 | `marbella-os/4-decisiones/ADR-0002-metadatos-operables-y-validador.md` |
 | 80 | `marbella-os/4-decisiones/ADR-0003-identidad-de-afirmacion.md` |
 | 80 | `marbella-os/4-decisiones/ADR-0004-grafo-de-dependencias.md` |
+| 80 | `marbella-os/4-decisiones/ADR-0005-protocolo-operativo-de-agentes.md` |
 | 60 | `marbella-os/1-producto/PRINCIPIOS.md` |
 | 60 | `marbella-os/1-producto/VISION.md` |
 | 60 | `marbella-os/2-diseno/EXPERIENCIA.md` |
@@ -64,6 +65,7 @@ es `CANON §5`.
 | 20 | `marbella-os/3-ingenieria/integraciones/NOMINAS.md` |
 | 20 | `marbella-os/3-ingenieria/MODELO-DE-DATOS.md` |
 | 20 | `marbella-os/3-ingenieria/operacion/RUNBOOK-BDP-VENTAS.md` |
+| 20 | `marbella-os/3-ingenieria/PROTOCOLO-AGENTES.md` |
 | 20 | `marbella-os/3-ingenieria/SEGURIDAD.md` |
 | 20 | `marbella-os/5-estado/CHANGELOG.md` |
 | 20 | `marbella-os/5-estado/DEUDA.md` |

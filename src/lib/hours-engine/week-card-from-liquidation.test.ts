@@ -434,25 +434,22 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
     assert.equal(summary.estimatedValue, 144);
   });
 
-  it('Caso C: Trabajador sin ninguna tarifa en toda su historia → lanza excepción explícita', () => {
+  it('Caso C: Trabajador sin ninguna tarifa en toda su historia → no lanza excepción, representa importe no calculable (null) y permite renderizar la semana', () => {
     const employee = emp([
-      term('2026-01-01', '2026-06-30', 40, { bagMode: false, overtimeRatePerHour: null }),
       term('2026-07-01', null, 0, { bagMode: false, overtimeRatePerHour: null }),
     ]);
     const logs = [dayLog('2026-08-03', 8)];
-    assert.throws(
-      () => {
-        liquidateWeekForCard({
-          carryIn: 0,
-          employee,
-          weekStart: '2026-08-03',
-          logs,
-        });
-      },
-      (err: unknown) =>
-        err instanceof Error &&
-        err.message.includes('Overtime Cost Engine: segmento cobrable sin overtimeRatePerHour'),
-    );
+    const card = liquidateWeekForCard({
+      carryIn: 0,
+      employee,
+      weekStart: '2026-08-03',
+      logs,
+    });
+    assert.equal(card.summary.limitHours, 0);
+    assert.equal(card.result.overtimeHours, 8);
+    assert.equal(card.summary.estimatedValue, null);
+    assert.equal(card.summary.hourlyRate, null);
+    assert.equal(card.summary.hasMissingRate, true);
   });
 
   it('override semanal BOLSA: no cobra e importa preferStock', () => {

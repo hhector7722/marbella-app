@@ -43,26 +43,27 @@ export type WeekDisplayDto = {
   displayPendingBalance: number;
   /** EXTRAS (footer HE; 0 si carryOut < 0) */
   displayExtras: number;
-  /** IMPORTE (Cost Engine; 0 si bolsa o deuda) */
-  displayEstimatedValue: number;
+  /** IMPORTE (Cost Engine; null si falta tarifa) */
+  displayEstimatedValue: number | null;
   displayPreferStock: boolean;
   displayOrdinaryHours: number;
   displayCarryOut: number;
   displayFinalBalance: number;
   displayIsPaid: boolean;
   displayLimitHours: number;
-  displayHourlyRate: number;
+  displayHourlyRate: number | null;
 
   // Aliases estables para WeekCard / modal (mismos nombres históricos)
   totalHours: number;
   startBalance: number;
   weeklyBalance: number;
   finalBalance: number;
-  estimatedValue: number;
+  estimatedValue: number | null;
   preferStock: boolean;
   isPaid: boolean;
   limitHours: number;
-  hourlyRate: number;
+  hourlyRate: number | null;
+  hasMissingRate?: boolean;
 };
 
 export type WeekFooterDto = WeekDisplayDto;
@@ -106,7 +107,7 @@ export function assertWeekDisplayInvariants(
         `Invariante display: carryOut=${result.carryOut} < 0 pero displayExtras=${summary.weeklyBalance}`,
       );
     }
-    if (summary.estimatedValue > EPS) {
+    if (summary.estimatedValue != null && summary.estimatedValue > EPS) {
       throw new Error(
         `Invariante display: carryOut=${result.carryOut} < 0 pero displayEstimatedValue=${summary.estimatedValue}`,
       );
@@ -114,7 +115,7 @@ export function assertWeekDisplayInvariants(
   }
 
   const netPayable = netPayableHoursFromLiquidation(result, bagModeOverride);
-  if (summary.preferStock && netPayable <= EPS && summary.estimatedValue > EPS) {
+  if (summary.preferStock && netPayable <= EPS && summary.estimatedValue != null && summary.estimatedValue > EPS) {
     throw new Error(
       `Invariante display: bolsa + netPayable=0 pero displayEstimatedValue=${summary.estimatedValue}`,
     );
@@ -148,6 +149,7 @@ export function weekDisplayFromEngine(
     isPaid: summary.isPaid,
     limitHours: summary.limitHours,
     hourlyRate: summary.hourlyRate,
+    hasMissingRate: summary.hasMissingRate,
   };
 }
 

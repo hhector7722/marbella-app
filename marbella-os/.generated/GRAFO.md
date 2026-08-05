@@ -1,5 +1,5 @@
-<!-- Generado desde 5 documentos de marbella-os/.
-     Huella del origen: b8d83f8c49971bd0
+<!-- Generado desde 8 documentos de marbella-os/.
+     Huella del origen: 6304823756a5c31a
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -16,8 +16,8 @@ para responder a la pregunta que surge al cambiar algo.
 | Si cambia | Documento | Hay que revisar |
 |---|---|---|
 | `ADR-0001` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | `CONTRATO-PROYECCION-v1` |
-| `ADR-0002` | `marbella-os/4-decisiones/ADR-0002-metadatos-operables-y-validador.md` | `ADR-0003`, `ADR-0004` |
-| `CANON` | `marbella-os/CANON.md` | `ADR-0003`, `ADR-0004` |
+| `ADR-0002` | `marbella-os/4-decisiones/ADR-0002-metadatos-operables-y-validador.md` | `ADR-0003`, `ADR-0004`, `ADR-0005` |
+| `CANON` | `marbella-os/CANON.md` | `ADR-0003`, `ADR-0004`, `ADR-0005`, `PROTOCOLO-AGENTES` |
 
 Que un documento no aparezca aquí no significa que nadie dependa de él:
 significa que nadie lo ha declarado. La adopción es incremental, y la decisión
