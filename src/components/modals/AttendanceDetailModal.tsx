@@ -162,7 +162,7 @@ function EditWeekModal({ isOpen, onClose, date, userId, onSuccess }: EditWeekMod
                 const profile = profileRes.data;
                 const contracted = snap?.contracted_hours_snapshot ?? profile?.contracted_hours_weekly ?? 40;
                 const prefer = snap?.prefer_stock_hours_override ?? profile?.prefer_stock_hours ?? false;
-                setContractedHours(Number(contracted) || 40);
+                setContractedHours(typeof contracted === 'number' ? contracted : (Number(contracted) ?? 0));
                 setPreferStock(!!prefer);
             } catch (e) {
                 console.error(e);
@@ -261,8 +261,8 @@ function EditWeekModal({ isOpen, onClose, date, userId, onSuccess }: EditWeekMod
                                     type="number"
                                     min={0}
                                     step={0.5}
-                                    value={contractedHours || ''}
-                                    onChange={(e) => setContractedHours(Number(e.target.value) || 0)}
+                                    value={contractedHours !== undefined && contractedHours !== null ? contractedHours : ''}
+                                    onChange={(e) => setContractedHours(e.target.value === '' ? 0 : Number(e.target.value))}
                                     className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-black text-zinc-800 bg-white focus:ring-2 focus:ring-[#36606F] focus:border-[#36606F] outline-none"
                                 />
                             </div>

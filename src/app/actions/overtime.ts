@@ -251,6 +251,11 @@ export async function updateWeeklyWorkerConfig(
         logs?: Array<{ date: string; in_time: string; out_time: string; event_type: string; id?: string; is_deleted?: boolean }>;
     }
 ) {
+    console.log('[TRACE 3] Parámetro recibido por updateWeeklyWorkerConfig:', {
+        userId,
+        weekStart,
+        updates,
+    });
     const supabase = await createClient();
 
     try {

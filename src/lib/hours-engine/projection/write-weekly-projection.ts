@@ -355,6 +355,11 @@ export async function writeWeeklyProjection(
     if (existing) {
       // INV-J07: no tocar overrides B. Solo UPDATE de C (+ week_end identidad).
       const updatePayload = domainRowToUpdatePayload(row);
+      console.log('[TRACE 4] Valor escrito en UPDATE de weekly_snapshots:', {
+        weekStart: row.week_start,
+        contracted_hours_snapshot: updatePayload.contracted_hours_snapshot,
+        updatePayload,
+      });
       const { error: updErr } = await client
         .from('weekly_snapshots')
         .update(updatePayload)
@@ -370,6 +375,11 @@ export async function writeWeeklyProjection(
       weeksUpdated += 1;
     } else {
       const insertPayload = domainRowToInsertPayload(row);
+      console.log('[TRACE 4] Valor escrito en INSERT de weekly_snapshots:', {
+        weekStart: row.week_start,
+        contracted_hours_snapshot: insertPayload.contracted_hours_snapshot,
+        insertPayload,
+      });
       const { error: insErr } = await client
         .from('weekly_snapshots')
         .insert(insertPayload);
@@ -391,6 +401,12 @@ export async function writeWeeklyProjection(
       .eq('user_id', userId)
       .eq('week_start', row.week_start)
       .maybeSingle();
+
+    console.log('[TRACE 5] Valor leído inmediatamente después del write (read-back):', {
+      weekStart: row.week_start,
+      contracted_hours_snapshot: readBack?.contracted_hours_snapshot,
+      readBack,
+    });
 
     if (readErr) {
       return {

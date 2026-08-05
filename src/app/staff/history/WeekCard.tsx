@@ -111,6 +111,11 @@ export function WeekCard({
     const [savingOverrides, setSavingOverrides] = useState(false);
 
     React.useEffect(() => {
+        console.log('[TRACE 6] Valor recibido por el componente tras el refresh:', {
+            limitHours: week.summary.limitHours,
+            preferStock: week.summary.preferStock,
+            hourlyRate: week.summary.hourlyRate,
+        });
         setLocalPreferStock(week.summary.preferStock ?? false);
         setLocalContracted(
             week.summary.limitHours !== undefined && week.summary.limitHours !== null 
@@ -134,6 +139,10 @@ export function WeekCard({
         if (!interactive || !userId || !onApplyWeekOverrides) return;
         setSavingOverrides(true);
         try {
+            console.log('[TRACE 1] Valor del input React justo antes de pulsar Aplicar:', {
+                localContracted,
+                typeofLocalContracted: typeof localContracted,
+            });
             const contractedValue = localContracted === "" ? 0 : Number(localContracted);
             // Vacío = quitar override (NULL). "0" explícito = override a 0 €/h.
             const hourlyRateValue =
@@ -148,6 +157,11 @@ export function WeekCard({
                 setSavingOverrides(false);
                 return;
             }
+            console.log('[TRACE 2] Payload que sale hacia updateWeeklyWorkerConfig:', {
+                contractedValue,
+                localPreferStock,
+                hourlyRateValue,
+            });
             const result = await onApplyWeekOverrides(contractedValue, localPreferStock, hourlyRateValue);
             if (!result.success && result.error) setSavingOverrides(false);
         } finally {
