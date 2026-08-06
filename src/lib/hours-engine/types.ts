@@ -12,7 +12,7 @@ export type CivilDate = string;
 export type ContractRegime = 'staff' | 'manager' | 'fixed';
 
 /** Régimen efectivo de un segmento de liquidación. */
-export type SegmentRegime = ContractRegime | 'pre_alta';
+export type SegmentRegime = ContractRegime | 'pre_alta' | 'gap';
 
 /**
  * Tramo contractual versionado (hecho).
@@ -83,8 +83,8 @@ export type ContractSegment = {
   termRegime: ContractRegime;
   /** Tarifa OT del tramo vigente en esos días (passthrough del hecho). */
   overtimeRatePerHour: number | null;
-  /** Origen: tramo real o pre-alta sintética. */
-  kind: 'term' | 'pre_alta';
+  /** Origen: tramo real, pre-alta sintética, o gap post-alta. */
+  kind: 'term' | 'pre_alta' | 'gap';
   effectiveFrom: CivilDate | null;
   effectiveTo: CivilDate | null;
 };
@@ -119,7 +119,7 @@ export type SegmentLiquidation = {
   weeklyBalancePart: number;
   ordinaryHours: number;
   overtimeHours: number;
-  kind: 'term' | 'pre_alta';
+  kind: 'term' | 'pre_alta' | 'gap';
 };
 
 /** Un día del desglose: consecuencia de la liquidación (regla running). */

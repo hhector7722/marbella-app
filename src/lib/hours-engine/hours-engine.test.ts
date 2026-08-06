@@ -211,6 +211,56 @@ describe('Liquidation Engine', () => {
     // pre_alta +10; staff 30 − contract (días 4–8)
     const expectedWeekly = 10 + (30 - contract);
     assert.ok(Math.abs(r.weeklyBalance - expectedWeekly) < 1e-9);
+    
+    // Verificamos el segmento inyectado
+    const preAltaSeg = r.segments.find(s => s.kind === 'pre_alta');
+    assert.ok(preAltaSeg);
+    assert.equal(preAltaSeg.hoursWorked, 10);
+  });
+
+  it('gap: horas huérfanas posteriores al primer contrato son gap y se calculan igual que pre_alta', () => {
+    const emp = employeeBase({
+      joiningDate: '2026-01-01',
+      terms: [
+        {
+          effectiveFrom: '2026-01-01',
+          effectiveTo: '2026-03-01',
+          weeklyHours: 40,
+          bagMode: true,
+          regime: 'staff',
+        },
+        // Hueco los días 2 y 3
+        {
+          effectiveFrom: '2026-03-04',
+          effectiveTo: null,
+          weeklyHours: 40,
+          bagMode: true,
+          regime: 'staff',
+        },
+      ],
+    });
+    const r = liquidateWeek(
+      input({
+        employee: emp,
+        weekStart: '2026-03-02', // El 2 y 3 caen en gap
+        logs: [
+          { clockInIso: '2026-03-02T08:00:00.000Z', totalHours: 10 }, // gap
+          { clockInIso: '2026-03-04T08:00:00.000Z', totalHours: 30 },
+        ],
+      }),
+    );
+    const contract = expectedContract([[5, 40]]);
+    assert.equal(r.contractedHoursEffective, contract);
+    // gap +10; staff 30 − contract (días 4–8)
+    const expectedWeekly = 10 + (30 - contract);
+    assert.ok(Math.abs(r.weeklyBalance - expectedWeekly) < 1e-9);
+
+    // No debe haber pre_alta, debe ser gap
+    assert.equal(r.segments.find(s => s.kind === 'pre_alta'), undefined);
+    
+    const gapSeg = r.segments.find(s => s.kind === 'gap');
+    assert.ok(gapSeg);
+    assert.equal(gapSeg.hoursWorked, 10);
   });
 
   it('agosto: aplica reglas estándar de contrato (no genera automáticamente extras)', () => {

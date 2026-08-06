@@ -313,13 +313,13 @@ export function validateLaborInvariantsOnResult(
     );
   }
 
-  // INV-L04 — pre_alta no aporta jornada ordinaria de contrato
+  // INV-L04 — pre_alta y gap no aportan jornada ordinaria de contrato
   for (const s of liq.segments) {
-    if (s.kind === 'pre_alta') {
+    if (s.kind === 'pre_alta' || s.kind === 'gap') {
       if (s.ordinaryHours > HOURS_EPS || s.contractedHours > HOURS_EPS) {
         return fail(
           'INV-L04',
-          `INV-L04: segmento pre_alta con ordinaria/contrato @ ${ws}`,
+          `INV-L04: segmento ${s.kind} con ordinaria/contrato @ ${ws}`,
         );
       }
     }

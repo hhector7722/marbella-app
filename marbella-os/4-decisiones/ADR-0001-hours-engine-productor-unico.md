@@ -242,7 +242,7 @@ Notación: semana `W`, siguiente `W+1`. Redondeo Marbella `R(·)` (solo .0 / .5)
 | INV-C07 | Si régimen **pago puro** y `balanceFinal > 0` y no pagada: `carryOut = 0` |
 | INV-C08 | Si régimen **bolsa pura** y `balanceFinal > 0` y no pagada: `carryOut = balanceFinal` |
 | INV-C09 | Deuda nunca se “paga”: `carryOut ≤ 0` cuando `balanceFinal ≤ 0` |
-| INV-C10 | ≤ 1 tramo abierto por empleado; sin huecos ni solapes en `hours_contract_terms` |
+| INV-C10 | ≤ 1 tramo abierto por empleado; sin solapes en `hours_contract_terms` |
 
 ### Liquidación semanal
 
@@ -251,7 +251,7 @@ Notación: semana `W`, siguiente `W+1`. Redondeo Marbella `R(·)` (solo .0 / .5)
 | INV-L01 | `hoursWorked = Σ horas computables de la semana (hechos)` |
 | INV-L02 | `weeklyBalance = Σ weeklyBalancePart(segmentos)` |
 | INV-L03 | `ordinaryHours + overtimeHours` coherente con régimen/contrato efectivo |
-| INV-L04 | Días `pre_alta` / `post_baja` no aportan jornada ordinaria de contrato |
+| INV-L04 | Días `pre_alta` / `gap` / `post_baja` no aportan jornada ordinaria de contrato |
 | INV-L05 | Determinismo de liquidación: mismos hechos + mismos overrides ⇒ mismo `LiquidationResult` **para una versión dada del Hours Engine** |
 
 ### Preferencia bolsa / payable / display

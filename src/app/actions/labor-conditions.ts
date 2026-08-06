@@ -330,7 +330,7 @@ export async function updateLaborConditions(
 }
 
 /**
- * Elimina un tramo del histórico. El anterior absorbe el rango (sin huecos).
+ * Elimina un tramo del histórico. Puede dejar un hueco en la historia contractual.
  * No permite borrar el único tramo. Recalcula snapshots desde el primer tramo.
  */
 export async function deleteLaborTerm(

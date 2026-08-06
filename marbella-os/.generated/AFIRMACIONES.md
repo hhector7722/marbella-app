@@ -1,5 +1,5 @@
 <!-- Generado desde 38 documentos de marbella-os/.
-     Huella del origen: b59bfedf2a9dee66
+     Huella del origen: a03319de06915cce
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -31,7 +31,7 @@ texto crea un segundo dueño, y eso es exactamente lo que prohíbe `CANON §5`.
 | `INV-C07` | Si régimen **pago puro** y `balanceFinal > 0` y no pagada: `carryOut = 0` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 |  |
 | `INV-C08` | Si régimen **bolsa pura** y `balanceFinal > 0` y no pagada: `carryOut = balanceFinal` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 |  |
 | `INV-C09` | Deuda nunca se “paga”: `carryOut ≤ 0` cuando `balanceFinal ≤ 0` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 |  |
-| `INV-C10` | ≤ 1 tramo abierto por empleado; sin huecos ni solapes en `hours_contract_terms` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 | 3 |
+| `INV-C10` | ≤ 1 tramo abierto por empleado; sin solapes en `hours_contract_terms` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 | 3 |
 | `INV-D01` | **Mismos hechos** + **mismos overrides** + **misma versión Hours Engine** + **misma versión Cost Engine** ⇒ **misma proyección de resultado… | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 | 13 |
 | `INV-J01` | Tras writer: `pending_balance = carryIn` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 | 7 |
 | `INV-J02` | Tras writer: `final_balance = balanceFinal` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 | 1 |
@@ -44,7 +44,7 @@ texto crea un segundo dueño, y eso es exactamente lo que prohíbe `CANON §5`.
 | `INV-L01` | `hoursWorked = Σ horas computables de la semana (hechos)` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 | 4 |
 | `INV-L02` | `weeklyBalance = Σ weeklyBalancePart(segmentos)` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 |  |
 | `INV-L03` | `ordinaryHours + overtimeHours` coherente con régimen/contrato efectivo | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 |  |
-| `INV-L04` | Días `pre_alta` / `post_baja` no aportan jornada ordinaria de contrato | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 |  |
+| `INV-L04` | Días `pre_alta` / `gap` / `post_baja` no aportan jornada ordinaria de contrato | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 |  |
 | `INV-L05` | Determinismo de liquidación: mismos hechos + mismos overrides ⇒ mismo `LiquidationResult` **para una versión dada del Hours Engine** | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 | 1 |
 | `INV-P01` | `effectivePreferStock = override ?? (todos los segmentos bagMode)` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 | 3 |
 | `INV-P02` | `netPayable = f(LiquidationResult, effectivePreferStock)` (única función) | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 |  |

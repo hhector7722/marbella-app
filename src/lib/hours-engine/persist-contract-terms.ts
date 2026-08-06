@@ -144,7 +144,7 @@ export async function persistTermBoundsReschedule(
 }
 
 /**
- * Elimina un tramo (el anterior absorbe el rango). No permite borrar el único.
+ * Elimina un tramo (deja un hueco). No permite borrar el único.
  */
 export async function persistTermDeletion(
   supabase: SupabaseClient,

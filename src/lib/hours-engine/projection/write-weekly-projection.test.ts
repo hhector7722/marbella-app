@@ -479,49 +479,51 @@ describe('Projection Writer — validación de invariantes', () => {
     assert.equal(r!.code, 'INV-L03');
   });
 
-  it('INV-L04: falla si pre_alta aporta ordinaria', () => {
-    const crafted: LiquidationResult = {
-      employeeId: 'writer-emp',
-      weekStart: '2026-03-02',
-      weekEnd: '2026-03-08',
-      hoursWorked: 8,
-      contractedHoursEffective: 0,
-      weeklyBalance: 8,
-      carryIn: 0,
-      balanceFinal: 8,
-      carryOut: 0,
-      isPaid: false,
-      ordinaryHours: 5,
-      overtimeHours: 3,
-      segments: [
-        {
-          days: ['2026-03-02'],
-          hoursWorked: 8,
-          contractedHours: 5,
-          bagMode: false,
-          regimeApplied: 'pre_alta',
-          weeklyBalancePart: 8,
-          ordinaryHours: 5,
-          overtimeHours: 3,
-          kind: 'pre_alta',
-        },
-      ],
-      dailyBreakdown: {
-        days: [
+  it('INV-L04: falla si pre_alta o gap aportan ordinaria', () => {
+    for (const kind of ['pre_alta', 'gap'] as const) {
+      const crafted: LiquidationResult = {
+        employeeId: 'writer-emp',
+        weekStart: '2026-03-02',
+        weekEnd: '2026-03-08',
+        hoursWorked: 8,
+        contractedHoursEffective: 0,
+        weeklyBalance: 8,
+        carryIn: 0,
+        balanceFinal: 8,
+        carryOut: 0,
+        isPaid: false,
+        ordinaryHours: 5,
+        overtimeHours: 3,
+        segments: [
           {
-            day: '2026-03-02',
-            hours: 8,
+            days: ['2026-03-02'],
+            hoursWorked: 8,
+            contractedHours: 5,
+            bagMode: false,
+            regimeApplied: kind,
+            weeklyBalancePart: 8,
             ordinaryHours: 5,
             overtimeHours: 3,
+            kind: kind,
           },
         ],
-        ordinaryHoursTotal: 5,
-        overtimeHoursTotal: 3,
-      },
-    };
-    const r = validateLaborInvariantsOnResult(crafted);
-    assert.ok(r);
-    assert.equal(r!.code, 'INV-L04');
+        dailyBreakdown: {
+          days: [
+            {
+              day: '2026-03-02',
+              hours: 8,
+              ordinaryHours: 5,
+              overtimeHours: 3,
+            },
+          ],
+          ordinaryHoursTotal: 5,
+          overtimeHoursTotal: 3,
+        },
+      };
+      const r = validateLaborInvariantsOnResult(crafted);
+      assert.ok(r);
+      assert.equal(r!.code, 'INV-L04');
+    }
   });
 
   it('INV-P04 / INV-$01: falla si carryOut < 0 y estimatedValue > 0', () => {

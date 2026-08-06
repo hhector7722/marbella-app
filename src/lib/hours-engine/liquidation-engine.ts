@@ -70,20 +70,51 @@ export function liquidateWeek(input: LiquidationInput): LiquidationResult {
     .filter((d) => d.hours > 0 && !covered.has(d.day))
     .map((d) => d.day);
 
+  let firstTermDate: string | null = null;
+  for (const t of employee.terms) {
+    if (firstTermDate === null || t.effectiveFrom < firstTermDate) {
+      firstTermDate = t.effectiveFrom;
+    }
+  }
+
+  const preAltaDays: string[] = [];
+  const gapDays: string[] = [];
+  for (const day of orphanDays) {
+    if (firstTermDate === null || day < firstTermDate) {
+      preAltaDays.push(day);
+    } else {
+      gapDays.push(day);
+    }
+  }
+
   const segmentInputs = [
     ...contract.segments.map((seg) => ({
       ...seg,
       bagMode: resolveBag(seg.bagMode),
     })),
-    ...(orphanDays.length > 0
+    ...(preAltaDays.length > 0
       ? [
           {
-            days: orphanDays,
+            days: preAltaDays,
             weeklyHoursOfTerm: 0,
             contractedHours: 0,
             bagMode: resolveBag(false),
             termRegime: 'staff' as const,
             kind: 'pre_alta' as const,
+            effectiveFrom: null,
+            effectiveTo: null,
+          },
+        ]
+      : []),
+    ...(gapDays.length > 0
+      ? [
+          {
+            days: gapDays,
+            weeklyHoursOfTerm: 0,
+            contractedHours: 0,
+            bagMode: resolveBag(false),
+            termRegime: 'staff' as const,
+            kind: 'gap' as const,
             effectiveFrom: null,
             effectiveTo: null,
           },

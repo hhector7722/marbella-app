@@ -46,7 +46,7 @@ function isPreAltaDay(day: CivilDate, joiningDate: CivilDate | null): boolean {
   return joiningDate !== null && compareCivilDate(day, joiningDate) < 0;
 }
 
-function segmentKey(term: ContractTermFact | null, kind: 'term' | 'pre_alta'): string {
+function segmentKey(term: ContractTermFact | null, kind: 'term' | 'pre_alta' | 'gap'): string {
   if (kind === 'pre_alta') return 'pre_alta';
   if (!term) return 'none';
   return `term:${term.effectiveFrom}:${term.effectiveTo ?? 'open'}:${term.weeklyHours}:${term.bagMode}:${term.regime}`;
@@ -65,7 +65,7 @@ export function resolveEffectiveContract(
   const { joiningDate, endDate, terms } = employee;
 
   type Acc = {
-    kind: 'term' | 'pre_alta';
+    kind: 'term' | 'pre_alta' | 'gap';
     term: ContractTermFact | null;
     days: CivilDate[];
   };

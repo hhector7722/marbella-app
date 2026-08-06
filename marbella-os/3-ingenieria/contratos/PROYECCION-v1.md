@@ -210,7 +210,7 @@ Columnas **físicas actuales** de `weekly_snapshots`:
 
 - `week_start` es lunes ISO.  
 - Empleado existe; timeline resoluble (INV-C01).  
-- Tramos cumplen INV-C10 (sin huecos/solapes; ≤1 abierto).  
+- Tramos cumplen INV-C10 (sin solapes; ≤1 abierto).  
 - Overrides de las semanas a escribir están disponibles (INV-J07).  
 - Cadena de carry desde `timelineStart` hasta el horizonte solicitado es calculable.  
 - Hours Engine y Cost Engine producen resultados finitos y determinados.
@@ -290,7 +290,7 @@ El Writer debe validar, como mínimo:
 
 1. Timeline resoluble; `timelineStart` definido; apertura 0 (INV-C01).  
 2. `week_start` lunes; `week_end` coherente.  
-3. Tramos: sin solapes, sin huecos, ≤1 abierto (INV-C10).  
+3. Tramos: sin solapes, ≤1 abierto (INV-C10).  
 4. Frontera employment coherente con tramos.  
 5. Overrides presentes o explícitamente null según semántica.  
 6. `LiquidationResult` completo y numéricamente finito.  

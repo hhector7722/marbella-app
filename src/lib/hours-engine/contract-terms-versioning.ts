@@ -9,7 +9,7 @@
  * - Si D > inicio → parte: izquierda (hasta D-1) + derecha (D → to original)
  * - Cola de tramos posteriores intacta
  * - Coalesce de vecinos con el mismo snapshot
- * - Invariantes: sin solapes, ≤1 abierto, sin huecos
+ * - Invariantes: sin solapes, ≤1 abierto
  */
 
 import type { CivilDate, ContractRegime, ContractTermFact } from './types.ts';
@@ -33,9 +33,9 @@ export type VersioningResult =
   /** @deprecated Alias histórico de updated. */
   | { kind: 'updated_open'; terms: readonly ContractTermFact[] }
   | { kind: 'rewritten'; terms: readonly ContractTermFact[] }
-  /** Mueve el inicio de un tramo y reajusta el anterior (sin huecos). */
+  /** Mueve el inicio de un tramo (puede dejar huecos). */
   | { kind: 'rescheduled'; terms: readonly ContractTermFact[] }
-  /** Elimina un tramo; el anterior absorbe el rango (sin huecos). */
+  /** Elimina un tramo (deja un hueco). */
   | { kind: 'deleted'; terms: readonly ContractTermFact[] };
 
 function previousCivilDay(ymd: CivilDate): CivilDate {
@@ -108,29 +108,6 @@ export function snapshotFromProfileFields(input: {
   };
 }
 
-/**
- * Sin huecos: cada tramo cerrado T cumple next.effectiveFrom === T.effectiveTo + 1
- * (salvo el último abierto).
- */
-export function assertNoGaps(terms: readonly ContractTermFact[]): void {
-  const sorted = [...terms].sort((a, b) =>
-    compareCivilDate(a.effectiveFrom, b.effectiveFrom),
-  );
-  for (let i = 0; i < sorted.length - 1; i++) {
-    const cur = sorted[i]!;
-    const nxt = sorted[i + 1]!;
-    if (cur.effectiveTo === null) {
-      throw new Error('Tramo abierto no puede preceder a otro tramo');
-    }
-    const expectedNext = nextCivilDay(cur.effectiveTo);
-    if (compareCivilDate(nxt.effectiveFrom, expectedNext) !== 0) {
-      throw new Error(
-        `Hueco o solape entre tramos: ${cur.effectiveTo} → ${nxt.effectiveFrom} (esperado ${expectedNext})`,
-      );
-    }
-  }
-}
-
 export function assertAtMostOneOpen(terms: readonly ContractTermFact[]): void {
   const opens = terms.filter((t) => t.effectiveTo === null);
   if (opens.length > 1) {
@@ -141,7 +118,6 @@ export function assertAtMostOneOpen(terms: readonly ContractTermFact[]): void {
 export function assertContractTermInvariants(terms: readonly ContractTermFact[]): void {
   assertTermsNonOverlapping(terms);
   assertAtMostOneOpen(terms);
-  assertNoGaps(terms);
 }
 
 export function findTermContaining(
@@ -168,7 +144,8 @@ export function coalesceIdenticalConsecutiveTerms(
   for (let i = 1; i < sorted.length; i++) {
     const prev = out[out.length - 1]!;
     const cur = sorted[i]!;
-    if (snapshotsEqual(termToSnapshot(prev), termToSnapshot(cur))) {
+    const isConsecutive = prev.effectiveTo !== null && compareCivilDate(cur.effectiveFrom, nextCivilDay(prev.effectiveTo)) === 0;
+    if (isConsecutive && snapshotsEqual(termToSnapshot(prev), termToSnapshot(cur))) {
       out[out.length - 1] = {
         ...prev,
         effectiveTo: cur.effectiveTo,
@@ -203,15 +180,18 @@ export function applyContractualChange(
 
   const target = findTermContaining(sorted, effectiveFrom);
   if (!target) {
-    const first = sorted[0]!;
-    if (compareCivilDate(effectiveFrom, first.effectiveFrom) < 0) {
-      throw new Error(
-        `La fecha efectiva (${effectiveFrom}) es anterior al primer contrato (${first.effectiveFrom})`,
-      );
-    }
-    throw new Error(
-      `La fecha efectiva (${effectiveFrom}) no pertenece a ningún tramo contractual`,
+    // Cae en un hueco (o antes del primero, o después del último).
+    // Insertamos un nuevo tramo que llena el hueco hasta el siguiente tramo (si hay).
+    const nextTerm = sorted.find(t => compareCivilDate(t.effectiveFrom, effectiveFrom) > 0);
+    const newTerm = snapshotToTerm(
+      nextSnapshot,
+      effectiveFrom,
+      nextTerm ? previousCivilDay(nextTerm.effectiveFrom) : null
     );
+    const spliced = [...sorted, newTerm];
+    const coalesced = coalesceIdenticalConsecutiveTerms(spliced);
+    assertContractTermInvariants(coalesced);
+    return { kind: nextTerm ? 'spliced' : 'appended', terms: coalesced };
   }
 
   if (snapshotsEqual(termToSnapshot(target), nextSnapshot)) {
@@ -291,13 +271,12 @@ export function rewriteHistoricalTerm(
 }
 
 /**
- * Mueve la fecha de inicio de un tramo (por su effectiveFrom original) y
- * recalcula el fin del tramo anterior para no dejar huecos.
+ * Mueve la fecha de inicio de un tramo (por su effectiveFrom original).
  * También aplica el snapshot de condiciones al tramo movido.
+ * Esta operación puede crear un hueco si se mueve la fecha hacia adelante.
+ * Si se mueve hacia atrás y produce un solape, assertContractTermInvariants fallará.
  *
  * - Misma fecha → rewrite in-place (condiciones).
- * - Fecha posterior → el tramo anterior absorbe [oldFrom, newFrom-1].
- * - Fecha anterior → el tramo anterior se acorta hasta newFrom-1.
  */
 export function rescheduleTermStart(
   terms: readonly ContractTermFact[],
@@ -326,8 +305,8 @@ export function rescheduleTermStart(
 }
 
 /**
- * Mueve la fecha de fin de un tramo y recalcula el inicio del siguiente
- * (sin huecos). null = vigente (solo permitido en el último tramo).
+ * Mueve la fecha de fin de un tramo. Puede crear un hueco.
+ * null = vigente (solo permitido en el último tramo).
  */
 export function rescheduleTermEnd(
   terms: readonly ContractTermFact[],
@@ -356,7 +335,7 @@ export function rescheduleTermEnd(
 
 /**
  * Mueve inicio y/o fin de un tramo (identificado por effectiveFrom original).
- * Recalcula vecinos para no dejar huecos. Aplica el snapshot al tramo.
+ * Puede dejar huecos. Aplica el snapshot al tramo.
  */
 export function rescheduleTermBounds(
   terms: readonly ContractTermFact[],
@@ -401,40 +380,9 @@ export function rescheduleTermBounds(
 
   const updated = sorted.map((t) => ({ ...t }));
 
-  // Ajustar tramo anterior si se mueve el inicio
-  if (!fromUnchanged) {
-    if (idx === 0) {
-      // Solo cambia el from del primero
-    } else {
-      const prev = updated[idx - 1]!;
-      if (compareCivilDate(newFrom, prev.effectiveFrom) <= 0) {
-        throw new Error(
-          `La fecha de inicio debe ser posterior al inicio del tramo anterior (${prev.effectiveFrom})`,
-        );
-      }
-      updated[idx - 1] = { ...prev, effectiveTo: previousCivilDay(newFrom) };
-    }
-  }
+  // No alteramos vecinos, dejamos que se formen huecos si es necesario.
+  // Cualquier solape provocado por mover fechas será capturado por assertContractTermInvariants.
 
-  // Ajustar tramo siguiente si se mueve el fin
-  if (!toUnchanged && idx < updated.length - 1) {
-    if (newTo === null) {
-      throw new Error(
-        'Solo el último tramo puede quedar vigente (sin fecha de fin)',
-      );
-    }
-    const next = updated[idx + 1]!;
-    const nextFrom = nextCivilDay(newTo);
-    if (
-      next.effectiveTo !== null &&
-      compareCivilDate(nextFrom, next.effectiveTo) > 0
-    ) {
-      throw new Error(
-        `La fecha de fin (${newTo}) deja sin días el tramo siguiente (fin ${next.effectiveTo})`,
-      );
-    }
-    updated[idx + 1] = { ...next, effectiveFrom: nextFrom };
-  }
 
   updated[idx] = snapshotToTerm(nextSnapshot, newFrom, newTo);
 
@@ -445,7 +393,7 @@ export function rescheduleTermBounds(
 
 /**
  * Elimina un tramo por su effectiveFrom.
- * - Si hay tramo anterior: ese absorbe el rango eliminado (su effectiveTo = al del borrado).
+ * - El tramo se elimina dejando un hueco (no se expanden los vecinos).
  * - Si es el primero: se elimina y el siguiente pasa a ser el primero (joining se sincroniza fuera).
  * No se permite borrar el único tramo (el trabajador quedaría sin contrato).
  */
@@ -471,13 +419,7 @@ export function deleteContractTerm(
   const deleted = sorted[idx]!;
   const remaining = sorted.filter((_, i) => i !== idx).map((t) => ({ ...t }));
 
-  if (idx > 0) {
-    const prev = remaining[idx - 1]!;
-    remaining[idx - 1] = {
-      ...prev,
-      effectiveTo: deleted.effectiveTo,
-    };
-  }
+  // El tramo anterior NO absorbe el rango eliminado. Simplemente se deja el hueco.
 
   const coalesced = coalesceIdenticalConsecutiveTerms(remaining);
   assertContractTermInvariants(coalesced);

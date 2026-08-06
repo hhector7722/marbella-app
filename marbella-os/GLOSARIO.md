@@ -58,6 +58,8 @@ Reglas de uso:
 | **Horas extras** | Horas trabajadas por encima de la jornada contratada, una vez aplicado el arrastre. | `weekly_snapshots.extra_hours` |
 | **Jornada contratada** | Horas semanales pactadas en el tramo de contrato vigente esa semana. | `contracted_hours_snapshot` |
 | **Tramo de contrato** | Periodo con condiciones laborales constantes. Editar un tramo no crea tramos nuevos; se puede abrir una vigencia nueva desde una fecha. | `hours_contract_terms` |
+| **Pre-alta** | Situación de los días anteriores a la fecha de inicio del primer tramo de contrato conocido. Los fichajes en este periodo no consumen horas de contrato. | `kind: 'pre_alta'` |
+| **Gap contractual** | Hueco o vacío entre dos tramos de contrato. Legal y soportado en el modelo. Los fichajes en estos días generan horas extra íntegras (al no haber jornada base). | `kind: 'gap'` |
 | **Jornada fija** | Política por la que una persona computa su jornada completa con independencia de sus fichajes, y sus fichajes generan solo extras. Aplicada hoy a un único usuario. | — |
 | **Bolsa de horas** | Saldo de horas acumuladas a favor o en contra de una persona, que se arrastra de una semana a la siguiente. Término canónico. | `balance_hours`, `final_balance` |
 | **Arrastre** | El acto de trasladar el saldo de bolsa de una semana a la siguiente. Sinónimo interno en código: *carry*. En documentación se dice **arrastre**. | `computeCarry` |

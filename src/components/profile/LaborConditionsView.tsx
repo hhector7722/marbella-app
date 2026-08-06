@@ -367,7 +367,7 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
                   <>
                     <p className="mb-3 text-xs text-zinc-500">
                       Pulsa un tramo para modificarlo (condiciones o fechas) sin crear
-                      otro. Al borrar, el anterior absorbe el rango. Vacío en fin =
+                      otro. Al borrar, dejará un hueco en la historia contractual. Vacío en fin =
                       vigente.
                     </p>
                     <div className="divide-y divide-zinc-100">

@@ -16,7 +16,7 @@ export type RegimeSegmentInput = {
   contractedHours: number;
   bagMode: boolean;
   termRegime: ContractRegime;
-  kind: 'term' | 'pre_alta';
+  kind: 'term' | 'pre_alta' | 'gap';
 };
 
 function hoursOnDays(
@@ -58,7 +58,9 @@ function balanceForRegime(
 export function applyRegimeToSegment(input: RegimeSegmentInput): SegmentLiquidation {
   const { days, hoursByDay, contractedHours, bagMode, termRegime, kind } = input;
 
-  const regimeApplied: SegmentRegime = kind === 'pre_alta' ? 'pre_alta' : termRegime;
+  let regimeApplied: SegmentRegime = termRegime;
+  if (kind === 'pre_alta') regimeApplied = 'pre_alta';
+  if (kind === 'gap') regimeApplied = 'gap';
 
   if (days.length === 0) {
     return {

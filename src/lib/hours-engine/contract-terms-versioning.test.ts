@@ -153,7 +153,7 @@ describe('contract-terms-versioning', () => {
     assertContractTermInvariants(r.terms);
   });
 
-  it('rescheduleTermStart: mueve inicio más tarde y alarga el anterior', () => {
+  it('rescheduleTermStart: mueve inicio más tarde (deja hueco)', () => {
     const base = [
       term('2026-01-01', '2026-02-28', 16),
       term('2026-03-01', null, 40),
@@ -166,29 +166,26 @@ describe('contract-terms-versioning', () => {
     );
     assert.equal(r.kind, 'rescheduled');
     assert.equal(r.terms[0]!.effectiveFrom, '2026-01-01');
-    assert.equal(r.terms[0]!.effectiveTo, '2026-03-31');
+    assert.equal(r.terms[0]!.effectiveTo, '2026-02-28');
     assert.equal(r.terms[1]!.effectiveFrom, '2026-04-01');
     assert.equal(r.terms[1]!.effectiveTo, null);
     assertContractTermInvariants(r.terms);
   });
 
-  it('rescheduleTermStart: mueve inicio más temprano y acorta el anterior', () => {
+  it('rescheduleTermStart: mueve inicio más temprano (solape -> aborta)', () => {
     const base = [
       term('2026-01-01', '2026-02-28', 16),
       term('2026-03-01', null, 40),
     ];
-    const r = rescheduleTermStart(
-      base,
-      '2026-03-01',
-      '2026-02-15',
-      { weeklyHours: 32, bagMode: false, regime: 'staff', overtimeRatePerHour: 12 },
+    assert.throws(() =>
+      rescheduleTermStart(
+        base,
+        '2026-03-01',
+        '2026-02-15',
+        { weeklyHours: 32, bagMode: false, regime: 'staff', overtimeRatePerHour: 12 },
+      ),
+      /solapa/i
     );
-    assert.equal(r.kind, 'rescheduled');
-    assert.equal(r.terms[0]!.effectiveTo, '2026-02-14');
-    assert.equal(r.terms[1]!.effectiveFrom, '2026-02-15');
-    assert.equal(r.terms[1]!.weeklyHours, 32);
-    assert.equal(r.terms[1]!.bagMode, false);
-    assertContractTermInvariants(r.terms);
   });
 
   it('rescheduleTermStart: primer tramo solo cambia su from', () => {
@@ -222,7 +219,7 @@ describe('contract-terms-versioning', () => {
     assertContractTermInvariants(r.terms);
   });
 
-  it('rescheduleTermEnd: mueve fin y recalcula inicio del siguiente', () => {
+  it('rescheduleTermEnd: mueve fin más temprano (deja hueco)', () => {
     const base = [
       term('2026-01-01', '2026-02-28', 16),
       term('2026-03-01', null, 40),
@@ -230,12 +227,12 @@ describe('contract-terms-versioning', () => {
     const r = rescheduleTermEnd(
       base,
       '2026-01-01',
-      '2026-03-15',
+      '2026-02-15',
       { weeklyHours: 16, bagMode: false, regime: 'staff', overtimeRatePerHour: 10 },
     );
     assert.equal(r.kind, 'rescheduled');
-    assert.equal(r.terms[0]!.effectiveTo, '2026-03-15');
-    assert.equal(r.terms[1]!.effectiveFrom, '2026-03-16');
+    assert.equal(r.terms[0]!.effectiveTo, '2026-02-15');
+    assert.equal(r.terms[1]!.effectiveFrom, '2026-03-01');
     assert.equal(r.terms[1]!.effectiveTo, null);
     assertContractTermInvariants(r.terms);
   });
@@ -271,25 +268,25 @@ describe('contract-terms-versioning', () => {
     );
   });
 
-  it('rescheduleTermBounds: mueve inicio y fin a la vez', () => {
+  it('rescheduleTermBounds: mueve inicio y fin a la vez (dejando huecos)', () => {
     const base = [
       term('2026-01-01', '2026-02-28', 16),
-      term('2026-03-01', '2026-05-31', 32),
-      term('2026-06-01', null, 40),
+      term('2026-03-15', '2026-05-31', 32),
+      term('2026-06-15', null, 40),
     ];
     const r = rescheduleTermBounds(
       base,
-      '2026-03-01',
-      '2026-02-15',
-      '2026-04-30',
+      '2026-03-15',
+      '2026-04-01',
+      '2026-05-15',
       { weeklyHours: 24, bagMode: false, regime: 'staff', overtimeRatePerHour: 12 },
     );
     assert.equal(r.kind, 'rescheduled');
-    assert.equal(r.terms[0]!.effectiveTo, '2026-02-14');
-    assert.equal(r.terms[1]!.effectiveFrom, '2026-02-15');
-    assert.equal(r.terms[1]!.effectiveTo, '2026-04-30');
+    assert.equal(r.terms[0]!.effectiveTo, '2026-02-28');
+    assert.equal(r.terms[1]!.effectiveFrom, '2026-04-01');
+    assert.equal(r.terms[1]!.effectiveTo, '2026-05-15');
     assert.equal(r.terms[1]!.weeklyHours, 24);
-    assert.equal(r.terms[2]!.effectiveFrom, '2026-05-01');
+    assert.equal(r.terms[2]!.effectiveFrom, '2026-06-15');
     assertContractTermInvariants(r.terms);
   });
 
@@ -302,11 +299,11 @@ describe('contract-terms-versioning', () => {
     );
   });
 
-  it('evitar huecos (abort)', () => {
-    assert.throws(() =>
+  it('permitir huecos (no abort)', () => {
+    assert.doesNotThrow(() =>
       assertContractTermInvariants([
         term('2026-01-01', '2026-01-31', 16),
-        term('2026-02-02', null, 40),
+        term('2026-02-05', null, 40),
       ]),
     );
   });
@@ -492,28 +489,28 @@ describe('contract-terms-versioning — splice histórico v2', () => {
     assert.equal(merged[0]!.effectiveTo, null);
   });
 
-  it('rechaza fecha anterior al primer contrato', () => {
+  it('crea tramo si fecha anterior al primer contrato', () => {
     const base = [term('2026-02-11', null, 16, { bagMode: false })];
-    assert.throws(
-      () => applyContractualChange(base, snap(40), '2026-01-01'),
-      /anterior al primer contrato/,
-    );
+    const r = applyContractualChange(base, snap(40), '2026-01-01');
+    assert.equal(r.kind, 'spliced');
+    assert.equal(r.terms.length, 2);
+    assert.equal(r.terms[0]!.effectiveFrom, '2026-01-01');
+    assert.equal(r.terms[0]!.effectiveTo, '2026-02-10');
   });
 
-  it('rechaza fecha fuera de cualquier tramo (hueco)', () => {
+  it('crea tramo en un hueco intermedio', () => {
     const base = [
       term('2026-01-01', '2026-01-31', 16, { bagMode: false }),
-      // hueco artificial no pasa invariantes al construir a mano sin assert;
-      // simulamos “fuera” con un solo tramo cerrado y D posterior
-      term('2026-02-01', '2026-02-28', 40, { bagMode: false }),
+      term('2026-03-01', '2026-03-31', 40, { bagMode: false }),
     ];
-    assert.throws(
-      () => applyContractualChange(base, snap(32), '2026-03-15'),
-      /no pertenece a ningún tramo/,
-    );
+    const r = applyContractualChange(base, snap(32), '2026-02-15');
+    assert.equal(r.kind, 'spliced');
+    assert.equal(r.terms.length, 3);
+    assert.equal(r.terms[1]!.effectiveFrom, '2026-02-15');
+    assert.equal(r.terms[1]!.effectiveTo, '2026-02-28');
   });
 
-  it('invariantes finales: sin huecos ni solapes tras splice', () => {
+  it('mantiene invariantes del dominio tras splice', () => {
     const base = [
       term('2026-02-11', '2026-07-15', 16, { bagMode: false, overtimeRatePerHour: 10 }),
       term('2026-07-16', null, 40, { bagMode: false, overtimeRatePerHour: 10 }),
@@ -522,7 +519,7 @@ describe('contract-terms-versioning — splice histórico v2', () => {
     assert.doesNotThrow(() => assertContractTermInvariants(r.terms));
   });
 
-  it('deleteContractTerm: intermedio → anterior absorbe el rango', () => {
+  it('deleteContractTerm: intermedio → deja hueco', () => {
     const base = [
       term('2026-01-01', '2026-02-28', 16),
       term('2026-03-01', '2026-05-31', 32),
@@ -532,13 +529,13 @@ describe('contract-terms-versioning — splice histórico v2', () => {
     assert.equal(r.kind, 'deleted');
     assert.equal(r.terms.length, 2);
     assert.equal(r.terms[0]!.effectiveFrom, '2026-01-01');
-    assert.equal(r.terms[0]!.effectiveTo, '2026-05-31');
+    assert.equal(r.terms[0]!.effectiveTo, '2026-02-28');
     assert.equal(r.terms[0]!.weeklyHours, 16);
     assert.equal(r.terms[1]!.effectiveFrom, '2026-06-01');
     assertContractTermInvariants(r.terms);
   });
 
-  it('deleteContractTerm: último abierto → anterior queda vigente', () => {
+  it('deleteContractTerm: último abierto → deja hueco al final', () => {
     const base = [
       term('2026-01-01', '2026-02-28', 16),
       term('2026-03-01', null, 40),
@@ -547,7 +544,7 @@ describe('contract-terms-versioning — splice histórico v2', () => {
     assert.equal(r.kind, 'deleted');
     assert.equal(r.terms.length, 1);
     assert.equal(r.terms[0]!.effectiveFrom, '2026-01-01');
-    assert.equal(r.terms[0]!.effectiveTo, null);
+    assert.equal(r.terms[0]!.effectiveTo, '2026-02-28');
     assert.equal(r.terms[0]!.weeklyHours, 16);
     assertContractTermInvariants(r.terms);
   });
@@ -572,7 +569,7 @@ describe('contract-terms-versioning — splice histórico v2', () => {
     );
   });
 
-  it('deleteContractTerm: coalesce si vecinos quedan idénticos', () => {
+  it('deleteContractTerm: NO coalesce vecinos idénticos separados por un hueco', () => {
     const base = [
       term('2026-01-01', '2026-02-28', 40, { bagMode: false }),
       term('2026-03-01', '2026-04-30', 16, { bagMode: true }),
@@ -580,10 +577,9 @@ describe('contract-terms-versioning — splice histórico v2', () => {
     ];
     const r = deleteContractTerm(base, '2026-03-01');
     assert.equal(r.kind, 'deleted');
-    assert.equal(r.terms.length, 1);
-    assert.equal(r.terms[0]!.effectiveFrom, '2026-01-01');
-    assert.equal(r.terms[0]!.effectiveTo, null);
-    assert.equal(r.terms[0]!.weeklyHours, 40);
+    assert.equal(r.terms.length, 2);
+    assert.equal(r.terms[0]!.effectiveTo, '2026-02-28');
+    assert.equal(r.terms[1]!.effectiveFrom, '2026-05-01');
     assertContractTermInvariants(r.terms);
   });
 });

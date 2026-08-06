@@ -18,12 +18,13 @@ export type DailyBreakdownSegmentInput = {
   hoursByDay: Readonly<Record<CivilDate, number>>;
   contractedHours: number;
   termRegime: ContractRegime;
-  kind: 'term' | 'pre_alta';
+  kind: 'term' | 'pre_alta' | 'gap';
 };
 
 function isAllOvertimeRegime(regime: SegmentRegime): boolean {
   return (
     regime === 'pre_alta' ||
+    regime === 'gap' ||
     regime === 'manager' ||
     regime === 'fixed'
   );
@@ -101,7 +102,9 @@ export function buildDailyBreakdown(
   for (const seg of segments) {
     if (seg.days.length === 0) continue;
 
-    const regime: SegmentRegime = seg.kind === 'pre_alta' ? 'pre_alta' : seg.termRegime;
+    let regime: SegmentRegime = seg.termRegime;
+    if (seg.kind === 'pre_alta') regime = 'pre_alta';
+    if (seg.kind === 'gap') regime = 'gap';
 
     if (isAllOvertimeRegime(regime)) {
       attributeAllOvertime(seg.days, hoursByDay, byDay);
