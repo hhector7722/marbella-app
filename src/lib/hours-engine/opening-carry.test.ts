@@ -117,7 +117,7 @@ describe('opening-carry — cadena continua', () => {
 
     // Cadena parcial: solo mayo (como historial filtrado) + opening para junio
     const mayPatched = patchWeeksFromLiquidation(
-      [{ startDate: w22, days: emptyDays(w22), summary: { isPaid: false } }],
+      [{ startDate: w22, days: emptyDays(w22), summary: { isPaid: false } as any }],
       employee,
       logs,
       {
@@ -138,7 +138,7 @@ describe('opening-carry — cadena continua', () => {
     });
 
     const junePatched = patchWeeksFromLiquidation(
-      [{ startDate: w23, days: emptyDays(w23), summary: { isPaid: false } }],
+      [{ startDate: w23, days: emptyDays(w23), summary: { isPaid: false } as any }],
       employee,
       logs,
       { openingCarryIn: juneOpening },
@@ -189,7 +189,7 @@ describe('opening-carry — cadena continua', () => {
     assert.equal(opening, -5);
 
     const patched = patchWeeksFromLiquidation(
-      [{ startDate: wJun, days: emptyDays(wJun), summary: { isPaid: false } }],
+      [{ startDate: wJun, days: emptyDays(wJun), summary: { isPaid: false } as any }],
       employee,
       logs,
       { openingCarryIn: opening },
@@ -236,7 +236,7 @@ describe('opening-carry — cadena continua', () => {
       isPaidByWeek,
     });
     const history = patchWeeksFromLiquidation(
-      [{ startDate: wJun, days: emptyDays(wJun), summary: { isPaid: false } }],
+      [{ startDate: wJun, days: emptyDays(wJun), summary: { isPaid: false } as any }],
       employee,
       logs,
       { openingCarryIn: historyOpening },

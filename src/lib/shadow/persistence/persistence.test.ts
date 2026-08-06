@@ -180,7 +180,8 @@ describe('shadow persistence ports (in-memory)', () => {
     assert.equal(persist.comparisonsSaved, 2);
     assert.ok(persist.fieldDiffsSaved >= 1);
     assert.ok(persist.discrepanciesCreated >= 1);
-    assert.equal(ports.runs.getById('persist-1')?.hoursEngineVersion, 'test-he');
+    const runRecord = await ports.runs.getById('persist-1');
+    assert.equal(runRecord?.hoursEngineVersion, 'test-he');
     assert.equal(ports.metrics._byRun.get('persist-1')?.comparisons, 2);
     assert.equal(ports.comparisons._diffs.length, persist.fieldDiffsSaved);
     // No vectores completos en comparisons store

@@ -35,6 +35,7 @@ describe('shadow domain scaffolding', () => {
       () =>
         createHeAdapterStub().toCanonical({
           employeeId: 'x',
+          employee: {} as never,
           weekStart: '2026-07-20',
           liquidation: {} as never,
         }),

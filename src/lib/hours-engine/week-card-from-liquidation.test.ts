@@ -537,9 +537,10 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
     );
     const week = patched[0]!;
     const sumDaily = week.days.reduce((a, d) => a + d.extraHours, 0);
-    assert.equal(week.summary!.weeklyBalance, 16);
-    assert.equal(sumDaily, week.summary!.weeklyBalance);
-    assert.equal(week.summary!.estimatedValue, 160);
+    const summary = week.summary as any;
+    assert.equal(summary.weeklyBalance, 16);
+    assert.equal(sumDaily, summary.weeklyBalance);
+    assert.equal(summary.estimatedValue, 160);
   });
 });
 
