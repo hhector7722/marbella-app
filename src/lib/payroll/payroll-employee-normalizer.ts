@@ -8,6 +8,7 @@ export interface ProfileEmployeeCandidate {
   last_name: string | null;
   email: string | null;
   dni: string | null;
+  payroll_name?: string | null;
 }
 
 /**
@@ -84,7 +85,7 @@ export class PayrollEmployeeNormalizer {
 
       const { data, error } = await this.supabase
         .from('profiles')
-        .select('id, first_name, last_name, email, dni');
+        .select('id, first_name, last_name, email, dni, payroll_name');
 
       if (error) {
         throw new Error(`Error cargando plantilla de empleados (profiles): ${error.message}`);
@@ -116,6 +117,36 @@ export class PayrollEmployeeNormalizer {
       };
     }
 
+    // 1. Intentar coincidencia exacta con payroll_name (si está informado en el perfil)
+    const normalizedRawInput = normalizeLastName(input.name); // Normalizamos todo el string de entrada de la gestoría
+    const payrollNameMatches = this.profiles.filter((p) => {
+      if (!p.payroll_name) return false;
+      return normalizeLastName(p.payroll_name) === normalizedRawInput;
+    });
+
+    if (payrollNameMatches.length === 1) {
+      const match = payrollNameMatches[0]!;
+      return {
+        matched: true,
+        userId: match.id,
+        fullName: `${match.first_name} ${match.last_name || ''}`.trim(),
+        dni: match.dni,
+        email: match.email,
+        matchMethod: 'fullName',
+      };
+    } else if (payrollNameMatches.length > 1) {
+      return {
+        matched: false,
+        userId: null,
+        fullName: null,
+        dni: null,
+        email: null,
+        matchMethod: 'none',
+        errorMessage: `Ambigüedad: existen ${payrollNameMatches.length} empleados activos que comparten el mismo payroll_name normalizado: '${normalizedRawInput}'`,
+      };
+    }
+
+    // 2. Si no hay coincidencia con payroll_name, usar algoritmo original por apellidos
     const extractedPdfLastName = extractLastName(input.name, this.profiles);
     const normalizedPdfLastName = normalizeLastName(extractedPdfLastName);
 

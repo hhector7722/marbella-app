@@ -1769,6 +1769,7 @@ export type Database = {
           monthly_cost: number | null
           needs_onboarding: boolean | null
           overtime_cost_per_hour: number | null
+          payroll_name: string | null
           phone: string | null
           prefer_stock_hours: boolean | null
           preferred_language: string | null
@@ -1797,6 +1798,7 @@ export type Database = {
           monthly_cost?: number | null
           needs_onboarding?: boolean | null
           overtime_cost_per_hour?: number | null
+          payroll_name?: string | null
           phone?: string | null
           prefer_stock_hours?: boolean | null
           preferred_language?: string | null
@@ -1825,6 +1827,7 @@ export type Database = {
           monthly_cost?: number | null
           needs_onboarding?: boolean | null
           overtime_cost_per_hour?: number | null
+          payroll_name?: string | null
           phone?: string | null
           prefer_stock_hours?: boolean | null
           preferred_language?: string | null
