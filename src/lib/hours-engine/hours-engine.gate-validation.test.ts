@@ -135,7 +135,7 @@ describe('Gate V1 — Golden Tests (especificación v1.0)', () => {
       terms: [
         {
           effectiveFrom: '2025-01-01',
-          effectiveTo: null,
+          effectiveTo: '2026-03-04',
           weeklyHours: 40,
           bagMode: true,
           regime: 'staff',
@@ -152,10 +152,13 @@ describe('Gate V1 — Golden Tests (especificación v1.0)', () => {
         ],
       }),
     );
-    assert.equal(r.hoursWorked, 10);
+    assert.equal(r.hoursWorked, 109);
     const contract = expectedContract([[3, 40]]);
     assertClose(r.contractedHoursEffective, contract, 'contrato baja');
-    assertClose(r.weeklyBalance, 10 - contract, 'weekly baja');
+    // 109 horas trabajadas: 10 en tramo + 99 en gap. 
+    // Ordinarias: min(10, 17) = 10. Extras de tramo = 0. Extras de gap = 99. Total extras = 99.
+    assertClose(r.ordinaryHours, 10, 'ordinarias baja');
+    assertClose(r.overtimeHours, 99, 'extras baja');
   });
 
   it('GT-05 Contrato 16→40 (caso real Alba) — semana bajo 40 no usa 16', () => {

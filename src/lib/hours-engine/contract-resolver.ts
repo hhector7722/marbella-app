@@ -28,26 +28,18 @@ function findTermForDay(
   return matches[0]!;
 }
 
-function isEmployedDay(
-  day: CivilDate,
-  joiningDate: CivilDate | null,
-  endDate: CivilDate | null,
-): boolean {
-  if (joiningDate !== null && compareCivilDate(day, joiningDate) < 0) {
-    return false;
+function getFirstTermDate(terms: readonly ContractTermFact[]): CivilDate | null {
+  let first: CivilDate | null = null;
+  for (const t of terms) {
+    if (first === null || compareCivilDate(t.effectiveFrom, first) < 0) {
+      first = t.effectiveFrom;
+    }
   }
-  if (endDate !== null && compareCivilDate(day, endDate) > 0) {
-    return false;
-  }
-  return true;
-}
-
-function isPreAltaDay(day: CivilDate, joiningDate: CivilDate | null): boolean {
-  return joiningDate !== null && compareCivilDate(day, joiningDate) < 0;
+  return first;
 }
 
 function segmentKey(term: ContractTermFact | null, kind: 'term' | 'pre_alta' | 'gap'): string {
-  if (kind === 'pre_alta') return 'pre_alta';
+  if (kind === 'pre_alta' || kind === 'gap') return kind;
   if (!term) return 'none';
   return `term:${term.effectiveFrom}:${term.effectiveTo ?? 'open'}:${term.weeklyHours}:${term.bagMode}:${term.regime}`;
 }
@@ -55,14 +47,17 @@ function segmentKey(term: ContractTermFact | null, kind: 'term' | 'pre_alta' | '
 /**
  * Único punto autorizado a resolver el contrato efectivo semanal.
  * Compone por tramo: días/7 × jornada, redondeado Marbella (enteros o medias).
- * Pre-alta = sin tramo (contrato 0). Post-baja = días excluidos.
+ * Pre-alta = antes del primer tramo.
+ * Gap = huecos entre tramos o después del último tramo.
  */
 export function resolveEffectiveContract(
   employee: EmployeeBoundaryFacts,
   weekStart: CivilDate,
 ): EffectiveContractWeek {
   const { weekEnd, days } = weekBounds(weekStart);
-  const { joiningDate, endDate, terms } = employee;
+  const { terms } = employee;
+
+  const firstTermDate = getFirstTermDate(terms);
 
   type Acc = {
     kind: 'term' | 'pre_alta' | 'gap';
@@ -74,32 +69,21 @@ export function resolveEffectiveContract(
   let current: Acc | null = null;
 
   for (const day of days) {
-    if (endDate !== null && compareCivilDate(day, endDate) > 0) {
-      // post-baja: no computa
-      current = null;
-      continue;
-    }
+    const term = findTermForDay(day, terms);
 
-    if (isPreAltaDay(day, joiningDate)) {
-      const key = segmentKey(null, 'pre_alta');
+    if (!term) {
+      const kind =
+        firstTermDate === null || compareCivilDate(day, firstTermDate) < 0
+          ? 'pre_alta'
+          : 'gap';
+      const key = segmentKey(null, kind);
+
       if (!current || segmentKey(current.term, current.kind) !== key) {
-        current = { kind: 'pre_alta', term: null, days: [day] };
+        current = { kind, term: null, days: [day] };
         groups.push(current);
       } else {
         current.days.push(day);
       }
-      continue;
-    }
-
-    if (!isEmployedDay(day, joiningDate, endDate)) {
-      current = null;
-      continue;
-    }
-
-    const term = findTermForDay(day, terms);
-    if (!term) {
-      // Empleado activo sin tramo: no hay contrato ese día (horas se tratan fuera vía asistencia).
-      current = null;
       continue;
     }
 
@@ -113,7 +97,7 @@ export function resolveEffectiveContract(
   }
 
   const segments: ContractSegment[] = groups.map((g) => {
-    if (g.kind === 'pre_alta') {
+    if (g.kind === 'pre_alta' || g.kind === 'gap') {
       return {
         days: g.days,
         weeklyHoursOfTerm: 0,
@@ -121,7 +105,7 @@ export function resolveEffectiveContract(
         bagMode: false,
         termRegime: 'staff',
         overtimeRatePerHour: null,
-        kind: 'pre_alta',
+        kind: g.kind,
         effectiveFrom: null,
         effectiveTo: null,
       };
@@ -151,39 +135,46 @@ export function resolveEffectiveContract(
   return {
     weekStart,
     weekEnd,
-    segments,
     contractedHoursEffective,
+    segments,
   };
 }
 
+/**
+ * Solo para estimación económica.
+ * Devuelve null si no hay contrato efectivo para obtener el precio.
+ */
 export function resolveEffectiveOvertimeRate(
   employee: EmployeeBoundaryFacts,
   weekStart: CivilDate,
   overrideRate?: number | null,
 ): number | null {
-  if (overrideRate != null && Number.isFinite(overrideRate)) {
-    return Number(overrideRate);
-  }
+  if (overrideRate != null) return overrideRate;
+
   const contract = resolveEffectiveContract(employee, weekStart);
+
   // First, try to find a segment that includes the Monday with a defined rate
   for (const s of contract.segments) {
     if (!s.days.includes(weekStart)) continue;
     if (s.overtimeRatePerHour != null && Number.isFinite(s.overtimeRatePerHour)) {
       return Number(s.overtimeRatePerHour);
     }
-    // If pre_alta or segment without rate, stop scanning further segments for this week
+    // If pre_alta, gap, or segment without rate, stop scanning further segments for this week
     break;
   }
+
   // Fallback: any term segment with a rate
   for (const s of contract.segments) {
     if (s.kind === 'term' && s.overtimeRatePerHour != null && Number.isFinite(s.overtimeRatePerHour)) {
       return Number(s.overtimeRatePerHour);
     }
   }
+
   // Historical fallback from employee terms, newest first
   const sortedTerms = [...employee.terms].sort((a, b) =>
     compareCivilDate(b.effectiveFrom, a.effectiveFrom),
   );
+
   for (const t of sortedTerms) {
     if (
       compareCivilDate(t.effectiveFrom, weekStart) <= 0 &&
@@ -192,11 +183,13 @@ export function resolveEffectiveOvertimeRate(
       return Number(t.overtimeRatePerHour);
     }
   }
+
   // Any known historical rate
   for (const t of sortedTerms) {
     if (t.overtimeRatePerHour != null && Number.isFinite(t.overtimeRatePerHour)) {
       return Number(t.overtimeRatePerHour);
     }
   }
+
   return null;
 }

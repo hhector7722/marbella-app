@@ -70,14 +70,14 @@ describe('Contract Resolver', () => {
     assert.equal(resolved.contractedHoursEffective, expected);
   });
 
-  it('excluye post-baja y no crea tramo pre-alta sin días', () => {
+  it('incluye post-baja como gap cuando el tramo finaliza', () => {
     const emp = employeeBase({
       joiningDate: '2026-03-04',
-      endDate: '2026-03-06',
+      endDate: '2026-03-06', // Ya no importa
       terms: [
         {
           effectiveFrom: '2026-03-04',
-          effectiveTo: null,
+          effectiveTo: '2026-03-06',
           weeklyHours: 40,
           bagMode: true,
           regime: 'staff',
@@ -85,12 +85,14 @@ describe('Contract Resolver', () => {
       ],
     });
     const resolved = resolveEffectiveContract(emp, '2026-03-02');
-    // pre_alta: 2-3; term: 4-6 (baja inclusive); 7-8 post-baja fuera
-    assert.equal(resolved.segments.length, 2);
+    // pre_alta: 2-3; term: 4-6; gap: 7-8
+    assert.equal(resolved.segments.length, 3);
     assert.equal(resolved.segments[0]!.kind, 'pre_alta');
     assert.deepEqual([...resolved.segments[0]!.days], ['2026-03-02', '2026-03-03']);
     assert.equal(resolved.segments[1]!.kind, 'term');
-    assert.deepEqual([...resolved.segments[1]!.days], ['2026-03-04', '2026-03-05', '2026-03-06']);
+    assert.deepEqual(resolved.segments[1]!.days, ['2026-03-04', '2026-03-05', '2026-03-06']);
+    assert.equal(resolved.segments[2]!.kind, 'gap');
+    assert.deepEqual(resolved.segments[2]!.days, ['2026-03-07', '2026-03-08']);
     assert.equal(resolved.contractedHoursEffective, expectedContract([[3, 40]]));
   });
 });
@@ -468,5 +470,45 @@ describe('Nueva Política Funcional — Eliminación Régimen Agosto (Invariante
     assert.equal(r.contractedHoursEffective, expectedContract);
     assert.equal(r.ordinaryHours, expectedContract);
     assert.equal(r.overtimeHours, 2);
+  });
+
+  it('gap post-contrato: empleado ficha en fin de semana tras finalizar contrato', () => {
+    // Escenario Bali: contrato finaliza el 28/06/2026. Ficha el 4 y 5 de julio.
+    const emp = employeeBase({
+      joiningDate: '2025-01-01',
+      endDate: '2026-06-28',
+      terms: [
+        {
+          effectiveFrom: '2025-01-01',
+          effectiveTo: '2026-06-28',
+          weeklyHours: 40,
+          bagMode: false,
+          regime: 'staff',
+          overtimeRatePerHour: 15,
+        },
+      ],
+    });
+    const r = liquidateWeek(
+      input({
+        employee: emp,
+        weekStart: '2026-06-29', // Semana del 29 junio al 5 julio
+        logs: [
+          { clockInIso: '2026-07-04T08:00:00.000Z', totalHours: 8 },
+          { clockInIso: '2026-07-05T08:00:00.000Z', totalHours: 8 },
+        ],
+      }),
+    );
+    
+    assert.equal(r.hoursWorked, 16);
+    assert.equal(r.contractedHoursEffective, 0); // No hay contrato en la semana
+    assert.equal(r.ordinaryHours, 0);
+    assert.equal(r.overtimeHours, 16);
+    
+    // Verificamos que el segmento gap está presente y acumula las horas extra
+    assert.equal(r.segments.length, 1);
+    const gapSeg = r.segments[0]!;
+    assert.equal(gapSeg.kind, 'gap');
+    assert.equal(gapSeg.overtimeHours, 16);
+    assert.equal(gapSeg.ordinaryHours, 0);
   });
 });

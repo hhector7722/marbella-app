@@ -229,8 +229,8 @@ describe('Daily Breakdown — regla running + coherencia semanal', () => {
         ],
       }),
     );
-    assert.equal(r.hoursWorked, 16);
-    assert.equal(r.dailyBreakdown.days.find((d) => d.day === '2026-03-06')!.hours, 0);
+    assert.equal(r.hoursWorked, 24);
+    assert.equal(r.dailyBreakdown.days.find((d) => d.day === '2026-03-06')!.hours, 8);
     assertDailyEqualsWeekly(r);
   });
 

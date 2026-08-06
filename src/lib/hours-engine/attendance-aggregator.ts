@@ -21,16 +21,7 @@ function hoursFromLog(log: TimeLogFact): number {
   return roundMarbellaHours(raw);
 }
 
-function isComputableDay(
-  day: CivilDate,
-  joiningDate: CivilDate | null,
-  endDate: CivilDate | null,
-): boolean {
-  // Pre-alta: sí computa (como extra). Post-baja: no.
-  if (endDate !== null && compareCivilDate(day, endDate) > 0) return false;
-  void joiningDate;
-  return true;
-}
+
 
 /**
  * Agrega horas trabajadas de una semana en Europe/Madrid.
@@ -49,7 +40,7 @@ export function aggregateWeekAttendance(
   for (const log of logs) {
     const day = formatYmdInMadrid(log.clockInIso);
     if (!day || !daySet.has(day)) continue;
-    if (!isComputableDay(day, employee.joiningDate, employee.endDate)) continue;
+
     hoursByDay[day] = (hoursByDay[day] ?? 0) + hoursFromLog(log);
   }
 

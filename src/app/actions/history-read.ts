@@ -24,6 +24,7 @@ export async function getEmployeeHistoryMonth(input: {
 
   try {
     const weeks = await buildEmployeeHistoryMonthFromEngine(supabase, input);
+    console.log(`[DEBUG] getEmployeeHistoryMonth for ${input.userId} - Week 27 Summary:`, weeks.find(w => w.startDate.startsWith('2026-06-29'))?.summary);
     return { success: true, weeks };
   } catch (e) {
     return {
