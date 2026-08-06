@@ -1,7 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
 import { parseCompanySummaryPdfBuffer, PAYROLL_SUMMARY_PARSER_VERSION } from '../lib/payroll/company-summary-parser';
 import { PayrollSnapshotValidator } from '../lib/payroll/payroll-snapshot-validator';
 import { PayrollSnapshotPersistenceService } from '../lib/payroll/payroll-snapshot-persistence-service';
@@ -11,7 +10,6 @@ import { hashPayrollPdf } from '../lib/payroll/content-hash';
 import PDFParser from 'pdf2json';
 
 // Cargar variables de entorno
-dotenv.config({ path: '.env.local' });
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
