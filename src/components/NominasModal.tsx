@@ -32,6 +32,7 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
     const [loading, setLoading] = useState(true);
     const [nominas, setNominas] = useState<NominaRow[]>([]);
     const [uploading, setUploading] = useState(false);
+    const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
 
 
 
@@ -46,6 +47,7 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                 return;
             }
             const effectiveUserId = targetUserId ?? user.id;
+            setResolvedUserId(effectiveUserId);
 
             const { fetchNominasListForUser } = await import('@/app/actions/profile');
             const { rows, error } = await fetchNominasListForUser(effectiveUserId);
@@ -125,12 +127,12 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file || !targetUserId) return;
+        if (!file || !resolvedUserId) return;
 
         setUploading(true);
         try {
             const fileName = file.name;
-            const filePath = `${targetUserId}/nominas/${fileName}`;
+            const filePath = `${resolvedUserId}/nominas/${fileName}`;
 
             const { error: uploadError } = await supabase.storage
                 .from('employee-documents')
@@ -139,7 +141,7 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
             if (uploadError) throw new Error(uploadError.message);
 
             const { addEmployeeDocumentByTipo } = await import('@/app/actions/profile');
-            const result = await addEmployeeDocumentByTipo(targetUserId, {
+            const result = await addEmployeeDocumentByTipo(resolvedUserId, {
                 tipo: 'nomina',
                 storage_path: filePath,
                 filename: file.name
@@ -190,7 +192,7 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
 
     if (!isOpen) return null;
 
-    const uploadTrailing = isManager && targetUserId ? (
+    const uploadTrailing = isManager && resolvedUserId ? (
         <>
             <input type="file" id="nomina-upload" className="hidden" accept=".pdf" onChange={handleUpload} disabled={uploading} />
             <label htmlFor="nomina-upload" className={cn('min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl cursor-pointer transition-colors bg-white/20 hover:bg-white/30', uploading && 'opacity-60 cursor-wait')}>

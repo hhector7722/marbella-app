@@ -21,6 +21,7 @@
     "test:payroll": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/lib/payroll/company-summary-parser.test.ts",
     "test:shadow": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/lib/shadow/shadow.scaffold.test.ts src/lib/shadow/adapters/adapters.test.ts src/lib/shadow/discrepancy/discrepancy.test.ts src/lib/shadow/comparator/comparator.test.ts src/lib/shadow/classifier/classifier.test.ts src/lib/shadow/runner/runner.test.ts src/lib/shadow/persistence/persistence.test.ts src/infrastructure/shadow/ops/shadow-cli.test.ts src/infrastructure/shadow/loaders/horizon.test.ts",
     "shadow": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/shadow-run.ts",
+    "payroll:backfill": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/scripts/payroll-backfill.ts",
     "backfill:overtime-cost": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/backfill-overtime-total-cost.ts",
     "check:copilot-voice-schemas": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-copilot-voice-schemas.mjs",
     "validate:corpus": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/validate-marbella-os.ts",

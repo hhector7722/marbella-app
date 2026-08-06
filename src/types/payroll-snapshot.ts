@@ -66,6 +66,7 @@ export type PayrollSnapshotMetadataDTO = {
   parsedAt: string;
   filename?: string | null;
   source?: string;
+  storagePath?: string;
 };
 
 export type PayrollMonthSnapshot = {

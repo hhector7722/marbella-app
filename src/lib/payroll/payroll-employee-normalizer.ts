@@ -10,163 +10,162 @@ export interface ProfileEmployeeCandidate {
   dni: string | null;
 }
 
-export function cleanDni(dni: string | null | undefined): string | null {
-  if (!dni) return null;
-  const cleaned = dni.trim().replace(/[\s\-]/g, '').toUpperCase();
-  return cleaned || null;
+/**
+ * Extrae únicamente los apellidos de un nombre completo.
+ * 1. Si contiene coma, extrae todo lo anterior a la coma.
+ * 2. Si no contiene coma, intenta emparejar el texto completo contra el formato habitual
+ *    almacenado en Employees (first_name + last_name o last_name + first_name) para aislar el apellido.
+ */
+export function extractLastName(fullName: string | null | undefined, profiles: ProfileEmployeeCandidate[] = []): string {
+  if (!fullName) return '';
+  const trimmed = fullName.trim();
+  const commaIndex = trimmed.indexOf(',');
+  
+  if (commaIndex !== -1) {
+    return trimmed.substring(0, commaIndex).trim();
+  }
+
+  // Si no hay coma, intentamos buscar el apellido usando el formato completo.
+  const normalizedInput = normalizeLastName(trimmed);
+  for (const p of profiles) {
+    const first = p.first_name || '';
+    const last = p.last_name || '';
+    const format1 = normalizeLastName(`${first} ${last}`);
+    const format2 = normalizeLastName(`${last} ${first}`);
+    
+    if (normalizedInput === format1 || normalizedInput === format2) {
+      return last.trim();
+    }
+  }
+
+  // Fallback si no coincide con ningún perfil
+  return trimmed;
 }
 
-export function normalizeText(str: string | null | undefined): string {
-  if (!str) return '';
-  return str
+/**
+ * Normaliza los apellidos para comparación exacta:
+ * - Mayúsculas
+ * - Elimina acentos
+ * - Elimina caracteres especiales (comas, puntos, etc.)
+ * - Elimina espacios duplicados
+ * - Trim
+ */
+export function normalizeLastName(text: string | null | undefined): string {
+  if (!text) return '';
+  return text
     .trim()
-    .toLowerCase()
+    .toUpperCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, ' ');
+    .replace(/[\u0300-\u036f]/g, '') // Eliminar acentos
+    .replace(/[^A-Z\s]/g, '')        // Eliminar caracteres especiales (comas, puntos, etc.)
+    .replace(/\s+/g, ' ')            // Eliminar espacios duplicados
+    .trim();
 }
 
 export class PayrollEmployeeNormalizer {
   private profiles: ProfileEmployeeCandidate[] = [];
+  private readonly supabase?: SupabaseClient;
 
-  constructor(private readonly supabase?: SupabaseClient) {}
+  constructor(supabase?: SupabaseClient) {
+    this.supabase = supabase;
+  }
 
   /**
-   * Carga los perfiles de la base de datos o utiliza una lista inyectada en memoria
+   * Carga los perfiles de la base de datos o utiliza una lista inyectada en memoria.
+   * Valida estrictamente que ningún empleado activo comparta los mismos apellidos normalizados.
    */
   async initialize(profilesList?: ProfileEmployeeCandidate[]): Promise<void> {
     if (profilesList) {
       this.profiles = profilesList;
-      return;
+    } else {
+      if (!this.supabase) {
+        throw new Error('SupabaseClient es necesario si no se inyecta profilesList');
+      }
+
+      const { data, error } = await this.supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email, dni');
+
+      if (error) {
+        throw new Error(`Error cargando plantilla de empleados (profiles): ${error.message}`);
+      }
+
+      this.profiles = (data ?? []) as ProfileEmployeeCandidate[];
     }
-
-    if (!this.supabase) {
-      throw new Error('SupabaseClient es necesario si no se inyecta profilesList');
-    }
-
-    const { data, error } = await this.supabase
-      .from('profiles')
-      .select('id, first_name, last_name, email, dni');
-
-    if (error) {
-      throw new Error(`Error cargando plantilla de empleados (profiles): ${error.message}`);
-    }
-
-    this.profiles = (data ?? []) as ProfileEmployeeCandidate[];
   }
 
   /**
    * Resuelve un candidato contra la plantilla de perfiles
+   * La asociación debe hacerse ÚNICAMENTE mediante los apellidos.
    */
   matchCandidate(input: {
-    userId?: string | null;
-    dni?: string | null;
-    email?: string | null;
     name?: string | null;
+    dni?: string | null; // Se mantiene por compatibilidad de firma, pero no se usa para emparejar
+    email?: string | null; // Se mantiene por compatibilidad de firma, pero no se usa para emparejar
+    userId?: string | null; // Se mantiene por compatibilidad de firma, pero no se usa para emparejar
   }): EmployeeMatchResult {
-    // 1. Coincidencia por userId directo
-    if (input.userId) {
-      const match = this.profiles.find((p) => p.id === input.userId);
-      if (match) {
-        return {
-          matched: true,
-          userId: match.id,
-          fullName: `${match.first_name} ${match.last_name || ''}`.trim(),
-          dni: match.dni,
-          email: match.email,
-          matchMethod: 'userId',
-        };
-      }
+    if (!input.name) {
+      return {
+        matched: false,
+        userId: null,
+        fullName: null,
+        dni: null,
+        email: null,
+        matchMethod: 'none',
+        errorMessage: 'No se proporcionó un nombre para extraer apellidos',
+      };
     }
 
-    // 2. Coincidencia por DNI / NIF
-    const inputDni = cleanDni(input.dni);
-    if (inputDni) {
-      const matches = this.profiles.filter((p) => cleanDni(p.dni) === inputDni);
-      if (matches.length === 1) {
-        const match = matches[0]!;
-        return {
-          matched: true,
-          userId: match.id,
-          fullName: `${match.first_name} ${match.last_name || ''}`.trim(),
-          dni: match.dni,
-          email: match.email,
-          matchMethod: 'dni',
-        };
-      } else if (matches.length > 1) {
-        return {
-          matched: false,
-          userId: null,
-          fullName: null,
-          dni: inputDni,
-          email: null,
-          matchMethod: 'none',
-          errorMessage: `Ambigüedad: Se encontraron ${matches.length} empleados con el DNI ${inputDni}`,
-        };
-      }
+    const extractedPdfLastName = extractLastName(input.name, this.profiles);
+    const normalizedPdfLastName = normalizeLastName(extractedPdfLastName);
+
+    if (!normalizedPdfLastName) {
+      return {
+        matched: false,
+        userId: null,
+        fullName: null,
+        dni: null,
+        email: null,
+        matchMethod: 'none',
+        errorMessage: `El nombre '${input.name}' no contiene apellidos válidos tras la extracción y normalización`,
+      };
     }
 
-    // 3. Coincidencia por Email
-    if (input.email) {
-      const inputEmail = input.email.trim().toLowerCase();
-      const matches = this.profiles.filter(
-        (p) => p.email && p.email.trim().toLowerCase() === inputEmail,
-      );
-      if (matches.length === 1) {
-        const match = matches[0]!;
-        return {
-          matched: true,
-          userId: match.id,
-          fullName: `${match.first_name} ${match.last_name || ''}`.trim(),
-          dni: match.dni,
-          email: match.email,
-          matchMethod: 'email',
-        };
-      }
-    }
+    const matches = this.profiles.filter((p) => {
+      const normalizedDbLastName = normalizeLastName(p.last_name);
+      return normalizedDbLastName === normalizedPdfLastName;
+    });
 
-    // 4. Coincidencia por Nombre Completo
-    if (input.name) {
-      const inputNorm = normalizeText(input.name);
-      if (inputNorm) {
-        const matches = this.profiles.filter((p) => {
-          const fullNameNorm = normalizeText(`${p.first_name} ${p.last_name || ''}`);
-          const reverseNameNorm = normalizeText(`${p.last_name || ''} ${p.first_name}`);
-          return fullNameNorm === inputNorm || reverseNameNorm === inputNorm;
-        });
-
-        if (matches.length === 1) {
-          const match = matches[0]!;
-          return {
-            matched: true,
-            userId: match.id,
-            fullName: `${match.first_name} ${match.last_name || ''}`.trim(),
-            dni: match.dni,
-            email: match.email,
-            matchMethod: 'fullName',
-          };
-        } else if (matches.length > 1) {
-          return {
-            matched: false,
-            userId: null,
-            fullName: null,
-            dni: null,
-            email: null,
-            matchMethod: 'none',
-            errorMessage: `Ambigüedad: Se encontraron ${matches.length} empleados coincidentes con el nombre '${input.name}'`,
-          };
-        }
-      }
+    if (matches.length === 1) {
+      const match = matches[0]!;
+      return {
+        matched: true,
+        userId: match.id,
+        fullName: `${match.first_name} ${match.last_name || ''}`.trim(),
+        dni: match.dni,
+        email: match.email,
+        matchMethod: 'fullName',
+      };
+    } else if (matches.length > 1) {
+      return {
+        matched: false,
+        userId: null,
+        fullName: null,
+        dni: null,
+        email: null,
+        matchMethod: 'none',
+        errorMessage: `Ambigüedad: Se encontraron ${matches.length} empleados con el apellido '${normalizedPdfLastName}'`,
+      };
     }
 
     return {
       matched: false,
       userId: null,
       fullName: null,
-      dni: input.dni ?? null,
-      email: input.email ?? null,
+      dni: null,
+      email: null,
       matchMethod: 'none',
-      errorMessage: `No se encontró ningún empleado en profiles para: DNI="${input.dni || ''}", Email="${input.email || ''}", Nombre="${input.name || ''}"`,
+      errorMessage: `No existe coincidencia para el apellido '${normalizedPdfLastName}'`,
     };
   }
 }

@@ -25,6 +25,10 @@ export type PersistenceResultDTO = {
   monthlyTotalsUpserted: boolean;
   importRunId?: string;
   errors: string[];
+  totalWorkers: number;
+  imported: number;
+  skippedNotFound: number;
+  skippedAmbiguous: number;
 };
 
 export class PayrollSnapshotPersistenceService {
@@ -50,6 +54,8 @@ export class PayrollSnapshotPersistenceService {
     }
 
     let factsInsertedCount = 0;
+    let factsSkippedNotFound = 0;
+    let factsSkippedMultiple = 0;
 
     // 2. Escribir 1 HECHO CONTABLE por cada Settlement (Invariante Contable)
     for (const settlement of snapshot.settlements) {
@@ -58,8 +64,21 @@ export class PayrollSnapshotPersistenceService {
         name: settlement.employeeName,
       });
 
-      // Si no se encuentra un trabajador en profiles, se puede asignar o registrar
-      const userId = match.userId ?? `unmatched-${settlement.employeeCode}`;
+      // Caso 2 y 3: No hay coincidencia (o hay múltiples).
+      if (!match.matched || !match.userId) {
+        if (match.errorMessage && match.errorMessage.includes('Ambigüedad')) {
+          factsSkippedMultiple++;
+        } else {
+          factsSkippedNotFound++;
+        }
+        
+        errors.push(
+          `No se inserta el registro, trabajador: ${settlement.employeeName}, apellidos extraídos: ${match.errorMessage ?? 'Desconocido'}`
+        );
+        continue; // SALTAMOS ESTE REGISTRO
+      }
+
+      const userId = match.userId;
 
       let settlementType: SettlementType = 'ordinary';
       if (settlement.classification === 'SETTLEMENT') {
@@ -73,8 +92,8 @@ export class PayrollSnapshotPersistenceService {
         period_ym: periodYm,
         settlement_type: settlementType,
         total_company_cost: settlement.companyCost,
-        document_id: settlement.settlementHash,
-        created_by: snapshot.metadata.source ?? 'snapshot_persistence_service',
+        document_id: null,
+        created_by: null,
       });
 
       if (factResult.success) {
@@ -99,6 +118,7 @@ export class PayrollSnapshotPersistenceService {
           content_hash: snapshot.metadata.contentHash || null,
           parser_version: snapshot.metadata.parserVersion,
           source: snapshot.metadata.source ?? 'gmail_summary',
+          file_path: snapshot.metadata.storagePath ?? null,
           updated_at: new Date().toISOString(),
         },
         { onConflict: 'period_ym' },
@@ -126,10 +146,13 @@ export class PayrollSnapshotPersistenceService {
         amount_selected: snapshot.totals.totalCompanyCost,
         candidates: [snapshot.totals.totalCompanyCost],
         label_used: 'COST TOTAL',
-        status: errors.length === 0 ? 'imported' : 'error',
+        status: errors.length === 0 && factsSkippedMultiple === 0 && factsSkippedNotFound === 0 ? 'imported' : 'error',
         validation_messages: [
-          `Snapshot v${snapshot.version} procesado exitosamente.`,
-          `Persistidos ${factsInsertedCount} hechos contables para ${snapshot.settlements.length} liquidaciones.`,
+          `Snapshot v${snapshot.version} procesado.`,
+          `Trabajadores en PDF: ${snapshot.settlements.length}`,
+          `Trabajadores asignados correctamente: ${factsInsertedCount}`,
+          `Trabajadores sin coincidencia (omitidos): ${factsSkippedNotFound}`,
+          `Trabajadores con coincidencias múltiples (omitidos): ${factsSkippedMultiple}`,
         ],
         error_message: errors.length > 0 ? errors.join('; ') : null,
       })
@@ -148,6 +171,10 @@ export class PayrollSnapshotPersistenceService {
       monthlyTotalsUpserted,
       importRunId,
       errors,
+      totalWorkers: snapshot.settlements.length,
+      imported: factsInsertedCount,
+      skippedNotFound: factsSkippedNotFound,
+      skippedAmbiguous: factsSkippedMultiple,
     };
   }
 }

@@ -142,6 +142,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: parsed.error }, { status: 422 });
     }
 
+    // Subir el PDF a Supabase Storage (bucket 'nominas')
+    const safeFilename = filenameForAudit ? filenameForAudit.replace(/[^a-zA-Z0-9.\-_ ]/g, '') : 'resumen.pdf';
+    const storagePath = `payroll-summary/${parsed.periodYm}/${safeFilename}`;
+    const { error: storageError } = await supabase.storage
+      .from('nominas')
+      .upload(storagePath, pdfBuffer, {
+        contentType: 'application/pdf',
+        upsert: true,
+      });
+
+    if (storageError) {
+      console.error('[nominas-summary] fallo upload storage:', storageError.message);
+      return NextResponse.json({ error: 'Fallo subiendo resumen al Storage', details: storageError.message }, { status: 500 });
+    }
+    
+    // Inyectar storagePath en el metadata para el persistSnapshot
+    parsed.snapshot.metadata.storagePath = storagePath;
+
     // 2. Validador PURO -> Verificar las 6 Invariantes (INV-01 a INV-06)
     const validationReport = PayrollSnapshotValidator.validate(parsed.snapshot);
     if (!validationReport.valid) {
