@@ -41,7 +41,7 @@ export class PayrollSnapshotPersistenceService {
   /**
    * Persiste un PayrollMonthSnapshot validado en la base de datos.
    */
-  async persistSnapshot(snapshot: PayrollMonthSnapshot): Promise<PersistenceResultDTO> {
+  async persistSnapshot(snapshot: PayrollMonthSnapshot, options?: { dryRun?: boolean }): Promise<PersistenceResultDTO> {
     const errors: string[] = [];
     const periodYm = snapshot.header.periodYm;
 
@@ -72,10 +72,12 @@ export class PayrollSnapshotPersistenceService {
           factsSkippedNotFound++;
         }
         
-        errors.push(
-          `No se inserta el registro, trabajador: ${settlement.employeeName}, apellidos extraídos: ${match.errorMessage ?? 'Desconocido'}`
-        );
-        continue; // SALTAMOS ESTE REGISTRO
+        const errorMsg = `No se inserta el registro, trabajador: ${settlement.employeeName}, apellidos extraídos: ${match.errorMessage ?? 'Desconocido'}, COSTE: ${settlement.companyCost} €`;
+        errors.push(errorMsg);
+        if (options?.dryRun) {
+            console.log(`[DRY RUN] ${errorMsg}`);
+        }
+        continue;
       }
 
       const userId = match.userId;
