@@ -49,18 +49,20 @@ export class PayrollSnapshotValidator {
       });
     }
 
-    // INV-03: Número de trabajadores / liquidaciones === header.totalWorkers
-    if (
-      snapshot.header.totalWorkers != null &&
-      snapshot.header.totalWorkers > 0 &&
-      snapshot.settlements.length !== snapshot.header.totalWorkers
-    ) {
-      issues.push({
-        ruleId: 'INV-03',
-        message: `INV-03 Fallida: Número de liquidaciones (${snapshot.settlements.length}) ≠ TOTAL TRABAJADORES (${snapshot.header.totalWorkers})`,
-        expected: snapshot.header.totalWorkers,
-        actual: snapshot.settlements.length,
-      });
+    // INV-03: Número de trabajadores únicos === header.totalWorkers
+    if (snapshot.header.totalWorkers != null && snapshot.header.totalWorkers > 0) {
+      const uniqueWorkers = new Set(
+        snapshot.settlements.map((s) => s.employeeCode?.trim() || s.employeeName?.trim())
+      );
+
+      if (uniqueWorkers.size !== snapshot.header.totalWorkers) {
+        issues.push({
+          ruleId: 'INV-03',
+          message: `INV-03 Fallida: Número de trabajadores únicos (${uniqueWorkers.size}) ≠ TOTAL TRABAJADORES (${snapshot.header.totalWorkers})`,
+          expected: snapshot.header.totalWorkers,
+          actual: uniqueWorkers.size,
+        });
+      }
     }
 
     // INV-04: Periodo único

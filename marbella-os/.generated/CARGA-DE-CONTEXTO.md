@@ -1,5 +1,5 @@
-<!-- Generado desde 49 documentos de marbella-os/.
-     Huella del origen: cb7299cb85478d86
+<!-- Generado desde 50 documentos de marbella-os/.
+     Huella del origen: d4667341a30cfe57
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -42,6 +42,7 @@ es `CANON §5`.
 | 80 | `marbella-os/4-decisiones/ADR-0003-identidad-de-afirmacion.md` |
 | 80 | `marbella-os/4-decisiones/ADR-0004-grafo-de-dependencias.md` |
 | 80 | `marbella-os/4-decisiones/ADR-0005-protocolo-operativo-de-agentes.md` |
+| 80 | `marbella-os/4-decisiones/ADR-0006-pipeline-nominas-y-dashboard.md` |
 | 60 | `marbella-os/1-producto/PRINCIPIOS.md` |
 | 60 | `marbella-os/1-producto/VISION.md` |
 | 60 | `marbella-os/2-diseno/EXPERIENCIA.md` |

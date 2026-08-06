@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "25f8ccc6d7c1868f",
+  "_huella": "544538f08fe2521e",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -82,6 +82,20 @@
       "depende_de": [
         "CANON",
         "ADR-0002"
+      ]
+    },
+    {
+      "ruta": "marbella-os/4-decisiones/ADR-0006-pipeline-nominas-y-dashboard.md",
+      "documento": "ADR-0006",
+      "clase": "inmutable",
+      "estado": "vigente",
+      "capa": "decisiones",
+      "normativo": true,
+      "citable": true,
+      "precedencia": 80,
+      "vence": null,
+      "depende_de": [
+        "CANON"
       ]
     },
     {
