@@ -727,21 +727,16 @@ export default function LaborHistoryPage() {
                 createPortal(
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-zinc-950/40 backdrop-blur-sm">
                         <div className="bg-white rounded-[24px] shadow-2xl shadow-zinc-900/10 max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden">
-                            <div className="p-6 sm:p-8 pb-6 flex items-start justify-between shrink-0">
-                                <div>
-                                    <div className="text-sm font-medium text-zinc-500 capitalize mb-2">
-                                        {selectedDayStr ? format(parseLocalSafe(selectedDayStr), 'EEEE · d MMMM yyyy', { locale: es }) : ''}
-                                    </div>
-                                    <h3 className="text-2xl font-semibold tracking-tight text-zinc-900">
-                                        Coste laboral del día
-                                    </h3>
+                            <div className="p-6 pb-4 flex items-start justify-between shrink-0">
+                                <div className="text-sm font-medium text-zinc-500 capitalize">
+                                    {selectedDayStr ? format(parseLocalSafe(selectedDayStr), 'EEEE · d MMMM yyyy', { locale: es }) : ''}
                                 </div>
                                 <button type="button" onClick={closeDetail} className="p-2 -mr-2 -mt-2 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded-full transition-colors">
                                     <X size={20} strokeWidth={2.5} />
                                 </button>
                             </div>
                             
-                            <div className="overflow-y-auto flex-1 px-6 sm:px-8 pb-8">
+                            <div className="overflow-y-auto flex-1 px-6 pb-6">
                                 {detailLoading ? (
                                     <div className="flex justify-center py-20">
                                         <LoadingSpinner size="lg" className="text-zinc-900" />
@@ -749,26 +744,30 @@ export default function LaborHistoryPage() {
                                 ) : dayDetail ? (
                                     <div className="flex flex-col h-full">
                                         
-                                        <div className="mb-8">
-                                            <div className="text-4xl font-semibold tabular-nums tracking-tight text-zinc-900 mb-8">
+                                        <div className="flex items-center justify-between mb-3 mt-1">
+                                            <h3 className="text-xl font-semibold tracking-tight text-zinc-900">
+                                                Coste laboral
+                                            </h3>
+                                            <div className="text-3xl font-semibold tabular-nums tracking-tight text-zinc-900">
                                                 {formatEuroRead(dayDetail.totalCost)}
                                             </div>
-                                            
-                                            <div className="grid grid-cols-[80px_1fr] gap-y-3 text-[13px] text-zinc-500">
-                                                <span>Fijo</span>
-                                                <span className="tabular-nums font-medium text-zinc-700">{formatEuroRead(dayDetail.totalFixed)}</span>
-                                                <span>Extras</span>
-                                                <span className="tabular-nums font-medium text-zinc-700">{formatEuroRead(dayDetail.totalOvertime)}</span>
-                                                <span>Ventas</span>
-                                                <span className="tabular-nums font-medium text-zinc-700">{formatEuroRead(dayDetail.dayNetSales)}</span>
-                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex items-center gap-2.5 text-[13px] mb-6">
+                                            <span className="text-zinc-500">Fijo</span>
+                                            <span className="tabular-nums font-medium text-zinc-700">{formatEuroRead(dayDetail.totalFixed)}</span>
+                                            <span className="text-zinc-300">·</span>
+                                            <span className="text-zinc-500">Extras</span>
+                                            <span className="tabular-nums font-medium text-zinc-700">{formatEuroRead(dayDetail.totalOvertime)}</span>
+                                            <span className="text-zinc-300">·</span>
+                                            <span className="text-zinc-500">Ventas</span>
+                                            <span className="tabular-nums font-medium text-zinc-700">{formatEuroRead(dayDetail.dayNetSales)}</span>
                                         </div>
 
-                                        <div className="flex items-center justify-between pt-8 border-t border-zinc-100 mb-4">
-                                            <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-widest">Trabajadores</span>
+                                        <div className="flex items-center justify-end pt-4 border-t border-zinc-100 mb-2">
                                             <div className="flex items-center gap-2">
                                                 <span className="text-[12px] font-medium text-zinc-500 cursor-pointer select-none" onClick={() => setShowNoActivity(!showNoActivity)}>
-                                                    Mostrar trabajadores sin fichaje
+                                                    Mostrar todos
                                                 </span>
                                                 <button 
                                                     type="button" 
@@ -791,30 +790,26 @@ export default function LaborHistoryPage() {
                                                 .filter(w => showNoActivity || w.hasActivity)
                                                 .sort((a, b) => Number(b.hasActivity) - Number(a.hasActivity) || b.total - a.total)
                                                 .map((w) => (
-                                                <div key={w.id} className="py-5 flex items-start justify-between border-b border-zinc-100 last:border-0 transition-all duration-200 ease-out animate-in fade-in slide-in-from-bottom-1">
-                                                    <div className="flex items-start gap-4">
+                                                <div key={w.id} className="py-3.5 flex items-center justify-between border-b border-zinc-50 last:border-0 transition-all duration-200 ease-out animate-in fade-in slide-in-from-bottom-1">
+                                                    <div className="flex items-center gap-4">
                                                         <div className={cn(
-                                                            "w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 mt-0.5",
+                                                            "w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold shrink-0",
                                                             w.hasActivity ? "bg-zinc-100 text-zinc-700" : "bg-zinc-50 text-zinc-300"
                                                         )}>
                                                             {(firstNameOnly(w.name) || '?').charAt(0).toUpperCase()}
                                                         </div>
                                                         <div className="flex flex-col">
-                                                            <div className="flex items-center gap-2 mb-1.5">
-                                                                <span className={cn(
-                                                                    "text-[15px] font-medium",
-                                                                    w.hasActivity ? "text-zinc-900" : "text-zinc-400"
-                                                                )}>{firstNameOnly(w.name)}</span>
-                                                                {!w.hasActivity && (
-                                                                    <span className="bg-zinc-50 text-zinc-400 text-[10px] px-1.5 py-0.5 rounded font-medium">
-                                                                        Sin fichaje
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                            <div className="flex flex-col gap-1 text-[13px] text-zinc-500 tabular-nums">
+                                                            <span className={cn(
+                                                                "text-[15px] font-medium mb-0.5",
+                                                                w.hasActivity ? "text-zinc-900" : "text-zinc-400"
+                                                            )}>{firstNameOnly(w.name)}</span>
+                                                            <div className="flex items-center gap-1.5 text-[12px] text-zinc-500 tabular-nums">
                                                                 <span className={!w.hasActivity ? "text-zinc-400" : ""}>Fijo {formatEuroRead(w.fixed)}</span>
                                                                 {w.overtime > 0 && (
-                                                                    <span>Extras {formatEuroRead(w.overtime)}</span>
+                                                                    <>
+                                                                        <span className="text-zinc-300">·</span>
+                                                                        <span className={!w.hasActivity ? "text-zinc-400" : ""}>Extras {formatEuroRead(w.overtime)}</span>
+                                                                    </>
                                                                 )}
                                                             </div>
                                                         </div>
@@ -826,13 +821,13 @@ export default function LaborHistoryPage() {
                                                         )}>
                                                             {formatEuroRead(w.total)}
                                                         </span>
-                                                        <span className="text-[11px] text-zinc-400 mt-1">Coste del día</span>
+                                                        <span className="text-[11px] text-zinc-400 mt-0.5">Coste del día</span>
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
 
-                                        <div className="mt-10">
+                                        <div className="mt-8">
                                             <div className="text-[11px] text-zinc-400 leading-relaxed text-center">
                                                 El coste fijo corresponde al prorrateo diario del coste laboral mensual.
                                             </div>
