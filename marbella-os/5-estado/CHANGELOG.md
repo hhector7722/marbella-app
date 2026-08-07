@@ -36,6 +36,10 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
 
+## 2026-08-08
+
+- **Marbella Studio se convierte en un editor visual interactivo estilo Figma/Framer/Penpot.** Se elimina la edición de JSON/JSX para ofrecer interacción directa sobre el lienzo con selección de componentes, insignias de tipo, barra flotante de acciones rápidas (mover, duplicar, eliminar), panel izquierdo de capas e inserción, y panel derecho de inspector visual de propiedades no-code.
+
 ---
 
 ## 2026-07-30

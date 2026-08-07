@@ -1,45 +1,44 @@
 'use client';
 
+import React from 'react';
 import { useStudioStore } from './store';
+import StudioTopBar from './components/StudioTopBar';
+import StudioLayersPanel from './components/StudioLayersPanel';
+import StudioInspectorPanel from './components/StudioInspectorPanel';
 import StudioCanvas from './components/StudioCanvas';
 
 export default function StudioPage() {
-    const { variants, activeVariantId, setActiveVariant } = useStudioStore();
+    const { activeVariantId, selectBlock, viewMode } = useStudioStore();
     
     if (!activeVariantId) return null;
 
     return (
-        <>
-            {/* Editor Sidebar (Infrastructure minimal) */}
-            <aside className="w-64 border-r border-white/10 bg-[#050505] flex flex-col shrink-0 overflow-y-auto hidden md:flex">
-                <div className="p-4 border-b border-white/5">
-                    <h2 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-3">Variante Activa</h2>
-                    <select 
-                        className="w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-sm focus:outline-none"
-                        value={activeVariantId}
-                        onChange={(e) => setActiveVariant(e.target.value)}
-                    >
-                        {variants.map(v => (
-                            <option key={v.id} value={v.id}>{v.name}</option>
-                        ))}
-                    </select>
-                </div>
-                
-                <div className="p-4">
-                    <h2 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-3">Editor AST</h2>
-                    <p className="text-xs text-white/50 leading-relaxed">
-                        Infraestructura preparada para añadir paneles de configuración de bloques, edición JSON directa y controles de layout en futuras iteraciones.
-                    </p>
-                </div>
-            </aside>
+        <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#050507] text-white">
+            {/* Top Workspace Toolbar */}
+            <StudioTopBar />
 
-            {/* Canvas Area */}
-            <main className="flex-1 bg-black relative">
-                <div className="absolute inset-0 overflow-y-auto">
-                    {/* El interprete pintando el AST */}
-                    <StudioCanvas variantId={activeVariantId} />
-                </div>
-            </main>
-        </>
+            {/* 3-Pane Editor Workspace */}
+            <div className="flex flex-1 overflow-hidden relative">
+                {/* Left Panel: Layers & Insert Library (Visible in Edit mode) */}
+                {viewMode === 'edit' && <StudioLayersPanel />}
+
+                {/* Center Canvas Area with Dot Grid Pattern */}
+                <main 
+                    onClick={() => selectBlock(null)}
+                    className="flex-1 bg-[#0a0a0d] relative overflow-y-auto overflow-x-auto flex flex-col"
+                    style={{
+                        backgroundImage: `radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px)`,
+                        backgroundSize: '24px 24px'
+                    }}
+                >
+                    <div className="flex-1 min-h-full py-6">
+                        <StudioCanvas variantId={activeVariantId} />
+                    </div>
+                </main>
+
+                {/* Right Panel: Property Inspector (Visible in Edit mode) */}
+                {viewMode === 'edit' && <StudioInspectorPanel />}
+            </div>
+        </div>
     );
 }
