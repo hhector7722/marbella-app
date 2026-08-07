@@ -8,41 +8,30 @@ export default function PlaygroundPage() {
                 </p>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <a href="/playground/master-layout/proposal-a" className="group block border border-white/10 rounded-2xl p-6 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/20 transition-all">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+                <a href="/playground/studio" className="group block border border-white/10 rounded-2xl p-8 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/20 transition-all">
                     <div className="h-32 mb-6 rounded-lg border border-white/5 bg-black/50 flex flex-col items-center justify-center relative overflow-hidden">
-                        <div className="absolute left-0 top-0 bottom-0 w-8 bg-white/10 border-r border-white/5" />
-                        <div className="absolute top-0 left-8 right-0 h-6 bg-white/5 border-b border-white/5" />
-                        <span className="text-white/20 text-xs font-mono z-10">A</span>
+                        <div className="w-16 h-16 border border-white/10 rounded-lg flex items-center justify-center bg-white/5 group-hover:scale-110 transition-transform">
+                            <span className="text-white/40 text-xl font-mono">{'{}'}</span>
+                        </div>
                     </div>
-                    <h2 className="text-base font-medium text-white/90 mb-2">Panel de Control</h2>
-                    <p className="text-xs text-white/50 leading-relaxed">
-                        Alta densidad, pro-tool. Máxima visibilidad de datos con sidebar permanente y área fluida.
+                    <h2 className="text-xl font-medium text-white/90 mb-2">Marbella Design Studio</h2>
+                    <p className="text-sm text-white/50 leading-relaxed">
+                        Entorno Data-Driven. Construye pantallas visualmente asegurando el cumplimiento automático del Design Language.
                     </p>
                 </a>
 
-                <a href="/playground/master-layout/proposal-b" className="group block border border-white/10 rounded-2xl p-6 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/20 transition-all">
+                <a href="/playground/studio/compare" className="group block border border-white/10 rounded-2xl p-8 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/20 transition-all">
                     <div className="h-32 mb-6 rounded-lg border border-white/5 bg-black/50 flex flex-col items-center justify-center relative overflow-hidden">
-                        <div className="absolute top-0 left-0 right-0 h-8 bg-white/10 border-b border-white/5" />
-                        <div className="w-2/3 h-16 mt-4 bg-white/5 border border-white/10 rounded" />
-                        <span className="text-white/20 text-xs font-mono z-10 absolute bottom-4">B</span>
+                        <div className="absolute top-0 bottom-0 left-0 w-1/2 border-r border-white/5 bg-white/[0.02]" />
+                        <div className="flex gap-4 z-10">
+                            <div className="w-12 h-16 border border-white/10 rounded bg-black shadow-lg group-hover:-translate-y-1 transition-transform" />
+                            <div className="w-12 h-16 border border-white/10 rounded bg-black shadow-lg group-hover:translate-y-1 transition-transform" />
+                        </div>
                     </div>
-                    <h2 className="text-base font-medium text-white/90 mb-2">Lienzo Enfocado</h2>
-                    <p className="text-xs text-white/50 leading-relaxed">
-                        Baja densidad, alta legibilidad. Navegación mínima, contenido centrado con foco absoluto.
-                    </p>
-                </a>
-
-                <a href="/playground/master-layout/proposal-c" className="group block border border-white/10 rounded-2xl p-6 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/20 transition-all">
-                    <div className="h-32 mb-6 rounded-lg border border-white/5 bg-[#0a0a0a] flex flex-col items-center justify-center relative overflow-hidden">
-                        <div className="absolute top-0 left-0 right-0 h-10 bg-white/[0.02] border-b border-white/5" />
-                        <div className="absolute left-4 top-14 bottom-4 w-12 bg-white/5 rounded border border-white/5" />
-                        <div className="absolute left-20 right-4 top-14 bottom-4 bg-white/10 rounded border border-white/10" />
-                        <span className="text-white/20 text-xs font-mono z-10 absolute bottom-2 right-6">C</span>
-                    </div>
-                    <h2 className="text-base font-medium text-white/90 mb-2">Estructura Bimodal</h2>
-                    <p className="text-xs text-white/50 leading-relaxed">
-                        Bloques modulares flotantes. Cabecera monumental y menús secundarios de página.
+                    <h2 className="text-xl font-medium text-white/90 mb-2">Comparador Visual</h2>
+                    <p className="text-sm text-white/50 leading-relaxed">
+                        Split-screen engine. Abre dos variantes del AST simultáneamente para comparar filosofías de layout en tiempo real.
                     </p>
                 </a>
             </div>
