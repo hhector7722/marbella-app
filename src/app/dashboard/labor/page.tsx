@@ -62,6 +62,9 @@ type WorkerRow = {
     total: number;
     /** (Coste total del trabajador / venta neta del día) × 100 */
     laborPctOfSales: number | null;
+    hasActivity: boolean;
+    hasActiveContract: boolean;
+    isEventual: boolean;
 };
 
 function parseLocalSafe(dateStr: string | null): Date {
@@ -274,6 +277,7 @@ export default function LaborHistoryPage() {
     const [employees, setEmployees] = useState<ProfileOption[]>([]);
 
     const [detailOpen, setDetailOpen] = useState(false);
+    const [showNoActivity, setShowNoActivity] = useState(false);
     const [detailLoading, setDetailLoading] = useState(false);
     const [selectedDayStr, setSelectedDayStr] = useState<string | null>(null);
     const [dayDetail, setDayDetail] = useState<{
@@ -489,7 +493,7 @@ export default function LaborHistoryPage() {
                 const labor = await getLaborCostDayDetailSsot({
                     dateYmd: key,
                     userId: workerFilterId ?? null,
-                    includeAllContracted: showAll,
+                    includeAllContracted: true,
                 });
 
                 if (labor.isPayrollPending) {
@@ -505,6 +509,9 @@ export default function LaborHistoryPage() {
                     overtime: w.overtime,
                     total: w.total,
                     laborPctOfSales: w.laborPctOfSales,
+                    hasActivity: w.hasActivity,
+                    hasActiveContract: w.hasActiveContract,
+                    isEventual: w.isEventual,
                 }));
 
                 setDayDetail({
@@ -526,11 +533,12 @@ export default function LaborHistoryPage() {
         [workerFilterId, pathname, includeAllContracted],
     );
 
-    const closeDetail = () => {
+    const closeDetail = useCallback(() => {
         setDetailOpen(false);
+        setShowNoActivity(false);
         setDayDetail(null);
         setSelectedDayStr(null);
-    };
+    }, []);
 
     return (
             <div className="p-4 md:p-6 pb-24 month-cal-shell">
@@ -717,63 +725,117 @@ export default function LaborHistoryPage() {
             {detailOpen &&
                 typeof document !== 'undefined' &&
                 createPortal(
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-                        <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] flex flex-col overflow-hidden">
-                            <div className="bg-[#36606F] text-white p-4 flex items-center justify-between shrink-0">
-                                <h3 className="font-bold text-lg">
-                                    {selectedDayStr ? format(parseLocalSafe(selectedDayStr), 'EEEE d MMMM yyyy', { locale: es }) : ''}
-                                </h3>
-                                <button type="button" onClick={closeDetail} className="p-1 hover:bg-white/10 rounded-lg">
-                                    <X size={20} />
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-zinc-950/40 backdrop-blur-sm">
+                        <div className="bg-white rounded-[24px] shadow-2xl shadow-zinc-900/10 max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden">
+                            <div className="p-6 sm:p-8 pb-6 flex items-start justify-between shrink-0">
+                                <div>
+                                    <div className="text-sm font-medium text-zinc-500 capitalize mb-2">
+                                        {selectedDayStr ? format(parseLocalSafe(selectedDayStr), 'EEEE · d MMMM yyyy', { locale: es }) : ''}
+                                    </div>
+                                    <h3 className="text-2xl font-semibold tracking-tight text-zinc-900">
+                                        Coste laboral del día
+                                    </h3>
+                                </div>
+                                <button type="button" onClick={closeDetail} className="p-2 -mr-2 -mt-2 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded-full transition-colors">
+                                    <X size={20} strokeWidth={2.5} />
                                 </button>
                             </div>
-                            <div className="p-4 overflow-y-auto flex-1">
+                            
+                            <div className="overflow-y-auto flex-1 px-6 sm:px-8 pb-8">
                                 {detailLoading ? (
-                                    <div className="flex justify-center py-12">
-                                        <LoadingSpinner size="lg" className="text-[#36606F]" />
+                                    <div className="flex justify-center py-20">
+                                        <LoadingSpinner size="lg" className="text-zinc-900" />
                                     </div>
                                 ) : dayDetail ? (
-                                    <div className="space-y-4">
-                                        <div className="grid grid-cols-4 gap-2 bg-zinc-50 p-3 rounded-xl text-center text-xs">
-                                            <div>
-                                                <div className="text-zinc-400 font-medium">Coste</div>
-                                                <div className="font-black text-rose-500">{formatEuroRead(dayDetail.totalCost)}</div>
+                                    <div className="flex flex-col h-full">
+                                        
+                                        <div className="mb-8">
+                                            <div className="text-4xl font-semibold tabular-nums tracking-tight text-zinc-900 mb-8">
+                                                {formatEuroRead(dayDetail.totalCost)}
                                             </div>
-                                            <div>
-                                                <div className="text-zinc-400 font-medium">Fijo</div>
-                                                <div className="font-bold text-zinc-700">{formatEuroRead(dayDetail.totalFixed)}</div>
-                                            </div>
-                                            <div>
-                                                <div className="text-zinc-400 font-medium">Extras</div>
-                                                <div className="font-bold text-amber-600">{formatEuroRead(dayDetail.totalOvertime)}</div>
-                                            </div>
-                                            <div>
-                                                <div className="text-zinc-400 font-medium">Ventas</div>
-                                                <div className="font-bold text-emerald-600">{formatEuroRead(dayDetail.dayNetSales)}</div>
+                                            
+                                            <div className="grid grid-cols-[80px_1fr] gap-y-3 text-[13px] text-zinc-500">
+                                                <span>Fijo</span>
+                                                <span className="tabular-nums font-medium text-zinc-700">{formatEuroRead(dayDetail.totalFixed)}</span>
+                                                <span>Extras</span>
+                                                <span className="tabular-nums font-medium text-zinc-700">{formatEuroRead(dayDetail.totalOvertime)}</span>
+                                                <span>Ventas</span>
+                                                <span className="tabular-nums font-medium text-zinc-700">{formatEuroRead(dayDetail.dayNetSales)}</span>
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center justify-between px-2 pt-2 text-xs font-bold text-zinc-500">
-                                            <span>Trabajador</span>
-                                            <div className="flex gap-4">
-                                                <span>Fijo / Extras</span>
-                                                <span>Total</span>
+                                        <div className="flex items-center justify-between pt-8 border-t border-zinc-100 mb-4">
+                                            <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-widest">Trabajadores</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[12px] font-medium text-zinc-500 cursor-pointer select-none" onClick={() => setShowNoActivity(!showNoActivity)}>
+                                                    Mostrar trabajadores sin fichaje
+                                                </span>
+                                                <button 
+                                                    type="button" 
+                                                    onClick={() => setShowNoActivity(!showNoActivity)}
+                                                    className={cn(
+                                                        "relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                                                        showNoActivity ? "bg-zinc-800" : "bg-zinc-200"
+                                                    )}
+                                                >
+                                                    <span className={cn(
+                                                        "pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                                                        showNoActivity ? "translate-x-3" : "translate-x-0"
+                                                    )} />
+                                                </button>
                                             </div>
                                         </div>
-                                        <div className="divide-y divide-zinc-100">
-                                            {dayDetail.workers.map((w) => (
-                                                <div key={w.id} className="py-2.5 flex items-center justify-between text-sm">
-                                                    <div className="font-medium text-zinc-800">{firstNameOnly(w.name)}</div>
-                                                    <div className="flex items-center gap-4 text-xs font-mono">
-                                                        <span className="text-zinc-500">
-                                                            {formatEuroRead(w.fixed)} / {formatEuroRead(w.overtime)}
-                                                        </span>
-                                                        <span className="font-bold text-zinc-900 w-16 text-right">
+
+                                        <div className="flex-1 flex flex-col relative">
+                                            {dayDetail.workers
+                                                .filter(w => showNoActivity || w.hasActivity)
+                                                .sort((a, b) => Number(b.hasActivity) - Number(a.hasActivity) || b.total - a.total)
+                                                .map((w) => (
+                                                <div key={w.id} className="py-5 flex items-start justify-between border-b border-zinc-100 last:border-0 transition-all duration-200 ease-out animate-in fade-in slide-in-from-bottom-1">
+                                                    <div className="flex items-start gap-4">
+                                                        <div className={cn(
+                                                            "w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 mt-0.5",
+                                                            w.hasActivity ? "bg-zinc-100 text-zinc-700" : "bg-zinc-50 text-zinc-300"
+                                                        )}>
+                                                            {(firstNameOnly(w.name) || '?').charAt(0).toUpperCase()}
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <div className="flex items-center gap-2 mb-1.5">
+                                                                <span className={cn(
+                                                                    "text-[15px] font-medium",
+                                                                    w.hasActivity ? "text-zinc-900" : "text-zinc-400"
+                                                                )}>{firstNameOnly(w.name)}</span>
+                                                                {!w.hasActivity && (
+                                                                    <span className="bg-zinc-50 text-zinc-400 text-[10px] px-1.5 py-0.5 rounded font-medium">
+                                                                        Sin fichaje
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div className="flex flex-col gap-1 text-[13px] text-zinc-500 tabular-nums">
+                                                                <span className={!w.hasActivity ? "text-zinc-400" : ""}>Fijo {formatEuroRead(w.fixed)}</span>
+                                                                {w.overtime > 0 && (
+                                                                    <span>Extras {formatEuroRead(w.overtime)}</span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex flex-col items-end">
+                                                        <span className={cn(
+                                                            "text-[15px] font-semibold tabular-nums",
+                                                            w.hasActivity ? "text-zinc-900" : "text-zinc-400"
+                                                        )}>
                                                             {formatEuroRead(w.total)}
                                                         </span>
+                                                        <span className="text-[11px] text-zinc-400 mt-1">Coste del día</span>
                                                     </div>
                                                 </div>
                                             ))}
+                                        </div>
+
+                                        <div className="mt-10">
+                                            <div className="text-[11px] text-zinc-400 leading-relaxed text-center">
+                                                El coste fijo corresponde al prorrateo diario del coste laboral mensual.
+                                            </div>
                                         </div>
                                     </div>
                                 ) : null}
