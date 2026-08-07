@@ -165,6 +165,12 @@ export async function proxy(request: NextRequest) {
       return masterRedirect;
     }
 
+    if (path.startsWith("/playground") && !isMasterDashboardUser(emailFromJwt)) {
+      const pgRedirect = NextResponse.redirect(new URL("/dashboard", request.url));
+      copyResponseCookies(response, pgRedirect);
+      return pgRedirect;
+    }
+
     if (path.startsWith("/dashboard/uso") && !isMasterDashboardUser(emailFromJwt)) {
       const usoRedirect = NextResponse.redirect(new URL("/dashboard", request.url));
       copyResponseCookies(response, usoRedirect);

@@ -97,6 +97,14 @@ export default function Navbar() {
                             <span className="text-white text-[8px] md:text-[10px] font-black leading-none uppercase tracking-wider whitespace-nowrap">
                                 {userData ? `Hola, ${userData.name}` : ''}
                             </span>
+                            {isMasterDashboardUser(userData?.email) && (
+                                <a
+                                    href="/playground"
+                                    className="ml-2 flex items-center px-2 h-5 bg-white/10 hover:bg-white/20 rounded-md transition-all border border-white/20 active:scale-95"
+                                >
+                                    <span className="text-[7px] font-black tracking-[0.12em] text-white/70">PG</span>
+                                </a>
+                            )}
                         </div>
                     </div>
 
