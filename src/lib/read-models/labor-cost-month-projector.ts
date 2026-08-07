@@ -294,12 +294,20 @@ export class LaborCostMonthReadModelProjector {
 
     const totalCostMoney = totalFixedMoney.add(totalOvertimeMoney);
 
+    // KPI "Fijo" del encabezado = coste oficial del mes (payroll_monthly_totals.total_company_cost).
+    // Representa el coste real conciliado con la gestoría, independiente de los días con fichaje.
+    // Si no hay nómina oficial cargada (isPayrollPending), se usa la suma de costes diarios imputados
+    // como estimación para no mostrar 0 en el encabezado.
+    const headerFixed = summaryCost !== null ? summaryCost : totalFixedMoney.amount;
+    const headerOvertime = totalOvertimeMoney.amount;
+    const headerCost = Money.from(headerFixed).add(Money.from(headerOvertime)).amount;
+
     return {
       periodYm,
       byDate,
-      totalFixed: totalFixedMoney.amount,
-      totalOvertime: totalOvertimeMoney.amount,
-      totalCost: totalCostMoney.amount,
+      totalFixed: headerFixed,
+      totalOvertime: headerOvertime,
+      totalCost: headerCost,
       isPayrollPending,
       missingPayrollMonths: isPayrollPending ? [periodYm] : [],
       reconciliation,

@@ -138,13 +138,38 @@ export class GetMonthlyLaborCostSummaryUseCase {
     // Conciliación del mes inicial en rangos multi-mes
     const startMonthDto = await this.monthProjector.projectMonthSummary(startMonth);
 
+    // KPI "Fijo" del encabezado en rangos multi-mes = suma de payroll_monthly_totals de cada mes
+    // Para mantener consistencia con el path de mes único.
+    const uniqueMonths = [...new Set(
+      Object.keys(byDate).map((d) => d.slice(0, 7))
+    )];
+    const { data: monthlyTotalsRows } = await this.supabase
+      .from('payroll_monthly_totals')
+      .select('period_ym, total_company_cost')
+      .in('period_ym', uniqueMonths);
+
+    let officialFixed = 0;
+    let allMonthsHaveOfficial = true;
+    for (const ym of uniqueMonths) {
+      const row = monthlyTotalsRows?.find((r) => r.period_ym === ym);
+      if (row?.total_company_cost != null) {
+        officialFixed += Number(row.total_company_cost);
+      } else {
+        allMonthsHaveOfficial = false;
+      }
+    }
+
+    const headerFixed = allMonthsHaveOfficial ? officialFixed : totalFixedMoney.amount;
+    const headerOvertime = totalOvertimeMoney.amount;
+    const headerCost = Money.from(headerFixed).add(Money.from(headerOvertime)).amount;
+
     return {
       startDate: input.startDate,
       endDate: input.endDate,
       byDate,
-      totalFixed: totalFixedMoney.amount,
-      totalOvertime: totalOvertimeMoney.amount,
-      totalCost: totalCostMoney.amount,
+      totalFixed: headerFixed,
+      totalOvertime: headerOvertime,
+      totalCost: headerCost,
       isPayrollPending: missingMonths.size > 0,
       missingPayrollMonths: Array.from(missingMonths),
       reconciliation: startMonthDto.reconciliation,
