@@ -69,14 +69,17 @@ Para prevenir futuras regresiones, se establecen como inquebrantables los siguie
 4. **La cuadratura es obligatoria:** La suma total de `employee_payroll_facts.total_company_cost` siempre debe cuadrar matemáticamente con `payroll_monthly_totals.total_company_cost`.
 5. **El parser es de sólo lectura:** Nunca modifica los importes oficiales. Se limita a reflejar lo que dice el documento de la gestoría.
 6. **El sistema conserva la historia:** Todas las liquidaciones originales quedan grabadas de forma inmutable, vinculadas al hash de su PDF de origen.
+7. **Concurrencia Atómica por Mes:** Para evitar condiciones de carrera (*Write Skew*) cuando dos procesos importan simultáneamente el mismo mes, el sistema adquiere obligatoriamente un candado transaccional explícito `pg_advisory_xact_lock` basado en el hash del mes (`period_ym`). Esto serializa estrictamente las escrituras concurrentes del mismo periodo sin bloquear la importación paralela de meses distintos.
 
 ## Alternativas descartadas
 
 - **Mantener 1 fila por trabajador en Base de Datos (Fusionando en escritura):** Descartado. Si fusionábamos las liquidaciones al guardar en la base de datos, destruíamos el detalle de cada liquidación individual (ej. si una era por despido y otra era ordinaria). Viola el principio de "Hecho inmutable".
 - **Mantener tabla extra de alias `payroll_employee_aliases`:** Descartado. Se propuso una tabla paralela, pero aumentaba la deuda técnica (mantener un CRUD de aliases). La identidad de nómina es un atributo del trabajador, por lo que pertenece a su tabla `profiles`.
 - **Añadir el desglose de liquidaciones a la UI del Dashboard:** Descartado. El Dashboard Labor es una herramienta operativa de márgenes (coste total / ventas), no una herramienta de auditoría de RRHH para visualizar finiquitos frente a pagos ordinarios.
+- **Control de concurrencia mediante `SERIALIZABLE` o `FOR UPDATE`:** Descartado para la atomicidad mensual. `SERIALIZABLE` puede producir falsos positivos e incurre en mayor coste. Un `SELECT ... FOR UPDATE` requiere bloquear una fila existente (ej. `payroll_monthly_totals`), pero en la primera importación del mes esa fila aún no existe, dejando un hueco para race conditions. Los *advisory locks* transaccionales (`pg_advisory_xact_lock`) sobre el string del mes ofrecen un mecanismo perfecto, determinista y seguro que no depende de la existencia previa de registros.
 
 ## Consecuencias aceptadas
 
 - El read model diario hace una agregación on-the-fly (`reduce`) del coste mensual. Aceptamos este coste computacional menor frente a la alternativa de perder granularidad.
 - El mantenimiento de los discrepantes queda atado al campo `payroll_name`, requiriendo intervención manual si la gestoría cambia de repente el nombre a otro distinto de nuevo.
+- La inserción de nóminas dependerá funcionalmente de `replace_payroll_month_atomic` (RPC de base de datos) ya que el control de concurrencia ha sido desplazado íntegramente a la base de datos para ofrecer seguridad universal, independientemente del cliente (API, script, backfill).

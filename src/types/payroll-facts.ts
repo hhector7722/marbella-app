@@ -27,6 +27,7 @@ export type InsertEmployeePayrollFactDTO = {
   total_company_cost: number;
   document_id?: string | null;
   created_by?: string | null;
+  settlement_hash?: string | null;
 };
 
 export type SupabasePayrollFactDatabase = {

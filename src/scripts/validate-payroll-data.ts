@@ -10,7 +10,7 @@ async function main() {
   
   console.log('=== VALIDACIÓN 1: Cuadratura ===');
   for (const p of periods) {
-    const { data: facts } = await supabase.from('employee_payroll_facts').select('user_id, total_company_cost').eq('period_ym', p);
+    const { data: facts } = await supabase.from('employee_payroll_facts').select('user_id, total_company_cost').eq('period_ym', p).eq('status', 'active');
     const { data: total } = await supabase.from('payroll_monthly_totals').select('total_company_cost').eq('period_ym', p).maybeSingle();
     const { data: run } = await supabase.from('payroll_import_runs').select('error_message').eq('period_ym', p).order('created_at', { ascending: false }).limit(1).maybeSingle();
     

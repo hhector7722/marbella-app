@@ -13,7 +13,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { PayrollMonthSnapshot } from '../../types/payroll-snapshot.ts';
-import type { SettlementType } from '../../types/payroll-facts.ts';
+import type { SettlementType, InsertEmployeePayrollFactDTO } from '../../types/payroll-facts.ts';
 import { PayrollEmployeeNormalizer } from './payroll-employee-normalizer.ts';
 import { PayrollFactWriteModel } from './payroll-write-model.ts';
 
@@ -57,7 +57,9 @@ export class PayrollSnapshotPersistenceService {
     let factsSkippedNotFound = 0;
     let factsSkippedMultiple = 0;
 
-    // 2. Escribir 1 HECHO CONTABLE por cada Settlement (Invariante Contable)
+    // 2. Acumular 1 HECHO CONTABLE por cada Settlement (Invariante Contable)
+    const factsToInsert: InsertEmployeePayrollFactDTO[] = [];
+
     for (const settlement of snapshot.settlements) {
       const match = normalizer.matchCandidate({
         dni: settlement.employeeCode,
@@ -89,22 +91,38 @@ export class PayrollSnapshotPersistenceService {
         settlementType = 'complementary';
       }
 
-      const factResult = await this.writeModel.recordPayrollFact({
+      factsToInsert.push({
         user_id: userId,
         period_ym: periodYm,
         settlement_type: settlementType,
         total_company_cost: settlement.companyCost,
         document_id: null,
         created_by: null,
+        settlement_hash: settlement.settlementHash,
       });
+    }
 
-      if (factResult.success) {
-        factsInsertedCount++;
+    if (!options?.dryRun && factsToInsert.length > 0) {
+      // Reemplazo atómico masivo en base de datos
+      const batchResult = await this.writeModel.replaceMonthAtomic(periodYm, factsToInsert);
+      if (batchResult.success) {
+        factsInsertedCount = batchResult.insertedCount ?? factsToInsert.length;
       } else {
-        errors.push(
-          `Fallo al insertar hecho para ${settlement.employeeName} (${settlement.settlementHash}): ${factResult.error}`,
-        );
+        return {
+          success: false,
+          errors: [`Fallo crítico en reemplazo atómico del mes: ${batchResult.error}`],
+          periodYm,
+          totalSettlements: snapshot.settlements.length,
+          factsInsertedCount: 0,
+          monthlyTotalsUpserted: false,
+          totalWorkers: snapshot.header.totalWorkers ?? 0,
+          imported: 0,
+          skippedNotFound: factsSkippedNotFound,
+          skippedAmbiguous: factsSkippedMultiple,
+        };
       }
+    } else if (options?.dryRun) {
+      factsInsertedCount = factsToInsert.length;
     }
 
     // 3. Upsert en payroll_monthly_totals (Tomar exacto snapshot.totals.totalCompanyCost)
