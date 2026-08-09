@@ -36,6 +36,12 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
 
+## 2026-08-10
+
+- **Nace Design Academy en Marbella Design Studio.** Un espacio interactivo exclusivo de aprendizaje e inspiración de patrones de producto líderes (Linear, Stripe, Vercel, Apple, Notion), con experimentación en tiempo real de densidad/contraste, estudio comparativo de decisiones de diseño y botón de translación de filosofía a Marbella OS.
+
+---
+
 ## 2026-08-08
 
 - **Marbella Studio se convierte en un editor visual interactivo estilo Figma/Framer/Penpot.** Se elimina la edición de JSON/JSX para ofrecer interacción directa sobre el lienzo con selección de componentes, insignias de tipo, barra flotante de acciones rápidas (mover, duplicar, eliminar), panel izquierdo de capas e inserción, y panel derecho de inspector visual de propiedades no-code.

@@ -28,6 +28,7 @@ export interface MarbellaVariant {
 
 export type StudioViewMode = 'edit' | 'preview';
 export type ViewportPreset = 'desktop' | 'tablet' | 'mobile';
+export type StudioTab = 'canvas' | 'academy' | 'comparator';
 
 export interface StudioState {
     variants: MarbellaVariant[];
@@ -38,7 +39,18 @@ export interface StudioState {
     viewportPreset: ViewportPreset;
     zoom: number; // 50, 75, 100, etc.
 
+    // Design Academy & Navigation State
+    activeStudioTab: StudioTab;
+    selectedBenchmarkId: string;
+    comparatorLeftId: string;
+    comparatorRightId: string;
+
     // State Mutators
+    setActiveStudioTab: (tab: StudioTab) => void;
+    setSelectedBenchmarkId: (id: string) => void;
+    setComparatorIds: (leftId: string, rightId: string) => void;
+    applyBenchmarkToMarbella: (benchmarkId: string) => void;
+
     setActiveVariant: (id: string) => void;
     saveVariant: (variant: MarbellaVariant) => void;
     addVariant: (name: string, layout: LayoutType) => void;

@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { StudioState, MarbellaVariant, MarbellaBlock } from './types';
+import { StudioState, MarbellaVariant, MarbellaBlock, StudioTab } from './types';
+import { DESIGN_BENCHMARKS } from './academy/data';
 
 const INITIAL_VARIANTS: MarbellaVariant[] = [
     {
@@ -77,6 +78,68 @@ export const useStudioStore = create<StudioState>()(
             viewMode: 'edit',
             viewportPreset: 'desktop',
             zoom: 100,
+
+            // Design Academy State
+            activeStudioTab: 'canvas',
+            selectedBenchmarkId: DESIGN_BENCHMARKS[0].id,
+            comparatorLeftId: DESIGN_BENCHMARKS[0].id,
+            comparatorRightId: DESIGN_BENCHMARKS[1].id,
+
+            setActiveStudioTab: (tab: StudioTab) => set({ activeStudioTab: tab }),
+            setSelectedBenchmarkId: (id: string) => set({ selectedBenchmarkId: id }),
+            setComparatorIds: (leftId: string, rightId: string) => set({ comparatorLeftId: leftId, comparatorRightId: rightId }),
+
+            applyBenchmarkToMarbella: (benchmarkId: string) => set((state) => {
+                const benchmark = DESIGN_BENCHMARKS.find(b => b.id === benchmarkId);
+                if (!benchmark) return state;
+
+                const newVariantId = `marbella-by-${benchmark.product.toLowerCase()}-${Date.now().toString(36)}`;
+                const newVariant: MarbellaVariant = {
+                    id: newVariantId,
+                    name: `Filosofía ${benchmark.product}`,
+                    description: benchmark.marbellaTranslation.philosophyTitle,
+                    layout: benchmark.marbellaTranslation.suggestedLayout,
+                    regions: {
+                        header: [
+                            {
+                                id: `hd-${Date.now()}`,
+                                type: 'page-header',
+                                props: {
+                                    title: `Marbella × ${benchmark.product}`,
+                                    description: `Variante generada aplicando los principios de ${benchmark.product} (${benchmark.tagline})`,
+                                    isMonumental: benchmark.marbellaTranslation.suggestedLayout === 'bimodal'
+                                }
+                            }
+                        ],
+                        main: [
+                            {
+                                id: `flt-${Date.now()}`,
+                                type: 'filter-bar',
+                                props: { boxed: true, placeholder: `Buscar con ritmo visual ${benchmark.product}...` }
+                            },
+                            {
+                                id: `tbl-${Date.now()}`,
+                                type: 'data-table',
+                                props: {
+                                    title: 'Plantilla de Empleados Marbella OS',
+                                    density: benchmark.defaultControls.density === 'compact' ? 'high' : 'standard',
+                                    boxed: true
+                                }
+                            }
+                        ],
+                        sidebar: [
+                            { id: `sb-${Date.now()}`, type: 'sidebar-nav', props: { variant: 'app-menu' } }
+                        ]
+                    }
+                };
+
+                return {
+                    variants: [...state.variants, newVariant],
+                    activeVariantId: newVariantId,
+                    activeStudioTab: 'canvas',
+                    selectedBlockId: newVariant.regions.header[0].id
+                };
+            }),
 
             // Variant actions
             setActiveVariant: (id) => set({ activeVariantId: id, selectedBlockId: null }),
@@ -157,7 +220,6 @@ export const useStudioStore = create<StudioState>()(
                 if (!state.activeVariantId) return state;
                 const newId = `blk-${type}-${Date.now().toString(36)}`;
                 
-                // Default props according to block type
                 let defaultProps: Record<string, any> = {};
                 if (type === 'page-header') {
                     defaultProps = { title: 'Nuevo Encabezado', description: 'Escribe una descripción corta aquí.' };
@@ -295,7 +357,8 @@ export const useStudioStore = create<StudioState>()(
                 variants: INITIAL_VARIANTS,
                 activeVariantId: INITIAL_VARIANTS[0].id,
                 selectedBlockId: INITIAL_VARIANTS[0].regions.header[0].id,
-                viewMode: 'edit'
+                viewMode: 'edit',
+                activeStudioTab: 'canvas'
             })
         }),
         {
