@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useStudioStore } from '../store';
-import { BlockType, LayoutType, IntentCategory } from '../types';
+import { BlockType, IntentCategory, SpatialCompositionFlow } from '../types';
 
 const INTENT_CATALOG: { category: IntentCategory; name: string; description: string; icon: string }[] = [
     { category: 'identidad', name: 'Zona de Identidad & Contexto', description: 'Describe la entidad principal, título, fecha y estado operativo.', icon: '🎯' },
@@ -25,7 +25,7 @@ const BLOCK_LIBRARY: { type: BlockType; name: string; description: string; icon:
 ];
 
 export default function StudioLayersPanel() {
-    const [activeTab, setActiveTab] = useState<'layers' | 'library' | 'settings'>('layers');
+    const [activeTab, setActiveTab] = useState<'layers' | 'library'>('layers');
     const { 
         variants, 
         activeVariantId, 
@@ -34,31 +34,54 @@ export default function StudioLayersPanel() {
         addBlockToRegion, 
         removeBlock, 
         moveBlock,
-        updateVariantLayout,
+        updateVariantSpatialFlow,
         currentLevel,
         setCurrentLevel,
         addIntentZone,
         tokens,
-        updateSystemToken
+        updateSystemToken,
+        focusStack,
+        focusIntoObject,
+        focusOutObject
     } = useStudioStore();
 
     const activeVariant = variants.find(v => v.id === activeVariantId);
     if (!activeVariant) return null;
 
     const regions = activeVariant.regions;
+    const currentFocus = focusStack[focusStack.length - 1];
 
     return (
         <aside className="w-80 border-r border-white/10 bg-[#09090b] flex flex-col shrink-0 text-white overflow-hidden select-none z-20">
-            
+            {/* Object Scope Banner */}
+            <div className="p-3 bg-black/50 border-b border-white/10 flex items-center justify-between">
+                <div className="flex items-center gap-2 overflow-hidden">
+                    <span className="text-sm font-mono">{currentFocus.type === 'pantalla' ? '💻' : '📦'}</span>
+                    <div className="truncate">
+                        <div className="text-[9px] uppercase font-bold text-[#5B8FB9] tracking-wider">Espacio de Objeto Activo</div>
+                        <div className="text-xs font-bold text-white truncate">{currentFocus.name}</div>
+                    </div>
+                </div>
+                {focusStack.length > 1 && (
+                    <button
+                        onClick={focusOutObject}
+                        className="px-2 py-1 bg-white/10 hover:bg-white/20 text-xs text-zinc-200 rounded font-semibold"
+                        title="Subir de nivel de objeto"
+                    >
+                        ← Salir
+                    </button>
+                )}
+            </div>
+
             {/* LEVEL 1: DECLARACIÓN DE INTENCIÓN */}
             {currentLevel === 1 && (
                 <div className="flex-1 flex flex-col p-4 overflow-y-auto space-y-4">
                     <div>
                         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#5B8FB9] mb-1">
-                            <span>🎯 Nivel 1: Intención</span>
+                            <span>🎯 Intención del Objeto</span>
                         </div>
                         <p className="text-xs text-zinc-400 leading-relaxed">
-                            Declara la intención semántica de la zona que deseas crear. El Studio propondrá una composición limpia basada en Marbella OS.
+                            Declara el propósito semántico de este espacio. El Studio propondrá una composición derivada.
                         </p>
                     </div>
 
@@ -90,43 +113,44 @@ export default function StudioLayersPanel() {
                             onClick={() => setCurrentLevel(2)}
                             className="w-full py-2 bg-white/5 hover:bg-white/10 text-xs font-semibold text-zinc-300 rounded-xl transition-colors"
                         >
-                            Profundizar a Nivel 2 (Composición) →
+                            Ver Composición Espacial (Nivel 2) →
                         </button>
                     </div>
                 </div>
             )}
 
-            {/* LEVEL 2: COMPOSICIÓN Y ESTRUCTURA ESPACIAL */}
+            {/* LEVEL 2: COMPOSICIÓN ESPACIAL Y FLUJO */}
             {currentLevel === 2 && (
                 <div className="flex-1 flex flex-col p-4 overflow-y-auto space-y-5">
                     <div>
                         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#5B8FB9] mb-1">
-                            <span>📐 Nivel 2: Composición Espacial</span>
+                            <span>📐 Composición & Flujo Espacial</span>
                         </div>
                         <p className="text-xs text-zinc-400 leading-relaxed">
-                            Organiza cómo fluye y se agrupa el espacio. Ajusta la arquitectura espacial y las envolventes.
+                            Ajusta cómo se agrupa y distribuye espacialmente el contenido de este espacio.
                         </p>
                     </div>
 
                     <div>
-                        <h4 className="text-xs font-bold text-zinc-300 uppercase tracking-wider mb-2">Arquitectura Espacial</h4>
+                        <h4 className="text-xs font-bold text-zinc-300 uppercase tracking-wider mb-2">Flujo de Distribución</h4>
                         <div className="space-y-2">
                             {[
-                                { id: 'control-panel', name: 'Panel de Control', desc: 'Sidebar lateral permanente + Contenido principal.' },
-                                { id: 'focused-canvas', name: 'Lienzo Enfocado', desc: 'Lectura limpia centrada max-w-4xl.' },
-                                { id: 'bimodal', name: 'Arquitectura Espacial', desc: 'Cabecera monumental + Menú flotante y contenido.' }
-                            ].map(layoutOpt => (
+                                { id: 'fluid-stack', name: 'Apilamiento Fluido (Stack)', desc: 'Distribución en bloques fluidos con ritmo vertical.' },
+                                { id: 'hero-header', name: 'Enfoque Hero / Monumental', desc: 'Cabecera de impacto superior + Contenido central.' },
+                                { id: 'grid-surface', name: 'Rejilla Modular', desc: 'Disposición matricial elástica.' },
+                                { id: 'clean-canvas', name: 'Lienzo Limpio Continuo', desc: 'Lectura ininterrumpida de baja densidad.' }
+                            ].map(flowOpt => (
                                 <button
-                                    key={layoutOpt.id}
-                                    onClick={() => updateVariantLayout(layoutOpt.id as LayoutType)}
+                                    key={flowOpt.id}
+                                    onClick={() => updateVariantSpatialFlow(flowOpt.id as SpatialCompositionFlow)}
                                     className={`w-full text-left p-3 rounded-xl border transition-all ${
-                                        activeVariant.layout === layoutOpt.id
+                                        activeVariant.layout === flowOpt.id
                                             ? 'bg-[#36606F]/30 border-[#5B8FB9] text-white shadow-md'
                                             : 'bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10'
                                     }`}
                                 >
-                                    <div className="font-bold text-xs mb-0.5">{layoutOpt.name}</div>
-                                    <div className="text-[11px] text-zinc-400">{layoutOpt.desc}</div>
+                                    <div className="font-bold text-xs mb-0.5">{flowOpt.name}</div>
+                                    <div className="text-[11px] text-zinc-400">{flowOpt.desc}</div>
                                 </button>
                             ))}
                         </div>
@@ -137,19 +161,19 @@ export default function StudioLayersPanel() {
                             onClick={() => setCurrentLevel(1)}
                             className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-xs font-semibold text-zinc-400 rounded-xl"
                         >
-                            ← Nivel 1 (Intención)
+                            ← Intención (Nivel 1)
                         </button>
                         <button
                             onClick={() => setCurrentLevel(3)}
                             className="flex-1 py-2 bg-[#36606F] hover:bg-[#407080] text-xs font-bold text-white rounded-xl"
                         >
-                            Nivel 3 (Componentes) →
+                            Componentes (Nivel 3) →
                         </button>
                     </div>
                 </div>
             )}
 
-            {/* LEVEL 3: COMPONENTES Y ÁRBOLES DE CAPAS */}
+            {/* LEVEL 3: COMPONENTES Y ÁRBOLES DE CAPAS RECURSIVOS */}
             {currentLevel === 3 && (
                 <div className="flex-1 flex flex-col overflow-hidden">
                     {/* Header Tabs */}
@@ -162,7 +186,7 @@ export default function StudioLayersPanel() {
                                     : 'border-transparent text-zinc-400 hover:text-zinc-200'
                             }`}
                         >
-                            Capas (Tree)
+                            Objetos Contenidos
                         </button>
                         <button
                             onClick={() => setActiveTab('library')}
@@ -192,7 +216,8 @@ export default function StudioLayersPanel() {
                                             return (
                                                 <div
                                                     key={block.id}
-                                                    onClick={() => { selectBlock(block.id); setCurrentLevel(4); }}
+                                                    onClick={() => selectBlock(block.id)}
+                                                    onDoubleClick={() => focusIntoObject(block.id, block.props.title || block.type, block.type)}
                                                     className={`group flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer border transition-all ${
                                                         isSelected
                                                             ? 'bg-[#36606F] text-white border-[#5B8FB9] shadow-sm'
@@ -203,10 +228,19 @@ export default function StudioLayersPanel() {
                                                         <span className="font-mono text-[10px] opacity-60">[{block.type}]</span>
                                                         <span className="truncate font-medium">{block.props.title || block.type}</span>
                                                     </div>
-                                                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100">
-                                                        <button onClick={(e) => { e.stopPropagation(); moveBlock(block.id, 'up'); }} disabled={idx === 0} className="p-1">▲</button>
-                                                        <button onClick={(e) => { e.stopPropagation(); moveBlock(block.id, 'down'); }} disabled={idx === blocks.length - 1} className="p-1">▼</button>
-                                                        <button onClick={(e) => { e.stopPropagation(); removeBlock(block.id); }} className="p-1 text-rose-400">✕</button>
+                                                    <div className="flex items-center gap-1">
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); focusIntoObject(block.id, block.props.title || block.type, block.type); }} 
+                                                            className="px-1.5 py-0.5 bg-purple-600/30 hover:bg-purple-600 text-purple-200 text-[10px] rounded font-bold"
+                                                            title="Zoom dentro del objeto"
+                                                        >
+                                                            Entrar 🔍
+                                                        </button>
+                                                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100">
+                                                            <button onClick={(e) => { e.stopPropagation(); moveBlock(block.id, 'up'); }} disabled={idx === 0} className="p-1">▲</button>
+                                                            <button onClick={(e) => { e.stopPropagation(); moveBlock(block.id, 'down'); }} disabled={idx === blocks.length - 1} className="p-1">▼</button>
+                                                            <button onClick={(e) => { e.stopPropagation(); removeBlock(block.id); }} className="p-1 text-rose-400">✕</button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             );
@@ -246,18 +280,18 @@ export default function StudioLayersPanel() {
                 <div className="flex-1 flex flex-col p-4 overflow-y-auto space-y-4">
                     <div>
                         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#5B8FB9] mb-1">
-                            <span>🎛️ Nivel 4: Propiedades</span>
+                            <span>🎛️ Propiedades del Objeto</span>
                         </div>
                         <p className="text-xs text-zinc-400 leading-relaxed">
-                            Inspecciona y ajusta el comportamiento visual de cada elemento en el panel derecho.
+                            Inspecciona y ajusta las propiedades del objeto activo en el Inspector Derecho.
                         </p>
                     </div>
 
                     <div className="p-4 bg-white/5 rounded-2xl border border-white/10 text-xs text-zinc-300 space-y-2">
-                        <div className="font-bold text-white">Bloque Seleccionado:</div>
-                        <div className="font-mono text-[11px] text-[#5B8FB9]">{selectedBlockId || 'Ninguno'}</div>
+                        <div className="font-bold text-white">Objeto en Inspección:</div>
+                        <div className="font-mono text-[11px] text-[#5B8FB9]">{selectedBlockId || currentFocus.name}</div>
                         <p className="text-[11px] text-zinc-400">
-                            Utiliza el panel lateral derecho (Inspector de Propiedades) para ajustar densidades, textos y variantes.
+                            Ajusta densidades, textos y estados visuales en el panel derecho.
                         </p>
                     </div>
 
@@ -266,27 +300,27 @@ export default function StudioLayersPanel() {
                             onClick={() => setCurrentLevel(3)}
                             className="flex-1 py-2 bg-white/5 text-xs font-semibold text-zinc-400 rounded-xl"
                         >
-                            ← Nivel 3 (Componentes)
+                            ← Componentes (Nivel 3)
                         </button>
                         <button
                             onClick={() => setCurrentLevel(5)}
                             className="flex-1 py-2 bg-purple-600/30 hover:bg-purple-600 text-xs font-bold text-purple-200 hover:text-white rounded-xl border border-purple-500/40"
                         >
-                            Nivel 5 (Tokens OS) →
+                            Evolucionar OS (Nivel 5) →
                         </button>
                     </div>
                 </div>
             )}
 
-            {/* LEVEL 5: TOKENS DE MARBELLA OS */}
+            {/* LEVEL 5: TOKENS / FUNDAMENTOS DE MARBELLA OS */}
             {currentLevel === 5 && (
                 <div className="flex-1 flex flex-col p-4 overflow-y-auto space-y-5">
                     <div>
                         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-purple-400 mb-1">
-                            <span>🧬 Nivel 5: Tokens de Marbella OS</span>
+                            <span>🧬 Fundamentos de Marbella OS</span>
                         </div>
                         <p className="text-xs text-zinc-400 leading-relaxed">
-                            Gobernanza del sistema de diseño. Evoluciona los valores constitucionales que norman a Marbella.
+                            Evoluciona los valores constitucionales que gobiernan a Marbella.
                         </p>
                     </div>
 
@@ -309,7 +343,7 @@ export default function StudioLayersPanel() {
                             onClick={() => setCurrentLevel(1)}
                             className="w-full py-2 bg-white/5 hover:bg-white/10 text-xs font-semibold text-zinc-300 rounded-xl"
                         >
-                            ← Volver a Nivel 1 (Intención)
+                            ← Salir a Intención (Nivel 1)
                         </button>
                     </div>
                 </div>

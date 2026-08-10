@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export type LayoutType = 'control-panel' | 'focused-canvas' | 'bimodal';
+export type SpatialCompositionFlow = 'fluid-stack' | 'hero-header' | 'grid-surface' | 'clean-canvas';
 
 export type BlockType = 
     | 'kpi-grid' 
@@ -22,7 +22,7 @@ export interface MarbellaVariant {
     id: string;
     name: string;
     description: string;
-    layout: LayoutType;
+    layout: SpatialCompositionFlow;
     regions: Record<string, MarbellaBlock[]>;
 }
 
@@ -30,7 +30,7 @@ export type StudioViewMode = 'edit' | 'preview';
 export type ViewportPreset = 'desktop' | 'tablet' | 'mobile';
 export type StudioTab = 'canvas' | 'academy' | 'comparator';
 
-// 5-LEVEL PROGRESSIVE ABSTRACTION MODEL
+// 5-LEVEL RECURSIVE OBJECT MODEL
 export type DesignLevel = 1 | 2 | 3 | 4 | 5;
 
 export type IntentCategory = 
@@ -43,12 +43,10 @@ export type IntentCategory =
     | 'estado' 
     | 'alerta';
 
-export interface IntentSpec {
-    category: IntentCategory;
+export interface FocusNode {
+    id: string;
     name: string;
-    description: string;
-    icon: string;
-    defaultBlocks: { type: BlockType; props: Record<string, any> }[];
+    type: string;
 }
 
 export interface StudioState {
@@ -59,6 +57,10 @@ export interface StudioState {
     viewMode: StudioViewMode;
     viewportPreset: ViewportPreset;
     zoom: number; // 50, 75, 100, etc.
+
+    // Recursive Object Focus Stack Navigation
+    focusStack: FocusNode[];
+    focusedBlockId: string | null;
 
     // Multilevel Progressive Zoom State
     currentLevel: DesignLevel;
@@ -75,6 +77,11 @@ export interface StudioState {
     isNewSurfaceModalOpen: boolean;
     copilotMessages: any[];
     isGeneratingAI: boolean;
+
+    // Recursive Object Navigation Actions
+    focusIntoObject: (id: string, name: string, type: string) => void;
+    focusOutObject: () => void;
+    popToFocusIndex: (index: number) => void;
 
     // Multilevel State Mutators
     setCurrentLevel: (level: DesignLevel) => void;
@@ -97,7 +104,7 @@ export interface StudioState {
 
     setActiveVariant: (id: string) => void;
     saveVariant: (variant: MarbellaVariant) => void;
-    addVariant: (name: string, layout: LayoutType) => void;
+    addVariant: (name: string, layout?: SpatialCompositionFlow) => void;
     deleteVariant: (id: string) => void;
     
     // Canvas & Inspection State
@@ -114,8 +121,6 @@ export interface StudioState {
     duplicateBlock: (blockId: string) => void;
     moveBlock: (blockId: string, direction: 'up' | 'down') => void;
     updateRegionInActiveVariant: (regionId: string, blocks: MarbellaBlock[]) => void;
-    updateVariantLayout: (layout: LayoutType) => void;
+    updateVariantSpatialFlow: (flow: SpatialCompositionFlow) => void;
     resetToDefaults: () => void;
 }
-
-

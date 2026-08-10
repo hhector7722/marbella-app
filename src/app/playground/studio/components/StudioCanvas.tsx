@@ -353,15 +353,17 @@ function RegionRenderer({ regionId, blocks = [] }: { regionId: string; blocks?: 
 }
 
 // ==========================================
-// 3. LAYOUT SCHEMAS
+// 3. FLUID SPATIAL FLOW RENDERER (Replacing rigid legacy layouts)
 // ==========================================
 
-function ControlPanelLayout({ regions }: { regions: MarbellaVariant['regions'] }) {
+function FluidStackLayout({ regions }: { regions: MarbellaVariant['regions'] }) {
     return (
         <div className="flex min-h-[85vh] bg-zinc-50 text-zinc-900 rounded-2xl overflow-hidden border border-zinc-300/80 shadow-2xl">
-            <aside className="w-64 border-r border-zinc-200 bg-white p-6 shrink-0">
-                <RegionRenderer regionId="sidebar" blocks={regions['sidebar']} />
-            </aside>
+            {regions['sidebar'] && regions['sidebar'].length > 0 && (
+                <aside className="w-64 border-r border-zinc-200 bg-white p-6 shrink-0">
+                    <RegionRenderer regionId="sidebar" blocks={regions['sidebar']} />
+                </aside>
+            )}
             <main className="flex-1 p-8 overflow-y-auto">
                 <RegionRenderer regionId="header" blocks={regions['header']} />
                 <RegionRenderer regionId="main" blocks={regions['main']} />
@@ -370,25 +372,16 @@ function ControlPanelLayout({ regions }: { regions: MarbellaVariant['regions'] }
     );
 }
 
-function FocusedCanvasLayout({ regions }: { regions: MarbellaVariant['regions'] }) {
-    return (
-        <div className="min-h-[85vh] bg-zinc-50 text-zinc-900 py-10 px-6 rounded-2xl border border-zinc-300/80 shadow-2xl">
-            <main className="max-w-4xl mx-auto">
-                <RegionRenderer regionId="header" blocks={regions['header']} />
-                <RegionRenderer regionId="main" blocks={regions['main']} />
-            </main>
-        </div>
-    );
-}
-
-function BimodalLayout({ regions }: { regions: MarbellaVariant['regions'] }) {
+function HeroHeaderLayout({ regions }: { regions: MarbellaVariant['regions'] }) {
     return (
         <div className="min-h-[85vh] bg-zinc-50 text-zinc-900 rounded-2xl overflow-hidden border border-zinc-300/80 shadow-2xl">
             <RegionRenderer regionId="header" blocks={regions['header']} />
             <div className="max-w-7xl mx-auto px-8 py-8 flex gap-10">
-                <nav className="w-64 shrink-0">
-                    <RegionRenderer regionId="sidebar" blocks={regions['sidebar']} />
-                </nav>
+                {regions['sidebar'] && regions['sidebar'].length > 0 && (
+                    <nav className="w-64 shrink-0">
+                        <RegionRenderer regionId="sidebar" blocks={regions['sidebar']} />
+                    </nav>
+                )}
                 <main className="flex-1">
                     <RegionRenderer regionId="main" blocks={regions['main']} />
                 </main>
@@ -419,9 +412,11 @@ export default function StudioCanvas({ variantId }: { variantId: string }) {
                 className={`${containerWidthClass} transition-all duration-300`}
                 style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}
             >
-                {variant.layout === 'control-panel' && <ControlPanelLayout regions={variant.regions} />}
-                {variant.layout === 'focused-canvas' && <FocusedCanvasLayout regions={variant.regions} />}
-                {variant.layout === 'bimodal' && <BimodalLayout regions={variant.regions} />}
+                {variant.layout === 'hero-header' ? (
+                    <HeroHeaderLayout regions={variant.regions} />
+                ) : (
+                    <FluidStackLayout regions={variant.regions} />
+                )}
             </div>
         </div>
     );

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { StudioState, MarbellaVariant, MarbellaBlock, StudioTab, DesignLevel, IntentCategory } from './types';
+import { StudioState, MarbellaVariant, MarbellaBlock, StudioTab, DesignLevel, IntentCategory, SpatialCompositionFlow } from './types';
 import { DESIGN_BENCHMARKS } from './academy/data';
 import { generateCopilotVariants } from './copilot/ai-engine';
 import { SurfaceType } from './copilot/types';
@@ -22,9 +22,9 @@ const DEFAULT_MARBELLA_TOKENS: Record<string, string> = {
 const INITIAL_VARIANTS: MarbellaVariant[] = [
     {
         id: 'prop-a-panel',
-        name: 'Panel de Control',
-        description: 'Alta densidad, pro-tool. Sidebar permanente.',
-        layout: 'control-panel',
+        name: 'Panel de Control Marbella',
+        description: 'Superficie fluida con foco operacional.',
+        layout: 'fluid-stack',
         regions: {
             'sidebar': [
                 { id: 'sb-nav-1', type: 'sidebar-nav', props: { variant: 'app-menu' } }
@@ -52,32 +52,14 @@ const INITIAL_VARIANTS: MarbellaVariant[] = [
     {
         id: 'prop-b-lienzo',
         name: 'Lienzo Enfocado',
-        description: 'Baja densidad, alta legibilidad. Foco absoluto.',
-        layout: 'focused-canvas',
+        description: 'Baja densidad, alta legibilidad.',
+        layout: 'hero-header',
         regions: {
             'header': [
                 { id: 'hd-title-b', type: 'page-header', props: { title: 'Equipo & Talento', description: 'Gestiona los perfiles, disponibilidad y condiciones laborales del equipo.' } }
             ],
             'main': [
                 { id: 'm-list', type: 'data-table', props: { density: 'low', format: 'list', title: 'Directorio Ejecutivo' } }
-            ]
-        }
-    },
-    {
-        id: 'prop-c-bimodal',
-        name: 'Arquitectura Espacial',
-        description: 'Bloques modulares flotantes. Cabecera monumental.',
-        layout: 'bimodal',
-        regions: {
-            'header': [
-                { id: 'hd-monumental', type: 'page-header', props: { title: 'Operaciones Marbella', isMonumental: true, kpis: [{ label: 'Personal Activo', value: '42' }, { label: 'Ausencias Hoy', value: '3', alert: true }, { label: 'Horas Extra Semanales', value: '14.5h' }] } }
-            ],
-            'sidebar': [
-                { id: 'sb-nav-page', type: 'sidebar-nav', props: { variant: 'page-menu' } }
-            ],
-            'main': [
-                { id: 'm-filters', type: 'filter-bar', props: { boxed: true, placeholder: 'Filtrar directorio activo...' } },
-                { id: 'm-table-boxed', type: 'data-table', props: { boxed: true, title: 'Directorio Activo de Empleados' } }
             ]
         }
     }
@@ -93,6 +75,10 @@ export const useStudioStore = create<StudioState>()(
             viewMode: 'edit',
             viewportPreset: 'desktop',
             zoom: 100,
+
+            // Recursive Object Focus Stack
+            focusStack: [{ id: 'root-surface', name: INITIAL_VARIANTS[0].name, type: 'pantalla' }],
+            focusedBlockId: null,
 
             // Multilevel Progressive Zoom State
             currentLevel: 1, // Starts at Level 1: INTENCIÓN
@@ -111,11 +97,41 @@ export const useStudioStore = create<StudioState>()(
                 {
                     id: 'msg-welcome',
                     role: 'assistant',
-                    text: '¡Hola! Soy tu Copiloto Creativo de Marbella OS. ¿Qué intención deseas explorar o diseñar hoy?',
+                    text: '¡Hola! Soy tu Copiloto Creativo de Marbella OS. Haz doble clic en cualquier objeto para hacer zoom dentro de él.',
                     timestamp: 'Ahora'
                 }
             ],
             isGeneratingAI: false,
+
+            // Recursive Object Navigation Actions
+            focusIntoObject: (id, name, type) => set((st) => ({
+                focusStack: [...st.focusStack, { id, name, type }],
+                focusedBlockId: id,
+                selectedBlockId: id,
+                currentLevel: 2 // Automatically zoom to Level 2 (Composición del objeto)
+            })),
+
+            focusOutObject: () => set((st) => {
+                if (st.focusStack.length <= 1) return st;
+                const nextStack = st.focusStack.slice(0, -1);
+                const lastNode = nextStack[nextStack.length - 1];
+                return {
+                    focusStack: nextStack,
+                    focusedBlockId: lastNode.id === 'root-surface' ? null : lastNode.id,
+                    selectedBlockId: lastNode.id === 'root-surface' ? null : lastNode.id
+                };
+            }),
+
+            popToFocusIndex: (index) => set((st) => {
+                if (index < 0 || index >= st.focusStack.length) return st;
+                const nextStack = st.focusStack.slice(0, index + 1);
+                const targetNode = nextStack[nextStack.length - 1];
+                return {
+                    focusStack: nextStack,
+                    focusedBlockId: targetNode.id === 'root-surface' ? null : targetNode.id,
+                    selectedBlockId: targetNode.id === 'root-surface' ? null : targetNode.id
+                };
+            }),
 
             // Multilevel Level Mutators
             setCurrentLevel: (level: DesignLevel) => set({ currentLevel: level }),
@@ -139,7 +155,7 @@ export const useStudioStore = create<StudioState>()(
                     });
                 } else if (category === 'datos') {
                     newBlocks.push({
-                        id: `intent-[#01]-tbl-${timestamp}`,
+                        id: `intent-tbl-${timestamp}`,
                         type: 'data-table',
                         props: { title: 'Zona de Exposición de Datos', density: 'high', boxed: true }
                     });
@@ -169,7 +185,7 @@ export const useStudioStore = create<StudioState>()(
                     });
                 } else {
                     newBlocks.push({
-                        id: `intent-[#01]-card-${timestamp}`,
+                        id: `intent-card-${timestamp}`,
                         type: 'container-block',
                         props: { title: `Zona de ${category.toUpperCase()}` }
                     });
@@ -222,6 +238,8 @@ export const useStudioStore = create<StudioState>()(
                     activeVariantId: newVariants[0].id,
                     activeStudioTab: 'canvas',
                     currentLevel: 1, // Starts at Level 1
+                    focusStack: [{ id: 'root-surface', name: newVariants[0].name, type: 'pantalla' }],
+                    focusedBlockId: null,
                     selectedBlockId: newVariants[0].regions.header[0]?.id || null,
                     isGeneratingAI: false,
                     isNewSurfaceModalOpen: false,
@@ -276,7 +294,7 @@ export const useStudioStore = create<StudioState>()(
                     id: newVariantId,
                     name: `Filosofía ${benchmark.product}`,
                     description: benchmark.marbellaTranslation.philosophyTitle,
-                    layout: benchmark.marbellaTranslation.suggestedLayout,
+                    layout: 'fluid-stack',
                     regions: {
                         header: [
                             {
@@ -285,7 +303,7 @@ export const useStudioStore = create<StudioState>()(
                                 props: {
                                     title: `Marbella × ${benchmark.product}`,
                                     description: `Variante generada aplicando los principios de ${benchmark.product} (${benchmark.tagline})`,
-                                    isMonumental: benchmark.marbellaTranslation.suggestedLayout === 'bimodal'
+                                    isMonumental: true
                                 }
                             }
                         ],
@@ -316,12 +334,22 @@ export const useStudioStore = create<StudioState>()(
                     activeVariantId: newVariantId,
                     activeStudioTab: 'canvas',
                     currentLevel: 1,
+                    focusStack: [{ id: 'root-surface', name: newVariant.name, type: 'pantalla' }],
+                    focusedBlockId: null,
                     selectedBlockId: newVariant.regions.header[0].id
                 };
             }),
 
             // Variant actions
-            setActiveVariant: (id) => set({ activeVariantId: id, selectedBlockId: null }),
+            setActiveVariant: (id) => set((state) => {
+                const targetVar = state.variants.find(v => v.id === id);
+                return {
+                    activeVariantId: id,
+                    selectedBlockId: null,
+                    focusStack: [{ id: 'root-surface', name: targetVar ? targetVar.name : 'Pantalla', type: 'pantalla' }],
+                    focusedBlockId: null
+                };
+            }),
             
             saveVariant: (variant) => set((state) => {
                 const exists = state.variants.some(v => v.id === variant.id);
@@ -337,7 +365,7 @@ export const useStudioStore = create<StudioState>()(
                     id: newId,
                     name: name || 'Nueva Variante',
                     description: 'Variante creada desde la declaración de intenciones.',
-                    layout: layout || 'control-panel',
+                    layout: layout || 'fluid-stack',
                     regions: {
                         header: [
                             { id: `hd-${Date.now()}`, type: 'page-header', props: { title: name || 'Nueva Sección', description: 'Declaración de Intención inicial.' } }
@@ -349,7 +377,9 @@ export const useStudioStore = create<StudioState>()(
                 return {
                     variants: [...state.variants, newVariant],
                     activeVariantId: newId,
-                    currentLevel: 1, // Starts at Level 1
+                    currentLevel: 1,
+                    focusStack: [{ id: 'root-surface', name: newVariant.name, type: 'pantalla' }],
+                    focusedBlockId: null,
                     selectedBlockId: newVariant.regions.header[0].id
                 };
             }),
@@ -519,7 +549,7 @@ export const useStudioStore = create<StudioState>()(
                 };
             }),
 
-            updateVariantLayout: (layout) => set((state) => {
+            updateVariantSpatialFlow: (layout: SpatialCompositionFlow) => set((state) => {
                 if (!state.activeVariantId) return state;
                 return {
                     variants: state.variants.map(v => {
@@ -536,6 +566,8 @@ export const useStudioStore = create<StudioState>()(
                 viewMode: 'edit',
                 activeStudioTab: 'canvas',
                 currentLevel: 1,
+                focusStack: [{ id: 'root-surface', name: INITIAL_VARIANTS[0].name, type: 'pantalla' }],
+                focusedBlockId: null,
                 tokens: DEFAULT_MARBELLA_TOKENS,
                 isCopilotOpen: false,
                 isNewSurfaceModalOpen: false
