@@ -3,6 +3,7 @@
 import React from 'react';
 import { useStudioStore } from './store';
 import StudioTopBar from './components/StudioTopBar';
+import StudioLevelBar from './components/StudioLevelBar';
 import StudioLayersPanel from './components/StudioLayersPanel';
 import StudioInspectorPanel from './components/StudioInspectorPanel';
 import StudioCanvas from './components/StudioCanvas';
@@ -21,6 +22,9 @@ export default function StudioPage() {
             {/* Top Workspace Toolbar */}
             <StudioTopBar />
 
+            {/* 5-Level Progressive Zoom Breadcrumb & Level Selector */}
+            {activeStudioTab === 'canvas' && <StudioLevelBar />}
+
             {/* Main Area: Render Canvas Editor, Design Academy Studio, or Pattern Comparator */}
             <div className="flex flex-1 overflow-hidden relative">
                 {activeStudioTab === 'academy' && (
@@ -37,7 +41,7 @@ export default function StudioPage() {
 
                 {activeStudioTab === 'canvas' && (
                     <div className="flex flex-1 overflow-hidden relative">
-                        {/* Left Panel: Layers & Insert Library (Visible in Edit mode) */}
+                        {/* Left Panel: Dynamic 5-Level Multilevel Panel (Visible in Edit mode) */}
                         {viewMode === 'edit' && <StudioLayersPanel />}
 
                         {/* Center Canvas Area with Dot Grid Pattern */}

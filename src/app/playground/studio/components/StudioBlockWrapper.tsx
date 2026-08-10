@@ -19,7 +19,9 @@ export default function StudioBlockWrapper({ block, regionId, children }: Studio
         setHoveredBlock,
         moveBlock,
         duplicateBlock,
-        removeBlock
+        removeBlock,
+        currentLevel,
+        setCurrentLevel
     } = useStudioStore();
 
     const isSelected = selectedBlockId === block.id;
@@ -34,6 +36,7 @@ export default function StudioBlockWrapper({ block, regionId, children }: Studio
             onClick={(e) => {
                 e.stopPropagation();
                 selectBlock(block.id);
+                if (currentLevel < 3) setCurrentLevel(3);
             }}
             onMouseEnter={(e) => {
                 e.stopPropagation();
@@ -51,17 +54,32 @@ export default function StudioBlockWrapper({ block, regionId, children }: Studio
                     : 'hover:ring-1 hover:ring-zinc-300 cursor-pointer'
             }`}
         >
-            {/* Active Selection Badge (Figma / Framer Style) */}
-            {isSelected && (
-                <div className="absolute -top-3 left-3 bg-[#1F5FAF] text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1.5 z-20 pointer-events-none">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>{block.type}</span>
+            {/* Level 1 & 2 Intent Badge */}
+            {currentLevel <= 2 && (
+                <div className="absolute -top-3 left-3 bg-[#36606F] text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1.5 z-20 pointer-events-none">
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                    <span>Zona de Intención: {block.type}</span>
                     <span className="opacity-60 text-[9px] font-mono">({regionId})</span>
                 </div>
             )}
 
+            {/* Level 3 & 4 Active Selection Badge (Figma / Framer Style) */}
+            {currentLevel >= 3 && isSelected && (
+                <div className="absolute -top-3 left-3 bg-[#1F5FAF] text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1.5 z-20 pointer-events-none">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>Nivel {currentLevel}: {block.type}</span>
+                </div>
+            )}
+
+            {/* Level 5 Token Bound Badge */}
+            {currentLevel === 5 && (
+                <div className="absolute -top-3 right-3 bg-purple-700 text-white text-[9px] font-mono px-2 py-0.5 rounded-md uppercase tracking-wider shadow-sm z-20 pointer-events-none border border-purple-400">
+                    Reglas Marbella OS • Token Bound
+                </div>
+            )}
+
             {/* Hover Badge */}
-            {isHovered && (
+            {isHovered && currentLevel >= 3 && (
                 <div className="absolute -top-2.5 left-3 bg-[#5B8FB9] text-white text-[9px] font-semibold px-2 py-0.5 rounded uppercase tracking-wider shadow-sm z-20 pointer-events-none">
                     {block.type}
                 </div>

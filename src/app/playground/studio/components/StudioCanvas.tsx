@@ -299,25 +299,24 @@ const REGISTRY: Record<string, React.FC<{ props: any }>> = {
 };
 
 // ==========================================
-// 2. REGION RENDER ENGINE (With Block Wrappers & Dropzones)
+// 2. REGION RENDER ENGINE (With Level-Aware Wrappers & Dropzones)
 // ==========================================
 
 function RegionRenderer({ regionId, blocks = [] }: { regionId: string; blocks?: MarbellaBlock[] }) {
-    const addBlockToRegion = useStudioStore(state => state.addBlockToRegion);
-    const viewMode = useStudioStore(state => state.viewMode);
+    const { addIntentZone, viewMode, currentLevel } = useStudioStore();
 
     if (!blocks || blocks.length === 0) {
         if (viewMode === 'preview') return null;
         return (
             <div 
-                onClick={() => addBlockToRegion(regionId, 'page-header')}
+                onClick={() => addIntentZone('identidad', regionId)}
                 className="border-2 border-dashed border-zinc-300 hover:border-[#36606F] bg-zinc-100/50 hover:bg-[#36606F]/5 rounded-2xl p-6 text-center cursor-pointer transition-all mb-6 group"
             >
                 <div className="text-zinc-400 group-hover:text-[#36606F] text-xs font-bold uppercase tracking-wider mb-1">
                     Región {regionId} Vacía
                 </div>
                 <div className="text-sm text-zinc-600 font-medium group-hover:text-[#36606F]">
-                    + Haz clic para agregar un bloque aquí
+                    🎯 + Declara una Zona de Intención para la región {regionId}
                 </div>
             </div>
         );
@@ -340,13 +339,13 @@ function RegionRenderer({ regionId, blocks = [] }: { regionId: string; blocks?: 
                 );
             })}
 
-            {/* Bottom dropzone button per region in edit mode */}
-            {viewMode === 'edit' && (
+            {/* Bottom intent dropzone button per region in edit mode */}
+            {viewMode === 'edit' && currentLevel <= 2 && (
                 <button
-                    onClick={() => addBlockToRegion(regionId, 'data-table')}
-                    className="w-full py-2 border border-dashed border-zinc-300 hover:border-[#36606F] rounded-xl text-xs font-medium text-zinc-400 hover:text-[#36606F] hover:bg-[#36606F]/5 transition-all mb-4"
+                    onClick={() => addIntentZone('datos', regionId)}
+                    className="w-full py-2.5 border border-dashed border-zinc-300 hover:border-[#36606F] rounded-xl text-xs font-bold text-zinc-500 hover:text-[#36606F] hover:bg-[#36606F]/5 transition-all mb-4 flex items-center justify-center gap-1.5"
                 >
-                    + Añadir bloque a {regionId}
+                    <span>🎯 + Declarar nueva Zona de Intención en {regionId}</span>
                 </button>
             )}
         </div>
@@ -410,7 +409,6 @@ export default function StudioCanvas({ variantId }: { variantId: string }) {
         return <div className="p-8 text-zinc-400 text-sm">Variante no encontrada</div>;
     }
 
-    // Viewport width scaling
     let containerWidthClass = 'w-full max-w-[1400px]';
     if (viewportPreset === 'tablet') containerWidthClass = 'w-[768px]';
     if (viewportPreset === 'mobile') containerWidthClass = 'w-[375px]';

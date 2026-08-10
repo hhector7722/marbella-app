@@ -30,6 +30,27 @@ export type StudioViewMode = 'edit' | 'preview';
 export type ViewportPreset = 'desktop' | 'tablet' | 'mobile';
 export type StudioTab = 'canvas' | 'academy' | 'comparator';
 
+// 5-LEVEL PROGRESSIVE ABSTRACTION MODEL
+export type DesignLevel = 1 | 2 | 3 | 4 | 5;
+
+export type IntentCategory = 
+    | 'identidad' 
+    | 'datos' 
+    | 'control' 
+    | 'navegacion' 
+    | 'acciones' 
+    | 'resumen' 
+    | 'estado' 
+    | 'alerta';
+
+export interface IntentSpec {
+    category: IntentCategory;
+    name: string;
+    description: string;
+    icon: string;
+    defaultBlocks: { type: BlockType; props: Record<string, any> }[];
+}
+
 export interface StudioState {
     variants: MarbellaVariant[];
     activeVariantId: string | null;
@@ -38,6 +59,10 @@ export interface StudioState {
     viewMode: StudioViewMode;
     viewportPreset: ViewportPreset;
     zoom: number; // 50, 75, 100, etc.
+
+    // Multilevel Progressive Zoom State
+    currentLevel: DesignLevel;
+    tokens: Record<string, string>;
 
     // Design Academy & Navigation State
     activeStudioTab: StudioTab;
@@ -50,6 +75,13 @@ export interface StudioState {
     isNewSurfaceModalOpen: boolean;
     copilotMessages: any[];
     isGeneratingAI: boolean;
+
+    // Multilevel State Mutators
+    setCurrentLevel: (level: DesignLevel) => void;
+    zoomInLevel: () => void;
+    zoomOutLevel: () => void;
+    addIntentZone: (category: IntentCategory, regionId?: string) => void;
+    updateSystemToken: (key: string, value: string) => void;
 
     // State Mutators
     toggleCopilotPanel: (open?: boolean) => void;
@@ -85,4 +117,5 @@ export interface StudioState {
     updateVariantLayout: (layout: LayoutType) => void;
     resetToDefaults: () => void;
 }
+
 

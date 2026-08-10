@@ -75,7 +75,7 @@ export default function StudioTopBar() {
                             className="px-3 py-1 bg-[#36606F] hover:bg-[#407080] border border-[#5B8FB9] rounded-lg text-xs font-bold text-white transition-all flex items-center gap-1.5 shadow"
                             title="Nueva Superficie (Manual o IA)"
                         >
-                            <span>+ Nueva Superficie</span>
+                            <span>+ Declarar Intención</span>
                         </button>
                     </div>
                 )}

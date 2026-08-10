@@ -1,10 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { StudioState, MarbellaVariant, MarbellaBlock, StudioTab } from './types';
+import { StudioState, MarbellaVariant, MarbellaBlock, StudioTab, DesignLevel, IntentCategory } from './types';
 import { DESIGN_BENCHMARKS } from './academy/data';
 import { generateCopilotVariants } from './copilot/ai-engine';
 import { SurfaceType } from './copilot/types';
+
+const DEFAULT_MARBELLA_TOKENS: Record<string, string> = {
+    'color.marca': '#36606F',
+    'color.marca.intenso': '#2F5D6A',
+    'color.superficie': '#FFFFFF',
+    'color.superficie.hundida': '#FAFAFA',
+    'color.texto': '#18181B',
+    'radio.control': '12px',
+    'radio.superficie': '16px',
+    'tactil.minimo': '48px',
+    'tipo.familia': 'Inter',
+    'espacio.base': '4px'
+};
 
 const INITIAL_VARIANTS: MarbellaVariant[] = [
     {
@@ -81,6 +94,10 @@ export const useStudioStore = create<StudioState>()(
             viewportPreset: 'desktop',
             zoom: 100,
 
+            // Multilevel Progressive Zoom State
+            currentLevel: 1, // Starts at Level 1: INTENCIÓN
+            tokens: DEFAULT_MARBELLA_TOKENS,
+
             // Design Academy State
             activeStudioTab: 'canvas',
             selectedBenchmarkId: DESIGN_BENCHMARKS[0].id,
@@ -94,11 +111,86 @@ export const useStudioStore = create<StudioState>()(
                 {
                     id: 'msg-welcome',
                     role: 'assistant',
-                    text: '¡Hola! Soy tu Copiloto Creativo de Marbella OS. ¿Qué superficie deseas explorar o diseñar hoy?',
+                    text: '¡Hola! Soy tu Copiloto Creativo de Marbella OS. ¿Qué intención deseas explorar o diseñar hoy?',
                     timestamp: 'Ahora'
                 }
             ],
             isGeneratingAI: false,
+
+            // Multilevel Level Mutators
+            setCurrentLevel: (level: DesignLevel) => set({ currentLevel: level }),
+            zoomInLevel: () => set((st) => ({ currentLevel: Math.min(5, st.currentLevel + 1) as DesignLevel })),
+            zoomOutLevel: () => set((st) => ({ currentLevel: Math.max(1, st.currentLevel - 1) as DesignLevel })),
+
+            updateSystemToken: (key, value) => set((st) => ({
+                tokens: { ...st.tokens, [key]: value }
+            })),
+
+            addIntentZone: (category: IntentCategory, targetRegion = 'main') => set((state) => {
+                if (!state.activeVariantId) return state;
+                const timestamp = Date.now();
+                const newBlocks: MarbellaBlock[] = [];
+
+                if (category === 'identidad') {
+                    newBlocks.push({
+                        id: `intent-hd-${timestamp}`,
+                        type: 'page-header',
+                        props: { title: 'Zona de Identidad & Contexto', description: 'Describe la entidad principal y el contexto operativo.' }
+                    });
+                } else if (category === 'datos') {
+                    newBlocks.push({
+                        id: `intent-[#01]-tbl-${timestamp}`,
+                        type: 'data-table',
+                        props: { title: 'Zona de Exposición de Datos', density: 'high', boxed: true }
+                    });
+                } else if (category === 'control') {
+                    newBlocks.push({
+                        id: `intent-flt-${timestamp}`,
+                        type: 'filter-bar',
+                        props: { showSearch: true, showNew: true, placeholder: 'Zona de Control: Buscar o acotar...' }
+                    });
+                } else if (category === 'resumen') {
+                    newBlocks.push({
+                        id: `intent-kpi-${timestamp}`,
+                        type: 'kpi-grid',
+                        props: { items: [{ label: 'Indicador 1', value: '100' }, { label: 'Indicador 2', value: '98%' }] }
+                    });
+                } else if (category === 'navegacion') {
+                    newBlocks.push({
+                        id: `intent-nav-${timestamp}`,
+                        type: 'sidebar-nav',
+                        props: { variant: 'page-menu' }
+                    });
+                } else if (category === 'alerta' || category === 'estado') {
+                    newBlocks.push({
+                        id: `intent-callout-${timestamp}`,
+                        type: 'callout-banner',
+                        props: { title: 'Zona de Alerta & Estado', message: 'Indicación semántica destacada en pantalla.' }
+                    });
+                } else {
+                    newBlocks.push({
+                        id: `intent-[#01]-card-${timestamp}`,
+                        type: 'container-block',
+                        props: { title: `Zona de ${category.toUpperCase()}` }
+                    });
+                }
+
+                return {
+                    variants: state.variants.map(v => {
+                        if (v.id !== state.activeVariantId) return v;
+                        const currentReg = v.regions[targetRegion] || [];
+                        return {
+                            ...v,
+                            regions: {
+                                ...v.regions,
+                                [targetRegion]: [...currentReg, ...newBlocks]
+                            }
+                        };
+                    }),
+                    selectedBlockId: newBlocks[0].id,
+                    currentLevel: 2 // Automatically zoom to Level 2 (Composición)
+                };
+            }),
 
             // Copilot Mutators
             toggleCopilotPanel: (open) => set((state) => ({
@@ -129,6 +221,7 @@ export const useStudioStore = create<StudioState>()(
                     variants: [...state.variants, ...newVariants],
                     activeVariantId: newVariants[0].id,
                     activeStudioTab: 'canvas',
+                    currentLevel: 1, // Starts at Level 1
                     selectedBlockId: newVariants[0].regions.header[0]?.id || null,
                     isGeneratingAI: false,
                     isNewSurfaceModalOpen: false,
@@ -222,6 +315,7 @@ export const useStudioStore = create<StudioState>()(
                     variants: [...state.variants, newVariant],
                     activeVariantId: newVariantId,
                     activeStudioTab: 'canvas',
+                    currentLevel: 1,
                     selectedBlockId: newVariant.regions.header[0].id
                 };
             }),
@@ -242,23 +336,20 @@ export const useStudioStore = create<StudioState>()(
                 const newVariant: MarbellaVariant = {
                     id: newId,
                     name: name || 'Nueva Variante',
-                    description: 'Variante creada desde el editor visual.',
+                    description: 'Variante creada desde la declaración de intenciones.',
                     layout: layout || 'control-panel',
                     regions: {
                         header: [
-                            { id: `hd-${Date.now()}`, type: 'page-header', props: { title: name || 'Nueva Sección', description: 'Edita la descripción en el panel lateral derecho.' } }
+                            { id: `hd-${Date.now()}`, type: 'page-header', props: { title: name || 'Nueva Sección', description: 'Declaración de Intención inicial.' } }
                         ],
-                        main: [
-                            { id: `tbl-${Date.now()}`, type: 'data-table', props: { title: 'Tabla de Datos' } }
-                        ],
-                        sidebar: [
-                            { id: `sb-${Date.now()}`, type: 'sidebar-nav', props: { variant: 'app-menu' } }
-                        ]
+                        main: [],
+                        sidebar: []
                     }
                 };
                 return {
                     variants: [...state.variants, newVariant],
                     activeVariantId: newId,
+                    currentLevel: 1, // Starts at Level 1
                     selectedBlockId: newVariant.regions.header[0].id
                 };
             }),
@@ -444,6 +535,8 @@ export const useStudioStore = create<StudioState>()(
                 selectedBlockId: INITIAL_VARIANTS[0].regions.header[0].id,
                 viewMode: 'edit',
                 activeStudioTab: 'canvas',
+                currentLevel: 1,
+                tokens: DEFAULT_MARBELLA_TOKENS,
                 isCopilotOpen: false,
                 isNewSurfaceModalOpen: false
             })
