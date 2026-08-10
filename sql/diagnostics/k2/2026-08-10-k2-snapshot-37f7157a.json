@@ -1,0 +1,4013 @@
+{
+  "artifact": "K2_DATA_SNAPSHOT",
+  "created_at": "2026-08-10T17:00:18.642Z",
+  "baseline_manifest": "sql/diagnostics/k2/2026-08-10-k2-baseline-manifest-37f7157a.json",
+  "head": "37f7157ae160dd34344fc1892136ee40e1921cc2",
+  "scope": {
+    "ingredients": [
+      "id",
+      "purchase_unit",
+      "unit_type",
+      "recipe_unit",
+      "unit",
+      "order_unit"
+    ],
+    "recipe_ingredients": [
+      "id",
+      "recipe_id",
+      "ingredient_id",
+      "unit"
+    ]
+  },
+  "counts": {
+    "ingredients": 226,
+    "recipe_ingredients": 362
+  },
+  "checksum_sha256": "80ff612d1cd2524ad09588e4c0e7e648242987839a5a95fcaf5c59eb4fb60ea3",
+  "rows": {
+    "ingredients": [
+      {
+        "id": "0187d23b-48f8-4965-981c-7c71e66ac7ed",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "02b6c950-0679-4068-9544-77cfdb383692",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "0355fa9f-1a8d-4779-84e6-6e2803097f4e",
+        "purchase_unit": "kg",
+        "unit_type": "gr",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": null
+      },
+      {
+        "id": "04f0d423-98f7-4bb2-bba3-09dd1f105dbf",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "pack"
+      },
+      {
+        "id": "087b39e9-3628-42cc-9819-3858bee41508",
+        "purchase_unit": "kg",
+        "unit_type": "gr",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "08fa666f-3eae-4635-853d-6c993fee448f",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "pack"
+      },
+      {
+        "id": "09e75615-8693-4792-a0d7-5e2a4081e988",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "0bc48001-8c06-4db0-9fbd-4f02cb2dd41a",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "0bef6c31-2694-4c90-afa7-0cdb38f3325d",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "0c0001ac-d5a7-40a2-847a-0fc705df45ce",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "0c2ec910-4270-4c0f-9b0f-225790c52d5e",
+        "purchase_unit": "kg",
+        "unit_type": "gr",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "0d79c5f5-caf0-40c1-ad7a-c24391f0dc3b",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "0e3879d5-e8a8-4dc1-8be6-8bf9a99dbfd6",
+        "purchase_unit": "kg",
+        "unit_type": "gr",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "0fce07d0-7f1e-4cb6-b0ab-8d60b06d68f8",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "106ffed0-90de-492a-91ef-bbb5441577c3",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "10b6c194-c018-4b96-947c-c2ed4b2c63f9",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "1594e528-f028-4517-a3ff-cf5b5ce3ff07",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "185dd4e6-cc89-4941-b9bc-2a61d35c15cd",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "1a2114bd-39fb-4eee-8591-95ff7fd6e7d7",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "1aa6d12a-cfa2-4842-b843-1ebdd2540c94",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "1acc4b2e-5cd7-4eb6-a197-64517fc2b61b",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "1aefa4f3-f2d9-4100-9ae9-ecf8984295d3",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "1b53a80d-17aa-4431-9474-240a136b3c92",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "1cd70721-9d13-43e7-9e9f-89b4b777ecd0",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "pieza"
+      },
+      {
+        "id": "1d328f64-02d7-4051-ab40-ebc0a7de4c35",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "caja"
+      },
+      {
+        "id": "1e07c667-1d01-447e-ab71-837b3f669a1f",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "ud",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "1e73e1f7-d27b-40fd-8f29-bfb6c73eedb0",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "1ffe5a93-0b5d-4901-ab93-271c09c4f8c5",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "2211a2d7-619f-4603-90e0-0e5523ca9026",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "kg"
+      },
+      {
+        "id": "227da6c5-050b-42cb-8c6e-bdb141a20472",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "caja"
+      },
+      {
+        "id": "22b7a22b-2ef3-4433-8bc7-086b894439b2",
+        "purchase_unit": "u",
+        "unit_type": "unitat",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "23195cc0-7c54-4aeb-8ef8-d44c83257f25",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "234f1233-f7fa-43ed-976b-c9aef6029c7c",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "257d7f6a-15eb-487b-84f9-d3bdfc1e9a1d",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "28c8a38f-217c-45c6-88e2-d6c7c9250fe0",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "29291f6d-22b6-4dc0-9259-1005ee57979b",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "29d34ab6-82ff-4878-bbae-ba515ce6b062",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "pieza"
+      },
+      {
+        "id": "2b1e75ba-cdd0-45a3-a540-a40cd597090a",
+        "purchase_unit": "kg",
+        "unit_type": "gr",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "2c2bcd41-cb58-419c-816f-4964b40a988b",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "2cda8631-2c90-4c3f-8b67-4bc069ab8d74",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "2ceb67c1-97bf-4447-8e07-f10451bbb43e",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "2d96b5d4-c3d5-4ce1-8acd-5b68fb20fb2b",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "kg"
+      },
+      {
+        "id": "314ccee6-b80f-4643-91f2-46fa0d0c0786",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "3161d801-c778-49c5-92b1-1671770468bb",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "336b7da5-44f2-49bb-ae64-2554b047e65d",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "34178642-518d-4527-aa69-f7dc8f81a32c",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "36a348dd-1b2f-4390-8d99-b29cffff3e8d",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "36b335fe-c4d5-49ec-bda2-713d515c7c4b",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "37ab5db5-54da-4494-a91e-10ae087efabf",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "3801e138-bc4f-42d0-a083-d42bf8441994",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "381be8b7-eb35-4726-8bd0-5b79c01fede0",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "392294dc-dd89-425e-9e14-8572672d5588",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "3a6269c3-2e22-4572-acd3-960e337f497e",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "3b7dd033-3b66-4cfb-b9d9-c73e3fb1d99c",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "3c690f81-cd79-4cd9-8668-20f1771ce45a",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "3fd18290-c667-4a2b-85c0-6c63be55933e",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "3fe86ec3-ed9a-401c-8c76-7813ece15645",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "408d13c0-e395-4e74-8b94-de623f469463",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "41206fb6-996a-4c08-9433-b689fb159925",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "427f5b61-140c-412f-b589-8c4cab31ad55",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "4302702d-d01c-40ce-8725-d862f8d97e89",
+        "purchase_unit": "l",
+        "unit_type": "ml",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": null
+      },
+      {
+        "id": "438fa5e2-0a11-4867-af8b-f1596c6f80a8",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "caja"
+      },
+      {
+        "id": "442a2689-73cf-4322-851d-2b4b5a5bf21d",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "pack"
+      },
+      {
+        "id": "44f0756c-5d5d-4d2d-bfb1-2b106b1e6b12",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "45a7ab64-c05c-4c84-9509-855d7663b3a1",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "463d9b1f-ea02-4481-a6fe-c8af1461b594",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "489d4104-7b77-4644-874c-f17a4b20fb68",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "4a46351e-f66e-42f2-87fd-6afc8def4f3a",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "4afd2387-eb57-4732-a4c2-7ea81157a9ca",
+        "purchase_unit": "kg",
+        "unit_type": "gr",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "4da456e0-b787-455e-af8f-0410d6edb5bc",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "4deac0d0-cf72-4bdd-8753-0ad1c99b344f",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "5199784b-b6bd-42cb-9f00-ea63494aa764",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "pieza"
+      },
+      {
+        "id": "52eebb76-f875-4cc0-8f8a-3a5194cc102a",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "537b5e26-3938-4f1f-a862-f8191cdcd341",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "5470f0f9-ea78-4094-8f14-f6582dc0a45b",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "565591eb-8ed2-47a4-82b6-85ee10293219",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "56d1d1ec-5846-41bd-a85f-12eaff88bdff",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "ud"
+      },
+      {
+        "id": "582bf313-e60e-4a27-a18b-19bbcdcfb71a",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "599c77d3-02a8-4441-9ba2-23de4bffdf2d",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "kg"
+      },
+      {
+        "id": "5bacb6e7-ffbf-448d-bcaa-a942fe316000",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "caja"
+      },
+      {
+        "id": "5c427d48-4b9a-4684-8276-5b4a3e63015f",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "5c50df6a-8f89-4e01-ad8d-09cda4292ead",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "5de0a8d4-3e10-47cb-91c2-177736bea17c",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "5f2163b8-c57f-4e87-a823-3d3511474fbb",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "63208d3a-91bd-4e3f-ba74-9a971229ce9c",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "641439d9-2069-4f6f-940c-ad2ac611df12",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "kg"
+      },
+      {
+        "id": "64179dc5-69f1-4d2c-8728-094d1aa6596f",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "64c9cebe-cf60-479e-973a-f6a95b622a79",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "caja"
+      },
+      {
+        "id": "69101a4f-ca02-48e9-a6ea-a799f795de17",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "pieza"
+      },
+      {
+        "id": "6984e30a-b012-4236-8705-804063704a98",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "caja"
+      },
+      {
+        "id": "69bce9f5-d406-43eb-bf10-da81cd5943d1",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "6ac512ee-5bcf-4b60-bdaa-0e33fa872121",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "6b3d52b6-5240-44cd-b872-92041c72efcd",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "6c186bd7-aac1-44e2-92bc-a0151739163d",
+        "purchase_unit": "kg",
+        "unit_type": "gr",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": null
+      },
+      {
+        "id": "6c6f9073-1a5d-4f07-b933-bfdc8ff1a044",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "6ce92ea6-9f4d-49af-8a7e-37d77b9cf34a",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "kg",
+        "unit": "ud",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "6f0a1935-1fc9-4bff-bb67-115d0696f42e",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "7057e5c4-c8f7-418e-ae5e-07f83f105dda",
+        "purchase_unit": "kg",
+        "unit_type": "gr",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "71eda23a-41b7-49b9-af08-1c94e1111fa4",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "720caef0-3db6-40cd-808e-243348cdd960",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "7223becf-d07c-42aa-9997-fa754d549699",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "727c9b9f-2ede-48ce-a022-07e23d4e9a21",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "72be79a7-3e52-4267-9116-b3507abc1fce",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "ud"
+      },
+      {
+        "id": "740a6194-2343-4c31-b876-7a327f7c6058",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "77483a6b-1c67-4892-afec-43692ebd0e37",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "7754f664-0bde-4e8f-bb48-ef47f0a41fc7",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "789d0b3a-ef8c-459b-980f-9af288746840",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "pack"
+      },
+      {
+        "id": "78c3218d-181e-4dcc-9101-e00f6e19d4ce",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "7ada05cd-ee89-40a7-adb4-0da04d405b1b",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "ud"
+      },
+      {
+        "id": "7c38b97d-914f-4506-a038-7155fce8ae3c",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "7f6e15b7-c3ba-4b61-a128-641dda699546",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "7f825cdd-cb19-4aba-bd83-8f3dc459b98e",
+        "purchase_unit": "kg",
+        "unit_type": "gr",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "812c32a4-2cda-40ee-a7cb-bce39f6daf3b",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "kg"
+      },
+      {
+        "id": "82c443f8-3238-49ff-ad4d-e832d12e3840",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "82e4a0fa-c316-4b2d-952d-e3593180ee41",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "83c2d9dd-fd24-4657-9f54-f1fe38d1e80f",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "87c168b7-1fb4-400a-98e5-f5b3fef9d4f4",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "888096ca-9379-49c8-a8ff-5c63f93dd9e3",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "88af1b1e-f722-48f5-aadd-df88c9b81e66",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "8e1f69c3-65e1-4f23-a93e-8bbc9d3d098e",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "g",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "8f4a7f9f-93f4-40b7-a099-6391c26eeb18",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "90634e0b-9d22-44e4-ae7d-38704fee67f7",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "ud",
+        "unit": "g",
+        "order_unit": "pack"
+      },
+      {
+        "id": "93fa2926-0668-4a76-9c7a-2e51209e086f",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "943a0f57-cb00-47c4-bc4f-9030ff6e3a55",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "96fa79d1-32d0-4400-9290-cd3bace67980",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "g",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "976f0779-1c64-4958-ba24-dc0e29bbe907",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "97947c07-7a50-4746-993a-9c5b4f5a101f",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "98cc25c4-a943-4165-b25c-5951c90b459c",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "994d9639-7a40-49d3-9405-4236130f06b9",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "9a4d3a80-2f40-4f6e-9eea-a65c8c7aae1c",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "9ec81f74-2fc9-4c4b-b8b4-9df3ae783a8c",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "9ec9f5ce-78e3-4780-95c4-ab5c6b886db4",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "9f7f3651-f0c8-4a85-bc74-b6ff0db3cc71",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "a2bf332d-e466-4a10-bbfe-d0cdd4cae1e8",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "a3f2f1c0-e667-4573-bc7b-ff887e67eeae",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "a593e221-21c8-4820-b22c-a3aca7253629",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "a72c2896-b0e2-40a4-9b0d-f85aee9babff",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "a8e4985d-4f8c-4e29-b04a-fff359897291",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "ac24a6d5-c13c-47a9-babd-d92cc8a29534",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "kg",
+        "unit": "ud",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "acf91237-45fa-43f1-a3b0-3fb67b132431",
+        "purchase_unit": "kg",
+        "unit_type": "gr",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "b13b0416-4601-442b-8be8-e55004851e71",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "b21156cd-9d60-4991-92af-79b058f80edb",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "caja"
+      },
+      {
+        "id": "b48ea353-4f01-4b44-83c6-8deb22faf32f",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "b4df25f7-0d45-473a-9b7f-12c6a399f6f6",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "b6b300b5-105b-4136-a0c5-419bf981ea83",
+        "purchase_unit": "kg",
+        "unit_type": "gr",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": null
+      },
+      {
+        "id": "b71fd694-860b-4db5-9294-414cb7234a4e",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "b7225e57-ecbb-4f79-aad6-989e77b47942",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "b774a8ec-92f9-44ff-8d21-b0e6e1f7189f",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "ba109c55-0a2d-43ba-8863-e2d49cea7a6a",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "ba1e1e0c-f17b-4c36-a466-6be70ddc6508",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "ba9090ea-3fa8-4815-83b5-e3161b52faca",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "pieza"
+      },
+      {
+        "id": "bc1149cb-9d14-400e-90ab-15d4348f1aed",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "bee6e7d5-3524-4091-b365-df19b56b7f6b",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "bf044a2a-a627-4cc0-bdb2-a0e8a085e25a",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "bf1576be-6346-40ca-a17d-536b487937b8",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "c0b6c9d8-6fdf-417b-9bc3-1d05677caea8",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "c23ef184-b980-41d2-8485-28d711326c3e",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "c3679370-f6a8-46bf-88e3-2ebe88cf008d",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "c432b611-db01-4e96-8f72-9599d859ec60",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "c475a658-ebe2-4345-b5c7-8a7a52278f85",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "c4f62c4c-1fc7-41bf-aba8-899546c2c4dc",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "c56ff1f6-a222-4615-b39d-496446b4215c",
+        "purchase_unit": "kg",
+        "unit_type": "gr",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "c6ca6c91-3538-47ad-919b-c64dc39da8fe",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "c82dd0f1-2e81-4413-9279-87db17b93cd1",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "pack"
+      },
+      {
+        "id": "c9c87d4a-b095-4e3f-b127-b3c2f9b4a5d9",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "c9fc2c75-feef-4fea-9fe6-0b8db9da89df",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "kg"
+      },
+      {
+        "id": "ca14ee93-b636-49fe-8faf-f5667082adc2",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "ca2313e1-16b6-4563-945b-a024ed05aa2e",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "cb3f7ed1-70c3-46ba-8111-49a23833b9a1",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "cbf3a47b-4ad6-46cd-9e11-5aabeb91f179",
+        "purchase_unit": "kg",
+        "unit_type": "gr",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "ccb183fa-2507-4543-b0ef-38e5e995fe44",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "cd5c2cbe-0260-49df-80e4-a66b8a62f623",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "cdf0d99f-8e7e-4efc-b1d8-bf4817f2d4d9",
+        "purchase_unit": "kg",
+        "unit_type": "gr",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "ce43391b-d1f5-4931-93da-06eb65aae06c",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "kg",
+        "unit": "ml",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "ceb857b0-6239-4e27-b1bf-6642878fec2f",
+        "purchase_unit": "kg",
+        "unit_type": "gr",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "cf4e549b-9b1e-4967-9cb1-df87b31b640c",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "d05c4daf-1aae-4fd7-900d-25dfe01dd3e8",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "d3b90c3c-8c0b-407a-b674-5e4a451753d1",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "d54669fe-b893-4978-a2f8-1e7dcead6c3c",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "kg"
+      },
+      {
+        "id": "d58e8291-2b2d-4479-a8c2-59b165a099bb",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "da9754ec-7c31-4e4b-ae32-b9f4c6c60e53",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "dc077be2-0f9d-45e6-96f5-fe047edd9b75",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "dd865c75-4c9d-4cc8-8303-bef3ca13b2de",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "ddb8063d-4038-418a-ade5-9aa32343d03b",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "dee2d9f2-8d11-457a-bf22-3afeb8b3ac71",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "df3fa8b0-50c4-46ce-a1ab-ab0706e14d64",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "e02c0ba1-7095-49cf-92bd-830a91307800",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "e24b6d2b-1c6c-4f8f-b17d-58a0b89f5a6d",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "e2d3051a-9071-4eda-97db-53c277afd05f",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "g",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "e36f1d9f-42f9-485c-9ecf-8175b1b78dd9",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "e3885280-44bd-4739-ada1-1d2d7188d9d6",
+        "purchase_unit": "kg",
+        "unit_type": "gr",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "caja"
+      },
+      {
+        "id": "e3fb15ec-e228-4757-87e4-31d694d32b5a",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "caja"
+      },
+      {
+        "id": "e4234fbd-3954-4e3d-924c-30ea6aee4954",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "e5587479-57d8-450f-a006-09d0183f8a8f",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "e63bad97-e829-4fc2-a1a6-1ec0856d6dab",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "caja"
+      },
+      {
+        "id": "e7b7a390-5700-4cd8-bdee-3bbd86e95ee8",
+        "purchase_unit": "l",
+        "unit_type": "ml",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": null
+      },
+      {
+        "id": "e86939b1-21d7-41f3-9d38-ac09b4a3dde1",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "e8a577c8-7de0-4c61-9fd3-32699c3af136",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "e8be0dbe-cb9d-4cd8-9cc6-88d5f62eba67",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "ea28e180-e86b-4b9e-9ee5-9a1b8d4c2e93",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "kg",
+        "unit": "ud",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "eafea750-7fae-4f6b-a128-cd667aa9fb39",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "eb5e4308-8546-46b4-873b-8fb58611b694",
+        "purchase_unit": "kg",
+        "unit_type": "gr",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "ec1df795-8c23-464a-a8d7-44c3e27ca676",
+        "purchase_unit": "kg",
+        "unit_type": "gr",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": null
+      },
+      {
+        "id": "ec49880d-c409-4c1b-ab55-d65d8771eeeb",
+        "purchase_unit": "kg",
+        "unit_type": "gr",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "kg"
+      },
+      {
+        "id": "eca0875a-ec96-4e54-97da-4e2d257364d4",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "ece1013a-4157-4da7-be05-b90b3b2309fd",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "pieza"
+      },
+      {
+        "id": "effbcd1e-c551-46e5-ac23-28ce6dcaa82a",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "f06f6d44-d597-48fe-98ab-97ec53ea6dbe",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "f0e64833-be80-448f-a92a-b2312b781888",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "g",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "f127ccaa-c13b-468b-972e-9df0476713cd",
+        "purchase_unit": "kg",
+        "unit_type": "gr",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "f269024e-1a7b-453c-b6b3-9a250f422f11",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "f2bb4d7d-bf93-402e-855d-83daafbabb98",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "f3d52e45-a935-4384-9be0-187a1fcf8d64",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "f4f2287f-d66e-4f86-bab9-8eac5fd34498",
+        "purchase_unit": "kg",
+        "unit_type": "gr",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": null
+      },
+      {
+        "id": "f54bf307-87a4-411a-9f3a-32b31858a6e8",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "f6a3e2cf-3324-49d9-aa6e-bae1b541dff4",
+        "purchase_unit": "kg",
+        "unit_type": "gr",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "caja"
+      },
+      {
+        "id": "f818b0ef-211f-4524-b3b7-f07c9cc56c98",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "f8725bce-e86f-4f7f-bf9f-f09dfdef20b0",
+        "purchase_unit": "l",
+        "unit_type": "l",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "pack"
+      },
+      {
+        "id": "f924027f-5b67-47e0-a7df-7c5ea14d44e7",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "f9d969b0-8b4c-46a9-9db4-204de91d0e3a",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "caja"
+      },
+      {
+        "id": "f9e77f81-d18b-487b-95bf-74481d68e158",
+        "purchase_unit": "ud",
+        "unit_type": "ud",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "fb318925-2b5b-4e92-8562-6d573c2b4ad5",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      },
+      {
+        "id": "fd80c71a-8864-46e6-9cf1-6f07e7a63656",
+        "purchase_unit": "kg",
+        "unit_type": "kg",
+        "recipe_unit": "kg",
+        "unit": "g",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "fdbd0348-3349-48fe-8740-f7eeac81c5b9",
+        "purchase_unit": "l",
+        "unit_type": "ml",
+        "recipe_unit": "l",
+        "unit": "ml",
+        "order_unit": "unidad"
+      },
+      {
+        "id": "fe056cd1-ea97-449c-918c-7d6e08b42622",
+        "purchase_unit": "u",
+        "unit_type": "u",
+        "recipe_unit": "ud",
+        "unit": "ud",
+        "order_unit": "pack"
+      }
+    ],
+    "recipe_ingredients": [
+      {
+        "id": "00888c39-6e34-4c07-a2ea-dcee8e31a184",
+        "recipe_id": "85d857bc-06de-4117-8311-3964bb552663",
+        "ingredient_id": "a72c2896-b0e2-40a4-9b0d-f85aee9babff",
+        "unit": "ud"
+      },
+      {
+        "id": "013f79ef-7522-4036-9de1-45c174bc6c9f",
+        "recipe_id": "7d36b53d-d34a-4fd3-b786-98514d94da3c",
+        "ingredient_id": "0bef6c31-2694-4c90-afa7-0cdb38f3325d",
+        "unit": "ud"
+      },
+      {
+        "id": "017066d1-ec27-46bf-bd87-e1325ec20649",
+        "recipe_id": "85d857bc-06de-4117-8311-3964bb552663",
+        "ingredient_id": "da9754ec-7c31-4e4b-ae32-b9f4c6c60e53",
+        "unit": "ud"
+      },
+      {
+        "id": "01e265db-00a9-49d8-b416-5c81a26b77e3",
+        "recipe_id": "d4d63d3a-0784-46dd-b094-a48abf24f1ba",
+        "ingredient_id": "f9d969b0-8b4c-46a9-9db4-204de91d0e3a",
+        "unit": "ud"
+      },
+      {
+        "id": "01f63cec-0243-471e-8cb2-486350c65f8b",
+        "recipe_id": "753f16be-0397-4aeb-b9b2-1999a36c6a1b",
+        "ingredient_id": "5bacb6e7-ffbf-448d-bcaa-a942fe316000",
+        "unit": "kg"
+      },
+      {
+        "id": "027fcf85-e397-4cde-9d20-03b010221b25",
+        "recipe_id": "530ff4a6-d16e-4550-b5c8-e7ee002f3f07",
+        "ingredient_id": "442a2689-73cf-4322-851d-2b4b5a5bf21d",
+        "unit": "g"
+      },
+      {
+        "id": "03f96612-ea72-4672-94e1-0bff195b9846",
+        "recipe_id": "c33a96ce-c033-4816-840c-db969921e8bd",
+        "ingredient_id": "dd865c75-4c9d-4cc8-8303-bef3ca13b2de",
+        "unit": "g"
+      },
+      {
+        "id": "063a01b2-1b13-4f01-9e82-bb982a203bbd",
+        "recipe_id": "e63286d1-b428-4d46-a2c9-b205f6000381",
+        "ingredient_id": "bf044a2a-a627-4cc0-bdb2-a0e8a085e25a",
+        "unit": "ud"
+      },
+      {
+        "id": "066f8200-6dc8-44bb-a3b3-7610dacde88c",
+        "recipe_id": "8e234b0c-9ed2-4b42-a815-6a1122e26f79",
+        "ingredient_id": "ceb857b0-6239-4e27-b1bf-6642878fec2f",
+        "unit": "g"
+      },
+      {
+        "id": "07bc4c22-69ce-4c25-becc-be51360b31b3",
+        "recipe_id": "7ebe3b4b-ea91-4789-a358-10178d6ecc39",
+        "ingredient_id": "bf044a2a-a627-4cc0-bdb2-a0e8a085e25a",
+        "unit": "ud"
+      },
+      {
+        "id": "08f42ea6-238d-4f74-8151-56fc751f3ea4",
+        "recipe_id": "867802a1-5090-4480-b07a-d216af23ac3d",
+        "ingredient_id": "994d9639-7a40-49d3-9405-4236130f06b9",
+        "unit": "ud"
+      },
+      {
+        "id": "0a761aa3-7f96-4202-bfaf-7584a4fa13b4",
+        "recipe_id": "1480c10a-a8e7-4cda-a0d5-bab86773795e",
+        "ingredient_id": "0bc48001-8c06-4db0-9fbd-4f02cb2dd41a",
+        "unit": "g"
+      },
+      {
+        "id": "0a7984c2-3c8a-47b8-a320-623fb8e6876d",
+        "recipe_id": "1c6efa8d-2c05-469f-98a7-48a369613bfc",
+        "ingredient_id": "f924027f-5b67-47e0-a7df-7c5ea14d44e7",
+        "unit": "ud"
+      },
+      {
+        "id": "0a886cef-257c-4973-b456-e9f6f8b90319",
+        "recipe_id": "a781486c-84b3-4212-be63-3c21ede04cfe",
+        "ingredient_id": "cdf0d99f-8e7e-4efc-b1d8-bf4817f2d4d9",
+        "unit": "g"
+      },
+      {
+        "id": "0b5476de-5018-4138-9b1d-3edcdfc2801e",
+        "recipe_id": "47354f75-98d5-495a-9f4e-5381cc994b81",
+        "ingredient_id": "90634e0b-9d22-44e4-ae7d-38704fee67f7",
+        "unit": "g"
+      },
+      {
+        "id": "0b55b37f-050c-466f-bfa8-97e93d967674",
+        "recipe_id": "d4d63d3a-0784-46dd-b094-a48abf24f1ba",
+        "ingredient_id": "ba9090ea-3fa8-4815-83b5-e3161b52faca",
+        "unit": "g"
+      },
+      {
+        "id": "0b725825-804b-4f9d-be9d-90ff0ed65f9a",
+        "recipe_id": "c2e98bf1-d29f-491f-81b8-03cf562261dc",
+        "ingredient_id": "e7b7a390-5700-4cd8-bdee-3bbd86e95ee8",
+        "unit": "ml"
+      },
+      {
+        "id": "0c5370c4-c55e-4627-be6f-5624efee795b",
+        "recipe_id": "ef1a8803-db2c-44c8-a72c-abbf5d350f88",
+        "ingredient_id": "f924027f-5b67-47e0-a7df-7c5ea14d44e7",
+        "unit": "ud"
+      },
+      {
+        "id": "0c8d42fc-2a80-4641-862f-6d7c28d98f06",
+        "recipe_id": "3707c751-29ba-4c7a-8238-df648bdc4eb9",
+        "ingredient_id": "582bf313-e60e-4a27-a18b-19bbcdcfb71a",
+        "unit": "g"
+      },
+      {
+        "id": "0cb039e2-c06c-4c32-a486-44d7f178ee12",
+        "recipe_id": "59e25790-49ff-4351-9d84-6bf8d9dc16e6",
+        "ingredient_id": "ba1e1e0c-f17b-4c36-a466-6be70ddc6508",
+        "unit": "ud"
+      },
+      {
+        "id": "0d8ba723-6826-4f79-9e46-22d0f7705ee6",
+        "recipe_id": "84f6915e-f519-41f3-929d-df247e50ae53",
+        "ingredient_id": "599c77d3-02a8-4441-9ba2-23de4bffdf2d",
+        "unit": "kg"
+      },
+      {
+        "id": "0da9860c-6282-499f-a363-7779ae4a3ef6",
+        "recipe_id": "36bc807b-2aa1-4676-b472-816fb2318fbf",
+        "ingredient_id": "cb3f7ed1-70c3-46ba-8111-49a23833b9a1",
+        "unit": "ml"
+      },
+      {
+        "id": "0ef829a6-ff48-4857-9cc5-eb509df6677e",
+        "recipe_id": "e02adb64-740e-4455-8009-f8b27e32232a",
+        "ingredient_id": "f269024e-1a7b-453c-b6b3-9a250f422f11",
+        "unit": "u"
+      },
+      {
+        "id": "0f09e994-4919-4945-ab1b-d71ddea5ee05",
+        "recipe_id": "e89d39d4-630b-41c2-bc75-64f2ccb4abad",
+        "ingredient_id": "e4234fbd-3954-4e3d-924c-30ea6aee4954",
+        "unit": "ud"
+      },
+      {
+        "id": "105acefa-b4a2-4162-a77a-2b486f2a8196",
+        "recipe_id": "6eff9c00-1003-4d63-b53b-7506af71129c",
+        "ingredient_id": "98cc25c4-a943-4165-b25c-5951c90b459c",
+        "unit": "ud"
+      },
+      {
+        "id": "10f6d6c7-b4ce-46e8-bfbe-f2031dbb68fd",
+        "recipe_id": "85d857bc-06de-4117-8311-3964bb552663",
+        "ingredient_id": "72be79a7-3e52-4267-9116-b3507abc1fce",
+        "unit": "ud"
+      },
+      {
+        "id": "1205f006-0e1b-4601-ab84-4ad2f179e5a9",
+        "recipe_id": "c33a96ce-c033-4816-840c-db969921e8bd",
+        "ingredient_id": "0bc48001-8c06-4db0-9fbd-4f02cb2dd41a",
+        "unit": "g"
+      },
+      {
+        "id": "12506438-854c-46a4-9d40-890838b1e47f",
+        "recipe_id": "b6010630-7220-40f2-90eb-d04f16bf3f11",
+        "ingredient_id": "0bc48001-8c06-4db0-9fbd-4f02cb2dd41a",
+        "unit": "g"
+      },
+      {
+        "id": "12e4f64f-a16e-48ee-8be6-90e666349322",
+        "recipe_id": "b6010630-7220-40f2-90eb-d04f16bf3f11",
+        "ingredient_id": "78c3218d-181e-4dcc-9101-e00f6e19d4ce",
+        "unit": "g"
+      },
+      {
+        "id": "134fa264-350b-425f-aacb-a1aad992d98f",
+        "recipe_id": "36bc807b-2aa1-4676-b472-816fb2318fbf",
+        "ingredient_id": "0bc48001-8c06-4db0-9fbd-4f02cb2dd41a",
+        "unit": "g"
+      },
+      {
+        "id": "14823290-47ce-4346-b363-accdc05ece6d",
+        "recipe_id": "b9ad65d9-3503-464f-aa5c-3a25e4e36f0d",
+        "ingredient_id": "69101a4f-ca02-48e9-a6ea-a799f795de17",
+        "unit": "g"
+      },
+      {
+        "id": "14d4c487-9819-4cd1-a817-5b0f0fa13675",
+        "recipe_id": "7f28162c-03b4-495e-852e-9dcae6e47d8b",
+        "ingredient_id": "b21156cd-9d60-4991-92af-79b058f80edb",
+        "unit": "g"
+      },
+      {
+        "id": "156dca22-9084-43a2-9fe8-cd0e57b9377c",
+        "recipe_id": "530ff4a6-d16e-4550-b5c8-e7ee002f3f07",
+        "ingredient_id": "bf044a2a-a627-4cc0-bdb2-a0e8a085e25a",
+        "unit": "ud"
+      },
+      {
+        "id": "159a5507-beec-4af7-afc7-038549573a64",
+        "recipe_id": "61572a28-2c98-4e0e-af59-2ca2b7f6ab7d",
+        "ingredient_id": "438fa5e2-0a11-4867-af8b-f1596c6f80a8",
+        "unit": "ml"
+      },
+      {
+        "id": "16146bb2-d66f-4bd7-8ec3-1a5633ab4da4",
+        "recipe_id": "0672d802-7193-459a-a51f-d49fd01ae720",
+        "ingredient_id": "78c3218d-181e-4dcc-9101-e00f6e19d4ce",
+        "unit": "g"
+      },
+      {
+        "id": "167e38ee-a81c-4389-a214-df2f04723df6",
+        "recipe_id": "809adb85-dc1c-4d48-aac1-93cf639f36e2",
+        "ingredient_id": "c9fc2c75-feef-4fea-9fe6-0b8db9da89df",
+        "unit": "g"
+      },
+      {
+        "id": "16a0151e-711a-4dff-8109-15632ccba85e",
+        "recipe_id": "cf74a7ae-e953-4491-b284-d27761180088",
+        "ingredient_id": "3c690f81-cd79-4cd9-8668-20f1771ce45a",
+        "unit": "ud"
+      },
+      {
+        "id": "1756de6b-13a7-4530-a508-f8bf3e9c0119",
+        "recipe_id": "6eb74ed5-7074-42bc-879a-195074ab4775",
+        "ingredient_id": "29d34ab6-82ff-4878-bbae-ba515ce6b062",
+        "unit": "g"
+      },
+      {
+        "id": "1799ebc4-e269-4d8d-a962-d1b538dde720",
+        "recipe_id": "1ee204b0-bec3-4f9d-b215-f0f4d288375e",
+        "ingredient_id": "f54bf307-87a4-411a-9f3a-32b31858a6e8",
+        "unit": "ud"
+      },
+      {
+        "id": "1851860b-c6ce-4666-8df0-f9911facb177",
+        "recipe_id": "c2e98bf1-d29f-491f-81b8-03cf562261dc",
+        "ingredient_id": "740a6194-2343-4c31-b876-7a327f7c6058",
+        "unit": "u"
+      },
+      {
+        "id": "18595793-1d7a-45d9-ba5b-54e0b486aa18",
+        "recipe_id": "6f50bd0c-0818-446f-8e91-9dabcdec81f5",
+        "ingredient_id": "78c3218d-181e-4dcc-9101-e00f6e19d4ce",
+        "unit": "g"
+      },
+      {
+        "id": "186ff730-7089-434b-8fb0-beb4c769c1c0",
+        "recipe_id": "25d61017-b3bd-4881-878c-76dfa6fafdb8",
+        "ingredient_id": "f9d969b0-8b4c-46a9-9db4-204de91d0e3a",
+        "unit": "ud"
+      },
+      {
+        "id": "18929153-52ad-4d33-ad98-ebb8be9c9bb2",
+        "recipe_id": "530ff4a6-d16e-4550-b5c8-e7ee002f3f07",
+        "ingredient_id": "36a348dd-1b2f-4390-8d99-b29cffff3e8d",
+        "unit": "ud"
+      },
+      {
+        "id": "18d0a80a-1ed3-4a39-961e-bab9520e7061",
+        "recipe_id": "36bc807b-2aa1-4676-b472-816fb2318fbf",
+        "ingredient_id": "f9d969b0-8b4c-46a9-9db4-204de91d0e3a",
+        "unit": "ud"
+      },
+      {
+        "id": "19c4ff31-fbe8-4d8e-b609-a0d6bd417dec",
+        "recipe_id": "ac2b6b3a-4d49-4fdd-a793-3865fe490da8",
+        "ingredient_id": "f9d969b0-8b4c-46a9-9db4-204de91d0e3a",
+        "unit": "ud"
+      },
+      {
+        "id": "19e55125-36f7-42eb-9a08-32a49c5838d7",
+        "recipe_id": "8e234b0c-9ed2-4b42-a815-6a1122e26f79",
+        "ingredient_id": "0bc48001-8c06-4db0-9fbd-4f02cb2dd41a",
+        "unit": "g"
+      },
+      {
+        "id": "1a3d9a2a-6882-48d1-8624-8dc906fd4f51",
+        "recipe_id": "b7f085a9-63ee-40c6-a70f-d57a1b56e3be",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "ud"
+      },
+      {
+        "id": "1aca49fb-7144-4769-be0d-7ef2e35332af",
+        "recipe_id": "6f50bd0c-0818-446f-8e91-9dabcdec81f5",
+        "ingredient_id": "a2bf332d-e466-4a10-bbfe-d0cdd4cae1e8",
+        "unit": "ud"
+      },
+      {
+        "id": "1b01fd53-a812-4450-8922-e41f8c5084fe",
+        "recipe_id": "b6010630-7220-40f2-90eb-d04f16bf3f11",
+        "ingredient_id": "ceb857b0-6239-4e27-b1bf-6642878fec2f",
+        "unit": "g"
+      },
+      {
+        "id": "1cc1db9f-e166-4adb-a73a-6247e9a832d5",
+        "recipe_id": "0672d802-7193-459a-a51f-d49fd01ae720",
+        "ingredient_id": "e3fb15ec-e228-4757-87e4-31d694d32b5a",
+        "unit": "g"
+      },
+      {
+        "id": "1d7f49c4-0e7d-4da9-9186-ae8127bb0b2e",
+        "recipe_id": "92e35944-806a-4568-9874-db622760fc9b",
+        "ingredient_id": "da9754ec-7c31-4e4b-ae32-b9f4c6c60e53",
+        "unit": "ud"
+      },
+      {
+        "id": "1d9f027b-001c-431c-9b32-3d95ce3d4671",
+        "recipe_id": "f5ac98a9-8cb7-4282-b02b-fba93a15543e",
+        "ingredient_id": "943a0f57-cb00-47c4-bc4f-9030ff6e3a55",
+        "unit": "ml"
+      },
+      {
+        "id": "1e01d531-c8c0-4319-81d0-c9b8d22220a7",
+        "recipe_id": "d9aa9b35-cd34-4031-888e-a436848adc4d",
+        "ingredient_id": "0fce07d0-7f1e-4cb6-b0ab-8d60b06d68f8",
+        "unit": "l"
+      },
+      {
+        "id": "1e5dbdb8-d03d-4992-8698-689fccc1436c",
+        "recipe_id": "3707c751-29ba-4c7a-8238-df648bdc4eb9",
+        "ingredient_id": "789d0b3a-ef8c-459b-980f-9af288746840",
+        "unit": "ml"
+      },
+      {
+        "id": "1fbedb4d-a162-45c1-9a8e-056d8ba4016c",
+        "recipe_id": "a6475bf6-9ae6-43e3-ab0e-0ae70e167225",
+        "ingredient_id": "185dd4e6-cc89-4941-b9bc-2a61d35c15cd",
+        "unit": "ud"
+      },
+      {
+        "id": "1fe54a04-d5a8-486e-87c9-c1e0751049a1",
+        "recipe_id": "92e35944-806a-4568-9874-db622760fc9b",
+        "ingredient_id": "a72c2896-b0e2-40a4-9b0d-f85aee9babff",
+        "unit": "ud"
+      },
+      {
+        "id": "214e5d1b-fbb3-4253-b20c-ed466f317346",
+        "recipe_id": "a781486c-84b3-4212-be63-3c21ede04cfe",
+        "ingredient_id": "fd80c71a-8864-46e6-9cf1-6f07e7a63656",
+        "unit": "kg"
+      },
+      {
+        "id": "2203e3c3-e31f-49ae-adc9-90af90f39502",
+        "recipe_id": "ceebca9e-869e-4575-a6d3-aa4086d98f2e",
+        "ingredient_id": "bf044a2a-a627-4cc0-bdb2-a0e8a085e25a",
+        "unit": "u"
+      },
+      {
+        "id": "22197a98-760a-482b-9969-bb7b5f63d970",
+        "recipe_id": "556360cc-1560-475c-9ca1-a348f558fcf6",
+        "ingredient_id": "c3679370-f6a8-46bf-88e3-2ebe88cf008d",
+        "unit": "u"
+      },
+      {
+        "id": "23bda8a2-7cd7-44ae-be35-b2d0cb25b256",
+        "recipe_id": "f5ac98a9-8cb7-4282-b02b-fba93a15543e",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "ud"
+      },
+      {
+        "id": "2433b34b-bb65-41f0-81e0-93f91348fb2f",
+        "recipe_id": "d02f57c9-1890-493a-8761-78e59ceff429",
+        "ingredient_id": "e63bad97-e829-4fc2-a1a6-1ec0856d6dab",
+        "unit": "ml"
+      },
+      {
+        "id": "25babc7d-02ac-416e-9e4d-0a70fd745dd8",
+        "recipe_id": "6f50bd0c-0818-446f-8e91-9dabcdec81f5",
+        "ingredient_id": "b71fd694-860b-4db5-9294-414cb7234a4e",
+        "unit": "ud"
+      },
+      {
+        "id": "25c785f7-4707-4653-84a2-c29216ba9ac9",
+        "recipe_id": "407a2295-d1cb-4512-8102-9f41fc0d6f8c",
+        "ingredient_id": "e2d3051a-9071-4eda-97db-53c277afd05f",
+        "unit": "g"
+      },
+      {
+        "id": "26ad0c57-e782-48d9-b970-c46fb95b91a0",
+        "recipe_id": "25d61017-b3bd-4881-878c-76dfa6fafdb8",
+        "ingredient_id": "3fe86ec3-ed9a-401c-8c76-7813ece15645",
+        "unit": "ud"
+      },
+      {
+        "id": "27064396-1860-4058-a7bb-8020ecde5c87",
+        "recipe_id": "b63ba921-8f5a-498d-8d3e-328e46388a47",
+        "ingredient_id": "599c77d3-02a8-4441-9ba2-23de4bffdf2d",
+        "unit": "g"
+      },
+      {
+        "id": "270b71cd-f74a-4f53-9235-fa1d1baf1c7e",
+        "recipe_id": "04e0f3bd-a030-4f5f-8d0d-a09e9aa972ca",
+        "ingredient_id": "5c427d48-4b9a-4684-8276-5b4a3e63015f",
+        "unit": "ud"
+      },
+      {
+        "id": "27405ec2-4e42-4f1f-a793-653582efb7d2",
+        "recipe_id": "1904d10c-c8d3-4bd2-a46e-ceb2b78c81bc",
+        "ingredient_id": "2b1e75ba-cdd0-45a3-a540-a40cd597090a",
+        "unit": "kg"
+      },
+      {
+        "id": "27579114-fd1f-4c74-9930-4b1f4aee5ba7",
+        "recipe_id": "10da9370-394e-4f21-83dc-48c98ab36640",
+        "ingredient_id": "44f0756c-5d5d-4d2d-bfb1-2b106b1e6b12",
+        "unit": "ud"
+      },
+      {
+        "id": "2781ee9c-89b2-42ae-ba90-65bd0100be18",
+        "recipe_id": "616257ea-7cf9-4a1f-8e5a-d25a929901c0",
+        "ingredient_id": "cd5c2cbe-0260-49df-80e4-a66b8a62f623",
+        "unit": "g"
+      },
+      {
+        "id": "28c8a48b-d279-4636-b808-d8e758f18993",
+        "recipe_id": "3707c751-29ba-4c7a-8238-df648bdc4eb9",
+        "ingredient_id": "7ada05cd-ee89-40a7-adb4-0da04d405b1b",
+        "unit": "g"
+      },
+      {
+        "id": "299e0387-9a48-4452-bfbf-a7fd75e0a448",
+        "recipe_id": "47354f75-98d5-495a-9f4e-5381cc994b81",
+        "ingredient_id": "2ceb67c1-97bf-4447-8e07-f10451bbb43e",
+        "unit": "ml"
+      },
+      {
+        "id": "2a39bcf0-e032-4cd8-9ffe-a42f87c80365",
+        "recipe_id": "e18d299a-7e10-4fa1-81bc-3c7ee24de2da",
+        "ingredient_id": "71eda23a-41b7-49b9-af08-1c94e1111fa4",
+        "unit": "ud"
+      },
+      {
+        "id": "2a80b177-6241-487d-9810-b60f2bd755f0",
+        "recipe_id": "c2e98bf1-d29f-491f-81b8-03cf562261dc",
+        "ingredient_id": "0bc48001-8c06-4db0-9fbd-4f02cb2dd41a",
+        "unit": "g"
+      },
+      {
+        "id": "2bb2eb12-11f6-4973-9fb3-11f0072ec62f",
+        "recipe_id": "7f28162c-03b4-495e-852e-9dcae6e47d8b",
+        "ingredient_id": "78c3218d-181e-4dcc-9101-e00f6e19d4ce",
+        "unit": "g"
+      },
+      {
+        "id": "2bfd3dab-a39b-432d-bd03-911c7cb6ddf8",
+        "recipe_id": "809adb85-dc1c-4d48-aac1-93cf639f36e2",
+        "ingredient_id": "a2bf332d-e466-4a10-bbfe-d0cdd4cae1e8",
+        "unit": "ud"
+      },
+      {
+        "id": "2c3d98a3-3c87-4ada-afd0-891400fe1b9f",
+        "recipe_id": "ac2b6b3a-4d49-4fdd-a793-3865fe490da8",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "ud"
+      },
+      {
+        "id": "2c3f8b71-b325-45d4-84e3-050702fd92aa",
+        "recipe_id": "55f3087f-f818-4f11-9028-2c93c24d7d97",
+        "ingredient_id": "64179dc5-69f1-4d2c-8728-094d1aa6596f",
+        "unit": "ud"
+      },
+      {
+        "id": "2ca22c96-5b28-41d9-bd3b-5ab081f8725f",
+        "recipe_id": "6eb74ed5-7074-42bc-879a-195074ab4775",
+        "ingredient_id": "0bc48001-8c06-4db0-9fbd-4f02cb2dd41a",
+        "unit": "g"
+      },
+      {
+        "id": "2d2f061c-7c3d-4dc7-99bf-c007e4305bb3",
+        "recipe_id": "a66a38b9-a601-40a4-94b9-e862d2b677e2",
+        "ingredient_id": "b6b300b5-105b-4136-a0c5-419bf981ea83",
+        "unit": "ud"
+      },
+      {
+        "id": "2d8270d4-dbc2-4b71-93f3-58222618bbb8",
+        "recipe_id": "f5ac98a9-8cb7-4282-b02b-fba93a15543e",
+        "ingredient_id": "ec49880d-c409-4c1b-ab55-d65d8771eeeb",
+        "unit": "g"
+      },
+      {
+        "id": "2dcc26d0-de97-4415-94d0-f76fb0de5e0b",
+        "recipe_id": "ff97c49d-6dda-440a-a224-6bdd075e5378",
+        "ingredient_id": "442a2689-73cf-4322-851d-2b4b5a5bf21d",
+        "unit": "kg"
+      },
+      {
+        "id": "2f101463-0e16-42a3-9127-a0e560cfd283",
+        "recipe_id": "e89a2668-5b01-4b8d-9c4d-b965ee05df9c",
+        "ingredient_id": "cdf0d99f-8e7e-4efc-b1d8-bf4817f2d4d9",
+        "unit": "kg"
+      },
+      {
+        "id": "2f5300db-3416-4c94-bcbb-d11cac7e478f",
+        "recipe_id": "a63ea6af-5e14-465f-8e02-17509d8d2bdb",
+        "ingredient_id": "fe056cd1-ea97-449c-918c-7d6e08b42622",
+        "unit": "ud"
+      },
+      {
+        "id": "2f69931a-a02c-43f1-8f5e-6e5c25659d2a",
+        "recipe_id": "e90f0f9c-7952-42ae-b19d-7c3062aff278",
+        "ingredient_id": "df3fa8b0-50c4-46ce-a1ab-ab0706e14d64",
+        "unit": "ud"
+      },
+      {
+        "id": "305b8714-b89e-4478-8acd-4843a13c948e",
+        "recipe_id": "c33a96ce-c033-4816-840c-db969921e8bd",
+        "ingredient_id": "cbf3a47b-4ad6-46cd-9e11-5aabeb91f179",
+        "unit": "g"
+      },
+      {
+        "id": "31367ec7-0958-4a16-95c7-a8893cd83c73",
+        "recipe_id": "9f74b8c5-f891-4353-b070-fbc620cdad98",
+        "ingredient_id": "bf044a2a-a627-4cc0-bdb2-a0e8a085e25a",
+        "unit": "u"
+      },
+      {
+        "id": "325dda3a-f412-44ad-806d-7949157573be",
+        "recipe_id": "055ba34d-f723-403f-adcc-c7c237dcb3b1",
+        "ingredient_id": "ddb8063d-4038-418a-ade5-9aa32343d03b",
+        "unit": "ud"
+      },
+      {
+        "id": "3320a2f6-bc65-4f22-91a5-82907417d319",
+        "recipe_id": "6f50bd0c-0818-446f-8e91-9dabcdec81f5",
+        "ingredient_id": "8f4a7f9f-93f4-40b7-a099-6391c26eeb18",
+        "unit": "g"
+      },
+      {
+        "id": "337c397d-a9a0-4ad0-9a01-cd538e99f7f7",
+        "recipe_id": "30d4d099-2192-4351-8557-b4dfff65b15a",
+        "ingredient_id": "34178642-518d-4527-aa69-f7dc8f81a32c",
+        "unit": "ud"
+      },
+      {
+        "id": "348bbc77-5df7-48f1-8f13-0295ac1df4df",
+        "recipe_id": "f28b7484-a6b3-4eb6-9ff6-8688c5ad188f",
+        "ingredient_id": "3fe86ec3-ed9a-401c-8c76-7813ece15645",
+        "unit": "ud"
+      },
+      {
+        "id": "3564a2e5-5771-4dea-9742-9f7091911f61",
+        "recipe_id": "7f28162c-03b4-495e-852e-9dcae6e47d8b",
+        "ingredient_id": "8f4a7f9f-93f4-40b7-a099-6391c26eeb18",
+        "unit": "g"
+      },
+      {
+        "id": "36079189-6ad1-45c7-ab04-725473e0eefe",
+        "recipe_id": "76ce2fb6-d0dc-4879-8e39-ebfafd147a53",
+        "ingredient_id": "bf1576be-6346-40ca-a17d-536b487937b8",
+        "unit": "g"
+      },
+      {
+        "id": "364dc026-06e0-478d-a566-180ebe979eb2",
+        "recipe_id": "e09fa65f-2dc4-460a-90b0-a4907ce5fb15",
+        "ingredient_id": "789d0b3a-ef8c-459b-980f-9af288746840",
+        "unit": "ml"
+      },
+      {
+        "id": "36cbaf07-b05d-4297-be4c-e8ca1da3522b",
+        "recipe_id": "648e4691-bf25-4dd2-a79e-54fb3c530f34",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "ud"
+      },
+      {
+        "id": "3711dbaf-b86f-4549-9c66-644b0bbd501e",
+        "recipe_id": "60a6d63d-7a2a-44f7-a6b7-bcb7e5f5921d",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "ud"
+      },
+      {
+        "id": "37b8a14d-d927-412c-95f0-dd5b4b6c046d",
+        "recipe_id": "d99ea91c-7d83-4139-9685-bb636f711ad0",
+        "ingredient_id": "438fa5e2-0a11-4867-af8b-f1596c6f80a8",
+        "unit": "ud"
+      },
+      {
+        "id": "383bc581-a6a9-4344-b49f-fba8f8141e68",
+        "recipe_id": "616257ea-7cf9-4a1f-8e5a-d25a929901c0",
+        "ingredient_id": "64179dc5-69f1-4d2c-8728-094d1aa6596f",
+        "unit": "ud"
+      },
+      {
+        "id": "38b9d7e6-277c-44bd-92c0-5cb9dc124e83",
+        "recipe_id": "10da9370-394e-4f21-83dc-48c98ab36640",
+        "ingredient_id": "599c77d3-02a8-4441-9ba2-23de4bffdf2d",
+        "unit": "g"
+      },
+      {
+        "id": "38dfee91-3021-4826-b110-a6b6a680b743",
+        "recipe_id": "25d61017-b3bd-4881-878c-76dfa6fafdb8",
+        "ingredient_id": "2b1e75ba-cdd0-45a3-a540-a40cd597090a",
+        "unit": "g"
+      },
+      {
+        "id": "39505a1f-cbe7-4e2f-8f29-92515fb5c57f",
+        "recipe_id": "36f8059e-e1c6-426f-97a5-6cbe7ce2bbd3",
+        "ingredient_id": "29291f6d-22b6-4dc0-9259-1005ee57979b",
+        "unit": "ud"
+      },
+      {
+        "id": "395c605c-d293-4b5d-aa52-a7e1c6ef1642",
+        "recipe_id": "f5ac98a9-8cb7-4282-b02b-fba93a15543e",
+        "ingredient_id": "f8725bce-e86f-4f7f-bf9f-f09dfdef20b0",
+        "unit": "ml"
+      },
+      {
+        "id": "39ad5163-f7ad-414c-87c8-682fd65c2d31",
+        "recipe_id": "589d3800-7fa6-4a2f-9712-c807282476c9",
+        "ingredient_id": "c9c87d4a-b095-4e3f-b127-b3c2f9b4a5d9",
+        "unit": "ud"
+      },
+      {
+        "id": "3a1da0c8-f236-486d-92ff-797971ec7f67",
+        "recipe_id": "aad79b60-95bb-47f1-8633-f45d31826ebc",
+        "ingredient_id": "88af1b1e-f722-48f5-aadd-df88c9b81e66",
+        "unit": "ud"
+      },
+      {
+        "id": "3ab7a9d7-6cef-4ae7-b22f-6718d483e1db",
+        "recipe_id": "3536e353-2ad6-4b58-84d0-4668924fe7a9",
+        "ingredient_id": "740a6194-2343-4c31-b876-7a327f7c6058",
+        "unit": "ud"
+      },
+      {
+        "id": "3c98b273-cdec-4687-ac09-de9139929e6f",
+        "recipe_id": "10da9370-394e-4f21-83dc-48c98ab36640",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "ud"
+      },
+      {
+        "id": "3ce0089c-aa9b-4b63-8f22-ffb42b5c8c27",
+        "recipe_id": "d3e56cd4-ec8c-4076-b8b9-3456c64ea10b",
+        "ingredient_id": "7f6e15b7-c3ba-4b61-a128-641dda699546",
+        "unit": "ud"
+      },
+      {
+        "id": "3d27834c-f38f-46a3-845b-332535029dfc",
+        "recipe_id": "a66a38b9-a601-40a4-94b9-e862d2b677e2",
+        "ingredient_id": "41206fb6-996a-4c08-9433-b689fb159925",
+        "unit": "ml"
+      },
+      {
+        "id": "3e9e0353-f09e-44c6-a54b-f97b436e381f",
+        "recipe_id": "72a4d05e-827d-46ce-837b-fe9348f36d60",
+        "ingredient_id": "bf044a2a-a627-4cc0-bdb2-a0e8a085e25a",
+        "unit": "ud"
+      },
+      {
+        "id": "3eae1071-18e5-4de7-afa7-e210fe4e0146",
+        "recipe_id": "fb86f2fb-2eef-40e0-8659-a74b3230c622",
+        "ingredient_id": "257d7f6a-15eb-487b-84f9-d3bdfc1e9a1d",
+        "unit": "ml"
+      },
+      {
+        "id": "3eeba6a2-a4ac-4cf3-8c45-e88240db13ed",
+        "recipe_id": "941de858-d74d-4007-8824-8fdf61dc32f1",
+        "ingredient_id": "f818b0ef-211f-4524-b3b7-f07c9cc56c98",
+        "unit": "ud"
+      },
+      {
+        "id": "4025204a-ab3a-4ce0-acc4-874392de6e75",
+        "recipe_id": "a781486c-84b3-4212-be63-3c21ede04cfe",
+        "ingredient_id": "eb5e4308-8546-46b4-873b-8fb58611b694",
+        "unit": "g"
+      },
+      {
+        "id": "40964f6c-a9f7-40b7-954c-1da867f755d4",
+        "recipe_id": "e09fa65f-2dc4-460a-90b0-a4907ce5fb15",
+        "ingredient_id": "1a2114bd-39fb-4eee-8591-95ff7fd6e7d7",
+        "unit": "g"
+      },
+      {
+        "id": "41162921-26ea-4797-9078-83cf6cc3c3e1",
+        "recipe_id": "36bc807b-2aa1-4676-b472-816fb2318fbf",
+        "ingredient_id": "5199784b-b6bd-42cb-9f00-ea63494aa764",
+        "unit": "g"
+      },
+      {
+        "id": "42cca8a3-c4c9-4b77-911a-a6fc7af102b5",
+        "recipe_id": "60a6d63d-7a2a-44f7-a6b7-bcb7e5f5921d",
+        "ingredient_id": "381be8b7-eb35-4726-8bd0-5b79c01fede0",
+        "unit": "ud"
+      },
+      {
+        "id": "432c3662-4186-42f9-a7a4-bfa63b149833",
+        "recipe_id": "2df5d366-b783-4ad4-a2ee-141095eeeb45",
+        "ingredient_id": "cd5c2cbe-0260-49df-80e4-a66b8a62f623",
+        "unit": "g"
+      },
+      {
+        "id": "439cb1b9-1c68-420a-b5c2-4b988663b0ef",
+        "recipe_id": "c33a96ce-c033-4816-840c-db969921e8bd",
+        "ingredient_id": "ceb857b0-6239-4e27-b1bf-6642878fec2f",
+        "unit": "g"
+      },
+      {
+        "id": "43c0021f-8e59-4d9d-a69d-8a468958df0d",
+        "recipe_id": "35ff03ca-430e-4406-8829-fd0cfba3f424",
+        "ingredient_id": "f6a3e2cf-3324-49d9-aa6e-bae1b541dff4",
+        "unit": "kg"
+      },
+      {
+        "id": "442e871d-8f44-4842-8a18-29f4f0bd0b40",
+        "recipe_id": "b9ad65d9-3503-464f-aa5c-3a25e4e36f0d",
+        "ingredient_id": "87c168b7-1fb4-400a-98e5-f5b3fef9d4f4",
+        "unit": "g"
+      },
+      {
+        "id": "44f2f569-877e-45af-bcb3-82c452410f57",
+        "recipe_id": "9a19d611-1104-4784-bb20-5c4cc3328d97",
+        "ingredient_id": "943a0f57-cb00-47c4-bc4f-9030ff6e3a55",
+        "unit": "ud"
+      },
+      {
+        "id": "464ee14e-d05f-4a47-83b1-1368d1a7b88e",
+        "recipe_id": "6f50bd0c-0818-446f-8e91-9dabcdec81f5",
+        "ingredient_id": "994d9639-7a40-49d3-9405-4236130f06b9",
+        "unit": "ud"
+      },
+      {
+        "id": "46fa5522-bf88-456f-8232-7f65a4fba8c4",
+        "recipe_id": "35ff03ca-430e-4406-8829-fd0cfba3f424",
+        "ingredient_id": "36a348dd-1b2f-4390-8d99-b29cffff3e8d",
+        "unit": "u"
+      },
+      {
+        "id": "4787d85e-dcf6-4b6f-9fc8-5931848bad66",
+        "recipe_id": "cfa76a48-f386-4c67-819c-bda9ebaae65d",
+        "ingredient_id": "87c168b7-1fb4-400a-98e5-f5b3fef9d4f4",
+        "unit": "g"
+      },
+      {
+        "id": "47bbb6d0-b939-41a5-998f-cd3cf9f9ac0f",
+        "recipe_id": "b63ba921-8f5a-498d-8d3e-328e46388a47",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "ud"
+      },
+      {
+        "id": "47be3293-412e-4399-b4dc-f114ccf26ca2",
+        "recipe_id": "25d61017-b3bd-4881-878c-76dfa6fafdb8",
+        "ingredient_id": "87c168b7-1fb4-400a-98e5-f5b3fef9d4f4",
+        "unit": "g"
+      },
+      {
+        "id": "47ebd3ad-ecb7-4963-84f7-2d1bba25a1e0",
+        "recipe_id": "867802a1-5090-4480-b07a-d216af23ac3d",
+        "ingredient_id": "ece1013a-4157-4da7-be05-b90b3b2309fd",
+        "unit": "g"
+      },
+      {
+        "id": "47ee0e92-f12a-4362-b8e3-4c7d1faa7d27",
+        "recipe_id": "2a75df15-0a08-4553-a246-0d8ba16f23a1",
+        "ingredient_id": "a3f2f1c0-e667-4573-bc7b-ff887e67eeae",
+        "unit": "ud"
+      },
+      {
+        "id": "49893efe-52a9-4115-bada-58b8a5cc0449",
+        "recipe_id": "47354f75-98d5-495a-9f4e-5381cc994b81",
+        "ingredient_id": "72be79a7-3e52-4267-9116-b3507abc1fce",
+        "unit": "ud"
+      },
+      {
+        "id": "49918a8d-a4c9-48c8-b3b5-53576023a090",
+        "recipe_id": "25d61017-b3bd-4881-878c-76dfa6fafdb8",
+        "ingredient_id": "c6ca6c91-3538-47ad-919b-c64dc39da8fe",
+        "unit": "ud"
+      },
+      {
+        "id": "49ff0f6c-1303-4a38-a905-cbec488221b9",
+        "recipe_id": "51220f57-4254-48df-baaf-85557c4095ac",
+        "ingredient_id": "7057e5c4-c8f7-418e-ae5e-07f83f105dda",
+        "unit": "g"
+      },
+      {
+        "id": "4aecd9eb-10a2-4870-aea1-fc0ab3d43609",
+        "recipe_id": "3536e353-2ad6-4b58-84d0-4668924fe7a9",
+        "ingredient_id": "52eebb76-f875-4cc0-8f8a-3a5194cc102a",
+        "unit": "ud"
+      },
+      {
+        "id": "4b4fe3c2-13c5-4211-a1a7-915a19a8f355",
+        "recipe_id": "aad79b60-95bb-47f1-8633-f45d31826ebc",
+        "ingredient_id": "599c77d3-02a8-4441-9ba2-23de4bffdf2d",
+        "unit": "g"
+      },
+      {
+        "id": "4bc54e7a-2def-42ee-8b75-43eca34440ed",
+        "recipe_id": "2df5d366-b783-4ad4-a2ee-141095eeeb45",
+        "ingredient_id": "8e1f69c3-65e1-4f23-a93e-8bbc9d3d098e",
+        "unit": "g"
+      },
+      {
+        "id": "4bcfbd70-a22f-4115-a8e0-c5e90e08fef2",
+        "recipe_id": "3707c751-29ba-4c7a-8238-df648bdc4eb9",
+        "ingredient_id": "e8a577c8-7de0-4c61-9fd3-32699c3af136",
+        "unit": "g"
+      },
+      {
+        "id": "4c8deb46-d9ca-4dd6-82b2-ea7da6257251",
+        "recipe_id": "6eb74ed5-7074-42bc-879a-195074ab4775",
+        "ingredient_id": "740a6194-2343-4c31-b876-7a327f7c6058",
+        "unit": "ud"
+      },
+      {
+        "id": "4ce18b1a-f708-4799-9710-02044de1d70f",
+        "recipe_id": "a66a38b9-a601-40a4-94b9-e862d2b677e2",
+        "ingredient_id": "7f825cdd-cb19-4aba-bd83-8f3dc459b98e",
+        "unit": "ud"
+      },
+      {
+        "id": "4d4fd48a-d7cc-4a34-947e-d1a138e34a87",
+        "recipe_id": "357e7266-6c33-4afe-afa1-9d20fea44f64",
+        "ingredient_id": "83c2d9dd-fd24-4657-9f54-f1fe38d1e80f",
+        "unit": "ud"
+      },
+      {
+        "id": "4d7141ca-0ae9-490f-89bd-3da3a1cc37b5",
+        "recipe_id": "e95ea224-7abd-40df-a679-50011016c895",
+        "ingredient_id": "e63bad97-e829-4fc2-a1a6-1ec0856d6dab",
+        "unit": "ud"
+      },
+      {
+        "id": "4e48e103-5304-4742-874e-1d83488a416f",
+        "recipe_id": "556360cc-1560-475c-9ca1-a348f558fcf6",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "u"
+      },
+      {
+        "id": "4eb952c0-4c42-42d1-85d0-f7cb935bf803",
+        "recipe_id": "4bf359f5-2cfa-4e7f-ae68-3a4eeef87928",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "ud"
+      },
+      {
+        "id": "4faef8fa-f664-4260-be5c-225487e5cc0f",
+        "recipe_id": "c33a96ce-c033-4816-840c-db969921e8bd",
+        "ingredient_id": "8f4a7f9f-93f4-40b7-a099-6391c26eeb18",
+        "unit": "g"
+      },
+      {
+        "id": "4fc1a505-e7fe-4a8d-a59d-bfb8672dbe9b",
+        "recipe_id": "51220f57-4254-48df-baaf-85557c4095ac",
+        "ingredient_id": "78c3218d-181e-4dcc-9101-e00f6e19d4ce",
+        "unit": "g"
+      },
+      {
+        "id": "50439f53-8490-49a8-8bf7-00b207fad5f1",
+        "recipe_id": "ef1a8803-db2c-44c8-a72c-abbf5d350f88",
+        "ingredient_id": "52eebb76-f875-4cc0-8f8a-3a5194cc102a",
+        "unit": "ud"
+      },
+      {
+        "id": "51264bcb-7a2d-4a4d-988c-e8859cdf5604",
+        "recipe_id": "c2e98bf1-d29f-491f-81b8-03cf562261dc",
+        "ingredient_id": "ec1df795-8c23-464a-a8d7-44c3e27ca676",
+        "unit": "g"
+      },
+      {
+        "id": "519e10ae-cba0-45db-8bf4-942fb8cf57d6",
+        "recipe_id": "e67b1c9b-f0a7-40fc-b9bc-ed3599ef220b",
+        "ingredient_id": "82c443f8-3238-49ff-ad4d-e832d12e3840",
+        "unit": "l"
+      },
+      {
+        "id": "52171c8a-89ed-47f9-8d9f-8d992b3fc114",
+        "recipe_id": "b7f085a9-63ee-40c6-a70f-d57a1b56e3be",
+        "ingredient_id": "599c77d3-02a8-4441-9ba2-23de4bffdf2d",
+        "unit": "g"
+      },
+      {
+        "id": "52a8f644-4f64-4291-9389-90651cf57072",
+        "recipe_id": "e5713067-4eb6-45de-aaa8-e928cbf24ac1",
+        "ingredient_id": "e86939b1-21d7-41f3-9d38-ac09b4a3dde1",
+        "unit": "ml"
+      },
+      {
+        "id": "5311447f-ca91-472a-82c9-45bda5bd130e",
+        "recipe_id": "bb625512-0427-462f-be5a-835b0f5c0e19",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "ud"
+      },
+      {
+        "id": "53bdc68e-8e9e-43f0-8b98-ef4054baa880",
+        "recipe_id": "edb58bd2-0a3e-49af-802e-4a4863d4ba68",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "ud"
+      },
+      {
+        "id": "5489948d-6ec4-404f-99d6-501b2b4efe41",
+        "recipe_id": "1904d10c-c8d3-4bd2-a46e-ceb2b78c81bc",
+        "ingredient_id": "ce43391b-d1f5-4931-93da-06eb65aae06c",
+        "unit": "ml"
+      },
+      {
+        "id": "550a0da2-0cc2-438d-a566-1f58955c3b40",
+        "recipe_id": "ff74a27e-e487-4364-8372-a30821f809bf",
+        "ingredient_id": "cd5c2cbe-0260-49df-80e4-a66b8a62f623",
+        "unit": "g"
+      },
+      {
+        "id": "55927494-e82e-483d-81f5-f5f31f2ab152",
+        "recipe_id": "61572a28-2c98-4e0e-af59-2ca2b7f6ab7d",
+        "ingredient_id": "f9d969b0-8b4c-46a9-9db4-204de91d0e3a",
+        "unit": "ud"
+      },
+      {
+        "id": "580e90c1-782f-4393-8a61-eaf279fd2e98",
+        "recipe_id": "f28b7484-a6b3-4eb6-9ff6-8688c5ad188f",
+        "ingredient_id": "37ab5db5-54da-4494-a91e-10ae087efabf",
+        "unit": "ud"
+      },
+      {
+        "id": "58960e51-719a-415a-90d0-f9ad6b2a013b",
+        "recipe_id": "51220f57-4254-48df-baaf-85557c4095ac",
+        "ingredient_id": "36a348dd-1b2f-4390-8d99-b29cffff3e8d",
+        "unit": "ud"
+      },
+      {
+        "id": "59ad639c-bef7-4fb8-aa59-d5c90b8b2163",
+        "recipe_id": "e09fa65f-2dc4-460a-90b0-a4907ce5fb15",
+        "ingredient_id": "78c3218d-181e-4dcc-9101-e00f6e19d4ce",
+        "unit": "g"
+      },
+      {
+        "id": "5a9cd0bf-71c3-4a5f-bb11-dc63358ef1b0",
+        "recipe_id": "9e7be70f-eed8-41fc-9165-4a896b66ab03",
+        "ingredient_id": "9f7f3651-f0c8-4a85-bc74-b6ff0db3cc71",
+        "unit": "ud"
+      },
+      {
+        "id": "5b7c5c19-0800-49cb-b518-b6ffd77c9492",
+        "recipe_id": "ff74a27e-e487-4364-8372-a30821f809bf",
+        "ingredient_id": "da9754ec-7c31-4e4b-ae32-b9f4c6c60e53",
+        "unit": "ud"
+      },
+      {
+        "id": "5be4275e-b56e-4de8-9755-4b8031828a0e",
+        "recipe_id": "a66a38b9-a601-40a4-94b9-e862d2b677e2",
+        "ingredient_id": "fe056cd1-ea97-449c-918c-7d6e08b42622",
+        "unit": "ml"
+      },
+      {
+        "id": "5d245e94-28c1-4ae3-bd9b-5dfb13e946a5",
+        "recipe_id": "ca90bfd9-1820-47ec-9edf-f33102a3f91d",
+        "ingredient_id": "ec49880d-c409-4c1b-ab55-d65d8771eeeb",
+        "unit": "g"
+      },
+      {
+        "id": "5de32add-eb2f-409f-8c3e-a92b295095a0",
+        "recipe_id": "cfa76a48-f386-4c67-819c-bda9ebaae65d",
+        "ingredient_id": "29d34ab6-82ff-4878-bbae-ba515ce6b062",
+        "unit": "g"
+      },
+      {
+        "id": "5e4b50e9-db27-4790-b6b5-2086d48b5e8f",
+        "recipe_id": "b3f5a0c1-05fb-4a48-9100-cb0df3f89c4c",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "ud"
+      },
+      {
+        "id": "5e6e335c-cf65-48db-9566-13a54c69f6fc",
+        "recipe_id": "1c6efa8d-2c05-469f-98a7-48a369613bfc",
+        "ingredient_id": "52eebb76-f875-4cc0-8f8a-3a5194cc102a",
+        "unit": "ud"
+      },
+      {
+        "id": "5e868963-567e-4118-99fe-b778dd4e3b68",
+        "recipe_id": "c2decee5-da26-4e15-b25a-f7854627d993",
+        "ingredient_id": "9ec9f5ce-78e3-4780-95c4-ab5c6b886db4",
+        "unit": "ud"
+      },
+      {
+        "id": "5f4b44fd-2284-4d70-96ec-ac26fda1745e",
+        "recipe_id": "878188d3-94f3-42b7-a268-54aeea58aae9",
+        "ingredient_id": "976f0779-1c64-4958-ba24-dc0e29bbe907",
+        "unit": "u"
+      },
+      {
+        "id": "5fb52518-43f0-4a0e-9d00-3c99f1f9c8e8",
+        "recipe_id": "3707c751-29ba-4c7a-8238-df648bdc4eb9",
+        "ingredient_id": "cb3f7ed1-70c3-46ba-8111-49a23833b9a1",
+        "unit": "ml"
+      },
+      {
+        "id": "60039ef7-3dd7-43f7-af7c-17d8fca167d0",
+        "recipe_id": "2df5d366-b783-4ad4-a2ee-141095eeeb45",
+        "ingredient_id": "72be79a7-3e52-4267-9116-b3507abc1fce",
+        "unit": "ud"
+      },
+      {
+        "id": "60a7fce0-9f79-48d1-8fec-8733f0f70875",
+        "recipe_id": "2a75df15-0a08-4553-a246-0d8ba16f23a1",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "ud"
+      },
+      {
+        "id": "60bbbbc7-8b08-4a11-b8ce-54086cf1ecd3",
+        "recipe_id": "51220f57-4254-48df-baaf-85557c4095ac",
+        "ingredient_id": "e86939b1-21d7-41f3-9d38-ac09b4a3dde1",
+        "unit": "ml"
+      },
+      {
+        "id": "6276688c-b433-44ca-84e1-03b3c37f3c4b",
+        "recipe_id": "616257ea-7cf9-4a1f-8e5a-d25a929901c0",
+        "ingredient_id": "2ceb67c1-97bf-4447-8e07-f10451bbb43e",
+        "unit": "ml"
+      },
+      {
+        "id": "62961931-b1eb-4d82-819e-2e2bd6483e1e",
+        "recipe_id": "472de4f7-1f6e-473a-9446-7b306ad1e183",
+        "ingredient_id": "5f2163b8-c57f-4e87-a823-3d3511474fbb",
+        "unit": "ud"
+      },
+      {
+        "id": "62ad8d91-aed7-4703-a4aa-46cf4f6010ae",
+        "recipe_id": "2df5d366-b783-4ad4-a2ee-141095eeeb45",
+        "ingredient_id": "a72c2896-b0e2-40a4-9b0d-f85aee9babff",
+        "unit": "ud"
+      },
+      {
+        "id": "64024362-e554-424b-a015-cfd660a7caea",
+        "recipe_id": "66ce43dd-7db5-40bb-a0ad-9085e614ba98",
+        "ingredient_id": "78c3218d-181e-4dcc-9101-e00f6e19d4ce",
+        "unit": "kg"
+      },
+      {
+        "id": "64abdb6d-3a6d-4be5-92c3-400d9a4c6a36",
+        "recipe_id": "e18d299a-7e10-4fa1-81bc-3c7ee24de2da",
+        "ingredient_id": "789d0b3a-ef8c-459b-980f-9af288746840",
+        "unit": "ml"
+      },
+      {
+        "id": "64c8e5b1-c85a-4977-884e-4c01953719fd",
+        "recipe_id": "b6010630-7220-40f2-90eb-d04f16bf3f11",
+        "ingredient_id": "cbf3a47b-4ad6-46cd-9e11-5aabeb91f179",
+        "unit": "g"
+      },
+      {
+        "id": "64d9de5e-27bb-4348-90ec-4488e5c87d7d",
+        "recipe_id": "e09fa65f-2dc4-460a-90b0-a4907ce5fb15",
+        "ingredient_id": "7057e5c4-c8f7-418e-ae5e-07f83f105dda",
+        "unit": "g"
+      },
+      {
+        "id": "65c7e8ab-bd3c-49bf-a3fe-f3243c4415d8",
+        "recipe_id": "7f28162c-03b4-495e-852e-9dcae6e47d8b",
+        "ingredient_id": "acf91237-45fa-43f1-a3b0-3fb67b132431",
+        "unit": "g"
+      },
+      {
+        "id": "663ddb09-771a-49a3-a593-3b8fdb1fe264",
+        "recipe_id": "1233183e-8e07-4ef2-973d-c389b38e2ba9",
+        "ingredient_id": "e86939b1-21d7-41f3-9d38-ac09b4a3dde1",
+        "unit": "ml"
+      },
+      {
+        "id": "67069cc4-410d-494c-9453-0d20ee8c9f00",
+        "recipe_id": "d02f57c9-1890-493a-8761-78e59ceff429",
+        "ingredient_id": "f9d969b0-8b4c-46a9-9db4-204de91d0e3a",
+        "unit": "ud"
+      },
+      {
+        "id": "675a2f98-6177-44c2-9a4d-e2551248852d",
+        "recipe_id": "0c4cc194-e19a-4f34-b7e7-b5d8fa3cd9c2",
+        "ingredient_id": "336b7da5-44f2-49bb-ae64-2554b047e65d",
+        "unit": "ud"
+      },
+      {
+        "id": "68cd193e-fe5e-4c5f-8bac-33d3b4f9a189",
+        "recipe_id": "36bc807b-2aa1-4676-b472-816fb2318fbf",
+        "ingredient_id": "740a6194-2343-4c31-b876-7a327f7c6058",
+        "unit": "ud"
+      },
+      {
+        "id": "68e21ab0-83c7-4f83-b3ed-2f09e949005e",
+        "recipe_id": "e63286d1-b428-4d46-a2c9-b205f6000381",
+        "ingredient_id": "bee6e7d5-3524-4091-b365-df19b56b7f6b",
+        "unit": "g"
+      },
+      {
+        "id": "698d994b-52d1-4455-8f77-73e8de1dbe67",
+        "recipe_id": "530ff4a6-d16e-4550-b5c8-e7ee002f3f07",
+        "ingredient_id": "f924027f-5b67-47e0-a7df-7c5ea14d44e7",
+        "unit": "ud"
+      },
+      {
+        "id": "698db651-4152-4b81-a23d-c6abd7338394",
+        "recipe_id": "c33a96ce-c033-4816-840c-db969921e8bd",
+        "ingredient_id": "cb3f7ed1-70c3-46ba-8111-49a23833b9a1",
+        "unit": "ml"
+      },
+      {
+        "id": "69c05414-8c00-4338-9c15-067710ec0b84",
+        "recipe_id": "a781486c-84b3-4212-be63-3c21ede04cfe",
+        "ingredient_id": "c9fc2c75-feef-4fea-9fe6-0b8db9da89df",
+        "unit": "ud"
+      },
+      {
+        "id": "69ee6119-dbcb-4398-b824-76dff3994801",
+        "recipe_id": "c8bae611-660c-47ac-a1dc-5989a8b04c6d",
+        "ingredient_id": "5470f0f9-ea78-4094-8f14-f6582dc0a45b",
+        "unit": "ud"
+      },
+      {
+        "id": "6b9578e2-3bc0-4e26-9116-589bf467d1c2",
+        "recipe_id": "b9ad65d9-3503-464f-aa5c-3a25e4e36f0d",
+        "ingredient_id": "f9d969b0-8b4c-46a9-9db4-204de91d0e3a",
+        "unit": "ud"
+      },
+      {
+        "id": "6bc9be3f-e7c0-4a5b-8e00-064e66d5e2d6",
+        "recipe_id": "3536e353-2ad6-4b58-84d0-4668924fe7a9",
+        "ingredient_id": "ece1013a-4157-4da7-be05-b90b3b2309fd",
+        "unit": "g"
+      },
+      {
+        "id": "6c6b0216-0113-4265-985e-2708048c49ee",
+        "recipe_id": "e09fa65f-2dc4-460a-90b0-a4907ce5fb15",
+        "ingredient_id": "e8a577c8-7de0-4c61-9fd3-32699c3af136",
+        "unit": "g"
+      },
+      {
+        "id": "6d028c3d-0383-43c4-81c0-d09d3a88f5ef",
+        "recipe_id": "ca90bfd9-1820-47ec-9edf-f33102a3f91d",
+        "ingredient_id": "56d1d1ec-5846-41bd-a85f-12eaff88bdff",
+        "unit": "ml"
+      },
+      {
+        "id": "6d14a653-62c8-4a9a-927f-349e7587e8fc",
+        "recipe_id": "8e234b0c-9ed2-4b42-a815-6a1122e26f79",
+        "ingredient_id": "cbf3a47b-4ad6-46cd-9e11-5aabeb91f179",
+        "unit": "g"
+      },
+      {
+        "id": "6dc834ba-900e-4612-b91d-2a411327a6be",
+        "recipe_id": "39c0c8a8-c545-4314-9fbf-0d2c23f1ec3d",
+        "ingredient_id": "789d0b3a-ef8c-459b-980f-9af288746840",
+        "unit": "ml"
+      },
+      {
+        "id": "6dfcbc4a-719c-4389-8417-5410995b6b43",
+        "recipe_id": "6f50bd0c-0818-446f-8e91-9dabcdec81f5",
+        "ingredient_id": "f6a3e2cf-3324-49d9-aa6e-bae1b541dff4",
+        "unit": "g"
+      },
+      {
+        "id": "6f5c0ed7-e694-48cc-a97f-80923d2b1209",
+        "recipe_id": "a66a38b9-a601-40a4-94b9-e862d2b677e2",
+        "ingredient_id": "0355fa9f-1a8d-4779-84e6-6e2803097f4e",
+        "unit": "ud"
+      },
+      {
+        "id": "6f73bf7c-d00d-4ac4-aa05-36476cbec95a",
+        "recipe_id": "47354f75-98d5-495a-9f4e-5381cc994b81",
+        "ingredient_id": "88af1b1e-f722-48f5-aadd-df88c9b81e66",
+        "unit": "ud"
+      },
+      {
+        "id": "6f73f14f-2b53-412a-907c-ed9cc9f30622",
+        "recipe_id": "7ebe3b4b-ea91-4789-a358-10178d6ecc39",
+        "ingredient_id": "e3fb15ec-e228-4757-87e4-31d694d32b5a",
+        "unit": "g"
+      },
+      {
+        "id": "6ffc8326-383d-4a90-a11c-ae9a3b231a4f",
+        "recipe_id": "7ebe3b4b-ea91-4789-a358-10178d6ecc39",
+        "ingredient_id": "2b1e75ba-cdd0-45a3-a540-a40cd597090a",
+        "unit": "g"
+      },
+      {
+        "id": "709dec7e-0a96-4b7e-9974-4e305940c41a",
+        "recipe_id": "7f28162c-03b4-495e-852e-9dcae6e47d8b",
+        "ingredient_id": "cb3f7ed1-70c3-46ba-8111-49a23833b9a1",
+        "unit": "ml"
+      },
+      {
+        "id": "7138a3b4-62e3-4302-b436-4bf1d6b5831d",
+        "recipe_id": "c33a96ce-c033-4816-840c-db969921e8bd",
+        "ingredient_id": "acf91237-45fa-43f1-a3b0-3fb67b132431",
+        "unit": "g"
+      },
+      {
+        "id": "718730a0-40c2-49d2-9408-4979f3a26959",
+        "recipe_id": "a781486c-84b3-4212-be63-3c21ede04cfe",
+        "ingredient_id": "087b39e9-3628-42cc-9819-3858bee41508",
+        "unit": "ud"
+      },
+      {
+        "id": "74ce2dec-493b-4b2a-8a58-31c16b554471",
+        "recipe_id": "7309629b-2228-4a50-a0ab-2f07dce3ec3a",
+        "ingredient_id": "599c77d3-02a8-4441-9ba2-23de4bffdf2d",
+        "unit": "kg"
+      },
+      {
+        "id": "77283134-9098-43f6-9765-48be1daf1dd9",
+        "recipe_id": "2df5d366-b783-4ad4-a2ee-141095eeeb45",
+        "ingredient_id": "da9754ec-7c31-4e4b-ae32-b9f4c6c60e53",
+        "unit": "ud"
+      },
+      {
+        "id": "778b5128-ace3-42b7-8a0f-2aa30dec63a1",
+        "recipe_id": "fb86f2fb-2eef-40e0-8659-a74b3230c622",
+        "ingredient_id": "eb5e4308-8546-46b4-873b-8fb58611b694",
+        "unit": "g"
+      },
+      {
+        "id": "77fda7ce-48d9-4448-b9ae-a495507aac5e",
+        "recipe_id": "35ff03ca-430e-4406-8829-fd0cfba3f424",
+        "ingredient_id": "f924027f-5b67-47e0-a7df-7c5ea14d44e7",
+        "unit": "ud"
+      },
+      {
+        "id": "79739d93-67c5-45c7-b3af-dd917ffb4a9e",
+        "recipe_id": "a66a38b9-a601-40a4-94b9-e862d2b677e2",
+        "ingredient_id": "5de0a8d4-3e10-47cb-91c2-177736bea17c",
+        "unit": "ml"
+      },
+      {
+        "id": "7a89f60d-d9d2-45f3-b2e7-75f937620176",
+        "recipe_id": "1233183e-8e07-4ef2-973d-c389b38e2ba9",
+        "ingredient_id": "582bf313-e60e-4a27-a18b-19bbcdcfb71a",
+        "unit": "g"
+      },
+      {
+        "id": "7b27fda7-fdf9-4f80-8df2-ebbc3db19211",
+        "recipe_id": "b63ba921-8f5a-498d-8d3e-328e46388a47",
+        "ingredient_id": "02b6c950-0679-4068-9544-77cfdb383692",
+        "unit": "ud"
+      },
+      {
+        "id": "7b5cdd90-6dd1-465c-a282-44994c303868",
+        "recipe_id": "aad79b60-95bb-47f1-8633-f45d31826ebc",
+        "ingredient_id": "565591eb-8ed2-47a4-82b6-85ee10293219",
+        "unit": "ud"
+      },
+      {
+        "id": "7ccdb67a-b41d-4b8c-b5a3-84be0251e960",
+        "recipe_id": "7f28162c-03b4-495e-852e-9dcae6e47d8b",
+        "ingredient_id": "c0b6c9d8-6fdf-417b-9bc3-1d05677caea8",
+        "unit": "ud"
+      },
+      {
+        "id": "7cd88903-66cd-4136-a344-18c82eeb9359",
+        "recipe_id": "e63286d1-b428-4d46-a2c9-b205f6000381",
+        "ingredient_id": "740a6194-2343-4c31-b876-7a327f7c6058",
+        "unit": "ud"
+      },
+      {
+        "id": "7cf93ea3-a866-4cbd-a7eb-e993b1c409e8",
+        "recipe_id": "b9ad65d9-3503-464f-aa5c-3a25e4e36f0d",
+        "ingredient_id": "bf044a2a-a627-4cc0-bdb2-a0e8a085e25a",
+        "unit": "ud"
+      },
+      {
+        "id": "7d2e67aa-bce8-48db-8f25-264cbd2993a9",
+        "recipe_id": "e5713067-4eb6-45de-aaa8-e928cbf24ac1",
+        "ingredient_id": "f4f2287f-d66e-4f86-bab9-8eac5fd34498",
+        "unit": "g"
+      },
+      {
+        "id": "7d7ab0f6-c323-4f75-8721-8d3454c14c72",
+        "recipe_id": "9f74b8c5-f891-4353-b070-fbc620cdad98",
+        "ingredient_id": "0bc48001-8c06-4db0-9fbd-4f02cb2dd41a",
+        "unit": "kg"
+      },
+      {
+        "id": "7e77db4f-7f47-43a1-b486-c1c43d85cf65",
+        "recipe_id": "d4d63d3a-0784-46dd-b094-a48abf24f1ba",
+        "ingredient_id": "0bc48001-8c06-4db0-9fbd-4f02cb2dd41a",
+        "unit": "g"
+      },
+      {
+        "id": "81a7ef8b-ef94-4c0c-b39a-6df3b0ff65eb",
+        "recipe_id": "df34ae89-25d3-401c-9697-48ad45c9b33a",
+        "ingredient_id": "1acc4b2e-5cd7-4eb6-a197-64517fc2b61b",
+        "unit": "ud"
+      },
+      {
+        "id": "8209ab20-06a3-4b98-87e2-4d099e629be0",
+        "recipe_id": "7ebe3b4b-ea91-4789-a358-10178d6ecc39",
+        "ingredient_id": "1594e528-f028-4517-a3ff-cf5b5ce3ff07",
+        "unit": "ud"
+      },
+      {
+        "id": "827ea808-3269-4ff6-a42f-722b0c4410a1",
+        "recipe_id": "2df5d366-b783-4ad4-a2ee-141095eeeb45",
+        "ingredient_id": "88af1b1e-f722-48f5-aadd-df88c9b81e66",
+        "unit": "ud"
+      },
+      {
+        "id": "82fd866b-a57e-4d5e-a675-25e79c92b1e0",
+        "recipe_id": "591e60ca-fd01-46b9-ba5b-5c529c94adf0",
+        "ingredient_id": "789d0b3a-ef8c-459b-980f-9af288746840",
+        "unit": "l"
+      },
+      {
+        "id": "833abb65-8c63-4671-ad12-c88a5e328864",
+        "recipe_id": "ff74a27e-e487-4364-8372-a30821f809bf",
+        "ingredient_id": "a72c2896-b0e2-40a4-9b0d-f85aee9babff",
+        "unit": "ud"
+      },
+      {
+        "id": "83cb6fa9-09c1-4cff-83f8-48d7fee4776e",
+        "recipe_id": "b6010630-7220-40f2-90eb-d04f16bf3f11",
+        "ingredient_id": "cb3f7ed1-70c3-46ba-8111-49a23833b9a1",
+        "unit": "ml"
+      },
+      {
+        "id": "83d455a0-b466-4b05-b7ef-dd7aa5b6c89b",
+        "recipe_id": "25d61017-b3bd-4881-878c-76dfa6fafdb8",
+        "ingredient_id": "994d9639-7a40-49d3-9405-4236130f06b9",
+        "unit": "ud"
+      },
+      {
+        "id": "84abf0b8-40ea-43f3-9d4b-587b74ca48b5",
+        "recipe_id": "84f6915e-f519-41f3-929d-df247e50ae53",
+        "ingredient_id": "fb318925-2b5b-4e92-8562-6d573c2b4ad5",
+        "unit": "ud"
+      },
+      {
+        "id": "84bb90da-64a8-4dd5-ae3f-06296e6d5d61",
+        "recipe_id": "7f28162c-03b4-495e-852e-9dcae6e47d8b",
+        "ingredient_id": "ceb857b0-6239-4e27-b1bf-6642878fec2f",
+        "unit": "g"
+      },
+      {
+        "id": "84c43182-1f7c-46a5-99ed-d7eadb4e100b",
+        "recipe_id": "7ebe3b4b-ea91-4789-a358-10178d6ecc39",
+        "ingredient_id": "994d9639-7a40-49d3-9405-4236130f06b9",
+        "unit": "ud"
+      },
+      {
+        "id": "84ebc3d1-d102-4e0f-b34d-907e6d2ef7fa",
+        "recipe_id": "a83d85fd-613e-4821-8544-199eaa2414f6",
+        "ingredient_id": "f06f6d44-d597-48fe-98ab-97ec53ea6dbe",
+        "unit": "ud"
+      },
+      {
+        "id": "851baf86-6719-4eae-978b-2fb031b9840f",
+        "recipe_id": "0672d802-7193-459a-a51f-d49fd01ae720",
+        "ingredient_id": "cb3f7ed1-70c3-46ba-8111-49a23833b9a1",
+        "unit": "ml"
+      },
+      {
+        "id": "85fc656b-d15d-4706-9318-a4c5ff5da068",
+        "recipe_id": "6eb74ed5-7074-42bc-879a-195074ab4775",
+        "ingredient_id": "cb3f7ed1-70c3-46ba-8111-49a23833b9a1",
+        "unit": "ml"
+      },
+      {
+        "id": "8652a8d5-8938-4a81-8e12-be5b09f79699",
+        "recipe_id": "589d3800-7fa6-4a2f-9712-c807282476c9",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "ud"
+      },
+      {
+        "id": "865e8388-d995-44e9-b05b-f545763e2d35",
+        "recipe_id": "ff74a27e-e487-4364-8372-a30821f809bf",
+        "ingredient_id": "72be79a7-3e52-4267-9116-b3507abc1fce",
+        "unit": "ud"
+      },
+      {
+        "id": "873075d5-5aa9-41a2-bc01-a63e1cad99f6",
+        "recipe_id": "51220f57-4254-48df-baaf-85557c4095ac",
+        "ingredient_id": "f924027f-5b67-47e0-a7df-7c5ea14d44e7",
+        "unit": "ud"
+      },
+      {
+        "id": "895a6c1f-5737-43c2-92a4-4e4171287eae",
+        "recipe_id": "76213852-e428-46ae-a491-f2ec97916215",
+        "ingredient_id": "72be79a7-3e52-4267-9116-b3507abc1fce",
+        "unit": "ud"
+      },
+      {
+        "id": "898a0d03-9765-40dc-9538-e0a08fbd2e74",
+        "recipe_id": "a6475bf6-9ae6-43e3-ab0e-0ae70e167225",
+        "ingredient_id": "ec49880d-c409-4c1b-ab55-d65d8771eeeb",
+        "unit": "g"
+      },
+      {
+        "id": "8d577a9a-b6a6-4225-a479-52674c703aa4",
+        "recipe_id": "648e4691-bf25-4dd2-a79e-54fb3c530f34",
+        "ingredient_id": "cf4e549b-9b1e-4967-9cb1-df87b31b640c",
+        "unit": "ud"
+      },
+      {
+        "id": "8e23d26c-a1d7-4404-86a6-919c721adcaf",
+        "recipe_id": "7f28162c-03b4-495e-852e-9dcae6e47d8b",
+        "ingredient_id": "cbf3a47b-4ad6-46cd-9e11-5aabeb91f179",
+        "unit": "g"
+      },
+      {
+        "id": "8e2de03e-5781-4027-8fa6-c9e7ebf9e0e4",
+        "recipe_id": "a6475bf6-9ae6-43e3-ab0e-0ae70e167225",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "ud"
+      },
+      {
+        "id": "8f39f211-6462-4398-99ee-4da4751ee5a3",
+        "recipe_id": "e5713067-4eb6-45de-aaa8-e928cbf24ac1",
+        "ingredient_id": "a2bf332d-e466-4a10-bbfe-d0cdd4cae1e8",
+        "unit": "ud"
+      },
+      {
+        "id": "8f4f1ab1-193e-4d2c-95f0-4be7efcc70a2",
+        "recipe_id": "6eb74ed5-7074-42bc-879a-195074ab4775",
+        "ingredient_id": "f9d969b0-8b4c-46a9-9db4-204de91d0e3a",
+        "unit": "ud"
+      },
+      {
+        "id": "8fe94c20-ac43-41f6-971e-a74eafe733a6",
+        "recipe_id": "d4d63d3a-0784-46dd-b094-a48abf24f1ba",
+        "ingredient_id": "740a6194-2343-4c31-b876-7a327f7c6058",
+        "unit": "ud"
+      },
+      {
+        "id": "90162f19-38d1-46f9-88c7-c2b18cbd835f",
+        "recipe_id": "76213852-e428-46ae-a491-f2ec97916215",
+        "ingredient_id": "cd5c2cbe-0260-49df-80e4-a66b8a62f623",
+        "unit": "g"
+      },
+      {
+        "id": "909b765f-ee9d-492e-823a-2226a7516694",
+        "recipe_id": "7f28162c-03b4-495e-852e-9dcae6e47d8b",
+        "ingredient_id": "0bc48001-8c06-4db0-9fbd-4f02cb2dd41a",
+        "unit": "g"
+      },
+      {
+        "id": "90b6eb85-1f94-4c7b-8e32-a602ac87ce96",
+        "recipe_id": "7ebe3b4b-ea91-4789-a358-10178d6ecc39",
+        "ingredient_id": "36a348dd-1b2f-4390-8d99-b29cffff3e8d",
+        "unit": "ud"
+      },
+      {
+        "id": "92eac323-ff37-46ec-bddf-e89dd96dc822",
+        "recipe_id": "3707c751-29ba-4c7a-8238-df648bdc4eb9",
+        "ingredient_id": "7057e5c4-c8f7-418e-ae5e-07f83f105dda",
+        "unit": "g"
+      },
+      {
+        "id": "94692635-5462-4efb-a646-8a1724dde673",
+        "recipe_id": "d4d63d3a-0784-46dd-b094-a48abf24f1ba",
+        "ingredient_id": "cb3f7ed1-70c3-46ba-8111-49a23833b9a1",
+        "unit": "ml"
+      },
+      {
+        "id": "9480781c-c357-44bc-8e94-f2b82f6b24a4",
+        "recipe_id": "1233183e-8e07-4ef2-973d-c389b38e2ba9",
+        "ingredient_id": "e7b7a390-5700-4cd8-bdee-3bbd86e95ee8",
+        "unit": "ml"
+      },
+      {
+        "id": "948f5e15-2092-474e-b0b6-20b32f5b45ab",
+        "recipe_id": "e89a2668-5b01-4b8d-9c4d-b965ee05df9c",
+        "ingredient_id": "e3885280-44bd-4739-ada1-1d2d7188d9d6",
+        "unit": "kg"
+      },
+      {
+        "id": "94911cfa-5c5d-493f-8ffb-f763f21935e6",
+        "recipe_id": "e18d299a-7e10-4fa1-81bc-3c7ee24de2da",
+        "ingredient_id": "cd5c2cbe-0260-49df-80e4-a66b8a62f623",
+        "unit": "g"
+      },
+      {
+        "id": "95c6e0d7-e649-4b00-92b3-25b387d0181c",
+        "recipe_id": "e18d299a-7e10-4fa1-81bc-3c7ee24de2da",
+        "ingredient_id": "64179dc5-69f1-4d2c-8728-094d1aa6596f",
+        "unit": "ud"
+      },
+      {
+        "id": "9624c781-0ba8-4696-a286-c4fac679661a",
+        "recipe_id": "9ef86e7b-fbde-471e-abeb-484c9e2ba2eb",
+        "ingredient_id": "408d13c0-e395-4e74-8b94-de623f469463",
+        "unit": "ud"
+      },
+      {
+        "id": "96980631-16cf-48e7-8262-a7914decf2df",
+        "recipe_id": "556360cc-1560-475c-9ca1-a348f558fcf6",
+        "ingredient_id": "599c77d3-02a8-4441-9ba2-23de4bffdf2d",
+        "unit": "g"
+      },
+      {
+        "id": "96992aba-1af4-4db0-af78-5c17340b9e77",
+        "recipe_id": "2df5d366-b783-4ad4-a2ee-141095eeeb45",
+        "ingredient_id": "789d0b3a-ef8c-459b-980f-9af288746840",
+        "unit": "ml"
+      },
+      {
+        "id": "98365e46-36ff-456d-a6e2-eafae7918cda",
+        "recipe_id": "e18d299a-7e10-4fa1-81bc-3c7ee24de2da",
+        "ingredient_id": "72be79a7-3e52-4267-9116-b3507abc1fce",
+        "unit": "ud"
+      },
+      {
+        "id": "98a25e3c-a6d0-4ac5-ad33-0d877e3cf234",
+        "recipe_id": "c33a96ce-c033-4816-840c-db969921e8bd",
+        "ingredient_id": "78c3218d-181e-4dcc-9101-e00f6e19d4ce",
+        "unit": "g"
+      },
+      {
+        "id": "98af8d16-307a-42df-90dc-8154fff80562",
+        "recipe_id": "edb58bd2-0a3e-49af-802e-4a4863d4ba68",
+        "ingredient_id": "1aefa4f3-f2d9-4100-9ae9-ecf8984295d3",
+        "unit": "ud"
+      },
+      {
+        "id": "9a460e84-6b08-403b-9e5d-296b86d95ce7",
+        "recipe_id": "bb625512-0427-462f-be5a-835b0f5c0e19",
+        "ingredient_id": "888096ca-9379-49c8-a8ff-5c63f93dd9e3",
+        "unit": "l"
+      },
+      {
+        "id": "a00105cc-d502-4ea5-be2b-63e8ed6960af",
+        "recipe_id": "1c6efa8d-2c05-469f-98a7-48a369613bfc",
+        "ingredient_id": "82e4a0fa-c316-4b2d-952d-e3593180ee41",
+        "unit": "ud"
+      },
+      {
+        "id": "a002624b-39fe-477e-9204-e4a47351a3b1",
+        "recipe_id": "ca90bfd9-1820-47ec-9edf-f33102a3f91d",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "ud"
+      },
+      {
+        "id": "a00a22cc-a279-4ec3-a34c-8b43ab4059d9",
+        "recipe_id": "afadd065-dc3d-43ac-bd62-bc33aa84c270",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "ud"
+      },
+      {
+        "id": "a12ef33b-71a2-49b4-bf4d-499482ea20d3",
+        "recipe_id": "8e234b0c-9ed2-4b42-a815-6a1122e26f79",
+        "ingredient_id": "acf91237-45fa-43f1-a3b0-3fb67b132431",
+        "unit": "g"
+      },
+      {
+        "id": "a1f1058e-9074-48ba-8440-913f606f6cdc",
+        "recipe_id": "7ebe3b4b-ea91-4789-a358-10178d6ecc39",
+        "ingredient_id": "c6ca6c91-3538-47ad-919b-c64dc39da8fe",
+        "unit": "ud"
+      },
+      {
+        "id": "a1ff12bd-d919-47df-bd48-9e6aad66522a",
+        "recipe_id": "facf46ba-5504-477f-b619-b0196535eef3",
+        "ingredient_id": "599c77d3-02a8-4441-9ba2-23de4bffdf2d",
+        "unit": "kg"
+      },
+      {
+        "id": "a2e2ad60-7089-4848-a1bc-270bddbce1a1",
+        "recipe_id": "ec17c437-11f8-4ec8-8eb5-2ce7533fc0ab",
+        "ingredient_id": "0d79c5f5-caf0-40c1-ad7a-c24391f0dc3b",
+        "unit": "ud"
+      },
+      {
+        "id": "a2ed6b77-66e2-4b63-a74e-c7e5e5b580d6",
+        "recipe_id": "a63ea6af-5e14-465f-8e02-17509d8d2bdb",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "ud"
+      },
+      {
+        "id": "a3649c7a-7deb-4210-afff-19bceeafc5fe",
+        "recipe_id": "85d857bc-06de-4117-8311-3964bb552663",
+        "ingredient_id": "789d0b3a-ef8c-459b-980f-9af288746840",
+        "unit": "ml"
+      },
+      {
+        "id": "a3ab1e92-deb7-4486-95f9-2a049cf980b0",
+        "recipe_id": "72a4d05e-827d-46ce-837b-fe9348f36d60",
+        "ingredient_id": "ba9090ea-3fa8-4815-83b5-e3161b52faca",
+        "unit": "g"
+      },
+      {
+        "id": "a3cc9af9-1cf2-4c5c-9051-ac4f3c87f0d6",
+        "recipe_id": "92e35944-806a-4568-9874-db622760fc9b",
+        "ingredient_id": "88af1b1e-f722-48f5-aadd-df88c9b81e66",
+        "unit": "ud"
+      },
+      {
+        "id": "a42b6975-d3cb-4886-987a-aa8ed54a97f8",
+        "recipe_id": "b7f085a9-63ee-40c6-a70f-d57a1b56e3be",
+        "ingredient_id": "1e73e1f7-d27b-40fd-8f29-bfb6c73eedb0",
+        "unit": "ud"
+      },
+      {
+        "id": "a591999f-fcb1-4236-8c51-e52ec20cb6e1",
+        "recipe_id": "2d8f540e-2244-42d2-9696-bbb34b513713",
+        "ingredient_id": "f2bb4d7d-bf93-402e-855d-83daafbabb98",
+        "unit": "ud"
+      },
+      {
+        "id": "a59a8b98-d349-40fb-a4bd-65a721fc8ad0",
+        "recipe_id": "6f50bd0c-0818-446f-8e91-9dabcdec81f5",
+        "ingredient_id": "442a2689-73cf-4322-851d-2b4b5a5bf21d",
+        "unit": "g"
+      },
+      {
+        "id": "a6d116d1-4c00-4b64-bef2-49cec3a1932b",
+        "recipe_id": "b6010630-7220-40f2-90eb-d04f16bf3f11",
+        "ingredient_id": "c0b6c9d8-6fdf-417b-9bc3-1d05677caea8",
+        "unit": "ud"
+      },
+      {
+        "id": "a6f8f88f-de3d-42d9-a436-d2f78ef1b8a6",
+        "recipe_id": "51220f57-4254-48df-baaf-85557c4095ac",
+        "ingredient_id": "e3fb15ec-e228-4757-87e4-31d694d32b5a",
+        "unit": "g"
+      },
+      {
+        "id": "aa326624-eaea-442b-b8e3-a40a9799ecc8",
+        "recipe_id": "370f493f-253d-4da7-bb9e-c37d6d86007c",
+        "ingredient_id": "eca0875a-ec96-4e54-97da-4e2d257364d4",
+        "unit": "ud"
+      },
+      {
+        "id": "aa5231cc-0429-441c-8613-91b16e10c4f5",
+        "recipe_id": "1480c10a-a8e7-4cda-a0d5-bab86773795e",
+        "ingredient_id": "bf044a2a-a627-4cc0-bdb2-a0e8a085e25a",
+        "unit": "ud"
+      },
+      {
+        "id": "aaab2e84-e48f-429c-9661-5b7aade18ae6",
+        "recipe_id": "2e7f65f4-eb4a-4102-93c3-ee9ce3c2ebc9",
+        "ingredient_id": "78c3218d-181e-4dcc-9101-e00f6e19d4ce",
+        "unit": "kg"
+      },
+      {
+        "id": "ab1d4e50-9ae9-4a60-8718-9eb116994c04",
+        "recipe_id": "aaaf597c-23bd-4c82-b7a5-6393df81d2bd",
+        "ingredient_id": "727c9b9f-2ede-48ce-a022-07e23d4e9a21",
+        "unit": "ud"
+      },
+      {
+        "id": "ab597e9a-4c04-4422-a54c-0a6a67c839bd",
+        "recipe_id": "e18d299a-7e10-4fa1-81bc-3c7ee24de2da",
+        "ingredient_id": "1d328f64-02d7-4051-ab40-ebc0a7de4c35",
+        "unit": "g"
+      },
+      {
+        "id": "ac447359-5091-4eca-80c3-125741f651e5",
+        "recipe_id": "4bf359f5-2cfa-4e7f-ae68-3a4eeef87928",
+        "ingredient_id": "6ac512ee-5bcf-4b60-bdaa-0e33fa872121",
+        "unit": "ud"
+      },
+      {
+        "id": "ae4ad659-ffec-4195-97cc-1c2bb4019f78",
+        "recipe_id": "781880f1-4ba4-4569-8f82-7ad599a4b5a3",
+        "ingredient_id": "63208d3a-91bd-4e3f-ba74-9a971229ce9c",
+        "unit": "l"
+      },
+      {
+        "id": "affef5af-625e-4f66-b885-6f98fe80a5d5",
+        "recipe_id": "b6010630-7220-40f2-90eb-d04f16bf3f11",
+        "ingredient_id": "0187d23b-48f8-4965-981c-7c71e66ac7ed",
+        "unit": "g"
+      },
+      {
+        "id": "b0b89400-a52b-401e-86dd-103d15deab22",
+        "recipe_id": "afadd065-dc3d-43ac-bd62-bc33aa84c270",
+        "ingredient_id": "3161d801-c778-49c5-92b1-1671770468bb",
+        "unit": "ud"
+      },
+      {
+        "id": "b1c6186a-c6b3-4a42-860e-45f891c64b9c",
+        "recipe_id": "9403b419-e60f-4ef6-a3e5-a462dda37fbf",
+        "ingredient_id": "7223becf-d07c-42aa-9997-fa754d549699",
+        "unit": "ud"
+      },
+      {
+        "id": "b29fae69-0c03-4071-b9ea-d05c11df8d75",
+        "recipe_id": "55f3087f-f818-4f11-9028-2c93c24d7d97",
+        "ingredient_id": "cd5c2cbe-0260-49df-80e4-a66b8a62f623",
+        "unit": "g"
+      },
+      {
+        "id": "b3a2765a-5fd4-4efd-8b4a-23865ef970c2",
+        "recipe_id": "673c4e51-ec90-46e1-9aa3-89ed873c6855",
+        "ingredient_id": "c6ca6c91-3538-47ad-919b-c64dc39da8fe",
+        "unit": "ud"
+      },
+      {
+        "id": "b49ae83c-d30c-4a64-8e28-52858cbd50a1",
+        "recipe_id": "6f50bd0c-0818-446f-8e91-9dabcdec81f5",
+        "ingredient_id": "dd865c75-4c9d-4cc8-8303-bef3ca13b2de",
+        "unit": "g"
+      },
+      {
+        "id": "b552dd8c-1159-4d58-89eb-7d6234614615",
+        "recipe_id": "92e35944-806a-4568-9874-db622760fc9b",
+        "ingredient_id": "cd5c2cbe-0260-49df-80e4-a66b8a62f623",
+        "unit": "g"
+      },
+      {
+        "id": "b59ec806-9c4a-4108-8005-c639a36fbe4a",
+        "recipe_id": "55f3087f-f818-4f11-9028-2c93c24d7d97",
+        "ingredient_id": "72be79a7-3e52-4267-9116-b3507abc1fce",
+        "unit": "ud"
+      },
+      {
+        "id": "b5fda408-5832-47c1-9f2f-84925dbd3db0",
+        "recipe_id": "57c4f0e9-5f74-43ab-92f9-b6c63f88221f",
+        "ingredient_id": "23195cc0-7c54-4aeb-8ef8-d44c83257f25",
+        "unit": "l"
+      },
+      {
+        "id": "b744ce63-ac5a-47de-8f11-9a03178dae68",
+        "recipe_id": "7efbd64d-6730-4f8b-9616-c89650a050d5",
+        "ingredient_id": "78c3218d-181e-4dcc-9101-e00f6e19d4ce",
+        "unit": "kg"
+      },
+      {
+        "id": "b746cbb6-12dd-4c2d-88e8-30e70b804161",
+        "recipe_id": "aaaf597c-23bd-4c82-b7a5-6393df81d2bd",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "ud"
+      },
+      {
+        "id": "b78a8d04-8934-4aa1-8119-4997acab5b89",
+        "recipe_id": "666d1536-a235-42ce-9f08-ebb762f1b122",
+        "ingredient_id": "2d96b5d4-c3d5-4ce1-8acd-5b68fb20fb2b",
+        "unit": "kg"
+      },
+      {
+        "id": "b7dad605-9d40-45f9-a8de-c4faa099e18f",
+        "recipe_id": "c33a96ce-c033-4816-840c-db969921e8bd",
+        "ingredient_id": "e24b6d2b-1c6c-4f8f-b17d-58a0b89f5a6d",
+        "unit": "ml"
+      },
+      {
+        "id": "b8c51ce0-ceb5-4542-ade5-4fcb5405f45f",
+        "recipe_id": "753f16be-0397-4aeb-b9b2-1999a36c6a1b",
+        "ingredient_id": "599c77d3-02a8-4441-9ba2-23de4bffdf2d",
+        "unit": "kg"
+      },
+      {
+        "id": "ba1dc722-d0ee-49ed-a43a-0b8fb9ba6c38",
+        "recipe_id": "61572a28-2c98-4e0e-af59-2ca2b7f6ab7d",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "ud"
+      },
+      {
+        "id": "bab8a0b5-4578-407c-be1a-9299aa33b4a0",
+        "recipe_id": "55f3087f-f818-4f11-9028-2c93c24d7d97",
+        "ingredient_id": "71eda23a-41b7-49b9-af08-1c94e1111fa4",
+        "unit": "ud"
+      },
+      {
+        "id": "badaff85-6aaf-43ef-81a6-b59f09e440f7",
+        "recipe_id": "b9ad65d9-3503-464f-aa5c-3a25e4e36f0d",
+        "ingredient_id": "740a6194-2343-4c31-b876-7a327f7c6058",
+        "unit": "ud"
+      },
+      {
+        "id": "bafa9f4b-5d00-4f54-9b04-108d5278d71b",
+        "recipe_id": "36f8059e-e1c6-426f-97a5-6cbe7ce2bbd3",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "ud"
+      },
+      {
+        "id": "bafdd6d6-fbb5-4968-a5dd-4c357a681f98",
+        "recipe_id": "530ff4a6-d16e-4550-b5c8-e7ee002f3f07",
+        "ingredient_id": "cb3f7ed1-70c3-46ba-8111-49a23833b9a1",
+        "unit": "ml"
+      },
+      {
+        "id": "bdf777ff-fa87-492a-a0e5-a9d6d0215939",
+        "recipe_id": "76213852-e428-46ae-a491-f2ec97916215",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "ud"
+      },
+      {
+        "id": "c32e8253-809a-4f7a-b0a7-702542939abd",
+        "recipe_id": "7ebe3b4b-ea91-4789-a358-10178d6ecc39",
+        "ingredient_id": "52eebb76-f875-4cc0-8f8a-3a5194cc102a",
+        "unit": "ud"
+      },
+      {
+        "id": "c3b7a960-46ea-4bee-a591-de03ea958021",
+        "recipe_id": "72a4d05e-827d-46ce-837b-fe9348f36d60",
+        "ingredient_id": "740a6194-2343-4c31-b876-7a327f7c6058",
+        "unit": "ud"
+      },
+      {
+        "id": "c53a868d-b2a3-4ea8-ad95-be3e750e3245",
+        "recipe_id": "cfa76a48-f386-4c67-819c-bda9ebaae65d",
+        "ingredient_id": "740a6194-2343-4c31-b876-7a327f7c6058",
+        "unit": "ud"
+      },
+      {
+        "id": "c6075a31-68b2-49e3-b212-2621ab396e09",
+        "recipe_id": "b9f7cfaa-bddd-48ea-b161-c576467f9962",
+        "ingredient_id": "eafea750-7fae-4f6b-a128-cd667aa9fb39",
+        "unit": "u"
+      },
+      {
+        "id": "c63fd91f-fbe3-422e-8255-2ee41f6a819f",
+        "recipe_id": "25d61017-b3bd-4881-878c-76dfa6fafdb8",
+        "ingredient_id": "2cda8631-2c90-4c3f-8b67-4bc069ab8d74",
+        "unit": "ud"
+      },
+      {
+        "id": "c7694316-718b-495c-8267-10282c08c965",
+        "recipe_id": "55f3087f-f818-4f11-9028-2c93c24d7d97",
+        "ingredient_id": "da9754ec-7c31-4e4b-ae32-b9f4c6c60e53",
+        "unit": "ud"
+      },
+      {
+        "id": "c79b984c-95f9-45e2-b5c9-32f4ed65a810",
+        "recipe_id": "809adb85-dc1c-4d48-aac1-93cf639f36e2",
+        "ingredient_id": "78c3218d-181e-4dcc-9101-e00f6e19d4ce",
+        "unit": "kg"
+      },
+      {
+        "id": "c85c0855-8020-4390-812b-6db7f615290a",
+        "recipe_id": "e90f0f9c-7952-42ae-b19d-7c3062aff278",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "ud"
+      },
+      {
+        "id": "cbe74efa-c99b-4742-94dd-dcbae5e5fe93",
+        "recipe_id": "4f4b0286-d742-459d-8614-caf12727ab3e",
+        "ingredient_id": "c432b611-db01-4e96-8f72-9599d859ec60",
+        "unit": "ud"
+      },
+      {
+        "id": "cc484e57-7161-478b-ae01-c10253fbcba5",
+        "recipe_id": "8e234b0c-9ed2-4b42-a815-6a1122e26f79",
+        "ingredient_id": "dd865c75-4c9d-4cc8-8303-bef3ca13b2de",
+        "unit": "g"
+      },
+      {
+        "id": "cc611325-d1c1-4eed-bdb4-b34e5b0338b8",
+        "recipe_id": "b3f5a0c1-05fb-4a48-9100-cb0df3f89c4c",
+        "ingredient_id": "5de0a8d4-3e10-47cb-91c2-177736bea17c",
+        "unit": "ud"
+      },
+      {
+        "id": "cdaa1bed-5b2e-44fb-9c0f-c40a14e4a376",
+        "recipe_id": "b6010630-7220-40f2-90eb-d04f16bf3f11",
+        "ingredient_id": "8f4a7f9f-93f4-40b7-a099-6391c26eeb18",
+        "unit": "g"
+      },
+      {
+        "id": "d1028597-4325-45ab-a21e-2a3d9e0cbf1e",
+        "recipe_id": "d02f57c9-1890-493a-8761-78e59ceff429",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "ud"
+      },
+      {
+        "id": "d2f5613e-3fbc-4706-99a3-1c7f1d4aaf22",
+        "recipe_id": "b759ea2e-47c0-42f4-9180-e08ed6d3e706",
+        "ingredient_id": "bf044a2a-a627-4cc0-bdb2-a0e8a085e25a",
+        "unit": "ud"
+      },
+      {
+        "id": "d407832a-8b9c-4828-816b-b0fba43f5d9c",
+        "recipe_id": "781880f1-4ba4-4569-8f82-7ad599a4b5a3",
+        "ingredient_id": "599c77d3-02a8-4441-9ba2-23de4bffdf2d",
+        "unit": "kg"
+      },
+      {
+        "id": "d45e3c94-105f-4c94-b26b-edb200f76c80",
+        "recipe_id": "5c583af6-ada5-490d-966d-574c721ffda7",
+        "ingredient_id": "537b5e26-3938-4f1f-a862-f8191cdcd341",
+        "unit": "ud"
+      },
+      {
+        "id": "d4d7472d-4f21-4c60-9a43-ad2f7e74f199",
+        "recipe_id": "530ff4a6-d16e-4550-b5c8-e7ee002f3f07",
+        "ingredient_id": "f9d969b0-8b4c-46a9-9db4-204de91d0e3a",
+        "unit": "ud"
+      },
+      {
+        "id": "d642679f-a517-4c18-8752-38fb3f5c985e",
+        "recipe_id": "3692c52c-508f-4cb5-90a9-cff49375585d",
+        "ingredient_id": "1aa6d12a-cfa2-4842-b843-1ebdd2540c94",
+        "unit": "ud"
+      },
+      {
+        "id": "d7aa67c4-c8f4-4da4-9d40-ce7f102beab6",
+        "recipe_id": "3692c52c-508f-4cb5-90a9-cff49375585d",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "ud"
+      },
+      {
+        "id": "d8364c50-8dbc-4437-992c-01b63c22c5fe",
+        "recipe_id": "ca90bfd9-1820-47ec-9edf-f33102a3f91d",
+        "ingredient_id": "442a2689-73cf-4322-851d-2b4b5a5bf21d",
+        "unit": "g"
+      },
+      {
+        "id": "dfacd312-81a2-4d39-9b50-b4a9f266e73c",
+        "recipe_id": "616257ea-7cf9-4a1f-8e5a-d25a929901c0",
+        "ingredient_id": "72be79a7-3e52-4267-9116-b3507abc1fce",
+        "unit": "ud"
+      },
+      {
+        "id": "dfd4243f-ea88-4fad-b369-28403d2d87f7",
+        "recipe_id": "753f16be-0397-4aeb-b9b2-1999a36c6a1b",
+        "ingredient_id": "bf1576be-6346-40ca-a17d-536b487937b8",
+        "unit": "kg"
+      },
+      {
+        "id": "dfdca7ca-c29c-4e68-9bc5-a041758a58c4",
+        "recipe_id": "648e4691-bf25-4dd2-a79e-54fb3c530f34",
+        "ingredient_id": "599c77d3-02a8-4441-9ba2-23de4bffdf2d",
+        "unit": "g"
+      },
+      {
+        "id": "e2157a3e-0731-4a9e-bfe4-145d178de2a1",
+        "recipe_id": "f28b7484-a6b3-4eb6-9ff6-8688c5ad188f",
+        "ingredient_id": "bf044a2a-a627-4cc0-bdb2-a0e8a085e25a",
+        "unit": "ud"
+      },
+      {
+        "id": "e3a36b3d-6104-42bc-a3ec-9ca448f4eb2e",
+        "recipe_id": "ac2b6b3a-4d49-4fdd-a793-3865fe490da8",
+        "ingredient_id": "943a0f57-cb00-47c4-bc4f-9030ff6e3a55",
+        "unit": "ml"
+      },
+      {
+        "id": "e5fb5599-fdec-4174-8e79-35dbc07eadea",
+        "recipe_id": "c366c0ef-e7ea-4e60-b4eb-b578324a4bfa",
+        "ingredient_id": "4da456e0-b787-455e-af8f-0410d6edb5bc",
+        "unit": "ud"
+      },
+      {
+        "id": "e67002b6-d87d-411c-97b8-744935c6fb93",
+        "recipe_id": "a781486c-84b3-4212-be63-3c21ede04cfe",
+        "ingredient_id": "82c443f8-3238-49ff-ad4d-e832d12e3840",
+        "unit": "ud"
+      },
+      {
+        "id": "e69a5e15-a291-4612-a4b8-6b7bc8d83c66",
+        "recipe_id": "76213852-e428-46ae-a491-f2ec97916215",
+        "ingredient_id": "789d0b3a-ef8c-459b-980f-9af288746840",
+        "unit": "ml"
+      },
+      {
+        "id": "e73e6c46-2401-4c51-8c66-f52ea16faedd",
+        "recipe_id": "e63286d1-b428-4d46-a2c9-b205f6000381",
+        "ingredient_id": "87c168b7-1fb4-400a-98e5-f5b3fef9d4f4",
+        "unit": "g"
+      },
+      {
+        "id": "e959de60-80d9-4dae-8c0f-84cf32b923dc",
+        "recipe_id": "f28b7484-a6b3-4eb6-9ff6-8688c5ad188f",
+        "ingredient_id": "740a6194-2343-4c31-b876-7a327f7c6058",
+        "unit": "ud"
+      },
+      {
+        "id": "e9b3ad5f-95c9-43b0-929c-2443141c567c",
+        "recipe_id": "ff74a27e-e487-4364-8372-a30821f809bf",
+        "ingredient_id": "88af1b1e-f722-48f5-aadd-df88c9b81e66",
+        "unit": "ud"
+      },
+      {
+        "id": "e9f6df88-abf4-4aae-92ed-943a0f3b8c93",
+        "recipe_id": "3536e353-2ad6-4b58-84d0-4668924fe7a9",
+        "ingredient_id": "bf044a2a-a627-4cc0-bdb2-a0e8a085e25a",
+        "unit": "ud"
+      },
+      {
+        "id": "eaa04ad4-ecc6-4475-be12-e1a4055bbebd",
+        "recipe_id": "a781486c-84b3-4212-be63-3c21ede04cfe",
+        "ingredient_id": "e63bad97-e829-4fc2-a1a6-1ec0856d6dab",
+        "unit": "ud"
+      },
+      {
+        "id": "eaae7955-0d1e-46df-9842-8422911d91ee",
+        "recipe_id": "f6a68008-e625-44aa-9245-4d5516d22635",
+        "ingredient_id": "6c6f9073-1a5d-4f07-b933-bfdc8ff1a044",
+        "unit": "l"
+      },
+      {
+        "id": "eb99a1f5-4b73-4380-ad82-3c52d4398242",
+        "recipe_id": "72a4d05e-827d-46ce-837b-fe9348f36d60",
+        "ingredient_id": "87c168b7-1fb4-400a-98e5-f5b3fef9d4f4",
+        "unit": "g"
+      },
+      {
+        "id": "ec8e7fce-e443-4c4f-bfe7-5bffb607bcce",
+        "recipe_id": "25d61017-b3bd-4881-878c-76dfa6fafdb8",
+        "ingredient_id": "cbf3a47b-4ad6-46cd-9e11-5aabeb91f179",
+        "unit": "g"
+      },
+      {
+        "id": "ed57cd78-69d8-4437-909f-b86ec0484899",
+        "recipe_id": "e5713067-4eb6-45de-aaa8-e928cbf24ac1",
+        "ingredient_id": "78c3218d-181e-4dcc-9101-e00f6e19d4ce",
+        "unit": "g"
+      },
+      {
+        "id": "eeb84f6e-c5a8-47e3-9f72-2cd85be05214",
+        "recipe_id": "530ff4a6-d16e-4550-b5c8-e7ee002f3f07",
+        "ingredient_id": "6c186bd7-aac1-44e2-92bc-a0151739163d",
+        "unit": "g"
+      },
+      {
+        "id": "ef738fea-08c5-44bc-82ee-f56689b0ea29",
+        "recipe_id": "25d61017-b3bd-4881-878c-76dfa6fafdb8",
+        "ingredient_id": "ceb857b0-6239-4e27-b1bf-6642878fec2f",
+        "unit": "g"
+      },
+      {
+        "id": "f024b19f-0b62-4dbf-8a21-232ef08c1121",
+        "recipe_id": "51220f57-4254-48df-baaf-85557c4095ac",
+        "ingredient_id": "52eebb76-f875-4cc0-8f8a-3a5194cc102a",
+        "unit": "ud"
+      },
+      {
+        "id": "f03d1ad4-d14b-45d2-a0d5-5a9a4c197dd6",
+        "recipe_id": "809adb85-dc1c-4d48-aac1-93cf639f36e2",
+        "ingredient_id": "f6a3e2cf-3324-49d9-aa6e-bae1b541dff4",
+        "unit": "g"
+      },
+      {
+        "id": "f085de8d-af43-4a55-a892-bfc81efbb5d4",
+        "recipe_id": "1480c10a-a8e7-4cda-a0d5-bab86773795e",
+        "ingredient_id": "740a6194-2343-4c31-b876-7a327f7c6058",
+        "unit": "ud"
+      },
+      {
+        "id": "f0fffc6f-40fe-4eb9-b89c-f4396c537363",
+        "recipe_id": "47354f75-98d5-495a-9f4e-5381cc994b81",
+        "ingredient_id": "a72c2896-b0e2-40a4-9b0d-f85aee9babff",
+        "unit": "ud"
+      },
+      {
+        "id": "f1348771-ed29-479e-ba09-a0a355dbd7d7",
+        "recipe_id": "76213852-e428-46ae-a491-f2ec97916215",
+        "ingredient_id": "da9754ec-7c31-4e4b-ae32-b9f4c6c60e53",
+        "unit": "ud"
+      },
+      {
+        "id": "f26ea91c-3546-4845-97bd-a316c981c040",
+        "recipe_id": "fb86f2fb-2eef-40e0-8659-a74b3230c622",
+        "ingredient_id": "69101a4f-ca02-48e9-a6ea-a799f795de17",
+        "unit": "g"
+      },
+      {
+        "id": "f282186e-529f-440d-b45a-81c446d3d255",
+        "recipe_id": "a781486c-84b3-4212-be63-3c21ede04cfe",
+        "ingredient_id": "8f4a7f9f-93f4-40b7-a099-6391c26eeb18",
+        "unit": "kg"
+      },
+      {
+        "id": "f2d8fc98-7f46-45c1-a247-510186e6a388",
+        "recipe_id": "3707c751-29ba-4c7a-8238-df648bdc4eb9",
+        "ingredient_id": "bf1576be-6346-40ca-a17d-536b487937b8",
+        "unit": "g"
+      },
+      {
+        "id": "f358e1bf-b6b5-42c8-a3a9-eb2c98bbaa5d",
+        "recipe_id": "afadd065-dc3d-43ac-bd62-bc33aa84c270",
+        "ingredient_id": "ec49880d-c409-4c1b-ab55-d65d8771eeeb",
+        "unit": "g"
+      },
+      {
+        "id": "f4b4154e-8913-4229-ab8f-42e210447939",
+        "recipe_id": "1480c10a-a8e7-4cda-a0d5-bab86773795e",
+        "ingredient_id": "bee6e7d5-3524-4091-b365-df19b56b7f6b",
+        "unit": "g"
+      },
+      {
+        "id": "f4ea6c4e-d705-4f67-b041-72bf1e06bc0e",
+        "recipe_id": "ca90bfd9-1820-47ec-9edf-f33102a3f91d",
+        "ingredient_id": "93fa2926-0668-4a76-9c7a-2e51209e086f",
+        "unit": "ud"
+      },
+      {
+        "id": "f4fdae3c-efbf-4b9b-8511-94c4b97f4f45",
+        "recipe_id": "6f50bd0c-0818-446f-8e91-9dabcdec81f5",
+        "ingredient_id": "5c50df6a-8f89-4e01-ad8d-09cda4292ead",
+        "unit": "g"
+      },
+      {
+        "id": "f5bae229-7553-4cb9-8c1d-bfb89644abbb",
+        "recipe_id": "92e35944-806a-4568-9874-db622760fc9b",
+        "ingredient_id": "72be79a7-3e52-4267-9116-b3507abc1fce",
+        "unit": "ud"
+      },
+      {
+        "id": "f5f6a0ab-f8de-4e32-9e65-416ad9cae6f6",
+        "recipe_id": "a66a38b9-a601-40a4-94b9-e862d2b677e2",
+        "ingredient_id": "943a0f57-cb00-47c4-bc4f-9030ff6e3a55",
+        "unit": "ud"
+      },
+      {
+        "id": "f6138323-2548-4177-9d25-1f3915daa96d",
+        "recipe_id": "6f50bd0c-0818-446f-8e91-9dabcdec81f5",
+        "ingredient_id": "2b1e75ba-cdd0-45a3-a540-a40cd597090a",
+        "unit": "g"
+      },
+      {
+        "id": "f6fa95ff-bffd-4ad9-b3db-fcfc8f63dd54",
+        "recipe_id": "ef1a8803-db2c-44c8-a72c-abbf5d350f88",
+        "ingredient_id": "b4df25f7-0d45-473a-9b7f-12c6a399f6f6",
+        "unit": "ud"
+      },
+      {
+        "id": "f712a462-39c1-4fbb-8894-cd611fa92069",
+        "recipe_id": "f5ac98a9-8cb7-4282-b02b-fba93a15543e",
+        "ingredient_id": "28c8a38f-217c-45c6-88e2-d6c7c9250fe0",
+        "unit": "ml"
+      },
+      {
+        "id": "f75f09b0-a5e5-4304-b4e8-27f1be1d3e93",
+        "recipe_id": "c33a96ce-c033-4816-840c-db969921e8bd",
+        "ingredient_id": "c0b6c9d8-6fdf-417b-9bc3-1d05677caea8",
+        "unit": "ud"
+      },
+      {
+        "id": "f7d0334c-59a0-40d5-b68c-28bb9d083d03",
+        "recipe_id": "a83d85fd-613e-4821-8544-199eaa2414f6",
+        "ingredient_id": "7d21115a-c1a1-4c9d-adc5-9f3ab36e6fab",
+        "unit": "ud"
+      },
+      {
+        "id": "f8822f80-e5b8-4b71-ba7d-cc79b94cbc81",
+        "recipe_id": "cfa76a48-f386-4c67-819c-bda9ebaae65d",
+        "ingredient_id": "f9d969b0-8b4c-46a9-9db4-204de91d0e3a",
+        "unit": "ud"
+      },
+      {
+        "id": "fa9e0892-6eeb-4fa0-954b-badf13f1b6f3",
+        "recipe_id": "25d61017-b3bd-4881-878c-76dfa6fafdb8",
+        "ingredient_id": "1594e528-f028-4517-a3ff-cf5b5ce3ff07",
+        "unit": "ud"
+      },
+      {
+        "id": "fb6c5664-1560-494d-9771-864fc69c1b0b",
+        "recipe_id": "51220f57-4254-48df-baaf-85557c4095ac",
+        "ingredient_id": "599c77d3-02a8-4441-9ba2-23de4bffdf2d",
+        "unit": "g"
+      },
+      {
+        "id": "fcb8202a-cb98-4c24-9dfe-1c70cbdb9839",
+        "recipe_id": "76ce2fb6-d0dc-4879-8e39-ebfafd147a53",
+        "ingredient_id": "3a6269c3-2e22-4572-acd3-960e337f497e",
+        "unit": "g"
+      },
+      {
+        "id": "fd2b44ae-247b-41b3-a986-c8c48f987d61",
+        "recipe_id": "36d840bf-26cc-4500-ba2f-686136478b21",
+        "ingredient_id": "69bce9f5-d406-43eb-bf10-da81cd5943d1",
+        "unit": "ud"
+      },
+      {
+        "id": "fd44acbb-7248-47bc-ad94-60fdb9570b2e",
+        "recipe_id": "9f74b8c5-f891-4353-b070-fbc620cdad98",
+        "ingredient_id": "78c3218d-181e-4dcc-9101-e00f6e19d4ce",
+        "unit": "kg"
+      },
+      {
+        "id": "fd7d9d15-b485-4b5b-a79a-752d1774ee96",
+        "recipe_id": "f28b7484-a6b3-4eb6-9ff6-8688c5ad188f",
+        "ingredient_id": "f9d969b0-8b4c-46a9-9db4-204de91d0e3a",
+        "unit": "ud"
+      },
+      {
+        "id": "feda38a2-be91-4195-bda7-ea29c231ee27",
+        "recipe_id": "85d857bc-06de-4117-8311-3964bb552663",
+        "ingredient_id": "88af1b1e-f722-48f5-aadd-df88c9b81e66",
+        "unit": "ud"
+      },
+      {
+        "id": "ffae9a53-61ea-499a-9ede-3da1cf2c91af",
+        "recipe_id": "589d3800-7fa6-4a2f-9712-c807282476c9",
+        "ingredient_id": "ec49880d-c409-4c1b-ab55-d65d8771eeeb",
+        "unit": "g"
+      }
+    ]
+  }
+}

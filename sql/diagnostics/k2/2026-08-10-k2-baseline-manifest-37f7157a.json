@@ -1,0 +1,590 @@
+{
+  "artifact": "K2_BASELINE_MANIFEST_RECONCILED",
+  "created_at": "2026-08-10T16:59:46.852Z",
+  "baseline_previous": "b72e123dd4de968755f10443d61fbb729d5329d7",
+  "parallel_commit": "37f7157ae160dd34344fc1892136ee40e1921cc2",
+  "head_current": "37f7157ae160dd34344fc1892136ee40e1921cc2",
+  "decision": "37f7157a is incorporated into the K2 operational baseline: it contains K1 plus parallel work, and has no overlap with K2 data tables/columns.",
+  "commit_delta_b72_to_37f7157a": [
+    {
+      "path": "marbella-os/.generated/CARGA-DE-CONTEXTO.md",
+      "status": "M",
+      "classification": "GENERATED",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 4488,
+      "sha256": "01e485d45de20c0493f9110b58e59b356aa35896b726bc63102195ccb7d485da"
+    },
+    {
+      "path": "marbella-os/.generated/GRAFO.md",
+      "status": "M",
+      "classification": "GENERATED",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 4933,
+      "sha256": "c5dba3409c1e05568f4affd1affffc950943f764fe40189c80ed0ad91d6efe1c"
+    },
+    {
+      "path": "marbella-os/.generated/OBSOLESCENCIA.md",
+      "status": "M",
+      "classification": "GENERATED",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 5444,
+      "sha256": "8f1f5226612438783d39511f1d38df4fe9b5387d37783acf71fc3c9f0abcf972"
+    },
+    {
+      "path": "marbella-os/.generated/PRECEDENCIA.json",
+      "status": "M",
+      "classification": "GENERATED",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 25427,
+      "sha256": "b640cf68c996c652ae8fe20d606c72de572dca141c59a85c8bcd01c9e79a9ee0"
+    },
+    {
+      "path": "marbella-os/6-investigacion/spikes/2026-08-10-cierre-decisiones-migracion.md",
+      "status": "A",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 26854,
+      "sha256": "35119238bd6f850bace7c8733768176bb9c65256618fc56850c3f7ac8ef860c5"
+    },
+    {
+      "path": "marbella-os/6-investigacion/spikes/2026-08-10-desbloqueo-k2-baseline.md",
+      "status": "A",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 14771,
+      "sha256": "8df53693cb8511bd349c838a91cc4b805eceec2ab7dafdb3d2bf9abe387e4f29"
+    },
+    {
+      "path": "marbella-os/6-investigacion/spikes/2026-08-10-ejecucion-k1.md",
+      "status": "A",
+      "classification": "K1",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 3345,
+      "sha256": "b24bebf151810e15cf35dbe09d43070a2a2fbf33e6136be4667c813df4c4bb40"
+    },
+    {
+      "path": "marbella-os/6-investigacion/spikes/2026-08-10-plan-migracion-dominio-producto-unidades.md",
+      "status": "A",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 110428,
+      "sha256": "0696275054c556dae5a506a0e52ba265efe932be6c3d74adf279a7e00265f862"
+    },
+    {
+      "path": "marbella-os/6-investigacion/spikes/2026-08-10-resolucion-bloqueos-migracion.md",
+      "status": "A",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 35394,
+      "sha256": "7c200a4ff566dd0e681092490c95538f8c955cbf6624c1ee86426f0e1a37eef0"
+    },
+    {
+      "path": "marbella-os/6-investigacion/spikes/2026-08-10-revision-critica-unidades-por-contexto.md",
+      "status": "A",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 34914,
+      "sha256": "6442653213e09f615f14a60719cd0acecf805dd36da677adc43c56eee2aab8a6"
+    },
+    {
+      "path": "marbella-os/6-investigacion/spikes/2026-08-10-revision-final-consistencia-plan-migracion.md",
+      "status": "A",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 40213,
+      "sha256": "9f66e3eb4fd39ee6673c6cd4952d30e8c325afffc70d29822a0e4ec99f411017"
+    },
+    {
+      "path": "src/app/actions/cash-closing-photos.ts",
+      "status": "M",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 5238,
+      "sha256": "cb722fa197cb9de8173f1e5b90cf33c7e4c04330b886604c9922003c22c601a9"
+    },
+    {
+      "path": "src/app/actions/labor-conditions.ts",
+      "status": "M",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 14164,
+      "sha256": "afa9bf5b08ebb10aa169ef635ab265247604e26ceaf78f90a2496cca281d1e57"
+    },
+    {
+      "path": "src/app/actions/notifications.ts",
+      "status": "M",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 10001,
+      "sha256": "adb1e45e4d0e86fca0603af13d4977f6480f97dfdc205c0fcd7bd63f9ee60f2a"
+    },
+    {
+      "path": "src/app/actions/overtime.ts",
+      "status": "M",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 17708,
+      "sha256": "b3a77de9025e8bcd6252a0ce47425f7a1752348342e9a21a4aee73d5cd34940b"
+    },
+    {
+      "path": "src/app/dashboard/albaranes-precios/actions.ts",
+      "status": "M",
+      "classification": "K1",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 10800,
+      "sha256": "e6a9e04bae739e7812b0ccc88bd916e38c93e74fd2029eee2cb5dd690fc4b8b3"
+    },
+    {
+      "path": "src/app/dashboard/albaranes/actions.ts",
+      "status": "M",
+      "classification": "K1",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 95202,
+      "sha256": "9a41643872628d7bff126259648d92887ccbce792f44bbaa8c251af310ae674f"
+    },
+    {
+      "path": "src/app/dashboard/insights/InsightsClient.tsx",
+      "status": "M",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 63921,
+      "sha256": "d86c21473f55d7615177d46bc827bc69adf153db35237aac929de8aa24b31c24"
+    },
+    {
+      "path": "src/app/dashboard/sala/page.tsx",
+      "status": "M",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 2116,
+      "sha256": "8e7cc658350d52e4898384fb16ed1a1260ae981747a373d65d43413ddd592ca4"
+    },
+    {
+      "path": "src/app/dashboard/ventas/page.tsx",
+      "status": "M",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 71409,
+      "sha256": "9735175c9e9a570c05f475dd3efd5b7baa004713347d0dac4f6d13c025e0868c"
+    },
+    {
+      "path": "src/app/globals.css",
+      "status": "M",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 11480,
+      "sha256": "5b3f63e1406ac94af5f1f96abc0efc839496145a0ae14f59a939e057f1d0eb7d"
+    },
+    {
+      "path": "src/app/ingredients/page.tsx",
+      "status": "M",
+      "classification": "K1",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 47370,
+      "sha256": "6ae8ba0aa582b4ec5e2df8d1d9524f15a40461793cbfdb11424807324b781987"
+    },
+    {
+      "path": "src/app/playground/page.tsx",
+      "status": "M",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 1599,
+      "sha256": "0e82f1ccff646806d904899c43d3507da8b50292ad309656b3bf211467ad71d1"
+    },
+    {
+      "path": "src/app/playground/studio/components/BarraIntencion.tsx",
+      "status": "M",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 4160,
+      "sha256": "0d2e3ad1c3e15c21e2d2019d0010a5d6aaa9847b28fcf5f8a4f6084052bf7a2c"
+    },
+    {
+      "path": "src/app/playground/studio/components/DesignLanguage.tsx",
+      "status": "M",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 7950,
+      "sha256": "1760ac66520154eaa2e74526cae672b691addde6b97d474bcda35811507500a3"
+    },
+    {
+      "path": "src/app/playground/studio/components/HojaContacto.tsx",
+      "status": "A",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 4871,
+      "sha256": "5f84018575778046c38bf4a4f614978266ec0eccbe469ce348d1c5c208363953"
+    },
+    {
+      "path": "src/app/playground/studio/components/ModoAbsorber.tsx",
+      "status": "M",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 9157,
+      "sha256": "cee650da883010b64bb3d365f21194b5b840146919369c1bdcf5541598e64ca1"
+    },
+    {
+      "path": "src/app/playground/studio/components/ModoDecidir.tsx",
+      "status": "D",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": false,
+      "size_bytes": null,
+      "sha256": null
+    },
+    {
+      "path": "src/app/playground/studio/components/ModoSondear.tsx",
+      "status": "D",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": false,
+      "size_bytes": null,
+      "sha256": null
+    },
+    {
+      "path": "src/app/playground/studio/components/RealAppView.tsx",
+      "status": "A",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 2178,
+      "sha256": "a41abd4d5790d8e7c109d55386cc001c0087cf69f5994bc75fbc2c9ea2ccc0d6"
+    },
+    {
+      "path": "src/app/playground/studio/components/RealInsightsView.tsx",
+      "status": "A",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 2638,
+      "sha256": "8ae56a64e4c2818750d686d2e552a092f3ce63adbf6048183ab6ad0539d1390a"
+    },
+    {
+      "path": "src/app/playground/studio/components/SandboxView.tsx",
+      "status": "A",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 4029,
+      "sha256": "6b04a18ec749f381909cf6949f4887f40c8c04d99178ea6a746c185b30032b2e"
+    },
+    {
+      "path": "src/app/playground/studio/components/ScreenView.tsx",
+      "status": "D",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": false,
+      "size_bytes": null,
+      "sha256": null
+    },
+    {
+      "path": "src/app/playground/studio/components/ValidationPanel.tsx",
+      "status": "A",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 9748,
+      "sha256": "55d237113348889d017f313d6edd9428e6250912c815b0b89ed05ab48947556e"
+    },
+    {
+      "path": "src/app/playground/studio/page.tsx",
+      "status": "M",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 21488,
+      "sha256": "6aafa2d46d3ad63632876ce15afa8bb2d3287eed7c40734e21d521c6882a9fcc"
+    },
+    {
+      "path": "src/app/playground/studio/screens/real.tsx",
+      "status": "D",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": false,
+      "size_bytes": null,
+      "sha256": null
+    },
+    {
+      "path": "src/app/playground/studio/screens/sandbox-screens.tsx",
+      "status": "A",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 35787,
+      "sha256": "e49f3977e3f555de34976fa6b6b522fde06373c3704ff43c19280c220fac1d4a"
+    },
+    {
+      "path": "src/app/playground/studio/screens/system.tsx",
+      "status": "M",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 10603,
+      "sha256": "fba4ba097578056dce0f178680e0b9bca5d843b46e32305423df6719e073754e"
+    },
+    {
+      "path": "src/app/playground/studio/store.ts",
+      "status": "M",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 9745,
+      "sha256": "2691e5945c5cb8a1bd9df734108e05e2c3f77c612a651e2ac72b7404ba803da2"
+    },
+    {
+      "path": "src/app/playground/studio/types.ts",
+      "status": "M",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 3537,
+      "sha256": "bc8d3ad5d6b165777fbd6f1c4412630878decb162377afba614f98264871545a"
+    },
+    {
+      "path": "src/components/Navbar.tsx",
+      "status": "M",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 6507,
+      "sha256": "02a21d80c68c92754aedeb1a56c85d74cf20ca858c4ff4befaeb161f87fa4e68"
+    },
+    {
+      "path": "src/components/dashboards/SubNavVentas.tsx",
+      "status": "M",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 6775,
+      "sha256": "51870d23e7c604e87ccab17332289a3b5dea937db4339f53c09cc90873f655fa"
+    },
+    {
+      "path": "src/components/ingredients/IngredientWizard.tsx",
+      "status": "M",
+      "classification": "K1",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 70884,
+      "sha256": "30c35ebb6732dfd19d6e8bf5670affbb51cb3d2a2fcaa4cc186dea8b6008f070"
+    },
+    {
+      "path": "src/lib/ingredient-price-sync.test.ts",
+      "status": "A",
+      "classification": "K1",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 578,
+      "sha256": "778708443890656bd04a50ecdd7a9e2b0ad6fd7a2ca415e8a35390a6a1986558"
+    },
+    {
+      "path": "src/lib/ingredient-price-sync.ts",
+      "status": "M",
+      "classification": "K1",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 3688,
+      "sha256": "09d1a29ecc2fc08dad7e0601e89f187ca2204d69f093b8797b967a48e8c8a763"
+    },
+    {
+      "path": "src/lib/recipe-cost.ts",
+      "status": "M",
+      "classification": "K1",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 10601,
+      "sha256": "6c1966069e0ac2a5016014eb5b6d7aa6fb716c267fac71b0efbab893d7e21e17"
+    },
+    {
+      "path": "src/lib/sandbox/client.ts",
+      "status": "A",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 1786,
+      "sha256": "eb44d51a45b87a27fa735765b8f40db785cf97b0cb84f86cbd5542e17959d70d"
+    },
+    {
+      "path": "src/lib/sandbox/server.ts",
+      "status": "A",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 267,
+      "sha256": "cebf0f488fb21c2a57bb9340c2d753d2ba7853066c72f2339da15f353810766b"
+    },
+    {
+      "path": "src/utils/supabase/client.ts",
+      "status": "M",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "scope_k2": "NO_OVERLAP",
+      "exists": true,
+      "size_bytes": 5785,
+      "sha256": "f73c97740d222a3a0c1b3fb35334d965a87dd7ffdf5194b8cd0af15770b7885c"
+    }
+  ],
+  "working_tree_at_manifest": [
+    {
+      "path": "marbella-os/.generated/CARGA-DE-CONTEXTO.md",
+      "status": " M",
+      "classification": "GENERATED",
+      "exists": true,
+      "size_bytes": 4488,
+      "sha256": "01e485d45de20c0493f9110b58e59b356aa35896b726bc63102195ccb7d485da"
+    },
+    {
+      "path": "marbella-os/.generated/GRAFO.md",
+      "status": " M",
+      "classification": "GENERATED",
+      "exists": true,
+      "size_bytes": 4933,
+      "sha256": "c5dba3409c1e05568f4affd1affffc950943f764fe40189c80ed0ad91d6efe1c"
+    },
+    {
+      "path": "marbella-os/.generated/OBSOLESCENCIA.md",
+      "status": " M",
+      "classification": "GENERATED",
+      "exists": true,
+      "size_bytes": 5444,
+      "sha256": "8f1f5226612438783d39511f1d38df4fe9b5387d37783acf71fc3c9f0abcf972"
+    },
+    {
+      "path": "marbella-os/.generated/PRECEDENCIA.json",
+      "status": " M",
+      "classification": "GENERATED",
+      "exists": true,
+      "size_bytes": 25427,
+      "sha256": "b640cf68c996c652ae8fe20d606c72de572dca141c59a85c8bcd01c9e79a9ee0"
+    },
+    {
+      "path": "src/app/playground/studio/components/RealAppView.tsx",
+      "status": " M",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "exists": true,
+      "size_bytes": 2178,
+      "sha256": "a41abd4d5790d8e7c109d55386cc001c0087cf69f5994bc75fbc2c9ea2ccc0d6"
+    },
+    {
+      "path": "src/app/playground/studio/components/SandboxView.tsx",
+      "status": " M",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "exists": true,
+      "size_bytes": 4029,
+      "sha256": "6b04a18ec749f381909cf6949f4887f40c8c04d99178ea6a746c185b30032b2e"
+    },
+    {
+      "path": "marbella-os/6-investigacion/spikes/2026-08-10-ejecucion-k2-bloqueada.md",
+      "status": "??",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "exists": true,
+      "size_bytes": 2995,
+      "sha256": "6d74639bf60d26831b21c66dd2c9ff62e12a5600718148369b7f956db4918b50"
+    },
+    {
+      "path": "marbella-os/6-investigacion/spikes/2026-08-10-preparacion-k2.md",
+      "status": "??",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "exists": true,
+      "size_bytes": 3623,
+      "sha256": "805b6b83e193328127adf1f237dd507c607178eae3d934fac08bb7ac4b44b96d"
+    },
+    {
+      "path": "sql/diagnostics/k2/",
+      "status": "??",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "exists": false,
+      "size_bytes": null,
+      "sha256": null
+    },
+    {
+      "path": "src/app/playground/studio/components/EsteticaEditor.tsx",
+      "status": "??",
+      "classification": "PARALLEL_OR_PREEXISTING_ORIGIN_TEMPORALLY_UNKNOWN",
+      "exists": true,
+      "size_bytes": 8590,
+      "sha256": "9d075639f0002939c89c13e5c7438703d5c6baf5f79db6614b0f64dabc535ae9"
+    }
+  ],
+  "k1_paths": [
+    "src/lib/ingredient-price-sync.ts",
+    "src/lib/ingredient-price-sync.test.ts",
+    "src/app/dashboard/albaranes-precios/actions.ts",
+    "src/lib/recipe-cost.ts",
+    "src/app/ingredients/page.tsx",
+    "src/app/dashboard/albaranes/actions.ts",
+    "src/components/ingredients/IngredientWizard.tsx",
+    "marbella-os/6-investigacion/spikes/2026-08-10-ejecucion-k1.md"
+  ],
+  "generated_paths": [
+    "marbella-os/.generated/CARGA-DE-CONTEXTO.md",
+    "marbella-os/.generated/AFIRMACIONES.md",
+    "marbella-os/.generated/GRAFO.md",
+    "marbella-os/.generated/OBSOLESCENCIA.md",
+    "marbella-os/.generated/PRECEDENCIA.json"
+  ],
+  "preparation_artifacts_excluded_from_self": [
+    "sql/diagnostics/k2/2026-08-10-k2-baseline-manifest.json",
+    "sql/diagnostics/k2/2026-08-10-k2-baseline-manifest-37f7157a.json",
+    "sql/diagnostics/k2/2026-08-10-k2-snapshot-37f7157a.json",
+    "marbella-os/6-investigacion/spikes/2026-08-10-reconciliacion-baseline-k2.md"
+  ],
+  "k2_allowlist": {
+    "tables": {
+      "ingredients": [
+        "purchase_unit",
+        "unit_type",
+        "recipe_unit",
+        "unit",
+        "order_unit"
+      ],
+      "recipe_ingredients": [
+        "unit"
+      ]
+    },
+    "operations": [
+      "UPDATE transactional only after snapshot/dry-run; deterministic rows only"
+    ]
+  },
+  "k2_exclusions": [
+    "all code files",
+    "all migrations",
+    "presentations",
+    "supplier mappings",
+    "prices",
+    "stock",
+    "recipe structure",
+    "all git paths"
+  ],
+  "k2_overlap_with_commit": [],
+  "hash_semantics": "SHA-256 of actual current file bytes; deleted paths have sha256=null",
+  "notes": [
+    "K1 is included in the parallel commit delta and is not pending in the working tree.",
+    "Current untracked preparation artifacts are excluded from K2 data scope.",
+    "Old manifest remains unchanged and is retained as historical evidence of the rejected b72 baseline capture."
+  ]
+}

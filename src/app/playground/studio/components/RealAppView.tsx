@@ -11,7 +11,7 @@ import { RealInsightsView } from './RealInsightsView';
 import { DesignProvider } from '../screens/system';
 import { resolverReceta } from '../design-context';
 import { SANDBOX_ROUTES, useSandboxStore, useActiveEstetica } from '../store';
-import type { SandboxRoute } from '../types';
+import type { Recipe, SandboxRoute } from '../types';
 import { enableSandboxRuntime } from '@/lib/sandbox/client';
 
 type RealPage = React.ComponentType<{ sandboxNavigate?: (href: string) => void }>;
@@ -27,12 +27,13 @@ const REAL_PAGES: Partial<Record<SandboxRoute, RealPage>> = {
     '/registros': StaffHistoryPage,
 };
 
-export function RealAppView() {
+export function RealAppView({ recipeOverride }: { recipeOverride?: Recipe }) {
     const route = useSandboxStore(s => s.route);
     const setRoute = useSandboxStore(s => s.setRoute);
     const estetica = useActiveEstetica();
     const Page = REAL_PAGES[route];
-    const visual = resolverReceta(estetica.recipe);
+    const recipe = recipeOverride ?? estetica.recipe;
+    const visual = resolverReceta(recipe);
 
     enableSandboxRuntime((href: string) => {
         const pathname = href.split('?')[0] as SandboxRoute;
@@ -44,7 +45,7 @@ export function RealAppView() {
     if (!Page) return null;
 
     return (
-        <DesignProvider recipe={estetica.recipe}>
+        <DesignProvider recipe={recipe}>
             <div data-marbella-sandbox="true" className="min-h-full bg-white text-zinc-900">
                 <Page key={route} />
             </div>

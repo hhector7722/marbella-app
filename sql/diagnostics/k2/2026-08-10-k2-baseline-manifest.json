@@ -1,0 +1,103 @@
+{
+  "artifact": "K2_BASELINE_MANIFEST",
+  "created_at": "2026-08-10T16:54:36.461Z",
+  "head": "37f7157ae160dd34344fc1892136ee40e1921cc2",
+  "head_short": "37f7157a",
+  "baseline": "HEAD + delta K1 + cambios paralelos preexistentes",
+  "tracked_and_untracked_paths": [
+    {
+      "path": "marbella-os/.generated/CARGA-DE-CONTEXTO.md",
+      "status": " M",
+      "classification": "GENERATED",
+      "exists": true,
+      "size_bytes": 4488,
+      "sha256": "12203b9f2088691ff7e8240894d9d199e929fa9ca4a7c7767161c8b866e7cc92"
+    },
+    {
+      "path": "marbella-os/.generated/GRAFO.md",
+      "status": " M",
+      "classification": "GENERATED",
+      "exists": true,
+      "size_bytes": 4693,
+      "sha256": "92a56cc2ea40f2ed41df406fd04fdfda22243bc7ba9c88828c0bba21aac29f11"
+    },
+    {
+      "path": "marbella-os/.generated/OBSOLESCENCIA.md",
+      "status": " M",
+      "classification": "GENERATED",
+      "exists": true,
+      "size_bytes": 5444,
+      "sha256": "61a0de5cb1059ec96197c049075299ed68576ba2c87a18e3dac5ee34c6e14511"
+    },
+    {
+      "path": "marbella-os/.generated/PRECEDENCIA.json",
+      "status": " M",
+      "classification": "GENERATED",
+      "exists": true,
+      "size_bytes": 24844,
+      "sha256": "54bcaa1522256f71d4347599bafe47defeaf1950987efcb21c2346bcbbce35fa"
+    },
+    {
+      "path": "marbella-os/6-investigacion/spikes/2026-08-10-ejecucion-k2-bloqueada.md",
+      "status": "??",
+      "classification": "PREEXISTING_AJENO_ORIGEN_TEMPORAL_DESCONOCIDO",
+      "exists": true,
+      "size_bytes": 2995,
+      "sha256": "6d74639bf60d26831b21c66dd2c9ff62e12a5600718148369b7f956db4918b50"
+    }
+  ],
+  "preparation_artifacts_excluded": [
+    "sql/diagnostics/k2/2026-08-10-k2-baseline-manifest.json",
+    "sql/diagnostics/k2/2026-08-10-k2-snapshot.json",
+    "marbella-os/6-investigacion/spikes/2026-08-10-preparacion-k2.md"
+  ],
+  "k1_paths": [
+    "src/lib/ingredient-price-sync.ts",
+    "src/lib/ingredient-price-sync.test.ts",
+    "src/app/dashboard/albaranes-precios/actions.ts",
+    "src/lib/recipe-cost.ts",
+    "src/app/ingredients/page.tsx",
+    "src/app/dashboard/albaranes/actions.ts",
+    "src/components/ingredients/IngredientWizard.tsx",
+    "marbella-os/6-investigacion/spikes/2026-08-10-ejecucion-k1.md"
+  ],
+  "generated_paths": [
+    "marbella-os/.generated/CARGA-DE-CONTEXTO.md",
+    "marbella-os/.generated/AFIRMACIONES.md",
+    "marbella-os/.generated/GRAFO.md",
+    "marbella-os/.generated/OBSOLESCENCIA.md",
+    "marbella-os/.generated/PRECEDENCIA.json"
+  ],
+  "k2_allowlist": {
+    "tables": {
+      "ingredients": [
+        "purchase_unit",
+        "unit_type",
+        "recipe_unit",
+        "unit",
+        "order_unit"
+      ],
+      "recipe_ingredients": [
+        "unit"
+      ]
+    },
+    "operations": [
+      "UPDATE transaccional solo de filas deterministas; revisión para ambiguas"
+    ]
+  },
+  "k2_exclusions": [
+    "código",
+    "migraciones",
+    "presentaciones",
+    "mappings",
+    "precios",
+    "stock",
+    "recetas estructurales",
+    "cualquier path del working tree"
+  ],
+  "hash_semantics": "SHA-256 del contenido real actual; archivos borrados llevan sha256=null",
+  "notes": [
+    "K1 no tiene commit propio; la autoría temporal de paths no K1 es desconocida.",
+    "El manifest es una fotografía previa a crear este manifest, el snapshot y el registro de preparación."
+  ]
+}

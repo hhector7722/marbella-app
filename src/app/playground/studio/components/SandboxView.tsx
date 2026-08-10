@@ -5,7 +5,7 @@ import { useSandboxStore, useActiveEstetica } from '../store';
 import { DesignProvider } from '../screens/system';
 import { SANDBOX_SCREENS, SANDBOX_ROUTE_META } from '../screens/sandbox-screens';
 import { RealAppView, hasRealSandboxPage } from './RealAppView';
-import type { SandboxRoute, Estetica } from '../types';
+import type { SandboxRoute, Estetica, Recipe } from '../types';
 
 // ============================================================
 // SANDBOX VIEW — Marbella App real como lienzo.
@@ -15,9 +15,11 @@ import type { SandboxRoute, Estetica } from '../types';
 
 export function SandboxView({
     esteticaId,
+    recipeOverride,
     label,
 }: {
     esteticaId?: string;
+    recipeOverride?: Recipe;
     label?: string | null;
 }) {
     const route = useSandboxStore(s => s.route);
@@ -27,7 +29,7 @@ export function SandboxView({
 
     const estetica: Estetica | undefined = esteticaPorId ?? esteticaActiva;
 
-    if (hasRealSandboxPage(route)) return <RealAppView />;
+    if (hasRealSandboxPage(route)) return <RealAppView recipeOverride={recipeOverride} />;
 
     if (!Screen) {
         return (
@@ -38,7 +40,7 @@ export function SandboxView({
     }
 
     return (
-        <DesignProvider recipe={estetica?.recipe ?? {}}>
+        <DesignProvider recipe={recipeOverride ?? estetica?.recipe ?? {}}>
             <div className="h-full w-full">
                 {label && (
                     <div className="pointer-events-none absolute top-2 left-2 z-20 rounded-md bg-zinc-800/60 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-zinc-400">

@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "e85dd23481b60b64",
+  "_huella": "8ef7ad15140859f0",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -820,6 +820,29 @@
       ]
     },
     {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-10-ejecucion-k2-bloqueada.md",
+      "documento": "SPIKE-EJECUCION-K2-BLOQUEADA",
+      "clase": "inmutable",
+      "estado": "archivado",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": [
+        "CANON",
+        "GLOSARIO",
+        "MODELO-DE-DATOS",
+        "DOMINIO-PRECIOS-Y-COMPRAS",
+        "ARQUITECTURA",
+        "DEUDA",
+        "ESTADO",
+        "MAPA-DE-CAPACIDADES",
+        "PRINCIPIOS",
+        "SEGURIDAD"
+      ]
+    },
+    {
       "ruta": "marbella-os/6-investigacion/spikes/2026-08-10-plan-migracion-dominio-producto-unidades.md",
       "documento": "SPIKE-PLAN-MIGRACION-DOMINIO-PRODUCTO-UNIDADES",
       "clase": "inmutable",
@@ -838,6 +861,52 @@
         "DEUDA",
         "ESTADO",
         "MAPA-DE-CAPACIDADES"
+      ]
+    },
+    {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-10-preparacion-k2.md",
+      "documento": "SPIKE-PREPARACION-K2",
+      "clase": "inmutable",
+      "estado": "archivado",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": [
+        "CANON",
+        "GLOSARIO",
+        "MODELO-DE-DATOS",
+        "DOMINIO-PRECIOS-Y-COMPRAS",
+        "ARQUITECTURA",
+        "DEUDA",
+        "ESTADO",
+        "MAPA-DE-CAPACIDADES",
+        "PRINCIPIOS",
+        "SEGURIDAD"
+      ]
+    },
+    {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-10-reconciliacion-baseline-k2.md",
+      "documento": "SPIKE-RECONCILIACION-BASELINE-K2",
+      "clase": "inmutable",
+      "estado": "archivado",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": [
+        "CANON",
+        "GLOSARIO",
+        "MODELO-DE-DATOS",
+        "DOMINIO-PRECIOS-Y-COMPRAS",
+        "ARQUITECTURA",
+        "DEUDA",
+        "ESTADO",
+        "MAPA-DE-CAPACIDADES",
+        "PRINCIPIOS",
+        "SEGURIDAD"
       ]
     },
     {
