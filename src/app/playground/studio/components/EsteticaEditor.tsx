@@ -45,7 +45,7 @@ export function EsteticaEditor({
     const secundarios = MOVIDAS_CATALOGO.filter(move => !principales.some(principal => principal.id === move.id));
 
     return (
-        <aside className="flex max-h-[48vh] min-h-0 w-full shrink-0 flex-col border-b border-zinc-800 bg-zinc-950 lg:max-h-none lg:w-[360px] lg:border-b-0 lg:border-r">
+        <aside className="flex max-h-[48vh] min-h-0 w-full shrink-0 flex-col border-b border-zinc-800 bg-zinc-950 lg:max-h-none lg:w-[520px] lg:border-b-0 lg:border-r">
             <div className="border-b border-zinc-800 px-4 py-3">
                 <div className="flex items-center justify-between gap-2">
                     <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Editor de estética</span>
@@ -111,7 +111,7 @@ export function EsteticaEditor({
                     </div>
                     <div className="mb-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-2.5">
                         <div className="mb-2 text-[8px] font-black uppercase tracking-widest text-zinc-500">Principales</div>
-                        <div className="grid gap-2 lg:grid-cols-2">
+                        <div className="grid gap-3 lg:grid-cols-2">
                             {principales.map(move => (
                                 <div key={move.id} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-2.5">
                                     <div className="flex items-center justify-between gap-2">
@@ -119,13 +119,13 @@ export function EsteticaEditor({
                                         <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600">{move.madurez}</span>
                                     </div>
                                     <div className="mt-1 text-[9px] font-bold text-zinc-500">{move.descripcion}</div>
-                                    <div className="mt-2 grid grid-cols-4 gap-1">
+                                    <div className="mt-2 grid grid-cols-3 gap-2">
                                         {INTENSIDADES.map(intensity => (
                                             <button
                                                 key={intensity}
                                                 onClick={() => changeMove(move.id, intensity)}
-                                                style={{ minHeight: 48 }}
-                                                className={`rounded-lg text-[8px] font-black uppercase tracking-widest ${recipe[move.id] === intensity ? 'bg-[#36606F] text-white' : 'bg-zinc-800 text-zinc-500 hover:text-zinc-200'}`}
+                                                style={{ minHeight: 56, padding: '0.5rem 0.75rem' }}
+                                                className={`rounded-md text-[11px] font-black uppercase tracking-widest ${recipe[move.id] === intensity ? 'bg-[#36606F] text-white' : 'bg-zinc-800 text-zinc-500 hover:text-zinc-200'}`}
                                             >
                                                 {intensity}
                                             </button>
@@ -137,7 +137,7 @@ export function EsteticaEditor({
                     </div>
                     <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-2.5">
                         <div className="mb-2 text-[8px] font-black uppercase tracking-widest text-zinc-500">Ajustes</div>
-                        <div className="grid gap-2 lg:grid-cols-2">
+                        <div className="grid gap-3 lg:grid-cols-2">
                             {secundarios.map(move => (
                                 <div key={move.id} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-2.5">
                                     <div className="flex items-center justify-between gap-2">
@@ -145,13 +145,13 @@ export function EsteticaEditor({
                                         <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600">{move.madurez}</span>
                                     </div>
                                     <div className="mt-1 text-[9px] font-bold text-zinc-500">{move.descripcion}</div>
-                                    <div className="mt-2 grid grid-cols-4 gap-1">
+                                    <div className="mt-2 grid grid-cols-3 gap-2">
                                         {INTENSIDADES.map(intensity => (
                                             <button
                                                 key={intensity}
                                                 onClick={() => changeMove(move.id, intensity)}
-                                                style={{ minHeight: 48 }}
-                                                className={`rounded-lg text-[8px] font-black uppercase tracking-widest ${recipe[move.id] === intensity ? 'bg-[#36606F] text-white' : 'bg-zinc-800 text-zinc-500 hover:text-zinc-200'}`}
+                                                style={{ minHeight: 56, padding: '0.5rem 0.75rem' }}
+                                                className={`rounded-md text-[11px] font-black uppercase tracking-widest ${recipe[move.id] === intensity ? 'bg-[#36606F] text-white' : 'bg-zinc-800 text-zinc-500 hover:text-zinc-200'}`}
                                             >
                                                 {intensity}
                                             </button>

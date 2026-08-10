@@ -39,7 +39,7 @@ BEGIN
   -- B: normal write is rejected while the domain freeze is active.
   BEGIN
     BEGIN
-      SELECT private.k2_acquire_domain_freeze(
+      PERFORM private.k2_acquire_domain_freeze(
         '00000000-0000-0000-0000-000000000001'::uuid,
         'test-write-freeze',
         NULL,
@@ -77,7 +77,7 @@ BEGIN
   -- C: second protected row type also rejects while frozen.
   BEGIN
     BEGIN
-      SELECT private.k2_acquire_domain_freeze(
+      PERFORM private.k2_acquire_domain_freeze(
         '00000000-0000-0000-0000-000000000002'::uuid,
         'test-write-freeze',
         NULL,
@@ -115,7 +115,7 @@ BEGIN
   -- D: protected write on recipe_ingredients is rejected.
   BEGIN
     BEGIN
-      SELECT private.k2_acquire_domain_freeze(
+      PERFORM private.k2_acquire_domain_freeze(
         '00000000-0000-0000-0000-000000000003'::uuid,
         'test-write-freeze',
         NULL,
@@ -153,7 +153,7 @@ BEGIN
   -- E: reads remain permitted while frozen.
   BEGIN
     BEGIN
-      SELECT private.k2_acquire_domain_freeze(
+      PERFORM private.k2_acquire_domain_freeze(
         '00000000-0000-0000-0000-000000000004'::uuid,
         'test-read',
         NULL,
@@ -183,13 +183,13 @@ BEGIN
   -- F: transaction-local authorization permits the protected write.
   BEGIN
     BEGIN
-      SELECT private.k2_acquire_domain_freeze(
+      PERFORM private.k2_acquire_domain_freeze(
         '00000000-0000-0000-0000-000000000005'::uuid,
         'test-authorized-write',
         NULL,
         interval '5 minutes'
       );
-      SELECT private.k2_authorize_transaction('00000000-0000-0000-0000-000000000005'::uuid);
+      PERFORM private.k2_authorize_transaction('00000000-0000-0000-0000-000000000005'::uuid);
       UPDATE public.ingredients
       SET purchase_unit = purchase_unit
       WHERE id = (SELECT id FROM public.ingredients ORDER BY id LIMIT 1);
@@ -234,7 +234,7 @@ BEGIN
   -- H: a second activation for the same domain is rejected while the first is active.
   BEGIN
     BEGIN
-      SELECT private.k2_acquire_domain_freeze(
+      PERFORM private.k2_acquire_domain_freeze(
         '00000000-0000-0000-0000-000000000006'::uuid,
         'test-double-k2',
         NULL,
@@ -276,13 +276,13 @@ BEGIN
   -- are in the same transaction. The next status query must be inactive.
   BEGIN
     BEGIN
-      SELECT private.k2_acquire_domain_freeze(
+      PERFORM private.k2_acquire_domain_freeze(
         '00000000-0000-0000-0000-000000000008'::uuid,
         'test-rollback',
         NULL,
         interval '5 minutes'
       );
-      SELECT private.k2_authorize_transaction('00000000-0000-0000-0000-000000000008'::uuid);
+      PERFORM private.k2_authorize_transaction('00000000-0000-0000-0000-000000000008'::uuid);
       RAISE EXCEPTION 'cleanup';
     EXCEPTION WHEN OTHERS THEN
       IF SQLERRM LIKE '%cleanup%' THEN

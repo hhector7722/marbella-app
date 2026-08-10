@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "9a039eaa24a24bd6",
+  "_huella": "862f3c6b87a7f514",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -1019,6 +1019,24 @@
         "MAPA-DE-CAPACIDADES",
         "PRINCIPIOS",
         "SEGURIDAD"
+      ]
+    },
+    {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-10-validacion-write-freeze-k2.md",
+      "documento": "SPIKE-VALIDACION-WRITE-FREEZE-K2",
+      "clase": "inmutable",
+      "estado": "vigente",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": [
+        "CANON",
+        "GLOSARIO",
+        "MODELO-DE-DATOS",
+        "DOMINIO-PRECIOS-Y-COMPRAS",
+        "ARQUITECTURA"
       ]
     }
   ]
