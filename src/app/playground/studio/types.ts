@@ -138,6 +138,7 @@ export interface StudioState {
     updateBlockProps: (blockId: string, props: Record<string, any>) => void;
     addBlockToRegion: (regionId: string, type: BlockType, targetIndex?: number) => void;
     removeBlock: (blockId: string) => void;
+    duplicateBlock: (blockId: string) => void;
     moveBlock: (blockId: string, direction: 'up' | 'down') => void;
     updateRegionInActiveVariant: (regionId: string, blocks: MarbellaBlock[]) => void;
     updateVariantSpatialFlow: (flow: SpatialCompositionFlow) => void;

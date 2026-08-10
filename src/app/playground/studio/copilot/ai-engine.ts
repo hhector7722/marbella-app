@@ -1,4 +1,4 @@
-import { MarbellaVariant, MarbellaBlock, LayoutType } from '../types';
+import { MarbellaVariant, MarbellaBlock, SpatialCompositionFlow } from '../types';
 import { CopilotGenerationRequest } from './types';
 
 export function generateCopilotVariants(
@@ -20,11 +20,11 @@ export function generateCopilotVariants(
         const variantId = `ai-var-${timestamp}-${i + 1}`;
         const suffix = countToGenerate > 1 ? ` (Propuesta ${i + 1})` : '';
         
-        let layout: LayoutType = 'control-panel';
+        let layout: SpatialCompositionFlow = 'fluid-stack';
         if (lowerPrompt.includes('apple') || lowerPrompt.includes('monumental') || lowerPrompt.includes('espacial')) {
-            layout = 'bimodal';
+            layout = 'hero-header';
         } else if (lowerPrompt.includes('limpio') || lowerPrompt.includes('foco') || lowerPrompt.includes('móvil') || lowerPrompt.includes('modal')) {
-            layout = 'focused-canvas';
+            layout = 'clean-canvas';
         } else if (baseVariant) {
             layout = baseVariant.layout;
         }
@@ -228,11 +228,14 @@ export function generateCopilotVariants(
             ];
         }
 
+        const timestampIso = new Date().toISOString();
         const newVariant: MarbellaVariant = {
             id: variantId,
             name: `Propuesta IA: ${surfaceType.toUpperCase()}${suffix}`,
             description: `Generada por IA Copiloto para: "${prompt}"`,
             layout,
+            createdAt: timestampIso,
+            updatedAt: timestampIso,
             regions: blocks
         };
 

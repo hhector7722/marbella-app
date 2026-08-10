@@ -35,7 +35,7 @@ export default function NewSurfaceModal() {
 
     const handleCreate = () => {
         if (mode === 'manual') {
-            addVariant(`Nueva ${surfaceType}`, 'control-panel');
+            addVariant(`Nueva ${surfaceType}`, 'fluid-stack');
             closeNewSurfaceModal();
         } else {
             const prompt = promptText.trim() || `Crear superficie ${surfaceType} limpia con tokens Marbella OS`;
