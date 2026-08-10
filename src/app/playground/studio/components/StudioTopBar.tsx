@@ -16,19 +16,12 @@ export default function StudioTopBar() {
         zoom, 
         setZoom,
         resetToDefaults,
-        addVariant,
         activeStudioTab,
-        setActiveStudioTab
+        setActiveStudioTab,
+        openNewSurfaceModal,
+        toggleCopilotPanel,
+        isCopilotOpen
     } = useStudioStore();
-
-    const activeVariant = variants.find(v => v.id === activeVariantId);
-
-    const handleCreateVariant = () => {
-        const name = prompt('Nombre de la nueva variante:', 'Variante personalizada');
-        if (name) {
-            addVariant(name, activeVariant?.layout || 'control-panel');
-        }
-    };
 
     return (
         <header className="h-14 border-b border-white/10 bg-[#0a0a0c] px-4 flex items-center justify-between text-white shrink-0 select-none z-30">
@@ -62,7 +55,7 @@ export default function StudioTopBar() {
                     ))}
                 </div>
 
-                {/* Active Variant Dropdown (Only in Canvas tab) */}
+                {/* Active Variant Dropdown & New Surface Trigger (Only in Canvas tab) */}
                 {activeStudioTab === 'canvas' && (
                     <div className="flex items-center gap-2 pl-3 border-l border-white/10">
                         <select
@@ -78,14 +71,11 @@ export default function StudioTopBar() {
                         </select>
 
                         <button
-                            onClick={handleCreateVariant}
-                            className="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-medium text-zinc-300 transition-colors flex items-center gap-1"
-                            title="Nueva Variante"
+                            onClick={openNewSurfaceModal}
+                            className="px-3 py-1 bg-[#36606F] hover:bg-[#407080] border border-[#5B8FB9] rounded-lg text-xs font-bold text-white transition-all flex items-center gap-1.5 shadow"
+                            title="Nueva Superficie (Manual o IA)"
                         >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                            </svg>
-                            Nueva
+                            <span>+ Nueva Superficie</span>
                         </button>
                     </div>
                 )}
@@ -130,8 +120,20 @@ export default function StudioTopBar() {
                 </div>
             )}
 
-            {/* Right: View Mode Toggle & Reset */}
+            {/* Right: AI Copilot Toggle & View Mode Toggle & Reset */}
             <div className="flex items-center gap-3">
+                {/* Copilot Toggle Trigger */}
+                <button
+                    onClick={() => toggleCopilotPanel()}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
+                        isCopilotOpen
+                            ? 'bg-gradient-to-r from-[#36606F] to-indigo-600 border-[#5B8FB9] text-white shadow-md'
+                            : 'bg-white/5 border-white/10 text-zinc-300 hover:text-white hover:bg-white/10'
+                    }`}
+                >
+                    <span>✨ Copiloto IA</span>
+                </button>
+
                 {activeStudioTab === 'canvas' && (
                     <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
                         <button

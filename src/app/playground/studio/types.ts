@@ -45,7 +45,19 @@ export interface StudioState {
     comparatorLeftId: string;
     comparatorRightId: string;
 
+    // AI Copilot State
+    isCopilotOpen: boolean;
+    isNewSurfaceModalOpen: boolean;
+    copilotMessages: any[];
+    isGeneratingAI: boolean;
+
     // State Mutators
+    toggleCopilotPanel: (open?: boolean) => void;
+    openNewSurfaceModal: () => void;
+    closeNewSurfaceModal: () => void;
+    generateAIProposals: (prompt: string, surfaceType?: string, count?: number) => void;
+    refineAIVariant: (prompt: string) => void;
+
     setActiveStudioTab: (tab: StudioTab) => void;
     setSelectedBenchmarkId: (id: string) => void;
     setComparatorIds: (leftId: string, rightId: string) => void;

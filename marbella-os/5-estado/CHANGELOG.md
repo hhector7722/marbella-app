@@ -38,6 +38,7 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-10
 
+- **Se integra la IA Diseñadora (Copiloto Creativo) en la arquitectura de Marbella Design Studio.** Convivencia entre diseño manual y asistido por IA para todas las superficies (modales, formularios, tablas, KPIs, dashboards, etc.) con selección inicial "¿Cómo quieres empezar?", generación múltiple de variantes editables y panel de chat conversacional para refinamiento continuo sin destruir variantes previas.
 - **Nace Design Academy en Marbella Design Studio.** Un espacio interactivo exclusivo de aprendizaje e inspiración de patrones de producto líderes (Linear, Stripe, Vercel, Apple, Notion), con experimentación en tiempo real de densidad/contraste, estudio comparativo de decisiones de diseño y botón de translación de filosofía a Marbella OS.
 
 ---

@@ -3,6 +3,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { StudioState, MarbellaVariant, MarbellaBlock, StudioTab } from './types';
 import { DESIGN_BENCHMARKS } from './academy/data';
+import { generateCopilotVariants } from './copilot/ai-engine';
+import { SurfaceType } from './copilot/types';
 
 const INITIAL_VARIANTS: MarbellaVariant[] = [
     {
@@ -70,7 +72,7 @@ const INITIAL_VARIANTS: MarbellaVariant[] = [
 
 export const useStudioStore = create<StudioState>()(
     persist(
-        (set) => ({
+        (set, get) => ({
             variants: INITIAL_VARIANTS,
             activeVariantId: INITIAL_VARIANTS[0].id,
             selectedBlockId: 'hd-title',
@@ -84,6 +86,89 @@ export const useStudioStore = create<StudioState>()(
             selectedBenchmarkId: DESIGN_BENCHMARKS[0].id,
             comparatorLeftId: DESIGN_BENCHMARKS[0].id,
             comparatorRightId: DESIGN_BENCHMARKS[1].id,
+
+            // AI Copilot State
+            isCopilotOpen: false,
+            isNewSurfaceModalOpen: false,
+            copilotMessages: [
+                {
+                    id: 'msg-welcome',
+                    role: 'assistant',
+                    text: '¡Hola! Soy tu Copiloto Creativo de Marbella OS. ¿Qué superficie deseas explorar o diseñar hoy?',
+                    timestamp: 'Ahora'
+                }
+            ],
+            isGeneratingAI: false,
+
+            // Copilot Mutators
+            toggleCopilotPanel: (open) => set((state) => ({
+                isCopilotOpen: typeof open === 'boolean' ? open : !state.isCopilotOpen
+            })),
+
+            openNewSurfaceModal: () => set({ isNewSurfaceModalOpen: true }),
+            closeNewSurfaceModal: () => set({ isNewSurfaceModalOpen: false }),
+
+            generateAIProposals: (prompt: string, surfaceType = 'pantalla', count = 3) => {
+                set({ isGeneratingAI: true });
+                const currentVariants = get().variants;
+                
+                const newVariants = generateCopilotVariants(
+                    { prompt, surfaceType: surfaceType as SurfaceType, variantCount: count },
+                    currentVariants
+                );
+
+                const newMsg = {
+                    id: `msg-${Date.now()}`,
+                    role: 'assistant' as const,
+                    text: `He generado ${newVariants.length} propuestas editables para: "${prompt}". Han sido creadas en tu lienzo respetando todos los tokens de Marbella OS.`,
+                    generatedVariantIds: newVariants.map(v => v.id),
+                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                };
+
+                set((state) => ({
+                    variants: [...state.variants, ...newVariants],
+                    activeVariantId: newVariants[0].id,
+                    activeStudioTab: 'canvas',
+                    selectedBlockId: newVariants[0].regions.header[0]?.id || null,
+                    isGeneratingAI: false,
+                    isNewSurfaceModalOpen: false,
+                    copilotMessages: [...state.copilotMessages, newMsg]
+                }));
+            },
+
+            refineAIVariant: (prompt: string) => {
+                set({ isGeneratingAI: true });
+                const state = get();
+                const activeVarId = state.activeVariantId;
+
+                const newVariants = generateCopilotVariants(
+                    { prompt, surfaceType: 'pantalla', variantCount: 1, baseVariantId: activeVarId || undefined },
+                    state.variants
+                );
+
+                const userMsg = {
+                    id: `msg-u-${Date.now()}`,
+                    role: 'user' as const,
+                    text: prompt,
+                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                };
+
+                const assistantMsg = {
+                    id: `msg-a-${Date.now()}`,
+                    role: 'assistant' as const,
+                    text: `He creado una nueva variante aplicando tu instrucción: "${prompt}". Puedes compararla o modificarla libremente.`,
+                    generatedVariantIds: newVariants.map(v => v.id),
+                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                };
+
+                set((st) => ({
+                    variants: [...st.variants, ...newVariants],
+                    activeVariantId: newVariants[0].id,
+                    selectedBlockId: newVariants[0].regions.header[0]?.id || null,
+                    isGeneratingAI: false,
+                    copilotMessages: [...st.copilotMessages, userMsg, assistantMsg]
+                }));
+            },
 
             setActiveStudioTab: (tab: StudioTab) => set({ activeStudioTab: tab }),
             setSelectedBenchmarkId: (id: string) => set({ selectedBenchmarkId: id }),
@@ -358,7 +443,9 @@ export const useStudioStore = create<StudioState>()(
                 activeVariantId: INITIAL_VARIANTS[0].id,
                 selectedBlockId: INITIAL_VARIANTS[0].regions.header[0].id,
                 viewMode: 'edit',
-                activeStudioTab: 'canvas'
+                activeStudioTab: 'canvas',
+                isCopilotOpen: false,
+                isNewSurfaceModalOpen: false
             })
         }),
         {
