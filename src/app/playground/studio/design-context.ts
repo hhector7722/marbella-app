@@ -8,6 +8,7 @@ import { INTENSIDAD_FACTOR } from './movidas.ts';
 // ============================================================
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
+const formatScale = (v: number) => String(Number(v.toFixed(4)));
 
 export function resolverReceta(recipe: Recipe): DesignContext {
     const nivel = (id: string): number => {
@@ -20,9 +21,11 @@ export function resolverReceta(recipe: Recipe): DesignContext {
     const profundidad = nivel('profundidad');
     const contraste = nivel('contraste');
 
-    // El aire y la densidad se compensan sobre la escala de espaciado.
-    const space = clamp(1 + 0.35 * aire - 0.18 * densidad, 0.6, 2.2);
-    const typeScale = clamp(1 + 0.12 * aire + 0.06 * nivel('voz_tipografica') - 0.04 * densidad, 0.85, 1.6);
+    // AIRE usa saltos perceptuales; DENSIDAD solo comprime el resultado.
+    // Así se pueden explorar ambas dimensiones sin que sean sinónimos.
+    const airScale = [0.82, 1, 1.28, 1.72][Math.round(aire * 2)] ?? 0.82;
+    const space = clamp(airScale - 0.16 * densidad, 0.7, 1.9);
+    const typeScale = clamp(1 + 0.06 * nivel('voz_tipografica') - 0.04 * densidad, 0.85, 1.25);
 
     const surface = (recipe['superficies'] ?? 'nada') === 'fuerte' ? 2 : (recipe['superficies'] ?? 'nada') === 'moderado' ? 1 : 0;
     const elevation = Math.round(profundidad * 2); // 0..3
@@ -76,9 +79,16 @@ export function getSandboxSpacingTokens(ctx: DesignContext): Record<string, stri
 
 // Variables CSS que las pantallas consumen por nombre (espaciado, tipografía).
 export function cssVarsDelContexto(ctx: DesignContext): Record<string, string> {
+    const sectionSpace = clamp(ctx.space * 1.12, 0.75, 2.15);
+    const contentSpace = clamp(ctx.space, 0.7, 1.9);
+    const rowSpace = clamp(0.85 + (ctx.space - 1) * 0.7, 0.7, 1.5);
+
     return {
-        '--dl-space': `${ctx.space}`,
-        '--dl-type-scale': `${ctx.typeScale}`,
+        '--dl-space': formatScale(ctx.space),
+        '--dl-space-section': formatScale(sectionSpace),
+        '--dl-space-content': formatScale(contentSpace),
+        '--dl-space-row': formatScale(rowSpace),
+        '--dl-type-scale': formatScale(ctx.typeScale),
         '--dl-elevation': `${ctx.elevation}`,
         '--dl-contrast': `${ctx.contrast}`,
         '--dl-border-alpha': ctx.surface >= 1 ? '0.25' : '1',

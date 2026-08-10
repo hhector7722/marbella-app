@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "7b30585ef9c1f444",
+  "_huella": "9d2801508ffc2a12",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -1077,6 +1077,26 @@
         "MODELO-DE-DATOS",
         "DOMINIO-PRECIOS-Y-COMPRAS",
         "ARQUITECTURA"
+      ]
+    },
+    {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-11-plan-desbloqueo-k2.md",
+      "documento": "SPIKE-PLAN-DESBLOQUEO-K2",
+      "clase": "inmutable",
+      "estado": "archivado",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": [
+        "CANON",
+        "GLOSARIO",
+        "MODELO-DE-DATOS",
+        "DOMINIO-PRECIOS-Y-COMPRAS",
+        "ARQUITECTURA",
+        "DEUDA",
+        "PROTOCOLO-AGENTES"
       ]
     }
   ]

@@ -2,23 +2,28 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { cssVarsDelContexto, getSandboxSpacingTokens, resolverReceta } from './design-context.ts';
 
-test('the sandbox spacing tokens grow when air becomes stronger', () => {
-  const base = resolverReceta({ aire: 'nada', densidad: 'nada', profundidad: 'nada', contraste: 'nada' });
-  const strong = resolverReceta({ aire: 'fuerte', densidad: 'nada', profundidad: 'nada', contraste: 'nada' });
+test('the sandbox spacing scale separates all four air intensities', () => {
+  const levels = (['nada', 'sutil', 'moderado', 'fuerte'] as const).map(aire =>
+    resolverReceta({ aire, densidad: 'nada', profundidad: 'nada', contraste: 'nada' }).space,
+  );
 
-  const baseTokens = getSandboxSpacingTokens(base);
-  const strongTokens = getSandboxSpacingTokens(strong);
+  assert.deepEqual(levels, [0.82, 1, 1.28, 1.72]);
+  assert.ok(levels[3] - levels[0] >= 0.9);
 
-  assert.ok(Number(strongTokens['--marbella-space-2'].replace('rem', '')) > Number(baseTokens['--marbella-space-2'].replace('rem', '')));
-  assert.ok(Number(strongTokens['--marbella-space-3'].replace('rem', '')) > Number(baseTokens['--marbella-space-3'].replace('rem', '')));
+  const baseTokens = getSandboxSpacingTokens(resolverReceta({ aire: 'nada' }));
+  const strongTokens = getSandboxSpacingTokens(resolverReceta({ aire: 'fuerte' }));
+  assert.ok(Number(strongTokens['--marbella-space-4'].replace('rem', '')) > Number(baseTokens['--marbella-space-4'].replace('rem', '')));
 });
 
 test('the live CSS contract exposes air as a scoped design variable', () => {
   const base = cssVarsDelContexto(resolverReceta({ aire: 'nada' }));
   const strong = cssVarsDelContexto(resolverReceta({ aire: 'fuerte' }));
 
-  assert.equal(base['--dl-space'], '1');
-  assert.equal(strong['--dl-space'], '1.56');
-  assert.equal(base['--marbella-space-4'], '1rem');
-  assert.equal(strong['--marbella-space-4'], '1.56rem');
+  assert.equal(base['--dl-space'], '0.82');
+  assert.equal(strong['--dl-space'], '1.72');
+  assert.equal(base['--dl-space-section'], '0.9184');
+  assert.equal(strong['--dl-space-section'], '1.9264');
+  assert.equal(base['--dl-space-row'], '0.724');
+  assert.equal(strong['--dl-space-row'], '1.354');
+  assert.equal(resolverReceta({ aire: 'nada' }).typeScale, resolverReceta({ aire: 'fuerte' }).typeScale);
 });
