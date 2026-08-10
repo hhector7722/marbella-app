@@ -3,18 +3,15 @@
 import React from 'react';
 import { useStudioStore } from './store';
 import StudioTopBar from './components/StudioTopBar';
-import StudioLevelBar from './components/StudioLevelBar';
 import StudioLayersPanel from './components/StudioLayersPanel';
 import StudioInspectorPanel from './components/StudioInspectorPanel';
 import StudioCanvas from './components/StudioCanvas';
-import AcademyStudioView from './academy/components/AcademyStudioView';
-import AcademyComparatorView from './academy/components/AcademyComparatorView';
 import NewSurfaceModal from './copilot/components/NewSurfaceModal';
 import CopilotChatPanel from './copilot/components/CopilotChatPanel';
 import VariantManagerModal from './components/VariantManagerModal';
 
 export default function StudioPage() {
-    const { activeVariantId, selectBlock, viewMode, activeStudioTab } = useStudioStore();
+    const { activeVariantId, selectBlock, viewMode } = useStudioStore();
     
     if (!activeVariantId) return null;
 
@@ -23,46 +20,29 @@ export default function StudioPage() {
             {/* Top Workspace Toolbar */}
             <StudioTopBar />
 
-            {/* 5-Level Progressive Zoom Breadcrumb & Level Selector */}
-            {activeStudioTab === 'canvas' && <StudioLevelBar />}
-
-            {/* Main Area: Render Canvas Editor, Design Academy Studio, or Pattern Comparator */}
+            {/* Main Canvas Editor Area */}
             <div className="flex flex-1 overflow-hidden relative">
-                {activeStudioTab === 'academy' && (
-                    <div className="flex-1 flex overflow-hidden">
-                        <AcademyStudioView />
-                    </div>
-                )}
+                <div className="flex flex-1 overflow-hidden relative">
+                    {/* Left Panel: Contextual Intention & Object Tree Panel (Visible in Edit mode) */}
+                    {viewMode === 'edit' && <StudioLayersPanel />}
 
-                {activeStudioTab === 'comparator' && (
-                    <div className="flex-1 flex overflow-hidden">
-                        <AcademyComparatorView />
-                    </div>
-                )}
+                    {/* Center Canvas Area with Dot Grid Pattern */}
+                    <main 
+                        onClick={() => selectBlock(null)}
+                        className="flex-1 bg-[#0a0a0d] relative overflow-y-auto overflow-x-auto flex flex-col"
+                        style={{
+                            backgroundImage: `radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px)`,
+                            backgroundSize: '24px 24px'
+                        }}
+                    >
+                        <div className="flex-1 min-h-full py-6">
+                            <StudioCanvas variantId={activeVariantId} />
+                        </div>
+                    </main>
 
-                {activeStudioTab === 'canvas' && (
-                    <div className="flex flex-1 overflow-hidden relative">
-                        {/* Left Panel: Dynamic 5-Level Multilevel Panel (Visible in Edit mode) */}
-                        {viewMode === 'edit' && <StudioLayersPanel />}
-
-                        {/* Center Canvas Area with Dot Grid Pattern */}
-                        <main 
-                            onClick={() => selectBlock(null)}
-                            className="flex-1 bg-[#0a0a0d] relative overflow-y-auto overflow-x-auto flex flex-col"
-                            style={{
-                                backgroundImage: `radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px)`,
-                                backgroundSize: '24px 24px'
-                            }}
-                        >
-                            <div className="flex-1 min-h-full py-6">
-                                <StudioCanvas variantId={activeVariantId} />
-                            </div>
-                        </main>
-
-                        {/* Right Panel: Property Inspector (Visible in Edit mode) */}
-                        {viewMode === 'edit' && <StudioInspectorPanel />}
-                    </div>
-                )}
+                    {/* Right Panel: Property Inspector (Visible in Edit mode) */}
+                    {viewMode === 'edit' && <StudioInspectorPanel />}
+                </div>
 
                 {/* AI Copilot Conversational Drawer Panel */}
                 <CopilotChatPanel />
