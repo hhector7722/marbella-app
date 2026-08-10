@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "29ce78c63a2feb22",
+  "_huella": "a3aef479da37a1e3",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -729,6 +729,18 @@
     {
       "ruta": "marbella-os/6-investigacion/spikes/2026-07-26-shadow-validacion.md",
       "documento": "SPIKE-SHADOW-VALIDACION",
+      "clase": "inmutable",
+      "estado": "archivado",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": []
+    },
+    {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-10-auditoria-dominio-producto-unidades.md",
+      "documento": "SPIKE-AUDITORIA-DOMINIO-PRODUCTO-UNIDADES",
       "clase": "inmutable",
       "estado": "archivado",
       "capa": "investigacion",
