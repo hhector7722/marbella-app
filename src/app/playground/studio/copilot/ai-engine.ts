@@ -1,246 +1,260 @@
-import { MarbellaVariant, MarbellaBlock, SpatialCompositionFlow } from '../types';
-import { CopilotGenerationRequest } from './types';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import {
+    MarbellaVariant,
+    MarbellaBlock,
+    BlockType,
+    SurfaceType,
+    ViewportPreset,
+} from '../types';
+import {
+    getAllowedBlocks,
+    getAllowedRegions,
+    getSurfaceContract,
+    validateVariant,
+    hasBlockingViolations,
+    defaultLayoutForSurface,
+} from '../contracts';
+
+export interface CopilotGenerationRequest {
+    prompt: string;
+    surfaceType: SurfaceType;
+    viewport: ViewportPreset;
+    variantCount: number; // 1, 3, 5
+    baseVariantId?: string; // If refining an existing variant
+}
+
+const MAX_REPAIR_ATTEMPTS = 6;
+
+// ==========================================
+// COMPOSICIÓN GOBERNADA POR CONTRATO
+// ==========================================
+
+function buildKpis(prompt: string, count: number): Record<string, string>[] {
+    const lower = prompt.toLowerCase();
+    const pool: Record<string, string>[] = [
+        { label: 'Personal Activo', value: '42', change: '+3 este mes' },
+        { label: 'Cobertura de Turno', value: '100%', change: 'Óptimo' },
+        { label: 'Coste Laboral', value: '€2.140', change: '15% ventas' },
+        { label: 'Incidencias', value: '0', change: 'Sin pendientes' },
+    ];
+    if (lower.includes('kpi') || lower.includes('métric') || lower.includes('metric')) {
+        return pool.slice(0, count);
+    }
+    return pool.slice(0, count);
+}
+
+function surfaceTitle(surfaceType: SurfaceType, suffix: string): string {
+    const names: Record<SurfaceType, string> = {
+        pantalla: 'Pantalla Principal',
+        dashboard: 'Resumen Ejecutivo',
+        modal: 'Diálogo de Detalle',
+        formulario: 'Formulario de Registro',
+        tabla: 'Listado de Datos',
+        kpis: 'Panel de Métricas',
+        cabecera: 'Cabecera de Sección',
+        drawer: 'Panel Lateral',
+        'bottom-sheet': 'Hoja Inferior',
+    };
+    return `${names[surfaceType]}${suffix}`;
+}
+
+function composeBlocks(
+    prompt: string,
+    surfaceType: SurfaceType,
+    viewport: ViewportPreset,
+    seed: number,
+    suffix: string,
+): Record<string, MarbellaBlock[]> {
+    const allowed = getAllowedBlocks(surfaceType, viewport);
+    const lower = prompt.toLowerCase();
+    const has = (t: BlockType) => allowed.includes(t);
+    const blocks: Record<string, MarbellaBlock[]> = { header: [], main: [], sidebar: [] };
+
+    if (has('top-bar')) {
+        blocks.header.push({ id: `ai-tb-${seed}`, type: 'top-bar', props: { title: 'Marbella' } });
+    }
+
+    if (has('page-header')) {
+        blocks.header.push({
+            id: `ai-hd-${seed}`,
+            type: 'page-header',
+            props: { title: surfaceTitle(surfaceType, suffix), description: `Propuesta generada para: "${prompt}".` },
+        });
+    }
+
+    if (has('tabs')) {
+        blocks.header.push({ id: `ai-tabs-${seed}`, type: 'tabs', props: { tabs: ['Resumen', 'Detalle', 'Historial'], active: 'Resumen' } });
+    }
+
+    if (has('filter-bar')) {
+        blocks.header.push({ id: `ai-flt-${seed}`, type: 'filter-bar', props: { showSearch: true, showNew: true, placeholder: 'Buscar...' } });
+    }
+
+    if (has('kpi-grid')) {
+        const columns = viewport === 'mobile' ? 2 : 3;
+        blocks.main.push({ id: `ai-kpi-${seed}`, type: 'kpi-grid', props: { items: buildKpis(lower, columns) } });
+    }
+
+    if (has('data-table')) {
+        blocks.main.push({
+            id: `ai-tbl-${seed}`,
+            type: 'data-table',
+            props: {
+                title: 'Listado de Datos',
+                density: 'standard',
+                format: viewport === 'mobile' ? 'list' : 'table',
+                boxed: true,
+            },
+        });
+    }
+
+    if (has('form')) {
+        blocks.main.push({ id: `ai-form-${seed}`, type: 'form', props: { title: 'Formulario' } });
+    }
+
+    if (has('container-block')) {
+        blocks.main.push({ id: `ai-card-${seed}`, type: 'container-block', props: { title: 'Detalle' } });
+    }
+
+    if (has('callout-banner')) {
+        blocks.main.push({
+            id: `ai-call-${seed}`,
+            type: 'callout-banner',
+            props: { title: 'Aviso', message: 'Indicación semántica destacada en pantalla.', variant: 'info' },
+        });
+    }
+
+    if (has('fab')) {
+        blocks.main.push({ id: `ai-fab-${seed}`, type: 'fab', props: { label: 'Nuevo' } });
+    }
+
+    if (has('bottom-nav') && viewport === 'mobile') {
+        blocks.main.push({ id: `ai-bn-${seed}`, type: 'bottom-nav', props: { active: 'Inicio' } });
+    }
+
+    if (has('sidebar-nav') && viewport !== 'mobile') {
+        blocks.sidebar.push({ id: `ai-sb-${seed}`, type: 'sidebar-nav', props: { variant: 'app-menu' } });
+    }
+
+    return blocks;
+}
+
+// ==========================================
+// SANEAMIENTO: el Copiloto nunca emite una variante inválida
+// ==========================================
+
+function sanitizeVariant(variant: MarbellaVariant, viewport: ViewportPreset): MarbellaVariant {
+    const { surfaceType } = variant;
+    const allowed = getAllowedBlocks(surfaceType, viewport);
+    const allowedRegions = getAllowedRegions(surfaceType, viewport);
+
+    const cleanRegions: Record<string, MarbellaBlock[]> = {};
+    Object.entries(variant.regions || {}).forEach(([region, blocks]) => {
+        if (!allowedRegions.includes(region as any)) return;
+        const clean = blocks
+            .filter(b => allowed.includes(b.type))
+            .map(b => {
+                const next = { ...b, props: { ...b.props } };
+                if (next.type === 'data-table' && viewport === 'mobile' && next.props.format !== 'list') {
+                    next.props.format = 'list';
+                }
+                if (next.type === 'kpi-grid') {
+                    const max = viewport === 'mobile' ? 2 : viewport === 'tablet' ? 3 : 4;
+                    const items = Array.isArray(next.props.items) ? next.props.items.slice(0, max) : [];
+                    next.props.items = items;
+                }
+                return next;
+            });
+        if (clean.length > 0) cleanRegions[region] = clean;
+    });
+
+    const contract = getSurfaceContract(surfaceType);
+    const layout = contract.allowedLayouts.includes(variant.layout)
+        ? variant.layout
+        : defaultLayoutForSurface(surfaceType);
+
+    return {
+        ...variant,
+        layout,
+        regions: cleanRegions,
+        updatedAt: new Date().toISOString(),
+    };
+}
+
+function buildCandidate(
+    request: CopilotGenerationRequest,
+    seed: number,
+    index: number,
+    total: number,
+): MarbellaVariant {
+    const suffix = total > 1 ? ` (Propuesta ${index + 1})` : '';
+    return {
+        id: `ai-var-${seed}`,
+        name: `Propuesta IA: ${surfaceTitle(request.surfaceType, suffix)}`,
+        description: `Generada bajo el contrato de ${request.surfaceType} (${request.viewport}).`,
+        surfaceType: request.surfaceType,
+        layout: defaultLayoutForSurface(request.surfaceType),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        regions: composeBlocks(request.prompt, request.surfaceType, request.viewport, seed, suffix),
+    };
+}
+
+function adaptBaseVariant(base: MarbellaVariant, request: CopilotGenerationRequest, seed: number): MarbellaVariant {
+    const clone: MarbellaVariant = JSON.parse(JSON.stringify(base));
+    return {
+        ...clone,
+        id: `ai-var-${seed}`,
+        name: `${base.name} • Refinada`,
+        description: `Variante refinada bajo el contrato de ${request.surfaceType} (${request.viewport}).`,
+        updatedAt: new Date().toISOString(),
+    };
+}
+
+function refineToValidCandidate(
+    base: MarbellaVariant | null,
+    request: CopilotGenerationRequest,
+    seed: number,
+    index: number,
+    total: number,
+): MarbellaVariant | null {
+    const useBase = base && base.surfaceType === request.surfaceType;
+
+    for (let attempt = 0; attempt < MAX_REPAIR_ATTEMPTS; attempt++) {
+        const candidate = useBase
+            ? adaptBaseVariant(base, request, seed + attempt)
+            : buildCandidate(request, seed + attempt, index, total);
+
+        const sanitized = sanitizeVariant(candidate, request.viewport);
+        const violations = validateVariant(sanitized, request.viewport);
+
+        if (!hasBlockingViolations(violations)) {
+            return sanitized;
+        }
+    }
+
+    return null;
+}
+
+// ==========================================
+// API PÚBLICA DEL CO-PILOTO
+// ==========================================
 
 export function generateCopilotVariants(
     request: CopilotGenerationRequest,
-    existingVariants: MarbellaVariant[]
+    existingVariants: MarbellaVariant[],
 ): MarbellaVariant[] {
-    const { prompt, surfaceType, variantCount, baseVariantId } = request;
-    const lowerPrompt = prompt.toLowerCase();
+    const { variantCount, baseVariantId } = request;
+    const count = Math.min(Math.max(1, variantCount || 1), 5);
+    const base = baseVariantId ? existingVariants.find(v => v.id === baseVariantId) || null : null;
 
-    // If refining an existing variant
-    const baseVariant = baseVariantId ? existingVariants.find(v => v.id === baseVariantId) : null;
+    const results: MarbellaVariant[] = [];
+    const baseSeed = Date.now();
 
-    const resultVariants: MarbellaVariant[] = [];
-    const timestamp = Date.now();
-
-    const countToGenerate = Math.min(Math.max(1, variantCount || 1), 5);
-
-    for (let i = 0; i < countToGenerate; i++) {
-        const variantId = `ai-var-${timestamp}-${i + 1}`;
-        const suffix = countToGenerate > 1 ? ` (Propuesta ${i + 1})` : '';
-        
-        let layout: SpatialCompositionFlow = 'fluid-stack';
-        if (lowerPrompt.includes('apple') || lowerPrompt.includes('monumental') || lowerPrompt.includes('espacial')) {
-            layout = 'hero-header';
-        } else if (lowerPrompt.includes('limpio') || lowerPrompt.includes('foco') || lowerPrompt.includes('móvil') || lowerPrompt.includes('modal')) {
-            layout = 'clean-canvas';
-        } else if (baseVariant) {
-            layout = baseVariant.layout;
-        }
-
-        const blocks: Record<string, MarbellaBlock[]> = {
-            header: [],
-            main: [],
-            sidebar: []
-        };
-
-        // Determine surface block composition based on request & prompt
-        if (baseVariant && lowerPrompt.includes('kpi')) {
-            // Refinement: Elevate KPI prominence
-            blocks.header = [
-                {
-                    id: `ai-hd-${timestamp}-${i}`,
-                    type: 'page-header',
-                    props: {
-                        title: baseVariant.name + ' • Foco KPI',
-                        isMonumental: true,
-                        kpis: [
-                            { label: 'Rendimiento', value: '98.5%' },
-                            { label: 'Incidencias', value: '0', alert: false },
-                            { label: 'Tiempo Medio', value: '4.2 min' }
-                        ]
-                    }
-                }
-            ];
-            blocks.main = [
-                {
-                    id: `ai-kpi-${timestamp}-${i}`,
-                    type: 'kpi-grid',
-                    props: {
-                        items: [
-                            { label: 'Eficiencia Operativa', value: '94%', change: '+4.2%' },
-                            { label: 'Cobertura de Turno', value: '100%', change: 'Óptimo' },
-                            { label: 'Satisfacción', value: '4.9/5', change: 'Alta' }
-                        ]
-                    }
-                },
-                ...JSON.parse(JSON.stringify(baseVariant.regions.main || []))
-            ];
-            blocks.sidebar = JSON.parse(JSON.stringify(baseVariant.regions.sidebar || []));
-
-        } else if (baseVariant && (lowerPrompt.includes('carga cognitiva') || lowerPrompt.includes('ruido') || lowerPrompt.includes('respiración'))) {
-            // Refinement: Reduce cognitive load & space out
-            blocks.header = [
-                {
-                    id: `ai-hd-${timestamp}-${i}`,
-                    type: 'page-header',
-                    props: {
-                        title: baseVariant.name + ' • Mínima Carga Cognitiva',
-                        description: 'Interfaz simplificada para maximizar el foco y reducir la fatiga visual.'
-                    }
-                }
-            ];
-            blocks.main = [
-                {
-                    id: `ai-tbl-${timestamp}-${i}`,
-                    type: 'data-table',
-                    props: {
-                        title: 'Vista Limpia de Contenido',
-                        density: 'low',
-                        format: 'list',
-                        boxed: true
-                    }
-                }
-            ];
-            blocks.sidebar = [];
-
-        } else if (surfaceType === 'modal' || lowerPrompt.includes('modal') || lowerPrompt.includes('ticket') || lowerPrompt.includes('confirmacion')) {
-            // Surface: Modal / Callout Details
-            blocks.header = [
-                {
-                    id: `ai-hd-${timestamp}-${i}`,
-                    type: 'page-header',
-                    props: {
-                        title: i === 0 ? 'Detalle de Ticket #4029' : i === 1 ? 'Gestión de Incidencia' : 'Visor de Solicitud',
-                        description: 'Superficie modal flotante enmarcada con tokens de elevación Marbella OS.'
-                    }
-                }
-            ];
-            blocks.main = [
-                {
-                    id: `ai-[#01]-callout-${timestamp}-${i}`,
-                    type: 'callout-banner',
-                    props: {
-                        title: 'Prioridad Alta • Solicitud Pendiente',
-                        message: 'Revisión requerida por el responsable de sala antes del cierre de turno.'
-                    }
-                },
-                {
-                    id: `ai-[#01]-card-${timestamp}-${i}`,
-                    type: 'container-block',
-                    props: {
-                        title: 'Información del Empleado',
-                        padding: 'normal'
-                    }
-                }
-            ];
-
-        } else if (surfaceType === 'formulario' || lowerPrompt.includes('formulario') || lowerPrompt.includes('fichaje')) {
-            // Surface: Clean Form
-            blocks.header = [
-                {
-                    id: `ai-hd-${timestamp}-${i}`,
-                    type: 'page-header',
-                    props: {
-                        title: i === 0 ? 'Formulario de Fichaje' : i === 1 ? 'Registro de Personal' : 'Formulario de Ajuste',
-                        description: 'Diseño de campos limpios con objetivos táctiles mínimos de 48px.'
-                    }
-                }
-            ];
-            blocks.main = [
-                {
-                    id: `ai-flt-${timestamp}-${i}`,
-                    type: 'filter-bar',
-                    props: {
-                        showSearch: true,
-                        showNew: true,
-                        placeholder: 'Nombre o código de empleado...'
-                    }
-                },
-                {
-                    id: `ai-card-${timestamp}-${i}`,
-                    type: 'container-block',
-                    props: {
-                        title: 'Detalle de Horas & Turno'
-                    }
-                }
-            ];
-
-        } else if (lowerPrompt.includes('linear') || lowerPrompt.includes('compact') || lowerPrompt.includes('pro-tool')) {
-            // Surface / Inspiration: Linear Compact
-            blocks.header = [
-                {
-                    id: `ai-hd-${timestamp}-${i}`,
-                    type: 'page-header',
-                    props: {
-                        title: 'Gestión Pro-Tool' + suffix,
-                        description: 'Alta densidad de información con contraste tipográfico sutil.'
-                    }
-                }
-            ];
-            blocks.main = [
-                {
-                    id: `ai-flt-${timestamp}-${i}`,
-                    type: 'filter-bar',
-                    props: { showSearch: true, showNew: true, placeholder: 'Filtrar por etiqueta...' }
-                },
-                {
-                    id: `ai-tbl-${timestamp}-${i}`,
-                    type: 'data-table',
-                    props: {
-                        title: 'Directorio de Trabajo',
-                        density: 'high',
-                        boxed: true
-                    }
-                }
-            ];
-            blocks.sidebar = [
-                { id: `ai-sb-${timestamp}-${i}`, type: 'sidebar-nav', props: { variant: 'page-menu' } }
-            ];
-
-        } else {
-            // General / Default AI Proposal
-            blocks.header = [
-                {
-                    id: `ai-hd-${timestamp}-${i}`,
-                    type: 'page-header',
-                    props: {
-                        title: `Propuesta IA: ${surfaceType.toUpperCase()}` + suffix,
-                        description: `Generada a partir de: "${prompt}" (respetando tokens de Marbella OS).`,
-                        isMonumental: i === 1
-                    }
-                }
-            ];
-            blocks.main = [
-                {
-                    id: `ai-kpi-${timestamp}-${i}`,
-                    type: 'kpi-grid',
-                    props: {
-                        items: [
-                            { label: 'Cifra Principal', value: i === 0 ? '42' : '100%' },
-                            { label: 'Estado', value: 'Óptimo' }
-                        ]
-                    }
-                },
-                {
-                    id: `ai-tbl-${timestamp}-${i}`,
-                    type: 'data-table',
-                    props: {
-                        title: 'Superficie de Datos Generada',
-                        density: i === 2 ? 'high' : 'standard',
-                        boxed: true
-                    }
-                }
-            ];
-            blocks.sidebar = [
-                { id: `ai-sb-${timestamp}-${i}`, type: 'sidebar-nav', props: { variant: 'app-menu' } }
-            ];
-        }
-
-        const timestampIso = new Date().toISOString();
-        const newVariant: MarbellaVariant = {
-            id: variantId,
-            name: `Propuesta IA: ${surfaceType.toUpperCase()}${suffix}`,
-            description: `Generada por IA Copiloto para: "${prompt}"`,
-            layout,
-            createdAt: timestampIso,
-            updatedAt: timestampIso,
-            regions: blocks
-        };
-
-        resultVariants.push(newVariant);
+    for (let i = 0; i < count; i++) {
+        const valid = refineToValidCandidate(base, request, baseSeed + i * 1000, i, count);
+        if (valid) results.push(valid);
     }
 
-    return resultVariants;
+    return results;
 }

@@ -9,7 +9,23 @@ export type BlockType =
     | 'sidebar-nav'
     | 'empty-placeholder'
     | 'container-block'
-    | 'callout-banner';
+    | 'callout-banner'
+    | 'top-bar'
+    | 'bottom-nav'
+    | 'tabs'
+    | 'fab'
+    | 'form';
+
+export type SurfaceType =
+    | 'pantalla'
+    | 'dashboard'
+    | 'modal'
+    | 'formulario'
+    | 'tabla'
+    | 'kpis'
+    | 'cabecera'
+    | 'drawer'
+    | 'bottom-sheet';
 
 export interface MarbellaBlock {
     id: string;
@@ -22,19 +38,15 @@ export interface MarbellaVariant {
     id: string;
     name: string;
     description: string;
+    surfaceType: SurfaceType;
     layout: SpatialCompositionFlow;
     regions: Record<string, MarbellaBlock[]>;
     createdAt: string; // ISO date
     updatedAt: string; // ISO date
-    isArchived?: boolean;
-    isSystemVariant?: boolean;
-    isBaseVariant?: boolean;
 }
 
 export type StudioViewMode = 'edit' | 'preview';
 export type ViewportPreset = 'desktop' | 'tablet' | 'mobile';
-export type StudioTab = 'canvas' | 'academy' | 'comparator';
-export type VariantSortOption = 'modified' | 'created' | 'name';
 
 // 5-LEVEL RECURSIVE OBJECT MODEL
 export type DesignLevel = 1 | 2 | 3 | 4 | 5;
@@ -55,6 +67,14 @@ export interface FocusNode {
     type: string;
 }
 
+export interface CopilotMessage {
+    id: string;
+    role: 'user' | 'assistant';
+    text: string;
+    generatedVariantIds?: string[];
+    timestamp: string;
+}
+
 export interface StudioState {
     variants: MarbellaVariant[];
     activeVariantId: string | null;
@@ -66,7 +86,6 @@ export interface StudioState {
 
     // Variant Manager State
     isVariantManagerOpen: boolean;
-    variantSortBy: VariantSortOption;
 
     // Recursive Object Focus Stack Navigation
     focusStack: FocusNode[];
@@ -76,27 +95,17 @@ export interface StudioState {
     currentLevel: DesignLevel;
     tokens: Record<string, string>;
 
-    // Design Academy & Navigation State
-    activeStudioTab: StudioTab;
-    selectedBenchmarkId: string;
-    comparatorLeftId: string;
-    comparatorRightId: string;
-
-    // AI Copilot State
+    // AI Copilot (governed) State
     isCopilotOpen: boolean;
     isNewSurfaceModalOpen: boolean;
-    copilotMessages: any[];
     isGeneratingAI: boolean;
+    copilotMessages: CopilotMessage[];
 
     // Variant Lifecycle Management Actions
     openVariantManager: () => void;
     closeVariantManager: () => void;
-    setVariantSortBy: (option: VariantSortOption) => void;
     renameVariant: (id: string, newName: string) => void;
     duplicateVariant: (id: string) => void;
-    archiveVariant: (id: string, archived?: boolean) => void;
-    setBaseVariant: (id: string) => void;
-    exportVariant: (id: string) => void;
     deleteVariant: (id: string) => boolean;
 
     // Recursive Object Navigation Actions
@@ -111,21 +120,16 @@ export interface StudioState {
     addIntentZone: (category: IntentCategory, regionId?: string) => void;
     updateSystemToken: (key: string, value: string) => void;
 
-    // State Mutators
+    // Copilot Actions (governed by contracts)
     toggleCopilotPanel: (open?: boolean) => void;
     openNewSurfaceModal: () => void;
     closeNewSurfaceModal: () => void;
-    generateAIProposals: (prompt: string, surfaceType?: string, count?: number) => void;
+    generateAIProposals: (prompt: string, surfaceType: SurfaceType, viewport: ViewportPreset, count?: number) => void;
     refineAIVariant: (prompt: string) => void;
-
-    setActiveStudioTab: (tab: StudioTab) => void;
-    setSelectedBenchmarkId: (id: string) => void;
-    setComparatorIds: (leftId: string, rightId: string) => void;
-    applyBenchmarkToMarbella: (benchmarkId: string) => void;
 
     setActiveVariant: (id: string) => void;
     saveVariant: (variant: MarbellaVariant) => void;
-    addVariant: (name: string, layout?: SpatialCompositionFlow) => void;
+    addVariant: (name: string, surfaceType?: SurfaceType, layout?: SpatialCompositionFlow) => void;
     
     // Canvas & Inspection State
     selectBlock: (id: string | null) => void;
@@ -142,5 +146,4 @@ export interface StudioState {
     moveBlock: (blockId: string, direction: 'up' | 'down') => void;
     updateRegionInActiveVariant: (regionId: string, blocks: MarbellaBlock[]) => void;
     updateVariantSpatialFlow: (flow: SpatialCompositionFlow) => void;
-    resetToDefaults: () => void;
 }

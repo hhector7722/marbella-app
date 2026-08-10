@@ -5,6 +5,7 @@
 import React from 'react';
 import { useStudioStore } from '../store';
 import { MarbellaBlock } from '../types';
+import { getSurfaceContract } from '../contracts';
 
 export default function StudioInspectorPanel() {
     const { 
@@ -15,10 +16,12 @@ export default function StudioInspectorPanel() {
         duplicateBlock, 
         removeBlock, 
         moveBlock,
-        selectBlock
+        selectBlock,
+        viewportPreset
     } = useStudioStore();
 
     const activeVariant = variants.find(v => v.id === activeVariantId);
+    const contract = activeVariant ? getSurfaceContract(activeVariant.surfaceType) : null;
     
     // Locate selected block across all regions
     let selectedBlock: MarbellaBlock | null = null;
@@ -75,6 +78,17 @@ export default function StudioInspectorPanel() {
                     ✕
                 </button>
             </div>
+
+            {/* Contract Context */}
+            {contract && (
+                <div className="px-4 py-2 bg-[#0e1620] border-b border-white/10 flex items-center gap-2 text-[10px]">
+                    <span>{contract.icon}</span>
+                    <span className="text-zinc-300 font-bold uppercase tracking-wider">{contract.name}</span>
+                    <span className="text-zinc-500">·</span>
+                    <span className="text-zinc-500 uppercase font-bold">{viewportPreset}</span>
+                    <span className="ml-auto text-emerald-400 font-semibold">✓ En contrato</span>
+                </div>
+            )}
 
             {/* Quick Actions Toolbar */}
             <div className="p-3 bg-white/[0.02] border-b border-white/10 flex items-center justify-between gap-1 text-xs">
@@ -450,27 +464,107 @@ export default function StudioInspectorPanel() {
                     </div>
                 )}
 
-                {/* COMMON STYLING CONTROLS */}
-                <div className="pt-6 border-t border-white/10 space-y-4">
-                    <div className="text-[10px] uppercase font-bold tracking-widest text-zinc-500">
-                        Estilos & Tokens de Marbella OS
+                {/* TOP BAR PROPS */}
+                {type === 'top-bar' && (
+                    <div className="space-y-4">
+                        <div className="text-[10px] uppercase font-bold tracking-widest text-[#5B8FB9]">
+                            Propiedades de Barra Superior
+                        </div>
+                        <div>
+                            <label className="block text-xs text-zinc-400 font-medium mb-1">Título de la app</label>
+                            <input
+                                type="text"
+                                value={props.title || ''}
+                                onChange={(e) => updateBlockProps(id, { title: e.target.value })}
+                                className="w-full bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#5B8FB9]"
+                            />
+                        </div>
+                        <p className="text-[10px] text-zinc-500 leading-relaxed">
+                            La barra superior respeta los safe areas del viewport móvil.
+                        </p>
                     </div>
+                )}
 
-                    <div className="p-3 bg-white/5 rounded-xl border border-white/10 space-y-2">
-                        <div className="flex justify-between text-xs">
-                            <span className="text-zinc-400">Radio de Borde:</span>
-                            <span className="font-mono text-zinc-200">12px (Token control)</span>
+                {/* BOTTOM NAV PROPS */}
+                {type === 'bottom-nav' && (
+                    <div className="space-y-4">
+                        <div className="text-[10px] uppercase font-bold tracking-widest text-[#5B8FB9]">
+                            Propiedades de Navegación Inferior
                         </div>
-                        <div className="flex justify-between text-xs">
-                            <span className="text-zinc-400">Objetivo Táctil Mínimo:</span>
-                            <span className="font-mono text-[#5B8FB9]">48px</span>
-                        </div>
-                        <div className="flex justify-between text-xs">
-                            <span className="text-zinc-400">Fuente Canónica:</span>
-                            <span className="font-mono text-zinc-200">Inter</span>
+                        <div>
+                            <label className="block text-xs text-zinc-400 font-medium mb-1">Pestaña activa</label>
+                            <select
+                                value={props.active || 'Inicio'}
+                                onChange={(e) => updateBlockProps(id, { active: e.target.value })}
+                                className="w-full bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#5B8FB9]"
+                            >
+                                {['Inicio', 'Buscar', 'Crear', 'Perfil'].map(t => (
+                                    <option key={t} value={t} className="bg-[#121214]">{t}</option>
+                                ))}
+                            </select>
                         </div>
                     </div>
-                </div>
+                )}
+
+                {/* TABS PROPS */}
+                {type === 'tabs' && (
+                    <div className="space-y-4">
+                        <div className="text-[10px] uppercase font-bold tracking-widest text-[#5B8FB9]">
+                            Propiedades de Pestañas
+                        </div>
+                        <div>
+                            <label className="block text-xs text-zinc-400 font-medium mb-1">Pestaña activa</label>
+                            <select
+                                value={props.active || 'Resumen'}
+                                onChange={(e) => updateBlockProps(id, { active: e.target.value })}
+                                className="w-full bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#5B8FB9]"
+                            >
+                                {(props.tabs || ['Resumen', 'Detalle', 'Historial']).map((t: string) => (
+                                    <option key={t} value={t} className="bg-[#121214]">{t}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                )}
+
+                {/* FAB PROPS */}
+                {type === 'fab' && (
+                    <div className="space-y-4">
+                        <div className="text-[10px] uppercase font-bold tracking-widest text-[#5B8FB9]">
+                            Propiedades del Botón Flotante
+                        </div>
+                        <div>
+                            <label className="block text-xs text-zinc-400 font-medium mb-1">Etiqueta de acción</label>
+                            <input
+                                type="text"
+                                value={props.label || ''}
+                                onChange={(e) => updateBlockProps(id, { label: e.target.value })}
+                                className="w-full bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#5B8FB9]"
+                            />
+                        </div>
+                        <p className="text-[10px] text-zinc-500 leading-relaxed">
+                            El objetivo táctil es de 56px, por encima del mínimo de 48px.
+                        </p>
+                    </div>
+                )}
+
+                {/* FORM PROPS */}
+                {type === 'form' && (
+                    <div className="space-y-4">
+                        <div className="text-[10px] uppercase font-bold tracking-widest text-[#5B8FB9]">
+                            Propiedades del Formulario
+                        </div>
+                        <div>
+                            <label className="block text-xs text-zinc-400 font-medium mb-1">Título</label>
+                            <input
+                                type="text"
+                                value={props.title || ''}
+                                onChange={(e) => updateBlockProps(id, { title: e.target.value })}
+                                className="w-full bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#5B8FB9]"
+                            />
+                        </div>
+                    </div>
+                )}
 
             </div>
         </aside>

@@ -3,6 +3,7 @@
 import React from 'react';
 import { useStudioStore } from '../store';
 import { ViewportPreset } from '../types';
+import { getSurfaceContract, canSurfaceFitViewport } from '../contracts';
 
 export default function StudioTopBar() {
     const { 
@@ -15,16 +16,20 @@ export default function StudioTopBar() {
         setViewportPreset, 
         zoom, 
         setZoom,
-        resetToDefaults,
+        openVariantManager,
         openNewSurfaceModal,
-        toggleCopilotPanel,
         isCopilotOpen,
-        openVariantManager
+        toggleCopilotPanel,
+        isGeneratingAI
     } = useStudioStore();
+
+    const activeVariant = variants.find(v => v.id === activeVariantId);
+    const activeContract = activeVariant ? getSurfaceContract(activeVariant.surfaceType) : null;
+    const fitsViewport = activeVariant ? canSurfaceFitViewport(activeVariant.surfaceType, viewportPreset) : true;
 
     return (
         <header className="h-14 border-b border-white/10 bg-[#0a0a0c] px-4 flex items-center justify-between text-white shrink-0 select-none z-30">
-            {/* Left: Product Brand & Active Document Switcher */}
+            {/* Left: Product Brand & Active Variant Switcher */}
             <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 pr-3 border-r border-white/10">
                     <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#36606F] to-[#1F5FAF] flex items-center justify-center font-bold text-xs shadow-md">
@@ -33,7 +38,6 @@ export default function StudioTopBar() {
                     <span className="font-semibold text-sm tracking-tight text-zinc-100">Marbella Studio</span>
                 </div>
 
-                {/* Active Variant Switcher & Manager Trigger */}
                 <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1 bg-white/5 border border-white/15 rounded-xl p-1">
                         <select
@@ -41,32 +45,46 @@ export default function StudioTopBar() {
                             onChange={(e) => setActiveVariant(e.target.value)}
                             className="bg-transparent text-xs font-bold text-white focus:outline-none px-2 cursor-pointer"
                         >
-                            {variants.filter(v => !v.isArchived && !v.isSystemVariant).map(v => (
+                            {variants.map(v => (
                                 <option key={v.id} value={v.id} className="bg-[#121214] text-white font-medium">
-                                    {v.name} {v.isBaseVariant ? '⭐' : ''}
+                                    {v.name}
                                 </option>
                             ))}
                         </select>
 
                         <button
                             onClick={openVariantManager}
-                            className="px-2 py-1 bg-white/10 hover:bg-white/20 text-zinc-200 text-xs font-bold rounded-lg transition-colors flex items-center gap-1"
-                            title="Abrir Gestor Documental de Variantes"
+                            className="px-2 py-1 bg-white/10 hover:bg-white/20 text-zinc-200 text-xs font-bold rounded-lg transition-colors"
+                            title="Gestionar pantallas"
                         >
-                            <span>🗂️</span>
-                            <span className="hidden md:inline">Gestor ({variants.filter(v => !v.isArchived && !v.isSystemVariant).length})</span>
+                            <span className="hidden md:inline">Gestionar</span>
+                            <span className="md:hidden">⋯</span>
                         </button>
                     </div>
 
                     <button
                         onClick={openNewSurfaceModal}
                         className="px-3 py-1 bg-[#36606F] hover:bg-[#407080] border border-[#5B8FB9] rounded-xl text-xs font-bold text-white transition-all flex items-center gap-1.5 shadow"
-                        title="Declarar Nueva Intención de Superficie"
+                        title="Crear una nueva superficie gobernada por contrato"
                     >
-                        <span>+ Nueva Variante</span>
+                        <span>+ Nueva Superficie</span>
                     </button>
                 </div>
             </div>
+
+            {/* Contract Chip: active surface */}
+            {activeContract && (
+                <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5">
+                    <span className="text-base">{activeContract.icon}</span>
+                    <div className="leading-tight">
+                        <div className="text-[9px] uppercase font-bold tracking-wider text-[#5B8FB9]">Contrato activo</div>
+                        <div className="text-xs font-bold text-white">
+                            {activeContract.name}
+                            {!fitsViewport && <span className="text-amber-400 ml-1">⚠</span>}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Middle: Canvas Viewport & Zoom Controls */}
             <div className="flex items-center gap-2 bg-white/5 p-1 rounded-xl border border-white/10">
@@ -81,9 +99,9 @@ export default function StudioTopBar() {
                                     : 'text-zinc-400 hover:text-white hover:bg-white/5'
                             }`}
                         >
-                            {preset === 'desktop' && 'Escritorio (1400px)'}
-                            {preset === 'tablet' && 'Tablet (768px)'}
-                            {preset === 'mobile' && 'Móvil (375px)'}
+                            {preset === 'desktop' && 'Escritorio'}
+                            {preset === 'tablet' && 'Tablet'}
+                            {preset === 'mobile' && 'Móvil'}
                         </button>
                     ))}
                 </div>
@@ -105,18 +123,21 @@ export default function StudioTopBar() {
                 </div>
             </div>
 
-            {/* Right: AI Copilot Toggle & View Mode Toggle & Reset */}
-            <div className="flex items-center gap-3">
-                {/* Copilot Toggle Trigger */}
+            {/* Right: View Mode Toggle + Copilot */}
+            <div className="flex items-center gap-2">
                 <button
                     onClick={() => toggleCopilotPanel()}
-                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
+                    className={`px-3 py-1 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 border ${
                         isCopilotOpen
-                            ? 'bg-gradient-to-r from-[#36606F] to-indigo-600 border-[#5B8FB9] text-white shadow-md'
-                            : 'bg-white/5 border-white/10 text-zinc-300 hover:text-white hover:bg-white/10'
+                            ? 'bg-[#36606F] text-white border-[#5B8FB9] font-semibold'
+                            : 'bg-white/5 border-white/10 text-zinc-300 hover:text-white'
                     }`}
+                    title="Abrir el Copiloto gobernado"
                 >
-                    <span>✨ Copiloto IA</span>
+                    {isGeneratingAI && (
+                        <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    )}
+                    ✨ Copiloto
                 </button>
 
                 <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
@@ -128,29 +149,19 @@ export default function StudioTopBar() {
                                 : 'text-zinc-400 hover:text-white'
                         }`}
                     >
-                        Editor Visual
+                        Editar
                     </button>
                     <button
                         onClick={() => setViewMode('preview')}
                         className={`px-3 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
                             viewMode === 'preview'
-                                ? 'bg-emerald-600 text-white shadow-sm'
+                                ? 'bg-[#36606F] text-white shadow-sm'
                                 : 'text-zinc-400 hover:text-white'
                         }`}
                     >
-                        Vista Limpia
+                        Vista
                     </button>
                 </div>
-
-                <button
-                    onClick={resetToDefaults}
-                    className="p-1.5 text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg border border-transparent hover:border-rose-500/20 transition-all"
-                    title="Restablecer estado predeterminado"
-                >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                </button>
             </div>
         </header>
     );

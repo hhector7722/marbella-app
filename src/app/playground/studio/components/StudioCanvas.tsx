@@ -4,6 +4,7 @@
 import React from 'react';
 import { useStudioStore } from '../store';
 import { MarbellaBlock, MarbellaVariant } from '../types';
+import { getAllowedRegions } from '../contracts';
 import StudioBlockWrapper from './StudioBlockWrapper';
 
 // ==========================================
@@ -288,6 +289,94 @@ function CalloutBannerBlock({ props }: { props: any }) {
     );
 }
 
+function TopBarBlock({ props }: { props: any }) {
+    return (
+        <div className="bg-white border-b border-zinc-200 rounded-t-2xl px-4 py-3 flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#36606F] to-[#1F5FAF] flex items-center justify-center text-white font-bold text-xs">
+                    M
+                </div>
+                <span className="font-bold text-zinc-900 text-sm">{props.title || 'Marbella'}</span>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-zinc-100 border border-zinc-200 flex items-center justify-center text-xs text-zinc-500">
+                👤
+            </div>
+        </div>
+    );
+}
+
+function BottomNavBlock({ props }: { props: any }) {
+    const tabs = ['Inicio', 'Buscar', 'Crear', 'Perfil'];
+    return (
+        <div className="bg-white border-t border-zinc-200 rounded-b-2xl px-2 py-1.5 flex justify-around shadow-sm">
+            {tabs.map(t => (
+                <div
+                    key={t}
+                    className={`px-3 py-2 text-[10px] font-semibold rounded-xl min-h-[48px] flex items-center justify-center ${
+                        props.active === t
+                            ? 'text-[#36606F] bg-[#36606F]/10'
+                            : 'text-zinc-400'
+                    }`}
+                >
+                    {t}
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function TabsBlock({ props }: { props: any }) {
+    const tabs = props.tabs || ['Resumen', 'Detalle', 'Historial'];
+    return (
+        <div className="flex bg-white border border-zinc-200 rounded-xl p-1 gap-1 mb-6 shadow-sm">
+            {tabs.map((t: string) => (
+                <div
+                    key={t}
+                    className={`flex-1 text-center px-3 py-2 text-xs font-semibold rounded-lg min-h-[44px] flex items-center justify-center ${
+                        props.active === t ? 'bg-[#36606F] text-white' : 'text-zinc-500'
+                    }`}
+                >
+                    {t}
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function FabBlock() {
+    return (
+        <div className="flex justify-end mb-6">
+            <div className="w-14 h-14 rounded-full bg-[#36606F] shadow-lg flex items-center justify-center text-white text-xl border-2 border-white">
+                ＋
+            </div>
+        </div>
+    );
+}
+
+function FormBlock({ props }: { props: any }) {
+    const fields = [
+        { label: 'Nombre', ph: 'Nombre completo' },
+        { label: 'Puesto', ph: 'Ej: Camarero' },
+        { label: 'Turno', ph: 'Mañana / Tarde' },
+    ];
+    return (
+        <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm mb-6 space-y-4">
+            {props.title && <h3 className="text-base font-bold text-zinc-900">{props.title}</h3>}
+            {fields.map(f => (
+                <div key={f.label}>
+                    <label className="block text-xs font-semibold text-zinc-600 mb-1">{f.label}</label>
+                    <div className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 text-xs text-zinc-400 min-h-[48px] flex items-center">
+                        {f.ph}
+                    </div>
+                </div>
+            ))}
+            <div className="w-full py-2.5 bg-[#36606F] text-white text-center text-xs font-bold rounded-xl min-h-[48px] flex items-center justify-center">
+                Guardar
+            </div>
+        </div>
+    );
+}
+
 const REGISTRY: Record<string, React.FC<{ props: any }>> = {
     'page-header': PageHeaderBlock,
     'data-table': DataTableBlock,
@@ -296,6 +385,11 @@ const REGISTRY: Record<string, React.FC<{ props: any }>> = {
     'kpi-grid': KpiGridBlock,
     'container-block': ContainerBlock,
     'callout-banner': CalloutBannerBlock,
+    'top-bar': TopBarBlock,
+    'bottom-nav': BottomNavBlock,
+    'tabs': TabsBlock,
+    'fab': FabBlock,
+    'form': FormBlock,
 };
 
 // ==========================================
@@ -303,7 +397,7 @@ const REGISTRY: Record<string, React.FC<{ props: any }>> = {
 // ==========================================
 
 function RegionRenderer({ regionId, blocks = [] }: { regionId: string; blocks?: MarbellaBlock[] }) {
-    const { addIntentZone, viewMode, currentLevel } = useStudioStore();
+    const { addIntentZone, viewMode, viewportPreset } = useStudioStore();
 
     if (!blocks || blocks.length === 0) {
         if (viewMode === 'preview') return null;
@@ -326,10 +420,16 @@ function RegionRenderer({ regionId, blocks = [] }: { regionId: string; blocks?: 
         <div className="relative">
             {blocks.map(block => {
                 const Component = REGISTRY[block.type];
+
+                // CONTRACT GUARD EN RENDER: en móvil las tablas matriciales se muestran como lista
+                const renderProps = viewportPreset === 'mobile' && block.type === 'data-table'
+                    ? { ...block.props, format: 'list' }
+                    : block.props;
+
                 return (
-                    <StudioBlockWrapper key={block.id} block={block} regionId={regionId}>
+                    <StudioBlockWrapper key={block.id} block={block}>
                         {Component ? (
-                            <Component props={block.props} />
+                            <Component props={renderProps} />
                         ) : (
                             <div className="p-4 bg-rose-50 text-rose-600 rounded-xl text-xs border border-rose-200">
                                 Tipo de bloque desconocido: {block.type}
@@ -338,16 +438,6 @@ function RegionRenderer({ regionId, blocks = [] }: { regionId: string; blocks?: 
                     </StudioBlockWrapper>
                 );
             })}
-
-            {/* Bottom intent dropzone button per region in edit mode */}
-            {viewMode === 'edit' && currentLevel <= 2 && (
-                <button
-                    onClick={() => addIntentZone('datos', regionId)}
-                    className="w-full py-2.5 border border-dashed border-zinc-300 hover:border-[#36606F] rounded-xl text-xs font-bold text-zinc-500 hover:text-[#36606F] hover:bg-[#36606F]/5 transition-all mb-4 flex items-center justify-center gap-1.5"
-                >
-                    <span>🎯 + Declarar nueva Zona de Intención en {regionId}</span>
-                </button>
-            )}
         </div>
     );
 }
@@ -357,9 +447,13 @@ function RegionRenderer({ regionId, blocks = [] }: { regionId: string; blocks?: 
 // ==========================================
 
 function FluidStackLayout({ regions }: { regions: MarbellaVariant['regions'] }) {
+    const { variants, activeVariantId, viewportPreset } = useStudioStore();
+    const active = variants.find(v => v.id === activeVariantId);
+    const sidebarAllowed = active ? getAllowedRegions(active.surfaceType, viewportPreset).includes('sidebar') : false;
+
     return (
         <div className="flex min-h-[85vh] bg-zinc-50 text-zinc-900 rounded-2xl overflow-hidden border border-zinc-300/80 shadow-2xl">
-            {regions['sidebar'] && regions['sidebar'].length > 0 && (
+            {sidebarAllowed && regions['sidebar'] && regions['sidebar'].length > 0 && (
                 <aside className="w-64 border-r border-zinc-200 bg-white p-6 shrink-0">
                     <RegionRenderer regionId="sidebar" blocks={regions['sidebar']} />
                 </aside>
@@ -373,11 +467,15 @@ function FluidStackLayout({ regions }: { regions: MarbellaVariant['regions'] }) 
 }
 
 function HeroHeaderLayout({ regions }: { regions: MarbellaVariant['regions'] }) {
+    const { variants, activeVariantId, viewportPreset } = useStudioStore();
+    const active = variants.find(v => v.id === activeVariantId);
+    const sidebarAllowed = active ? getAllowedRegions(active.surfaceType, viewportPreset).includes('sidebar') : false;
+
     return (
         <div className="min-h-[85vh] bg-zinc-50 text-zinc-900 rounded-2xl overflow-hidden border border-zinc-300/80 shadow-2xl">
             <RegionRenderer regionId="header" blocks={regions['header']} />
             <div className="max-w-7xl mx-auto px-8 py-8 flex gap-10">
-                {regions['sidebar'] && regions['sidebar'].length > 0 && (
+                {sidebarAllowed && regions['sidebar'] && regions['sidebar'].length > 0 && (
                     <nav className="w-64 shrink-0">
                         <RegionRenderer regionId="sidebar" blocks={regions['sidebar']} />
                     </nav>

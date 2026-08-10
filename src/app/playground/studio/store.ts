@@ -1,10 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { StudioState, MarbellaVariant, MarbellaBlock, StudioTab, DesignLevel, IntentCategory, SpatialCompositionFlow, VariantSortOption } from './types';
-import { DESIGN_BENCHMARKS } from './academy/data';
+import {
+    StudioState,
+    MarbellaVariant,
+    MarbellaBlock,
+    DesignLevel,
+    IntentCategory,
+    SpatialCompositionFlow,
+    BlockType,
+    CopilotMessage,
+} from './types';
+import {
+    isBlockAllowed,
+    isRegionAllowed,
+    getAllowedRegions,
+    getSurfaceContract,
+    buildInitialRegions,
+    defaultLayoutForSurface,
+} from './contracts';
 import { generateCopilotVariants } from './copilot/ai-engine';
-import { SurfaceType } from './copilot/types';
 
 const DEFAULT_MARBELLA_TOKENS: Record<string, string> = {
     'color.marca': '#36606F',
@@ -24,12 +39,10 @@ const INITIAL_CLEAN_VARIANTS: MarbellaVariant[] = [
         id: 'marbella-workspace-main',
         name: 'Pantalla Principal Marbella',
         description: 'Lienzo de trabajo inicial de Marbella App.',
+        surfaceType: 'pantalla',
         layout: 'fluid-stack',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        isArchived: false,
-        isSystemVariant: false,
-        isBaseVariant: true,
         regions: {
             'header': [
                 { id: 'hd-title-main', type: 'page-header', props: { title: 'Gestión de Equipo Marbella', description: 'Supervisión de personal, horarios e incidencias operativas.', showStats: true } },
@@ -55,6 +68,37 @@ const INITIAL_CLEAN_VARIANTS: MarbellaVariant[] = [
     }
 ];
 
+function defaultPropsFor(type: BlockType): Record<string, any> {
+    switch (type) {
+        case 'page-header':
+            return { title: 'Nuevo Encabezado', description: 'Escribe una descripción corta aquí.' };
+        case 'data-table':
+            return { title: 'Nueva Tabla de Datos', density: 'standard', columns: ['Columna 1', 'Columna 2', 'Estado'] };
+        case 'filter-bar':
+            return { showSearch: true, showNew: true, placeholder: 'Buscar...' };
+        case 'sidebar-nav':
+            return { variant: 'app-menu' };
+        case 'kpi-grid':
+            return { items: [{ label: 'Métrica 1', value: '100' }, { label: 'Métrica 2', value: '85%' }] };
+        case 'container-block':
+            return { title: 'Tarjeta Contenedora', padding: 'normal', bgStyle: 'white' };
+        case 'callout-banner':
+            return { title: 'Aviso Importante', message: 'Este es un mensaje explicativo destacado en pantalla.', variant: 'info' };
+        case 'top-bar':
+            return { title: 'Marbella' };
+        case 'bottom-nav':
+            return { active: 'Inicio' };
+        case 'tabs':
+            return { tabs: ['Resumen', 'Detalle', 'Historial'], active: 'Resumen' };
+        case 'fab':
+            return { label: 'Nuevo' };
+        case 'form':
+            return { title: 'Formulario' };
+        default:
+            return {};
+    }
+}
+
 export const useStudioStore = create<StudioState>()(
     persist(
         (set, get) => ({
@@ -68,7 +112,6 @@ export const useStudioStore = create<StudioState>()(
 
             // Variant Manager State
             isVariantManagerOpen: false,
-            variantSortBy: 'modified',
 
             // Recursive Object Focus Stack
             focusStack: [{ id: 'root-surface', name: INITIAL_CLEAN_VARIANTS[0].name, type: 'pantalla' }],
@@ -78,29 +121,15 @@ export const useStudioStore = create<StudioState>()(
             currentLevel: 1, // Starts at Level 1: INTENCIÓN
             tokens: DEFAULT_MARBELLA_TOKENS,
 
-            // Design Academy State
-            activeStudioTab: 'canvas',
-            selectedBenchmarkId: DESIGN_BENCHMARKS[0].id,
-            comparatorLeftId: DESIGN_BENCHMARKS[0].id,
-            comparatorRightId: DESIGN_BENCHMARKS[1].id,
-
-            // AI Copilot State
+            // AI Copilot (governed) State
             isCopilotOpen: false,
             isNewSurfaceModalOpen: false,
-            copilotMessages: [
-                {
-                    id: 'msg-welcome',
-                    role: 'assistant',
-                    text: '¡Hola! Soy tu Copiloto Creativo de Marbella OS. Administra tus variantes desde el gestor documental.',
-                    timestamp: 'Ahora'
-                }
-            ],
             isGeneratingAI: false,
+            copilotMessages: [],
 
             // Variant Manager Actions
             openVariantManager: () => set({ isVariantManagerOpen: true }),
             closeVariantManager: () => set({ isVariantManagerOpen: false }),
-            setVariantSortBy: (sortBy: VariantSortOption) => set({ variantSortBy: sortBy }),
 
             renameVariant: (id, newName) => set((state) => ({
                 variants: state.variants.map(v => v.id === id ? {
@@ -120,64 +149,31 @@ export const useStudioStore = create<StudioState>()(
                     id: newId,
                     name: `${target.name} - Copia`,
                     createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                    isBaseVariant: false,
-                    isArchived: false
+                    updatedAt: new Date().toISOString()
                 };
 
                 return {
                     variants: [...state.variants, cloned],
                     activeVariantId: newId,
-                    focusStack: [{ id: 'root-surface', name: cloned.name, type: 'pantalla' }]
+                    focusStack: [{ id: 'root-surface', name: cloned.name, type: cloned.surfaceType }]
                 };
             }),
 
-            archiveVariant: (id, archived = true) => set((state) => ({
-                variants: state.variants.map(v => v.id === id ? {
-                    ...v,
-                    isArchived: archived,
-                    updatedAt: new Date().toISOString()
-                } : v)
-            })),
-
-            setBaseVariant: (id) => set((state) => ({
-                variants: state.variants.map(v => ({
-                    ...v,
-                    isBaseVariant: v.id === id,
-                    updatedAt: v.id === id ? new Date().toISOString() : v.updatedAt
-                }))
-            })),
-
-            exportVariant: (id) => {
-                const variant = get().variants.find(v => v.id === id);
-                if (!variant) return;
-
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(variant, null, 2));
-                const downloadAnchor = document.createElement('a');
-                downloadAnchor.setAttribute("href", dataStr);
-                downloadAnchor.setAttribute("download", `marbella-variant-${variant.name.toLowerCase().replace(/\s+/g, '-')}.json`);
-                document.body.appendChild(downloadAnchor);
-                downloadAnchor.click();
-                downloadAnchor.remove();
-            },
-
             deleteVariant: (id) => {
                 const state = get();
-                const activeUserVariants = state.variants.filter(v => !v.isArchived && !v.isSystemVariant);
-
-                if (activeUserVariants.length <= 1 && activeUserVariants.some(v => v.id === id)) {
-                    return false; // Cannot delete the last remaining active workspace variant
+                if (state.variants.length <= 1) {
+                    return false; // Cannot delete the last remaining workspace variant
                 }
 
                 const nextVariants = state.variants.filter(v => v.id !== id);
-                const nextActiveId = state.activeVariantId === id ? (nextVariants.find(v => !v.isArchived)?.id || nextVariants[0].id) : state.activeVariantId;
+                const nextActiveId = state.activeVariantId === id ? nextVariants[0].id : state.activeVariantId;
                 const activeVar = nextVariants.find(v => v.id === nextActiveId);
 
                 set({
                     variants: nextVariants,
                     activeVariantId: nextActiveId,
                     selectedBlockId: null,
-                    focusStack: [{ id: 'root-surface', name: activeVar ? activeVar.name : 'Pantalla', type: 'pantalla' }]
+                    focusStack: [{ id: 'root-surface', name: activeVar ? activeVar.name : 'Pantalla', type: activeVar ? activeVar.surfaceType : 'pantalla' }]
                 });
 
                 return true;
@@ -224,52 +220,59 @@ export const useStudioStore = create<StudioState>()(
 
             addIntentZone: (category: IntentCategory, targetRegion = 'main') => set((state) => {
                 if (!state.activeVariantId) return state;
+                const active = state.variants.find(v => v.id === state.activeVariantId);
+                if (!active) return state;
+
+                const viewport = state.viewportPreset;
+
+                // CONTRACT GUARD: la región destino debe existir en el contrato actual
+                if (!isRegionAllowed(active.surfaceType, viewport, targetRegion)) {
+                    const fallback = getAllowedRegions(active.surfaceType, viewport)[0];
+                    if (!fallback) return state;
+                    targetRegion = fallback;
+                }
+
                 const timestamp = Date.now();
                 const newBlocks: MarbellaBlock[] = [];
 
+                let type: BlockType | null = null;
+                let props: Record<string, any> = {};
+
                 if (category === 'identidad') {
-                    newBlocks.push({
-                        id: `intent-hd-${timestamp}`,
-                        type: 'page-header',
-                        props: { title: 'Zona de Identidad & Contexto', description: 'Describe la entidad principal y el contexto operativo.' }
-                    });
+                    type = 'page-header';
+                    props = { title: 'Zona de Identidad & Contexto', description: 'Describe la entidad principal y el contexto operativo.' };
                 } else if (category === 'datos') {
-                    newBlocks.push({
-                        id: `intent-tbl-${timestamp}`,
-                        type: 'data-table',
-                        props: { title: 'Zona de Exposición de Datos', density: 'high', boxed: true }
-                    });
+                    type = 'data-table';
+                    props = { title: 'Zona de Exposición de Datos', density: 'standard', boxed: true };
                 } else if (category === 'control') {
-                    newBlocks.push({
-                        id: `intent-flt-${timestamp}`,
-                        type: 'filter-bar',
-                        props: { showSearch: true, showNew: true, placeholder: 'Zona de Control: Buscar o acotar...' }
-                    });
+                    type = 'filter-bar';
+                    props = { showSearch: true, showNew: true, placeholder: 'Zona de Control: Buscar o acotar...' };
                 } else if (category === 'resumen') {
-                    newBlocks.push({
-                        id: `intent-kpi-${timestamp}`,
-                        type: 'kpi-grid',
-                        props: { items: [{ label: 'Indicador 1', value: '100' }, { label: 'Indicador 2', value: '98%' }] }
-                    });
+                    type = 'kpi-grid';
+                    props = { items: [{ label: 'Indicador 1', value: '100' }, { label: 'Indicador 2', value: '98%' }] };
                 } else if (category === 'navegacion') {
-                    newBlocks.push({
-                        id: `intent-nav-${timestamp}`,
-                        type: 'sidebar-nav',
-                        props: { variant: 'page-menu' }
-                    });
+                    type = 'sidebar-nav';
+                    props = { variant: 'page-menu' };
                 } else if (category === 'alerta' || category === 'estado') {
-                    newBlocks.push({
-                        id: `intent-callout-${timestamp}`,
-                        type: 'callout-banner',
-                        props: { title: 'Zona de Alerta & Estado', message: 'Indicación semántica destacada en pantalla.' }
-                    });
+                    type = 'callout-banner';
+                    props = { title: 'Zona de Alerta & Estado', message: 'Indicación semántica destacada en pantalla.' };
                 } else {
-                    newBlocks.push({
-                        id: `intent-card-${timestamp}`,
-                        type: 'container-block',
-                        props: { title: `Zona de ${category.toUpperCase()}` }
-                    });
+                    type = 'container-block';
+                    props = { title: `Zona de ${category.toUpperCase()}` };
                 }
+
+                // CONTRACT GUARD: la intención se traduce al bloque permitido; si el que toca
+                // no está permitido en la superficie+viewport, se descarta (no se crea nada).
+                if (!type || !isBlockAllowed(active.surfaceType, viewport, type)) {
+                    return state;
+                }
+
+                if (type === 'data-table' && viewport === 'mobile') {
+                    props.format = 'list';
+                }
+
+                const newBlock: MarbellaBlock = { id: `intent-${type}-${timestamp}`, type, props };
+                newBlocks.push(newBlock);
 
                 return {
                     variants: state.variants.map(v => {
@@ -289,172 +292,17 @@ export const useStudioStore = create<StudioState>()(
                 };
             }),
 
-            // Copilot Mutators
-            toggleCopilotPanel: (open) => set((state) => ({
-                isCopilotOpen: typeof open === 'boolean' ? open : !state.isCopilotOpen
-            })),
-
-            openNewSurfaceModal: () => set({ isNewSurfaceModalOpen: true }),
-            closeNewSurfaceModal: () => set({ isNewSurfaceModalOpen: false }),
-
-            generateAIProposals: (prompt: string, surfaceType = 'pantalla', count = 3) => {
-                set({ isGeneratingAI: true });
-                const currentVariants = get().variants;
-                
-                const generated = generateCopilotVariants(
-                    { prompt, surfaceType: surfaceType as SurfaceType, variantCount: count },
-                    currentVariants
-                );
-
-                const timestampIso = new Date().toISOString();
-                const newVariants: MarbellaVariant[] = generated.map(v => ({
-                    ...v,
-                    createdAt: timestampIso,
-                    updatedAt: timestampIso,
-                    isArchived: false,
-                    isSystemVariant: false
-                }));
-
-                const newMsg = {
-                    id: `msg-${Date.now()}`,
-                    role: 'assistant' as const,
-                    text: `He generado ${newVariants.length} propuestas editables para: "${prompt}". Han sido creadas en tu gestor de variantes respetando todos los tokens de Marbella OS.`,
-                    generatedVariantIds: newVariants.map(v => v.id),
-                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                };
-
-                set((state) => ({
-                    variants: [...state.variants, ...newVariants],
-                    activeVariantId: newVariants[0].id,
-                    activeStudioTab: 'canvas',
-                    currentLevel: 1,
-                    focusStack: [{ id: 'root-surface', name: newVariants[0].name, type: 'pantalla' }],
-                    focusedBlockId: null,
-                    selectedBlockId: newVariants[0].regions.header[0]?.id || null,
-                    isGeneratingAI: false,
-                    isNewSurfaceModalOpen: false,
-                    copilotMessages: [...state.copilotMessages, newMsg]
-                }));
-            },
-
-            refineAIVariant: (prompt: string) => {
-                set({ isGeneratingAI: true });
-                const state = get();
-                const activeVarId = state.activeVariantId;
-
-                const generated = generateCopilotVariants(
-                    { prompt, surfaceType: 'pantalla', variantCount: 1, baseVariantId: activeVarId || undefined },
-                    state.variants
-                );
-
-                const timestampIso = new Date().toISOString();
-                const newVariants: MarbellaVariant[] = generated.map(v => ({
-                    ...v,
-                    createdAt: timestampIso,
-                    updatedAt: timestampIso,
-                    isArchived: false,
-                    isSystemVariant: false
-                }));
-
-                const userMsg = {
-                    id: `msg-u-${Date.now()}`,
-                    role: 'user' as const,
-                    text: prompt,
-                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                };
-
-                const assistantMsg = {
-                    id: `msg-a-${Date.now()}`,
-                    role: 'assistant' as const,
-                    text: `He creado una nueva variante aplicando tu instrucción: "${prompt}".`,
-                    generatedVariantIds: newVariants.map(v => v.id),
-                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                };
-
-                set((st) => ({
-                    variants: [...st.variants, ...newVariants],
-                    activeVariantId: newVariants[0].id,
-                    selectedBlockId: newVariants[0].regions.header[0]?.id || null,
-                    isGeneratingAI: false,
-                    copilotMessages: [...st.copilotMessages, userMsg, assistantMsg]
-                }));
-            },
-
-            setActiveStudioTab: (tab: StudioTab) => set({ activeStudioTab: tab }),
-            setSelectedBenchmarkId: (id: string) => set({ selectedBenchmarkId: id }),
-            setComparatorIds: (leftId: string, rightId: string) => set({ comparatorLeftId: leftId, comparatorRightId: rightId }),
-
-            applyBenchmarkToMarbella: (benchmarkId: string) => set((state) => {
-                const benchmark = DESIGN_BENCHMARKS.find(b => b.id === benchmarkId);
-                if (!benchmark) return state;
-
-                const newVariantId = `marbella-by-${benchmark.product.toLowerCase()}-${Date.now().toString(36)}`;
-                const timestampIso = new Date().toISOString();
-                const newVariant: MarbellaVariant = {
-                    id: newVariantId,
-                    name: `Filosofía ${benchmark.product}`,
-                    description: benchmark.marbellaTranslation.philosophyTitle,
-                    layout: 'fluid-stack',
-                    createdAt: timestampIso,
-                    updatedAt: timestampIso,
-                    isArchived: false,
-                    isSystemVariant: false,
-                    regions: {
-                        header: [
-                            {
-                                id: `hd-${Date.now()}`,
-                                type: 'page-header',
-                                props: {
-                                    title: `Marbella × ${benchmark.product}`,
-                                    description: `Variante generada aplicando los principios de ${benchmark.product} (${benchmark.tagline})`,
-                                    isMonumental: true
-                                }
-                            }
-                        ],
-                        main: [
-                            {
-                                id: `flt-${Date.now()}`,
-                                type: 'filter-bar',
-                                props: { boxed: true, placeholder: `Buscar con ritmo visual ${benchmark.product}...` }
-                            },
-                            {
-                                id: `tbl-${Date.now()}`,
-                                type: 'data-table',
-                                props: {
-                                    title: 'Plantilla de Empleados Marbella OS',
-                                    density: benchmark.defaultControls.density === 'compact' ? 'high' : 'standard',
-                                    boxed: true
-                                }
-                            }
-                        ],
-                        sidebar: [
-                            { id: `sb-${Date.now()}`, type: 'sidebar-nav', props: { variant: 'app-menu' } }
-                        ]
-                    }
-                };
-
-                return {
-                    variants: [...state.variants, newVariant],
-                    activeVariantId: newVariantId,
-                    activeStudioTab: 'canvas',
-                    currentLevel: 1,
-                    focusStack: [{ id: 'root-surface', name: newVariant.name, type: 'pantalla' }],
-                    focusedBlockId: null,
-                    selectedBlockId: newVariant.regions.header[0].id
-                };
-            }),
-
             // Variant actions
             setActiveVariant: (id) => set((state) => {
                 const targetVar = state.variants.find(v => v.id === id);
                 return {
                     activeVariantId: id,
                     selectedBlockId: null,
-                    focusStack: [{ id: 'root-surface', name: targetVar ? targetVar.name : 'Pantalla', type: 'pantalla' }],
+                    focusStack: [{ id: 'root-surface', name: targetVar ? targetVar.name : 'Pantalla', type: targetVar ? targetVar.surfaceType : 'pantalla' }],
                     focusedBlockId: null
                 };
             }),
-            
+
             saveVariant: (variant) => set((state) => {
                 const exists = state.variants.some(v => v.id === variant.id);
                 const updatedObj = { ...variant, updatedAt: new Date().toISOString() };
@@ -464,35 +312,110 @@ export const useStudioStore = create<StudioState>()(
                 return { variants: [...state.variants, updatedObj] };
             }),
 
-            addVariant: (name, layout) => set((state) => {
+            addVariant: (name, surfaceType = 'pantalla', layout) => set((state) => {
                 const newId = `var-${Date.now().toString(36)}`;
                 const timestampIso = new Date().toISOString();
+                const contract = getSurfaceContract(surfaceType);
+                const viewport = state.viewportPreset;
                 const newVariant: MarbellaVariant = {
                     id: newId,
-                    name: name || 'Nueva Variante',
-                    description: 'Variante creada desde la declaración de intenciones.',
-                    layout: layout || 'fluid-stack',
+                    name: name || contract.name,
+                    description: contract.description,
+                    surfaceType,
+                    layout: layout && contract.allowedLayouts.includes(layout)
+                        ? layout
+                        : defaultLayoutForSurface(surfaceType),
                     createdAt: timestampIso,
                     updatedAt: timestampIso,
-                    isArchived: false,
-                    isSystemVariant: false,
-                    regions: {
-                        header: [
-                            { id: `hd-${Date.now()}`, type: 'page-header', props: { title: name || 'Nueva Sección', description: 'Declaración de Intención inicial.' } }
-                        ],
-                        main: [],
-                        sidebar: []
-                    }
+                    regions: buildInitialRegions(surfaceType, name || contract.name, viewport)
                 };
                 return {
                     variants: [...state.variants, newVariant],
                     activeVariantId: newId,
                     currentLevel: 1,
-                    focusStack: [{ id: 'root-surface', name: newVariant.name, type: 'pantalla' }],
+                    focusStack: [{ id: 'root-surface', name: newVariant.name, type: surfaceType }],
                     focusedBlockId: null,
-                    selectedBlockId: newVariant.regions.header[0].id
+                    selectedBlockId: null
                 };
             }),
+
+            // Copilot Actions (governed by contracts)
+            toggleCopilotPanel: (open) => set((state) => ({
+                isCopilotOpen: typeof open === 'boolean' ? open : !state.isCopilotOpen
+            })),
+
+            openNewSurfaceModal: () => set({ isNewSurfaceModalOpen: true }),
+            closeNewSurfaceModal: () => set({ isNewSurfaceModalOpen: false }),
+
+            generateAIProposals: (prompt, surfaceType, viewport, count = 3) => {
+                set({ isGeneratingAI: true });
+
+                setTimeout(() => {
+                    const generated = generateCopilotVariants(
+                        { prompt, surfaceType, viewport, variantCount: count },
+                        get().variants
+                    );
+
+                    const assistantMsg: CopilotMessage = {
+                        id: `msg-ai-${Date.now()}`,
+                        role: 'assistant',
+                        text: generated.length > 0
+                            ? `He generado ${generated.length} propuesta(s) para ${getSurfaceContract(surfaceType).name} (${viewport}). Las que violaban el contrato no se muestran.`
+                            : `No encontré una combinación que respete el contrato de ${getSurfaceContract(surfaceType).name} en ${viewport}. Prueba otra superficie o viewport.`,
+                        generatedVariantIds: generated.map(v => v.id),
+                        timestamp: new Date().toISOString(),
+                    };
+
+                    set((st) => ({
+                        isGeneratingAI: false,
+                        copilotMessages: [...st.copilotMessages, assistantMsg],
+                        variants: [...st.variants, ...generated],
+                        activeVariantId: generated[0] ? generated[0].id : st.activeVariantId,
+                        selectedBlockId: null,
+                        isCopilotOpen: true,
+                    }));
+                }, 650);
+            },
+
+            refineAIVariant: (prompt) => {
+                const state = get();
+                const active = state.variants.find(v => v.id === state.activeVariantId);
+                if (!active) return;
+
+                set({ isGeneratingAI: true });
+
+                setTimeout(() => {
+                    const refined = generateCopilotVariants(
+                        {
+                            prompt,
+                            surfaceType: active.surfaceType,
+                            viewport: state.viewportPreset,
+                            variantCount: 1,
+                            baseVariantId: active.id,
+                        },
+                        get().variants
+                    );
+
+                    const assistantMsg: CopilotMessage = {
+                        id: `msg-ai-${Date.now()}`,
+                        role: 'assistant',
+                        text: refined[0]
+                            ? 'He refinado la variante activa respetando el contrato de su superficie.'
+                            : 'No pude refinar la variante sin violar su contrato. La dejo intacta.',
+                        generatedVariantIds: refined.map(v => v.id),
+                        timestamp: new Date().toISOString(),
+                    };
+
+                    set((st) => ({
+                        isGeneratingAI: false,
+                        copilotMessages: [...st.copilotMessages, assistantMsg],
+                        variants: refined[0] ? [...st.variants, refined[0]] : st.variants,
+                        activeVariantId: refined[0] ? refined[0].id : st.activeVariantId,
+                        selectedBlockId: null,
+                        isCopilotOpen: true,
+                    }));
+                }, 650);
+            },
 
             // Interactive state
             selectBlock: (id) => set({ selectedBlockId: id }),
@@ -501,19 +424,37 @@ export const useStudioStore = create<StudioState>()(
             setViewportPreset: (preset) => set({ viewportPreset: preset }),
             setZoom: (zoom) => set({ zoom }),
 
-            // Property updates
+            // Property updates (guarded by contract)
             updateBlockProps: (blockId, newProps) => set((state) => {
                 if (!state.activeVariantId) return state;
+                const active = state.variants.find(v => v.id === state.activeVariantId);
+                if (!active) return state;
+                const viewport = state.viewportPreset;
+
                 return {
                     variants: state.variants.map(v => {
                         if (v.id !== state.activeVariantId) return v;
                         const newRegions: Record<string, MarbellaBlock[]> = {};
                         Object.keys(v.regions).forEach(regKey => {
                             newRegions[regKey] = v.regions[regKey].map(blk => {
-                                if (blk.id === blockId) {
-                                    return { ...blk, props: { ...blk.props, ...newProps } };
+                                if (blk.id !== blockId) return blk;
+
+                                let props = { ...blk.props, ...newProps };
+
+                                // CONTRACT GUARD: las tablas en móvil solo pueden renderizarse como lista
+                                if (blk.type === 'data-table' && viewport === 'mobile' && props.format !== 'list') {
+                                    props.format = 'list';
                                 }
-                                return blk;
+
+                                // CONTRACT GUARD: la rejilla KPI respeta el máximo de columnas del viewport
+                                if (blk.type === 'kpi-grid') {
+                                    const max = viewport === 'mobile' ? 2 : viewport === 'tablet' ? 3 : 4;
+                                    if (Array.isArray(props.items) && props.items.length > max) {
+                                        props = { ...props, items: props.items.slice(0, max) };
+                                    }
+                                }
+
+                                return { ...blk, props };
                             });
                         });
                         return { ...v, updatedAt: new Date().toISOString(), regions: newRegions };
@@ -523,23 +464,22 @@ export const useStudioStore = create<StudioState>()(
 
             addBlockToRegion: (regionId, type, targetIndex) => set((state) => {
                 if (!state.activeVariantId) return state;
+                const active = state.variants.find(v => v.id === state.activeVariantId);
+                if (!active) return state;
+                const viewport = state.viewportPreset;
+
+                // CONTRACT GUARD: la región y el bloque deben estar permitidos en la superficie+viewport actual
+                if (!isRegionAllowed(active.surfaceType, viewport, regionId)) return state;
+                if (!isBlockAllowed(active.surfaceType, viewport, type)) return state;
+
                 const newId = `blk-${type}-${Date.now().toString(36)}`;
-                
-                let defaultProps: Record<string, any> = {};
-                if (type === 'page-header') {
-                    defaultProps = { title: 'Nuevo Encabezado', description: 'Escribe una descripción corta aquí.' };
-                } else if (type === 'data-table') {
-                    defaultProps = { title: 'Nueva Tabla de Datos', density: 'high', columns: ['Columna 1', 'Columna 2', 'Estado'] };
-                } else if (type === 'filter-bar') {
-                    defaultProps = { showSearch: true, showNew: true, placeholder: 'Buscar...' };
-                } else if (type === 'sidebar-nav') {
-                    defaultProps = { variant: 'app-menu' };
-                } else if (type === 'kpi-grid') {
-                    defaultProps = { items: [{ label: 'Métrica 1', value: '100' }, { label: 'Métrica 2', value: '85%' }] };
-                } else if (type === 'container-block') {
-                    defaultProps = { title: 'Tarjeta Contenedora', padding: 'normal', bgStyle: 'white' };
-                } else if (type === 'callout-banner') {
-                    defaultProps = { title: 'Aviso Importante', message: 'Este es un mensaje explicativo destacado en pantalla.', variant: 'info' };
+
+                let defaultProps: Record<string, any> = defaultPropsFor(type);
+                if (type === 'data-table' && viewport === 'mobile') {
+                    defaultProps = { ...defaultProps, format: 'list' };
+                }
+                if (type === 'kpi-grid' && viewport === 'mobile') {
+                    defaultProps = { ...defaultProps, items: defaultProps.items.slice(0, 2) };
                 }
 
                 const newBlock: MarbellaBlock = { id: newId, type, props: defaultProps };
@@ -581,6 +521,10 @@ export const useStudioStore = create<StudioState>()(
 
             duplicateBlock: (blockId) => set((state) => {
                 if (!state.activeVariantId) return state;
+                const active = state.variants.find(v => v.id === state.activeVariantId);
+                if (!active) return state;
+                const viewport = state.viewportPreset;
+
                 let duplicatedId: string | null = null;
                 const nextVariants = state.variants.map(v => {
                     if (v.id !== state.activeVariantId) return v;
@@ -591,12 +535,17 @@ export const useStudioStore = create<StudioState>()(
                         blocks.forEach(blk => {
                             result.push(blk);
                             if (blk.id === blockId) {
+                                // CONTRACT GUARD: no duplicar si el bloque dejó de estar permitido
+                                if (!isBlockAllowed(active.surfaceType, viewport, blk.type)) return;
                                 const dupId = `${blk.type}-${Date.now().toString(36)}`;
                                 duplicatedId = dupId;
-                                result.push({
-                                    ...JSON.parse(JSON.stringify(blk)),
-                                    id: dupId
-                                });
+                                const props = JSON.parse(JSON.stringify(blk.props));
+                                if (blk.type === 'data-table' && viewport === 'mobile') props.format = 'list';
+                                if (blk.type === 'kpi-grid') {
+                                    const max = viewport === 'mobile' ? 2 : viewport === 'tablet' ? 3 : 4;
+                                    props.items = (props.items || []).slice(0, max);
+                                }
+                                result.push({ ...blk, id: dupId, props });
                             }
                         });
                         newRegions[regKey] = result;
@@ -635,6 +584,13 @@ export const useStudioStore = create<StudioState>()(
 
             updateRegionInActiveVariant: (regionId, blocks) => set((state) => {
                 if (!state.activeVariantId) return state;
+                const active = state.variants.find(v => v.id === state.activeVariantId);
+                if (!active) return state;
+                const viewport = state.viewportPreset;
+
+                // CONTRACT GUARD: la región debe existir en el contrato actual
+                if (!isRegionAllowed(active.surfaceType, viewport, regionId)) return state;
+
                 return {
                     variants: state.variants.map(v => {
                         if (v.id !== state.activeVariantId) return v;
@@ -652,32 +608,45 @@ export const useStudioStore = create<StudioState>()(
 
             updateVariantSpatialFlow: (layout: SpatialCompositionFlow) => set((state) => {
                 if (!state.activeVariantId) return state;
+                const active = state.variants.find(v => v.id === state.activeVariantId);
+                if (!active) return state;
+                const contract = getSurfaceContract(active.surfaceType);
+
+                // CONTRACT GUARD: el layout debe estar permitido por el contrato de la superficie
+                if (!contract.allowedLayouts.includes(layout)) return state;
+
                 return {
                     variants: state.variants.map(v => {
                         if (v.id !== state.activeVariantId) return v;
                         return { ...v, layout, updatedAt: new Date().toISOString() };
                     })
                 };
-            }),
-
-            resetToDefaults: () => set({
-                variants: INITIAL_CLEAN_VARIANTS,
-                activeVariantId: INITIAL_CLEAN_VARIANTS[0].id,
-                selectedBlockId: INITIAL_CLEAN_VARIANTS[0].regions.header[0].id,
-                viewMode: 'edit',
-                activeStudioTab: 'canvas',
-                currentLevel: 1,
-                focusStack: [{ id: 'root-surface', name: INITIAL_CLEAN_VARIANTS[0].name, type: 'pantalla' }],
-                focusedBlockId: null,
-                tokens: DEFAULT_MARBELLA_TOKENS,
-                isVariantManagerOpen: false,
-                variantSortBy: 'modified',
-                isCopilotOpen: false,
-                isNewSurfaceModalOpen: false
             })
         }),
         {
             name: 'marbella-studio-storage',
+            version: 3,
+            migrate: (persistedState: any, version: number) => {
+                if (version < 3) {
+                    const variants = Array.isArray(persistedState?.variants)
+                        ? persistedState.variants.map((v: any) => ({
+                              ...v,
+                              surfaceType: v.surfaceType || 'pantalla',
+                              layout: defaultLayoutForSurface(v.surfaceType || 'pantalla'),
+                          }))
+                        : [];
+
+                    return {
+                        ...persistedState,
+                        variants,
+                        isCopilotOpen: false,
+                        isNewSurfaceModalOpen: false,
+                        isGeneratingAI: false,
+                        copilotMessages: [],
+                    };
+                }
+                return persistedState;
+            },
         }
     )
 );

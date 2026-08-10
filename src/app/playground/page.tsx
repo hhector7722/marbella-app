@@ -4,7 +4,7 @@ export default function PlaygroundPage() {
             <header className="space-y-3">
                 <h1 className="text-3xl font-light tracking-tight">Marbella Playground</h1>
                 <p className="text-sm text-white/50 max-w-xl leading-relaxed">
-                    Laboratorio permanente de diseño. Exploración visual y prototipado del ADN de Marbella App.
+                    Herramientas de diseño del ADN de Marbella App.
                 </p>
             </header>
 
@@ -17,21 +17,7 @@ export default function PlaygroundPage() {
                     </div>
                     <h2 className="text-xl font-medium text-white/90 mb-2">Marbella Design Studio</h2>
                     <p className="text-sm text-white/50 leading-relaxed">
-                        Entorno Data-Driven. Construye pantallas visualmente asegurando el cumplimiento automático del Design Language.
-                    </p>
-                </a>
-
-                <a href="/playground/studio/compare" className="group block border border-white/10 rounded-2xl p-8 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/20 transition-all">
-                    <div className="h-32 mb-6 rounded-lg border border-white/5 bg-black/50 flex flex-col items-center justify-center relative overflow-hidden">
-                        <div className="absolute top-0 bottom-0 left-0 w-1/2 border-r border-white/5 bg-white/[0.02]" />
-                        <div className="flex gap-4 z-10">
-                            <div className="w-12 h-16 border border-white/10 rounded bg-black shadow-lg group-hover:-translate-y-1 transition-transform" />
-                            <div className="w-12 h-16 border border-white/10 rounded bg-black shadow-lg group-hover:translate-y-1 transition-transform" />
-                        </div>
-                    </div>
-                    <h2 className="text-xl font-medium text-white/90 mb-2">Comparador Visual</h2>
-                    <p className="text-sm text-white/50 leading-relaxed">
-                        Split-screen engine. Abre dos variantes del AST simultáneamente para comparar filosofías de layout en tiempo real.
+                        Diseña pantallas de Marbella App asegurando el cumplimiento del Design Language.
                     </p>
                 </a>
             </div>

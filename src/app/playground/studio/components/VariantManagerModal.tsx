@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useStudioStore } from '../store';
-import { MarbellaVariant, VariantSortOption } from '../types';
+import { MarbellaVariant } from '../types';
+import { getSurfaceContract } from '../contracts';
 
 export default function VariantManagerModal() {
     const { 
@@ -13,50 +14,13 @@ export default function VariantManagerModal() {
         setActiveVariant,
         renameVariant,
         duplicateVariant,
-        archiveVariant,
-        setBaseVariant,
-        exportVariant,
-        deleteVariant,
-        variantSortBy,
-        setVariantSortBy,
-        openNewSurfaceModal
+        deleteVariant
     } = useStudioStore();
 
-    const [searchQuery, setSearchQuery] = useState('');
-    const [tabFilter, setTabFilter] = useState<'active' | 'archived'>('active');
     const [editingVariantId, setEditingVariantId] = useState<string | null>(null);
     const [editingName, setEditingName] = useState('');
     const [deletingVariantId, setDeletingVariantId] = useState<string | null>(null);
     const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
-
-    // Filter & Sort Variants
-    const filteredVariants = useMemo(() => {
-        let result = variants.filter(v => !v.isSystemVariant);
-
-        if (tabFilter === 'active') {
-            result = result.filter(v => !v.isArchived);
-        } else {
-            result = result.filter(v => v.isArchived);
-        }
-
-        if (searchQuery.trim()) {
-            const query = searchQuery.toLowerCase().trim();
-            result = result.filter(v => 
-                v.name.toLowerCase().includes(query) || 
-                (v.description && v.description.toLowerCase().includes(query))
-            );
-        }
-
-        return result.sort((a, b) => {
-            if (variantSortBy === 'modified') {
-                return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
-            }
-            if (variantSortBy === 'created') {
-                return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-            }
-            return a.name.localeCompare(b.name);
-        });
-    }, [variants, tabFilter, searchQuery, variantSortBy]);
 
     if (!isVariantManagerOpen) return null;
 
@@ -76,7 +40,7 @@ export default function VariantManagerModal() {
     const handleConfirmDelete = (id: string) => {
         const success = deleteVariant(id);
         if (!success) {
-            alert('No se puede eliminar la única variante activa del lienzo.');
+            alert('No se puede eliminar la única pantalla del proyecto.');
         }
         setDeletingVariantId(null);
         setMenuOpenId(null);
@@ -84,104 +48,36 @@ export default function VariantManagerModal() {
 
     return (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 select-none">
-            <div className="bg-[#0c0c10] border border-white/15 rounded-3xl w-full max-w-3xl shadow-2xl text-white flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-[#0c0c10] border border-white/15 rounded-3xl w-full max-w-2xl shadow-2xl text-white flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                 
                 {/* Header */}
                 <div className="p-6 border-b border-white/10 flex items-center justify-between bg-black/40">
                     <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#36606F] to-[#1F5FAF] flex items-center justify-center font-bold text-base shadow-md">
-                            🗂️
+                            M
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold tracking-tight text-white">Gestor de Variantes Marbella</h2>
-                            <p className="text-xs text-zinc-400">Ciclo de vida completo de documentos de trabajo</p>
+                            <h2 className="text-lg font-bold tracking-tight text-white">Pantallas del Proyecto</h2>
+                            <p className="text-xs text-zinc-400">Selecciona, renombra, duplica o elimina</p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => { closeVariantManager(); openNewSurfaceModal(); }}
-                            className="px-3.5 py-1.5 bg-[#36606F] hover:bg-[#407080] text-white text-xs font-bold rounded-xl shadow transition-all flex items-center gap-1"
-                        >
-                            + Nueva Variante
-                        </button>
-                        <button
-                            onClick={closeVariantManager}
-                            className="text-zinc-500 hover:text-white p-1.5 rounded-lg transition-colors text-sm"
-                        >
-                            ✕
-                        </button>
-                    </div>
+                    <button
+                        onClick={closeVariantManager}
+                        className="text-zinc-500 hover:text-white p-1.5 rounded-lg transition-colors text-sm"
+                    >
+                        ✕
+                    </button>
                 </div>
 
-                {/* Toolbar (Search & Sort & Tab Filter) */}
-                <div className="p-4 bg-white/[0.02] border-b border-white/10 flex flex-wrap items-center justify-between gap-3">
-                    {/* Active vs Archived Tabs */}
-                    <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
-                        <button
-                            onClick={() => setTabFilter('active')}
-                            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                                tabFilter === 'active'
-                                    ? 'bg-[#36606F] text-white shadow-sm'
-                                    : 'text-zinc-400 hover:text-white'
-                            }`}
-                        >
-                            Activas ({variants.filter(v => !v.isArchived && !v.isSystemVariant).length})
-                        </button>
-                        <button
-                            onClick={() => setTabFilter('archived')}
-                            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                                tabFilter === 'archived'
-                                    ? 'bg-amber-600/40 text-amber-200 border border-amber-500/40 shadow-sm'
-                                    : 'text-zinc-400 hover:text-white'
-                            }`}
-                        >
-                            Archivadas ({variants.filter(v => v.isArchived && !v.isSystemVariant).length})
-                        </button>
-                    </div>
-
-                    {/* Search Input */}
-                    <div className="flex-1 min-w-[200px] relative">
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Buscar variante por nombre..."
-                            className="w-full bg-white/5 border border-white/15 rounded-xl px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#5B8FB9]"
-                        />
-                        {searchQuery && (
-                            <button
-                                onClick={() => setSearchQuery('')}
-                                className="absolute right-2.5 top-2 text-xs text-zinc-500 hover:text-white"
-                            >
-                                ✕
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Sort Dropdown */}
-                    <div className="flex items-center gap-1.5">
-                        <span className="text-xs text-zinc-400">Orden:</span>
-                        <select
-                            value={variantSortBy}
-                            onChange={(e) => setVariantSortBy(e.target.value as VariantSortOption)}
-                            className="bg-white/5 border border-white/15 rounded-xl px-2.5 py-1.5 text-xs font-medium text-white focus:outline-none focus:border-[#5B8FB9]"
-                        >
-                            <option value="modified" className="bg-[#121214]">Modificadas recientemente</option>
-                            <option value="created" className="bg-[#121214]">Creadas recientemente</option>
-                            <option value="name" className="bg-[#121214]">Nombre (A-Z)</option>
-                        </select>
-                    </div>
-                </div>
-
-                {/* Variant List Grid */}
+                {/* Variant List */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-3">
-                    {filteredVariants.length === 0 ? (
+                    {variants.length === 0 ? (
                         <div className="p-12 text-center text-zinc-500 border border-dashed border-white/10 rounded-2xl">
-                            <p className="text-sm font-medium">No se encontraron variantes en esta categoría.</p>
+                            <p className="text-sm font-medium">No hay pantallas todavía.</p>
                         </div>
                     ) : (
-                        filteredVariants.map((v) => {
+                        variants.map((v) => {
                             const isActive = activeVariantId === v.id;
                             const isEditing = editingVariantId === v.id;
                             const isDeleting = deletingVariantId === v.id;
@@ -198,23 +94,13 @@ export default function VariantManagerModal() {
                                 >
                                     {/* Variant Info / Rename Input */}
                                     <div className="flex-1 min-w-0 pr-4">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            {isActive && (
+                                        {isActive && (
+                                            <div className="mb-1">
                                                 <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-bold rounded-full uppercase tracking-wider">
-                                                    Activa en Lienzo
+                                                    En el lienzo
                                                 </span>
-                                            )}
-                                            {v.isBaseVariant && (
-                                                <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[10px] font-bold rounded-full uppercase tracking-wider">
-                                                    Variante Base
-                                                </span>
-                                            )}
-                                            {v.isArchived && (
-                                                <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold rounded-full uppercase tracking-wider">
-                                                    Archivada
-                                                </span>
-                                            )}
-                                        </div>
+                                            </div>
+                                        )}
 
                                         {isEditing ? (
                                             <div className="flex items-center gap-2 mt-1">
@@ -240,18 +126,19 @@ export default function VariantManagerModal() {
                                                 </button>
                                             </div>
                                         ) : (
-                                            <div>
+                                            <div className="flex items-center gap-2">
                                                 <h3 className="font-bold text-sm text-white truncate">{v.name}</h3>
-                                                {v.description && (
-                                                    <p className="text-xs text-zinc-400 truncate mt-0.5">{v.description}</p>
-                                                )}
+                                                <span
+                                                    className="shrink-0 px-2 py-0.5 bg-[#0e1620] border border-[#5B8FB9]/40 text-[#5B8FB9] text-[9px] font-bold rounded-full uppercase tracking-wider"
+                                                    title={getSurfaceContract(v.surfaceType)?.description}
+                                                >
+                                                    {getSurfaceContract(v.surfaceType)?.icon} {getSurfaceContract(v.surfaceType)?.name}
+                                                </span>
                                             </div>
                                         )}
 
-                                        <div className="flex items-center gap-4 text-[10px] text-zinc-500 font-mono mt-2">
-                                            <span>Modificada: {new Date(v.updatedAt || '2026-08-10T00:00:00.000Z').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                            <span>•</span>
-                                            <span>Creada: {new Date(v.createdAt || '2026-08-10T00:00:00.000Z').toLocaleDateString()}</span>
+                                        <div className="text-[10px] text-zinc-500 font-mono mt-2">
+                                            Modificada: {new Date(v.updatedAt || '2026-08-10T00:00:00.000Z').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </div>
                                     </div>
 
@@ -273,21 +160,20 @@ export default function VariantManagerModal() {
                                             </button>
                                         </div>
                                     ) : (
-                                        /* Primary Action & Context Menu Trigger */
                                         <div className="flex items-center gap-2 relative">
                                             {!isActive && (
                                                 <button
                                                     onClick={() => { setActiveVariant(v.id); closeVariantManager(); }}
                                                     className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition-all"
                                                 >
-                                                    Abrir en Lienzo
+                                                    Abrir
                                                 </button>
                                             )}
 
                                             <button
                                                 onClick={() => setMenuOpenId(isMenuOpen ? null : v.id)}
                                                 className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 flex items-center justify-center font-bold text-zinc-300 hover:text-white transition-colors"
-                                                title="Opciones de variante"
+                                                title="Opciones de pantalla"
                                             >
                                                 ···
                                             </button>
@@ -307,27 +193,6 @@ export default function VariantManagerModal() {
                                                         className="w-full text-left px-3 py-1.5 text-xs text-zinc-200 hover:bg-white/10 rounded-lg flex items-center gap-2 font-medium"
                                                     >
                                                         ⧉ Duplicar
-                                                    </button>
-
-                                                    <button
-                                                        onClick={() => { setBaseVariant(v.id); setMenuOpenId(null); }}
-                                                        className="w-full text-left px-3 py-1.5 text-xs text-zinc-200 hover:bg-white/10 rounded-lg flex items-center gap-2 font-medium"
-                                                    >
-                                                        ⭐ Establecer como Base
-                                                    </button>
-
-                                                    <button
-                                                        onClick={() => { exportVariant(v.id); setMenuOpenId(null); }}
-                                                        className="w-full text-left px-3 py-1.5 text-xs text-zinc-200 hover:bg-white/10 rounded-lg flex items-center gap-2 font-medium"
-                                                    >
-                                                        📥 Exportar (JSON)
-                                                    </button>
-
-                                                    <button
-                                                        onClick={() => { archiveVariant(v.id, !v.isArchived); setMenuOpenId(null); }}
-                                                        className="w-full text-left px-3 py-1.5 text-xs text-amber-300 hover:bg-amber-500/20 rounded-lg flex items-center gap-2 font-medium"
-                                                    >
-                                                        📦 {v.isArchived ? 'Desarchivar' : 'Archivar'}
                                                     </button>
 
                                                     <div className="h-px bg-white/10 my-1" />
@@ -350,7 +215,7 @@ export default function VariantManagerModal() {
 
                 {/* Footer */}
                 <div className="p-4 bg-black/40 border-t border-white/10 flex items-center justify-between text-xs text-zinc-400">
-                    <span>Total de variantes en el proyecto: <strong className="text-white">{variants.filter(v => !v.isSystemVariant).length}</strong></span>
+                    <span>{variants.length} {variants.length === 1 ? 'pantalla' : 'pantallas'}</span>
                     <button
                         onClick={closeVariantManager}
                         className="px-4 py-2 font-semibold text-zinc-400 hover:text-white transition-colors"

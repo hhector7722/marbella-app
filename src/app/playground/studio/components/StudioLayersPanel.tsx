@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useStudioStore } from '../store';
 import { BlockType, IntentCategory } from '../types';
+import { getAllowedBlocks, getAllowedRegions, getSurfaceContract, SurfaceRegion } from '../contracts';
 
 const INTENT_CATALOG: { category: IntentCategory; name: string; description: string; icon: string }[] = [
     { category: 'identidad', name: 'Zona de Identidad & Contexto', description: 'Describe la entidad principal, título, fecha y estado operativo.', icon: '🎯' },
@@ -16,9 +17,14 @@ const INTENT_CATALOG: { category: IntentCategory; name: string; description: str
 
 const BLOCK_LIBRARY: { type: BlockType; name: string; description: string; icon: string; category: string }[] = [
     { type: 'page-header', name: 'Cabecera de Página', description: 'Título, subtítulo, variante monumental y KPIs.', icon: 'H', category: 'Estructura' },
+    { type: 'top-bar', name: 'Barra Superior (App)', description: 'Barra de aplicación con título y acciones. Estándar en móvil.', icon: '▔', category: 'Chrome' },
+    { type: 'bottom-nav', name: 'Navegación Inferior', description: 'Barra de navegación anclada a la base, solo móvil.', icon: '▁', category: 'Chrome' },
+    { type: 'tabs', name: 'Pestañas', description: 'Selector de secciones horizontales con estado activo.', icon: '≡', category: 'Chrome' },
     { type: 'data-table', name: 'Tabla de Datos / Lista', description: 'Tabla matricial o lista de tarjetas con densidad configurable.', icon: 'T', category: 'Datos' },
     { type: 'filter-bar', name: 'Barra de Filtros & Búsqueda', description: 'Campo de búsqueda global, filtros y botón de acción.', icon: 'F', category: 'Acción' },
     { type: 'kpi-grid', name: 'Rejilla de Métricas KPI', description: 'Tarjetas resumidas con tendencias y cifras principales.', icon: 'K', category: 'Métricas' },
+    { type: 'form', name: 'Formulario', description: 'Captura de campos táctiles con botón de envío.', icon: '✎', category: 'Datos' },
+    { type: 'fab', name: 'Botón de Acción Flotante', description: 'Acción principal prominente, típico de móvil.', icon: '⊕', category: 'Acción' },
     { type: 'sidebar-nav', name: 'Navegación / Menú', description: 'Menú principal de app o menú lateral de sección.', icon: 'N', category: 'Navegación' },
     { type: 'container-block', name: 'Tarjeta Contenedora', description: 'Superficie enmarcada en blanco para agrupar contenido.', icon: 'C', category: 'Estructura' },
     { type: 'callout-banner', name: 'Aviso / Callout', description: 'Banner explicativo o de advertencia para el usuario.', icon: 'A', category: 'Feedback' },
@@ -37,7 +43,8 @@ export default function StudioLayersPanel() {
         addIntentZone,
         focusStack,
         focusIntoObject,
-        focusOutObject
+        focusOutObject,
+        viewportPreset
     } = useStudioStore();
 
     const activeVariant = variants.find(v => v.id === activeVariantId);
@@ -45,6 +52,12 @@ export default function StudioLayersPanel() {
 
     const regions = activeVariant.regions;
     const currentFocus = focusStack[focusStack.length - 1];
+
+    // CONTEXTUAL CATALOG: solo lo que el contrato permite para esta superficie + viewport
+    const allowedBlocks = getAllowedBlocks(activeVariant.surfaceType, viewportPreset);
+    const allowedRegions = getAllowedRegions(activeVariant.surfaceType, viewportPreset);
+    const visibleLibrary = BLOCK_LIBRARY.filter(item => allowedBlocks.includes(item.type));
+    const contract = getSurfaceContract(activeVariant.surfaceType);
 
     return (
         <aside className="w-80 border-r border-white/10 bg-[#09090b] flex flex-col shrink-0 text-white overflow-hidden select-none z-20">
@@ -102,6 +115,24 @@ export default function StudioLayersPanel() {
                 </button>
             </div>
 
+            {/* Contract Context Banner */}
+            <div className="px-4 py-2.5 bg-[#0e1620] border-b border-white/10 shrink-0">
+                <div className="flex items-center gap-2">
+                    <span className="text-base">{contract.icon}</span>
+                    <div className="leading-tight">
+                        <div className="text-[9px] uppercase font-bold tracking-wider text-[#5B8FB9]">
+                            Contrato · {viewportPreset}
+                        </div>
+                        <div className="text-[11px] font-bold text-zinc-200">
+                            {contract.name} — {allowedBlocks.length} componentes permitidos
+                        </div>
+                    </div>
+                </div>
+                <div className="text-[10px] text-zinc-500 mt-1">
+                    El catálogo solo muestra lo que este contrato permite. Lo demás ni aparece.
+                </div>
+            </div>
+
             {/* Tab: Declaración de Intención */}
             {activeTab === 'intents' && (
                 <div className="flex-1 flex flex-col p-4 overflow-y-auto space-y-3">
@@ -137,7 +168,9 @@ export default function StudioLayersPanel() {
             {/* Tab: Objetos Contenidos */}
             {activeTab === 'layers' && (
                 <div className="flex-1 overflow-y-auto p-3 space-y-4">
-                    {Object.entries(regions).map(([regionId, blocks]) => (
+                    {Object.entries(regions)
+                        .filter(([regionId]) => allowedRegions.includes(regionId as SurfaceRegion))
+                        .map(([regionId, blocks]) => (
                         <div key={regionId} className="space-y-1">
                             <div className="flex items-center justify-between px-2 py-1.5 bg-white/5 rounded-md border border-white/5 text-xs text-zinc-300 font-medium">
                                 <span className="capitalize font-bold">Región {regionId}</span>
@@ -185,15 +218,20 @@ export default function StudioLayersPanel() {
                 </div>
             )}
 
-            {/* Tab: Inserción Directa */}
+            {/* Tab: Inserción Directa (contextual) */}
             {activeTab === 'library' && (
                 <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                    {BLOCK_LIBRARY.map((item) => (
+                    {visibleLibrary.length === 0 && (
+                        <div className="p-4 text-center text-zinc-500 text-xs border border-dashed border-white/10 rounded-xl">
+                            Este contrato no permite insertar componentes directamente.
+                        </div>
+                    )}
+                    {visibleLibrary.map((item) => (
                         <div key={item.type} className="p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl">
                             <div className="font-bold text-xs text-zinc-200 mb-1">{item.name}</div>
                             <p className="text-[11px] text-zinc-400 mb-2">{item.description}</p>
-                            <div className="flex gap-1">
-                                {Object.keys(regions).map(regId => (
+                            <div className="flex gap-1 flex-wrap">
+                                {allowedRegions.map(regId => (
                                     <button
                                         key={regId}
                                         onClick={() => addBlockToRegion(regId, item.type)}
