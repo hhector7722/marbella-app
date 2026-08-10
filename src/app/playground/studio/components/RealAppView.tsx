@@ -9,7 +9,6 @@ import SalaPage from '@/app/dashboard/sala/page';
 import StaffHistoryPage from '@/app/staff/history/page';
 import { RealInsightsView } from './RealInsightsView';
 import { DesignProvider } from '../screens/system';
-import { resolverReceta } from '../design-context';
 import { SANDBOX_ROUTES, useSandboxStore, useActiveEstetica } from '../store';
 import type { Recipe, SandboxRoute } from '../types';
 import { enableSandboxRuntime } from '@/lib/sandbox/client';
@@ -33,14 +32,13 @@ export function RealAppView({ recipeOverride }: { recipeOverride?: Recipe }) {
     const estetica = useActiveEstetica();
     const Page = REAL_PAGES[route];
     const recipe = recipeOverride ?? estetica.recipe;
-    const visual = resolverReceta(recipe);
 
     enableSandboxRuntime((href: string) => {
         const pathname = href.split('?')[0] as SandboxRoute;
         if (!SANDBOX_ROUTES.some(candidate => candidate.id === pathname)) return false;
         setRoute(pathname);
         return true;
-    }, visual);
+    });
 
     if (!Page) return null;
 

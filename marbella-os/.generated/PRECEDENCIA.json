@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "862f3c6b87a7f514",
+  "_huella": "7b30585ef9c1f444",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -820,6 +820,26 @@
       ]
     },
     {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-10-dry-run-k2-unidades.md",
+      "documento": "SPIKE-DRY-RUN-K2-UNIDADES",
+      "clase": "inmutable",
+      "estado": "archivado",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": [
+        "CANON",
+        "GLOSARIO",
+        "MODELO-DE-DATOS",
+        "DOMINIO-PRECIOS-Y-COMPRAS",
+        "ARQUITECTURA",
+        "DEUDA",
+        "PROTOCOLO-AGENTES"
+      ]
+    },
+    {
       "ruta": "marbella-os/6-investigacion/spikes/2026-08-10-ejecucion-k1.md",
       "documento": "SPIKE-EJECUCION-K1",
       "clase": "inmutable",
@@ -953,6 +973,26 @@
         "MAPA-DE-CAPACIDADES",
         "PRINCIPIOS",
         "SEGURIDAD"
+      ]
+    },
+    {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-10-resolucion-bloqueos-dry-run-k2.md",
+      "documento": "SPIKE-RESOLUCION-BLOQUEOS-DRY-RUN-K2",
+      "clase": "inmutable",
+      "estado": "archivado",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": [
+        "CANON",
+        "GLOSARIO",
+        "MODELO-DE-DATOS",
+        "DOMINIO-PRECIOS-Y-COMPRAS",
+        "ARQUITECTURA",
+        "DEUDA",
+        "PROTOCOLO-AGENTES"
       ]
     },
     {

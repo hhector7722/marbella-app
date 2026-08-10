@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect } from 'react';
+import React, { createContext, useContext } from 'react';
 import { DesignContext } from '../types';
 import { resolverReceta, cssVarsDelContexto } from '../design-context';
 import { Recipe } from '../types';
@@ -22,35 +22,6 @@ export function useDesign(): DesignContext {
 export function DesignProvider({ recipe, children }: { recipe: Recipe; children: React.ReactNode }) {
     const ctx = resolverReceta(recipe);
     const cssVars = cssVarsDelContexto(ctx);
-    // Aplicar variables CSS también a :root para garantizar que
-    // utilidades basadas en `rem` / Tailwind respondan correctamente.
-    useEffect(() => {
-        const root = document.documentElement;
-        const prev: Record<string, string> = {};
-        try {
-            Object.entries(cssVars).forEach(([k, v]) => {
-                prev[k] = root.style.getPropertyValue(k) ?? '';
-                root.style.setProperty(k, v);
-            });
-            // Escalado tipográfico global vía root font-size (rem)
-            prev['--marbella-prev-root-font-size'] = root.style.fontSize ?? '';
-            root.style.fontSize = `calc(16px * ${cssVars['--dl-type-scale']})`;
-        } catch (e) {
-            // NOOP
-        }
-        return () => {
-            try {
-                Object.entries(prev).forEach(([k, v]) => {
-                    if (k === '--marbella-prev-root-font-size') return;
-                    if (v) root.style.setProperty(k, v);
-                    else root.style.removeProperty(k);
-                });
-                root.style.fontSize = prev['--marbella-prev-root-font-size'] ?? '';
-            } catch (e) {
-                // NOOP
-            }
-        };
-    }, [cssVars]);
 
     return (
         <DesignCtx.Provider value={ctx}>

@@ -119,7 +119,7 @@ export function EsteticaEditor({
                                         <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600">{move.madurez}</span>
                                     </div>
                                     <div className="mt-1 text-[9px] font-bold text-zinc-500">{move.descripcion}</div>
-                                    <div className="mt-2 grid grid-cols-3 gap-2">
+                                    <div className="mt-2 grid grid-cols-2 gap-2">
                                         {INTENSIDADES.map(intensity => (
                                             <button
                                                 key={intensity}
@@ -145,7 +145,7 @@ export function EsteticaEditor({
                                         <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600">{move.madurez}</span>
                                     </div>
                                     <div className="mt-1 text-[9px] font-bold text-zinc-500">{move.descripcion}</div>
-                                    <div className="mt-2 grid grid-cols-3 gap-2">
+                                    <div className="mt-2 grid grid-cols-2 gap-2">
                                         {INTENSIDADES.map(intensity => (
                                             <button
                                                 key={intensity}
