@@ -25,6 +25,42 @@
   color: #36606f;
 }
 
+[data-marbella-sandbox='true'] .gap-1 { gap: calc(0.25rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .gap-2 { gap: calc(0.5rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .gap-3 { gap: calc(0.75rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .gap-4 { gap: calc(1rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .gap-5 { gap: calc(1.25rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .gap-6 { gap: calc(1.5rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .gap-8 { gap: calc(2rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .p-2 { padding: calc(0.5rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .p-3 { padding: calc(0.75rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .p-4 { padding: calc(1rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .px-2 { padding-left: calc(0.5rem * var(--dl-space)) !important; padding-right: calc(0.5rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .px-3 { padding-left: calc(0.75rem * var(--dl-space)) !important; padding-right: calc(0.75rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .px-4 { padding-left: calc(1rem * var(--dl-space)) !important; padding-right: calc(1rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .py-2 { padding-top: calc(0.5rem * var(--dl-space)) !important; padding-bottom: calc(0.5rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .py-3 { padding-top: calc(0.75rem * var(--dl-space)) !important; padding-bottom: calc(0.75rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .py-4 { padding-top: calc(1rem * var(--dl-space)) !important; padding-bottom: calc(1rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .m-2 { margin: calc(0.5rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .m-3 { margin: calc(0.75rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .m-4 { margin: calc(1rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .mx-2 { margin-left: calc(0.5rem * var(--dl-space)) !important; margin-right: calc(0.5rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .mx-3 { margin-left: calc(0.75rem * var(--dl-space)) !important; margin-right: calc(0.75rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .mx-4 { margin-left: calc(1rem * var(--dl-space)) !important; margin-right: calc(1rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .my-2 { margin-top: calc(0.5rem * var(--dl-space)) !important; margin-bottom: calc(0.5rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .my-3 { margin-top: calc(0.75rem * var(--dl-space)) !important; margin-bottom: calc(0.75rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .my-4 { margin-top: calc(1rem * var(--dl-space)) !important; margin-bottom: calc(1rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .space-y-2 > :not([hidden]) ~ :not([hidden]) { margin-top: calc(0.5rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .space-y-3 > :not([hidden]) ~ :not([hidden]) { margin-top: calc(0.75rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: calc(1rem * var(--dl-space)) !important; }
+[data-marbella-sandbox='true'] .text-xs { font-size: calc(0.75rem * var(--dl-type-scale)) !important; }
+[data-marbella-sandbox='true'] .text-sm { font-size: calc(0.875rem * var(--dl-type-scale)) !important; }
+[data-marbella-sandbox='true'] .text-base { font-size: calc(1rem * var(--dl-type-scale)) !important; }
+[data-marbella-sandbox='true'] .text-lg { font-size: calc(1.125rem * var(--dl-type-scale)) !important; }
+[data-marbella-sandbox='true'] .text-xl { font-size: calc(1.25rem * var(--dl-type-scale)) !important; }
+[data-marbella-sandbox='true'] .leading-tight { line-height: calc(1.25 * var(--dl-type-scale)) !important; }
+[data-marbella-sandbox='true'] .leading-normal { line-height: calc(1.5 * var(--dl-type-scale)) !important; }
+
 @layer utilities {
   /**
    * Fondo de app: azul corporativo (#5B8FB9) con difuminado sutil —

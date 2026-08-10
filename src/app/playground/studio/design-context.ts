@@ -1,5 +1,5 @@
-import { Recipe, DesignContext, Intensidad } from './types';
-import { INTENSIDAD_FACTOR } from './movidas';
+import type { Recipe, DesignContext, Intensidad } from './types.ts';
+import { INTENSIDAD_FACTOR } from './movidas.ts';
 
 // ============================================================
 // RESOLUCIÓN DE RECETA → CONTEXTO DE DISEÑO
@@ -62,6 +62,18 @@ export function resolverReceta(recipe: Recipe): DesignContext {
     };
 }
 
+export function getSandboxSpacingTokens(ctx: DesignContext): Record<string, string> {
+    return {
+        '--marbella-space-1': `${0.25 * ctx.space}rem`,
+        '--marbella-space-2': `${0.5 * ctx.space}rem`,
+        '--marbella-space-3': `${0.75 * ctx.space}rem`,
+        '--marbella-space-4': `${1 * ctx.space}rem`,
+        '--marbella-space-6': `${1.5 * ctx.space}rem`,
+        '--marbella-space-8': `${2 * ctx.space}rem`,
+        '--marbella-type-scale': `${ctx.typeScale}rem`,
+    };
+}
+
 // Variables CSS que las pantallas consumen por nombre (espaciado, tipografía).
 export function cssVarsDelContexto(ctx: DesignContext): Record<string, string> {
     return {
@@ -70,5 +82,6 @@ export function cssVarsDelContexto(ctx: DesignContext): Record<string, string> {
         '--dl-elevation': `${ctx.elevation}`,
         '--dl-contrast': `${ctx.contrast}`,
         '--dl-border-alpha': ctx.surface >= 1 ? '0.25' : '1',
+        ...getSandboxSpacingTokens(ctx),
     };
 }

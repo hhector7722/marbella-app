@@ -1,7 +1,7 @@
-import assert from 'node:assert/strict';
+import * as assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { PayrollFactWriteModel } from './payroll-write-model.ts';
-import type { InsertEmployeePayrollFactDTO } from '../../types/payroll-facts.ts';
+import { PayrollFactWriteModel } from './payroll-write-model';
+import type { InsertEmployeePayrollFactDTO } from '../../types/payroll-facts';
 
 describe('FASE 2: Payroll Write Model Transaccional Atómico (employee_payroll_facts)', () => {
   it('instancia el Write Model atómico correctamente sin consumidores de lectura', () => {

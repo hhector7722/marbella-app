@@ -29,7 +29,7 @@ export function DesignProvider({ recipe, children }: { recipe: Recipe; children:
                 data-dl-surface={ctx.surface}
                 data-dl-elevation={ctx.elevation}
                 data-dl-buttons={ctx.buttonWeight}
-                style={{ ...cssVars, fontSize: `calc(16px * var(--dl-type-scale))` } as React.CSSProperties}
+                style={{ ...cssVars, fontSize: `calc(16px * ${cssVars['--dl-type-scale']})` } as React.CSSProperties}
                 className="h-full"
             >
                 {children}

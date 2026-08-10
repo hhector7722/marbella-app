@@ -41,6 +41,9 @@ export function EsteticaEditor({
         onRecipeChange({ ...recipe, [id]: intensity });
     };
 
+    const principales = MOVIDAS_CATALOGO.filter(move => ['aire', 'superficies', 'densidad', 'profundidad', 'contraste', 'voz_tipografica'].includes(move.id));
+    const secundarios = MOVIDAS_CATALOGO.filter(move => !principales.some(principal => principal.id === move.id));
+
     return (
         <aside className="flex max-h-[48vh] min-h-0 w-full shrink-0 flex-col border-b border-zinc-800 bg-zinc-950 lg:max-h-none lg:w-[360px] lg:border-b-0 lg:border-r">
             <div className="border-b border-zinc-800 px-4 py-3">
@@ -106,28 +109,57 @@ export function EsteticaEditor({
                         <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Movidas visuales</span>
                         <span className="text-[9px] font-bold text-zinc-600">sin porcentajes</span>
                     </div>
-                    <div className="space-y-2">
-                        {MOVIDAS_CATALOGO.map(move => (
-                            <div key={move.id} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-2.5">
-                                <div className="flex items-center justify-between gap-2">
-                                    <span className="text-[11px] font-black text-zinc-200">{move.nombre}</span>
-                                    <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600">{move.madurez}</span>
+                    <div className="mb-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-2.5">
+                        <div className="mb-2 text-[8px] font-black uppercase tracking-widest text-zinc-500">Principales</div>
+                        <div className="grid gap-2 lg:grid-cols-2">
+                            {principales.map(move => (
+                                <div key={move.id} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-2.5">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="text-[11px] font-black text-zinc-200">{move.nombre}</span>
+                                        <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600">{move.madurez}</span>
+                                    </div>
+                                    <div className="mt-1 text-[9px] font-bold text-zinc-500">{move.descripcion}</div>
+                                    <div className="mt-2 grid grid-cols-4 gap-1">
+                                        {INTENSIDADES.map(intensity => (
+                                            <button
+                                                key={intensity}
+                                                onClick={() => changeMove(move.id, intensity)}
+                                                style={{ minHeight: 48 }}
+                                                className={`rounded-lg text-[8px] font-black uppercase tracking-widest ${recipe[move.id] === intensity ? 'bg-[#36606F] text-white' : 'bg-zinc-800 text-zinc-500 hover:text-zinc-200'}`}
+                                            >
+                                                {intensity}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                                <div className="mt-1 text-[9px] font-bold text-zinc-500">{move.descripcion}</div>
-                                <div className="mt-2 grid grid-cols-4 gap-1">
-                                    {INTENSIDADES.map(intensity => (
-                                        <button
-                                            key={intensity}
-                                            onClick={() => changeMove(move.id, intensity)}
-                                            style={{ minHeight: 48 }}
-                                            className={`rounded-lg text-[8px] font-black uppercase tracking-widest ${recipe[move.id] === intensity ? 'bg-[#36606F] text-white' : 'bg-zinc-800 text-zinc-500 hover:text-zinc-200'}`}
-                                        >
-                                            {intensity}
-                                        </button>
-                                    ))}
+                            ))}
+                        </div>
+                    </div>
+                    <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-2.5">
+                        <div className="mb-2 text-[8px] font-black uppercase tracking-widest text-zinc-500">Ajustes</div>
+                        <div className="grid gap-2 lg:grid-cols-2">
+                            {secundarios.map(move => (
+                                <div key={move.id} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-2.5">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="text-[11px] font-black text-zinc-200">{move.nombre}</span>
+                                        <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600">{move.madurez}</span>
+                                    </div>
+                                    <div className="mt-1 text-[9px] font-bold text-zinc-500">{move.descripcion}</div>
+                                    <div className="mt-2 grid grid-cols-4 gap-1">
+                                        {INTENSIDADES.map(intensity => (
+                                            <button
+                                                key={intensity}
+                                                onClick={() => changeMove(move.id, intensity)}
+                                                style={{ minHeight: 48 }}
+                                                className={`rounded-lg text-[8px] font-black uppercase tracking-widest ${recipe[move.id] === intensity ? 'bg-[#36606F] text-white' : 'bg-zinc-800 text-zinc-500 hover:text-zinc-200'}`}
+                                            >
+                                                {intensity}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
                 </div>
 

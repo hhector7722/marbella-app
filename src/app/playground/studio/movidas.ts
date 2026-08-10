@@ -1,4 +1,4 @@
-import { Movida, MovidaId, Intensidad, Madurez } from './types';
+import type { Movida, MovidaId, Intensidad, Madurez } from './types.ts';
 
 // ============================================================
 // EL VOCABULARIO ÚNICO — movidas de diseño

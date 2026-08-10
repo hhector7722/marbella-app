@@ -48,4 +48,39 @@ export class PayrollFactWriteModel {
 
     return { success: true, insertedCount: payload.inserted_count };
   }
+
+  async recordPayrollFact(dto: InsertEmployeePayrollFactDTO): Promise<WriteFactResult> {
+    const { data, error } = await this.supabase.rpc('record_payroll_fact_atomic', {
+      p_user_id: dto.user_id,
+      p_period_ym: dto.period_ym,
+      p_settlement_type: dto.settlement_type,
+      p_total_company_cost: dto.total_company_cost,
+      p_document_id: dto.document_id,
+      p_created_by: dto.created_by,
+      p_settlement_hash: dto.settlement_hash,
+    });
+
+    if (error) {
+      return { success: false, factId: '', version: 0, error: error.message };
+    }
+
+    const payload = data as {
+      success: boolean;
+      fact_id?: string;
+      version?: number;
+      superseded_fact_id?: string;
+      error?: string;
+    };
+
+    if (!payload?.success) {
+      return { success: false, factId: '', version: 0, error: payload?.error ?? 'unknown error' };
+    }
+
+    return {
+      success: true,
+      factId: payload.fact_id ?? '',
+      version: payload.version ?? 0,
+      supersededFactId: payload.superseded_fact_id ?? undefined,
+    };
+  }
 }
