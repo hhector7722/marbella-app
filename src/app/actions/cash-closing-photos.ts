@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { isSandboxRequest } from '@/lib/sandbox/server'
 
 const MAX_BYTES = 5 * 1024 * 1024
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp'])
@@ -70,6 +71,7 @@ export async function uploadCashClosingPhotoAction(formData: FormData): Promise<
   }
 
   const storagePath = buildStoragePath(closingDate, closingId, kind, extForMime(mime))
+  if (await isSandboxRequest()) return { success: true, path: `sandbox/${storagePath}` }
   const buffer = Buffer.from(await file.arrayBuffer())
 
   const { error: uploadError } = await auth.supabase.storage
@@ -137,6 +139,7 @@ export async function deleteCashClosingPhotosAction(paths: string[]): Promise<
 
   const uniquePaths = [...new Set(paths.map((p) => p.trim()).filter(Boolean))]
   if (uniquePaths.length === 0) return { success: true }
+  if (await isSandboxRequest()) return { success: true }
 
   const { error } = await auth.supabase.storage.from('cash_closings').remove(uniquePaths)
   if (error) return { success: false, error: error.message }

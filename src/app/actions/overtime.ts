@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { madridDayUtcRangeIso } from "@/lib/madrid-date-bounds";
 import { calculateRoundedHours } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
+import { isSandboxRequest } from '@/lib/sandbox/server';
 import {
     buildOvertimeWeeksFromSsot,
     type StaffWeeklyStats,
@@ -104,6 +105,7 @@ export async function getOvertimeData(startDate: string, endDate: string, userId
 }
 
 export async function togglePaidStatus(userId: string, weekStart: string, newStatus: boolean, _stats?: { totalHours: number, overtimeHours: number }) {
+    if (await isSandboxRequest()) return { success: true, newStatus, simulated: true };
     const supabase = await createClient();
     const weekMonday = mondayOnOrBefore(weekStart.split('T')[0]! as CivilDate);
     const { weekEnd } = weekBounds(weekMonday);
@@ -156,6 +158,7 @@ export async function togglePaidStatus(userId: string, weekStart: string, newSta
 }
 
 export async function updateWeeklyContractHours(userId: string, weekStart: string, _newHours: number) {
+    if (await isSandboxRequest()) return { success: true, simulated: true };
     const supabase = await createClient();
 
     try {
@@ -183,6 +186,7 @@ export async function updateWeeklyContractHours(userId: string, weekStart: strin
 }
 
 export async function togglePreferStockStatus(userId: string, weekStart: string, currentStatus: boolean) {
+    if (await isSandboxRequest()) return { success: true, newStatus: !currentStatus, simulated: true };
     const supabase = await createClient();
 
     try {
@@ -251,6 +255,7 @@ export async function updateWeeklyWorkerConfig(
         logs?: Array<{ date: string; in_time: string; out_time: string; event_type: string; id?: string; is_deleted?: boolean }>;
     }
 ) {
+    if (await isSandboxRequest()) return { success: true, simulated: true };
     console.log('[TRACE 3] Parámetro recibido por updateWeeklyWorkerConfig:', {
         userId,
         weekStart,
@@ -385,7 +390,8 @@ export async function updateWeeklyWorkerConfig(
 /**
  * Crea un fichaje (entrada) en nombre de un empleado. Solo managers.
  */
-export async function createManagerFichaje(userId: string, dateStr: string, timeStr: string): Promise<{ success: boolean; error?: string }> {
+export async function createManagerFichaje(userId: string, dateStr: string, timeStr: string): Promise<{ success: boolean; error?: string; simulated?: boolean }> {
+    if (await isSandboxRequest()) return { success: true, simulated: true };
     try {
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
@@ -432,7 +438,8 @@ export async function createManagerFichaje(userId: string, dateStr: string, time
 /**
  * Elimina todos los registros de asistencia de un trabajador para un día concreto. Solo managers.
  */
-export async function deleteManagerDayLogs(userId: string, dateStr: string): Promise<{ success: boolean; error?: string }> {
+export async function deleteManagerDayLogs(userId: string, dateStr: string): Promise<{ success: boolean; error?: string; simulated?: boolean }> {
+    if (await isSandboxRequest()) return { success: true, simulated: true };
     try {
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();

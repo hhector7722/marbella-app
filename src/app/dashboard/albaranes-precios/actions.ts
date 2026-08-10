@@ -9,7 +9,7 @@ import {
   pickSuggestedCandidate,
   canonicalPurchaseUnit,
 } from '@/lib/albaran-price-match'
-import { buildIngredientPriceOnlyPatch } from '@/lib/ingredient-price-sync'
+import { buildIngredientPriceOnlyPatch, isIngredientPriceLocked } from '@/lib/ingredient-price-sync'
 import { convertToPurchaseUnitQuantity } from '@/lib/recipe-cost'
 
 export type ProposalCandidate = {
@@ -253,23 +253,27 @@ export async function applyAlbaranPriceUpdatesAction(
       continue
     }
 
-    if (!allowUnitChanges) {
-      const { data: existing, error: loadErr } = await supabase
-        .from('ingredients')
-        .select(
-          'current_price, supplier_pricing_mode, pack_price, pack_units, pack_unit_size_qty, pack_unit_size_unit, purchase_unit'
-        )
-        .eq('id', u.ingredientId)
-        .maybeSingle()
-      if (loadErr) {
-        errors.push(`${u.ingredientId}: ${loadErr.message}`)
-        continue
-      }
-      if (!existing) {
-        errors.push(`${u.ingredientId}: ingrediente no encontrado`)
-        continue
-      }
+    const { data: existing, error: loadErr } = await supabase
+      .from('ingredients')
+      .select(
+        'price_locked, current_price, supplier_pricing_mode, pack_price, pack_units, pack_unit_size_qty, pack_unit_size_unit, purchase_unit'
+      )
+      .eq('id', u.ingredientId)
+      .maybeSingle()
+    if (loadErr) {
+      errors.push(`${u.ingredientId}: ${loadErr.message}`)
+      continue
+    }
+    if (!existing) {
+      errors.push(`${u.ingredientId}: ingrediente no encontrado`)
+      continue
+    }
+    if (isIngredientPriceLocked(existing)) {
+      errors.push(`${u.ingredientId}: precio bloqueado; no se actualiza desde albarán`)
+      continue
+    }
 
+    if (!allowUnitChanges) {
       const pricePatch = buildIngredientPriceOnlyPatch(existing as any, price, (qty, from, to) =>
         convertToPurchaseUnitQuantity(qty, from, to)
       )

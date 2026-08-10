@@ -4,7 +4,7 @@ export default function PlaygroundPage() {
             <header className="space-y-3">
                 <h1 className="text-3xl font-light tracking-tight">Marbella Playground</h1>
                 <p className="text-sm text-white/50 max-w-xl leading-relaxed">
-                    Herramientas de diseño del ADN de Marbella App.
+                    Explora cómo puede sentirse Marbella App con distintas expresiones visuales.
                 </p>
             </header>
 
@@ -17,7 +17,7 @@ export default function PlaygroundPage() {
                     </div>
                     <h2 className="text-xl font-medium text-white/90 mb-2">Marbella Design Studio</h2>
                     <p className="text-sm text-white/50 leading-relaxed">
-                        Diseña pantallas de Marbella App asegurando el cumplimiento del Design Language.
+                        Entra en Marbella, navega y prueba estéticas globales sin modificar datos reales.
                     </p>
                 </a>
             </div>

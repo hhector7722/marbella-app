@@ -1,5 +1,5 @@
 'use client';
-// SSOT precios ingredientes / albaranes: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md
+// SSOT precios ingredientes / albaranes: marbella-os/3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md
 
 import { useState, useEffect } from 'react';
 import { createClient } from "@/utils/supabase/client";

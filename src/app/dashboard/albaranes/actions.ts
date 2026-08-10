@@ -1,6 +1,6 @@
 'use server'
 
-// SSOT precios ingredientes / albaranes: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md
+// SSOT precios ingredientes / albaranes: marbella-os/3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md
 import { suggestedAlbaranConversionFactorFromIngredient } from '@/lib/ingredient-pack-pricing'
 import { buildIngredientPriceOnlyPatch } from '@/lib/ingredient-price-sync'
 import { convertToPurchaseUnitQuantity } from '@/lib/recipe-cost'
@@ -2406,4 +2406,3 @@ export async function autoMapKnownLinesAction(params?: {
     },
   }
 }
-

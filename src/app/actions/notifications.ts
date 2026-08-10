@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from "@/utils/supabase/server";
+import { isSandboxRequest } from '@/lib/sandbox/server';
 import {
     NOTIFICATION_HECTOR_EMAIL,
     normalizeNotificationEmail,
@@ -210,6 +211,7 @@ export async function sendClosingNotification(data: {
     avgTicket?: number;
     closingId?: string;
 }) {
+    if (await isSandboxRequest()) return { success: true, sentCount: 0, simulated: true };
     if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
         console.error('Push: VAPID keys not set.');
         return { success: false, error: 'Notificaciones push no configuradas (falta VAPID en el servidor)', sentCount: 0 };

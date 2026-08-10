@@ -1,9 +1,8 @@
 // ============================================================
-// MODELO CONCEPTUAL DEFINITIVO — Marbella Design Studio
-// Una app. Un vocabulario. Tres modos de atención.
+// MODELO DEL SANDBOX VISUAL DE MARBELLA
+// Una expresión visual global aplicada a toda Marbella App.
+// Navegación real entre pantallas. Estéticas guardadas.
 // ============================================================
-
-export type Modo = 'absorber' | 'sondear' | 'decidir';
 
 export type ViewportPreset = 'mobile' | 'tablet' | 'desktop';
 
@@ -50,57 +49,21 @@ export interface Referencia {
     preguntas: string[];
 }
 
-export type EstadoHipotesis =
-    | 'nueva'
-    | 'investigando'
-    | 'probando'
-    | 'validada'
-    | 'descartada'
-    | 'convertida_en_regla';
+// ============================================================
+// ESTÉTICA — objeto de primer nivel
+// Una variante representa UNA EXPRESIÓN COMPLETA DE MARBELLA.
+// No una copia de una página. GLOBAL a toda la aplicación.
+// ============================================================
 
-export interface Hipotesis {
+export interface Estetica {
     id: string;
-    texto: string;
-    estado: EstadoHipotesis;
-    movidas: MovidaId[];
-    referencias: string[];
-    variantes: string[];
-    pantallas: string[];
-    notas: string;
+    name: string; // "Marbella Original", "Editorial V3", "Minimal V4"
+    description?: string;
+    recipe: Recipe; // la configuración visual completa
+    parentId: string | null; // null = estética base / Original
+    isOriginal?: boolean; // solo la "Marbella Original" lo tiene
     createdAt: string;
     updatedAt: string;
-    timeline: { estado: EstadoHipotesis; fecha: string }[];
-}
-
-export type EstadoVersion = 'original' | 'conservada' | 'candidata' | 'descartada';
-
-// Nodo del árbol de versiones de una pantalla.
-export interface VariantNode {
-    id: string;
-    screenKey: string;
-    parentId: string | null; // null => nodo ORIGINAL (raíz)
-    name: string;
-    recipe: Recipe; // dispersa: solo lo que cambia respecto al original
-    estado: EstadoVersion;
-    hipotesisId?: string;
-    // Puertas de validación hacia el Design Language
-    superaPuerta1?: boolean; // mejor que el original en su pantalla
-    segundaPantalla?: string | null; // pantalla distinta donde también funcionó
-    createdAt: string;
-    updatedAt: string;
-}
-
-export interface Regla {
-    id: string;
-    movidaId: MovidaId;
-    resumen: string;
-    ejemplo: string;
-    contraejemplo: string;
-    pantallaOrigen: string;
-    pantallaValidacion: string;
-    varianteOrigenId: string;
-    hipotesisId?: string;
-    createdAt: string;
 }
 
 // ============================================================
@@ -125,10 +88,16 @@ export interface DesignContext {
     buttonWeight: ButtonWeight;
 }
 
-export interface SondaNota {
-    id: string;
-    screenKey: string;
-    recipe: Recipe;
-    texto: string;
-    createdAt: string;
-}
+// ============================================================
+// RUTAS DEL SANDBOX (navegación real entre pantallas)
+// ============================================================
+
+export type SandboxRoute =
+    | '/dashboard/ventas'
+    | '/dashboard/history'
+    | '/dashboard/movements'
+    | '/dashboard/labor'
+    | '/dashboard/insights'
+    | '/dashboard/sala'
+    | '/staff/history'
+    | '/registros';

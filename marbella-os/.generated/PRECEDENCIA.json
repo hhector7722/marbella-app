@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "a3aef479da37a1e3",
+  "_huella": "e85dd23481b60b64",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -749,6 +749,162 @@
       "precedencia": 0,
       "vence": null,
       "depende_de": []
+    },
+    {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-10-cierre-decisiones-migracion.md",
+      "documento": "SPIKE-CIERRE-DECISIONES-MIGRACION",
+      "clase": "inmutable",
+      "estado": "archivado",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": [
+        "CANON",
+        "GLOSARIO",
+        "MODELO-DE-DATOS",
+        "DOMINIO-PRECIOS-Y-COMPRAS",
+        "ARQUITECTURA",
+        "DEUDA",
+        "ESTADO",
+        "MAPA-DE-CAPACIDADES",
+        "PRINCIPIOS",
+        "SEGURIDAD"
+      ]
+    },
+    {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-10-desbloqueo-k2-baseline.md",
+      "documento": "SPIKE-DESBLOQUEO-K2-BASELINE",
+      "clase": "inmutable",
+      "estado": "archivado",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": [
+        "CANON",
+        "GLOSARIO",
+        "MODELO-DE-DATOS",
+        "DOMINIO-PRECIOS-Y-COMPRAS",
+        "ARQUITECTURA",
+        "DEUDA",
+        "ESTADO",
+        "MAPA-DE-CAPACIDADES",
+        "PRINCIPIOS",
+        "SEGURIDAD"
+      ]
+    },
+    {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-10-ejecucion-k1.md",
+      "documento": "SPIKE-EJECUCION-K1",
+      "clase": "inmutable",
+      "estado": "archivado",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": [
+        "CANON",
+        "GLOSARIO",
+        "MODELO-DE-DATOS",
+        "DOMINIO-PRECIOS-Y-COMPRAS",
+        "ARQUITECTURA",
+        "DEUDA",
+        "ESTADO",
+        "MAPA-DE-CAPACIDADES",
+        "PRINCIPIOS",
+        "SEGURIDAD"
+      ]
+    },
+    {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-10-plan-migracion-dominio-producto-unidades.md",
+      "documento": "SPIKE-PLAN-MIGRACION-DOMINIO-PRODUCTO-UNIDADES",
+      "clase": "inmutable",
+      "estado": "archivado",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": [
+        "CANON",
+        "GLOSARIO",
+        "MODELO-DE-DATOS",
+        "DOMINIO-PRECIOS-Y-COMPRAS",
+        "ARQUITECTURA",
+        "DEUDA",
+        "ESTADO",
+        "MAPA-DE-CAPACIDADES"
+      ]
+    },
+    {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-10-resolucion-bloqueos-migracion.md",
+      "documento": "SPIKE-RESOLUCION-BLOQUEOS-MIGRACION",
+      "clase": "inmutable",
+      "estado": "archivado",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": [
+        "CANON",
+        "GLOSARIO",
+        "MODELO-DE-DATOS",
+        "DOMINIO-PRECIOS-Y-COMPRAS",
+        "ARQUITECTURA",
+        "DEUDA",
+        "ESTADO",
+        "MAPA-DE-CAPACIDADES",
+        "PRINCIPIOS",
+        "SEGURIDAD"
+      ]
+    },
+    {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-10-revision-critica-unidades-por-contexto.md",
+      "documento": "SPIKE-REVISION-CRITICA-UNIDADES-POR-CONTEXTO",
+      "clase": "inmutable",
+      "estado": "archivado",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": [
+        "CANON",
+        "GLOSARIO",
+        "MODELO-DE-DATOS",
+        "DOMINIO-PRECIOS-Y-COMPRAS",
+        "ARQUITECTURA",
+        "DEUDA",
+        "MAPA-DE-CAPACIDADES"
+      ]
+    },
+    {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-10-revision-final-consistencia-plan-migracion.md",
+      "documento": "SPIKE-REVISION-FINAL-CONSISTENCIA-PLAN-MIGRACION",
+      "clase": "inmutable",
+      "estado": "archivado",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": [
+        "CANON",
+        "GLOSARIO",
+        "MODELO-DE-DATOS",
+        "DOMINIO-PRECIOS-Y-COMPRAS",
+        "ARQUITECTURA",
+        "DEUDA",
+        "ESTADO",
+        "MAPA-DE-CAPACIDADES",
+        "PRINCIPIOS",
+        "SEGURIDAD"
+      ]
     }
   ]
 }

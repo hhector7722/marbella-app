@@ -3,6 +3,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
+import { isSandboxRequest } from '@/lib/sandbox/server';
 import { formatYmdInMadrid } from '@/lib/madrid-date-bounds';
 import {
   mapContractTermRows,
@@ -140,7 +141,8 @@ async function propagateSnapshotsAfterContractChange(
 export async function updateLaborConditions(
   employeeId: string,
   form: LaborConditionsFormInput,
-): Promise<{ success: boolean; error?: string; kind?: string; message?: string }> {
+): Promise<{ success: boolean; error?: string; kind?: string; message?: string; simulated?: boolean }> {
+  if (await isSandboxRequest()) return { success: true, simulated: true, message: 'Cambio simulado en sandbox' };
   const gate = await requireHectorSession();
   if (!gate.ok || !gate.supabase) {
     return { success: false, error: gate.error ?? 'Acceso denegado' };
@@ -336,7 +338,8 @@ export async function updateLaborConditions(
 export async function deleteLaborTerm(
   employeeId: string,
   termEffectiveFrom: string,
-): Promise<{ success: boolean; error?: string; kind?: string }> {
+): Promise<{ success: boolean; error?: string; kind?: string; simulated?: boolean }> {
+  if (await isSandboxRequest()) return { success: true, simulated: true };
   const gate = await requireHectorSession();
   if (!gate.ok || !gate.supabase) {
     return { success: false, error: gate.error ?? 'Acceso denegado' };

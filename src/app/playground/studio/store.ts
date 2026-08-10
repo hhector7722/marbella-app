@@ -2,376 +2,244 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import {
-    Modo,
     ViewportPreset,
     Recipe,
     MovidaId,
     Movida,
-    Hipotesis,
-    EstadoHipotesis,
-    VariantNode,
-    EstadoVersion,
-    Regla,
-    SondaNota,
-    Intensidad,
+    Estetica,
+    SandboxRoute,
     DesignContext,
+    Intensidad,
 } from './types';
-import { MOVIDAS_CATALOGO, MOVIDA_BY_ID } from './movidas';
+import { MOVIDAS_CATALOGO } from './movidas';
 import { resolverReceta } from './design-context';
-import { SCREEN_IDS, ScreenId } from './screens/real';
 
 // ============================================================
-// STORE — Marbella Design Studio (modelo conceptual definitivo)
-// Árbol de versiones por pantalla real. Hipótesis como centro de
-// gravedad. Movidas mutables hacia el Design Language.
+// STORE DEL SANDBOX VISUAL DE MARBELLA
+// Centro de gravedad: ESTÉTICA GLOBAL aplicada a toda Marbella.
+// Navegación real entre rutas. Persistencia en localStorage.
 // ============================================================
 
 const now = () => new Date().toISOString();
-const uid = (prefix: string) => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+const uid = (prefix: string) =>
+    `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
-function mergeRecipes(a: Recipe, b: Recipe): Recipe {
-    const out: Recipe = { ...a };
-    for (const [k, v] of Object.entries(b)) {
-        out[k as MovidaId] = v as Intensidad;
-    }
-    return out;
+export const SANDBOX_ROUTES: { id: SandboxRoute; title: string; grupo: string }[] = [
+    { id: '/dashboard/ventas', title: 'Ventas', grupo: 'Dashboard' },
+    { id: '/dashboard/history', title: 'Cierres / History', grupo: 'Dashboard' },
+    { id: '/dashboard/movements', title: 'Movimientos', grupo: 'Dashboard' },
+    { id: '/dashboard/labor', title: 'Coste Laboral', grupo: 'Dashboard' },
+    { id: '/dashboard/insights', title: 'Insights', grupo: 'Dashboard' },
+    { id: '/dashboard/sala', title: 'Radar de Sala', grupo: 'Dashboard' },
+    { id: '/staff/history', title: 'Historial Personal', grupo: 'Personal' },
+    { id: '/registros', title: 'Fichar / Registro', grupo: 'Personal' },
+];
+
+export const ESTETICA_ORIGINAL_ID = 'estetica-original';
+
+function esteticasIniciales(): Estetica[] {
+    const hoy = now();
+    return [
+        {
+            id: ESTETICA_ORIGINAL_ID,
+            name: 'Marbella Original',
+            description: 'La identidad actual de Marbella. Punto de partida.',
+            recipe: {},
+            parentId: null,
+            isOriginal: true,
+            createdAt: hoy,
+            updatedAt: hoy,
+        },
+        {
+            id: 'est-editorial-v1',
+            name: 'Marbella Editorial',
+            description: 'Más aire, menos superficies, jerarquía tipográfica marcada.',
+            recipe: {
+                aire: 'moderado',
+                superficies: 'moderado',
+                voz_tipografica: 'moderado',
+                ruido_navegacion: 'moderado',
+                profundidad: 'sutil',
+            },
+            parentId: ESTETICA_ORIGINAL_ID,
+            createdAt: hoy,
+            updatedAt: hoy,
+        },
+        {
+            id: 'est-minimal-v1',
+            name: 'Marbella Minimal',
+            description: 'Superficies mínimas, contraste limpio, navegación silenciosa.',
+            recipe: {
+                superficies: 'fuerte',
+                profundidad: 'nada',
+                contraste: 'moderado',
+                ruido_navegacion: 'fuerte',
+                tratamiento_tablas: 'fuerte',
+                peso_botones: 'fuerte',
+            },
+            parentId: ESTETICA_ORIGINAL_ID,
+            createdAt: hoy,
+            updatedAt: hoy,
+        },
+        {
+            id: 'est-operativa-v1',
+            name: 'Marbella Operativa',
+            description: 'Más densidad, controles compactos, mucha información visible.',
+            recipe: {
+                densidad: 'moderado',
+                protagonismo_kpi: 'moderado',
+                contraste: 'moderado',
+                voz_tipografica: 'sutil',
+                tratamiento_tablas: 'moderado',
+            },
+            parentId: ESTETICA_ORIGINAL_ID,
+            createdAt: hoy,
+            updatedAt: hoy,
+        },
+    ];
 }
 
-interface ScreenVersions {
-    [screenKey: string]: VariantNode[];
-}
-
-interface StudioStateV4 {
-    // ---- Modos ----
-    modo: Modo;
+interface SandboxState {
+    // ---- Contexto visual ----
     viewport: ViewportPreset;
-    activeScreenKey: ScreenId;
-    activeVariantId: string | null;
-    activeHipotesisId: string | null;
+    activeEsteticaId: string;
+    esteticas: Estetica[];
+    route: SandboxRoute;
+    routeHistory: SandboxRoute[];
 
-    // ---- Árbol de versiones por pantalla ----
-    versions: ScreenVersions;
-
-    // ---- Hipótesis (centro de gravedad) ----
-    hipotesis: Hipotesis[];
-
-    // ---- Movidas (madurez mutable) ----
+    // ---- Conservados del modelo anterior (útiles después) ----
     movidas: Movida[];
-
-    // ---- Reglas validadas ----
-    reglas: Regla[];
-
-    // ---- Notas de sonda ----
-    sondaNotas: SondaNota[];
-
-    // ---- Observaciones de Absorber (semillas) ----
-    observaciones: { id: string; referenciaId: string; movidaId: MovidaId; nota: string; createdAt: string }[];
 
     // ================= ACCIONES =================
 
-    setModo: (m: Modo) => void;
     setViewport: (v: ViewportPreset) => void;
-    setActiveScreen: (s: ScreenId) => void;
-    setActiveVariant: (id: string | null) => void;
+    setRoute: (r: SandboxRoute) => void;
+    goBack: () => void;
 
-    // Árbol de versiones
-    ensureOriginBranch: (screenKey: ScreenId) => void;
-    addVariantFromRecipe: (screenKey: ScreenId, parentId: string | null, name: string, recipe: Recipe, opts?: { hipotesisId?: string; estado?: EstadoVersion }) => string | null;
-    forkVariant: (screenKey: ScreenId, parentId: string, name: string) => string | null;
-    fusionarVariantes: (screenKey: ScreenId, ids: string[], name: string) => string | null;
-    setVariantState: (screenKey: ScreenId, id: string, estado: EstadoVersion) => void;
-    deleteVariant: (screenKey: ScreenId, id: string) => boolean;
-    setPuerta1: (screenKey: ScreenId, id: string, value: boolean) => void;
-    setSegundaPantalla: (screenKey: ScreenId, id: string, pantalla: string | null) => void;
+    // Estéticas: CRUD
+    setActiveEstetica: (id: string) => void;
+    createEstetica: (name: string, recipe: Recipe, opts?: { description?: string; parentId?: string }) => string;
+    duplicateEstetica: (id: string, newName?: string) => string | null;
+    renameEstetica: (id: string, newName: string) => void;
+    deleteEstetica: (id: string) => boolean;
+    updateEsteticaRecipe: (id: string, recipe: Recipe) => void;
+    mergeRecipeIntoEstetica: (esteticaId: string, recipe: Recipe) => void;
 
-    // Hipótesis
-    addHipotesis: (texto: string, movidas: MovidaId[], opts?: { referencias?: string[]; pantallas?: string[]; notas?: string }) => string;
-    updateHipotesisEstado: (id: string, estado: EstadoHipotesis) => void;
-    updateHipotesisNotas: (id: string, notas: string) => void;
-    setActiveHipotesis: (id: string | null) => void;
-
-    // Movidas / Design Language
-    updateMovidaMadurez: (movidaId: MovidaId, madurez: Movida['madurez'], reglaId?: string) => void;
-    convertToRegla: (screenKey: ScreenId, variantId: string) => string | null;
-
-    // Sondear
-    saveSondaNota: (screenKey: ScreenId, recipe: Recipe, texto: string) => void;
-
-    // Absorber
-    recordReadObservation: (referenciaId: string, movidaId: MovidaId, nota: string) => void;
 }
 
-function defaultVersions(): ScreenVersions {
-    const out: ScreenVersions = {};
-    for (const key of SCREEN_IDS) {
-        out[key] = [
-            {
-                id: `${key}-original`,
-                screenKey: key,
-                parentId: null,
-                name: 'Original',
-                recipe: {},
-                estado: 'original',
-                createdAt: now(),
-                updatedAt: now(),
-            },
-        ];
-    }
-    return out;
-}
-
-const versionOf = (versions: ScreenVersions, screenKey: ScreenId, id: string): VariantNode | undefined =>
-    (versions[screenKey] || []).find(v => v.id === id);
-
-export const useStudioStore = create<StudioStateV4>()(
+export const useSandboxStore = create<SandboxState>()(
     persist(
         (set, get) => ({
-            modo: 'decidir',
             viewport: 'mobile',
-            activeScreenKey: 'movimientos',
-            activeVariantId: null,
-            activeHipotesisId: null,
-            versions: defaultVersions(),
-            hipotesis: [],
+            activeEsteticaId: ESTETICA_ORIGINAL_ID,
+            esteticas: esteticasIniciales(),
+            route: '/dashboard/ventas',
+            routeHistory: [],
             movidas: MOVIDAS_CATALOGO,
-            reglas: [],
-            sondaNotas: [],
-            observaciones: [],
 
-            setModo: m => set({ modo: m }),
             setViewport: v => set({ viewport: v }),
-            setActiveScreen: s => set({ activeScreenKey: s, activeVariantId: null }),
-            setActiveVariant: id => set({ activeVariantId: id }),
 
-            ensureOriginBranch: screenKey =>
+            setRoute: r =>
+                set(state => ({
+                    route: r,
+                    routeHistory: state.route !== r ? [...state.routeHistory, state.route] : state.routeHistory,
+                })),
+
+            goBack: () =>
                 set(state => {
-                    if ((state.versions[screenKey] || []).some(v => v.parentId === null)) return state;
+                    const hist = [...state.routeHistory];
+                    const prev = hist.pop();
                     return {
-                        versions: {
-                            ...state.versions,
-                            [screenKey]: [
-                                {
-                                    id: `${screenKey}-original`,
-                                    screenKey,
-                                    parentId: null,
-                                    name: 'Original',
-                                    recipe: {},
-                                    estado: 'original',
-                                    createdAt: now(),
-                                    updatedAt: now(),
-                                },
-                            ],
-                        },
+                        routeHistory: hist,
+                        route: prev ?? state.route,
                     };
                 }),
 
-            addVariantFromRecipe: (screenKey, parentId, name, recipe, opts) => {
-                get().ensureOriginBranch(screenKey);
-                const id = uid('v');
-                const node: VariantNode = {
+            setActiveEstetica: id => {
+                const existe = get().esteticas.some(e => e.id === id);
+                if (existe) set({ activeEsteticaId: id });
+            },
+
+            createEstetica: (name, recipe, opts) => {
+                const id = uid('est');
+                const e: Estetica = {
                     id,
-                    screenKey,
-                    parentId,
                     name,
+                    description: opts?.description,
                     recipe,
-                    estado: opts?.estado ?? 'candidata',
-                    hipotesisId: opts?.hipotesisId ?? get().activeHipotesisId ?? undefined,
+                    parentId: opts?.parentId ?? get().activeEsteticaId,
                     createdAt: now(),
                     updatedAt: now(),
                 };
                 set(state => ({
-                    versions: { ...state.versions, [screenKey]: [...(state.versions[screenKey] || []), node] },
-                    activeVariantId: id,
+                    esteticas: [...state.esteticas, e],
+                    activeEsteticaId: id,
                 }));
                 return id;
             },
 
-            forkVariant: (screenKey, parentId, name) => {
-                const parent = versionOf(get().versions, screenKey, parentId);
-                if (!parent) return null;
-                return get().addVariantFromRecipe(screenKey, parentId, name, { ...parent.recipe });
+            duplicateEstetica: (id, newName) => {
+                const origen = get().esteticas.find(e => e.id === id);
+                if (!origen) return null;
+                const nombre = newName ?? `${origen.name} (copia)`;
+                return get().createEstetica(nombre, { ...origen.recipe }, {
+                    description: origen.description,
+                    parentId: id,
+                });
             },
 
-            fusionarVariantes: (screenKey, ids, name) => {
-                const nodes = ids.map(id => versionOf(get().versions, screenKey, id)).filter(Boolean) as VariantNode[];
-                if (nodes.length < 2) return null;
-                let recipe: Recipe = {};
-                for (const n of nodes) recipe = mergeRecipes(recipe, n.recipe);
-                return get().addVariantFromRecipe(screenKey, ids[0], name, recipe, { estado: 'candidata' });
-            },
-
-            setVariantState: (screenKey, id, estado) =>
+            renameEstetica: (id, newName) =>
                 set(state => ({
-                    versions: {
-                        ...state.versions,
-                        [screenKey]: (state.versions[screenKey] || []).map(v =>
-                            v.id === id ? { ...v, estado, updatedAt: now() } : v
-                        ),
-                    },
+                    esteticas: state.esteticas.map(e =>
+                        e.id === id && !e.isOriginal
+                            ? { ...e, name: newName, updatedAt: now() }
+                            : e
+                    ),
                 })),
 
-            deleteVariant: (screenKey, id) => {
-                const node = versionOf(get().versions, screenKey, id);
-                if (!node || node.parentId === null) return false;
-                const remaining = (get().versions[screenKey] || []).filter(v => v.id !== id);
+            deleteEstetica: id => {
+                const est = get().esteticas.find(e => e.id === id);
+                if (!est || est.isOriginal) return false;
+                const remaining = get().esteticas.filter(e => e.id !== id);
                 set(state => ({
-                    versions: { ...state.versions, [screenKey]: remaining },
-                    activeVariantId: state.activeVariantId === id ? null : state.activeVariantId,
+                    esteticas: remaining,
+                    activeEsteticaId: state.activeEsteticaId === id ? ESTETICA_ORIGINAL_ID : state.activeEsteticaId,
                 }));
                 return true;
             },
 
-            setPuerta1: (screenKey, id, value) =>
+            updateEsteticaRecipe: (id, recipe) =>
                 set(state => ({
-                    versions: {
-                        ...state.versions,
-                        [screenKey]: (state.versions[screenKey] || []).map(v =>
-                            v.id === id ? { ...v, superaPuerta1: value, updatedAt: now() } : v
-                        ),
-                    },
-                })),
-
-            setSegundaPantalla: (screenKey, id, pantalla) =>
-                set(state => ({
-                    versions: {
-                        ...state.versions,
-                        [screenKey]: (state.versions[screenKey] || []).map(v =>
-                            v.id === id ? { ...v, segundaPantalla: pantalla, updatedAt: now() } : v
-                        ),
-                    },
-                })),
-
-            addHipotesis: (texto, movidas, opts) => {
-                const id = uid('hip');
-                const h: Hipotesis = {
-                    id,
-                    texto,
-                    estado: 'nueva',
-                    movidas,
-                    referencias: opts?.referencias ?? [],
-                    variantes: [],
-                    pantallas: opts?.pantallas ?? [],
-                    notas: opts?.notas ?? '',
-                    createdAt: now(),
-                    updatedAt: now(),
-                    timeline: [{ estado: 'nueva', fecha: now() }],
-                };
-                set(state => ({ hipotesis: [...state.hipotesis, h], activeHipotesisId: id }));
-                return id;
-            },
-
-            updateHipotesisEstado: (id, estado) =>
-                set(state => ({
-                    hipotesis: state.hipotesis.map(h => {
-                        if (h.id !== id) return h;
-                        if (h.estado === estado) return h;
-                        return { ...h, estado, updatedAt: now(), timeline: [...h.timeline, { estado, fecha: now() }] };
-                    }),
-                })),
-
-            updateHipotesisNotas: (id, notas) =>
-                set(state => ({
-                    hipotesis: state.hipotesis.map(h => (h.id === id ? { ...h, notas, updatedAt: now() } : h)),
-                })),
-
-            setActiveHipotesis: id => set({ activeHipotesisId: id }),
-
-            updateMovidaMadurez: (movidaId, madurez, reglaId) =>
-                set(state => ({
-                    movidas: state.movidas.map(m =>
-                        m.id === movidaId
-                            ? { ...m, madurez, reglaId: reglaId ?? m.reglaId }
-                            : m
+                    esteticas: state.esteticas.map(e =>
+                        e.id === id && !e.isOriginal
+                            ? { ...e, recipe, updatedAt: now() }
+                            : e
                     ),
                 })),
 
-            convertToRegla: (screenKey, variantId) => {
-                const node = versionOf(get().versions, screenKey, variantId);
-                if (!node || node.parentId === null) return null;
-                const gate2 = !!node.segundaPantalla;
-                if (!node.superaPuerta1 || !gate2) return null;
-
-                const movidasActivas = Object.keys(node.recipe) as MovidaId[];
-                if (movidasActivas.length === 0) return null;
-                const movidaId = movidasActivas[0];
-
-                const id = uid('regla');
-                const regla: Regla = {
-                    id,
-                    movidaId,
-                    resumen: `Variante «${node.name}» supera la doble puerta en ${node.screenKey} y ${node.segundaPantalla}.`,
-                    ejemplo: node.name,
-                    contraejemplo: 'Original sin la movida aplicada.',
-                    pantallaOrigen: node.screenKey,
-                    pantallaValidacion: node.segundaPantalla!,
-                    varianteOrigenId: node.id,
-                    hipotesisId: node.hipotesisId,
-                    createdAt: now(),
-                };
-
-                set(state => ({
-                    reglas: [...state.reglas, regla],
-                    versions: {
-                        ...state.versions,
-                        [screenKey]: (state.versions[screenKey] || []).map(v =>
-                            v.id === node.id ? { ...v, estado: 'conservada', updatedAt: now() } : v
-                        ),
-                    },
-                    hipotesis: node.hipotesisId
-                        ? state.hipotesis.map(h =>
-                              h.id === node.hipotesisId
-                                  ? {
-                                        ...h,
-                                        estado: 'convertida_en_regla',
-                                        updatedAt: now(),
-                                        timeline: [...h.timeline, { estado: 'convertida_en_regla', fecha: now() }],
-                                    }
-                                  : h
-                          )
-                        : state.hipotesis,
-                }));
-
-                get().updateMovidaMadurez(movidaId, 'regla', id);
-                return id;
-            },
-
-            saveSondaNota: (screenKey, recipe, texto) =>
-                set(state => ({
-                    sondaNotas: [...state.sondaNotas, { id: uid('sonda'), screenKey, recipe, texto, createdAt: now() }],
-                })),
-
-            recordReadObservation: (referenciaId, movidaId, nota) => {
-                const exists = get().observaciones.some(
-                    o => o.referenciaId === referenciaId && o.movidaId === movidaId
-                );
-                if (exists) return;
-                const obs = { id: uid('obs'), referenciaId, movidaId, nota, createdAt: now() };
-                set(state => ({ observaciones: [...state.observaciones, obs] }));
-                const sourceCount = get().observaciones.filter(o => o.movidaId === movidaId).length;
-                const madurezActual = MOVIDA_BY_ID[movidaId].madurez;
-                if (madurezActual === 'semilla' && sourceCount >= 2) {
-                    get().updateMovidaMadurez(movidaId, 'ingrediente');
+            mergeRecipeIntoEstetica: (esteticaId, recipePatch) => {
+                const est = get().esteticas.find(e => e.id === esteticaId);
+                if (!est || est.isOriginal) return;
+                const merged: Recipe = { ...est.recipe };
+                for (const [k, v] of Object.entries(recipePatch)) {
+                    merged[k as MovidaId] = v as Intensidad;
                 }
+                get().updateEsteticaRecipe(esteticaId, merged);
             },
+
         }),
         {
-            name: 'marbella-studio-storage',
-            version: 4,
+            name: 'marbella-sandbox-storage',
+            version: 5,
             migrate: (persistedState: any, version: number) => {
-                if (version < 4) {
-                    // El modelo anterior (contratos/Copiloto) queda DESCARTADO.
+                if (version < 5) {
                     return {
-                        modo: 'decidir',
                         viewport: 'mobile',
-                        activeScreenKey: 'movimientos',
-                        activeVariantId: null,
-                        activeHipotesisId: null,
-                        versions: defaultVersions(),
-                        hipotesis: [],
+                        activeEsteticaId: ESTETICA_ORIGINAL_ID,
+                        esteticas: esteticasIniciales(),
+                        route: '/dashboard/ventas' as SandboxRoute,
+                        routeHistory: [],
                         movidas: MOVIDAS_CATALOGO,
-                        reglas: [],
-                        sondaNotas: [],
-                        observaciones: [],
                     };
                 }
                 return persistedState;
@@ -380,7 +248,21 @@ export const useStudioStore = create<StudioStateV4>()(
     )
 );
 
-export function designContextDe(state: StudioStateV4): DesignContext {
-    const node = versionOf(state.versions, state.activeScreenKey, state.activeVariantId || '');
-    return resolverReceta(node ? node.recipe : {});
+// ============================================================
+// SELECTORES
+// ============================================================
+
+export function useActiveEstetica(): Estetica {
+    const activa = useSandboxStore(s => s.esteticas.find(e => e.id === s.activeEsteticaId));
+    return activa ?? useSandboxStore.getState().esteticas[0];
+}
+
+export function activeEsteticaRecipe(): Recipe {
+    const s = useSandboxStore.getState();
+    const est = s.esteticas.find(e => e.id === s.activeEsteticaId);
+    return est?.recipe ?? {};
+}
+
+export function designContextDeEsteticaActiva(): DesignContext {
+    return resolverReceta(activeEsteticaRecipe());
 }

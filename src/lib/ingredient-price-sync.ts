@@ -1,9 +1,10 @@
 /**
  * Sincronización de precio desde albaranes sin tocar unidades ni modo pack del catálogo.
- * SSOT: context/INGREDIENTS_PRECIOS_Y_ALBARANES.md
+ * SSOT: marbella-os/3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md
  */
 
 export type IngredientPriceRow = {
+  price_locked?: boolean | null
   current_price?: number | null
   supplier_pricing_mode?: string | null
   pack_price?: number | null
@@ -11,6 +12,11 @@ export type IngredientPriceRow = {
   pack_unit_size_qty?: number | null
   pack_unit_size_unit?: string | null
   purchase_unit?: string | null
+}
+
+/** Un precio bloqueado no acepta actualizaciones originadas en un albarán. */
+export function isIngredientPriceLocked(row: Pick<IngredientPriceRow, 'price_locked'>): boolean {
+  return row.price_locked === true
 }
 
 /** Comparación tolerante para numeric(12,6) y redondeos de albarán. */

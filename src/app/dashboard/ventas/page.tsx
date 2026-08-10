@@ -19,6 +19,7 @@ import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatMonthYear, formatYmdShort, periodRangeSummary } from '@/lib/usage/modal-apply';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { SubNavVentas } from '@/components/dashboards/SubNavVentas';
+import { navigateInsideSandbox } from '@/lib/sandbox/client';
 import type { VentasTab } from '@/components/dashboards/SubNavVentas';
 import * as XLSX from 'xlsx';
 
@@ -638,7 +639,9 @@ export default function VentasPage() {
                                 {canAccessInsights ? (
                                     <button
                                         type="button"
-                                        onClick={() => router.push('/dashboard/insights')}
+                                         onClick={() => {
+                                             if (!navigateInsideSandbox('/dashboard/insights')) router.push('/dashboard/insights');
+                                         }}
                                         aria-label="Abrir insights"
                                         title="Insights"
                                         className={cn(

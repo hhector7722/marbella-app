@@ -11,6 +11,7 @@ import { useAIStore } from '@/store/aiStore';
 import { cn } from '@/lib/utils';
 import { getHomeHrefForUser, isMasterDashboardUser } from '@/lib/master-dashboard';
 import { isFullscreenCartaPath } from '@/lib/carta-fullscreen-path';
+import { navigateInsideSandbox } from '@/lib/sandbox/client';
 
 export default function Navbar() {
     const pathname = usePathname();
@@ -78,7 +79,7 @@ export default function Navbar() {
                         {!hideNavbarBack && (
                             <button
                                 onClick={() => {
-                                    router.push(homePath);
+                                    if (!navigateInsideSandbox(homePath)) router.push(homePath);
                                 }}
                                 className={cn(
                                     'h-12 w-12 shrink-0 grid place-items-center',

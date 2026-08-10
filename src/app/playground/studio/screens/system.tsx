@@ -24,7 +24,14 @@ export function DesignProvider({ recipe, children }: { recipe: Recipe; children:
     const cssVars = cssVarsDelContexto(ctx);
     return (
         <DesignCtx.Provider value={ctx}>
-            <div style={{ ...cssVars, fontSize: `calc(16px * var(--dl-type-scale))` } as React.CSSProperties} className="h-full">
+            <div
+                data-marbella-sandbox="true"
+                data-dl-surface={ctx.surface}
+                data-dl-elevation={ctx.elevation}
+                data-dl-buttons={ctx.buttonWeight}
+                style={{ ...cssVars, fontSize: `calc(16px * var(--dl-type-scale))` } as React.CSSProperties}
+                className="h-full"
+            >
                 {children}
             </div>
         </DesignCtx.Provider>
@@ -36,6 +43,16 @@ const sp = (n: number) => `calc(${n * 8}px * var(--dl-space))` as const;
 // Marca de Marbella (de TOKENS.md: color.marca #36606F)
 const BRAND = '#36606F';
 const BRAND_PROFUNDO = '#2F5D6A';
+const TONE_CLASSES: Record<string, string> = {
+    white: 'bg-white',
+    zinc: 'bg-zinc-50',
+};
+const ACCENT_CLASSES: Record<string, string> = {
+    'zinc-900': 'text-zinc-900',
+    'zinc-500': 'text-zinc-500',
+    'emerald-500': 'text-emerald-500',
+    'rose-500': 'text-rose-500',
+};
 
 export function marca(ctx: DesignContext, strong = false): string {
     if (ctx.brandPresence >= 2) return BRAND_PROFUNDO;
@@ -50,8 +67,9 @@ function shadowClass(elevation: number): string {
 // ---- Primitivas de Marbella, sensibles a movidas ----
 
 export function TinyLabel({ children, tone = 'zinc-400' }: { children: React.ReactNode; tone?: string }) {
+    const toneClass = tone === 'zinc-500' ? 'text-zinc-500' : 'text-zinc-400';
     return (
-        <span className={`text-[8px] md:text-[10px] font-black uppercase tracking-[0.12em] text-${tone}`}>
+        <span className={`text-[8px] md:text-[10px] font-black uppercase tracking-[0.12em] ${toneClass}`}>
             {children}
         </span>
     );
@@ -61,11 +79,12 @@ export function SurfaceCard({ children, className = '', tone = 'white' }: { chil
     const ctx = useDesign();
     const flat = ctx.surface >= 2;
     const soft = ctx.surface === 1;
+    const toneClass = TONE_CLASSES[tone] ?? TONE_CLASSES.white;
     return (
         <div
             style={{ padding: sp(1.25), marginBottom: sp(1) }}
             className={`rounded-2xl ${shadowClass(ctx.elevation)} ${className} ${
-                flat ? 'bg-transparent border-0' : soft ? `bg-${tone} border border-zinc-100` : `bg-${tone}`
+                flat ? 'bg-transparent border-0' : soft ? `${toneClass} border border-zinc-100` : toneClass
             }`}
         >
             {children}
@@ -77,17 +96,17 @@ export function StatKPI({ label, value, accent = 'zinc-900', sub }: { label: str
     const ctx = useDesign();
     const prominence = ctx.kpiProminence;
     const size = prominence >= 2 ? 'text-2xl md:text-4xl' : prominence === 1 ? 'text-xl md:text-3xl' : 'text-lg md:text-2xl';
-    const accentCls = accent === 'marca' ? undefined : accent;
+    const accentCls = accent === 'marca' ? undefined : ACCENT_CLASSES[accent] ?? 'text-zinc-900';
     const color = accent === 'marca' ? marca(ctx, prominence >= 1) : accentCls;
     return (
         <div className="flex flex-col items-center text-center">
             <span
-                className={`${size} font-black tabular-nums leading-none tracking-tight ${accentCls ? '' : ''}`}
+                className={`${size} font-black tabular-nums leading-none tracking-tight ${accentCls ?? ''}`}
                 style={accent === 'marca' ? { color } : undefined}
             >
                 {value}
             </span>
-            <span className={`text-[8px] md:text-[9px] font-black uppercase tracking-widest mt-1 text-${accentCls ? (prominence >= 1 ? 'zinc-500' : 'zinc-400') : 'zinc-400'}`}>
+            <span className={`text-[8px] md:text-[9px] font-black uppercase tracking-widest mt-1 ${prominence >= 1 ? 'text-zinc-500' : 'text-zinc-400'}`}>
                 {label}
             </span>
             {sub && <span className="text-[10px] text-zinc-500 mt-0.5">{sub}</span>}
@@ -102,7 +121,7 @@ export function ActionPill({ label, kind = 'brand', onClick, disabled }: { label
         success: 'bg-emerald-500 text-white',
         danger: 'bg-rose-500 text-white',
         warning: 'bg-orange-500 text-white',
-        ghost: 'bg-white/10 text-white',
+        ghost: 'bg-zinc-100 text-zinc-600',
     };
     const silent = ctx.buttonWeight === 'silent';
     const bold = ctx.buttonWeight === 'bold';
@@ -167,7 +186,19 @@ export function AppTable({
 
     return (
         <div className={`w-full overflow-hidden rounded-xl ${borderCls}`}>
-            <table className="w-full text-left">
+            <div className="divide-y divide-zinc-100 md:hidden">
+                {rows.map((r, i) => (
+                    <div key={`${idPrefix}-mobile-${i}`} className="space-y-2 bg-white p-3">
+                        {r.map((cell, j) => (
+                            <div key={j} className="flex items-baseline justify-between gap-3">
+                                <span className="shrink-0 text-[8px] font-black uppercase tracking-widest text-zinc-400">{head[j]}</span>
+                                <span className={`text-right text-xs font-bold ${accents?.[j] ?? 'text-zinc-900'} tabular-nums`}>{cell}</span>
+                            </div>
+                        ))}
+                    </div>
+                ))}
+            </div>
+            <table className="hidden w-full text-left md:table">
                 <thead>
                     <tr className="bg-[#36606F] text-white">
                         {head.map((h, i) => (
@@ -193,16 +224,37 @@ export function AppTable({
     );
 }
 
-export function AppInput({ label, placeholder }: { label: string; placeholder?: string }) {
+export function AppInput({
+    label,
+    placeholder,
+    value,
+    onChange,
+    multiline = false,
+}: {
+    label: string;
+    placeholder?: string;
+    value?: string;
+    onChange?: (value: string) => void;
+    multiline?: boolean;
+}) {
     return (
         <label style={{ gap: sp(0.3) }} className="flex flex-col">
             <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">{label}</span>
-            <div
-                style={{ minHeight: 48 }}
-                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3.5 flex items-center text-xs text-zinc-400"
-            >
-                {placeholder || label}
-            </div>
+            {multiline ? (
+                <textarea
+                    value={value}
+                    onChange={event => onChange?.(event.target.value)}
+                    placeholder={placeholder || label}
+                    className="min-h-24 w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50 px-3.5 py-3 text-base text-zinc-700 outline-none placeholder:text-zinc-400 focus:border-[#36606F]"
+                />
+            ) : (
+                <input
+                    value={value}
+                    onChange={event => onChange?.(event.target.value)}
+                    placeholder={placeholder || label}
+                    className="min-h-12 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3.5 text-base text-zinc-700 outline-none placeholder:text-zinc-400 focus:border-[#36606F]"
+                />
+            )}
         </label>
     );
 }

@@ -2,6 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Lente visual del sandbox: afecta a la expresión, nunca a datos o lógica. */
+[data-marbella-sandbox='true'][data-dl-elevation='0'] [class~='shadow-2xl'],
+[data-marbella-sandbox='true'][data-dl-elevation='0'] [class~='shadow-xl'],
+[data-marbella-sandbox='true'][data-dl-elevation='0'] [class~='shadow-sm'] {
+  box-shadow: none;
+}
+
+[data-marbella-sandbox='true'][data-dl-surface='2'] [class~='shadow-2xl'],
+[data-marbella-sandbox='true'][data-dl-surface='2'] [class~='shadow-xl'],
+[data-marbella-sandbox='true'][data-dl-surface='2'] [class~='bg-white'] {
+  box-shadow: none;
+}
+
+[data-marbella-sandbox='true'][data-dl-surface='2'] [class~='bg-white'] {
+  background-color: transparent;
+}
+
+[data-marbella-sandbox='true'][data-dl-buttons='silent'] button[class*='bg-[#36606F]'] {
+  background-color: transparent;
+  border: 1px solid #e4e4e7;
+  color: #36606f;
+}
+
 @layer utilities {
   /**
    * Fondo de app: azul corporativo (#5B8FB9) con difuminado sutil —

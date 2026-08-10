@@ -7,7 +7,7 @@ import { computeEffectivePriceFromPack } from '@/lib/ingredient-pack-pricing'
  * En la receta cada línea tiene quantity_gross + unit; se convierte a purchase_unit
  * y se multiplica por current_price.
  *
- * SSOT precios vs albaranes: `context/INGREDIENTS_PRECIOS_Y_ALBARANES.md`
+ * SSOT precios vs albaranes: `marbella-os/3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md`
  */
 
 export type MassVolumeUnit = 'g' | 'kg' | 'ml' | 'l' | 'cl' | 'ud';

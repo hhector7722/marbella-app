@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { navigateInsideSandbox } from '@/lib/sandbox/client';
 import { Download, Printer, Share } from 'lucide-react';
 
 export type VentasTab = 'VENTAS' | 'LIVE' | 'PRODUCTOS' | 'HORAS';
@@ -21,6 +22,8 @@ interface SubNavVentasProps {
   onExportExcel?: () => void;
   /** Imprime la tabla activa (sólo en /dashboard/ventas) */
   onPrint?: () => void;
+  /** Navegación interna alternativa cuando Ventas está montada en el sandbox. */
+  sandboxNavigate?: (href: string) => void;
 }
 
 /**
@@ -31,7 +34,7 @@ interface SubNavVentasProps {
  *  - Resto → Si `onTabChange` existe (estamos en ventas) → invoca el callback.
  *             Si no existe (estamos en sala) → `router.push('/dashboard/ventas?tab=X')`.
  */
-export function SubNavVentas({ activeTab, onTabChange, showPrint = false, onExportExcel, onPrint }: SubNavVentasProps) {
+export function SubNavVentas({ activeTab, onTabChange, showPrint = false, onExportExcel, onPrint, sandboxNavigate }: SubNavVentasProps) {
   const router = useRouter();
   const [shareMenuOpen, setShareMenuOpen] = useState(false);
   const [shareBusy, setShareBusy] = useState<null | 'excel' | 'print'>(null);
@@ -57,7 +60,9 @@ export function SubNavVentas({ activeTab, onTabChange, showPrint = false, onExpo
 
   const handleTab = (tab: VentasTab) => {
     if (tab === 'LIVE') {
-      router.push('/dashboard/sala');
+      if (sandboxNavigate) sandboxNavigate('/dashboard/sala');
+      else if (navigateInsideSandbox('/dashboard/sala')) return;
+      else router.push('/dashboard/sala');
       return;
     }
     if (onTabChange) {
@@ -65,7 +70,9 @@ export function SubNavVentas({ activeTab, onTabChange, showPrint = false, onExpo
       onTabChange(tab);
     } else {
       // Venimos desde /dashboard/sala: hard-nav con parámetro de pestaña
-      router.push(`/dashboard/ventas?tab=${tab}`);
+      if (sandboxNavigate) sandboxNavigate(`/dashboard/ventas?tab=${tab}`);
+      else if (navigateInsideSandbox(`/dashboard/ventas?tab=${tab}`)) return;
+      else router.push(`/dashboard/ventas?tab=${tab}`);
     }
   };
 

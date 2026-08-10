@@ -25,6 +25,7 @@ import {
   YAxis,
 } from 'recharts'
 import { cn, formatDisplayValue } from '@/lib/utils'
+import { navigateInsideSandbox } from '@/lib/sandbox/client'
 import {
   getHourlySalesVsLabor,
   getWeekdayAnalysis,
@@ -66,6 +67,7 @@ type InsightsClientProps = {
   initialFinancial: FinancialSummaryData | null
   initialFinancialForbidden?: boolean
   initialErrors?: Partial<Record<SectionKey, string>>
+  sandboxNavigate?: (href: string) => void
 }
 
 const PETROLEO = '#36606F'
@@ -705,6 +707,7 @@ export default function InsightsClient({
   initialFinancial,
   initialFinancialForbidden = false,
   initialErrors,
+  sandboxNavigate,
 }: InsightsClientProps) {
   const [dateFrom, setDateFrom] = useState(initialDateFrom)
   const [dateTo, setDateTo] = useState(initialDateTo)
@@ -999,9 +1002,12 @@ export default function InsightsClient({
       const ok = window.confirm(
         `¿Abrir la receta de «${productName}»? Saldrás de Insights.`
       )
-      if (ok) router.push(`/recipes/${recipeId}`)
+      if (ok) {
+        if (sandboxNavigate) sandboxNavigate(`/recipes/${recipeId}`)
+        else if (!navigateInsideSandbox(`/recipes/${recipeId}`)) router.push(`/recipes/${recipeId}`)
+      }
     },
-    [router]
+    [router, sandboxNavigate]
   )
 
   const financialKpis = useMemo(() => {

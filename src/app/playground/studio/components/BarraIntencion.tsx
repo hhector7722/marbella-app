@@ -17,7 +17,7 @@ const ETIQUETA_INTENSIDAD: Record<Intensidad, string> = {
     fuerte: 'fuerte',
 };
 
-export function BarraIntencion({ onAplicar, placeholder }: { onAplicar: (recipe: Recipe) => void; placeholder?: string }) {
+export function BarraIntencion({ onAplicar, placeholder }: { onAplicar: (recipe: Recipe, frase: string) => void; placeholder?: string }) {
     const [frase, setFrase] = useState('');
     const [recipe, setRecipe] = useState<Recipe | null>(null);
     const [explicacion, setExplicacion] = useState<string[]>([]);
@@ -29,7 +29,7 @@ export function BarraIntencion({ onAplicar, placeholder }: { onAplicar: (recipe:
     };
 
     const aplicar = () => {
-        if (recipe && Object.keys(recipe).length > 0) onAplicar(recipe);
+        if (recipe && Object.keys(recipe).length > 0) onAplicar(recipe, frase);
         setFrase('');
         setRecipe(null);
         setExplicacion([]);
