@@ -1,149 +1,134 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-export type SpatialCompositionFlow = 'fluid-stack' | 'hero-header' | 'grid-surface' | 'clean-canvas';
+// ============================================================
+// MODELO CONCEPTUAL DEFINITIVO — Marbella Design Studio
+// Una app. Un vocabulario. Tres modos de atención.
+// ============================================================
 
-export type BlockType = 
-    | 'kpi-grid' 
-    | 'data-table' 
-    | 'filter-bar' 
-    | 'page-header'
-    | 'sidebar-nav'
-    | 'empty-placeholder'
-    | 'container-block'
-    | 'callout-banner'
-    | 'top-bar'
-    | 'bottom-nav'
-    | 'tabs'
-    | 'fab'
-    | 'form';
+export type Modo = 'absorber' | 'sondear' | 'decidir';
 
-export type SurfaceType =
-    | 'pantalla'
-    | 'dashboard'
-    | 'modal'
-    | 'formulario'
-    | 'tabla'
-    | 'kpis'
-    | 'cabecera'
-    | 'drawer'
-    | 'bottom-sheet';
+export type ViewportPreset = 'mobile' | 'tablet' | 'desktop';
 
-export interface MarbellaBlock {
-    id: string;
-    type: BlockType;
-    props: Record<string, any>;
-    children?: MarbellaBlock[];
+export type Intensidad = 'nada' | 'sutil' | 'moderado' | 'fuerte';
+
+export type Madurez = 'semilla' | 'ingrediente' | 'regla';
+
+// Receta = mapa disperso de intensidades por movida.
+// Nunca porcentajes: solo intensidad ordinal.
+export type Recipe = Partial<Record<MovidaId, Intensidad>>;
+
+export type MovidaId =
+    | 'aire'
+    | 'superficies'
+    | 'densidad'
+    | 'profundidad'
+    | 'contraste'
+    | 'voz_tipografica'
+    | 'ruido_navegacion'
+    | 'protagonismo_kpi'
+    | 'presencia_marca'
+    | 'tratamiento_tablas'
+    | 'peso_botones';
+
+export interface Movida {
+    id: MovidaId;
+    nombre: string;
+    descripcion: string;
+    ejemplo: string;
+    contraejemplo: string;
+    interacciones: MovidaId[];
+    madurez: Madurez;
+    referenciasOrigen: string[]; // ids de Referencia
+    reglaId?: string; // si madurez === 'regla'
 }
 
-export interface MarbellaVariant {
+export interface Referencia {
     id: string;
+    nombre: string;
+    dominio: string;
+    descripcion: string;
+    movidasObservadas: { movidaId: MovidaId; intensidad: Intensidad; nota: string }[];
+    contraejemplos: string[];
+    preguntas: string[];
+}
+
+export type EstadoHipotesis =
+    | 'nueva'
+    | 'investigando'
+    | 'probando'
+    | 'validada'
+    | 'descartada'
+    | 'convertida_en_regla';
+
+export interface Hipotesis {
+    id: string;
+    texto: string;
+    estado: EstadoHipotesis;
+    movidas: MovidaId[];
+    referencias: string[];
+    variantes: string[];
+    pantallas: string[];
+    notas: string;
+    createdAt: string;
+    updatedAt: string;
+    timeline: { estado: EstadoHipotesis; fecha: string }[];
+}
+
+export type EstadoVersion = 'original' | 'conservada' | 'candidata' | 'descartada';
+
+// Nodo del árbol de versiones de una pantalla.
+export interface VariantNode {
+    id: string;
+    screenKey: string;
+    parentId: string | null; // null => nodo ORIGINAL (raíz)
     name: string;
-    description: string;
-    surfaceType: SurfaceType;
-    layout: SpatialCompositionFlow;
-    regions: Record<string, MarbellaBlock[]>;
-    createdAt: string; // ISO date
-    updatedAt: string; // ISO date
+    recipe: Recipe; // dispersa: solo lo que cambia respecto al original
+    estado: EstadoVersion;
+    hipotesisId?: string;
+    // Puertas de validación hacia el Design Language
+    superaPuerta1?: boolean; // mejor que el original en su pantalla
+    segundaPantalla?: string | null; // pantalla distinta donde también funcionó
+    createdAt: string;
+    updatedAt: string;
 }
 
-export type StudioViewMode = 'edit' | 'preview';
-export type ViewportPreset = 'desktop' | 'tablet' | 'mobile';
-
-// 5-LEVEL RECURSIVE OBJECT MODEL
-export type DesignLevel = 1 | 2 | 3 | 4 | 5;
-
-export type IntentCategory = 
-    | 'identidad' 
-    | 'datos' 
-    | 'control' 
-    | 'navegacion' 
-    | 'acciones' 
-    | 'resumen' 
-    | 'estado' 
-    | 'alerta';
-
-export interface FocusNode {
+export interface Regla {
     id: string;
-    name: string;
-    type: string;
+    movidaId: MovidaId;
+    resumen: string;
+    ejemplo: string;
+    contraejemplo: string;
+    pantallaOrigen: string;
+    pantallaValidacion: string;
+    varianteOrigenId: string;
+    hipotesisId?: string;
+    createdAt: string;
 }
 
-export interface CopilotMessage {
+// ============================================================
+// CONTEXTO DE DISEÑO RESUELTO (consumido por las pantallas)
+// ============================================================
+
+export type FontVoice = 'compacto' | 'normal' | 'editorial';
+export type TableTreatment = 'bordered' | 'borderless' | 'flat';
+export type ButtonWeight = 'normal' | 'silent' | 'bold';
+
+export interface DesignContext {
+    space: number; // escala de espaciado (1 = normal)
+    typeScale: number; // escala tipográfica (1 = normal)
+    surface: number; // 0 = sin reducción · 2 = superficie mínima
+    elevation: number; // 0 = sin elevación · 3 = máxima
+    contrast: number; // 0 = neutro · 2 = contraste fuerte
+    fontVoice: FontVoice;
+    navNoise: number; // 0 = ruidosa · 2 = silenciosa
+    kpiProminence: number; // 0 = neutro · 2 = protagonismo
+    brandPresence: number; // 0 = ausente · 2 = protagonismo de marca
+    tableTreatment: TableTreatment;
+    buttonWeight: ButtonWeight;
+}
+
+export interface SondaNota {
     id: string;
-    role: 'user' | 'assistant';
-    text: string;
-    generatedVariantIds?: string[];
-    timestamp: string;
-}
-
-export interface StudioState {
-    variants: MarbellaVariant[];
-    activeVariantId: string | null;
-    selectedBlockId: string | null;
-    hoveredBlockId: string | null;
-    viewMode: StudioViewMode;
-    viewportPreset: ViewportPreset;
-    zoom: number; // 50, 75, 100, etc.
-
-    // Variant Manager State
-    isVariantManagerOpen: boolean;
-
-    // Recursive Object Focus Stack Navigation
-    focusStack: FocusNode[];
-    focusedBlockId: string | null;
-
-    // Multilevel Progressive Zoom State
-    currentLevel: DesignLevel;
-    tokens: Record<string, string>;
-
-    // AI Copilot (governed) State
-    isCopilotOpen: boolean;
-    isNewSurfaceModalOpen: boolean;
-    isGeneratingAI: boolean;
-    copilotMessages: CopilotMessage[];
-
-    // Variant Lifecycle Management Actions
-    openVariantManager: () => void;
-    closeVariantManager: () => void;
-    renameVariant: (id: string, newName: string) => void;
-    duplicateVariant: (id: string) => void;
-    deleteVariant: (id: string) => boolean;
-
-    // Recursive Object Navigation Actions
-    focusIntoObject: (id: string, name: string, type: string) => void;
-    focusOutObject: () => void;
-    popToFocusIndex: (index: number) => void;
-
-    // Multilevel State Mutators
-    setCurrentLevel: (level: DesignLevel) => void;
-    zoomInLevel: () => void;
-    zoomOutLevel: () => void;
-    addIntentZone: (category: IntentCategory, regionId?: string) => void;
-    updateSystemToken: (key: string, value: string) => void;
-
-    // Copilot Actions (governed by contracts)
-    toggleCopilotPanel: (open?: boolean) => void;
-    openNewSurfaceModal: () => void;
-    closeNewSurfaceModal: () => void;
-    generateAIProposals: (prompt: string, surfaceType: SurfaceType, viewport: ViewportPreset, count?: number) => void;
-    refineAIVariant: (prompt: string) => void;
-
-    setActiveVariant: (id: string) => void;
-    saveVariant: (variant: MarbellaVariant) => void;
-    addVariant: (name: string, surfaceType?: SurfaceType, layout?: SpatialCompositionFlow) => void;
-    
-    // Canvas & Inspection State
-    selectBlock: (id: string | null) => void;
-    setHoveredBlock: (id: string | null) => void;
-    setViewMode: (mode: StudioViewMode) => void;
-    setViewportPreset: (preset: ViewportPreset) => void;
-    setZoom: (zoom: number) => void;
-    
-    // Block Manipulation (No-Code Visual Editing)
-    updateBlockProps: (blockId: string, props: Record<string, any>) => void;
-    addBlockToRegion: (regionId: string, type: BlockType, targetIndex?: number) => void;
-    removeBlock: (blockId: string) => void;
-    duplicateBlock: (blockId: string) => void;
-    moveBlock: (blockId: string, direction: 'up' | 'down') => void;
-    updateRegionInActiveVariant: (regionId: string, blocks: MarbellaBlock[]) => void;
-    updateVariantSpatialFlow: (flow: SpatialCompositionFlow) => void;
+    screenKey: string;
+    recipe: Recipe;
+    texto: string;
+    createdAt: string;
 }
