@@ -20,7 +20,8 @@ export default function StudioTopBar() {
         setActiveStudioTab,
         openNewSurfaceModal,
         toggleCopilotPanel,
-        isCopilotOpen
+        isCopilotOpen,
+        openVariantManager
     } = useStudioStore();
 
     return (
@@ -55,27 +56,39 @@ export default function StudioTopBar() {
                     ))}
                 </div>
 
-                {/* Active Variant Dropdown & New Surface Trigger (Only in Canvas tab) */}
+                {/* Active Variant Professional Switcher & Manager Trigger (Only in Canvas tab) */}
                 {activeStudioTab === 'canvas' && (
                     <div className="flex items-center gap-2 pl-3 border-l border-white/10">
-                        <select
-                            value={activeVariantId || ''}
-                            onChange={(e) => setActiveVariant(e.target.value)}
-                            className="bg-white/5 border border-white/15 rounded-lg px-2.5 py-1 text-xs font-medium text-zinc-200 focus:outline-none focus:border-[#36606F] hover:bg-white/10 transition-colors"
-                        >
-                            {variants.map(v => (
-                                <option key={v.id} value={v.id} className="bg-[#121214] text-white">
-                                    {v.name} ({v.layout})
-                                </option>
-                            ))}
-                        </select>
+                        {/* Active Variant Badge & Dropdown Selector */}
+                        <div className="flex items-center gap-1 bg-white/5 border border-white/15 rounded-xl p-1">
+                            <select
+                                value={activeVariantId || ''}
+                                onChange={(e) => setActiveVariant(e.target.value)}
+                                className="bg-transparent text-xs font-bold text-white focus:outline-none px-2 cursor-pointer"
+                            >
+                                {variants.filter(v => !v.isArchived && !v.isSystemVariant).map(v => (
+                                    <option key={v.id} value={v.id} className="bg-[#121214] text-white font-medium">
+                                        {v.name} {v.isBaseVariant ? '⭐' : ''}
+                                    </option>
+                                ))}
+                            </select>
+
+                            <button
+                                onClick={openVariantManager}
+                                className="px-2 py-1 bg-white/10 hover:bg-white/20 text-zinc-200 text-xs font-bold rounded-lg transition-colors flex items-center gap-1"
+                                title="Abrir Gestor Documental de Variantes"
+                            >
+                                <span>🗂️</span>
+                                <span className="hidden md:inline">Gestor ({variants.filter(v => !v.isArchived && !v.isSystemVariant).length})</span>
+                            </button>
+                        </div>
 
                         <button
                             onClick={openNewSurfaceModal}
-                            className="px-3 py-1 bg-[#36606F] hover:bg-[#407080] border border-[#5B8FB9] rounded-lg text-xs font-bold text-white transition-all flex items-center gap-1.5 shadow"
-                            title="Nueva Superficie (Manual o IA)"
+                            className="px-3 py-1 bg-[#36606F] hover:bg-[#407080] border border-[#5B8FB9] rounded-xl text-xs font-bold text-white transition-all flex items-center gap-1.5 shadow"
+                            title="Declarar Nueva Intención de Superficie"
                         >
-                            <span>+ Declarar Intención</span>
+                            <span>+ Nueva Variante</span>
                         </button>
                     </div>
                 )}
@@ -162,7 +175,7 @@ export default function StudioTopBar() {
                 <button
                     onClick={resetToDefaults}
                     className="p-1.5 text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg border border-transparent hover:border-rose-500/20 transition-all"
-                    title="Restablecer estado predeterminado"
+                    title="Restablecer estado predeterminado de variantes"
                 >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />

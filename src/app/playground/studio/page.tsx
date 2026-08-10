@@ -11,6 +11,7 @@ import AcademyStudioView from './academy/components/AcademyStudioView';
 import AcademyComparatorView from './academy/components/AcademyComparatorView';
 import NewSurfaceModal from './copilot/components/NewSurfaceModal';
 import CopilotChatPanel from './copilot/components/CopilotChatPanel';
+import VariantManagerModal from './components/VariantManagerModal';
 
 export default function StudioPage() {
     const { activeVariantId, selectBlock, viewMode, activeStudioTab } = useStudioStore();
@@ -69,6 +70,9 @@ export default function StudioPage() {
 
             {/* New Surface Choice Modal (Manual vs AI Copilot) */}
             <NewSurfaceModal />
+
+            {/* Professional Variant Lifecycle Manager Modal */}
+            <VariantManagerModal />
         </div>
     );
 }

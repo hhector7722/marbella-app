@@ -24,11 +24,17 @@ export interface MarbellaVariant {
     description: string;
     layout: SpatialCompositionFlow;
     regions: Record<string, MarbellaBlock[]>;
+    createdAt: string; // ISO date
+    updatedAt: string; // ISO date
+    isArchived?: boolean;
+    isSystemVariant?: boolean;
+    isBaseVariant?: boolean;
 }
 
 export type StudioViewMode = 'edit' | 'preview';
 export type ViewportPreset = 'desktop' | 'tablet' | 'mobile';
 export type StudioTab = 'canvas' | 'academy' | 'comparator';
+export type VariantSortOption = 'modified' | 'created' | 'name';
 
 // 5-LEVEL RECURSIVE OBJECT MODEL
 export type DesignLevel = 1 | 2 | 3 | 4 | 5;
@@ -58,6 +64,10 @@ export interface StudioState {
     viewportPreset: ViewportPreset;
     zoom: number; // 50, 75, 100, etc.
 
+    // Variant Manager State
+    isVariantManagerOpen: boolean;
+    variantSortBy: VariantSortOption;
+
     // Recursive Object Focus Stack Navigation
     focusStack: FocusNode[];
     focusedBlockId: string | null;
@@ -77,6 +87,17 @@ export interface StudioState {
     isNewSurfaceModalOpen: boolean;
     copilotMessages: any[];
     isGeneratingAI: boolean;
+
+    // Variant Lifecycle Management Actions
+    openVariantManager: () => void;
+    closeVariantManager: () => void;
+    setVariantSortBy: (option: VariantSortOption) => void;
+    renameVariant: (id: string, newName: string) => void;
+    duplicateVariant: (id: string) => void;
+    archiveVariant: (id: string, archived?: boolean) => void;
+    setBaseVariant: (id: string) => void;
+    exportVariant: (id: string) => void;
+    deleteVariant: (id: string) => boolean;
 
     // Recursive Object Navigation Actions
     focusIntoObject: (id: string, name: string, type: string) => void;
@@ -105,7 +126,6 @@ export interface StudioState {
     setActiveVariant: (id: string) => void;
     saveVariant: (variant: MarbellaVariant) => void;
     addVariant: (name: string, layout?: SpatialCompositionFlow) => void;
-    deleteVariant: (id: string) => void;
     
     // Canvas & Inspection State
     selectBlock: (id: string | null) => void;
@@ -118,7 +138,6 @@ export interface StudioState {
     updateBlockProps: (blockId: string, props: Record<string, any>) => void;
     addBlockToRegion: (regionId: string, type: BlockType, targetIndex?: number) => void;
     removeBlock: (blockId: string) => void;
-    duplicateBlock: (blockId: string) => void;
     moveBlock: (blockId: string, direction: 'up' | 'down') => void;
     updateRegionInActiveVariant: (regionId: string, blocks: MarbellaBlock[]) => void;
     updateVariantSpatialFlow: (flow: SpatialCompositionFlow) => void;

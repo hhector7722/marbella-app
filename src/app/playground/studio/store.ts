@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { StudioState, MarbellaVariant, MarbellaBlock, StudioTab, DesignLevel, IntentCategory, SpatialCompositionFlow } from './types';
+import { StudioState, MarbellaVariant, MarbellaBlock, StudioTab, DesignLevel, IntentCategory, SpatialCompositionFlow, VariantSortOption } from './types';
 import { DESIGN_BENCHMARKS } from './academy/data';
 import { generateCopilotVariants } from './copilot/ai-engine';
 import { SurfaceType } from './copilot/types';
@@ -19,47 +19,37 @@ const DEFAULT_MARBELLA_TOKENS: Record<string, string> = {
     'espacio.base': '4px'
 };
 
-const INITIAL_VARIANTS: MarbellaVariant[] = [
+const INITIAL_CLEAN_VARIANTS: MarbellaVariant[] = [
     {
-        id: 'prop-a-panel',
-        name: 'Panel de Control Marbella',
-        description: 'Superficie fluida con foco operacional.',
+        id: 'marbella-workspace-main',
+        name: 'Pantalla Principal Marbella',
+        description: 'Lienzo de trabajo inicial de Marbella App.',
         layout: 'fluid-stack',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isArchived: false,
+        isSystemVariant: false,
+        isBaseVariant: true,
         regions: {
-            'sidebar': [
-                { id: 'sb-nav-1', type: 'sidebar-nav', props: { variant: 'app-menu' } }
-            ],
             'header': [
-                { id: 'hd-title', type: 'page-header', props: { title: 'Gestión de Equipo', description: 'Supervisión de personal, horarios e incidencias operativas.', showStats: true } },
-                { id: 'hd-filters', type: 'filter-bar', props: { showSearch: true, showNew: true, placeholder: 'Buscar empleado por nombre o DNI...' } }
+                { id: 'hd-title-main', type: 'page-header', props: { title: 'Gestión de Equipo Marbella', description: 'Supervisión de personal, horarios e incidencias operativas.', showStats: true } },
+                { id: 'hd-filters-main', type: 'filter-bar', props: { showSearch: true, showNew: true, placeholder: 'Buscar por nombre o DNI...' } }
             ],
             'main': [
                 {
-                    id: 'kpi-summary',
+                    id: 'kpi-summary-main',
                     type: 'kpi-grid',
                     props: {
                         items: [
                             { label: 'Personal Activo', value: '42', change: '+3 este mes', trend: 'up' },
-                            { label: 'Turno Actual', value: '18 camareros', change: '100% cobertura', trend: 'neutral' },
-                            { label: 'Alertas Fichaje', value: '2', change: 'Faltan salidas', trend: 'down' },
+                            { label: 'Turno Actual', value: '18 camareros', change: '100% cobertura', trend: 'neutral' }
                         ]
                     }
                 },
-                { id: 'm-table', type: 'data-table', props: { density: 'high', columns: ['Nombre', 'Puesto', 'Estado', 'Horas Semanal'], title: 'Plantilla de Personal' } }
-            ]
-        }
-    },
-    {
-        id: 'prop-b-lienzo',
-        name: 'Lienzo Enfocado',
-        description: 'Baja densidad, alta legibilidad.',
-        layout: 'hero-header',
-        regions: {
-            'header': [
-                { id: 'hd-title-b', type: 'page-header', props: { title: 'Equipo & Talento', description: 'Gestiona los perfiles, disponibilidad y condiciones laborales del equipo.' } }
+                { id: 'm-table-main', type: 'data-table', props: { density: 'high', columns: ['Nombre', 'Puesto', 'Estado', 'Horas Semanal'], title: 'Plantilla de Personal' } }
             ],
-            'main': [
-                { id: 'm-list', type: 'data-table', props: { density: 'low', format: 'list', title: 'Directorio Ejecutivo' } }
+            'sidebar': [
+                { id: 'sb-nav-main', type: 'sidebar-nav', props: { variant: 'app-menu' } }
             ]
         }
     }
@@ -68,16 +58,20 @@ const INITIAL_VARIANTS: MarbellaVariant[] = [
 export const useStudioStore = create<StudioState>()(
     persist(
         (set, get) => ({
-            variants: INITIAL_VARIANTS,
-            activeVariantId: INITIAL_VARIANTS[0].id,
-            selectedBlockId: 'hd-title',
+            variants: INITIAL_CLEAN_VARIANTS,
+            activeVariantId: INITIAL_CLEAN_VARIANTS[0].id,
+            selectedBlockId: 'hd-title-main',
             hoveredBlockId: null,
             viewMode: 'edit',
             viewportPreset: 'desktop',
             zoom: 100,
 
+            // Variant Manager State
+            isVariantManagerOpen: false,
+            variantSortBy: 'modified',
+
             // Recursive Object Focus Stack
-            focusStack: [{ id: 'root-surface', name: INITIAL_VARIANTS[0].name, type: 'pantalla' }],
+            focusStack: [{ id: 'root-surface', name: INITIAL_CLEAN_VARIANTS[0].name, type: 'pantalla' }],
             focusedBlockId: null,
 
             // Multilevel Progressive Zoom State
@@ -97,18 +91,104 @@ export const useStudioStore = create<StudioState>()(
                 {
                     id: 'msg-welcome',
                     role: 'assistant',
-                    text: '¡Hola! Soy tu Copiloto Creativo de Marbella OS. Haz doble clic en cualquier objeto para hacer zoom dentro de él.',
+                    text: '¡Hola! Soy tu Copiloto Creativo de Marbella OS. Administra tus variantes desde el gestor documental.',
                     timestamp: 'Ahora'
                 }
             ],
             isGeneratingAI: false,
+
+            // Variant Manager Actions
+            openVariantManager: () => set({ isVariantManagerOpen: true }),
+            closeVariantManager: () => set({ isVariantManagerOpen: false }),
+            setVariantSortBy: (sortBy: VariantSortOption) => set({ variantSortBy: sortBy }),
+
+            renameVariant: (id, newName) => set((state) => ({
+                variants: state.variants.map(v => v.id === id ? {
+                    ...v,
+                    name: newName,
+                    updatedAt: new Date().toISOString()
+                } : v)
+            })),
+
+            duplicateVariant: (id) => set((state) => {
+                const target = state.variants.find(v => v.id === id);
+                if (!target) return state;
+
+                const newId = `var-dup-${Date.now().toString(36)}`;
+                const cloned: MarbellaVariant = {
+                    ...JSON.parse(JSON.stringify(target)),
+                    id: newId,
+                    name: `${target.name} - Copia`,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    isBaseVariant: false,
+                    isArchived: false
+                };
+
+                return {
+                    variants: [...state.variants, cloned],
+                    activeVariantId: newId,
+                    focusStack: [{ id: 'root-surface', name: cloned.name, type: 'pantalla' }]
+                };
+            }),
+
+            archiveVariant: (id, archived = true) => set((state) => ({
+                variants: state.variants.map(v => v.id === id ? {
+                    ...v,
+                    isArchived: archived,
+                    updatedAt: new Date().toISOString()
+                } : v)
+            })),
+
+            setBaseVariant: (id) => set((state) => ({
+                variants: state.variants.map(v => ({
+                    ...v,
+                    isBaseVariant: v.id === id,
+                    updatedAt: v.id === id ? new Date().toISOString() : v.updatedAt
+                }))
+            })),
+
+            exportVariant: (id) => {
+                const variant = get().variants.find(v => v.id === id);
+                if (!variant) return;
+
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(variant, null, 2));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `marbella-variant-${variant.name.toLowerCase().replace(/\s+/g, '-')}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+            },
+
+            deleteVariant: (id) => {
+                const state = get();
+                const activeUserVariants = state.variants.filter(v => !v.isArchived && !v.isSystemVariant);
+
+                if (activeUserVariants.length <= 1 && activeUserVariants.some(v => v.id === id)) {
+                    return false; // Cannot delete the last remaining active workspace variant
+                }
+
+                const nextVariants = state.variants.filter(v => v.id !== id);
+                const nextActiveId = state.activeVariantId === id ? (nextVariants.find(v => !v.isArchived)?.id || nextVariants[0].id) : state.activeVariantId;
+                const activeVar = nextVariants.find(v => v.id === nextActiveId);
+
+                set({
+                    variants: nextVariants,
+                    activeVariantId: nextActiveId,
+                    selectedBlockId: null,
+                    focusStack: [{ id: 'root-surface', name: activeVar ? activeVar.name : 'Pantalla', type: 'pantalla' }]
+                });
+
+                return true;
+            },
 
             // Recursive Object Navigation Actions
             focusIntoObject: (id, name, type) => set((st) => ({
                 focusStack: [...st.focusStack, { id, name, type }],
                 focusedBlockId: id,
                 selectedBlockId: id,
-                currentLevel: 2 // Automatically zoom to Level 2 (Composición del objeto)
+                currentLevel: 2
             })),
 
             focusOutObject: () => set((st) => {
@@ -197,6 +277,7 @@ export const useStudioStore = create<StudioState>()(
                         const currentReg = v.regions[targetRegion] || [];
                         return {
                             ...v,
+                            updatedAt: new Date().toISOString(),
                             regions: {
                                 ...v.regions,
                                 [targetRegion]: [...currentReg, ...newBlocks]
@@ -204,7 +285,7 @@ export const useStudioStore = create<StudioState>()(
                         };
                     }),
                     selectedBlockId: newBlocks[0].id,
-                    currentLevel: 2 // Automatically zoom to Level 2 (Composición)
+                    currentLevel: 2
                 };
             }),
 
@@ -220,15 +301,24 @@ export const useStudioStore = create<StudioState>()(
                 set({ isGeneratingAI: true });
                 const currentVariants = get().variants;
                 
-                const newVariants = generateCopilotVariants(
+                const generated = generateCopilotVariants(
                     { prompt, surfaceType: surfaceType as SurfaceType, variantCount: count },
                     currentVariants
                 );
 
+                const timestampIso = new Date().toISOString();
+                const newVariants: MarbellaVariant[] = generated.map(v => ({
+                    ...v,
+                    createdAt: timestampIso,
+                    updatedAt: timestampIso,
+                    isArchived: false,
+                    isSystemVariant: false
+                }));
+
                 const newMsg = {
                     id: `msg-${Date.now()}`,
                     role: 'assistant' as const,
-                    text: `He generado ${newVariants.length} propuestas editables para: "${prompt}". Han sido creadas en tu lienzo respetando todos los tokens de Marbella OS.`,
+                    text: `He generado ${newVariants.length} propuestas editables para: "${prompt}". Han sido creadas en tu gestor de variantes respetando todos los tokens de Marbella OS.`,
                     generatedVariantIds: newVariants.map(v => v.id),
                     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 };
@@ -237,7 +327,7 @@ export const useStudioStore = create<StudioState>()(
                     variants: [...state.variants, ...newVariants],
                     activeVariantId: newVariants[0].id,
                     activeStudioTab: 'canvas',
-                    currentLevel: 1, // Starts at Level 1
+                    currentLevel: 1,
                     focusStack: [{ id: 'root-surface', name: newVariants[0].name, type: 'pantalla' }],
                     focusedBlockId: null,
                     selectedBlockId: newVariants[0].regions.header[0]?.id || null,
@@ -252,10 +342,19 @@ export const useStudioStore = create<StudioState>()(
                 const state = get();
                 const activeVarId = state.activeVariantId;
 
-                const newVariants = generateCopilotVariants(
+                const generated = generateCopilotVariants(
                     { prompt, surfaceType: 'pantalla', variantCount: 1, baseVariantId: activeVarId || undefined },
                     state.variants
                 );
+
+                const timestampIso = new Date().toISOString();
+                const newVariants: MarbellaVariant[] = generated.map(v => ({
+                    ...v,
+                    createdAt: timestampIso,
+                    updatedAt: timestampIso,
+                    isArchived: false,
+                    isSystemVariant: false
+                }));
 
                 const userMsg = {
                     id: `msg-u-${Date.now()}`,
@@ -267,7 +366,7 @@ export const useStudioStore = create<StudioState>()(
                 const assistantMsg = {
                     id: `msg-a-${Date.now()}`,
                     role: 'assistant' as const,
-                    text: `He creado una nueva variante aplicando tu instrucción: "${prompt}". Puedes compararla o modificarla libremente.`,
+                    text: `He creado una nueva variante aplicando tu instrucción: "${prompt}".`,
                     generatedVariantIds: newVariants.map(v => v.id),
                     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 };
@@ -290,11 +389,16 @@ export const useStudioStore = create<StudioState>()(
                 if (!benchmark) return state;
 
                 const newVariantId = `marbella-by-${benchmark.product.toLowerCase()}-${Date.now().toString(36)}`;
+                const timestampIso = new Date().toISOString();
                 const newVariant: MarbellaVariant = {
                     id: newVariantId,
                     name: `Filosofía ${benchmark.product}`,
                     description: benchmark.marbellaTranslation.philosophyTitle,
                     layout: 'fluid-stack',
+                    createdAt: timestampIso,
+                    updatedAt: timestampIso,
+                    isArchived: false,
+                    isSystemVariant: false,
                     regions: {
                         header: [
                             {
@@ -353,19 +457,25 @@ export const useStudioStore = create<StudioState>()(
             
             saveVariant: (variant) => set((state) => {
                 const exists = state.variants.some(v => v.id === variant.id);
+                const updatedObj = { ...variant, updatedAt: new Date().toISOString() };
                 if (exists) {
-                    return { variants: state.variants.map(v => v.id === variant.id ? variant : v) };
+                    return { variants: state.variants.map(v => v.id === variant.id ? updatedObj : v) };
                 }
-                return { variants: [...state.variants, variant] };
+                return { variants: [...state.variants, updatedObj] };
             }),
 
             addVariant: (name, layout) => set((state) => {
                 const newId = `var-${Date.now().toString(36)}`;
+                const timestampIso = new Date().toISOString();
                 const newVariant: MarbellaVariant = {
                     id: newId,
                     name: name || 'Nueva Variante',
                     description: 'Variante creada desde la declaración de intenciones.',
                     layout: layout || 'fluid-stack',
+                    createdAt: timestampIso,
+                    updatedAt: timestampIso,
+                    isArchived: false,
+                    isSystemVariant: false,
                     regions: {
                         header: [
                             { id: `hd-${Date.now()}`, type: 'page-header', props: { title: name || 'Nueva Sección', description: 'Declaración de Intención inicial.' } }
@@ -381,17 +491,6 @@ export const useStudioStore = create<StudioState>()(
                     focusStack: [{ id: 'root-surface', name: newVariant.name, type: 'pantalla' }],
                     focusedBlockId: null,
                     selectedBlockId: newVariant.regions.header[0].id
-                };
-            }),
-
-            deleteVariant: (id) => set((state) => {
-                if (state.variants.length <= 1) return state;
-                const nextVariants = state.variants.filter(v => v.id !== id);
-                const nextActiveId = state.activeVariantId === id ? nextVariants[0].id : state.activeVariantId;
-                return {
-                    variants: nextVariants,
-                    activeVariantId: nextActiveId,
-                    selectedBlockId: null
                 };
             }),
 
@@ -417,7 +516,7 @@ export const useStudioStore = create<StudioState>()(
                                 return blk;
                             });
                         });
-                        return { ...v, regions: newRegions };
+                        return { ...v, updatedAt: new Date().toISOString(), regions: newRegions };
                     })
                 };
             }),
@@ -454,6 +553,7 @@ export const useStudioStore = create<StudioState>()(
                         nextBlocks.splice(insertAt, 0, newBlock);
                         return {
                             ...v,
+                            updatedAt: new Date().toISOString(),
                             regions: {
                                 ...v.regions,
                                 [regionId]: nextBlocks
@@ -474,7 +574,7 @@ export const useStudioStore = create<StudioState>()(
                         Object.keys(v.regions).forEach(regKey => {
                             newRegions[regKey] = v.regions[regKey].filter(blk => blk.id !== blockId);
                         });
-                        return { ...v, regions: newRegions };
+                        return { ...v, updatedAt: new Date().toISOString(), regions: newRegions };
                     })
                 };
             }),
@@ -501,7 +601,7 @@ export const useStudioStore = create<StudioState>()(
                         });
                         newRegions[regKey] = result;
                     });
-                    return { ...v, regions: newRegions };
+                    return { ...v, updatedAt: new Date().toISOString(), regions: newRegions };
                 });
                 return {
                     variants: nextVariants,
@@ -528,7 +628,7 @@ export const useStudioStore = create<StudioState>()(
                             }
                             newRegions[regKey] = blocks;
                         });
-                        return { ...v, regions: newRegions };
+                        return { ...v, updatedAt: new Date().toISOString(), regions: newRegions };
                     })
                 };
             }),
@@ -540,6 +640,7 @@ export const useStudioStore = create<StudioState>()(
                         if (v.id !== state.activeVariantId) return v;
                         return {
                             ...v,
+                            updatedAt: new Date().toISOString(),
                             regions: {
                                 ...v.regions,
                                 [regionId]: blocks
@@ -554,21 +655,23 @@ export const useStudioStore = create<StudioState>()(
                 return {
                     variants: state.variants.map(v => {
                         if (v.id !== state.activeVariantId) return v;
-                        return { ...v, layout };
+                        return { ...v, layout, updatedAt: new Date().toISOString() };
                     })
                 };
             }),
 
             resetToDefaults: () => set({
-                variants: INITIAL_VARIANTS,
-                activeVariantId: INITIAL_VARIANTS[0].id,
-                selectedBlockId: INITIAL_VARIANTS[0].regions.header[0].id,
+                variants: INITIAL_CLEAN_VARIANTS,
+                activeVariantId: INITIAL_CLEAN_VARIANTS[0].id,
+                selectedBlockId: INITIAL_CLEAN_VARIANTS[0].regions.header[0].id,
                 viewMode: 'edit',
                 activeStudioTab: 'canvas',
                 currentLevel: 1,
-                focusStack: [{ id: 'root-surface', name: INITIAL_VARIANTS[0].name, type: 'pantalla' }],
+                focusStack: [{ id: 'root-surface', name: INITIAL_CLEAN_VARIANTS[0].name, type: 'pantalla' }],
                 focusedBlockId: null,
                 tokens: DEFAULT_MARBELLA_TOKENS,
+                isVariantManagerOpen: false,
+                variantSortBy: 'modified',
                 isCopilotOpen: false,
                 isNewSurfaceModalOpen: false
             })
