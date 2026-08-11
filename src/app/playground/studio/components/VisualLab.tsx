@@ -5,7 +5,7 @@ import { useSandboxStore } from '../store';
 import type { StudioFontOption } from '../font-catalog';
 import type { Estetica, SandboxRoute, SelectedVisualElement, StudioFontFamily, VisualOverride, VisualOverrides, VisualTargetKind, ViewportPreset } from '../types';
 
-const TARGET_SELECTOR = 'button, input, textarea, select, table, thead, tbody, tr, nav, header, [role="dialog"], [role="tab"], [class*="rounded"]';
+const TARGET_SELECTOR = 'button, input, textarea, select, table, thead, tbody, tr, th, td, nav, header, [role="dialog"], [role="tab"], [class*="rounded"], svg, path, span, p, h1, h2, h3, h4, h5, h6, img, a, li, ul, ol';
 
 function cleanLabel(value: string): string {
     return value.replace(/\s+/g, ' ').trim().slice(0, 48);
@@ -36,9 +36,14 @@ function classify(element: HTMLElement): { kind: VisualTargetKind; scope: string
 
     if (tag === 'button' || element.getAttribute('role') === 'button') {
         const primary = classes.includes('bg-[#36606F]') || classes.includes('bg-blue-') || classes.includes('bg-emerald-');
-        return { kind: 'button', scope: primary ? 'button:primary' : 'button:secondary', label };
+        return { kind: 'button', scope: primary ? 'button:primary' : 'button:secondary', label: label || 'Botón' };
     }
-    if (tag === 'input' || tag === 'textarea') return { kind: 'input', scope: 'input:default', label };
+    if (tag === 'svg') return { kind: 'element', scope: 'icon:svg', label: 'Icono (SVG)' };
+    if (tag === 'path') return { kind: 'element', scope: 'icon:path', label: 'Trazo (Path)' };
+    if (tag === 'span' || tag === 'p' || tag.match(/^h[1-6]$/)) return { kind: 'text', scope: `text:${tag}`, label: label || `Texto (${tag.toUpperCase()})` };
+    if (tag === 'img') return { kind: 'element', scope: 'image:default', label: label || 'Imagen' };
+    if (tag === 'a') return { kind: 'element', scope: 'link:default', label: label || 'Enlace' };
+    if (tag === 'input' || tag === 'textarea') return { kind: 'input', scope: 'input:default', label: label || 'Input' };
     if (tag === 'select') return { kind: 'select', scope: 'select:default', label };
     if (tag === 'table') return { kind: 'table', scope: 'table:default', label: 'Tabla' };
     if (tag === 'tr') return { kind: 'row', scope: 'table:row', label: label || 'Fila' };
@@ -58,7 +63,7 @@ function overrideFor(element: HTMLElement, overrides: VisualOverrides): VisualOv
 }
 
 function applyOverrideAttributes(element: HTMLElement, override: VisualOverride): void {
-    const attributes = ['shape', 'radius', 'weight', 'elevation', 'tone', 'padding', 'fontFamily'] as const;
+    const attributes = ['shape', 'weight', 'elevation', 'tone', 'padding'] as const;
     attributes.forEach(attribute => {
         const value = override[attribute];
         if (value) element.dataset[`studio${attribute[0].toUpperCase()}${attribute.slice(1)}`] = value;
@@ -83,6 +88,65 @@ function applyOverrideAttributes(element: HTMLElement, override: VisualOverride)
     else element.style.removeProperty('--studio-outline-color');
     if (override.outlineWidth) element.dataset.studioOutlineWidth = override.outlineWidth;
     else delete element.dataset.studioOutlineWidth;
+
+    if (override.tone === 'transparent') {
+        element.style.setProperty('background-color', 'transparent', 'important');
+        element.style.setProperty('background-image', 'none', 'important');
+    } else if (override.tone === 'custom' && override.backgroundColor) {
+        element.style.setProperty('background-color', override.backgroundColor, 'important');
+        element.style.setProperty('background-image', 'none', 'important');
+    } else {
+        element.style.removeProperty('background-color');
+        element.style.removeProperty('background-image');
+    }
+
+    if (override.width) element.style.setProperty('width', override.width, 'important');
+    else element.style.removeProperty('width');
+
+    if (override.height) element.style.setProperty('height', override.height, 'important');
+    else element.style.removeProperty('height');
+
+    if (override.margin) element.style.setProperty('margin', override.margin, 'important');
+    else element.style.removeProperty('margin');
+
+    if (override.customPadding) element.style.setProperty('padding', override.customPadding, 'important');
+    else element.style.removeProperty('padding');
+
+    if (override.gap) element.style.setProperty('gap', override.gap, 'important');
+    else element.style.removeProperty('gap');
+
+    if (override.borderWidth) element.style.setProperty('border-width', override.borderWidth, 'important');
+    else element.style.removeProperty('border-width');
+
+    if (override.borderColor) element.style.setProperty('border-color', override.borderColor, 'important');
+    else element.style.removeProperty('border-color');
+
+    if (override.boxShadow) {
+        const shadowMap = {
+            none: 'none',
+            subtle: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+            medium: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+            strong: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+        };
+        element.style.setProperty('box-shadow', shadowMap[override.boxShadow], 'important');
+    } else {
+        element.style.removeProperty('box-shadow');
+    }
+
+    if (override.opacity !== undefined) element.style.setProperty('opacity', String(override.opacity), 'important');
+    else element.style.removeProperty('opacity');
+
+    if (override.fontSize) element.style.setProperty('font-size', override.fontSize, 'important');
+    else element.style.removeProperty('font-size');
+
+    if (override.fontWeight) element.style.setProperty('font-weight', override.fontWeight, 'important');
+    else element.style.removeProperty('font-weight');
+
+    if (override.fontStyle) element.style.setProperty('font-style', override.fontStyle, 'important');
+    else element.style.removeProperty('font-style');
+
+    if (override.textAlign) element.style.setProperty('text-align', override.textAlign, 'important');
+    else element.style.removeProperty('text-align');
 }
 
 function realElements(root: HTMLElement): HTMLElement[] {
@@ -166,7 +230,18 @@ export function VisualLabSurface({
         };
         const handleClick = (event: MouseEvent) => {
             if (!labMode) return;
-            const element = findTarget(event.target);
+            
+            // Usar composedPath para llegar al elemento visual más profundo en el que se hizo click (útil para SVGs y textos internos)
+            const path = event.composedPath() as HTMLElement[];
+            let element: HTMLElement | null = null;
+            
+            for (const node of path) {
+                if (node instanceof HTMLElement && node.hasAttribute('data-studio-node-key') && !node.closest('[data-studio-chrome="true"]')) {
+                    element = node;
+                    break;
+                }
+            }
+            
             if (!element) return;
             event.preventDefault();
             event.stopPropagation();
@@ -213,11 +288,10 @@ export function VisualLabSurface({
 
 const OPTIONS: { key: keyof VisualOverride; title: string; values: string[] }[] = [
     { key: 'shape', title: 'Forma', values: ['recto', 'suave', 'redondo', 'pill'] },
-    { key: 'radius', title: 'Radio', values: ['none', 'small', 'medium', 'large'] },
     { key: 'weight', title: 'Peso', values: ['normal', 'medium', 'bold'] },
     { key: 'elevation', title: 'Elevación', values: ['flat', 'subtle', 'strong'] },
-    { key: 'tone', title: 'Color', values: ['brand', 'neutral', 'dark'] },
-    { key: 'padding', title: 'Padding', values: ['compact', 'standard', 'spacious'] },
+    { key: 'tone', title: 'Color Predefinido', values: ['brand', 'neutral', 'dark', 'custom', 'transparent'] },
+    { key: 'padding', title: 'Padding Clásico', values: ['compact', 'standard', 'spacious'] },
 ];
 
 export function VisualLabPanel({
@@ -283,6 +357,13 @@ export function VisualLabPanel({
                         ))}
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2">
+                        {current.tone === 'custom' && (
+                            <label className="col-span-2 flex items-center gap-2 rounded-lg bg-zinc-900 p-2">
+                                <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600">Color de Fondo Libre</span>
+                                <input type="color" value={current.backgroundColor ?? '#36606F'} onChange={event => onOverrideChange(overrideKey, { backgroundColor: event.target.value })} className="h-8 w-8 rounded border-0 bg-transparent" />
+                                <code className="text-[10px] text-zinc-400">{current.backgroundColor ?? '#36606F'}</code>
+                            </label>
+                        )}
                         <label className="rounded-lg bg-zinc-900 p-2">
                             <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Color texto</span>
                             <span className="flex items-center gap-2">
@@ -291,18 +372,18 @@ export function VisualLabPanel({
                             </span>
                         </label>
                         <label className="rounded-lg bg-zinc-900 p-2">
-                            <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Relleno SVG/Stroke</span>
+                            <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Color Trazo/Relleno</span>
                             <span className="flex items-center gap-2">
                                 <input type="color" value={current.fillColor ?? '#36606F'} onChange={event => onOverrideChange(overrideKey, { fillColor: event.target.value })} className="h-10 w-10 rounded border-0 bg-transparent" />
                                 <code className="text-[10px] text-zinc-400">{current.fillColor ?? '#36606F'}</code>
                             </span>
                         </label>
                         <label className="rounded-lg bg-zinc-900 p-2">
-                            <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Opacidad {Math.round((current.fillOpacity ?? 1) * 100)}%</span>
-                            <input type="range" min="0" max="1" step="0.05" value={current.fillOpacity ?? 1} onChange={event => onOverrideChange(overrideKey, { fillOpacity: Number(event.target.value) })} className="min-h-10 w-full accent-[#36606F]" />
+                            <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Opacidad {Math.round((current.opacity ?? 1) * 100)}%</span>
+                            <input type="range" min="0" max="1" step="0.05" value={current.opacity ?? 1} onChange={event => onOverrideChange(overrideKey, { opacity: Number(event.target.value) })} className="min-h-10 w-full accent-[#36606F]" />
                         </label>
-                        <label className="col-span-2 sm:col-span-1 rounded-lg bg-zinc-900 p-2">
-                            <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Contorno</span>
+                        <label className="rounded-lg bg-zinc-900 p-2">
+                            <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Contorno Outer</span>
                             <span className="flex items-center gap-2">
                                 <input type="color" value={current.outlineColor ?? '#36606F'} onChange={event => onOverrideChange(overrideKey, { outlineColor: event.target.value })} className="h-10 w-10 rounded border-0 bg-transparent" />
                                 <select value={current.outlineWidth ?? 'none'} onChange={event => onOverrideChange(overrideKey, { outlineWidth: event.target.value as VisualOverride['outlineWidth'] })} className="min-h-10 min-w-0 flex-1 rounded bg-zinc-800 px-2 text-[9px] font-black uppercase text-zinc-300">
@@ -313,6 +394,32 @@ export function VisualLabPanel({
                                 </select>
                             </span>
                         </label>
+                        <div className="col-span-2 grid grid-cols-3 gap-2 border-t border-zinc-800/50 pt-2 mt-2">
+                            <label className="rounded-lg bg-zinc-900 p-2">
+                                <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Ancho</span>
+                                <input type="text" placeholder="auto, 100%, 200px..." value={current.width ?? ''} onChange={event => onOverrideChange(overrideKey, { width: event.target.value })} className="w-full bg-transparent text-[10px] text-white outline-none" />
+                            </label>
+                            <label className="rounded-lg bg-zinc-900 p-2">
+                                <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Alto</span>
+                                <input type="text" placeholder="auto, 100%, 200px..." value={current.height ?? ''} onChange={event => onOverrideChange(overrideKey, { height: event.target.value })} className="w-full bg-transparent text-[10px] text-white outline-none" />
+                            </label>
+                            <label className="rounded-lg bg-zinc-900 p-2">
+                                <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Margen</span>
+                                <input type="text" placeholder="0, 1rem, 20px..." value={current.margin ?? ''} onChange={event => onOverrideChange(overrideKey, { margin: event.target.value })} className="w-full bg-transparent text-[10px] text-white outline-none" />
+                            </label>
+                            <label className="rounded-lg bg-zinc-900 p-2">
+                                <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Padding</span>
+                                <input type="text" placeholder="0, 1rem, 20px..." value={current.customPadding ?? ''} onChange={event => onOverrideChange(overrideKey, { customPadding: event.target.value })} className="w-full bg-transparent text-[10px] text-white outline-none" />
+                            </label>
+                            <label className="rounded-lg bg-zinc-900 p-2">
+                                <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Gap</span>
+                                <input type="text" placeholder="0, 1rem, 20px..." value={current.gap ?? ''} onChange={event => onOverrideChange(overrideKey, { gap: event.target.value })} className="w-full bg-transparent text-[10px] text-white outline-none" />
+                            </label>
+                            <label className="rounded-lg bg-zinc-900 p-2">
+                                <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Tamaño Fuente</span>
+                                <input type="text" placeholder="1rem, 16px..." value={current.fontSize ?? ''} onChange={event => onOverrideChange(overrideKey, { fontSize: event.target.value })} className="w-full bg-transparent text-[10px] text-white outline-none" />
+                            </label>
+                        </div>
                     </div>
                 </>
             )}

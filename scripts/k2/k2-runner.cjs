@@ -149,14 +149,36 @@ function buildK2bSql(allowlist, runId, metadata = {}) {
     `UPDATE private.k2_execution_runs SET status = 'WRITING' WHERE run_id = ${quoteLiteral(runId)}::uuid;`,
   ]
 
+  // FASE A — BEFORE VALIDATION
+  statements.push(`DO $$ BEGIN`)
   for (const entry of allowlist.operations) {
     const table = entry.table
     const column = quoteIdentifier(entry.column)
     const id = quoteLiteral(entry.primary_key_value)
     const before = quoteLiteral(entry.before_value)
-    const expected = quoteLiteral(entry.expected_value)
-    statements.push(`DO $$ DECLARE v_count integer; BEGIN IF NOT EXISTS (SELECT 1 FROM ${table} WHERE id = ${id} AND ${column} IS NOT DISTINCT FROM ${before}) THEN RAISE EXCEPTION 'K2_BEFORE_CONFLICT:${entry.primary_key_value}:${entry.column}'; END IF; UPDATE ${table} SET ${column} = ${expected} WHERE id = ${id} AND ${column} IS NOT DISTINCT FROM ${before}; GET DIAGNOSTICS v_count = ROW_COUNT; IF v_count <> 1 THEN RAISE EXCEPTION 'K2_WRITE_NOT_APPLIED:${entry.primary_key_value}:${entry.column}'; END IF; IF NOT EXISTS (SELECT 1 FROM ${table} WHERE id = ${id} AND ${column} IS NOT DISTINCT FROM ${expected}) THEN RAISE EXCEPTION 'K2_POSTCONDITION_FAIL:${entry.primary_key_value}:${entry.column}'; END IF; END $$;`)
+    statements.push(`IF NOT EXISTS (SELECT 1 FROM ${table} WHERE id = ${id} AND ${column} IS NOT DISTINCT FROM ${before}) THEN RAISE EXCEPTION 'K2_BEFORE_CONFLICT:${entry.primary_key_value}:${entry.column}'; END IF;`)
   }
+  statements.push(`END $$;`)
+
+  // FASE B — MUTATION
+  for (const entry of allowlist.operations) {
+    const table = entry.table
+    const column = quoteIdentifier(entry.column)
+    const id = quoteLiteral(entry.primary_key_value)
+    const expected = quoteLiteral(entry.expected_value)
+    statements.push(`DO $$ DECLARE v_count integer; BEGIN UPDATE ${table} SET ${column} = ${expected} WHERE id = ${id}; GET DIAGNOSTICS v_count = ROW_COUNT; IF v_count <> 1 THEN RAISE EXCEPTION 'K2_WRITE_NOT_APPLIED:${entry.primary_key_value}:${entry.column}'; END IF; END $$;`)
+  }
+
+  // FASE C — POSTCONDITION
+  statements.push(`DO $$ BEGIN`)
+  for (const entry of allowlist.operations) {
+    const table = entry.table
+    const column = quoteIdentifier(entry.column)
+    const id = quoteLiteral(entry.primary_key_value)
+    const expected = quoteLiteral(entry.expected_value)
+    statements.push(`IF NOT EXISTS (SELECT 1 FROM ${table} WHERE id = ${id} AND ${column} IS NOT DISTINCT FROM ${expected}) THEN RAISE EXCEPTION 'K2_POSTCONDITION_FAIL:${entry.primary_key_value}:${entry.column}'; END IF;`)
+  }
+  statements.push(`END $$;`)
 
   statements.push(`UPDATE private.k2_execution_runs SET status = 'COMMITTED', actual_operations = ${allowlist.operations.length}, actual_checksum = ${quoteLiteral(allowlist.allowlist_checksum)}, committed_at = clock_timestamp(), finished_at = clock_timestamp() WHERE run_id = ${quoteLiteral(runId)}::uuid;`)
   statements.push('COMMIT;')

@@ -99,10 +99,11 @@ test('O: postcondition 70/71 bloquea', () => {
   assert.equal(verifyPostconditions(allowlist, actual).status, 'K2_WRITE_BLOCKED')
 })
 
-test('P: SQL mantiene una operacion restringida por PK y before', () => {
+test('P: SQL mantiene una operacion restringida por PK, before y postconditions en fases', () => {
   const sql = buildK2bSql(allowlist, '00000000-0000-4000-8000-000000000001')
   assert.equal((sql.match(/K2_WRITE_NOT_APPLIED/g) ?? []).length, 71)
   assert.equal((sql.match(/K2_BEFORE_CONFLICT/g) ?? []).length, 71)
+  assert.equal((sql.match(/K2_POSTCONDITION_FAIL/g) ?? []).length, 71)
 })
 
 test('Q: error de ejecucion no se activa sin modo execute y confirmacion', () => {

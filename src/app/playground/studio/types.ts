@@ -92,17 +92,40 @@ export interface GlobalBackground {
 
 export type VisualOverride = {
     shape?: 'recto' | 'suave' | 'redondo' | 'pill';
-    radius?: 'none' | 'small' | 'medium' | 'large';
     weight?: 'normal' | 'medium' | 'bold';
     elevation?: 'flat' | 'subtle' | 'strong';
-    tone?: 'brand' | 'neutral' | 'dark' | 'custom';
+    tone?: 'brand' | 'neutral' | 'dark' | 'custom' | 'transparent';
     padding?: 'compact' | 'standard' | 'spacious';
     fontFamily?: StudioFontFamily;
     textColor?: string;
+    backgroundColor?: string;
     fillColor?: string;
     fillOpacity?: number;
     outlineColor?: string;
     outlineWidth?: 'none' | 'thin' | 'medium' | 'strong';
+    
+    // Size
+    width?: string;
+    height?: string;
+    
+    // Spacing
+    margin?: string;
+    customPadding?: string;
+    gap?: string;
+    
+    // Border
+    borderWidth?: string;
+    borderColor?: string;
+    
+    // Shadow & Opacity
+    boxShadow?: 'none' | 'subtle' | 'medium' | 'strong';
+    opacity?: number;
+    
+    // Typography advanced
+    fontSize?: string;
+    fontWeight?: string;
+    fontStyle?: 'normal' | 'italic';
+    textAlign?: 'left' | 'center' | 'right' | 'justify';
 };
 export type VisualOverrides = Record<string, VisualOverride>;
 export type StudioFontFamily = string;

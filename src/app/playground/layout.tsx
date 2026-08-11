@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import { withTimeout } from '@/lib/with-timeout';
-import PlaygroundShell from './_components/PlaygroundShell';
+import PlaygroundWrapper from './_components/PlaygroundWrapper';
 
 export default async function PlaygroundLayout({
     children,
@@ -30,10 +30,9 @@ export default async function PlaygroundLayout({
 
     return (
         <div className="min-h-screen bg-black text-white selection:bg-white/30">
-            <PlaygroundShell />
-            <div className="pt-20 pb-20 px-4 md:px-8 max-w-[1400px] mx-auto">
+            <PlaygroundWrapper>
                 {children}
-            </div>
+            </PlaygroundWrapper>
         </div>
     );
 }
