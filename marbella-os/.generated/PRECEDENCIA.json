@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "1f7e74d233416503",
+  "_huella": "23052cacbcea95fe",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -1306,6 +1306,18 @@
     {
       "ruta": "marbella-os/6-investigacion/spikes/2026-08-11-implementacion-k2-runner.md",
       "documento": "SPIKE-IMPLEMENTACION-K2-RUNNER",
+      "clase": "inmutable",
+      "estado": "archivado",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": []
+    },
+    {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-11-k2b-production-execution-report.md",
+      "documento": "SPIKE-K2B-PRODUCTION-EXECUTION-REPORT",
       "clase": "inmutable",
       "estado": "archivado",
       "capa": "investigacion",
