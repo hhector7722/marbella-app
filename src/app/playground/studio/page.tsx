@@ -174,7 +174,7 @@ export default function StudioPage() {
                     </aside>
                 )}
 
-                <section className="min-h-0 min-w-0 flex-1 overflow-auto bg-zinc-900/30">
+                <section data-studio-viewport={viewport} className="min-h-0 min-w-0 flex-1 overflow-auto bg-zinc-900/30">
                     <div className={`${frameClass} h-full`}>
                         <SandboxView esteticaId={activeId} recipeOverride={draftRecipe} overrides={draftOverrides} fontFamily={draftFontFamily} />
                     </div>

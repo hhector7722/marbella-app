@@ -120,6 +120,27 @@
 :is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-padding='spacious'] { padding: 1.75rem !important; }
 :is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-font-family] { font-family: var(--studio-font-family) !important; }
 [data-dl-font] * { font-family: var(--dl-font-family) !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-fill-color] {
+  color: color-mix(in srgb, var(--studio-fill-color) calc(var(--studio-fill-opacity, 1) * 100%), transparent) !important;
+  -webkit-text-fill-color: color-mix(in srgb, var(--studio-fill-color) calc(var(--studio-fill-opacity, 1) * 100%), transparent) !important;
+}
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-outline-width='none'] { -webkit-text-stroke-width: 0; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-outline-width='thin'] { -webkit-text-stroke: 1px var(--studio-outline-color) !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-outline-width='medium'] { -webkit-text-stroke: 2px var(--studio-outline-color) !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-outline-width='strong'] { -webkit-text-stroke: 3px var(--studio-outline-color) !important; }
+
+/* El preview móvil es un contenedor real dentro de un viewport desktop.
+   Reaplica al layout real sus reglas móviles sin reconstruir la pantalla. */
+[data-studio-viewport='mobile'] [class~='md:grid-cols-7'],
+[data-studio-viewport='mobile'] [class~='lg:grid-cols-8'] { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+[data-studio-viewport='mobile'] [class~='md:aspect-auto'] { aspect-ratio: 1 / 1 !important; }
+[data-studio-viewport='mobile'] [class~='md:w-[4.75rem]'] { width: 100% !important; }
+[data-studio-viewport='mobile'] [class~='md:max-w-full'] { max-width: none !important; }
+[data-studio-viewport='mobile'] [class~='md:p-1.5'] { padding: 0.5rem !important; }
+[data-studio-viewport='mobile'] [class~='md:gap-0.5'] { gap: 0.25rem !important; }
+[data-studio-viewport='mobile'] [class~='md:rounded-xl'] { border-radius: 1rem !important; }
+[data-studio-viewport='mobile'] [class~='md:w-11'] { width: 3rem !important; }
+[data-studio-viewport='mobile'] [class~='md:h-11'] { height: 3rem !important; }
 
 @layer utilities {
   /**

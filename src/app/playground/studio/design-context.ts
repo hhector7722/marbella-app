@@ -23,7 +23,9 @@ export function resolverReceta(recipe: Recipe): DesignContext {
 
     // AIRE usa saltos perceptuales; DENSIDAD solo comprime el resultado.
     // Así se pueden explorar ambas dimensiones sin que sean sinónimos.
-    const airScale = [0.82, 1, 1.28, 1.72][Math.round(aire * 2)] ?? 0.82;
+    const airScale = recipe.aire === undefined
+        ? 1
+        : [0.82, 1, 1.28, 1.72][Math.round(aire * 2)] ?? 0.82;
     const space = clamp(airScale - 0.16 * densidad, 0.7, 1.9);
     const typeScale = clamp(1 + 0.06 * nivel('voz_tipografica') - 0.04 * densidad, 0.85, 1.25);
 

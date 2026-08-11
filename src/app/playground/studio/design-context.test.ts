@@ -15,6 +15,10 @@ test('the sandbox spacing scale separates all four air intensities', () => {
   assert.ok(Number(strongTokens['--marbella-space-4'].replace('rem', '')) > Number(baseTokens['--marbella-space-4'].replace('rem', '')));
 });
 
+test('the original aesthetic preserves the real app base scale', () => {
+  assert.equal(resolverReceta({}).space, 1);
+});
+
 test('the live CSS contract exposes air as a scoped design variable', () => {
   const base = cssVarsDelContexto(resolverReceta({ aire: 'nada' }));
   const strong = cssVarsDelContexto(resolverReceta({ aire: 'fuerte' }));

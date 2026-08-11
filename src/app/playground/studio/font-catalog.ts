@@ -7,7 +7,7 @@ export interface StudioFontOption {
     format: 'truetype' | 'opentype' | 'woff' | 'woff2';
 }
 
-export function describeFontFile(fileName: string): StudioFontOption | null {
+export function describeFontFile(fileName: string, metadata?: { family?: string; style?: string }): StudioFontOption | null {
     const extension = fileName.toLowerCase().split('.').pop();
     if (!extension || !['ttf', 'otf', 'woff', 'woff2'].includes(extension)) return null;
 
@@ -16,19 +16,23 @@ export function describeFontFile(fileName: string): StudioFontOption | null {
     let style = 'Regular';
 
     if (/^EA Sports Covers SC/i.test(base)) {
-        family = /outline/i.test(base) ? 'EA Sports Covers SC Outline' : 'EA Sports Covers SC';
-        style = /outline/i.test(base) ? 'Outline' : /bold/i.test(base) ? 'Bold' : 'Regular';
+        family = 'EA Sports Covers SC';
+        style = /outline/i.test(base) ? 'Bold Outline' : /bold/i.test(base) ? 'Bold' : 'Regular';
     } else if (/^RobotoFlex/i.test(base)) {
-        family = 'RobotoFlex';
+        family = 'Roboto Flex';
         style = /italic/i.test(base) ? 'Italic' : 'Variable';
     }
+
+    const sourceFamily = metadata?.family?.trim() || family;
+    const sourceStyle = metadata?.style?.split('\n')[0]?.trim() || style;
+    const cssFamily = `${sourceFamily} · ${sourceStyle}`;
 
     const format = extension === 'ttf' ? 'truetype' : extension === 'otf' ? 'opentype' : extension;
     return {
         id: fileName,
-        family,
-        label: `${family} · ${style}`,
-        style,
+        family: cssFamily,
+        label: `${sourceFamily} · ${sourceStyle}`,
+        style: sourceStyle,
         url: `/fonts/${encodeURIComponent(fileName)}`,
         format: format as StudioFontOption['format'],
     };

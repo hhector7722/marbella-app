@@ -78,6 +78,10 @@ export type VisualOverride = {
     tone?: 'brand' | 'neutral' | 'dark' | 'custom';
     padding?: 'compact' | 'standard' | 'spacious';
     fontFamily?: StudioFontFamily;
+    fillColor?: string;
+    fillOpacity?: number;
+    outlineColor?: string;
+    outlineWidth?: 'none' | 'thin' | 'medium' | 'strong';
 };
 export type VisualOverrides = Record<string, VisualOverride>;
 export type StudioFontFamily = 'roboto' | 'ea-sports' | 'ea-sports-outline';

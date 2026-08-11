@@ -66,6 +66,19 @@ function applyOverrideAttributes(element: HTMLElement, override: VisualOverride)
     });
     if (override.fontFamily) element.style.setProperty('--studio-font-family', `'${override.fontFamily}'`);
     else element.style.removeProperty('--studio-font-family');
+    if (override.fillColor) {
+        element.style.setProperty('--studio-fill-color', override.fillColor);
+        element.dataset.studioFillColor = 'true';
+    } else {
+        element.style.removeProperty('--studio-fill-color');
+        delete element.dataset.studioFillColor;
+    }
+    if (override.fillOpacity !== undefined) element.style.setProperty('--studio-fill-opacity', String(override.fillOpacity));
+    else element.style.removeProperty('--studio-fill-opacity');
+    if (override.outlineColor) element.style.setProperty('--studio-outline-color', override.outlineColor);
+    else element.style.removeProperty('--studio-outline-color');
+    if (override.outlineWidth) element.dataset.studioOutlineWidth = override.outlineWidth;
+    else delete element.dataset.studioOutlineWidth;
 }
 
 function realElements(root: HTMLElement): HTMLElement[] {
@@ -259,6 +272,32 @@ export function VisualLabPanel({
                                 </div>
                             </div>
                         ))}
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                        <label className="rounded-lg bg-zinc-900 p-2">
+                            <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Relleno del texto</span>
+                            <span className="flex items-center gap-2">
+                                <input type="color" value={current.fillColor ?? '#36606F'} onChange={event => onOverrideChange(overrideKey, { fillColor: event.target.value })} className="h-10 w-10 rounded border-0 bg-transparent" />
+                                <code className="text-[10px] text-zinc-400">{current.fillColor ?? '#36606F'}</code>
+                            </span>
+                        </label>
+                        <label className="rounded-lg bg-zinc-900 p-2">
+                            <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Opacidad {Math.round((current.fillOpacity ?? 1) * 100)}%</span>
+                            <input type="range" min="0" max="1" step="0.05" value={current.fillOpacity ?? 1} onChange={event => onOverrideChange(overrideKey, { fillOpacity: Number(event.target.value) })} className="min-h-10 w-full accent-[#36606F]" />
+                        </label>
+                        <label className="rounded-lg bg-zinc-900 p-2">
+                            <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Contorno</span>
+                            <span className="flex items-center gap-2">
+                                <input type="color" value={current.outlineColor ?? '#36606F'} onChange={event => onOverrideChange(overrideKey, { outlineColor: event.target.value })} className="h-10 w-10 rounded border-0 bg-transparent" />
+                                <select value={current.outlineWidth ?? 'none'} onChange={event => onOverrideChange(overrideKey, { outlineWidth: event.target.value as VisualOverride['outlineWidth'] })} className="min-h-10 min-w-0 flex-1 rounded bg-zinc-800 px-2 text-[9px] font-black uppercase text-zinc-300">
+                                    <option value="none">Ninguno</option>
+                                    <option value="thin">Fino</option>
+                                    <option value="medium">Medio</option>
+                                    <option value="strong">Fuerte</option>
+                                </select>
+                            </span>
+                        </label>
+                        <div className="rounded-lg bg-zinc-900 p-2 text-[9px] leading-relaxed text-zinc-500">En una fuente Outline, el relleno controla la geometría que contiene el TTF. CSS no puede reconstruir el interior sólido que el archivo no incluye.</div>
                     </div>
                 </>
             )}
