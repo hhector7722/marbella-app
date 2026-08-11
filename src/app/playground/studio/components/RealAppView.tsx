@@ -10,6 +10,7 @@ export function RealAppView({ recipeOverride, overrides = {}, fontFamily, backgr
     const estetica = useActiveEstetica();
     const setSelectedElement = useSandboxStore(s => s.setSelectedElement);
     const labMode = useSandboxStore(s => s.labMode);
+    const viewport = useSandboxStore(s => s.viewport);
     const iframeRef = useRef<HTMLIFrameElement>(null);
 
     useEffect(() => {
@@ -26,7 +27,8 @@ export function RealAppView({ recipeOverride, overrides = {}, fontFamily, backgr
                             overrides,
                             fontFamily,
                             background,
-                            labMode
+                            labMode,
+                            viewport
                         }
                     }, '*');
                 }
@@ -47,11 +49,12 @@ export function RealAppView({ recipeOverride, overrides = {}, fontFamily, backgr
                     overrides,
                     fontFamily,
                     background,
-                    labMode
+                    labMode,
+                    viewport
                 }
             }, '*');
         }
-    }, [recipeOverride, estetica.recipe, overrides, fontFamily, background, labMode]);
+    }, [recipeOverride, estetica.recipe, overrides, fontFamily, background, labMode, viewport]);
 
     return (
         <iframe 

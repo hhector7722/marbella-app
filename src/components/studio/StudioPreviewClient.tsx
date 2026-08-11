@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { VisualOverrides, SandboxRoute, GlobalBackground, Recipe, StudioFontFamily } from '@/app/playground/studio/types';
+import { VisualOverrides, SandboxRoute, GlobalBackground, Recipe, StudioFontFamily, ViewportPreset } from '@/app/playground/studio/types';
 import { useSandboxStore } from '@/app/playground/studio/store';
 import { VisualLabSurface } from '@/app/playground/studio/components/VisualLab';
 import { DesignProvider } from '@/app/playground/studio/screens/system';
@@ -14,6 +14,7 @@ export function StudioPreviewClient({ children }: { children: React.ReactNode })
     const [background, setBackground] = useState<GlobalBackground | null>(null);
     const [recipe, setRecipe] = useState<Recipe>({});
     const [fontFamily, setFontFamily] = useState<StudioFontFamily | undefined>(undefined);
+    const [viewport, setViewport] = useState<ViewportPreset>('desktop');
     const pathname = usePathname();
 
     useEffect(() => {
@@ -31,6 +32,7 @@ export function StudioPreviewClient({ children }: { children: React.ReactNode })
                     setBackground(event.data.payload.background || null);
                     setRecipe(event.data.payload.recipeOverride || {});
                     setFontFamily(event.data.payload.fontFamily);
+                    setViewport(event.data.payload.viewport || 'desktop');
                     useSandboxStore.getState().setLabMode(event.data.payload.labMode || false);
                 }
             };
@@ -75,7 +77,7 @@ export function StudioPreviewClient({ children }: { children: React.ReactNode })
 
     return (
         <DesignProvider recipe={recipe} fontFamily={fontFamily}>
-            <VisualLabSurface route={pathname as SandboxRoute} overrides={overrides}>
+            <VisualLabSurface route={pathname as SandboxRoute} overrides={overrides} viewport={viewport}>
                 <div data-marbella-sandbox="true" className={`relative min-h-screen w-full overflow-y-auto overflow-x-hidden ${bgClass} ${effectsClass} text-zinc-900`} style={bgStyle}>
                     {children}
                 </div>

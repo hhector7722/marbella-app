@@ -87,10 +87,16 @@ export default function StudioPage() {
     const draftOverrides = draft?.id === activeEstetica.id ? draft.overrides : activeEstetica.overrides ?? {};
     const draftFontFamily = draft?.id === activeEstetica.id ? draft.fontFamily : activeEstetica.fontFamily;
     const draftBackground = draft?.id === activeEstetica.id ? draft.background : activeEstetica.background;
-    const setDraftOverride = (key: string, patch: VisualOverride) => setDraft({
+    const setDraftOverride = (key: string, vp: 'all' | 'mobile' | 'tablet' | 'desktop', patch: VisualOverride) => setDraft({
         id: activeEstetica.id,
         recipe: draftRecipe,
-        overrides: { ...draftOverrides, [key]: { ...draftOverrides[key], ...patch } },
+        overrides: { 
+            ...draftOverrides, 
+            [key]: { 
+                ...draftOverrides[key], 
+                [vp]: { ...draftOverrides[key]?.[vp], ...patch } 
+            } 
+        },
         fontFamily: draftFontFamily,
         background: draftBackground,
     });
@@ -177,7 +183,7 @@ export default function StudioPage() {
                         background={draftBackground}
                         onBackgroundChange={background => setDraft({ id: activeEstetica.id, recipe: draftRecipe, overrides: draftOverrides, fontFamily: draftFontFamily, background })}
                     />
-                        <VisualLabPanel overrides={draftOverrides} onOverrideChange={setDraftOverride} fonts={fonts} />
+                        <VisualLabPanel overrides={draftOverrides} onOverrideChange={setDraftOverride} fonts={fonts} viewport={viewport} />
                     </aside>
                 )}
 

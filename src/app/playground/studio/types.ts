@@ -104,18 +104,42 @@ export type VisualOverride = {
     outlineColor?: string;
     outlineWidth?: 'none' | 'thin' | 'medium' | 'strong';
     
+    // Position
+    x?: string;
+    y?: string;
+    position?: 'static' | 'relative' | 'absolute' | 'fixed';
+
     // Size
     width?: string;
     height?: string;
+    minWidth?: string;
+    maxWidth?: string;
+    minHeight?: string;
+    maxHeight?: string;
     
     // Spacing
     margin?: string;
+    marginTop?: string;
+    marginRight?: string;
+    marginBottom?: string;
+    marginLeft?: string;
     customPadding?: string;
+    paddingTop?: string;
+    paddingRight?: string;
+    paddingBottom?: string;
+    paddingLeft?: string;
     gap?: string;
+    
+    // Flex & Display
+    display?: 'block' | 'inline-block' | 'flex' | 'inline-flex' | 'grid' | 'none';
+    flexDirection?: 'row' | 'row-reverse' | 'column' | 'column-reverse';
+    alignItems?: 'flex-start' | 'flex-end' | 'center' | 'baseline' | 'stretch';
+    justifyContent?: 'flex-start' | 'flex-end' | 'center' | 'space-between' | 'space-around' | 'space-evenly';
     
     // Border
     borderWidth?: string;
     borderColor?: string;
+    borderStyle?: 'solid' | 'dashed' | 'dotted';
     
     // Shadow & Opacity
     boxShadow?: 'none' | 'subtle' | 'medium' | 'strong';
@@ -127,7 +151,15 @@ export type VisualOverride = {
     fontStyle?: 'normal' | 'italic';
     textAlign?: 'left' | 'center' | 'right' | 'justify';
 };
-export type VisualOverrides = Record<string, VisualOverride>;
+
+export type ResponsiveOverride = {
+    all?: VisualOverride;
+    mobile?: VisualOverride;
+    tablet?: VisualOverride;
+    desktop?: VisualOverride;
+};
+
+export type VisualOverrides = Record<string, ResponsiveOverride>;
 export type StudioFontFamily = string;
 export interface SelectedVisualElement {
     key: string;

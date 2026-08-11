@@ -59,11 +59,20 @@ function classify(element: HTMLElement): { kind: VisualTargetKind; scope: string
     return { kind: 'element', scope: `${tag}:default`, label };
 }
 
-function overrideFor(element: HTMLElement, overrides: VisualOverrides): VisualOverride {
+function overrideFor(element: HTMLElement, overrides: VisualOverrides, viewport: ViewportPreset): VisualOverride {
+    const merge = (key: string) => {
+        const responsive = overrides[key];
+        if (!responsive) return {};
+        return {
+            ...responsive.all,
+            ...responsive[viewport],
+        };
+    };
+
     return {
-        ...overrides.global,
-        ...overrides[`component:${element.dataset.studioComponent ?? ''}`],
-        ...overrides[element.dataset.studioNodeKey ?? ''],
+        ...merge('global'),
+        ...merge(`component:${element.dataset.studioComponent ?? ''}`),
+        ...merge(element.dataset.studioNodeKey ?? ''),
     };
 }
 
@@ -107,24 +116,69 @@ function applyOverrideAttributes(element: HTMLElement, override: VisualOverride)
 
     if (override.width) element.style.setProperty('width', override.width, 'important');
     else element.style.removeProperty('width');
-
     if (override.height) element.style.setProperty('height', override.height, 'important');
     else element.style.removeProperty('height');
+    if (override.minWidth) element.style.setProperty('min-width', override.minWidth, 'important');
+    else element.style.removeProperty('min-width');
+    if (override.maxWidth) element.style.setProperty('max-width', override.maxWidth, 'important');
+    else element.style.removeProperty('max-width');
+    if (override.minHeight) element.style.setProperty('min-height', override.minHeight, 'important');
+    else element.style.removeProperty('min-height');
+    if (override.maxHeight) element.style.setProperty('max-height', override.maxHeight, 'important');
+    else element.style.removeProperty('max-height');
+
+    // Transform (X, Y)
+    if (override.x || override.y) {
+        const x = override.x || '0px';
+        const y = override.y || '0px';
+        element.style.setProperty('transform', `translate(${x}, ${y})`, 'important');
+    } else {
+        element.style.removeProperty('transform');
+    }
+
+    if (override.position) element.style.setProperty('position', override.position, 'important');
+    else element.style.removeProperty('position');
 
     if (override.margin) element.style.setProperty('margin', override.margin, 'important');
     else element.style.removeProperty('margin');
+    if (override.marginTop) element.style.setProperty('margin-top', override.marginTop, 'important');
+    else element.style.removeProperty('margin-top');
+    if (override.marginRight) element.style.setProperty('margin-right', override.marginRight, 'important');
+    else element.style.removeProperty('margin-right');
+    if (override.marginBottom) element.style.setProperty('margin-bottom', override.marginBottom, 'important');
+    else element.style.removeProperty('margin-bottom');
+    if (override.marginLeft) element.style.setProperty('margin-left', override.marginLeft, 'important');
+    else element.style.removeProperty('margin-left');
 
     if (override.customPadding) element.style.setProperty('padding', override.customPadding, 'important');
     else element.style.removeProperty('padding');
+    if (override.paddingTop) element.style.setProperty('padding-top', override.paddingTop, 'important');
+    else element.style.removeProperty('padding-top');
+    if (override.paddingRight) element.style.setProperty('padding-right', override.paddingRight, 'important');
+    else element.style.removeProperty('padding-right');
+    if (override.paddingBottom) element.style.setProperty('padding-bottom', override.paddingBottom, 'important');
+    else element.style.removeProperty('padding-bottom');
+    if (override.paddingLeft) element.style.setProperty('padding-left', override.paddingLeft, 'important');
+    else element.style.removeProperty('padding-left');
 
     if (override.gap) element.style.setProperty('gap', override.gap, 'important');
     else element.style.removeProperty('gap');
 
+    if (override.display) element.style.setProperty('display', override.display, 'important');
+    else element.style.removeProperty('display');
+    if (override.flexDirection) element.style.setProperty('flex-direction', override.flexDirection, 'important');
+    else element.style.removeProperty('flex-direction');
+    if (override.alignItems) element.style.setProperty('align-items', override.alignItems, 'important');
+    else element.style.removeProperty('align-items');
+    if (override.justifyContent) element.style.setProperty('justify-content', override.justifyContent, 'important');
+    else element.style.removeProperty('justify-content');
+
     if (override.borderWidth) element.style.setProperty('border-width', override.borderWidth, 'important');
     else element.style.removeProperty('border-width');
-
     if (override.borderColor) element.style.setProperty('border-color', override.borderColor, 'important');
     else element.style.removeProperty('border-color');
+    if (override.borderStyle) element.style.setProperty('border-style', override.borderStyle, 'important');
+    else element.style.removeProperty('border-style');
 
     if (override.boxShadow) {
         const shadowMap = {
@@ -189,10 +243,12 @@ function realElements(root: HTMLElement): HTMLElement[] {
 export function VisualLabSurface({
     route,
     overrides,
+    viewport,
     children,
 }: {
     route: SandboxRoute;
     overrides: VisualOverrides;
+    viewport: ViewportPreset;
     children: React.ReactNode;
 }) {
     const rootRef = React.useRef<HTMLDivElement>(null);
@@ -223,13 +279,13 @@ export function VisualLabSurface({
                 element.dataset.studioPortal = 'true';
                 element.dataset.marbellaSandbox = 'true';
             }
-            applyOverrideAttributes(element, overrideFor(element, overrides));
+            applyOverrideAttributes(element, overrideFor(element, overrides, viewport));
             
             if (element.dataset.studioNodeKey === selectedElement?.key) {
                 element.dataset.studioSelected = 'true';
             }
         });
-    }, [route, overrides, selectedElement]);
+    }, [route, overrides, selectedElement, viewport]);
 
     React.useEffect(() => {
         indexElements();
@@ -335,27 +391,22 @@ export function VisualLabSurface({
     return <div ref={rootRef} data-studio-real-app="true" className="relative h-full">{children}</div>;
 }
 
-const OPTIONS: { key: keyof VisualOverride; title: string; values: string[] }[] = [
-    { key: 'shape', title: 'Forma', values: ['recto', 'suave', 'redondo', 'pill'] },
-    { key: 'weight', title: 'Peso', values: ['normal', 'medium', 'bold'] },
-    { key: 'elevation', title: 'Elevación', values: ['flat', 'subtle', 'strong'] },
-    { key: 'tone', title: 'Color Predefinido', values: ['brand', 'neutral', 'dark', 'custom', 'transparent'] },
-    { key: 'padding', title: 'Padding Clásico', values: ['compact', 'standard', 'spacious'] },
-];
-
 export function VisualLabPanel({
     overrides,
     onOverrideChange,
     fonts,
+    viewport,
 }: {
     overrides: VisualOverrides;
-    onOverrideChange: (key: string, patch: VisualOverride) => void;
+    onOverrideChange: (key: string, vp: 'all' | 'mobile' | 'tablet' | 'desktop', patch: VisualOverride) => void;
     fonts: StudioFontOption[];
+    viewport: ViewportPreset;
 }) {
     const labMode = useSandboxStore(s => s.labMode);
     const setLabMode = useSandboxStore(s => s.setLabMode);
     const selected = useSandboxStore(s => s.selectedElement);
     const [scope, setScope] = React.useState<'instance' | 'component' | 'global'>('instance');
+    const [openSection, setOpenSection] = React.useState<string>('apariencia');
 
     const overrideKey = selected
         ? scope === 'instance'
@@ -364,114 +415,301 @@ export function VisualLabPanel({
                 ? `component:${selected.componentScope}`
                 : 'global'
         : 'global';
-    const current = overrides[overrideKey] ?? {};
-    const options = [
-        ...OPTIONS,
-        { key: 'fontFamily' as const, title: 'Tipografía', values: fonts.map(font => font.family) },
-    ];
+    
+    const currentResponsive = overrides[overrideKey] ?? {};
+    const current = { ...currentResponsive.all, ...currentResponsive[viewport] };
+
+    const update = (patch: VisualOverride) => {
+        onOverrideChange(overrideKey, scope === 'global' ? 'all' : viewport, patch);
+    };
+
+    const reset = (keys: (keyof VisualOverride)[]) => {
+        const patch: any = {};
+        keys.forEach(k => patch[k] = undefined);
+        update(patch);
+    };
+
+    const resetAll = () => {
+        // En lugar de iterar, mandamos undefined a todo
+        onOverrideChange(overrideKey, scope === 'global' ? 'all' : viewport, undefined as any); // Require store cleanup eventually, pero sirve para limpiar
+    };
+
+    const Section = ({ id, title, children }: { id: string, title: string, children: React.ReactNode }) => {
+        const isOpen = openSection === id;
+        return (
+            <div className="border-b border-zinc-800/50">
+                <button type="button" onClick={() => setOpenSection(isOpen ? '' : id)} className="flex w-full items-center justify-between py-3 px-1 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-white">
+                    {title}
+                    <span className="text-zinc-600">{isOpen ? '▼' : '▶'}</span>
+                </button>
+                {isOpen && <div className="pb-4 pt-1">{children}</div>}
+            </div>
+        );
+    };
 
     return (
-        <div data-studio-chrome="true" className="border-b border-zinc-800 bg-zinc-950 px-4 py-3">
-            <div className="flex items-center justify-between gap-2">
-                <div>
-                    <div className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Laboratorio visual</div>
-                    <div className="mt-1 text-sm font-black text-white">{selected ? `${selected.kind} · ${selected.label}` : 'Mira la app y selecciona un elemento'}</div>
+        <div data-studio-chrome="true" className="flex h-full flex-col bg-zinc-950">
+            <div className="border-b border-zinc-800 px-4 py-3 shrink-0">
+                <div className="flex items-center justify-between gap-2">
+                    <div>
+                        <div className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Inspector Visual</div>
+                        <div className="mt-1 text-sm font-black text-white">{selected ? selected.label : 'Nada seleccionado'}</div>
+                    </div>
+                    <button type="button" onClick={() => setLabMode(!labMode)} style={{ minHeight: 48 }} className={`rounded-xl px-3 text-[9px] font-black uppercase tracking-widest ${labMode ? 'bg-emerald-500 text-white' : 'bg-zinc-800 text-zinc-300'}`}>
+                        {labMode ? 'Seleccionando' : 'Seleccionar'}
+                    </button>
                 </div>
-                <button type="button" onClick={() => setLabMode(!labMode)} style={{ minHeight: 48 }} className={`rounded-xl px-3 text-[9px] font-black uppercase tracking-widest ${labMode ? 'bg-emerald-500 text-white' : 'bg-zinc-800 text-zinc-300'}`}>
-                    {labMode ? 'Seleccionando' : 'Seleccionar'}
-                </button>
-            </div>
 
-            {selected && (
-                <>
+                {selected && (
                     <div className="mt-3 grid grid-cols-3 gap-1">
                         {(['instance', 'component', 'global'] as const).map(option => (
-                            <button key={option} type="button" onClick={() => setScope(option)} style={{ minHeight: 44 }} className={`rounded-lg text-[9px] font-black uppercase tracking-widest ${scope === option ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-500'}`}>
+                            <button key={option} type="button" onClick={() => setScope(option)} style={{ minHeight: 44 }} className={`rounded-lg text-[9px] font-black uppercase tracking-widest leading-tight ${scope === option ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-500 hover:bg-zinc-800'}`}>
                                 {scopeLabel(selected.kind, option)}
                             </button>
                         ))}
                     </div>
-                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                        {options.map(option => (
-                            <div key={option.key}>
-                                <div className="mb-1 text-[8px] font-black uppercase tracking-widest text-zinc-600">{option.title}</div>
-                                <div className="flex flex-wrap gap-1">
-                                    {option.values.map(value => (
-                                        <button key={value} type="button" onClick={() => onOverrideChange(overrideKey, { [option.key]: value } as VisualOverride)} style={{ minHeight: 40 }} className={`rounded-lg px-2 text-[9px] font-black uppercase tracking-widest ${current[option.key] === value ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-500 hover:text-zinc-200'}`}>
-                                            {fonts.find(font => font.family === value)?.label ?? value}
-                                        </button>
-                                    ))}
+                )}
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-4 py-2">
+                {!selected && (
+                    <div className="py-8 text-center text-zinc-500 text-xs">
+                        Activa el modo <strong>Seleccionar</strong> y haz click en cualquier elemento del preview para editarlo.
+                    </div>
+                )}
+                
+                {selected && (
+                    <>
+                        <Section id="apariencia" title="Apariencia">
+                            <div className="grid gap-3">
+                                <label className="block">
+                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Tipografía</span>
+                                    <select value={current.fontFamily ?? ''} onChange={e => update({ fontFamily: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none">
+                                        <option value="">Heredada</option>
+                                        {fonts.map(font => <option key={font.id} value={font.family} style={{ fontFamily: font.family }}>{font.label}</option>)}
+                                    </select>
+                                </label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <label className="block">
+                                        <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Tamaño de Fuente</span>
+                                        <input type="text" placeholder="ej. 16px, 1.5rem" value={current.fontSize ?? ''} onChange={e => update({ fontSize: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none" />
+                                    </label>
+                                    <label className="block">
+                                        <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Opacidad</span>
+                                        <div className="flex items-center gap-2">
+                                            <input type="range" min="0" max="1" step="0.05" value={current.opacity ?? 1} onChange={e => update({ opacity: Number(e.target.value) })} className="w-full accent-[#36606F]" />
+                                            <span className="text-[10px] text-zinc-400">{Math.round((current.opacity ?? 1) * 100)}%</span>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <label className="block rounded-lg bg-zinc-900 p-2">
+                                        <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">
+                                            Color Texto
+                                            {current.textColor && <button onClick={() => reset(['textColor'])} className="text-zinc-600 hover:text-white">✕</button>}
+                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            <input type="color" value={current.textColor ?? '#ffffff'} onChange={e => update({ textColor: e.target.value })} className="h-6 w-6 rounded border-0 bg-transparent p-0" />
+                                            <span className="text-[10px] text-zinc-300 font-mono">{current.textColor ?? 'Auto'}</span>
+                                        </div>
+                                    </label>
+                                    <label className="block rounded-lg bg-zinc-900 p-2">
+                                        <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">
+                                            Fondo / Relleno
+                                            {(current.backgroundColor || current.fillColor) && <button onClick={() => reset(['backgroundColor', 'fillColor', 'tone'])} className="text-zinc-600 hover:text-white">✕</button>}
+                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            <input type="color" value={current.backgroundColor ?? current.fillColor ?? '#000000'} onChange={e => update({ tone: 'custom', backgroundColor: e.target.value, fillColor: e.target.value })} className="h-6 w-6 rounded border-0 bg-transparent p-0" />
+                                            <span className="text-[10px] text-zinc-300 font-mono">{current.backgroundColor ?? current.fillColor ?? 'Auto'}</span>
+                                        </div>
+                                        <button onClick={() => update({ tone: 'transparent' })} className="mt-2 w-full rounded bg-zinc-800 py-1 text-[8px] font-black uppercase text-zinc-400 hover:bg-zinc-700 hover:text-white">Sin Fondo</button>
+                                    </label>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <label className="block">
+                                        <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Peso</span>
+                                        <select value={current.fontWeight ?? ''} onChange={e => update({ fontWeight: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-[10px] uppercase font-black text-white outline-none">
+                                            <option value="">Auto</option>
+                                            <option value="400">Normal</option>
+                                            <option value="500">Medium</option>
+                                            <option value="700">Bold</option>
+                                            <option value="900">Black</option>
+                                        </select>
+                                    </label>
+                                    <label className="block">
+                                        <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Alineación</span>
+                                        <select value={current.textAlign ?? ''} onChange={e => update({ textAlign: e.target.value as any })} className="w-full rounded bg-zinc-900 p-2 text-[10px] uppercase font-black text-white outline-none">
+                                            <option value="">Auto</option>
+                                            <option value="left">Izquierda</option>
+                                            <option value="center">Centro</option>
+                                            <option value="right">Derecha</option>
+                                        </select>
+                                    </label>
                                 </div>
                             </div>
-                        ))}
-                    </div>
-                    <div className="mt-3 grid grid-cols-2 gap-2">
-                        {current.tone === 'custom' && (
-                            <label className="col-span-2 flex items-center gap-2 rounded-lg bg-zinc-900 p-2">
-                                <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600">Color de Fondo Libre</span>
-                                <input type="color" value={current.backgroundColor ?? '#36606F'} onChange={event => onOverrideChange(overrideKey, { backgroundColor: event.target.value })} className="h-8 w-8 rounded border-0 bg-transparent" />
-                                <code className="text-[10px] text-zinc-400">{current.backgroundColor ?? '#36606F'}</code>
-                            </label>
-                        )}
-                        <label className="rounded-lg bg-zinc-900 p-2">
-                            <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Color texto</span>
-                            <span className="flex items-center gap-2">
-                                <input type="color" value={current.textColor ?? '#36606F'} onChange={event => onOverrideChange(overrideKey, { textColor: event.target.value })} className="h-10 w-10 rounded border-0 bg-transparent" />
-                                <code className="text-[10px] text-zinc-400">{current.textColor ?? '#36606F'}</code>
-                            </span>
-                        </label>
-                        <label className="rounded-lg bg-zinc-900 p-2">
-                            <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Color Trazo/Relleno</span>
-                            <span className="flex items-center gap-2">
-                                <input type="color" value={current.fillColor ?? '#36606F'} onChange={event => onOverrideChange(overrideKey, { fillColor: event.target.value })} className="h-10 w-10 rounded border-0 bg-transparent" />
-                                <code className="text-[10px] text-zinc-400">{current.fillColor ?? '#36606F'}</code>
-                            </span>
-                        </label>
-                        <label className="rounded-lg bg-zinc-900 p-2">
-                            <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Opacidad {Math.round((current.opacity ?? 1) * 100)}%</span>
-                            <input type="range" min="0" max="1" step="0.05" value={current.opacity ?? 1} onChange={event => onOverrideChange(overrideKey, { opacity: Number(event.target.value) })} className="min-h-10 w-full accent-[#36606F]" />
-                        </label>
-                        <label className="rounded-lg bg-zinc-900 p-2">
-                            <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Contorno Outer</span>
-                            <span className="flex items-center gap-2">
-                                <input type="color" value={current.outlineColor ?? '#36606F'} onChange={event => onOverrideChange(overrideKey, { outlineColor: event.target.value })} className="h-10 w-10 rounded border-0 bg-transparent" />
-                                <select value={current.outlineWidth ?? 'none'} onChange={event => onOverrideChange(overrideKey, { outlineWidth: event.target.value as VisualOverride['outlineWidth'] })} className="min-h-10 min-w-0 flex-1 rounded bg-zinc-800 px-2 text-[9px] font-black uppercase text-zinc-300">
-                                    <option value="none">Ninguno</option>
-                                    <option value="thin">Fino</option>
-                                    <option value="medium">Medio</option>
-                                    <option value="strong">Fuerte</option>
-                                </select>
-                            </span>
-                        </label>
-                        <div className="col-span-2 grid grid-cols-3 gap-2 border-t border-zinc-800/50 pt-2 mt-2">
-                            <label className="rounded-lg bg-zinc-900 p-2">
-                                <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Ancho</span>
-                                <input type="text" placeholder="auto, 100%, 200px..." value={current.width ?? ''} onChange={event => onOverrideChange(overrideKey, { width: event.target.value })} className="w-full bg-transparent text-[10px] text-white outline-none" />
-                            </label>
-                            <label className="rounded-lg bg-zinc-900 p-2">
-                                <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Alto</span>
-                                <input type="text" placeholder="auto, 100%, 200px..." value={current.height ?? ''} onChange={event => onOverrideChange(overrideKey, { height: event.target.value })} className="w-full bg-transparent text-[10px] text-white outline-none" />
-                            </label>
-                            <label className="rounded-lg bg-zinc-900 p-2">
-                                <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Margen</span>
-                                <input type="text" placeholder="0, 1rem, 20px..." value={current.margin ?? ''} onChange={event => onOverrideChange(overrideKey, { margin: event.target.value })} className="w-full bg-transparent text-[10px] text-white outline-none" />
-                            </label>
-                            <label className="rounded-lg bg-zinc-900 p-2">
-                                <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Padding</span>
-                                <input type="text" placeholder="0, 1rem, 20px..." value={current.customPadding ?? ''} onChange={event => onOverrideChange(overrideKey, { customPadding: event.target.value })} className="w-full bg-transparent text-[10px] text-white outline-none" />
-                            </label>
-                            <label className="rounded-lg bg-zinc-900 p-2">
-                                <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Gap</span>
-                                <input type="text" placeholder="0, 1rem, 20px..." value={current.gap ?? ''} onChange={event => onOverrideChange(overrideKey, { gap: event.target.value })} className="w-full bg-transparent text-[10px] text-white outline-none" />
-                            </label>
-                            <label className="rounded-lg bg-zinc-900 p-2">
-                                <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Tamaño Fuente</span>
-                                <input type="text" placeholder="1rem, 16px..." value={current.fontSize ?? ''} onChange={event => onOverrideChange(overrideKey, { fontSize: event.target.value })} className="w-full bg-transparent text-[10px] text-white outline-none" />
-                            </label>
+                        </Section>
+
+                        <Section id="tamano" title="Tamaño">
+                            <div className="grid grid-cols-2 gap-2">
+                                <label className="block">
+                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Ancho</span>
+                                    <input type="text" placeholder="auto, 100%, 200px" value={current.width ?? ''} onChange={e => update({ width: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none" />
+                                </label>
+                                <label className="block">
+                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Alto</span>
+                                    <input type="text" placeholder="auto, 100%, 200px" value={current.height ?? ''} onChange={e => update({ height: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none" />
+                                </label>
+                                <label className="block">
+                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Ancho Mínimo</span>
+                                    <input type="text" placeholder="" value={current.minWidth ?? ''} onChange={e => update({ minWidth: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none" />
+                                </label>
+                                <label className="block">
+                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Alto Mínimo</span>
+                                    <input type="text" placeholder="" value={current.minHeight ?? ''} onChange={e => update({ minHeight: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none" />
+                                </label>
+                            </div>
+                        </Section>
+
+                        <Section id="posicion" title="Posición Visual">
+                            <div className="grid grid-cols-2 gap-2">
+                                <label className="block">
+                                    <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">Eje X <button onClick={() => reset(['x'])} className="text-zinc-600 hover:text-white">✕</button></span>
+                                    <input type="text" placeholder="0px, 50%, 2rem" value={current.x ?? ''} onChange={e => update({ x: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none mb-1" />
+                                    <input type="range" min="-100" max="100" value={parseInt(current.x || '0')} onChange={e => update({ x: `${e.target.value}px` })} className="w-full accent-[#36606F]" />
+                                </label>
+                                <label className="block">
+                                    <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">Eje Y <button onClick={() => reset(['y'])} className="text-zinc-600 hover:text-white">✕</button></span>
+                                    <input type="text" placeholder="0px, 50%, 2rem" value={current.y ?? ''} onChange={e => update({ y: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none mb-1" />
+                                    <input type="range" min="-100" max="100" value={parseInt(current.y || '0')} onChange={e => update({ y: `${e.target.value}px` })} className="w-full accent-[#36606F]" />
+                                </label>
+                            </div>
+                        </Section>
+
+                        <Section id="espaciado" title="Espaciado (Margin, Padding, Gap)">
+                            <div className="grid gap-2">
+                                <label className="block">
+                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Gap (Espacio entre hijos)</span>
+                                    <input type="text" placeholder="1rem, 16px" value={current.gap ?? ''} onChange={e => update({ gap: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none" />
+                                </label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <label className="block">
+                                        <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">Padding <button onClick={() => reset(['customPadding'])} className="text-zinc-600">✕</button></span>
+                                        <input type="text" placeholder="1rem" value={current.customPadding ?? ''} onChange={e => update({ customPadding: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none" />
+                                    </label>
+                                    <label className="block">
+                                        <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">Margin <button onClick={() => reset(['margin'])} className="text-zinc-600">✕</button></span>
+                                        <input type="text" placeholder="1rem" value={current.margin ?? ''} onChange={e => update({ margin: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none" />
+                                    </label>
+                                </div>
+                                <div className="mt-2 text-[8px] font-black uppercase tracking-widest text-zinc-600">Padding Específico</div>
+                                <div className="grid grid-cols-4 gap-1">
+                                    <input type="text" placeholder="Top" value={current.paddingTop ?? ''} onChange={e => update({ paddingTop: e.target.value })} className="w-full rounded bg-zinc-900 p-1.5 text-center text-[10px] text-white outline-none" title="Top" />
+                                    <input type="text" placeholder="Right" value={current.paddingRight ?? ''} onChange={e => update({ paddingRight: e.target.value })} className="w-full rounded bg-zinc-900 p-1.5 text-center text-[10px] text-white outline-none" title="Right" />
+                                    <input type="text" placeholder="Bottom" value={current.paddingBottom ?? ''} onChange={e => update({ paddingBottom: e.target.value })} className="w-full rounded bg-zinc-900 p-1.5 text-center text-[10px] text-white outline-none" title="Bottom" />
+                                    <input type="text" placeholder="Left" value={current.paddingLeft ?? ''} onChange={e => update({ paddingLeft: e.target.value })} className="w-full rounded bg-zinc-900 p-1.5 text-center text-[10px] text-white outline-none" title="Left" />
+                                </div>
+                                <div className="mt-2 text-[8px] font-black uppercase tracking-widest text-zinc-600">Margin Específico</div>
+                                <div className="grid grid-cols-4 gap-1">
+                                    <input type="text" placeholder="Top" value={current.marginTop ?? ''} onChange={e => update({ marginTop: e.target.value })} className="w-full rounded bg-zinc-900 p-1.5 text-center text-[10px] text-white outline-none" title="Top" />
+                                    <input type="text" placeholder="Right" value={current.marginRight ?? ''} onChange={e => update({ marginRight: e.target.value })} className="w-full rounded bg-zinc-900 p-1.5 text-center text-[10px] text-white outline-none" title="Right" />
+                                    <input type="text" placeholder="Bottom" value={current.marginBottom ?? ''} onChange={e => update({ marginBottom: e.target.value })} className="w-full rounded bg-zinc-900 p-1.5 text-center text-[10px] text-white outline-none" title="Bottom" />
+                                    <input type="text" placeholder="Left" value={current.marginLeft ?? ''} onChange={e => update({ marginLeft: e.target.value })} className="w-full rounded bg-zinc-900 p-1.5 text-center text-[10px] text-white outline-none" title="Left" />
+                                </div>
+                            </div>
+                        </Section>
+
+                        <Section id="borde" title="Borde y Sombra">
+                            <div className="grid grid-cols-2 gap-2">
+                                <label className="block rounded-lg bg-zinc-900 p-2">
+                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Color Borde</span>
+                                    <input type="color" value={current.borderColor ?? '#000000'} onChange={e => update({ borderColor: e.target.value })} className="h-6 w-full rounded border-0 bg-transparent p-0" />
+                                </label>
+                                <label className="block">
+                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Grosor</span>
+                                    <input type="text" placeholder="1px" value={current.borderWidth ?? ''} onChange={e => update({ borderWidth: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none" />
+                                </label>
+                                <label className="block col-span-2">
+                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Estilo</span>
+                                    <select value={current.borderStyle ?? ''} onChange={e => update({ borderStyle: e.target.value as any })} className="w-full rounded bg-zinc-900 p-2 text-[10px] uppercase font-black text-white outline-none">
+                                        <option value="">Auto</option>
+                                        <option value="solid">Sólido</option>
+                                        <option value="dashed">Discontinuo</option>
+                                        <option value="dotted">Punteado</option>
+                                    </select>
+                                </label>
+                                <div className="col-span-2">
+                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Sombra</span>
+                                    <div className="grid grid-cols-4 gap-1">
+                                        {(['none', 'subtle', 'medium', 'strong'] as const).map(s => (
+                                            <button key={s} onClick={() => update({ boxShadow: s })} className={`rounded py-1 text-[9px] font-black uppercase tracking-widest ${current.boxShadow === s ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-500'}`}>{s === 'none' ? 'Sin' : s}</button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </Section>
+
+                        <Section id="avanzado" title="Avanzado (Layout)">
+                            <div className="grid grid-cols-2 gap-2">
+                                <label className="block">
+                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Display</span>
+                                    <select value={current.display ?? ''} onChange={e => update({ display: e.target.value as any })} className="w-full rounded bg-zinc-900 p-2 text-[10px] uppercase font-black text-white outline-none">
+                                        <option value="">Auto</option>
+                                        <option value="block">Block</option>
+                                        <option value="flex">Flex</option>
+                                        <option value="grid">Grid</option>
+                                        <option value="inline-block">Inline Block</option>
+                                        <option value="none">None</option>
+                                    </select>
+                                </label>
+                                <label className="block">
+                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Position</span>
+                                    <select value={current.position ?? ''} onChange={e => update({ position: e.target.value as any })} className="w-full rounded bg-zinc-900 p-2 text-[10px] uppercase font-black text-white outline-none">
+                                        <option value="">Auto</option>
+                                        <option value="static">Static</option>
+                                        <option value="relative">Relative</option>
+                                        <option value="absolute">Absolute</option>
+                                        <option value="fixed">Fixed</option>
+                                    </select>
+                                </label>
+                                <label className="block col-span-2">
+                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Flex Direction</span>
+                                    <div className="flex gap-1">
+                                        {(['row', 'column', 'row-reverse', 'column-reverse'] as const).map(d => (
+                                            <button key={d} onClick={() => update({ flexDirection: d })} className={`flex-1 rounded py-1 text-[8px] font-black uppercase tracking-widest ${current.flexDirection === d ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-500'}`}>{d.split('-')[0]}</button>
+                                        ))}
+                                    </div>
+                                </label>
+                                <label className="block col-span-2">
+                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Align Items</span>
+                                    <select value={current.alignItems ?? ''} onChange={e => update({ alignItems: e.target.value as any })} className="w-full rounded bg-zinc-900 p-2 text-[10px] uppercase font-black text-white outline-none">
+                                        <option value="">Auto</option>
+                                        <option value="center">Center</option>
+                                        <option value="flex-start">Start</option>
+                                        <option value="flex-end">End</option>
+                                        <option value="stretch">Stretch</option>
+                                    </select>
+                                </label>
+                                <label className="block col-span-2">
+                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Justify Content</span>
+                                    <select value={current.justifyContent ?? ''} onChange={e => update({ justifyContent: e.target.value as any })} className="w-full rounded bg-zinc-900 p-2 text-[10px] uppercase font-black text-white outline-none">
+                                        <option value="">Auto</option>
+                                        <option value="center">Center</option>
+                                        <option value="flex-start">Start</option>
+                                        <option value="flex-end">End</option>
+                                        <option value="space-between">Space Between</option>
+                                    </select>
+                                </label>
+                            </div>
+                        </Section>
+                        
+                        <div className="mt-4 border-t border-zinc-800 pt-4">
+                            <button onClick={resetAll} className="w-full rounded-xl bg-red-500/10 py-3 text-[9px] font-black uppercase tracking-widest text-red-400 hover:bg-red-500/20">
+                                Restablecer todo en este ámbito
+                            </button>
                         </div>
-                    </div>
-                </>
-            )}
+                    </>
+                )}
+            </div>
         </div>
     );
 }
