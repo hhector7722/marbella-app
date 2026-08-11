@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext } from 'react';
-import { DesignContext } from '../types';
+import { DesignContext, StudioFontFamily } from '../types';
 import { resolverReceta, cssVarsDelContexto } from '../design-context';
 import { Recipe } from '../types';
 
@@ -19,7 +19,7 @@ export function useDesign(): DesignContext {
     return ctx;
 }
 
-export function DesignProvider({ recipe, children }: { recipe: Recipe; children: React.ReactNode }) {
+export function DesignProvider({ recipe, fontFamily, children }: { recipe: Recipe; fontFamily?: StudioFontFamily; children: React.ReactNode }) {
     const ctx = resolverReceta(recipe);
     const cssVars = cssVarsDelContexto(ctx);
 
@@ -30,7 +30,8 @@ export function DesignProvider({ recipe, children }: { recipe: Recipe; children:
                 data-dl-surface={ctx.surface}
                 data-dl-elevation={ctx.elevation}
                 data-dl-buttons={ctx.buttonWeight}
-                style={{ ...cssVars } as React.CSSProperties}
+                data-dl-font={fontFamily}
+                style={{ ...cssVars, '--dl-font-family': fontFamily ? `'${fontFamily}'` : undefined } as React.CSSProperties}
                 className="h-full"
             >
                 {children}

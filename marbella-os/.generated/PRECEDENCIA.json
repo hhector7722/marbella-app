@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "892f680a877e949d",
+  "_huella": "43784fb82953e9c8",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -1080,6 +1080,61 @@
       ]
     },
     {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-11-allowlist-k2b.md",
+      "documento": "SPIKE-ALLOWLIST-K2B",
+      "clase": "inmutable",
+      "estado": "archivado",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": [
+        "CANON",
+        "GLOSARIO",
+        "MODELO-DE-DATOS",
+        "ARQUITECTURA",
+        "PROTOCOLO-AGENTES"
+      ]
+    },
+    {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-11-cierre-especificacion-k2-runner.md",
+      "documento": "SPIKE-CIERRE-ESPECIFICACION-K2-RUNNER",
+      "clase": "inmutable",
+      "estado": "archivado",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": [
+        "CANON",
+        "GLOSARIO",
+        "MODELO-DE-DATOS",
+        "ARQUITECTURA",
+        "SEGURIDAD",
+        "PROTOCOLO-AGENTES"
+      ]
+    },
+    {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-11-cierre-k2b-allowlist.md",
+      "documento": "SPIKE-CIERRE-K2B-ALLOWLIST",
+      "clase": "inmutable",
+      "estado": "archivado",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": [
+        "CANON",
+        "GLOSARIO",
+        "MODELO-DE-DATOS",
+        "ARQUITECTURA",
+        "PROTOCOLO-AGENTES"
+      ]
+    },
+    {
       "ruta": "marbella-os/6-investigacion/spikes/2026-08-11-correccion-gates-r1-k2.md",
       "documento": "SPIKE-CORRECCION-GATES-R1-K2",
       "clase": "inmutable",
@@ -1118,8 +1173,64 @@
       ]
     },
     {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-11-definicion-scope-k2b.md",
+      "documento": "SPIKE-DEFINICION-SCOPE-K2B",
+      "clase": "inmutable",
+      "estado": "archivado",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": [
+        "CANON",
+        "GLOSARIO",
+        "MODELO-DE-DATOS",
+        "ARQUITECTURA",
+        "PROTOCOLO-AGENTES"
+      ]
+    },
+    {
       "ruta": "marbella-os/6-investigacion/spikes/2026-08-11-diagnostico-fallo-r1.md",
       "documento": "SPIKE-DIAGNOSTICO-FALLO-R1",
+      "clase": "inmutable",
+      "estado": "archivado",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": [
+        "CANON",
+        "GLOSARIO",
+        "MODELO-DE-DATOS",
+        "DOMINIO-PRECIOS-Y-COMPRAS",
+        "ARQUITECTURA",
+        "PROTOCOLO-AGENTES"
+      ]
+    },
+    {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-11-diccionario-normalizacion-k2b-cierre.md",
+      "documento": "SPIKE-DICCIONARIO-NORMALIZACION-K2B-CIERRE",
+      "clase": "inmutable",
+      "estado": "archivado",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": [
+        "CANON",
+        "GLOSARIO",
+        "MODELO-DE-DATOS",
+        "DOMINIO-PRECIOS-Y-COMPRAS",
+        "ARQUITECTURA",
+        "PROTOCOLO-AGENTES"
+      ]
+    },
+    {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-11-diccionario-normalizacion-k2b.md",
+      "documento": "SPIKE-DICCIONARIO-NORMALIZACION-K2B",
       "clase": "inmutable",
       "estado": "archivado",
       "capa": "investigacion",
@@ -1152,6 +1263,25 @@
         "MODELO-DE-DATOS",
         "DOMINIO-PRECIOS-Y-COMPRAS",
         "ARQUITECTURA",
+        "PROTOCOLO-AGENTES"
+      ]
+    },
+    {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-11-especificacion-k2-runner-k2b.md",
+      "documento": "SPIKE-ESPECIFICACION-K2-RUNNER-K2B",
+      "clase": "inmutable",
+      "estado": "archivado",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": [
+        "CANON",
+        "GLOSARIO",
+        "MODELO-DE-DATOS",
+        "ARQUITECTURA",
+        "SEGURIDAD",
         "PROTOCOLO-AGENTES"
       ]
     },

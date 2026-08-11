@@ -12,6 +12,7 @@ import {
     Intensidad,
     SelectedVisualElement,
     VisualOverrides,
+    StudioFontFamily,
 } from './types';
 import { MOVIDAS_CATALOGO } from './movidas';
 import { resolverReceta } from './design-context';
@@ -28,6 +29,12 @@ const uid = (prefix: string) =>
     `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
 export const SANDBOX_ROUTES: { id: SandboxRoute; title: string; grupo: string }[] = [
+    { id: '/master/dashboard', title: 'Inicio', grupo: 'Inicio' },
+    { id: '/dashboard', title: 'Dashboard', grupo: 'Inicio' },
+    { id: '/staff/dashboard', title: 'Dashboard Staff', grupo: 'Inicio' },
+    { id: '/recipes', title: 'Recetas', grupo: 'Operación' },
+    { id: '/ingredients', title: 'Ingredientes', grupo: 'Operación' },
+    { id: '/suppliers', title: 'Proveedores', grupo: 'Operación' },
     { id: '/dashboard/ventas', title: 'Ventas', grupo: 'Dashboard' },
     { id: '/dashboard/history', title: 'Cierres / History', grupo: 'Dashboard' },
     { id: '/dashboard/movements', title: 'Movimientos', grupo: 'Dashboard' },
@@ -39,6 +46,14 @@ export const SANDBOX_ROUTES: { id: SandboxRoute; title: string; grupo: string }[
 ];
 
 export const ESTETICA_ORIGINAL_ID = 'estetica-original';
+export const START_REAL_ROUTE: SandboxRoute = '/master/dashboard';
+const SYSTEM_ESTETICA_IDS = new Set([
+    ESTETICA_ORIGINAL_ID,
+    'est-editorial-v1',
+    'est-minimal-v1',
+    'est-operativa-v1',
+    ...REFERENCIAS.map(reference => `est-${reference.id}-v1`),
+]);
 
 function esteticasIniciales(): Estetica[] {
     const hoy = now();
@@ -50,6 +65,7 @@ function esteticasIniciales(): Estetica[] {
             recipe: {},
             parentId: null,
             isOriginal: true,
+            isSystem: true,
             createdAt: hoy,
             updatedAt: hoy,
         },
@@ -65,6 +81,7 @@ function esteticasIniciales(): Estetica[] {
                 profundidad: 'sutil',
             },
             parentId: ESTETICA_ORIGINAL_ID,
+            isSystem: true,
             createdAt: hoy,
             updatedAt: hoy,
         },
@@ -81,6 +98,7 @@ function esteticasIniciales(): Estetica[] {
                 peso_botones: 'fuerte',
             },
             parentId: ESTETICA_ORIGINAL_ID,
+            isSystem: true,
             createdAt: hoy,
             updatedAt: hoy,
         },
@@ -96,6 +114,7 @@ function esteticasIniciales(): Estetica[] {
                 tratamiento_tablas: 'moderado',
             },
             parentId: ESTETICA_ORIGINAL_ID,
+            isSystem: true,
             createdAt: hoy,
             updatedAt: hoy,
         },
@@ -107,6 +126,7 @@ function esteticasIniciales(): Estetica[] {
         description: reference.descripcion,
         recipe: Object.fromEntries(reference.movidasObservadas.map(move => [move.movidaId, move.intensidad])) as Recipe,
         parentId: ESTETICA_ORIGINAL_ID,
+        isSystem: true,
         createdAt: hoy,
         updatedAt: hoy,
     }));
@@ -136,11 +156,12 @@ interface SandboxState {
 
     setViewport: (v: ViewportPreset) => void;
     setRoute: (r: SandboxRoute) => void;
+    setRouteFromBrowser: (r: SandboxRoute) => void;
     goBack: () => void;
 
     // Estéticas: CRUD
     setActiveEstetica: (id: string) => void;
-    createEstetica: (name: string, recipe: Recipe, opts?: { description?: string; parentId?: string; overrides?: VisualOverrides }) => string;
+    createEstetica: (name: string, recipe: Recipe, opts?: { description?: string; parentId?: string; overrides?: VisualOverrides; fontFamily?: StudioFontFamily }) => string;
     duplicateEstetica: (id: string, newName?: string) => string | null;
     renameEstetica: (id: string, newName: string) => void;
     deleteEstetica: (id: string) => boolean;
@@ -149,6 +170,7 @@ interface SandboxState {
     setLabMode: (active: boolean) => void;
     setSelectedElement: (element: SelectedVisualElement | null) => void;
     updateEsteticaOverrides: (id: string, overrides: VisualOverrides) => void;
+    updateEsteticaFontFamily: (id: string, fontFamily?: StudioFontFamily) => void;
 
 }
 
@@ -158,7 +180,7 @@ export const useSandboxStore = create<SandboxState>()(
             viewport: 'mobile',
             activeEsteticaId: ESTETICA_ORIGINAL_ID,
             esteticas: esteticasIniciales(),
-            route: '/dashboard/ventas',
+            route: START_REAL_ROUTE,
             routeHistory: [],
             labMode: false,
             selectedElement: null,
@@ -171,6 +193,7 @@ export const useSandboxStore = create<SandboxState>()(
                     route: r,
                     routeHistory: state.route !== r ? [...state.routeHistory, state.route] : state.routeHistory,
                 })),
+            setRouteFromBrowser: r => set({ route: r }),
 
             goBack: () =>
                 set(state => {
@@ -195,6 +218,7 @@ export const useSandboxStore = create<SandboxState>()(
                     description: opts?.description,
                     recipe,
                     overrides: opts?.overrides ?? {},
+                    fontFamily: opts?.fontFamily,
                     parentId: opts?.parentId ?? get().activeEsteticaId,
                     createdAt: now(),
                     updatedAt: now(),
@@ -214,13 +238,14 @@ export const useSandboxStore = create<SandboxState>()(
                     description: origen.description,
                     parentId: id,
                     overrides: { ...origen.overrides },
+                    fontFamily: origen.fontFamily,
                 });
             },
 
             renameEstetica: (id, newName) =>
                 set(state => ({
                     esteticas: state.esteticas.map(e =>
-                        e.id === id && !e.isOriginal
+                        e.id === id && !e.isOriginal && !e.isSystem
                             ? { ...e, name: newName, updatedAt: now() }
                             : e
                     ),
@@ -228,7 +253,7 @@ export const useSandboxStore = create<SandboxState>()(
 
             deleteEstetica: id => {
                 const est = get().esteticas.find(e => e.id === id);
-                if (!est || est.isOriginal) return false;
+                if (!est || est.isOriginal || est.isSystem) return false;
                 const remaining = get().esteticas.filter(e => e.id !== id);
                 set(state => ({
                     esteticas: remaining,
@@ -240,7 +265,7 @@ export const useSandboxStore = create<SandboxState>()(
             updateEsteticaRecipe: (id, recipe) =>
                 set(state => ({
                     esteticas: state.esteticas.map(e =>
-                        e.id === id && !e.isOriginal
+                        e.id === id && !e.isOriginal && !e.isSystem
                             ? { ...e, recipe, updatedAt: now() }
                             : e
                     ),
@@ -248,7 +273,7 @@ export const useSandboxStore = create<SandboxState>()(
 
             mergeRecipeIntoEstetica: (esteticaId, recipePatch) => {
                 const est = get().esteticas.find(e => e.id === esteticaId);
-                if (!est || est.isOriginal) return;
+                if (!est || est.isOriginal || est.isSystem) return;
                 const merged: Recipe = { ...est.recipe };
                 for (const [k, v] of Object.entries(recipePatch)) {
                     merged[k as MovidaId] = v as Intensidad;
@@ -261,21 +286,27 @@ export const useSandboxStore = create<SandboxState>()(
             updateEsteticaOverrides: (id, overrides) =>
                 set(state => ({
                     esteticas: state.esteticas.map(e =>
-                        e.id === id && !e.isOriginal ? { ...e, overrides, updatedAt: now() } : e
+                        e.id === id && !e.isOriginal && !e.isSystem ? { ...e, overrides, updatedAt: now() } : e
+                    ),
+                })),
+            updateEsteticaFontFamily: (id, fontFamily) =>
+                set(state => ({
+                    esteticas: state.esteticas.map(e =>
+                        e.id === id && !e.isOriginal && !e.isSystem ? { ...e, fontFamily, updatedAt: now() } : e
                     ),
                 })),
 
         }),
         {
             name: 'marbella-sandbox-storage',
-            version: 6,
+            version: 8,
             migrate: (persistedState: any, version: number) => {
                 if (version < 5) {
                     return {
                         viewport: 'mobile',
                         activeEsteticaId: ESTETICA_ORIGINAL_ID,
                         esteticas: esteticasIniciales(),
-                        route: '/dashboard/ventas' as SandboxRoute,
+                        route: START_REAL_ROUTE,
                         routeHistory: [],
                         movidas: MOVIDAS_CATALOGO,
                     };
@@ -283,13 +314,40 @@ export const useSandboxStore = create<SandboxState>()(
                 if (version < 6) {
                     return {
                         ...persistedState,
-                        esteticas: añadirReferenciasFaltantes((persistedState.esteticas ?? []).map((e: Estetica) => ({ ...e, overrides: e.overrides ?? {} }))),
+                        esteticas: añadirReferenciasFaltantes((persistedState.esteticas ?? []).map((e: Estetica) => ({
+                            ...e,
+                            overrides: e.overrides ?? {},
+                            isSystem: e.isSystem ?? SYSTEM_ESTETICA_IDS.has(e.id),
+                        }))),
                         labMode: false,
                         selectedElement: null,
                     };
                 }
+                if (version < 7) {
+                    return {
+                        ...persistedState,
+                        esteticas: añadirReferenciasFaltantes((persistedState.esteticas ?? []).map((e: Estetica) => ({
+                            ...e,
+                            isSystem: e.isSystem ?? SYSTEM_ESTETICA_IDS.has(e.id),
+                            overrides: e.overrides ?? {},
+                        }))),
+                    };
+                }
+                if (version < 8) {
+                    return {
+                        ...persistedState,
+                        route: START_REAL_ROUTE,
+                        routeHistory: [],
+                    };
+                }
                 return persistedState;
             },
+            partialize: state => ({
+                viewport: state.viewport,
+                activeEsteticaId: state.activeEsteticaId,
+                esteticas: state.esteticas,
+                movidas: state.movidas,
+            }),
         }
     )
 );

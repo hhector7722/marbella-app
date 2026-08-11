@@ -2,12 +2,31 @@
 
 import React from 'react';
 import { useSandboxStore } from '../store';
-import type { Estetica, SandboxRoute, SelectedVisualElement, VisualOverride, VisualOverrides, VisualTargetKind, ViewportPreset } from '../types';
+import type { StudioFontOption } from '../font-catalog';
+import type { Estetica, SandboxRoute, SelectedVisualElement, StudioFontFamily, VisualOverride, VisualOverrides, VisualTargetKind, ViewportPreset } from '../types';
 
 const TARGET_SELECTOR = 'button, input, textarea, select, table, thead, tbody, tr, nav, header, [role="dialog"], [role="tab"], [class*="rounded"]';
 
 function cleanLabel(value: string): string {
     return value.replace(/\s+/g, ' ').trim().slice(0, 48);
+}
+
+function scopeLabel(kind: VisualTargetKind, scope: 'instance' | 'component' | 'global'): string {
+    const names: Record<VisualTargetKind, [string, string]> = {
+        button: ['Solo este botón', 'Todos los botones de este tipo'],
+        card: ['Solo esta tarjeta', 'Todas las tarjetas de este tipo'],
+        table: ['Solo esta tabla', 'Todas las tablas de este tipo'],
+        row: ['Solo esta fila', 'Todas las filas de este tipo'],
+        input: ['Solo este campo', 'Todos los campos de este tipo'],
+        select: ['Solo este selector', 'Todos los selectores de este tipo'],
+        nav: ['Solo esta navegación', 'Todas las navegaciones de este tipo'],
+        header: ['Solo esta cabecera', 'Todas las cabeceras de este tipo'],
+        modal: ['Solo este modal', 'Todos los modales de este tipo'],
+        text: ['Solo este texto', 'Todos los textos de este tipo'],
+        element: ['Solo este elemento', 'Todos los elementos de este tipo'],
+    };
+    if (scope === 'global') return 'Toda la estética';
+    return names[kind][scope === 'instance' ? 0 : 1];
 }
 
 function classify(element: HTMLElement): { kind: VisualTargetKind; scope: string; label: string } {
@@ -32,19 +51,21 @@ function classify(element: HTMLElement): { kind: VisualTargetKind; scope: string
 
 function overrideFor(element: HTMLElement, overrides: VisualOverrides): VisualOverride {
     return {
-        ...overrides[`global:${element.dataset.studioKind ?? ''}`],
+        ...overrides.global,
         ...overrides[`component:${element.dataset.studioComponent ?? ''}`],
         ...overrides[element.dataset.studioNodeKey ?? ''],
     };
 }
 
 function applyOverrideAttributes(element: HTMLElement, override: VisualOverride): void {
-    const attributes = ['shape', 'radius', 'weight', 'elevation', 'tone'] as const;
+    const attributes = ['shape', 'radius', 'weight', 'elevation', 'tone', 'padding', 'fontFamily'] as const;
     attributes.forEach(attribute => {
         const value = override[attribute];
         if (value) element.dataset[`studio${attribute[0].toUpperCase()}${attribute.slice(1)}`] = value;
         else delete element.dataset[`studio${attribute[0].toUpperCase()}${attribute.slice(1)}`];
     });
+    if (override.fontFamily) element.style.setProperty('--studio-font-family', `'${override.fontFamily}'`);
+    else element.style.removeProperty('--studio-font-family');
 }
 
 function realElements(root: HTMLElement): HTMLElement[] {
@@ -173,14 +194,18 @@ const OPTIONS: { key: keyof VisualOverride; title: string; values: string[] }[] 
     { key: 'weight', title: 'Peso', values: ['normal', 'medium', 'bold'] },
     { key: 'elevation', title: 'Elevación', values: ['flat', 'subtle', 'strong'] },
     { key: 'tone', title: 'Color', values: ['brand', 'neutral', 'dark'] },
+    { key: 'padding', title: 'Padding', values: ['compact', 'standard', 'spacious'] },
+    { key: 'fontFamily', title: 'Tipografía', values: ['roboto', 'ea-sports-outline'] },
 ];
 
 export function VisualLabPanel({
     overrides,
     onOverrideChange,
+    fonts,
 }: {
     overrides: VisualOverrides;
     onOverrideChange: (key: string, patch: VisualOverride) => void;
+    fonts: StudioFontOption[];
 }) {
     const labMode = useSandboxStore(s => s.labMode);
     const setLabMode = useSandboxStore(s => s.setLabMode);
@@ -192,9 +217,13 @@ export function VisualLabPanel({
             ? selected.key
             : scope === 'component'
                 ? `component:${selected.componentScope}`
-                : `global:${selected.kind}`
-        : 'global:element';
+                : 'global'
+        : 'global';
     const current = overrides[overrideKey] ?? {};
+    const options = [
+        ...OPTIONS.filter(option => option.key !== 'fontFamily'),
+        { key: 'fontFamily' as const, title: 'Tipografía', values: fonts.map(font => font.family) },
+    ];
 
     return (
         <div data-studio-chrome="true" className="border-b border-zinc-800 bg-zinc-950 px-4 py-3">
@@ -213,18 +242,18 @@ export function VisualLabPanel({
                     <div className="mt-3 grid grid-cols-3 gap-1">
                         {(['instance', 'component', 'global'] as const).map(option => (
                             <button key={option} type="button" onClick={() => setScope(option)} style={{ minHeight: 44 }} className={`rounded-lg text-[9px] font-black uppercase tracking-widest ${scope === option ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-500'}`}>
-                                {option === 'instance' ? 'Este elemento' : option === 'component' ? 'Este tipo' : 'Este lenguaje'}
+                                {scopeLabel(selected.kind, option)}
                             </button>
                         ))}
                     </div>
                     <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                        {OPTIONS.map(option => (
+                        {options.map(option => (
                             <div key={option.key}>
                                 <div className="mb-1 text-[8px] font-black uppercase tracking-widest text-zinc-600">{option.title}</div>
                                 <div className="flex flex-wrap gap-1">
                                     {option.values.map(value => (
                                         <button key={value} type="button" onClick={() => onOverrideChange(overrideKey, { [option.key]: value } as VisualOverride)} style={{ minHeight: 40 }} className={`rounded-lg px-2 text-[9px] font-black uppercase tracking-widest ${current[option.key] === value ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-500 hover:text-zinc-200'}`}>
-                                            {value}
+                                            {fonts.find(font => font.family === value)?.label ?? value}
                                         </button>
                                     ))}
                                 </div>
@@ -248,6 +277,9 @@ export function GlobalAestheticPanel({
     onDelete,
     onRename,
     onCompare,
+    fontFamily,
+    onFontFamilyChange,
+    fonts,
 }: {
     estetica: Estetica;
     esteticas: Estetica[];
@@ -259,6 +291,9 @@ export function GlobalAestheticPanel({
     onDelete: () => void;
     onRename: (name: string) => void;
     onCompare: () => void;
+    fontFamily?: StudioFontFamily;
+    onFontFamilyChange: (fontFamily?: StudioFontFamily) => void;
+    fonts: StudioFontOption[];
 }) {
     return (
         <div data-studio-chrome="true" className="border-b border-zinc-800 bg-zinc-950 px-4 py-3">
@@ -266,9 +301,13 @@ export function GlobalAestheticPanel({
                 <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Estética global</span>
                 <span className="rounded-md bg-emerald-500/10 px-2 py-1 text-[8px] font-black uppercase tracking-widest text-emerald-300">Live</span>
             </div>
-            <input value={estetica.name} disabled={Boolean(estetica.isOriginal)} onChange={event => onRename(event.target.value)} className="mt-2 min-h-12 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 text-base font-black text-white outline-none focus:border-[#36606F] disabled:text-zinc-400" aria-label="Nombre de la estética" />
+            <input value={estetica.name} disabled={Boolean(estetica.isOriginal || estetica.isSystem)} onChange={event => onRename(event.target.value)} className="mt-2 min-h-12 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 text-base font-black text-white outline-none focus:border-[#36606F] disabled:text-zinc-400" aria-label="Nombre de la estética" />
             <select value={estetica.id} onChange={event => onSelect(event.target.value)} className="mt-2 min-h-12 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 text-base font-bold text-zinc-200" aria-label="Estética global">
                 {esteticas.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}
+            </select>
+            <select value={fontFamily ?? ''} onChange={event => onFontFamilyChange((event.target.value || undefined) as StudioFontFamily | undefined)} className="mt-2 min-h-12 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 text-sm font-bold text-zinc-200" aria-label="Tipografía global">
+                <option value="">Tipografía de Marbella</option>
+                {fonts.map(font => <option key={font.id} value={font.family}>{font.label}</option>)}
             </select>
             <div className="mt-2 grid grid-cols-3 gap-1">
                 {(['mobile', 'tablet', 'desktop'] as const).map(option => (
@@ -280,7 +319,7 @@ export function GlobalAestheticPanel({
             <div className="mt-2 flex gap-2">
                 <button type="button" onClick={onSave} style={{ minHeight: 48 }} className="flex-1 rounded-xl bg-[#36606F] text-[9px] font-black uppercase tracking-widest text-white">Guardar</button>
                 <button type="button" onClick={onDuplicate} style={{ minHeight: 48 }} className="rounded-xl bg-zinc-800 px-3 text-[9px] font-black uppercase tracking-widest text-zinc-300">Duplicar</button>
-                <button type="button" onClick={onDelete} disabled={Boolean(estetica.isOriginal)} style={{ minHeight: 48 }} className="rounded-xl bg-rose-500/10 px-3 text-[9px] font-black uppercase tracking-widest text-rose-300 disabled:opacity-30">Eliminar</button>
+                <button type="button" onClick={onDelete} disabled={Boolean(estetica.isOriginal || estetica.isSystem)} title={estetica.isSystem ? 'Las estéticas predeterminadas no se pueden eliminar' : undefined} style={{ minHeight: 48 }} className="rounded-xl bg-rose-500/10 px-3 text-[9px] font-black uppercase tracking-widest text-rose-300 disabled:opacity-30">Eliminar</button>
             </div>
             <button type="button" onClick={onCompare} style={{ minHeight: 44 }} className="mt-2 w-full rounded-xl bg-zinc-900 text-[9px] font-black uppercase tracking-widest text-zinc-400">Comparar exploraciones</button>
         </div>

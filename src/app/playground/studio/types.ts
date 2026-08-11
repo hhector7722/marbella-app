@@ -61,8 +61,10 @@ export interface Estetica {
     description?: string;
     recipe: Recipe; // la configuración visual completa
     overrides?: VisualOverrides;
+    fontFamily?: StudioFontFamily;
     parentId: string | null; // null = estética base / Original
     isOriginal?: boolean; // solo la "Marbella Original" lo tiene
+    isSystem?: boolean; // preset del catálogo, no eliminable ni renombrable
     createdAt: string;
     updatedAt: string;
 }
@@ -74,8 +76,11 @@ export type VisualOverride = {
     weight?: 'normal' | 'medium' | 'bold';
     elevation?: 'flat' | 'subtle' | 'strong';
     tone?: 'brand' | 'neutral' | 'dark' | 'custom';
+    padding?: 'compact' | 'standard' | 'spacious';
+    fontFamily?: StudioFontFamily;
 };
 export type VisualOverrides = Record<string, VisualOverride>;
+export type StudioFontFamily = 'roboto' | 'ea-sports' | 'ea-sports-outline';
 export interface SelectedVisualElement {
     key: string;
     route: SandboxRoute;
@@ -112,6 +117,12 @@ export interface DesignContext {
 // ============================================================
 
 export type SandboxRoute =
+    | '/master/dashboard'
+    | '/dashboard'
+    | '/staff/dashboard'
+    | '/recipes'
+    | '/ingredients'
+    | '/suppliers'
     | '/dashboard/ventas'
     | '/dashboard/history'
     | '/dashboard/movements'

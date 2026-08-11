@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Calendar, Clock, Home, Package, User, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { trackUsageTabSwitch } from '@/lib/usage/client';
@@ -31,6 +31,10 @@ const STAFF_NAV_ITEMS: StaffNavItem[] = [
 
 export default function StaffBottomNav() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const effectivePathname = pathname.startsWith('/playground/studio')
+    ? searchParams.get('route') ?? '/master/dashboard'
+    : pathname;
   const router = useRouter();
   const supabase = createClient();
   const navRef = useRef<HTMLElement>(null);
@@ -134,18 +138,18 @@ export default function StaffBottomNav() {
     if (href !== homeHref) return false;
     if (isMasterUser) {
       return (
-        pathname === '/master/dashboard' ||
-        pathname === '/dashboard' ||
-        pathname === '/staff/dashboard'
+        effectivePathname === '/master/dashboard' ||
+        effectivePathname === '/dashboard' ||
+        effectivePathname === '/staff/dashboard'
       );
     }
-    return pathname === href || pathname.startsWith(`${href}/`);
+    return effectivePathname === href || effectivePathname.startsWith(`${href}/`);
   };
 
   const isActive = (item: StaffNavItem) => {
     if (item.action === 'home') return isHomeActive(homeHref);
     if (item.href.startsWith('#')) return false;
-    return pathname === item.href || pathname.startsWith(`${item.href}/`);
+    return effectivePathname === item.href || effectivePathname.startsWith(`${item.href}/`);
   };
 
   const scheduleHref = '/horario';
@@ -176,18 +180,18 @@ export default function StaffBottomNav() {
               onClick={(e) => {
                 if (item.action === 'scheduleModal') {
                   e.preventDefault();
-                  trackUsageTabSwitch(pathname, scheduleHref, item.name);
+                  trackUsageTabSwitch(effectivePathname, scheduleHref, item.name);
                   router.push(scheduleHref);
                 } else if (item.action === 'supplierModal') {
                   e.preventDefault();
-                  trackUsageTabSwitch(pathname, '/orders/new', item.name);
+                  trackUsageTabSwitch(effectivePathname, '/orders/new', item.name);
                   setIsSupplierModalOpen(true);
                 } else if (item.action === 'home') {
                   e.preventDefault();
-                  trackUsageTabSwitch(pathname, homeHref, item.name);
+                  trackUsageTabSwitch(effectivePathname, homeHref, item.name);
                   router.push(homeHref);
                 } else if (!item.href.startsWith('#')) {
-                  trackUsageTabSwitch(pathname, linkHref, item.name);
+                  trackUsageTabSwitch(effectivePathname, linkHref, item.name);
                 }
               }}
             >

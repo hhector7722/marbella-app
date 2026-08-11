@@ -115,6 +115,11 @@
 :is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-tone='brand'] { background-color: #36606f !important; color: white !important; }
 :is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-tone='neutral'] { background-color: #f4f4f5 !important; color: #27272a !important; }
 :is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-tone='dark'] { background-color: #27272a !important; color: white !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-padding='compact'] { padding: 0.5rem !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-padding='standard'] { padding: 1rem !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-padding='spacious'] { padding: 1.75rem !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-font-family] { font-family: var(--studio-font-family) !important; }
+[data-dl-font] * { font-family: var(--dl-font-family) !important; }
 
 @layer utilities {
   /**

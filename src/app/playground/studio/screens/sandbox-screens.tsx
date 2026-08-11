@@ -26,6 +26,12 @@ export const SANDBOX_ROUTE_META: Record<
     SandboxRoute,
     { title: string; subtitle: string; grupo: string }
 > = {
+    '/master/dashboard': { title: 'Inicio', subtitle: 'Panel principal', grupo: 'Inicio' },
+    '/dashboard': { title: 'Dashboard', subtitle: 'Panel principal', grupo: 'Inicio' },
+    '/staff/dashboard': { title: 'Dashboard Staff', subtitle: 'Operativa diaria', grupo: 'Inicio' },
+    '/recipes': { title: 'Recetas', subtitle: 'Carta y escandallos', grupo: 'Operación' },
+    '/ingredients': { title: 'Ingredientes', subtitle: 'Precios y stock', grupo: 'Operación' },
+    '/suppliers': { title: 'Proveedores', subtitle: 'Compras', grupo: 'Operación' },
     '/dashboard/ventas': { title: 'Ventas', subtitle: 'Ranking y tickets', grupo: 'Dashboard' },
     '/dashboard/history': { title: 'Cierres', subtitle: 'Historial de caja', grupo: 'Dashboard' },
     '/dashboard/movements': { title: 'Movimientos', subtitle: 'Entradas y salidas', grupo: 'Dashboard' },
@@ -713,7 +719,7 @@ function ScreenRegistros() {
 // REGISTRO DE RUTAS → COMPONENTE
 // ============================================================
 
-export const SANDBOX_SCREENS: Record<SandboxRoute, React.FC> = {
+export const SANDBOX_SCREENS: Partial<Record<SandboxRoute, React.FC>> = {
     '/dashboard/ventas': ScreenVentas,
     '/dashboard/history': ScreenHistory,
     '/dashboard/movements': ScreenMovements,
