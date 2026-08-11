@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { VisualOverrides, SandboxRoute, GlobalBackground, Recipe, StudioFontFamily } from '@/app/playground/studio/types';
+import { useSandboxStore } from '@/app/playground/studio/store';
 import { VisualLabSurface } from '@/app/playground/studio/components/VisualLab';
 import { DesignProvider } from '@/app/playground/studio/screens/system';
 import { enableSandboxRuntime, disableSandboxRuntime } from '@/lib/sandbox/client';
@@ -30,12 +31,29 @@ export function StudioPreviewClient({ children }: { children: React.ReactNode })
                     setBackground(event.data.payload.background || null);
                     setRecipe(event.data.payload.recipeOverride || {});
                     setFontFamily(event.data.payload.fontFamily);
+                    useSandboxStore.getState().setLabMode(event.data.payload.labMode || false);
                 }
             };
             window.addEventListener('message', handleMessage);
+            
+            // Cargar las fuentes en el iframe
+            let cancelled = false;
+            void fetch('/playground/studio/fonts')
+                .then(response => response.ok ? response.json() : [])
+                .then((available: any[]) => {
+                    if (cancelled) return;
+                    available.forEach(font => {
+                        const face = new FontFace(font.family, `url("${font.url}") format("${font.format}")`);
+                        document.fonts.add(face);
+                        void face.load();
+                    });
+                })
+                .catch(() => {});
+
             return () => {
                 window.removeEventListener('message', handleMessage);
                 disableSandboxRuntime();
+                cancelled = true;
             };
         }
     }, [pathname]);

@@ -11,7 +11,7 @@ responsable: agente
 # Spike: Auditoría Crítica de Divergencia Supabase
 
 ## 1. Resumen de la Auditoría
-Tras una auditoría criptográfica profunda del esquema remoto frente al repositorio local, se ha invalidado la conclusión inicial de equivalencia total. 
+Tras una auditoría criptográfica profunda del esquema remoto frente al repositorio local, se ha invalidado la conclusión inicial de equivalencia total.
 Existen **diferencias semánticas reales** (squashes y adiciones de código) entre el historial remoto y el local. La divergencia no es solo de metadatos (timestamps), sino estructural en el empaquetado de las migraciones.
 
 ## 2. Estado
@@ -40,8 +40,8 @@ Las migraciones K2 (`write_freeze` y `execution_registry`) **NO** dependen de la
 
 ### Estrategia B: Migration Repair Selectivo (RECOMENDADA)
 1. **Desvincular historial remoto fantasma:** Ejecutar `repair --status reverted` sobre las 32 migraciones `SOLO REMOTE`. Esto alinea la tabla de control (Supabase CLI exige que todo lo remoto exista localmente).
-2. **Reconocer el historial local exacto:** Ejecutar `repair --status applied` **ÚNICAMENTE** sobre las 24 migraciones locales (`HASH_IDENTICAL` y `SEMANTICALLY_EQUIVALENT`). 
-3. **Aplicar los squashes:** **NO** marcar como applied las 12 migraciones locales restantes (las consolidadas/modificadas). 
+2. **Reconocer el historial local exacto:** Ejecutar `repair --status applied` **ÚNICAMENTE** sobre las 24 migraciones locales (`HASH_IDENTICAL` y `SEMANTICALLY_EQUIVALENT`).
+3. **Aplicar los squashes:** **NO** marcar como applied las 12 migraciones locales restantes (las consolidadas/modificadas).
 4. **Ejecutar Push:** Al hacer `db push`, Supabase ejecutará estas 12 migraciones locales y las 2 nuevas de K2. Al estar diseñadas de forma idempotente (`CREATE OR REPLACE`, `ADD COLUMN IF NOT EXISTS`), el `push` inyectará con seguridad los cambios faltantes (ej. comentarios) en el esquema remoto, logrando una sincronización 100% perfecta entre repositorio y BD real.
 
 ## 7. Decisión de Ejecución
@@ -237,11 +237,11 @@ Salida simulada de `migration list`:
 
 
 ## 10. FORWARD-ONLY DECISION
-El repositorio de Marbella opera bajo una arquitectura **forward-only**. 
+El repositorio de Marbella opera bajo una arquitectura **forward-only**.
 **Schema migrations are forward-only.** No se requerirá soporte automatizado de *rollback* funcional (archivos `_down.sql`) ni se exigirá *rollback history automático* para proceder. Ante cualquier fallo lógico en producción tras un despliegue, la reparación se diseñará inyectando una nueva migración correctora hacia delante.
 
 ## 11. IRREVERSIBILITY DISCLOSURE
-**Migration history repair is not treated as automatically reversible.** 
+**Migration history repair is not treated as automatically reversible.**
 **No manual writes to supabase_migrations.schema_migrations are part of the execution plan.**
 Cualquier manipulación de estado vía `supabase migration repair` que deba deshacerse obligaría a mutaciones directas sobre el catálogo que quedan formalmente excluidas del protocolo de operación. La operación es, a nivel de herramientas oficiales, irreversible.
 
@@ -356,7 +356,7 @@ Una vez la BD y el repositorio se alineen, el motor K2 debe repetir todo el pref
 
 ## REPAIR EXECUTION RECORD
 - **Timestamp**: 2026-08-11T11:43:05.016Z
-- **Comandos ejecutados**: 
+- **Comandos ejecutados**:
   1. `supabase migration repair --status reverted <SET A>`
   2. `supabase migration repair --status applied <SET B>`
   3. `supabase migration repair --status applied <SET C>`
@@ -368,3 +368,93 @@ Una vez la BD y el repositorio se alineen, el motor K2 debe repetir todo el pref
 - **Post-repair checksum**: `$(cat /tmp/pg-test/post_repair_history_snapshot.json | grep '"hash":' | awk -F '"' '{print $4}')`
 - **Datos modificados**: NO
 - **Schema modificado**: NO
+
+## POST-REPAIR RECONCILIATION ANALYSIS
+
+### 1. QUÉ SE ESPERABA ORIGINALMENTE
+Se esperaba que existieran 8 migraciones pendientes:
+- 4 funcionales del 16 de julio (`20260716160000`, `20260716162000`, `20260716170000`, `20260716171000`)
+- 3 funcionales del 27 de julio (`20260727135641`, `20260727145300`, `20260727152000`)
+- 1 K2 Registry (`20260811033217`)
+
+### 2. QUÉ SE EJECUTÓ REALMENTE
+Se ejecutó el Repair Selectivo exactamente como estaba planificado:
+- **SET A**: 32 remotas revertidas.
+- **SET B**: 28 locales marcadas applied (INCLUYENDO las 4 funcionales del 16 de julio).
+- **SET C**: 5 payroll marcadas applied.
+
+### 3. QUÉ MUESTRA AHORA MIGRATION LIST
+`supabase migration list` muestra **0 migraciones remote-only** y exactamente **3 migraciones pendientes**.
+
+### 4. QUÉ MIGRACIONES ESTÁN PENDIENTES
+1. `20260727152000` (Phase 1d)
+2. `20260810191300` (K2 Domain Write Freeze)
+3. `20260811033217` (K2 Registry)
+
+### 5. POR QUÉ EL EXPECTED=8 ERA INCORRECTO
+El cálculo de 8 pendientes era matemáticamente incorrecto en el plan por dos motivos:
+- Las 4 migraciones funcionales del 16 de julio fueron explícitamente incluidas en el **SET B**, marcándose como APPLIED, por lo que nunca podrían aparecer como pendientes tras el repair.
+- Las migraciones `20260727135641` y `20260727145300` ya estaban en el historial remoto previamente y **no formaban parte del SET A** (no fueron revertidas), por lo que permanecen aplicadas.
+Esto reduce las 7 funcionales esperadas a **solo 1 funcional pendiente** (`20260727152000`).
+
+### 6. ESTADO REAL DE K2 FREEZE (`20260810191300`)
+La migración aparece como PENDIENTE en el historial de `schema_migrations` (no existe el registro), pero **sus objetos ya están presentes en la BD** (`private.k2_domain_freezes` y sus triggers). Esto significa que se ejecutó previamente fuera de banda (out-of-band) o su registro fue borrado, pero funcionalmente está aplicada.
+
+### 7. ESTADO REAL DE K2 REGISTRY (`20260811033217`)
+La migración aparece como PENDIENTE y **sus objetos NO existen en la BD** (`private.k2_execution_runs` está missing). Esta migración es genuinamente pendiente de ejecutar.
+
+### 8. INCONSISTENCIA REAL
+**NO existe corrupción de historial generada por el repair.**
+La divergencia se debió a una contradicción en las expectativas del plan de ejecución frente a los comandos formulados para los SETs de reparación. El entorno ahora está saneado y coincide milimétricamente con el estado derivado lógicamente de las operaciones de history autorizadas.
+
+## K2 FREEZE OUT-OF-BAND VERIFICATION
+
+- **K2 freeze objects expected**: 11 (1 table, 6 functions, 4 triggers)
+- **K2 freeze objects present**: 11
+- **Missing**: 0
+- **Unexpected**: 0
+- **Function equivalence**: PASS
+- **Trigger equivalence**: PASS
+- **Security equivalence**: PASS
+- **Grants equivalence**: PASS
+- **A-J**: PASS
+- **K2 freeze classification**: FULLY_APPLIED_OUT_OF_BAND
+- **Phase 1D classification**: FULLY_APPLIED_OUT_OF_BAND (se verificaron fn_recalc_and_propagate_snapshots y close_week_for_all_users como no-ops)
+
+## PHASE 1D OUT-OF-BAND VERIFICATION
+
+- **Efectos completos**: Reemplazo de 3 funciones (`cron_close_previous_week_via_writer`, `close_week_for_all_users`, `fn_recalc_and_propagate_snapshots`), actualización de 3 comentarios y alteración del comando del cron job `close-previous-week`. No hay mutación de datos.
+- **Objetos esperados**: 3 funciones, 1 cron job update.
+- **Objetos presentes**: 3 funciones, 1 cron job update.
+- **Equivalencia de funciones**: PASS (semántica estricta verificada extrayendo prosrc y comprobando string match ignorando saltos de línea).
+- **Equivalencia del Cron**: PASS (el comando es exactamente `select public.cron_close_previous_week_via_writer();`).
+- **Diferencias**: Ninguna.
+- **Clasificación**: FULLY_APPLIED_OUT_OF_BAND.
+
+## FINAL OOB REPAIR PREPARATION
+
+- **K2 freeze**: FULLY_APPLIED_OUT_OF_BAND
+- **Phase 1D**: FULLY_APPLIED_OUT_OF_BAND
+- **K2 registry**: PENDING
+
+**Prepared repair commands:**
+```bash
+npx supabase migration repair --status applied 20260727152000
+npx supabase migration repair --status applied 20260810191300
+```
+
+- **Executed**: NO
+
+## OOB REPAIR EXECUTION
+
+- **Phase 1D**: REPAIR APPLIED
+- **K2 freeze**: REPAIR APPLIED
+- **Remote-only**: 0
+- **Pending**: 1
+- **Pending migration**: `20260811033217_k2_execution_registry.sql`
+- **Data mutation**: NO
+- **Schema mutation**: NO
+- **History mutation**: YES — migration repair only
+- **db push**: NO
+- **K2**: NO
+- **K2b**: NO

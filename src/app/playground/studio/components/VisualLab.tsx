@@ -145,7 +145,7 @@ export function VisualLabSurface({
                 }
             });
         };
-    }, [route, overrides, children]);
+    }, [route, children]); // Eliminar 'overrides' de dependencias para no regenerar índices al escribir colores
 
     React.useEffect(() => {
         const root = rootRef.current;
@@ -218,7 +218,6 @@ const OPTIONS: { key: keyof VisualOverride; title: string; values: string[] }[] 
     { key: 'elevation', title: 'Elevación', values: ['flat', 'subtle', 'strong'] },
     { key: 'tone', title: 'Color', values: ['brand', 'neutral', 'dark'] },
     { key: 'padding', title: 'Padding', values: ['compact', 'standard', 'spacious'] },
-    { key: 'fontFamily', title: 'Tipografía', values: ['roboto', 'ea-sports-outline'] },
 ];
 
 export function VisualLabPanel({
@@ -244,7 +243,7 @@ export function VisualLabPanel({
         : 'global';
     const current = overrides[overrideKey] ?? {};
     const options = [
-        ...OPTIONS.filter(option => option.key !== 'fontFamily'),
+        ...OPTIONS,
         { key: 'fontFamily' as const, title: 'Tipografía', values: fonts.map(font => font.family) },
     ];
 
@@ -335,6 +334,7 @@ export function GlobalAestheticPanel({
     fontFamily,
     onFontFamilyChange,
     fonts,
+    background,
     onBackgroundChange,
 }: {
     estetica: Estetica;
@@ -350,8 +350,11 @@ export function GlobalAestheticPanel({
     fontFamily?: StudioFontFamily;
     onFontFamilyChange: (fontFamily?: StudioFontFamily) => void;
     fonts: StudioFontOption[];
+    background?: NonNullable<Estetica['background']>;
     onBackgroundChange?: (bg: NonNullable<Estetica['background']>) => void;
 }) {
+    // Usar el background pasado (draft) o el de la estética guardada como fallback
+    const activeBackground = background ?? estetica.background;
     return (
         <div data-studio-chrome="true" className="border-b border-zinc-800 bg-zinc-950 px-4 py-3">
             <div className="flex items-center justify-between gap-2">
@@ -377,33 +380,33 @@ export function GlobalAestheticPanel({
             <div className="mt-2 rounded-xl bg-zinc-900 p-3">
                 <span className="mb-2 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Fondo Global de App</span>
                 <div className="grid grid-cols-3 gap-1 mb-2">
-                    <button type="button" onClick={() => onBackgroundChange?.({ type: 'solid', color1: '#000000', opacity: 1 })} style={{ minHeight: 36 }} className={`rounded-lg text-[9px] font-black uppercase tracking-widest ${estetica.background?.type === 'solid' ? 'bg-[#36606F] text-white' : 'bg-zinc-800 text-zinc-400'}`}>Sólido</button>
-                    <button type="button" onClick={() => onBackgroundChange?.({ type: 'gradient', gradientType: 'linear', color1: '#111827', color2: '#000000', gradientDirection: 'to bottom' })} style={{ minHeight: 36 }} className={`rounded-lg text-[9px] font-black uppercase tracking-widest ${estetica.background?.type === 'gradient' ? 'bg-[#36606F] text-white' : 'bg-zinc-800 text-zinc-400'}`}>Degradado</button>
-                    <button type="button" onClick={() => onBackgroundChange?.({ type: 'none' })} style={{ minHeight: 36 }} className={`rounded-lg text-[9px] font-black uppercase tracking-widest ${estetica.background?.type === 'none' || !estetica.background ? 'bg-[#36606F] text-white' : 'bg-zinc-800 text-zinc-400'}`}>Por defecto</button>
+                    <button type="button" onClick={() => onBackgroundChange?.({ type: 'solid', color1: '#000000', opacity: 1 })} style={{ minHeight: 36 }} className={`rounded-lg text-[9px] font-black uppercase tracking-widest ${activeBackground?.type === 'solid' ? 'bg-[#36606F] text-white' : 'bg-zinc-800 text-zinc-400'}`}>Sólido</button>
+                    <button type="button" onClick={() => onBackgroundChange?.({ type: 'gradient', gradientType: 'linear', color1: '#111827', color2: '#000000', gradientDirection: 'to bottom' })} style={{ minHeight: 36 }} className={`rounded-lg text-[9px] font-black uppercase tracking-widest ${activeBackground?.type === 'gradient' ? 'bg-[#36606F] text-white' : 'bg-zinc-800 text-zinc-400'}`}>Degradado</button>
+                    <button type="button" onClick={() => onBackgroundChange?.({ type: 'none' })} style={{ minHeight: 36 }} className={`rounded-lg text-[9px] font-black uppercase tracking-widest ${activeBackground?.type === 'none' || !activeBackground ? 'bg-[#36606F] text-white' : 'bg-zinc-800 text-zinc-400'}`}>Por defecto</button>
                 </div>
-                {estetica.background && estetica.background.type !== 'none' && (
+                {activeBackground && activeBackground.type !== 'none' && (
                     <div className="grid grid-cols-2 gap-2 mt-2">
                         <label className="flex items-center gap-2">
-                            <input type="color" value={estetica.background.color1 ?? '#000000'} onChange={e => onBackgroundChange?.({ ...estetica.background!, color1: e.target.value })} className="h-8 w-8 rounded border-0 bg-transparent" />
-                            <span className="text-[9px] text-zinc-400 font-bold uppercase">Color {estetica.background.type === 'gradient' ? '1' : ''}</span>
+                            <input type="color" value={activeBackground.color1 ?? '#000000'} onChange={e => onBackgroundChange?.({ ...activeBackground, color1: e.target.value })} className="h-8 w-8 rounded border-0 bg-transparent" />
+                            <span className="text-[9px] text-zinc-400 font-bold uppercase">Color {activeBackground.type === 'gradient' ? '1' : ''}</span>
                         </label>
-                        {estetica.background.type === 'gradient' && (
+                        {activeBackground.type === 'gradient' && (
                             <label className="flex items-center gap-2">
-                                <input type="color" value={estetica.background.color2 ?? '#000000'} onChange={e => onBackgroundChange?.({ ...estetica.background!, color2: e.target.value })} className="h-8 w-8 rounded border-0 bg-transparent" />
+                                <input type="color" value={activeBackground.color2 ?? '#000000'} onChange={e => onBackgroundChange?.({ ...activeBackground, color2: e.target.value })} className="h-8 w-8 rounded border-0 bg-transparent" />
                                 <span className="text-[9px] text-zinc-400 font-bold uppercase">Color 2</span>
                             </label>
                         )}
-                        {estetica.background.type === 'gradient' && (
-                            <select value={estetica.background.gradientType ?? 'linear'} onChange={e => onBackgroundChange?.({ ...estetica.background!, gradientType: e.target.value as any })} className="col-span-2 min-h-8 rounded bg-zinc-800 px-2 text-[9px] font-black uppercase text-zinc-300">
+                        {activeBackground.type === 'gradient' && (
+                            <select value={activeBackground.gradientType ?? 'linear'} onChange={e => onBackgroundChange?.({ ...activeBackground, gradientType: e.target.value as any })} className="col-span-2 min-h-8 rounded bg-zinc-800 px-2 text-[9px] font-black uppercase text-zinc-300">
                                 <option value="linear">Lineal</option>
                                 <option value="radial">Radial</option>
                                 <option value="conic">Cónico</option>
                             </select>
                         )}
                         <div className="col-span-2 flex gap-1 mt-1">
-                            <button onClick={() => onBackgroundChange?.({ ...estetica.background!, effects: { ...estetica.background?.effects, blur: (estetica.background?.effects?.blur || 0) ? 0 : 20 } })} className={`flex-1 rounded p-1 text-[8px] font-bold uppercase ${estetica.background?.effects?.blur ? 'bg-indigo-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>Blur</button>
-                            <button onClick={() => onBackgroundChange?.({ ...estetica.background!, effects: { ...estetica.background?.effects, grain: !estetica.background?.effects?.grain } })} className={`flex-1 rounded p-1 text-[8px] font-bold uppercase ${estetica.background?.effects?.grain ? 'bg-amber-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>Ruido</button>
-                            <button onClick={() => onBackgroundChange?.({ ...estetica.background!, effects: { ...estetica.background?.effects, vignette: !estetica.background?.effects?.vignette } })} className={`flex-1 rounded p-1 text-[8px] font-bold uppercase ${estetica.background?.effects?.vignette ? 'bg-rose-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>Viñeta</button>
+                            <button onClick={() => onBackgroundChange?.({ ...activeBackground, effects: { ...activeBackground.effects, blur: (activeBackground.effects?.blur || 0) ? 0 : 20 } })} className={`flex-1 rounded p-1 text-[8px] font-bold uppercase ${activeBackground.effects?.blur ? 'bg-indigo-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>Blur</button>
+                            <button onClick={() => onBackgroundChange?.({ ...activeBackground, effects: { ...activeBackground.effects, grain: !activeBackground.effects?.grain } })} className={`flex-1 rounded p-1 text-[8px] font-bold uppercase ${activeBackground.effects?.grain ? 'bg-amber-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>Ruido</button>
+                            <button onClick={() => onBackgroundChange?.({ ...activeBackground, effects: { ...activeBackground.effects, vignette: !activeBackground.effects?.vignette } })} className={`flex-1 rounded p-1 text-[8px] font-bold uppercase ${activeBackground.effects?.vignette ? 'bg-rose-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>Viñeta</button>
                         </div>
                     </div>
                 )}

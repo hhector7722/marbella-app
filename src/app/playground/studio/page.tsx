@@ -174,6 +174,7 @@ export default function StudioPage() {
                         fontFamily={draftFontFamily}
                         onFontFamilyChange={fontFamily => setDraft({ id: activeEstetica.id, recipe: draftRecipe, overrides: draftOverrides, fontFamily, background: draftBackground })}
                         fonts={fonts}
+                        background={draftBackground}
                         onBackgroundChange={background => setDraft({ id: activeEstetica.id, recipe: draftRecipe, overrides: draftOverrides, fontFamily: draftFontFamily, background })}
                     />
                         <VisualLabPanel overrides={draftOverrides} onOverrideChange={setDraftOverride} fonts={fonts} />
