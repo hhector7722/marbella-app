@@ -62,6 +62,7 @@ export interface Estetica {
     recipe: Recipe; // la configuración visual completa
     overrides?: VisualOverrides;
     fontFamily?: StudioFontFamily;
+    background?: GlobalBackground;
     parentId: string | null; // null = estética base / Original
     isOriginal?: boolean; // solo la "Marbella Original" lo tiene
     isSystem?: boolean; // preset del catálogo, no eliminable ni renombrable
@@ -70,6 +71,25 @@ export interface Estetica {
 }
 
 export type VisualTargetKind = 'button' | 'card' | 'table' | 'row' | 'input' | 'select' | 'nav' | 'header' | 'modal' | 'text' | 'element';
+
+export interface GlobalBackground {
+    type: 'solid' | 'gradient' | 'none';
+    color1?: string;
+    color2?: string;
+    opacity?: number;
+    gradientType?: 'linear' | 'radial' | 'conic';
+    gradientDirection?: string;
+    effects?: {
+        blur?: number;
+        glow?: number;
+        vignette?: boolean;
+        grain?: boolean;
+        glass?: boolean;
+        saturation?: number;
+        contrast?: number;
+    };
+}
+
 export type VisualOverride = {
     shape?: 'recto' | 'suave' | 'redondo' | 'pill';
     radius?: 'none' | 'small' | 'medium' | 'large';
@@ -78,13 +98,14 @@ export type VisualOverride = {
     tone?: 'brand' | 'neutral' | 'dark' | 'custom';
     padding?: 'compact' | 'standard' | 'spacious';
     fontFamily?: StudioFontFamily;
+    textColor?: string;
     fillColor?: string;
     fillOpacity?: number;
     outlineColor?: string;
     outlineWidth?: 'none' | 'thin' | 'medium' | 'strong';
 };
 export type VisualOverrides = Record<string, VisualOverride>;
-export type StudioFontFamily = 'roboto' | 'ea-sports' | 'ea-sports-outline';
+export type StudioFontFamily = string;
 export interface SelectedVisualElement {
     key: string;
     route: SandboxRoute;

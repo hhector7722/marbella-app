@@ -18,12 +18,14 @@ export function SandboxView({
     recipeOverride,
     overrides,
     fontFamily,
+    background,
     label,
 }: {
     esteticaId?: string;
     recipeOverride?: Recipe;
     overrides?: VisualOverrides;
     fontFamily?: StudioFontFamily;
+    background?: any;
     label?: string | null;
 }) {
     const route = useSandboxStore(s => s.route);
@@ -33,7 +35,7 @@ export function SandboxView({
 
     const estetica: Estetica | undefined = esteticaPorId ?? esteticaActiva;
 
-    if (hasRealSandboxPage(route)) return <RealAppView recipeOverride={recipeOverride} overrides={overrides ?? estetica?.overrides ?? {}} fontFamily={fontFamily ?? estetica?.fontFamily} />;
+    if (hasRealSandboxPage(route)) return <RealAppView recipeOverride={recipeOverride} overrides={overrides ?? estetica?.overrides ?? {}} fontFamily={fontFamily ?? estetica?.fontFamily} background={background ?? estetica?.background} />;
 
     if (!Screen) {
         return (

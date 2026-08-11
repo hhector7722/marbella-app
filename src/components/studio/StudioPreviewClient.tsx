@@ -1,0 +1,67 @@
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { VisualOverrides, SandboxRoute, GlobalBackground, Recipe, StudioFontFamily } from '@/app/playground/studio/types';
+import { VisualLabSurface } from '@/app/playground/studio/components/VisualLab';
+import { DesignProvider } from '@/app/playground/studio/screens/system';
+import { enableSandboxRuntime, disableSandboxRuntime } from '@/lib/sandbox/client';
+
+export function StudioPreviewClient({ children }: { children: React.ReactNode }) {
+    const [inIframe, setInIframe] = useState(false);
+    const [overrides, setOverrides] = useState<VisualOverrides>({});
+    const [background, setBackground] = useState<GlobalBackground | null>(null);
+    const [recipe, setRecipe] = useState<Recipe>({});
+    const [fontFamily, setFontFamily] = useState<StudioFontFamily | undefined>(undefined);
+    const pathname = usePathname();
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && window !== window.parent) {
+            setInIframe(true);
+            
+            enableSandboxRuntime(() => false);
+
+            // Notify parent we are ready to receive sync data
+            window.parent.postMessage({ type: 'MARBELLA_STUDIO_IFRAME_READY', payload: { pathname } }, '*');
+
+            const handleMessage = (event: MessageEvent) => {
+                if (event.data?.type === 'MARBELLA_STUDIO_SYNC') {
+                    setOverrides(event.data.payload.overrides || {});
+                    setBackground(event.data.payload.background || null);
+                    setRecipe(event.data.payload.recipeOverride || {});
+                    setFontFamily(event.data.payload.fontFamily);
+                }
+            };
+            window.addEventListener('message', handleMessage);
+            return () => {
+                window.removeEventListener('message', handleMessage);
+                disableSandboxRuntime();
+            };
+        }
+    }, [pathname]);
+
+    if (!inIframe) return <>{children}</>;
+
+    // Cuando estamos en el iframe del Studio, inyectamos la capa visual real
+    const bgStyle: React.CSSProperties = {};
+    if (background && background.type === 'solid') {
+        bgStyle.backgroundColor = background.color1;
+        bgStyle.backgroundImage = 'none';
+    } else if (background && background.type === 'gradient') {
+        bgStyle.backgroundImage = `${background.gradientType}-gradient(${background.gradientType === 'linear' ? background.gradientDirection : 'circle'}, ${background.color1}, ${background.color2})`;
+    }
+    const bgClass = !background || background.type === 'none' ? 'bg-marbella-shell' : '';
+    const effectsClass = background?.effects 
+        ? `${background.effects.blur ? 'studio-bg-glass ' : ''}${background.effects.vignette ? 'studio-bg-vignette ' : ''}${background.effects.grain ? 'studio-bg-grain ' : ''}`
+        : '';
+
+    return (
+        <DesignProvider recipe={recipe} fontFamily={fontFamily}>
+            <VisualLabSurface route={pathname as SandboxRoute} overrides={overrides}>
+                <div data-marbella-sandbox="true" className={`relative min-h-screen w-full overflow-y-auto overflow-x-hidden ${bgClass} ${effectsClass} text-zinc-900`} style={bgStyle}>
+                    {children}
+                </div>
+            </VisualLabSurface>
+        </DesignProvider>
+    );
+}

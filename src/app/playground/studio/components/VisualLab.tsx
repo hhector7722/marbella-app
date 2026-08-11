@@ -66,6 +66,10 @@ function applyOverrideAttributes(element: HTMLElement, override: VisualOverride)
     });
     if (override.fontFamily) element.style.setProperty('--studio-font-family', `'${override.fontFamily}'`);
     else element.style.removeProperty('--studio-font-family');
+    if (override.textColor) element.style.setProperty('--studio-text-color', override.textColor);
+    else element.style.removeProperty('--studio-text-color');
+    if (override.textColor) element.dataset.studioTextColor = 'true';
+    else delete element.dataset.studioTextColor;
     if (override.fillColor) {
         element.style.setProperty('--studio-fill-color', override.fillColor);
         element.dataset.studioFillColor = 'true';
@@ -133,6 +137,8 @@ export function VisualLabSurface({
                 delete element.dataset.studioKind;
                 delete element.dataset.studioHover;
                 delete element.dataset.studioSelected;
+                delete element.dataset.studioTextColor;
+                delete element.dataset.studioFillColor;
                 if (element.dataset.studioPortal === 'true') {
                     delete element.dataset.studioPortal;
                     delete element.dataset.marbellaSandbox;
@@ -176,6 +182,10 @@ export function VisualLabSurface({
             setSelectedElement(selection);
             document.querySelectorAll<HTMLElement>('[data-studio-selected="true"]').forEach(node => delete node.dataset.studioSelected);
             element.dataset.studioSelected = 'true';
+            
+            if (window !== window.parent) {
+                window.parent.postMessage({ type: 'MARBELLA_STUDIO_CLICK', payload: selection }, '*');
+            }
         };
 
         document.addEventListener('mouseover', handleOver);
@@ -275,7 +285,14 @@ export function VisualLabPanel({
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2">
                         <label className="rounded-lg bg-zinc-900 p-2">
-                            <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Relleno del texto</span>
+                            <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Color texto</span>
+                            <span className="flex items-center gap-2">
+                                <input type="color" value={current.textColor ?? '#36606F'} onChange={event => onOverrideChange(overrideKey, { textColor: event.target.value })} className="h-10 w-10 rounded border-0 bg-transparent" />
+                                <code className="text-[10px] text-zinc-400">{current.textColor ?? '#36606F'}</code>
+                            </span>
+                        </label>
+                        <label className="rounded-lg bg-zinc-900 p-2">
+                            <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Relleno SVG/Stroke</span>
                             <span className="flex items-center gap-2">
                                 <input type="color" value={current.fillColor ?? '#36606F'} onChange={event => onOverrideChange(overrideKey, { fillColor: event.target.value })} className="h-10 w-10 rounded border-0 bg-transparent" />
                                 <code className="text-[10px] text-zinc-400">{current.fillColor ?? '#36606F'}</code>
@@ -285,7 +302,7 @@ export function VisualLabPanel({
                             <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Opacidad {Math.round((current.fillOpacity ?? 1) * 100)}%</span>
                             <input type="range" min="0" max="1" step="0.05" value={current.fillOpacity ?? 1} onChange={event => onOverrideChange(overrideKey, { fillOpacity: Number(event.target.value) })} className="min-h-10 w-full accent-[#36606F]" />
                         </label>
-                        <label className="rounded-lg bg-zinc-900 p-2">
+                        <label className="col-span-2 sm:col-span-1 rounded-lg bg-zinc-900 p-2">
                             <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">Contorno</span>
                             <span className="flex items-center gap-2">
                                 <input type="color" value={current.outlineColor ?? '#36606F'} onChange={event => onOverrideChange(overrideKey, { outlineColor: event.target.value })} className="h-10 w-10 rounded border-0 bg-transparent" />
@@ -297,7 +314,6 @@ export function VisualLabPanel({
                                 </select>
                             </span>
                         </label>
-                        <div className="rounded-lg bg-zinc-900 p-2 text-[9px] leading-relaxed text-zinc-500">En una fuente Outline, el relleno controla la geometría que contiene el TTF. CSS no puede reconstruir el interior sólido que el archivo no incluye.</div>
                     </div>
                 </>
             )}
@@ -319,6 +335,7 @@ export function GlobalAestheticPanel({
     fontFamily,
     onFontFamilyChange,
     fonts,
+    onBackgroundChange,
 }: {
     estetica: Estetica;
     esteticas: Estetica[];
@@ -333,6 +350,7 @@ export function GlobalAestheticPanel({
     fontFamily?: StudioFontFamily;
     onFontFamilyChange: (fontFamily?: StudioFontFamily) => void;
     fonts: StudioFontOption[];
+    onBackgroundChange?: (bg: NonNullable<Estetica['background']>) => void;
 }) {
     return (
         <div data-studio-chrome="true" className="border-b border-zinc-800 bg-zinc-950 px-4 py-3">
@@ -355,6 +373,42 @@ export function GlobalAestheticPanel({
                     </button>
                 ))}
             </div>
+
+            <div className="mt-2 rounded-xl bg-zinc-900 p-3">
+                <span className="mb-2 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Fondo Global de App</span>
+                <div className="grid grid-cols-3 gap-1 mb-2">
+                    <button type="button" onClick={() => onBackgroundChange?.({ type: 'solid', color1: '#000000', opacity: 1 })} style={{ minHeight: 36 }} className={`rounded-lg text-[9px] font-black uppercase tracking-widest ${estetica.background?.type === 'solid' ? 'bg-[#36606F] text-white' : 'bg-zinc-800 text-zinc-400'}`}>Sólido</button>
+                    <button type="button" onClick={() => onBackgroundChange?.({ type: 'gradient', gradientType: 'linear', color1: '#111827', color2: '#000000', gradientDirection: 'to bottom' })} style={{ minHeight: 36 }} className={`rounded-lg text-[9px] font-black uppercase tracking-widest ${estetica.background?.type === 'gradient' ? 'bg-[#36606F] text-white' : 'bg-zinc-800 text-zinc-400'}`}>Degradado</button>
+                    <button type="button" onClick={() => onBackgroundChange?.({ type: 'none' })} style={{ minHeight: 36 }} className={`rounded-lg text-[9px] font-black uppercase tracking-widest ${estetica.background?.type === 'none' || !estetica.background ? 'bg-[#36606F] text-white' : 'bg-zinc-800 text-zinc-400'}`}>Por defecto</button>
+                </div>
+                {estetica.background && estetica.background.type !== 'none' && (
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                        <label className="flex items-center gap-2">
+                            <input type="color" value={estetica.background.color1 ?? '#000000'} onChange={e => onBackgroundChange?.({ ...estetica.background!, color1: e.target.value })} className="h-8 w-8 rounded border-0 bg-transparent" />
+                            <span className="text-[9px] text-zinc-400 font-bold uppercase">Color {estetica.background.type === 'gradient' ? '1' : ''}</span>
+                        </label>
+                        {estetica.background.type === 'gradient' && (
+                            <label className="flex items-center gap-2">
+                                <input type="color" value={estetica.background.color2 ?? '#000000'} onChange={e => onBackgroundChange?.({ ...estetica.background!, color2: e.target.value })} className="h-8 w-8 rounded border-0 bg-transparent" />
+                                <span className="text-[9px] text-zinc-400 font-bold uppercase">Color 2</span>
+                            </label>
+                        )}
+                        {estetica.background.type === 'gradient' && (
+                            <select value={estetica.background.gradientType ?? 'linear'} onChange={e => onBackgroundChange?.({ ...estetica.background!, gradientType: e.target.value as any })} className="col-span-2 min-h-8 rounded bg-zinc-800 px-2 text-[9px] font-black uppercase text-zinc-300">
+                                <option value="linear">Lineal</option>
+                                <option value="radial">Radial</option>
+                                <option value="conic">Cónico</option>
+                            </select>
+                        )}
+                        <div className="col-span-2 flex gap-1 mt-1">
+                            <button onClick={() => onBackgroundChange?.({ ...estetica.background!, effects: { ...estetica.background?.effects, blur: (estetica.background?.effects?.blur || 0) ? 0 : 20 } })} className={`flex-1 rounded p-1 text-[8px] font-bold uppercase ${estetica.background?.effects?.blur ? 'bg-indigo-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>Blur</button>
+                            <button onClick={() => onBackgroundChange?.({ ...estetica.background!, effects: { ...estetica.background?.effects, grain: !estetica.background?.effects?.grain } })} className={`flex-1 rounded p-1 text-[8px] font-bold uppercase ${estetica.background?.effects?.grain ? 'bg-amber-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>Ruido</button>
+                            <button onClick={() => onBackgroundChange?.({ ...estetica.background!, effects: { ...estetica.background?.effects, vignette: !estetica.background?.effects?.vignette } })} className={`flex-1 rounded p-1 text-[8px] font-bold uppercase ${estetica.background?.effects?.vignette ? 'bg-rose-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>Viñeta</button>
+                        </div>
+                    </div>
+                )}
+            </div>
+
             <div className="mt-2 flex gap-2">
                 <button type="button" onClick={onSave} style={{ minHeight: 48 }} className="flex-1 rounded-xl bg-[#36606F] text-[9px] font-black uppercase tracking-widest text-white">Guardar</button>
                 <button type="button" onClick={onDuplicate} style={{ minHeight: 48 }} className="rounded-xl bg-zinc-800 px-3 text-[9px] font-black uppercase tracking-widest text-zinc-300">Duplicar</button>

@@ -30,7 +30,7 @@ export default function StudioPage() {
     const renameEstetica = useSandboxStore(s => s.renameEstetica);
     const deleteEstetica = useSandboxStore(s => s.deleteEstetica);
 
-    const [draft, setDraft] = React.useState<{ id: string; recipe: Recipe; overrides: VisualOverrides; fontFamily?: StudioFontFamily } | null>(null);
+    const [draft, setDraft] = React.useState<{ id: string; recipe: Recipe; overrides: VisualOverrides; fontFamily?: StudioFontFamily; background?: any } | null>(null);
     const [editorVisible, setEditorVisible] = React.useState(true);
     const [secondaryView, setSecondaryView] = React.useState<SecondaryView>(null);
     const [comparisonId, setComparisonId] = React.useState('est-editorial-v1');
@@ -86,11 +86,13 @@ export default function StudioPage() {
     const draftRecipe = draft?.id === activeEstetica.id ? draft.recipe : activeEstetica.recipe;
     const draftOverrides = draft?.id === activeEstetica.id ? draft.overrides : activeEstetica.overrides ?? {};
     const draftFontFamily = draft?.id === activeEstetica.id ? draft.fontFamily : activeEstetica.fontFamily;
+    const draftBackground = draft?.id === activeEstetica.id ? draft.background : activeEstetica.background;
     const setDraftOverride = (key: string, patch: VisualOverride) => setDraft({
         id: activeEstetica.id,
         recipe: draftRecipe,
         overrides: { ...draftOverrides, [key]: { ...draftOverrides[key], ...patch } },
         fontFamily: draftFontFamily,
+        background: draftBackground,
     });
 
     const saveDraft = () => {
@@ -100,11 +102,13 @@ export default function StudioPage() {
                 parentId: activeEstetica.id,
                 overrides: draftOverrides,
                 fontFamily: draftFontFamily,
+                background: draftBackground,
             });
         } else {
             updateEsteticaRecipe(activeEstetica.id, draftRecipe);
             updateEsteticaOverrides(activeEstetica.id, draftOverrides);
             updateEsteticaFontFamily(activeEstetica.id, draftFontFamily);
+            useSandboxStore.getState().updateEsteticaBackground?.(activeEstetica.id, draftBackground);
         }
         toast.success('Estética guardada');
     };
@@ -115,6 +119,7 @@ export default function StudioPage() {
             parentId: activeEstetica.id,
             overrides: draftOverrides,
             fontFamily: draftFontFamily,
+            background: draftBackground,
         });
         if (id) toast.success('Copia creada y activa');
     };
@@ -167,8 +172,9 @@ export default function StudioPage() {
                         onDelete={deleteActive}
                         onCompare={() => setSecondaryView('comparar')}
                         fontFamily={draftFontFamily}
-                        onFontFamilyChange={fontFamily => setDraft({ id: activeEstetica.id, recipe: draftRecipe, overrides: draftOverrides, fontFamily })}
+                        onFontFamilyChange={fontFamily => setDraft({ id: activeEstetica.id, recipe: draftRecipe, overrides: draftOverrides, fontFamily, background: draftBackground })}
                         fonts={fonts}
+                        onBackgroundChange={background => setDraft({ id: activeEstetica.id, recipe: draftRecipe, overrides: draftOverrides, fontFamily: draftFontFamily, background })}
                     />
                         <VisualLabPanel overrides={draftOverrides} onOverrideChange={setDraftOverride} fonts={fonts} />
                     </aside>
@@ -176,7 +182,7 @@ export default function StudioPage() {
 
                 <section data-studio-viewport={viewport} className="min-h-0 min-w-0 flex-1 overflow-auto bg-zinc-900/30">
                     <div className={`${frameClass} h-full`}>
-                        <SandboxView esteticaId={activeId} recipeOverride={draftRecipe} overrides={draftOverrides} fontFamily={draftFontFamily} />
+                        <SandboxView esteticaId={activeId} recipeOverride={draftRecipe} overrides={draftOverrides} fontFamily={draftFontFamily} background={draftBackground} />
                     </div>
                 </section>
             </main>

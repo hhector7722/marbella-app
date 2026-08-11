@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "4a15785bcef12bdf",
+  "_huella": "13087fd593846a23",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -1334,6 +1334,18 @@
         "DEUDA",
         "PROTOCOLO-AGENTES"
       ]
+    },
+    {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-11-reconciliacion-migraciones-supabase-k2.md",
+      "documento": "SPIKE-RECONCILIACION-MIGRACIONES-SUPABASE-K2",
+      "clase": "inmutable",
+      "estado": "archivado",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": []
     }
   ]
 }

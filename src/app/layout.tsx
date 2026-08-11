@@ -11,6 +11,7 @@ import { UnreadNotificationsShell } from "@/components/UnreadNotificationsShell"
 import SileoProvider from "@/components/SileoProvider";
 import ChatMarbellaLazy from "@/components/chat/ChatMarbellaLazy";
 import { UsageAuthenticatedTracker } from "@/components/usage/UsageAuthenticatedTracker";
+import { StudioPreviewClient } from "@/components/studio/StudioPreviewClient";
 import { cn } from "@/lib/utils";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -74,13 +75,16 @@ export default function RootLayout({
           <ServiceWorkerRegistration />
           <ClientDisplayModeReporter />
           <PushNotificationsPrompt />
-          <Navbar />
-          <MainWrapper>{children}</MainWrapper>
-          <BottomNavWrapper />
-          <UsageAuthenticatedTracker />
+          
+          <StudioPreviewClient>
+            <Navbar />
+            <MainWrapper>{children}</MainWrapper>
+            <BottomNavWrapper />
+            <UsageAuthenticatedTracker />
 
-          {/* LÓGICA DEL ASISTENTE (INVISIBLE HASTA QUE PULSES TU BOTÓN IA) */}
-          <ChatMarbellaLazy />
+            {/* LÓGICA DEL ASISTENTE (INVISIBLE HASTA QUE PULSES TU BOTÓN IA) */}
+            <ChatMarbellaLazy />
+          </StudioPreviewClient>
         </UnreadNotificationsShell>
       </body>
     </html>

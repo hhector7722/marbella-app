@@ -15,10 +15,7 @@ export function describeFontFile(fileName: string, metadata?: { family?: string;
     let family = base;
     let style = 'Regular';
 
-    if (/^EA Sports Covers SC/i.test(base)) {
-        family = 'EA Sports Covers SC';
-        style = /outline/i.test(base) ? 'Bold Outline' : /bold/i.test(base) ? 'Bold' : 'Regular';
-    } else if (/^RobotoFlex/i.test(base)) {
+    if (/^RobotoFlex/i.test(base)) {
         family = 'Roboto Flex';
         style = /italic/i.test(base) ? 'Italic' : 'Variable';
     }

@@ -161,7 +161,7 @@ interface SandboxState {
 
     // Estéticas: CRUD
     setActiveEstetica: (id: string) => void;
-    createEstetica: (name: string, recipe: Recipe, opts?: { description?: string; parentId?: string; overrides?: VisualOverrides; fontFamily?: StudioFontFamily }) => string;
+    createEstetica: (name: string, recipe: Recipe, opts?: { description?: string; parentId?: string; overrides?: VisualOverrides; fontFamily?: StudioFontFamily; background?: any }) => string;
     duplicateEstetica: (id: string, newName?: string) => string | null;
     renameEstetica: (id: string, newName: string) => void;
     deleteEstetica: (id: string) => boolean;
@@ -171,6 +171,7 @@ interface SandboxState {
     setSelectedElement: (element: SelectedVisualElement | null) => void;
     updateEsteticaOverrides: (id: string, overrides: VisualOverrides) => void;
     updateEsteticaFontFamily: (id: string, fontFamily?: StudioFontFamily) => void;
+    updateEsteticaBackground: (id: string, background?: any) => void;
 
 }
 
@@ -210,7 +211,7 @@ export const useSandboxStore = create<SandboxState>()(
                 if (existe) set({ activeEsteticaId: id });
             },
 
-            createEstetica: (name, recipe, opts) => {
+    createEstetica: (name, recipe, opts) => {
                 const id = uid('est');
                 const e: Estetica = {
                     id,
@@ -219,6 +220,7 @@ export const useSandboxStore = create<SandboxState>()(
                     recipe,
                     overrides: opts?.overrides ?? {},
                     fontFamily: opts?.fontFamily,
+                    background: opts?.background,
                     parentId: opts?.parentId ?? get().activeEsteticaId,
                     createdAt: now(),
                     updatedAt: now(),
@@ -239,6 +241,7 @@ export const useSandboxStore = create<SandboxState>()(
                     parentId: id,
                     overrides: { ...origen.overrides },
                     fontFamily: origen.fontFamily,
+                    background: origen.background,
                 });
             },
 
@@ -293,6 +296,12 @@ export const useSandboxStore = create<SandboxState>()(
                 set(state => ({
                     esteticas: state.esteticas.map(e =>
                         e.id === id && !e.isOriginal && !e.isSystem ? { ...e, fontFamily, updatedAt: now() } : e
+                    ),
+                })),
+            updateEsteticaBackground: (id, background) =>
+                set(state => ({
+                    esteticas: state.esteticas.map(e =>
+                        e.id === id && !e.isOriginal && !e.isSystem ? { ...e, background, updatedAt: now() } : e
                     ),
                 })),
 
