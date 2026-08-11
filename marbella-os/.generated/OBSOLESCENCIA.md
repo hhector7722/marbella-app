@@ -60,5 +60,5 @@ siendo verdad y dejar constancia de la revisión en el cambio que la hace.
 | 2027-08-05 | `marbella-os/3-ingenieria/PROTOCOLO-AGENTES.md` | 2026-08-05 | 12 meses | propiedad del producto |
 | 2028-07-30 | `marbella-os/CANON.md` | 2026-07-30 | 24 meses | propiedad del producto |
 
-Los 29 documentos con `caducidad: no aplica` no aparecen aquí: son
+Los 34 documentos con `caducidad: no aplica` no aparecen aquí: son
 inmutables o congelados, y revisarlos no tendría sentido.

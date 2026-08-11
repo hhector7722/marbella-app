@@ -67,6 +67,55 @@
 [data-marbella-sandbox='true'] .leading-tight { line-height: calc(1.25 * var(--dl-type-scale)) !important; }
 [data-marbella-sandbox='true'] .leading-normal { line-height: calc(1.5 * var(--dl-type-scale)) !important; }
 
+[data-marbella-sandbox='true'] [data-studio-hover='true'] {
+  outline: 2px dashed rgba(54, 96, 111, 0.75) !important;
+  outline-offset: 2px;
+}
+
+[data-marbella-sandbox='true'] [data-studio-selected='true'] {
+  outline: 3px solid #36606f !important;
+  outline-offset: 3px;
+}
+
+[data-marbella-sandbox='true'] [data-studio-shape='recto'],
+[data-marbella-sandbox='true'] [data-studio-radius='none'] { border-radius: 0 !important; }
+[data-marbella-sandbox='true'] [data-studio-shape='suave'],
+[data-marbella-sandbox='true'] [data-studio-radius='small'] { border-radius: 0.5rem !important; }
+[data-marbella-sandbox='true'] [data-studio-shape='redondo'],
+[data-marbella-sandbox='true'] [data-studio-radius='medium'] { border-radius: 1rem !important; }
+[data-marbella-sandbox='true'] [data-studio-shape='pill'],
+[data-marbella-sandbox='true'] [data-studio-radius='large'] { border-radius: 9999px !important; }
+[data-marbella-sandbox='true'] [data-studio-weight='normal'] { font-weight: 400 !important; }
+[data-marbella-sandbox='true'] [data-studio-weight='medium'] { font-weight: 600 !important; }
+[data-marbella-sandbox='true'] [data-studio-weight='bold'] { font-weight: 800 !important; }
+[data-marbella-sandbox='true'] [data-studio-elevation='flat'] { box-shadow: none !important; }
+[data-marbella-sandbox='true'] [data-studio-elevation='subtle'] { box-shadow: 0 4px 14px rgba(24, 24, 27, 0.1) !important; }
+[data-marbella-sandbox='true'] [data-studio-elevation='strong'] { box-shadow: 0 18px 35px rgba(24, 24, 27, 0.2) !important; }
+[data-marbella-sandbox='true'] [data-studio-tone='brand'] { background-color: #36606f !important; color: white !important; }
+[data-marbella-sandbox='true'] [data-studio-tone='neutral'] { background-color: #f4f4f5 !important; color: #27272a !important; }
+[data-marbella-sandbox='true'] [data-studio-tone='dark'] { background-color: #27272a !important; color: white !important; }
+
+/* Los modales reales pueden vivir en un portal fuera del wrapper principal. */
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-hover='true'] { outline: 2px dashed rgba(54, 96, 111, 0.75) !important; outline-offset: 2px; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-selected='true'] { outline: 3px solid #36606f !important; outline-offset: 3px; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-shape='recto'],
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-radius='none'] { border-radius: 0 !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-shape='suave'],
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-radius='small'] { border-radius: 0.5rem !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-shape='redondo'],
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-radius='medium'] { border-radius: 1rem !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-shape='pill'],
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-radius='large'] { border-radius: 9999px !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-weight='normal'] { font-weight: 400 !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-weight='medium'] { font-weight: 600 !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-weight='bold'] { font-weight: 800 !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-elevation='flat'] { box-shadow: none !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-elevation='subtle'] { box-shadow: 0 4px 14px rgba(24, 24, 27, 0.1) !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-elevation='strong'] { box-shadow: 0 18px 35px rgba(24, 24, 27, 0.2) !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-tone='brand'] { background-color: #36606f !important; color: white !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-tone='neutral'] { background-color: #f4f4f5 !important; color: #27272a !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-tone='dark'] { background-color: #27272a !important; color: white !important; }
+
 @layer utilities {
   /**
    * Fondo de app: azul corporativo (#5B8FB9) con difuminado sutil —

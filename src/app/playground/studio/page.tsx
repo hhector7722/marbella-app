@@ -4,13 +4,12 @@ import React from 'react';
 import { toast, Toaster } from 'sonner';
 import { useSandboxStore } from './store';
 import { SandboxView, RutaBadge } from './components/SandboxView';
-import { EsteticaEditor } from './components/EsteticaEditor';
+import { GlobalAestheticPanel, VisualLabPanel } from './components/VisualLab';
 import { DesignLanguage } from './components/DesignLanguage';
 import { ModoAbsorber } from './components/ModoAbsorber';
 import { HojaContacto } from './components/HojaContacto';
 import { ValidationPanel } from './components/ValidationPanel';
-import { REFERENCIA_BY_ID } from './referencias';
-import type { Recipe } from './types';
+import type { Recipe, VisualOverride, VisualOverrides } from './types';
 import { disableSandboxRuntime } from '@/lib/sandbox/client';
 
 type SecondaryView = 'comparar' | 'contacto' | 'lenguaje' | 'absorber' | null;
@@ -23,12 +22,12 @@ export default function StudioPage() {
     const setViewport = useSandboxStore(s => s.setViewport);
     const setActiveEstetica = useSandboxStore(s => s.setActiveEstetica);
     const createEstetica = useSandboxStore(s => s.createEstetica);
-    const duplicateEstetica = useSandboxStore(s => s.duplicateEstetica);
     const updateEsteticaRecipe = useSandboxStore(s => s.updateEsteticaRecipe);
+    const updateEsteticaOverrides = useSandboxStore(s => s.updateEsteticaOverrides);
     const renameEstetica = useSandboxStore(s => s.renameEstetica);
     const deleteEstetica = useSandboxStore(s => s.deleteEstetica);
 
-    const [draft, setDraft] = React.useState<{ id: string; recipe: Recipe } | null>(null);
+    const [draft, setDraft] = React.useState<{ id: string; recipe: Recipe; overrides: VisualOverrides } | null>(null);
     const [editorVisible, setEditorVisible] = React.useState(true);
     const [secondaryView, setSecondaryView] = React.useState<SecondaryView>(null);
     const [comparisonId, setComparisonId] = React.useState('est-editorial-v1');
@@ -51,22 +50,33 @@ export default function StudioPage() {
     }, []);
 
     const draftRecipe = draft?.id === activeEstetica.id ? draft.recipe : activeEstetica.recipe;
-    const setDraftRecipe = (recipe: Recipe) => setDraft({ id: activeEstetica.id, recipe });
+    const draftOverrides = draft?.id === activeEstetica.id ? draft.overrides : activeEstetica.overrides ?? {};
+    const setDraftOverride = (key: string, patch: VisualOverride) => setDraft({
+        id: activeEstetica.id,
+        recipe: draftRecipe,
+        overrides: { ...draftOverrides, [key]: { ...draftOverrides[key], ...patch } },
+    });
 
     const saveDraft = () => {
         if (activeEstetica.isOriginal) {
             createEstetica(`${activeEstetica.name} · prueba`, draftRecipe, {
                 description: 'Expresión guardada desde una prueba en vivo.',
                 parentId: activeEstetica.id,
+                overrides: draftOverrides,
             });
         } else {
             updateEsteticaRecipe(activeEstetica.id, draftRecipe);
+            updateEsteticaOverrides(activeEstetica.id, draftOverrides);
         }
         toast.success('Estética guardada');
     };
 
     const duplicateActive = () => {
-        const id = duplicateEstetica(activeEstetica.id, `${activeEstetica.name} (copia)`);
+        const id = createEstetica(`${activeEstetica.name} (copia)`, draftRecipe, {
+            description: activeEstetica.description,
+            parentId: activeEstetica.id,
+            overrides: draftOverrides,
+        });
         if (id) toast.success('Copia creada y activa');
     };
 
@@ -76,13 +86,6 @@ export default function StudioPage() {
             deleteEstetica(activeEstetica.id);
             toast.success('Estética eliminada');
         }
-    };
-
-    const extractReference = (referenceId: string) => {
-        const reference = REFERENCIA_BY_ID[referenceId];
-        if (!reference) return;
-        const patch = Object.fromEntries(reference.movidasObservadas.map(move => [move.movidaId, move.intensidad])) as Recipe;
-        setDraftRecipe({ ...draftRecipe, ...patch });
     };
 
     const frameClass = viewport === 'mobile' ? 'mx-auto w-[375px]' : viewport === 'tablet' ? 'mx-auto w-[768px]' : 'w-full';
@@ -112,26 +115,26 @@ export default function StudioPage() {
 
             <main className="relative flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
                 {editorVisible && (
-                    <EsteticaEditor
+                    <aside className="flex max-h-[48vh] min-h-0 w-full shrink-0 flex-col overflow-y-auto border-b border-zinc-800 bg-zinc-950 lg:max-h-none lg:w-[520px] lg:border-b-0 lg:border-r">
+                    <GlobalAestheticPanel
                         estetica={activeEstetica}
                         esteticas={esteticas}
-                        recipe={draftRecipe}
                         viewport={viewport}
-                        onRecipeChange={setDraftRecipe}
                         onSelect={setActiveEstetica}
                         onViewportChange={setViewport}
                         onSave={saveDraft}
                         onDuplicate={duplicateActive}
                         onRename={name => { if (name.trim()) renameEstetica(activeEstetica.id, name.trim()); }}
                         onDelete={deleteActive}
-                        onReference={extractReference}
-                        onSecondary={setSecondaryView}
+                        onCompare={() => setSecondaryView('comparar')}
                     />
+                    <VisualLabPanel overrides={draftOverrides} onOverrideChange={setDraftOverride} />
+                    </aside>
                 )}
 
                 <section className="min-h-0 min-w-0 flex-1 overflow-auto bg-zinc-900/30">
                     <div className={`${frameClass} h-full`}>
-                        <SandboxView esteticaId={activeId} recipeOverride={draftRecipe} />
+                        <SandboxView esteticaId={activeId} recipeOverride={draftRecipe} overrides={draftOverrides} />
                     </div>
                 </section>
             </main>

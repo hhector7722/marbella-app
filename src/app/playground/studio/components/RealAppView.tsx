@@ -12,6 +12,8 @@ import { DesignProvider } from '../screens/system';
 import { SANDBOX_ROUTES, useSandboxStore, useActiveEstetica } from '../store';
 import type { Recipe, SandboxRoute } from '../types';
 import { enableSandboxRuntime } from '@/lib/sandbox/client';
+import { VisualLabSurface } from './VisualLab';
+import type { VisualOverrides } from '../types';
 
 type RealPage = React.ComponentType<{ sandboxNavigate?: (href: string) => void }>;
 
@@ -26,7 +28,7 @@ const REAL_PAGES: Partial<Record<SandboxRoute, RealPage>> = {
     '/registros': StaffHistoryPage,
 };
 
-export function RealAppView({ recipeOverride }: { recipeOverride?: Recipe }) {
+export function RealAppView({ recipeOverride, overrides = {} }: { recipeOverride?: Recipe; overrides?: VisualOverrides }) {
     const route = useSandboxStore(s => s.route);
     const setRoute = useSandboxStore(s => s.setRoute);
     const estetica = useActiveEstetica();
@@ -44,9 +46,11 @@ export function RealAppView({ recipeOverride }: { recipeOverride?: Recipe }) {
 
     return (
         <DesignProvider recipe={recipe}>
-            <div data-marbella-sandbox="true" className="min-h-full bg-white text-zinc-900">
-                <Page key={route} />
-            </div>
+            <VisualLabSurface route={route} overrides={overrides}>
+                <div data-marbella-sandbox="true" className="min-h-full bg-white text-zinc-900">
+                    <Page key={route} />
+                </div>
+            </VisualLabSurface>
         </DesignProvider>
     );
 }

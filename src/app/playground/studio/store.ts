@@ -10,9 +10,12 @@ import {
     SandboxRoute,
     DesignContext,
     Intensidad,
+    SelectedVisualElement,
+    VisualOverrides,
 } from './types';
 import { MOVIDAS_CATALOGO } from './movidas';
 import { resolverReceta } from './design-context';
+import { REFERENCIAS } from './referencias';
 
 // ============================================================
 // STORE DEL SANDBOX VISUAL DE MARBELLA
@@ -39,7 +42,7 @@ export const ESTETICA_ORIGINAL_ID = 'estetica-original';
 
 function esteticasIniciales(): Estetica[] {
     const hoy = now();
-    return [
+    const base: Estetica[] = [
         {
             id: ESTETICA_ORIGINAL_ID,
             name: 'Marbella Original',
@@ -97,6 +100,23 @@ function esteticasIniciales(): Estetica[] {
             updatedAt: hoy,
         },
     ];
+
+    const referencias = REFERENCIAS.map(reference => ({
+        id: `est-${reference.id}-v1`,
+        name: reference.nombre,
+        description: reference.descripcion,
+        recipe: Object.fromEntries(reference.movidasObservadas.map(move => [move.movidaId, move.intensidad])) as Recipe,
+        parentId: ESTETICA_ORIGINAL_ID,
+        createdAt: hoy,
+        updatedAt: hoy,
+    }));
+
+    return [...base, ...referencias];
+}
+
+function añadirReferenciasFaltantes(esteticas: Estetica[]): Estetica[] {
+    const existentes = new Set(esteticas.map(estetica => estetica.id));
+    return [...esteticas, ...esteticasIniciales().filter(estetica => estetica.id.startsWith('est-') && !existentes.has(estetica.id))];
 }
 
 interface SandboxState {
@@ -106,6 +126,8 @@ interface SandboxState {
     esteticas: Estetica[];
     route: SandboxRoute;
     routeHistory: SandboxRoute[];
+    labMode: boolean;
+    selectedElement: SelectedVisualElement | null;
 
     // ---- Conservados del modelo anterior (útiles después) ----
     movidas: Movida[];
@@ -118,12 +140,15 @@ interface SandboxState {
 
     // Estéticas: CRUD
     setActiveEstetica: (id: string) => void;
-    createEstetica: (name: string, recipe: Recipe, opts?: { description?: string; parentId?: string }) => string;
+    createEstetica: (name: string, recipe: Recipe, opts?: { description?: string; parentId?: string; overrides?: VisualOverrides }) => string;
     duplicateEstetica: (id: string, newName?: string) => string | null;
     renameEstetica: (id: string, newName: string) => void;
     deleteEstetica: (id: string) => boolean;
     updateEsteticaRecipe: (id: string, recipe: Recipe) => void;
     mergeRecipeIntoEstetica: (esteticaId: string, recipe: Recipe) => void;
+    setLabMode: (active: boolean) => void;
+    setSelectedElement: (element: SelectedVisualElement | null) => void;
+    updateEsteticaOverrides: (id: string, overrides: VisualOverrides) => void;
 
 }
 
@@ -135,6 +160,8 @@ export const useSandboxStore = create<SandboxState>()(
             esteticas: esteticasIniciales(),
             route: '/dashboard/ventas',
             routeHistory: [],
+            labMode: false,
+            selectedElement: null,
             movidas: MOVIDAS_CATALOGO,
 
             setViewport: v => set({ viewport: v }),
@@ -167,6 +194,7 @@ export const useSandboxStore = create<SandboxState>()(
                     name,
                     description: opts?.description,
                     recipe,
+                    overrides: opts?.overrides ?? {},
                     parentId: opts?.parentId ?? get().activeEsteticaId,
                     createdAt: now(),
                     updatedAt: now(),
@@ -185,6 +213,7 @@ export const useSandboxStore = create<SandboxState>()(
                 return get().createEstetica(nombre, { ...origen.recipe }, {
                     description: origen.description,
                     parentId: id,
+                    overrides: { ...origen.overrides },
                 });
             },
 
@@ -227,10 +256,19 @@ export const useSandboxStore = create<SandboxState>()(
                 get().updateEsteticaRecipe(esteticaId, merged);
             },
 
+            setLabMode: active => set({ labMode: active, selectedElement: active ? get().selectedElement : null }),
+            setSelectedElement: element => set({ selectedElement: element }),
+            updateEsteticaOverrides: (id, overrides) =>
+                set(state => ({
+                    esteticas: state.esteticas.map(e =>
+                        e.id === id && !e.isOriginal ? { ...e, overrides, updatedAt: now() } : e
+                    ),
+                })),
+
         }),
         {
             name: 'marbella-sandbox-storage',
-            version: 5,
+            version: 6,
             migrate: (persistedState: any, version: number) => {
                 if (version < 5) {
                     return {
@@ -240,6 +278,14 @@ export const useSandboxStore = create<SandboxState>()(
                         route: '/dashboard/ventas' as SandboxRoute,
                         routeHistory: [],
                         movidas: MOVIDAS_CATALOGO,
+                    };
+                }
+                if (version < 6) {
+                    return {
+                        ...persistedState,
+                        esteticas: añadirReferenciasFaltantes((persistedState.esteticas ?? []).map((e: Estetica) => ({ ...e, overrides: e.overrides ?? {} }))),
+                        labMode: false,
+                        selectedElement: null,
                     };
                 }
                 return persistedState;

@@ -60,10 +60,29 @@ export interface Estetica {
     name: string; // "Marbella Original", "Editorial V3", "Minimal V4"
     description?: string;
     recipe: Recipe; // la configuración visual completa
+    overrides?: VisualOverrides;
     parentId: string | null; // null = estética base / Original
     isOriginal?: boolean; // solo la "Marbella Original" lo tiene
     createdAt: string;
     updatedAt: string;
+}
+
+export type VisualTargetKind = 'button' | 'card' | 'table' | 'row' | 'input' | 'select' | 'nav' | 'header' | 'modal' | 'text' | 'element';
+export type VisualOverride = {
+    shape?: 'recto' | 'suave' | 'redondo' | 'pill';
+    radius?: 'none' | 'small' | 'medium' | 'large';
+    weight?: 'normal' | 'medium' | 'bold';
+    elevation?: 'flat' | 'subtle' | 'strong';
+    tone?: 'brand' | 'neutral' | 'dark' | 'custom';
+};
+export type VisualOverrides = Record<string, VisualOverride>;
+export interface SelectedVisualElement {
+    key: string;
+    route: SandboxRoute;
+    kind: VisualTargetKind;
+    label: string;
+    componentScope: string;
+    tagName: string;
 }
 
 // ============================================================

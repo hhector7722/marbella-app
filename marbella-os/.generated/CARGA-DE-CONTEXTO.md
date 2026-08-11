@@ -75,4 +75,4 @@ es `CANON §5`.
 | 20 | `marbella-os/GLOSARIO.md` |
 
 Todo lo que no aparece en esta tabla **no es normativo** y no autoriza ninguna
-decisión, empezando por los 28 documentos de `marbella-os/6-investigacion/`.
+decisión, empezando por los 33 documentos de `marbella-os/6-investigacion/`.
