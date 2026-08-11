@@ -5,7 +5,7 @@ import { useSandboxStore } from '../store';
 import type { StudioFontOption } from '../font-catalog';
 import type { Estetica, SandboxRoute, SelectedVisualElement, StudioFontFamily, VisualOverride, VisualOverrides, VisualTargetKind, ViewportPreset } from '../types';
 
-const TARGET_SELECTOR = 'button, input, textarea, select, table, thead, tbody, tr, th, td, nav, header, [role="dialog"], [role="tab"], [class*="rounded"], svg, path, span, p, h1, h2, h3, h4, h5, h6, img, a, li, ul, ol';
+const TARGET_SELECTOR = 'button, input, textarea, select, table, thead, tbody, tr, th, td, nav, header, [role="dialog"], [role="tab"], [class*="rounded"], svg, span, p, h1, h2, h3, h4, h5, h6, img, a, li, ul, ol';
 
 function cleanLabel(value: string): string {
     return value.replace(/\s+/g, ' ').trim().slice(0, 48);
@@ -32,25 +32,30 @@ function scopeLabel(kind: VisualTargetKind, scope: 'instance' | 'component' | 'g
 function classify(element: HTMLElement): { kind: VisualTargetKind; scope: string; label: string } {
     const tag = element.tagName.toLowerCase();
     const classes = String(element.className ?? '');
-    const label = cleanLabel(element.getAttribute('aria-label') ?? element.textContent ?? '') || tag;
+    let rawText = element.getAttribute('aria-label') || element.textContent || '';
+    if (tag === 'svg') {
+        const parentBtn = element.closest('button');
+        if (parentBtn) rawText = parentBtn.getAttribute('aria-label') || parentBtn.textContent || rawText;
+    }
+    const cleanRaw = cleanLabel(rawText);
+    const label = cleanRaw || tag;
 
     if (tag === 'button' || element.getAttribute('role') === 'button') {
         const primary = classes.includes('bg-[#36606F]') || classes.includes('bg-blue-') || classes.includes('bg-emerald-');
-        return { kind: 'button', scope: primary ? 'button:primary' : 'button:secondary', label: label || 'Botón' };
+        return { kind: 'button', scope: primary ? 'button:primary' : 'button:secondary', label: cleanRaw ? `BOTÓN · ${cleanRaw}` : 'BOTÓN' };
     }
-    if (tag === 'svg') return { kind: 'element', scope: 'icon:svg', label: 'Icono (SVG)' };
-    if (tag === 'path') return { kind: 'element', scope: 'icon:path', label: 'Trazo (Path)' };
-    if (tag === 'span' || tag === 'p' || tag.match(/^h[1-6]$/)) return { kind: 'text', scope: `text:${tag}`, label: label || `Texto (${tag.toUpperCase()})` };
-    if (tag === 'img') return { kind: 'element', scope: 'image:default', label: label || 'Imagen' };
-    if (tag === 'a') return { kind: 'element', scope: 'link:default', label: label || 'Enlace' };
-    if (tag === 'input' || tag === 'textarea') return { kind: 'input', scope: 'input:default', label: label || 'Input' };
-    if (tag === 'select') return { kind: 'select', scope: 'select:default', label };
-    if (tag === 'table') return { kind: 'table', scope: 'table:default', label: 'Tabla' };
-    if (tag === 'tr') return { kind: 'row', scope: 'table:row', label: label || 'Fila' };
-    if (tag === 'nav') return { kind: 'nav', scope: 'navigation:main', label: 'Navegación' };
-    if (tag === 'header') return { kind: 'header', scope: 'header:main', label: 'Cabecera' };
-    if (element.getAttribute('role') === 'dialog') return { kind: 'modal', scope: 'modal:default', label: label || 'Modal' };
-    if (classes.includes('rounded') || classes.includes('rounded-')) return { kind: 'card', scope: 'card:default', label: label || 'Superficie' };
+    if (tag === 'svg') return { kind: 'element', scope: 'icon:svg', label: cleanRaw ? `ICONO · ${cleanRaw}` : 'ICONO' };
+    if (tag === 'span' || tag === 'p' || tag.match(/^h[1-6]$/)) return { kind: 'text', scope: `text:${tag}`, label: cleanRaw ? `TEXTO · ${cleanRaw}` : 'TEXTO' };
+    if (tag === 'img') return { kind: 'element', scope: 'image:default', label: cleanRaw ? `IMAGEN · ${cleanRaw}` : 'IMAGEN' };
+    if (tag === 'a') return { kind: 'element', scope: 'link:default', label: cleanRaw ? `ENLACE · ${cleanRaw}` : 'ENLACE' };
+    if (tag === 'input' || tag === 'textarea') return { kind: 'input', scope: 'input:default', label: cleanRaw ? `INPUT · ${cleanRaw}` : 'INPUT' };
+    if (tag === 'select') return { kind: 'select', scope: 'select:default', label: cleanRaw ? `SELECTOR · ${cleanRaw}` : 'SELECTOR' };
+    if (tag === 'table') return { kind: 'table', scope: 'table:default', label: cleanRaw ? `TABLA · ${cleanRaw}` : 'TABLA' };
+    if (tag === 'tr') return { kind: 'row', scope: 'table:row', label: cleanRaw ? `FILA · ${cleanRaw}` : 'FILA' };
+    if (tag === 'nav') return { kind: 'nav', scope: 'navigation:main', label: 'NAVEGACIÓN' };
+    if (tag === 'header') return { kind: 'header', scope: 'header:main', label: 'CABECERA' };
+    if (element.getAttribute('role') === 'dialog') return { kind: 'modal', scope: 'modal:default', label: cleanRaw ? `MODAL · ${cleanRaw}` : 'MODAL' };
+    if (classes.includes('rounded') || classes.includes('rounded-')) return { kind: 'card', scope: 'card:default', label: cleanRaw ? `SUPERFICIE · ${cleanRaw}` : 'SUPERFICIE' };
     return { kind: 'element', scope: `${tag}:default`, label };
 }
 
@@ -155,7 +160,30 @@ function realElements(root: HTMLElement): HTMLElement[] {
         if (dialog.closest('[data-studio-chrome="true"]')) return;
         elements.push(dialog, ...Array.from(dialog.querySelectorAll<HTMLElement>(TARGET_SELECTOR)));
     });
-    return Array.from(new Set(elements)).filter(element => !element.closest('[data-studio-chrome="true"]'));
+    return Array.from(new Set(elements)).filter(element => {
+        if (element.closest('[data-studio-chrome="true"]')) return false;
+
+        const tag = element.tagName.toLowerCase();
+        
+        // Descartar SVGs que pertenezcan a Recharts o sean muy grandes (gráficos, no iconos)
+        if (tag === 'svg') {
+            const isChart = element.classList.contains('recharts-surface') || element.clientWidth > 100;
+            if (isChart) return false;
+        }
+
+        // Descartar spans internos puramente estructurales (ej. textos dentro de botones sin diseño particular)
+        if (tag === 'span') {
+            const parentBtn = element.closest('button, [role="button"]');
+            if (parentBtn) {
+                // Si el span tiene un rol decorativo evidente (fondo o borde), lo mantenemos. Si no, recaerá en el botón.
+                if (!element.className.includes('bg-') && !element.className.includes('border')) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    });
 }
 
 export function VisualLabSurface({
@@ -172,19 +200,23 @@ export function VisualLabSurface({
     const selectedElement = useSandboxStore(s => s.selectedElement);
     const setSelectedElement = useSandboxStore(s => s.setSelectedElement);
 
-    React.useEffect(() => {
+    const indexElements = React.useCallback(() => {
         const root = rootRef.current;
         if (!root) return;
-
         const elements = realElements(root);
         const counts = new Map<string, number>();
         elements.forEach(element => {
-            if (element.closest('[data-studio-chrome="true"]')) return;
             const descriptor = classify(element);
             const base = `${route}:${descriptor.kind}:${descriptor.scope}:${descriptor.label}`;
             const index = counts.get(base) ?? 0;
             counts.set(base, index + 1);
-            element.dataset.studioNodeKey = `${base}:${index}`;
+            
+            // Solo regeneramos los keys si no los tienen o si cambiaron (estabilidad)
+            const newKey = `${base}:${index}`;
+            if (element.dataset.studioNodeKey !== newKey) {
+                element.dataset.studioNodeKey = newKey;
+            }
+            
             element.dataset.studioComponent = descriptor.scope;
             element.dataset.studioKind = descriptor.kind;
             if (!root.contains(element)) {
@@ -192,24 +224,49 @@ export function VisualLabSurface({
                 element.dataset.marbellaSandbox = 'true';
             }
             applyOverrideAttributes(element, overrideFor(element, overrides));
+            
+            if (element.dataset.studioNodeKey === selectedElement?.key) {
+                element.dataset.studioSelected = 'true';
+            }
         });
+    }, [route, overrides, selectedElement]);
+
+    React.useEffect(() => {
+        indexElements();
+        
+        // Observador de mutaciones para atrapar modales y portales que se abren dinámicamente
+        const observer = new MutationObserver((mutations) => {
+            let shouldReindex = false;
+            for (const mutation of mutations) {
+                if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                    shouldReindex = true;
+                    break;
+                }
+            }
+            if (shouldReindex) indexElements();
+        });
+        
+        observer.observe(document.body, { childList: true, subtree: true });
 
         return () => {
-            elements.forEach(element => {
-                delete element.dataset.studioNodeKey;
-                delete element.dataset.studioComponent;
-                delete element.dataset.studioKind;
-                delete element.dataset.studioHover;
-                delete element.dataset.studioSelected;
-                delete element.dataset.studioTextColor;
-                delete element.dataset.studioFillColor;
-                if (element.dataset.studioPortal === 'true') {
-                    delete element.dataset.studioPortal;
-                    delete element.dataset.marbellaSandbox;
-                }
-            });
+            observer.disconnect();
+            if (rootRef.current) {
+                realElements(rootRef.current).forEach(element => {
+                    delete element.dataset.studioNodeKey;
+                    delete element.dataset.studioComponent;
+                    delete element.dataset.studioKind;
+                    delete element.dataset.studioHover;
+                    delete element.dataset.studioSelected;
+                    delete element.dataset.studioTextColor;
+                    delete element.dataset.studioFillColor;
+                    if (element.dataset.studioPortal === 'true') {
+                        delete element.dataset.studioPortal;
+                        delete element.dataset.marbellaSandbox;
+                    }
+                });
+            }
         };
-    }, [route, children]); // Eliminar 'overrides' de dependencias para no regenerar índices al escribir colores
+    }, [indexElements]);
 
     React.useEffect(() => {
         const root = rootRef.current;
@@ -273,15 +330,7 @@ export function VisualLabSurface({
         };
     }, [labMode, route, setSelectedElement]);
 
-    React.useEffect(() => {
-        const root = rootRef.current;
-        if (!root) return;
-        realElements(root).forEach(element => {
-            applyOverrideAttributes(element, overrideFor(element, overrides));
-            if (element.dataset.studioNodeKey === selectedElement?.key) element.dataset.studioSelected = 'true';
-            else delete element.dataset.studioSelected;
-        });
-    }, [overrides, selectedElement]);
+    // El efecto applyOverrideAttributes es manejado por indexElements y el observer.
 
     return <div ref={rootRef} data-studio-real-app="true" className="relative h-full">{children}</div>;
 }
