@@ -62,6 +62,7 @@ export interface Estetica {
     recipe: Recipe; // la configuración visual completa
     overrides?: VisualOverrides;
     fontFamily?: StudioFontFamily;
+    globalScale?: string; // ej. "110%", "90%"
     background?: GlobalBackground;
     parentId: string | null; // null = estética base / Original
     isOriginal?: boolean; // solo la "Marbella Original" lo tiene
@@ -99,6 +100,7 @@ export type VisualOverride = {
     fontFamily?: StudioFontFamily;
     textColor?: string;
     backgroundColor?: string;
+    backgroundImage?: string;
     fillColor?: string;
     fillOpacity?: number;
     outlineColor?: string;

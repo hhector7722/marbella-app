@@ -218,7 +218,7 @@ function realElements(root: HTMLElement): HTMLElement[] {
         if (element.closest('[data-studio-chrome="true"]')) return false;
 
         const tag = element.tagName.toLowerCase();
-        
+
         // Descartar SVGs que pertenezcan a Recharts o sean muy grandes (gráficos, no iconos)
         if (tag === 'svg') {
             const isChart = element.classList.contains('recharts-surface') || element.clientWidth > 100;
@@ -266,13 +266,13 @@ export function VisualLabSurface({
             const base = `${route}:${descriptor.kind}:${descriptor.scope}:${descriptor.label}`;
             const index = counts.get(base) ?? 0;
             counts.set(base, index + 1);
-            
+
             // Solo regeneramos los keys si no los tienen o si cambiaron (estabilidad)
             const newKey = `${base}:${index}`;
             if (element.dataset.studioNodeKey !== newKey) {
                 element.dataset.studioNodeKey = newKey;
             }
-            
+
             element.dataset.studioComponent = descriptor.scope;
             element.dataset.studioKind = descriptor.kind;
             if (!root.contains(element)) {
@@ -280,7 +280,7 @@ export function VisualLabSurface({
                 element.dataset.marbellaSandbox = 'true';
             }
             applyOverrideAttributes(element, overrideFor(element, overrides, viewport));
-            
+
             if (element.dataset.studioNodeKey === selectedElement?.key) {
                 element.dataset.studioSelected = 'true';
             }
@@ -289,7 +289,7 @@ export function VisualLabSurface({
 
     React.useEffect(() => {
         indexElements();
-        
+
         // Observador de mutaciones para atrapar modales y portales que se abren dinámicamente
         const observer = new MutationObserver((mutations) => {
             let shouldReindex = false;
@@ -301,7 +301,7 @@ export function VisualLabSurface({
             }
             if (shouldReindex) indexElements();
         });
-        
+
         observer.observe(document.body, { childList: true, subtree: true });
 
         return () => {
@@ -341,20 +341,85 @@ export function VisualLabSurface({
             const element = findTarget(event.target);
             if (element) delete element.dataset.studioHover;
         };
-        const handleClick = (event: MouseEvent) => {
+        let dragInfo: {
+            element: HTMLElement;
+            key: string;
+            startX: number;
+            startY: number;
+            initialX: number;
+            initialY: number;
+            moved: boolean;
+        } | null = null;
+
+        const handleMouseDown = (event: MouseEvent) => {
             if (!labMode) return;
-            
-            // Usar composedPath para llegar al elemento visual más profundo en el que se hizo click (útil para SVGs y textos internos)
             const path = event.composedPath() as HTMLElement[];
             let element: HTMLElement | null = null;
-            
             for (const node of path) {
                 if (node instanceof HTMLElement && node.hasAttribute('data-studio-node-key') && !node.closest('[data-studio-chrome="true"]')) {
                     element = node;
                     break;
                 }
             }
-            
+            if (!element) return;
+
+            // Calculate current translation
+            const transform = window.getComputedStyle(element).transform;
+            let initialX = 0;
+            let initialY = 0;
+            if (transform !== 'none') {
+                try {
+                    const matrix = new DOMMatrixReadOnly(transform);
+                    initialX = matrix.m41;
+                    initialY = matrix.m42;
+                } catch (e) {
+                    // Fallback if DOMMatrix fails
+                }
+            }
+
+            dragInfo = {
+                element,
+                key: element.dataset.studioNodeKey!,
+                startX: event.clientX,
+                startY: event.clientY,
+                initialX,
+                initialY,
+                moved: false,
+            };
+        };
+
+        const handleMouseMove = (event: MouseEvent) => {
+            if (!dragInfo) return;
+            const dx = event.clientX - dragInfo.startX;
+            const dy = event.clientY - dragInfo.startY;
+            if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+                dragInfo.moved = true;
+            }
+            if (dragInfo.moved) {
+                dragInfo.element.style.setProperty('transform', `translate(${dragInfo.initialX + dx}px, ${dragInfo.initialY + dy}px)`, 'important');
+            }
+        };
+
+        const handleClick = (event: MouseEvent) => {
+            if (!labMode) return;
+
+            if (dragInfo?.moved) {
+                // If it was a drag, handle in MouseUp and prevent click
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
+
+            const path = event.composedPath() as HTMLElement[];
+            let element: HTMLElement | null = null;
+
+            for (const node of path) {
+                if (node instanceof HTMLElement && node.hasAttribute('data-studio-node-key') && !node.closest('[data-studio-chrome="true"]')) {
+                    element = node;
+                    break;
+                }
+            }
+
             if (!element) return;
             event.preventDefault();
             event.stopPropagation();
@@ -370,18 +435,60 @@ export function VisualLabSurface({
             setSelectedElement(selection);
             document.querySelectorAll<HTMLElement>('[data-studio-selected="true"]').forEach(node => delete node.dataset.studioSelected);
             element.dataset.studioSelected = 'true';
-            
+
             if (window !== window.parent) {
                 window.parent.postMessage({ type: 'MARBELLA_STUDIO_CLICK', payload: selection }, '*');
             }
         };
 
+        const handleMouseUp = (event: MouseEvent) => {
+            if (!dragInfo) return;
+            const info = dragInfo;
+            // Delay clearing to allow click event to be blocked if needed
+            setTimeout(() => { dragInfo = null; }, 0);
+
+            if (info.moved) {
+                const dx = event.clientX - info.startX;
+                const dy = event.clientY - info.startY;
+                if (window !== window.parent) {
+                    window.parent.postMessage({
+                        type: 'MARBELLA_STUDIO_DRAG_END',
+                        payload: {
+                            key: info.key,
+                            x: `${info.initialX + dx}px`,
+                            y: `${info.initialY + dy}px`
+                        }
+                    }, '*');
+                }
+
+                // Keep element selected
+                const descriptor = classify(info.element);
+                const selection: SelectedVisualElement = {
+                    key: info.element.dataset.studioNodeKey ?? '',
+                    route,
+                    kind: descriptor.kind,
+                    label: descriptor.label,
+                    componentScope: descriptor.scope,
+                    tagName: info.element.tagName.toLowerCase(),
+                };
+                setSelectedElement(selection);
+                document.querySelectorAll<HTMLElement>('[data-studio-selected="true"]').forEach(node => delete node.dataset.studioSelected);
+                info.element.dataset.studioSelected = 'true';
+            }
+        };
+
         document.addEventListener('mouseover', handleOver);
         document.addEventListener('mouseout', handleOut);
+        document.addEventListener('mousedown', handleMouseDown, true);
+        document.addEventListener('mousemove', handleMouseMove, true);
+        document.addEventListener('mouseup', handleMouseUp, true);
         document.addEventListener('click', handleClick, true);
         return () => {
             document.removeEventListener('mouseover', handleOver);
             document.removeEventListener('mouseout', handleOut);
+            document.removeEventListener('mousedown', handleMouseDown, true);
+            document.removeEventListener('mousemove', handleMouseMove, true);
+            document.removeEventListener('mouseup', handleMouseUp, true);
             document.removeEventListener('click', handleClick, true);
         };
     }, [labMode, route, setSelectedElement]);
@@ -415,7 +522,7 @@ export function VisualLabPanel({
                 ? `component:${selected.componentScope}`
                 : 'global'
         : 'global';
-    
+
     const currentResponsive = overrides[overrideKey] ?? {};
     const current = { ...currentResponsive.all, ...currentResponsive[viewport] };
 
@@ -430,8 +537,7 @@ export function VisualLabPanel({
     };
 
     const resetAll = () => {
-        // En lugar de iterar, mandamos undefined a todo
-        onOverrideChange(overrideKey, scope === 'global' ? 'all' : viewport, undefined as any); // Require store cleanup eventually, pero sirve para limpiar
+        onOverrideChange(overrideKey, scope === 'global' ? 'all' : viewport, null as any);
     };
 
     const Section = ({ id, title, children }: { id: string, title: string, children: React.ReactNode }) => {
@@ -447,6 +553,9 @@ export function VisualLabPanel({
         );
     };
 
+    const [paddingUnlocked, setPaddingUnlocked] = React.useState(false);
+    const [marginUnlocked, setMarginUnlocked] = React.useState(false);
+
     return (
         <div data-studio-chrome="true" className="flex h-full flex-col bg-zinc-950">
             <div className="border-b border-zinc-800 px-4 py-3 shrink-0">
@@ -461,12 +570,17 @@ export function VisualLabPanel({
                 </div>
 
                 {selected && (
-                    <div className="mt-3 grid grid-cols-3 gap-1">
-                        {(['instance', 'component', 'global'] as const).map(option => (
-                            <button key={option} type="button" onClick={() => setScope(option)} style={{ minHeight: 44 }} className={`rounded-lg text-[9px] font-black uppercase tracking-widest leading-tight ${scope === option ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-500 hover:bg-zinc-800'}`}>
-                                {scopeLabel(selected.kind, option)}
-                            </button>
-                        ))}
+                    <div className="mt-3 flex gap-2 items-center">
+                        <div className="flex-1 grid grid-cols-3 gap-1">
+                            {(['instance', 'component', 'global'] as const).map(option => (
+                                <button key={option} type="button" onClick={() => setScope(option)} style={{ minHeight: 44 }} className={`rounded-lg text-[9px] font-black uppercase tracking-widest leading-tight ${scope === option ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-500 hover:bg-zinc-800'}`}>
+                                    {scopeLabel(selected.kind, option)}
+                                </button>
+                            ))}
+                        </div>
+                        <button type="button" onClick={resetAll} style={{ minHeight: 44 }} className="shrink-0 rounded-lg bg-rose-500/10 px-3 text-[9px] font-black uppercase tracking-widest text-rose-300 hover:bg-rose-500/20" title="Restablecer este elemento al original">
+                            Reset
+                        </button>
                     </div>
                 )}
             </div>
@@ -477,13 +591,13 @@ export function VisualLabPanel({
                         Activa el modo <strong>Seleccionar</strong> y haz click en cualquier elemento del preview para editarlo.
                     </div>
                 )}
-                
+
                 {selected && (
                     <>
                         <Section id="apariencia" title="Apariencia">
                             <div className="grid gap-3">
                                 <label className="block">
-                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Tipografía</span>
+                                    <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">Fuente {current.fontFamily && <button onClick={() => reset(['fontFamily'])} className="text-zinc-600 hover:text-white">✕</button>}</span>
                                     <select value={current.fontFamily ?? ''} onChange={e => update({ fontFamily: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none">
                                         <option value="">Heredada</option>
                                         {fonts.map(font => <option key={font.id} value={font.family} style={{ fontFamily: font.family }}>{font.label}</option>)}
@@ -491,15 +605,19 @@ export function VisualLabPanel({
                                 </label>
                                 <div className="grid grid-cols-2 gap-2">
                                     <label className="block">
-                                        <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Tamaño de Fuente</span>
+                                        <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">Tamaño {current.fontSize && <button onClick={() => reset(['fontSize'])} className="text-zinc-600 hover:text-white">✕</button>}</span>
                                         <input type="text" placeholder="ej. 16px, 1.5rem" value={current.fontSize ?? ''} onChange={e => update({ fontSize: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none" />
                                     </label>
                                     <label className="block">
-                                        <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Opacidad</span>
-                                        <div className="flex items-center gap-2">
-                                            <input type="range" min="0" max="1" step="0.05" value={current.opacity ?? 1} onChange={e => update({ opacity: Number(e.target.value) })} className="w-full accent-[#36606F]" />
-                                            <span className="text-[10px] text-zinc-400">{Math.round((current.opacity ?? 1) * 100)}%</span>
-                                        </div>
+                                        <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">Peso {current.fontWeight && <button onClick={() => reset(['fontWeight'])} className="text-zinc-600 hover:text-white">✕</button>}</span>
+                                        <select value={current.fontWeight ?? ''} onChange={e => update({ fontWeight: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none">
+                                            <option value="">Heredado</option>
+                                            <option value="400">Normal</option>
+                                            <option value="500">Medium</option>
+                                            <option value="600">Semibold</option>
+                                            <option value="700">Bold</option>
+                                            <option value="900">Black</option>
+                                        </select>
                                     </label>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
@@ -515,35 +633,14 @@ export function VisualLabPanel({
                                     </label>
                                     <label className="block rounded-lg bg-zinc-900 p-2">
                                         <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">
-                                            Fondo / Relleno
+                                            Fondo
                                             {(current.backgroundColor || current.fillColor) && <button onClick={() => reset(['backgroundColor', 'fillColor', 'tone'])} className="text-zinc-600 hover:text-white">✕</button>}
                                         </span>
                                         <div className="flex items-center gap-2">
                                             <input type="color" value={current.backgroundColor ?? current.fillColor ?? '#000000'} onChange={e => update({ tone: 'custom', backgroundColor: e.target.value, fillColor: e.target.value })} className="h-6 w-6 rounded border-0 bg-transparent p-0" />
                                             <span className="text-[10px] text-zinc-300 font-mono">{current.backgroundColor ?? current.fillColor ?? 'Auto'}</span>
                                         </div>
-                                        <button onClick={() => update({ tone: 'transparent' })} className="mt-2 w-full rounded bg-zinc-800 py-1 text-[8px] font-black uppercase text-zinc-400 hover:bg-zinc-700 hover:text-white">Sin Fondo</button>
-                                    </label>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <label className="block">
-                                        <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Peso</span>
-                                        <select value={current.fontWeight ?? ''} onChange={e => update({ fontWeight: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-[10px] uppercase font-black text-white outline-none">
-                                            <option value="">Auto</option>
-                                            <option value="400">Normal</option>
-                                            <option value="500">Medium</option>
-                                            <option value="700">Bold</option>
-                                            <option value="900">Black</option>
-                                        </select>
-                                    </label>
-                                    <label className="block">
-                                        <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Alineación</span>
-                                        <select value={current.textAlign ?? ''} onChange={e => update({ textAlign: e.target.value as any })} className="w-full rounded bg-zinc-900 p-2 text-[10px] uppercase font-black text-white outline-none">
-                                            <option value="">Auto</option>
-                                            <option value="left">Izquierda</option>
-                                            <option value="center">Centro</option>
-                                            <option value="right">Derecha</option>
-                                        </select>
+                                        <button onClick={() => update({ tone: 'transparent' })} className="mt-2 w-full rounded bg-zinc-800 py-1 text-[8px] font-black uppercase text-zinc-400 hover:bg-zinc-700 hover:text-white">Transparente</button>
                                     </label>
                                 </div>
                             </div>
@@ -552,20 +649,12 @@ export function VisualLabPanel({
                         <Section id="tamano" title="Tamaño">
                             <div className="grid grid-cols-2 gap-2">
                                 <label className="block">
-                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Ancho</span>
+                                    <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">Ancho {current.width && <button onClick={() => reset(['width'])} className="text-zinc-600 hover:text-white">✕</button>}</span>
                                     <input type="text" placeholder="auto, 100%, 200px" value={current.width ?? ''} onChange={e => update({ width: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none" />
                                 </label>
                                 <label className="block">
-                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Alto</span>
+                                    <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">Alto {current.height && <button onClick={() => reset(['height'])} className="text-zinc-600 hover:text-white">✕</button>}</span>
                                     <input type="text" placeholder="auto, 100%, 200px" value={current.height ?? ''} onChange={e => update({ height: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none" />
-                                </label>
-                                <label className="block">
-                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Ancho Mínimo</span>
-                                    <input type="text" placeholder="" value={current.minWidth ?? ''} onChange={e => update({ minWidth: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none" />
-                                </label>
-                                <label className="block">
-                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Alto Mínimo</span>
-                                    <input type="text" placeholder="" value={current.minHeight ?? ''} onChange={e => update({ minHeight: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none" />
                                 </label>
                             </div>
                         </Section>
@@ -586,39 +675,71 @@ export function VisualLabPanel({
                         </Section>
 
                         <Section id="espaciado" title="Espaciado (Margin, Padding, Gap)">
-                            <div className="grid gap-2">
+                            <div className="grid gap-4">
                                 <label className="block">
                                     <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Gap (Espacio entre hijos)</span>
                                     <input type="text" placeholder="1rem, 16px" value={current.gap ?? ''} onChange={e => update({ gap: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none" />
                                 </label>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <label className="block">
-                                        <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">Padding <button onClick={() => reset(['customPadding'])} className="text-zinc-600">✕</button></span>
-                                        <input type="text" placeholder="1rem" value={current.customPadding ?? ''} onChange={e => update({ customPadding: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none" />
-                                    </label>
-                                    <label className="block">
-                                        <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">Margin <button onClick={() => reset(['margin'])} className="text-zinc-600">✕</button></span>
-                                        <input type="text" placeholder="1rem" value={current.margin ?? ''} onChange={e => update({ margin: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none" />
-                                    </label>
+
+                                <div className="rounded-lg bg-zinc-900/50 p-2 border border-zinc-800">
+                                    <div className="mb-2 flex items-center justify-between">
+                                        <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Padding</span>
+                                        <button onClick={() => { setPaddingUnlocked(!paddingUnlocked); if (paddingUnlocked) { update({ paddingTop: undefined, paddingRight: undefined, paddingBottom: undefined, paddingLeft: undefined }); } }} className="text-zinc-500 hover:text-white" title={paddingUnlocked ? 'Bloquear y usar valor único' : 'Desbloquear lados'}>
+                                            {paddingUnlocked ? '🔓' : '🔒'}
+                                        </button>
+                                    </div>
+                                    {!paddingUnlocked ? (
+                                        <input type="text" placeholder="ej. 16px" value={current.customPadding ?? ''} onChange={e => update({ customPadding: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none" />
+                                    ) : (
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <input type="text" placeholder="Top" value={current.paddingTop ?? ''} onChange={e => update({ paddingTop: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-[10px] text-white outline-none" title="Top" />
+                                            <input type="text" placeholder="Right" value={current.paddingRight ?? ''} onChange={e => update({ paddingRight: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-[10px] text-white outline-none" title="Right" />
+                                            <input type="text" placeholder="Bottom" value={current.paddingBottom ?? ''} onChange={e => update({ paddingBottom: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-[10px] text-white outline-none" title="Bottom" />
+                                            <input type="text" placeholder="Left" value={current.paddingLeft ?? ''} onChange={e => update({ paddingLeft: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-[10px] text-white outline-none" title="Left" />
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="mt-2 text-[8px] font-black uppercase tracking-widest text-zinc-600">Padding Específico</div>
-                                <div className="grid grid-cols-4 gap-1">
-                                    <input type="text" placeholder="Top" value={current.paddingTop ?? ''} onChange={e => update({ paddingTop: e.target.value })} className="w-full rounded bg-zinc-900 p-1.5 text-center text-[10px] text-white outline-none" title="Top" />
-                                    <input type="text" placeholder="Right" value={current.paddingRight ?? ''} onChange={e => update({ paddingRight: e.target.value })} className="w-full rounded bg-zinc-900 p-1.5 text-center text-[10px] text-white outline-none" title="Right" />
-                                    <input type="text" placeholder="Bottom" value={current.paddingBottom ?? ''} onChange={e => update({ paddingBottom: e.target.value })} className="w-full rounded bg-zinc-900 p-1.5 text-center text-[10px] text-white outline-none" title="Bottom" />
-                                    <input type="text" placeholder="Left" value={current.paddingLeft ?? ''} onChange={e => update({ paddingLeft: e.target.value })} className="w-full rounded bg-zinc-900 p-1.5 text-center text-[10px] text-white outline-none" title="Left" />
-                                </div>
-                                <div className="mt-2 text-[8px] font-black uppercase tracking-widest text-zinc-600">Margin Específico</div>
-                                <div className="grid grid-cols-4 gap-1">
-                                    <input type="text" placeholder="Top" value={current.marginTop ?? ''} onChange={e => update({ marginTop: e.target.value })} className="w-full rounded bg-zinc-900 p-1.5 text-center text-[10px] text-white outline-none" title="Top" />
-                                    <input type="text" placeholder="Right" value={current.marginRight ?? ''} onChange={e => update({ marginRight: e.target.value })} className="w-full rounded bg-zinc-900 p-1.5 text-center text-[10px] text-white outline-none" title="Right" />
-                                    <input type="text" placeholder="Bottom" value={current.marginBottom ?? ''} onChange={e => update({ marginBottom: e.target.value })} className="w-full rounded bg-zinc-900 p-1.5 text-center text-[10px] text-white outline-none" title="Bottom" />
-                                    <input type="text" placeholder="Left" value={current.marginLeft ?? ''} onChange={e => update({ marginLeft: e.target.value })} className="w-full rounded bg-zinc-900 p-1.5 text-center text-[10px] text-white outline-none" title="Left" />
+
+                                <div className="rounded-lg bg-zinc-900/50 p-2 border border-zinc-800">
+                                    <div className="mb-2 flex items-center justify-between">
+                                        <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Margin</span>
+                                        <button onClick={() => { setMarginUnlocked(!marginUnlocked); if (marginUnlocked) { update({ marginTop: undefined, marginRight: undefined, marginBottom: undefined, marginLeft: undefined }); } }} className="text-zinc-500 hover:text-white" title={marginUnlocked ? 'Bloquear y usar valor único' : 'Desbloquear lados'}>
+                                            {marginUnlocked ? '🔓' : '🔒'}
+                                        </button>
+                                    </div>
+                                    {!marginUnlocked ? (
+                                        <input type="text" placeholder="ej. 0px" value={current.margin ?? ''} onChange={e => update({ margin: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none" />
+                                    ) : (
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <input type="text" placeholder="Top" value={current.marginTop ?? ''} onChange={e => update({ marginTop: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-[10px] text-white outline-none" title="Top" />
+                                            <input type="text" placeholder="Right" value={current.marginRight ?? ''} onChange={e => update({ marginRight: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-[10px] text-white outline-none" title="Right" />
+                                            <input type="text" placeholder="Bottom" value={current.marginBottom ?? ''} onChange={e => update({ marginBottom: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-[10px] text-white outline-none" title="Bottom" />
+                                            <input type="text" placeholder="Left" value={current.marginLeft ?? ''} onChange={e => update({ marginLeft: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-[10px] text-white outline-none" title="Left" />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </Section>
 
-                        <Section id="borde" title="Borde y Sombra">
+                        <Section id="avanzado" title="Avanzado">
+                            <div className="grid grid-cols-2 gap-2 mb-4">
+                                <label className="block">
+                                    <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">Opacidad {current.opacity !== undefined && <button onClick={() => reset(['opacity'])} className="text-zinc-600 hover:text-white">✕</button>}</span>
+                                    <div className="flex items-center gap-2">
+                                        <input type="range" min="0" max="1" step="0.05" value={current.opacity ?? 1} onChange={e => update({ opacity: Number(e.target.value) })} className="w-full accent-[#36606F]" />
+                                        <span className="text-[10px] text-zinc-400">{Math.round((current.opacity ?? 1) * 100)}%</span>
+                                    </div>
+                                </label>
+                                <label className="block">
+                                    <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">Alineación {current.textAlign && <button onClick={() => reset(['textAlign'])} className="text-zinc-600 hover:text-white">✕</button>}</span>
+                                    <select value={current.textAlign ?? ''} onChange={e => update({ textAlign: e.target.value as any })} className="w-full rounded bg-zinc-900 p-2 text-[10px] uppercase font-black text-white outline-none">
+                                        <option value="">Auto</option>
+                                        <option value="left">Izquierda</option>
+                                        <option value="center">Centro</option>
+                                        <option value="right">Derecha</option>
+                                    </select>
+                                </label>
+                            </div>
                             <div className="grid grid-cols-2 gap-2">
                                 <label className="block rounded-lg bg-zinc-900 p-2">
                                     <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Color Borde</span>
@@ -701,7 +822,7 @@ export function VisualLabPanel({
                                 </label>
                             </div>
                         </Section>
-                        
+
                         <div className="mt-4 border-t border-zinc-800 pt-4">
                             <button onClick={resetAll} className="w-full rounded-xl bg-red-500/10 py-3 text-[9px] font-black uppercase tracking-widest text-red-400 hover:bg-red-500/20">
                                 Restablecer todo en este ámbito
@@ -727,6 +848,8 @@ export function GlobalAestheticPanel({
     onCompare,
     fontFamily,
     onFontFamilyChange,
+    globalScale,
+    onGlobalScaleChange,
     fonts,
     background,
     onBackgroundChange,
@@ -743,6 +866,8 @@ export function GlobalAestheticPanel({
     onCompare: () => void;
     fontFamily?: StudioFontFamily;
     onFontFamilyChange: (fontFamily?: StudioFontFamily) => void;
+    globalScale?: string;
+    onGlobalScaleChange?: (scale?: string) => void;
     fonts: StudioFontOption[];
     background?: NonNullable<Estetica['background']>;
     onBackgroundChange?: (bg: NonNullable<Estetica['background']>) => void;
@@ -762,6 +887,13 @@ export function GlobalAestheticPanel({
             <select value={fontFamily ?? ''} onChange={event => onFontFamilyChange((event.target.value || undefined) as StudioFontFamily | undefined)} className="mt-2 min-h-12 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 text-sm font-bold text-zinc-200" aria-label="Tipografía global">
                 <option value="">Tipografía de Marbella</option>
                 {fonts.map(font => <option key={font.id} value={font.family}>{font.label}</option>)}
+            </select>
+            <select value={globalScale ?? ''} onChange={event => onGlobalScaleChange?.(event.target.value || undefined)} className="mt-2 min-h-12 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 text-sm font-bold text-zinc-200" aria-label="Escala global">
+                <option value="">Escala por defecto (100%)</option>
+                <option value="80%">80% (Extra compacto)</option>
+                <option value="90%">90% (Compacto)</option>
+                <option value="110%">110% (Amplio)</option>
+                <option value="120%">120% (Muy amplio)</option>
             </select>
             <div className="mt-2 grid grid-cols-3 gap-1">
                 {(['mobile', 'tablet', 'desktop'] as const).map(option => (

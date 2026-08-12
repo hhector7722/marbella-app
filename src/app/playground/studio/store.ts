@@ -161,7 +161,7 @@ interface SandboxState {
 
     // Estéticas: CRUD
     setActiveEstetica: (id: string) => void;
-    createEstetica: (name: string, recipe: Recipe, opts?: { description?: string; parentId?: string; overrides?: VisualOverrides; fontFamily?: StudioFontFamily; background?: any }) => string;
+    createEstetica: (name: string, recipe: Recipe, opts?: { description?: string; parentId?: string; overrides?: VisualOverrides; fontFamily?: StudioFontFamily; globalScale?: string; background?: any }) => string;
     duplicateEstetica: (id: string, newName?: string) => string | null;
     renameEstetica: (id: string, newName: string) => void;
     deleteEstetica: (id: string) => boolean;
@@ -171,6 +171,7 @@ interface SandboxState {
     setSelectedElement: (element: SelectedVisualElement | null) => void;
     updateEsteticaOverrides: (id: string, overrides: VisualOverrides) => void;
     updateEsteticaFontFamily: (id: string, fontFamily?: StudioFontFamily) => void;
+    updateEsteticaGlobalScale: (id: string, globalScale?: string) => void;
     updateEsteticaBackground: (id: string, background?: any) => void;
 
 }
@@ -220,6 +221,7 @@ export const useSandboxStore = create<SandboxState>()(
                     recipe,
                     overrides: opts?.overrides ?? {},
                     fontFamily: opts?.fontFamily,
+                    globalScale: opts?.globalScale,
                     background: opts?.background,
                     parentId: opts?.parentId ?? get().activeEsteticaId,
                     createdAt: now(),
@@ -241,6 +243,7 @@ export const useSandboxStore = create<SandboxState>()(
                     parentId: id,
                     overrides: { ...origen.overrides },
                     fontFamily: origen.fontFamily,
+                    globalScale: origen.globalScale,
                     background: origen.background,
                 });
             },
@@ -296,6 +299,12 @@ export const useSandboxStore = create<SandboxState>()(
                 set(state => ({
                     esteticas: state.esteticas.map(e =>
                         e.id === id && !e.isOriginal && !e.isSystem ? { ...e, fontFamily, updatedAt: now() } : e
+                    ),
+                })),
+            updateEsteticaGlobalScale: (id, globalScale) =>
+                set(state => ({
+                    esteticas: state.esteticas.map(e =>
+                        e.id === id && !e.isOriginal && !e.isSystem ? { ...e, globalScale, updatedAt: now() } : e
                     ),
                 })),
             updateEsteticaBackground: (id, background) =>

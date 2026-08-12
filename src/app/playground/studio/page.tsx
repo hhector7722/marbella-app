@@ -30,7 +30,7 @@ export default function StudioPage() {
     const renameEstetica = useSandboxStore(s => s.renameEstetica);
     const deleteEstetica = useSandboxStore(s => s.deleteEstetica);
 
-    const [draft, setDraft] = React.useState<{ id: string; recipe: Recipe; overrides: VisualOverrides; fontFamily?: StudioFontFamily; background?: any } | null>(null);
+    const [draft, setDraft] = React.useState<{ id: string; recipe: Recipe; overrides: VisualOverrides; fontFamily?: StudioFontFamily; globalScale?: string; background?: any } | null>(null);
     const [editorVisible, setEditorVisible] = React.useState(true);
     const [secondaryView, setSecondaryView] = React.useState<SecondaryView>(null);
     const [comparisonId, setComparisonId] = React.useState('est-editorial-v1');
@@ -87,19 +87,50 @@ export default function StudioPage() {
     const draftOverrides = draft?.id === activeEstetica.id ? draft.overrides : activeEstetica.overrides ?? {};
     const draftFontFamily = draft?.id === activeEstetica.id ? draft.fontFamily : activeEstetica.fontFamily;
     const draftBackground = draft?.id === activeEstetica.id ? draft.background : activeEstetica.background;
-    const setDraftOverride = (key: string, vp: 'all' | 'mobile' | 'tablet' | 'desktop', patch: VisualOverride) => setDraft({
-        id: activeEstetica.id,
-        recipe: draftRecipe,
-        overrides: { 
-            ...draftOverrides, 
-            [key]: { 
-                ...draftOverrides[key], 
-                [vp]: { ...draftOverrides[key]?.[vp], ...patch } 
-            } 
-        },
-        fontFamily: draftFontFamily,
-        background: draftBackground,
-    });
+    const draftGlobalScale = draft?.id === activeEstetica.id ? draft.globalScale : activeEstetica.globalScale;
+    const setDraftOverride = (key: string, vp: 'all' | 'mobile' | 'tablet' | 'desktop', patch: VisualOverride | null) => {
+        const currentOverride = draftOverrides[key] || {};
+        let newViewportData: any = undefined;
+
+        if (patch !== null) {
+            newViewportData = { ...currentOverride[vp], ...patch };
+            // Remove keys explicitly set to undefined so they fall back cleanly in the cascade
+            Object.keys(newViewportData).forEach(k => {
+                if (newViewportData[k] === undefined) {
+                    delete newViewportData[k];
+                }
+            });
+            if (Object.keys(newViewportData).length === 0) {
+                newViewportData = undefined;
+            }
+        }
+
+        const newOverride = {
+            ...currentOverride,
+            [vp]: newViewportData
+        };
+
+        // Remove undefined vp keys
+        if (newViewportData === undefined) {
+            delete newOverride[vp];
+        }
+
+        const newOverrides = { ...draftOverrides, [key]: newOverride };
+
+        // Remove key entirely if empty
+        if (Object.keys(newOverride).length === 0) {
+            delete newOverrides[key];
+        }
+
+        setDraft({
+            id: activeEstetica.id,
+            recipe: draftRecipe,
+            overrides: newOverrides,
+            fontFamily: draftFontFamily,
+            globalScale: draftGlobalScale,
+            background: draftBackground,
+        });
+    };
 
     const saveDraft = () => {
         if (activeEstetica.isOriginal || activeEstetica.isSystem) {
@@ -108,12 +139,14 @@ export default function StudioPage() {
                 parentId: activeEstetica.id,
                 overrides: draftOverrides,
                 fontFamily: draftFontFamily,
+                globalScale: draftGlobalScale,
                 background: draftBackground,
             });
         } else {
             updateEsteticaRecipe(activeEstetica.id, draftRecipe);
             updateEsteticaOverrides(activeEstetica.id, draftOverrides);
             updateEsteticaFontFamily(activeEstetica.id, draftFontFamily);
+            useSandboxStore.getState().updateEsteticaGlobalScale?.(activeEstetica.id, draftGlobalScale);
             useSandboxStore.getState().updateEsteticaBackground?.(activeEstetica.id, draftBackground);
         }
         toast.success('Estética guardada');
@@ -125,6 +158,7 @@ export default function StudioPage() {
             parentId: activeEstetica.id,
             overrides: draftOverrides,
             fontFamily: draftFontFamily,
+            globalScale: draftGlobalScale,
             background: draftBackground,
         });
         if (id) toast.success('Copia creada y activa');
@@ -178,10 +212,12 @@ export default function StudioPage() {
                         onDelete={deleteActive}
                         onCompare={() => setSecondaryView('comparar')}
                         fontFamily={draftFontFamily}
-                        onFontFamilyChange={fontFamily => setDraft({ id: activeEstetica.id, recipe: draftRecipe, overrides: draftOverrides, fontFamily, background: draftBackground })}
+                        onFontFamilyChange={fontFamily => setDraft({ id: activeEstetica.id, recipe: draftRecipe, overrides: draftOverrides, fontFamily, globalScale: draftGlobalScale, background: draftBackground })}
+                        globalScale={draftGlobalScale}
+                        onGlobalScaleChange={globalScale => setDraft({ id: activeEstetica.id, recipe: draftRecipe, overrides: draftOverrides, fontFamily: draftFontFamily, globalScale, background: draftBackground })}
                         fonts={fonts}
                         background={draftBackground}
-                        onBackgroundChange={background => setDraft({ id: activeEstetica.id, recipe: draftRecipe, overrides: draftOverrides, fontFamily: draftFontFamily, background })}
+                        onBackgroundChange={background => setDraft({ id: activeEstetica.id, recipe: draftRecipe, overrides: draftOverrides, fontFamily: draftFontFamily, globalScale: draftGlobalScale, background })}
                     />
                         <VisualLabPanel overrides={draftOverrides} onOverrideChange={setDraftOverride} fonts={fonts} viewport={viewport} />
                     </aside>
@@ -189,7 +225,7 @@ export default function StudioPage() {
 
                 <section data-studio-viewport={viewport} className="min-h-0 min-w-0 flex-1 overflow-auto bg-zinc-900/30">
                     <div className={`${frameClass} h-full`}>
-                        <SandboxView esteticaId={activeId} recipeOverride={draftRecipe} overrides={draftOverrides} fontFamily={draftFontFamily} background={draftBackground} />
+                        <SandboxView esteticaId={activeId} recipeOverride={draftRecipe} overrides={draftOverrides} fontFamily={draftFontFamily} globalScale={draftGlobalScale} background={draftBackground} onDragEnd={(key, x, y) => setDraftOverride(key, viewport, { x, y })} />
                     </div>
                 </section>
             </main>

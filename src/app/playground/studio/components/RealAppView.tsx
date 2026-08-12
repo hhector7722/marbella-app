@@ -4,7 +4,7 @@ import React, { useEffect, useRef } from 'react';
 import { SANDBOX_ROUTES, useSandboxStore, useActiveEstetica } from '../store';
 import type { Recipe, SandboxRoute, StudioFontFamily, VisualOverrides } from '../types';
 
-export function RealAppView({ recipeOverride, overrides = {}, fontFamily, background }: { recipeOverride?: Recipe; overrides?: VisualOverrides; fontFamily?: StudioFontFamily; background?: any }) {
+export function RealAppView({ recipeOverride, overrides = {}, fontFamily, globalScale, background, onDragEnd }: { recipeOverride?: Recipe; overrides?: VisualOverrides; fontFamily?: StudioFontFamily; globalScale?: string; background?: any; onDragEnd?: (key: string, x: string, y: string) => void }) {
     const route = useSandboxStore(s => s.route);
     const setRoute = useSandboxStore(s => s.setRoute);
     const estetica = useActiveEstetica();
@@ -26,6 +26,7 @@ export function RealAppView({ recipeOverride, overrides = {}, fontFamily, backgr
                             recipeOverride: recipeOverride ?? estetica.recipe,
                             overrides,
                             fontFamily,
+                            globalScale,
                             background,
                             labMode,
                             viewport
@@ -34,11 +35,15 @@ export function RealAppView({ recipeOverride, overrides = {}, fontFamily, backgr
                 }
             } else if (e.data?.type === 'MARBELLA_STUDIO_CLICK') {
                 setSelectedElement(e.data.payload);
+            } else if (e.data?.type === 'MARBELLA_STUDIO_DRAG_END') {
+                if (onDragEnd) {
+                    onDragEnd(e.data.payload.key, e.data.payload.x, e.data.payload.y);
+                }
             }
         };
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
-    }, [route, setRoute, recipeOverride, estetica.recipe, overrides, fontFamily, background, setSelectedElement]);
+    }, [route, setRoute, recipeOverride, estetica.recipe, overrides, fontFamily, globalScale, background, setSelectedElement, onDragEnd]);
 
     useEffect(() => {
         if (iframeRef.current?.contentWindow) {
@@ -48,13 +53,14 @@ export function RealAppView({ recipeOverride, overrides = {}, fontFamily, backgr
                     recipeOverride: recipeOverride ?? estetica.recipe,
                     overrides,
                     fontFamily,
+                    globalScale,
                     background,
                     labMode,
                     viewport
                 }
             }, '*');
         }
-    }, [recipeOverride, estetica.recipe, overrides, fontFamily, background, labMode, viewport]);
+    }, [recipeOverride, estetica.recipe, overrides, fontFamily, globalScale, background, labMode, viewport]);
 
     return (
         <iframe 

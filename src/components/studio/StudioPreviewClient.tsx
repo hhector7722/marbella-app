@@ -14,6 +14,7 @@ export function StudioPreviewClient({ children }: { children: React.ReactNode })
     const [background, setBackground] = useState<GlobalBackground | null>(null);
     const [recipe, setRecipe] = useState<Recipe>({});
     const [fontFamily, setFontFamily] = useState<StudioFontFamily | undefined>(undefined);
+    const [globalScale, setGlobalScale] = useState<string | undefined>(undefined);
     const [viewport, setViewport] = useState<ViewportPreset>('desktop');
     const pathname = usePathname();
 
@@ -32,6 +33,7 @@ export function StudioPreviewClient({ children }: { children: React.ReactNode })
                     setBackground(event.data.payload.background || null);
                     setRecipe(event.data.payload.recipeOverride || {});
                     setFontFamily(event.data.payload.fontFamily);
+                    setGlobalScale(event.data.payload.globalScale);
                     setViewport(event.data.payload.viewport || 'desktop');
                     useSandboxStore.getState().setLabMode(event.data.payload.labMode || false);
                 }
@@ -59,6 +61,16 @@ export function StudioPreviewClient({ children }: { children: React.ReactNode })
             };
         }
     }, [pathname]);
+
+    useEffect(() => {
+        if (inIframe) {
+            if (globalScale) {
+                document.documentElement.style.fontSize = globalScale;
+            } else {
+                document.documentElement.style.removeProperty('font-size');
+            }
+        }
+    }, [inIframe, globalScale]);
 
     if (!inIframe) return <>{children}</>;
 
