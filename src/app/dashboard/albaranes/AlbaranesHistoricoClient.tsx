@@ -1821,6 +1821,7 @@ export default function AlbaranesHistoricoClient({
                   open={!!lineForEvidenceModal}
                   lineId={lineForEvidenceModal}
                   refreshVersion={evidenceVersion}
+                  isManager={isManager}
                   onClose={() => {
                     evidenceContextLineIdRef.current = null
                     setLineForEvidenceModal(null)

@@ -10,6 +10,7 @@ interface DocumentEvidenceModalProps {
   open: boolean
   lineId: string | null
   onClose: () => void
+  isManager?: boolean
   onOpenProduct?: () => void
   onOpenEditor?: () => void
   onExcludeFromMapping?: () => void
@@ -19,7 +20,8 @@ interface DocumentEvidenceModalProps {
 }
 
 export function DocumentEvidenceModal({ 
-  open, lineId, onClose, 
+  open, lineId, onClose,
+  isManager = false,
   onOpenProduct, onOpenEditor, 
   onExcludeFromMapping, onMarkExpenseOnly, onRestoreStatus,
   refreshVersion 
@@ -135,7 +137,7 @@ export function DocumentEvidenceModal({
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
                   <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Línea Operativa Actual</h3>
                   <div className="flex flex-wrap items-center gap-2">
-                    {onOpenEditor && (
+                    {isManager && onOpenEditor && (
                       <button
                         type="button"
                         onClick={() => onOpenEditor()}
