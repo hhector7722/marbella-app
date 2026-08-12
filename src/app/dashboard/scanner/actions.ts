@@ -122,7 +122,7 @@ function parseInvoiceLinesFromTables(
       const name = (col.name || '').toLowerCase()
       if (/descripci|art[íi]culo|producto|concepto|nombre/i.test(name)) descColIndex = col.index
       else if (/cant|uds|unidades|emb|cajas|bultos/i.test(name)) qtyColIndex = col.index
-      else if (/precio|importe|tarifa/i.test(name)) priceColIndex = col.index
+      else if (/precio|tarifa/i.test(name)) priceColIndex = col.index
       else if (/unidad|um|unid/i.test(name)) unitColIndex = col.index
     }
 
