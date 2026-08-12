@@ -35,8 +35,10 @@ export function TimeFilterButton({
         )}
         aria-label="Filtrar"
       >
-        <span data-studio-target="icon" className="inline-flex shrink-0 items-center justify-center">
-          <Icon className="w-4 h-4 md:w-[18px] md:h-[18px]" />
+        <span data-studio-target="bg" className="inline-flex shrink-0 items-center justify-center">
+          <span data-studio-target="asset" className="inline-flex items-center justify-center">
+            <Icon className="w-4 h-4 md:w-[18px] md:h-[18px]" />
+          </span>
         </span>
         {showLabel && <span data-studio-target="text">Filtrar</span>}
       </button>

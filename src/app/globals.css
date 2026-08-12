@@ -134,22 +134,32 @@
     padding: 0 !important;
 }
 
-[data-studio-composition-host="true"][data-studio-composition="outside"] [data-studio-target="bg"] {
-    background-color: white;
-    padding: 0.5rem;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    border: 1px solid #f3f4f6;
-}
-
-/* Sin caja bg: la caja ICONO es la superficie (p. ej. Filtrar) */
-[data-studio-composition-host="true"][data-studio-composition="outside"]:not(:has([data-studio-target="bg"])) [data-studio-target="icon"] {
-    background-color: white;
-    padding: 0.5rem;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    border: 1px solid #f3f4f6;
+/* "Icono arriba · texto fuera" solo decide el layout.
+   La superficie (fondo, borde, sombra) pertenece a la CAJA DE ICONO. */
+[data-studio-composition-host="true"][data-studio-composition="outside"] [data-studio-target="bg"],
+[data-studio-composition-host="true"][data-studio-composition="outside"] [data-studio-target="icon"] {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
+    flex: 0 0 auto !important;
+}
+
+/* CAJA DE ICONO: presentación del contenedor. Nunca altera el asset. */
+[data-studio-icon-box="none"] {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+[data-studio-icon-box="box"],
+[data-studio-icon-box="square"] {
+    border-radius: var(--studio-icon-box-corner, 0px) !important;
+}
+
+[data-studio-icon-box="square"] {
+    aspect-ratio: 1 / 1 !important;
 }
 
 [data-studio-composition-host="true"][data-studio-composition="icon-only"] [data-studio-target="text"] {

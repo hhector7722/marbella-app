@@ -147,8 +147,17 @@ export type VisualOverride = {
     boxShadow?: 'none' | 'subtle' | 'medium' | 'strong';
     opacity?: number;
     
-    // Typography advanced
+    // Composición del botón
     composition?: 'inside' | 'outside' | 'icon-only' | 'text-only';
+
+    // Caja de icono: presentación del contenedor que envuelve al asset.
+    // 'none' = contenedor transparente sin borde ni sombra (el asset flota).
+    // 'square' = mantiene width igual a height.
+    iconBoxMode?: 'none' | 'box' | 'square';
+    /** Esquinas exclusivas de la caja de icono. No es el antiguo control general de radio. */
+    iconBoxCorner?: string;
+
+    // Typography advanced
     fontSize?: string;
 
     fontWeight?: string;

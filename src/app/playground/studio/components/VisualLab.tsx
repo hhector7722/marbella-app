@@ -5,7 +5,14 @@ import { useSandboxStore } from '../store';
 import type { StudioFontOption } from '../font-catalog';
 import type { Estetica, SandboxRoute, SelectedVisualElement, StudioFontFamily, VisualOverride, VisualOverrides, VisualTargetKind, ViewportPreset } from '../types';
 
-const TARGET_SELECTOR = 'button, input, textarea, select, table, thead, tbody, tr, th, td, nav, header, [role="dialog"], [role="tab"], [class*="rounded"], svg, span, p, h1, h2, h3, h4, h5, h6, img, a, li, ul, ol, [data-studio-target="icon"], [data-studio-target="text"], [data-studio-target="bg"]';
+const TARGET_SELECTOR = 'button, input, textarea, select, table, thead, tbody, tr, th, td, nav, header, [role="dialog"], [role="tab"], [class*="rounded"], svg, span, p, h1, h2, h3, h4, h5, h6, img, a, li, ul, ol, [data-studio-target="icon"], [data-studio-target="text"], [data-studio-target="bg"], [data-studio-target="asset"]';
+
+const BOX_SHADOWS: Record<NonNullable<VisualOverride['boxShadow']>, string> = {
+    none: 'none',
+    subtle: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+    medium: '0 4px 14px rgba(24, 24, 27, 0.12)',
+    strong: '0 18px 35px rgba(24, 24, 27, 0.2)',
+};
 
 function cleanLabel(value: string): string {
     return value.replace(/\s+/g, ' ').trim().slice(0, 48);
@@ -30,9 +37,10 @@ function scopeLabel(kind: VisualTargetKind, scope: 'instance' | 'component' | 'g
 }
 
 function classify(element: HTMLElement): { kind: VisualTargetKind; scope: string; label: string } {
-    if (element.getAttribute('data-studio-target') === 'icon') return { kind: 'element', scope: 'icon-box:default', label: 'ICONO' };
-    if (element.getAttribute('data-studio-target') === 'text') return { kind: 'text', scope: 'text:default', label: 'TEXTO' };
-    if (element.getAttribute('data-studio-target') === 'bg') return { kind: 'element', scope: 'bg-box:default', label: 'FONDO' };
+    const studioTarget = element.getAttribute('data-studio-target');
+    if (studioTarget === 'asset') return { kind: 'element', scope: 'icon-asset:default', label: 'ASSET' };
+    if (studioTarget === 'text') return { kind: 'text', scope: 'text:default', label: 'TEXTO' };
+    if (studioTarget === 'bg' || studioTarget === 'icon') return { kind: 'element', scope: 'icon-box:default', label: 'CAJA ICONO' };
 
     const tag = element.tagName.toLowerCase();
     const classes = String(element.className ?? '');
@@ -178,6 +186,28 @@ function applyOverrideAttributes(element: HTMLElement, override: VisualOverride)
 
     if (override.gap) element.style.setProperty('gap', override.gap, 'important');
     else element.style.removeProperty('gap');
+
+    // Caja de icono: el modo decide si el contenedor pinta superficie o desaparece.
+    if (override.iconBoxMode) element.dataset.studioIconBox = override.iconBoxMode;
+    else delete element.dataset.studioIconBox;
+
+    if (override.iconBoxCorner) element.style.setProperty('--studio-icon-box-corner', override.iconBoxCorner);
+    else element.style.removeProperty('--studio-icon-box-corner');
+
+    const boxless = override.iconBoxMode === 'none';
+
+    if (override.borderWidth && !boxless) {
+        element.style.setProperty('border-style', override.borderStyle ?? 'solid', 'important');
+        element.style.setProperty('border-width', override.borderWidth, 'important');
+    } else {
+        element.style.removeProperty('border-style');
+        element.style.removeProperty('border-width');
+    }
+    if (override.borderColor && !boxless) element.style.setProperty('border-color', override.borderColor, 'important');
+    else element.style.removeProperty('border-color');
+
+    if (override.boxShadow && !boxless) element.style.setProperty('box-shadow', BOX_SHADOWS[override.boxShadow], 'important');
+    else element.style.removeProperty('box-shadow');
 }
 
 function realElements(root: HTMLElement): HTMLElement[] {
@@ -200,7 +230,7 @@ function realElements(root: HTMLElement): HTMLElement[] {
     });
 }
 
-/** Prioridad: icon → text → bg → primer ancestro con node-key (componente). */
+/** Prioridad: asset → text → caja → primer ancestro con node-key (componente). */
 function resolveStudioHit(path: EventTarget[]): HTMLElement | null {
     const nodes = path.filter((node): node is HTMLElement => (
         node instanceof HTMLElement
@@ -210,7 +240,7 @@ function resolveStudioHit(path: EventTarget[]): HTMLElement | null {
     if (nodes.length === 0) return null;
 
     const byTarget = (name: string) => nodes.find(node => node.getAttribute('data-studio-target') === name);
-    return byTarget('icon') ?? byTarget('text') ?? byTarget('bg') ?? nodes[0] ?? null;
+    return byTarget('asset') ?? byTarget('text') ?? byTarget('bg') ?? byTarget('icon') ?? nodes[0] ?? null;
 }
 
 function hostButtonInfo(element: HTMLElement): Pick<SelectedVisualElement, 'hostKey' | 'hostComponentScope' | 'hostLabel'> {
@@ -522,7 +552,7 @@ export function VisualLabPanel({
     const selected = useSandboxStore(s => s.selectedElement);
     const setSelectedElement = useSandboxStore(s => s.setSelectedElement);
     const [scope, setScope] = React.useState<'instance' | 'component' | 'global'>('instance');
-    const [openSection, setOpenSection] = React.useState<string>('composicion');
+    const [openSection, setOpenSection] = React.useState<string | null>(null);
 
     const overrideKey = selected
         ? scope === 'instance'
@@ -550,6 +580,10 @@ export function VisualLabPanel({
     const compositionCurrent = { ...compositionResponsive.all, ...compositionResponsive[viewport] };
     const showComposition = Boolean(compositionKey);
 
+    const isIconBox = Boolean(selected?.componentScope?.startsWith('icon-box'));
+    const iconBoxMode = current.iconBoxMode ?? 'box';
+    const activeSection = openSection ?? (isIconBox ? 'caja-icono' : 'composicion');
+
     const update = (patch: VisualOverride) => {
         onOverrideChange(overrideKey, scope === 'global' ? 'all' : viewport, patch);
     };
@@ -569,8 +603,15 @@ export function VisualLabPanel({
         onOverrideChange(overrideKey, scope === 'global' ? 'all' : viewport, null as any);
     };
 
+    // En modo cuadrada las dos dimensiones son la misma medida.
+    const updateIconBoxSize = (dimension: 'width' | 'height', value: string) => {
+        if (iconBoxMode === 'square') update({ width: value, height: value });
+        else if (dimension === 'width') update({ width: value });
+        else update({ height: value });
+    };
+
     const renderSection = (id: string, title: string, children: React.ReactNode) => {
-        const isOpen = openSection === id;
+        const isOpen = activeSection === id;
         return (
             <div className="border-t border-zinc-800">
                 <button
@@ -650,6 +691,98 @@ export function VisualLabPanel({
                                 <button type="button" onClick={() => updateComposition({ composition: 'outside' })} className={`rounded p-2 text-xs font-bold ${compositionCurrent.composition === 'outside' ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}>Icono arriba · texto fuera</button>
                                 <button type="button" onClick={() => updateComposition({ composition: 'icon-only' })} className={`rounded p-2 text-xs font-bold ${compositionCurrent.composition === 'icon-only' ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}>Solo icono</button>
                                 <button type="button" onClick={() => updateComposition({ composition: 'text-only' })} className={`rounded p-2 text-xs font-bold ${compositionCurrent.composition === 'text-only' ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}>Solo texto</button>
+                            </div>
+                        ))}
+
+                        {isIconBox && renderSection("caja-icono", "Caja de icono", (
+                            <div className="grid gap-3">
+                                <div className="grid grid-cols-3 gap-1">
+                                    {([
+                                        ['none', 'Sin fondo'],
+                                        ['box', 'Caja'],
+                                        ['square', 'Cuadrada'],
+                                    ] as const).map(([mode, modeLabel]) => (
+                                        <button
+                                            key={mode}
+                                            type="button"
+                                            onClick={() => update(mode === 'square' && current.width ? { iconBoxMode: mode, height: current.width } : { iconBoxMode: mode })}
+                                            style={{ minHeight: 44 }}
+                                            className={`rounded-lg text-[9px] font-black uppercase tracking-widest ${iconBoxMode === mode ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}
+                                        >
+                                            {modeLabel}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {iconBoxMode === 'none' ? (
+                                    <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500">
+                                        Contenedor transparente: sin fondo, sin borde y sin sombra. El asset se muestra tal cual es.
+                                    </p>
+                                ) : (
+                                    <>
+                                        <label className="block rounded-lg bg-zinc-900 p-2">
+                                            <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">
+                                                Fondo de la caja
+                                                {(current.backgroundColor || current.tone) && <button type="button" onClick={() => reset(['backgroundColor', 'fillColor', 'tone'])} className="text-zinc-600 hover:text-white">✕</button>}
+                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <input type="color" value={current.backgroundColor ?? '#ffffff'} onChange={e => update({ tone: 'custom', backgroundColor: e.target.value })} className="h-6 w-6 rounded border-0 bg-transparent p-0" />
+                                                <span className="text-[10px] font-mono text-zinc-300">{current.tone === 'transparent' ? 'Transparente' : current.backgroundColor ?? 'Auto'}</span>
+                                            </div>
+                                            <button type="button" onClick={() => update({ tone: 'transparent' })} className="mt-2 w-full rounded bg-zinc-800 py-1 text-[8px] font-black uppercase text-zinc-400 hover:bg-zinc-700 hover:text-white">Transparente</button>
+                                        </label>
+
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <label className="block rounded-lg bg-zinc-900 p-2">
+                                                <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">
+                                                    Color borde
+                                                    {current.borderColor && <button type="button" onClick={() => reset(['borderColor'])} className="text-zinc-600 hover:text-white">✕</button>}
+                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    <input type="color" value={current.borderColor ?? '#e5e7eb'} onChange={e => update({ borderColor: e.target.value })} className="h-6 w-6 rounded border-0 bg-transparent p-0" />
+                                                    <span className="text-[10px] font-mono text-zinc-300">{current.borderColor ?? 'Auto'}</span>
+                                                </div>
+                                            </label>
+                                            <StepperControl label="Grosor borde" value={current.borderWidth} onChange={v => update({ borderWidth: String(v) })} onReset={() => reset(['borderWidth', 'borderColor'])} min={0} max={24} />
+                                        </div>
+
+                                        <StepperControl label="Esquinas de la caja" value={current.iconBoxCorner} onChange={v => update({ iconBoxCorner: String(v) })} onReset={() => reset(['iconBoxCorner'])} min={0} max={96} />
+
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <StepperControl label={iconBoxMode === 'square' ? 'Lado' : 'Ancho'} value={current.width} onChange={v => updateIconBoxSize('width', String(v))} onReset={() => reset(['width', 'height'])} min={0} max={320} />
+                                            <StepperControl label={iconBoxMode === 'square' ? 'Lado' : 'Alto'} value={iconBoxMode === 'square' ? current.width : current.height} onChange={v => updateIconBoxSize('height', String(v))} onReset={() => reset(['height'])} min={0} max={320} />
+                                        </div>
+
+                                        <StepperControl label="Padding interior" value={current.customPadding} onChange={v => update({ customPadding: String(v) })} onReset={() => reset(['customPadding'])} min={0} max={64} />
+
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <StepperControl label="Eje X" value={current.x} onChange={v => update({ x: String(v) })} onReset={() => reset(['x'])} />
+                                            <StepperControl label="Eje Y" value={current.y} onChange={v => update({ y: String(v) })} onReset={() => reset(['y'])} />
+                                        </div>
+
+                                        <div>
+                                            <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Sombra</span>
+                                            <div className="grid grid-cols-4 gap-1">
+                                                {([
+                                                    ['none', 'Sin'],
+                                                    ['subtle', 'Suave'],
+                                                    ['medium', 'Media'],
+                                                    ['strong', 'Fuerte'],
+                                                ] as const).map(([shadow, shadowLabel]) => (
+                                                    <button
+                                                        key={shadow}
+                                                        type="button"
+                                                        onClick={() => update({ boxShadow: shadow })}
+                                                        style={{ minHeight: 44 }}
+                                                        className={`rounded-lg text-[9px] font-black uppercase tracking-widest ${current.boxShadow === shadow ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}
+                                                    >
+                                                        {shadowLabel}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         ))}
 

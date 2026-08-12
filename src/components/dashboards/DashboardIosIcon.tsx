@@ -55,7 +55,7 @@ export default function DashboardIosIcon({
                 </span>
             ) : null}
             <div data-studio-target="bg" className={cn('flex-1 flex items-center justify-center w-full min-h-0 min-w-0 md:flex-none md:h-11 md:w-11', contentClassName)}>
-                <div data-studio-target="icon" className="w-full h-full flex items-center justify-center">
+                <div data-studio-target="asset" className="w-full h-full flex items-center justify-center">
                     {children ?? (
                         <div className="w-12 h-12 md:w-11 md:h-11 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden shrink-0">
                             {img ? (
