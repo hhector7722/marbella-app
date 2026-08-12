@@ -77,14 +77,10 @@
   outline-offset: 3px;
 }
 
-[data-marbella-sandbox='true'] [data-studio-shape='recto'],
-[data-marbella-sandbox='true'] [data-studio-radius='none'] { border-radius: 0 !important; }
-[data-marbella-sandbox='true'] [data-studio-shape='suave'],
-[data-marbella-sandbox='true'] [data-studio-radius='small'] { border-radius: 0.5rem !important; }
-[data-marbella-sandbox='true'] [data-studio-shape='redondo'],
-[data-marbella-sandbox='true'] [data-studio-radius='medium'] { border-radius: 1rem !important; }
-[data-marbella-sandbox='true'] [data-studio-shape='pill'],
-[data-marbella-sandbox='true'] [data-studio-radius='large'] { border-radius: 9999px !important; }
+[data-marbella-sandbox='true'] [data-studio-shape='recto'] { border-radius: 0 !important; }
+[data-marbella-sandbox='true'] [data-studio-shape='suave'] { border-radius: 0.5rem !important; }
+[data-marbella-sandbox='true'] [data-studio-shape='redondo'] { border-radius: 1rem !important; }
+[data-marbella-sandbox='true'] [data-studio-shape='pill'] { border-radius: 9999px !important; }
 [data-marbella-sandbox='true'] [data-studio-weight='normal'] { font-weight: 400 !important; }
 [data-marbella-sandbox='true'] [data-studio-weight='medium'] { font-weight: 600 !important; }
 [data-marbella-sandbox='true'] [data-studio-weight='bold'] { font-weight: 800 !important; }
@@ -98,14 +94,10 @@
 /* Los modales reales pueden vivir en un portal fuera del wrapper principal. */
 :is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-hover='true'] { outline: 2px dashed rgba(54, 96, 111, 0.75) !important; outline-offset: 2px; }
 :is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-selected='true'] { outline: 3px solid #36606f !important; outline-offset: 3px; }
-:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-shape='recto'],
-:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-radius='none'] { border-radius: 0 !important; }
-:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-shape='suave'],
-:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-radius='small'] { border-radius: 0.5rem !important; }
-:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-shape='redondo'],
-:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-radius='medium'] { border-radius: 1rem !important; }
-:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-shape='pill'],
-:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-radius='large'] { border-radius: 9999px !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-shape='recto'] { border-radius: 0 !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-shape='suave'] { border-radius: 0.5rem !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-shape='redondo'] { border-radius: 1rem !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-shape='pill'] { border-radius: 9999px !important; }
 :is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-weight='normal'] { font-weight: 400 !important; }
 :is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-weight='medium'] { font-weight: 600 !important; }
 :is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-weight='bold'] { font-weight: 800 !important; }
@@ -118,23 +110,46 @@
 :is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-padding='compact'] { padding: 0.5rem !important; }
 :is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-padding='standard'] { padding: 1rem !important; }
 :is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-padding='spacious'] { padding: 1.75rem !important; }
-:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-has-font-family="true"],
-:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-has-font-family="true"] * { font-family: var(--studio-font-family) !important; }
-:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-has-font-size="true"],
-:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-has-font-size="true"] * { font-size: var(--studio-font-size) !important; }
-:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-has-font-weight="true"],
-:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-has-font-weight="true"] * { font-weight: var(--studio-font-weight) !important; }
-:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-has-text-color="true"],
-:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-has-text-color="true"] * { color: var(--studio-text-color) !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-has-font-family="true"] { font-family: var(--studio-font-family) !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-has-font-family="true"] *:not([data-studio-has-font-family="true"]) { font-family: var(--studio-font-family) !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-has-font-size="true"] { font-size: var(--studio-font-size) !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-has-font-size="true"] *:not([data-studio-has-font-size="true"]) { font-size: var(--studio-font-size) !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-has-font-weight="true"] { font-weight: var(--studio-font-weight) !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-has-font-weight="true"] *:not([data-studio-has-font-weight="true"]) { font-weight: var(--studio-font-weight) !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-has-text-color="true"] { color: var(--studio-text-color) !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-has-text-color="true"] *:not([data-studio-has-text-color="true"]) { color: var(--studio-text-color) !important; }
 
 [data-dl-font] * { font-family: var(--dl-font-family) !important; }
+
+/* Composición: host transparente + caja de icono / fondo */
 [data-studio-composition-host="true"][data-studio-composition="outside"] {
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
     background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
     border-color: transparent !important;
     box-shadow: none !important;
+    padding: 0 !important;
+}
+
+[data-studio-composition-host="true"][data-studio-composition="outside"] [data-studio-target="bg"] {
+    background-color: white;
+    padding: 0.5rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    border: 1px solid #f3f4f6;
+}
+
+/* Sin caja bg: la caja ICONO es la superficie (p. ej. Filtrar) */
+[data-studio-composition-host="true"][data-studio-composition="outside"]:not(:has([data-studio-target="bg"])) [data-studio-target="icon"] {
+    background-color: white;
+    padding: 0.5rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    border: 1px solid #f3f4f6;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
 [data-studio-composition-host="true"][data-studio-composition="icon-only"] [data-studio-target="text"] {
@@ -608,20 +623,4 @@ html[data-modal-open="true"] .marbella-fixed-bottombar {
 
 .n8n-chat-send-button {
   background-color: #3F5E7A !important;
-}
-
-/* --- ESTUDIO: COMPOSICIÓN TIPO IOS --- */
-[data-studio-composition-host="true"][data-studio-composition="outside"] {
-  background-color: transparent !important;
-  border-color: transparent !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-}
-
-[data-studio-composition-host="true"][data-studio-composition="outside"] [data-studio-target="bg"] {
-  background-color: white;
-  border-radius: 1rem;
-  padding: 0.5rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  border: 1px solid #f3f4f6;
 }

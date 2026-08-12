@@ -189,19 +189,53 @@ function realElements(root: HTMLElement): HTMLElement[] {
     return Array.from(new Set(elements)).filter(element => {
         if (element.closest('[data-studio-chrome="true"]')) return false;
 
-        const tag = element.tagName.toLowerCase();
-
-        // Descartar SVGs si están dentro de un target="icon" o target="bg" explícito
-        if (tag === 'svg' && (element.closest('[data-studio-target="icon"]') || element.closest('[data-studio-target="bg"]'))) {
-            return false;
-        }
-        // Descartar spans si están dentro de un target="text" explícito (salvo que sea el target="text" mismo)
-        if (tag === 'span' && element.closest('[data-studio-target="text"]') && element.getAttribute('data-studio-target') !== 'text') {
-            return false;
+        // Dentro de un target explícito solo indexamos el propio target (no svg/img/divs internos).
+        const ownTarget = element.getAttribute('data-studio-target');
+        if (!ownTarget) {
+            const parentTarget = element.closest<HTMLElement>('[data-studio-target]');
+            if (parentTarget && parentTarget !== element) return false;
         }
 
         return true;
     });
+}
+
+/** Prioridad: icon → text → bg → primer ancestro con node-key (componente). */
+function resolveStudioHit(path: EventTarget[]): HTMLElement | null {
+    const nodes = path.filter((node): node is HTMLElement => (
+        node instanceof HTMLElement
+        && !node.closest('[data-studio-chrome="true"]')
+        && node.hasAttribute('data-studio-node-key')
+    ));
+    if (nodes.length === 0) return null;
+
+    const byTarget = (name: string) => nodes.find(node => node.getAttribute('data-studio-target') === name);
+    return byTarget('icon') ?? byTarget('text') ?? byTarget('bg') ?? nodes[0] ?? null;
+}
+
+function hostButtonInfo(element: HTMLElement): Pick<SelectedVisualElement, 'hostKey' | 'hostComponentScope' | 'hostLabel'> {
+    const host = element.closest<HTMLElement>('button, [role="button"]');
+    if (!host || host === element || !host.dataset.studioNodeKey) return {};
+    const hostDescriptor = classify(host);
+    if (hostDescriptor.kind !== 'button') return {};
+    return {
+        hostKey: host.dataset.studioNodeKey,
+        hostComponentScope: host.dataset.studioComponent ?? hostDescriptor.scope,
+        hostLabel: hostDescriptor.label,
+    };
+}
+
+function buildSelection(element: HTMLElement, route: SandboxRoute): SelectedVisualElement {
+    const descriptor = classify(element);
+    return {
+        key: element.dataset.studioNodeKey ?? '',
+        route,
+        kind: descriptor.kind,
+        label: descriptor.label,
+        componentScope: descriptor.scope,
+        tagName: element.tagName.toLowerCase(),
+        ...hostButtonInfo(element),
+    };
 }
 
 export function VisualLabSurface({
@@ -328,14 +362,7 @@ export function VisualLabSurface({
 
         const handleMouseDown = (event: MouseEvent) => {
             if (!labMode) return;
-            const path = event.composedPath() as HTMLElement[];
-            let element: HTMLElement | null = null;
-            for (const node of path) {
-                if (node instanceof HTMLElement && node.hasAttribute('data-studio-node-key') && !node.closest('[data-studio-chrome="true"]')) {
-                    element = node;
-                    break;
-                }
-            }
+            const element = resolveStudioHit(event.composedPath());
             if (!element) return;
 
             // Calculate current translation
@@ -385,28 +412,11 @@ export function VisualLabSurface({
                 return;
             }
 
-            const path = event.composedPath() as HTMLElement[];
-            let element: HTMLElement | null = null;
-
-            for (const node of path) {
-                if (node instanceof HTMLElement && node.hasAttribute('data-studio-node-key') && !node.closest('[data-studio-chrome="true"]')) {
-                    element = node;
-                    break;
-                }
-            }
-
+            const element = resolveStudioHit(event.composedPath());
             if (!element) return;
             event.preventDefault();
             event.stopPropagation();
-            const descriptor = classify(element);
-            const selection: SelectedVisualElement = {
-                key: element.dataset.studioNodeKey ?? '',
-                route,
-                kind: descriptor.kind,
-                label: descriptor.label,
-                componentScope: descriptor.scope,
-                tagName: element.tagName.toLowerCase(),
-            };
+            const selection = buildSelection(element, route);
             setSelectedElement(selection);
             document.querySelectorAll<HTMLElement>('[data-studio-selected="true"]').forEach(node => delete node.dataset.studioSelected);
             element.dataset.studioSelected = 'true';
@@ -437,18 +447,14 @@ export function VisualLabSurface({
                 }
 
                 // Keep element selected
-                const descriptor = classify(info.element);
-                const selection: SelectedVisualElement = {
-                    key: info.element.dataset.studioNodeKey ?? '',
-                    route,
-                    kind: descriptor.kind,
-                    label: descriptor.label,
-                    componentScope: descriptor.scope,
-                    tagName: info.element.tagName.toLowerCase(),
-                };
+                const selection = buildSelection(info.element, route);
                 setSelectedElement(selection);
                 document.querySelectorAll<HTMLElement>('[data-studio-selected="true"]').forEach(node => delete node.dataset.studioSelected);
                 info.element.dataset.studioSelected = 'true';
+
+                if (window !== window.parent) {
+                    window.parent.postMessage({ type: 'MARBELLA_STUDIO_CLICK', payload: selection }, '*');
+                }
             }
         };
 
@@ -514,8 +520,9 @@ export function VisualLabPanel({
     const labMode = useSandboxStore(s => s.labMode);
     const setLabMode = useSandboxStore(s => s.setLabMode);
     const selected = useSandboxStore(s => s.selectedElement);
+    const setSelectedElement = useSandboxStore(s => s.setSelectedElement);
     const [scope, setScope] = React.useState<'instance' | 'component' | 'global'>('instance');
-    const [openSection, setOpenSection] = React.useState<string>('apariencia');
+    const [openSection, setOpenSection] = React.useState<string>('composicion');
 
     const overrideKey = selected
         ? scope === 'instance'
@@ -525,11 +532,31 @@ export function VisualLabPanel({
                 : 'global'
         : 'global';
 
+    const compositionKey = selected
+        ? selected.kind === 'button'
+            ? overrideKey
+            : selected.hostKey
+                ? (scope === 'instance'
+                    ? selected.hostKey
+                    : scope === 'component'
+                        ? `component:${selected.hostComponentScope ?? 'button:secondary'}`
+                        : 'global')
+                : null
+        : null;
+
     const currentResponsive = overrides[overrideKey] ?? {};
     const current = { ...currentResponsive.all, ...currentResponsive[viewport] };
+    const compositionResponsive = compositionKey ? (overrides[compositionKey] ?? {}) : {};
+    const compositionCurrent = { ...compositionResponsive.all, ...compositionResponsive[viewport] };
+    const showComposition = Boolean(compositionKey);
 
     const update = (patch: VisualOverride) => {
         onOverrideChange(overrideKey, scope === 'global' ? 'all' : viewport, patch);
+    };
+
+    const updateComposition = (patch: VisualOverride) => {
+        if (!compositionKey) return;
+        onOverrideChange(compositionKey, scope === 'global' ? 'all' : viewport, patch);
     };
 
     const reset = (keys: (keyof VisualOverride)[]) => {
@@ -589,6 +616,23 @@ export function VisualLabPanel({
                         </button>
                     </div>
                 )}
+                {selected?.hostKey && selected.kind !== 'button' && (
+                    <button
+                        type="button"
+                        onClick={() => setSelectedElement({
+                            key: selected.hostKey!,
+                            route: selected.route,
+                            kind: 'button',
+                            label: selected.hostLabel ?? 'BOTÓN',
+                            componentScope: selected.hostComponentScope ?? 'button:secondary',
+                            tagName: 'button',
+                        })}
+                        style={{ minHeight: 44 }}
+                        className="mt-2 w-full rounded-lg bg-zinc-900 px-3 text-left text-[9px] font-black uppercase tracking-widest text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                    >
+                        ↑ Componente · {selected.hostLabel ?? 'BOTÓN'}
+                    </button>
+                )}
             </div>
 
             <div className="flex-1 overflow-y-auto">
@@ -600,12 +644,12 @@ export function VisualLabPanel({
 
                 {selected && (
                     <>
-                        {selected.tagName === 'button' && renderSection("composicion", "Composición", (
+                        {showComposition && renderSection("composicion", "Composición", (
                             <div className="grid grid-cols-2 gap-2">
-                                <button type="button" onClick={() => update({ composition: 'inside' })} className={`rounded p-2 text-xs font-bold ${(!current.composition || current.composition === 'inside') ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}>Dentro</button>
-                                <button type="button" onClick={() => update({ composition: 'outside' })} className={`rounded p-2 text-xs font-bold ${current.composition === 'outside' ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}>Icono arriba · texto fuera</button>
-                                <button type="button" onClick={() => update({ composition: 'icon-only' })} className={`rounded p-2 text-xs font-bold ${current.composition === 'icon-only' ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}>Solo icono</button>
-                                <button type="button" onClick={() => update({ composition: 'text-only' })} className={`rounded p-2 text-xs font-bold ${current.composition === 'text-only' ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}>Solo texto</button>
+                                <button type="button" onClick={() => updateComposition({ composition: 'inside' })} className={`rounded p-2 text-xs font-bold ${(!compositionCurrent.composition || compositionCurrent.composition === 'inside') ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}>Dentro</button>
+                                <button type="button" onClick={() => updateComposition({ composition: 'outside' })} className={`rounded p-2 text-xs font-bold ${compositionCurrent.composition === 'outside' ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}>Icono arriba · texto fuera</button>
+                                <button type="button" onClick={() => updateComposition({ composition: 'icon-only' })} className={`rounded p-2 text-xs font-bold ${compositionCurrent.composition === 'icon-only' ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}>Solo icono</button>
+                                <button type="button" onClick={() => updateComposition({ composition: 'text-only' })} className={`rounded p-2 text-xs font-bold ${compositionCurrent.composition === 'text-only' ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}>Solo texto</button>
                             </div>
                         ))}
 

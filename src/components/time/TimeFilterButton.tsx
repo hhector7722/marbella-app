@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, X, Filter, LucideIcon } from "lucide-react";
+import { Calendar, X, LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function TimeFilterButton({
@@ -35,8 +35,10 @@ export function TimeFilterButton({
         )}
         aria-label="Filtrar"
       >
-        <Icon className="w-4 h-4 md:w-[18px] md:h-[18px]" />
-        {showLabel && <span>Filtrar</span>}
+        <span data-studio-target="icon" className="inline-flex shrink-0 items-center justify-center">
+          <Icon className="w-4 h-4 md:w-[18px] md:h-[18px]" />
+        </span>
+        {showLabel && <span data-studio-target="text">Filtrar</span>}
       </button>
 
       {hasActiveFilter && onClear && (

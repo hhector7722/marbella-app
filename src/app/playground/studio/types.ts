@@ -172,6 +172,10 @@ export interface SelectedVisualElement {
     label: string;
     componentScope: string;
     tagName: string;
+    /** Botón/host padre cuando la selección es icono/texto/fondo granular. */
+    hostKey?: string;
+    hostComponentScope?: string;
+    hostLabel?: string;
 }
 
 // ============================================================

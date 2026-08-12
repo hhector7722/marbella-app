@@ -9,6 +9,7 @@ export function RealAppView({ recipeOverride, overrides = {}, fontFamily, global
     const setRoute = useSandboxStore(s => s.setRoute);
     const estetica = useActiveEstetica();
     const setSelectedElement = useSandboxStore(s => s.setSelectedElement);
+    const selectedElement = useSandboxStore(s => s.selectedElement);
     const labMode = useSandboxStore(s => s.labMode);
     const viewport = useSandboxStore(s => s.viewport);
     const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -29,7 +30,8 @@ export function RealAppView({ recipeOverride, overrides = {}, fontFamily, global
                             globalScale,
                             background,
                             labMode,
-                            viewport
+                            viewport,
+                            selectedElement,
                         }
                     }, '*');
                 }
@@ -43,7 +45,7 @@ export function RealAppView({ recipeOverride, overrides = {}, fontFamily, global
         };
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
-    }, [route, setRoute, recipeOverride, estetica.recipe, overrides, fontFamily, globalScale, background, setSelectedElement, onDragEnd]);
+    }, [route, setRoute, recipeOverride, estetica.recipe, overrides, fontFamily, globalScale, background, setSelectedElement, onDragEnd, labMode, viewport, selectedElement]);
 
     useEffect(() => {
         if (iframeRef.current?.contentWindow) {
@@ -56,11 +58,12 @@ export function RealAppView({ recipeOverride, overrides = {}, fontFamily, global
                     globalScale,
                     background,
                     labMode,
-                    viewport
+                    viewport,
+                    selectedElement,
                 }
             }, '*');
         }
-    }, [recipeOverride, estetica.recipe, overrides, fontFamily, globalScale, background, labMode, viewport]);
+    }, [recipeOverride, estetica.recipe, overrides, fontFamily, globalScale, background, labMode, viewport, selectedElement]);
 
     return (
         <iframe 

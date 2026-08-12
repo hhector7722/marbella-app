@@ -36,6 +36,7 @@ export function StudioPreviewClient({ children }: { children: React.ReactNode })
                     setGlobalScale(event.data.payload.globalScale);
                     setViewport(event.data.payload.viewport || 'desktop');
                     useSandboxStore.getState().setLabMode(event.data.payload.labMode || false);
+                    useSandboxStore.getState().setSelectedElement(event.data.payload.selectedElement ?? null);
                 }
             };
             window.addEventListener('message', handleMessage);
