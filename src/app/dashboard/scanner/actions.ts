@@ -180,6 +180,28 @@ function parseInvoiceLinesFromTables(
   return { linesToInsert, provenancesToInsert }
 }
 
+function parseOcrDate(raw: string | undefined | null): string | null {
+  if (typeof raw !== 'string') return null
+  const str = raw.trim()
+  if (!str) return null
+
+  // YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    return str
+  }
+
+  // DD/MM/YYYY or DD-MM-YYYY
+  const esMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/)
+  if (esMatch) {
+    const day = esMatch[1].padStart(2, '0')
+    const month = esMatch[2].padStart(2, '0')
+    const year = esMatch[3]
+    return `${year}-${month}-${day}`
+  }
+
+  return str
+}
+
 function todayYmdLocal(): string {
   const d = new Date()
   const y = d.getFullYear()
@@ -343,8 +365,7 @@ async function runOcrForInvoice(invoiceId: string) {
     const aiData = gemini.data
     const supplierId = Number((inv as { supplier_id?: number }).supplier_id)
     const contentSha256 = String((inv as { content_sha256?: string }).content_sha256 ?? '').trim()
-    const invoiceDateStr =
-      typeof aiData?.fecha === 'string' && aiData.fecha.trim() ? aiData.fecha.trim() : todayYmdLocal()
+    const invoiceDateStr = parseOcrDate(aiData?.fecha)
     const invoiceNumRaw = String(aiData?.numero_factura ?? '').trim()
     const invoiceNum = invoiceNumRaw || 'DESCONOCIDO'
 
