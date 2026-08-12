@@ -1,31 +1,36 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { createPortal } from 'react-dom'
 import { AlertCircle, FileText, Loader2, X, ChevronRight, Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getInvoiceLineEvidenceAction, type DocumentEvidencePayload } from '@/app/dashboard/albaranes/actions'
+import { Modal } from '@/components/ui/modal'
 
 interface DocumentEvidenceModalProps {
   open: boolean
   lineId: string | null
   onClose: () => void
-  portalTarget: HTMLElement | null
   onOpenProduct?: () => void
   onOpenEditor?: () => void
+  onExcludeFromMapping?: () => void
+  onMarkExpenseOnly?: () => void
+  onRestoreStatus?: () => void
   refreshVersion?: number
 }
 
-export function DocumentEvidenceModal({ open, lineId, onClose, portalTarget, onOpenProduct, onOpenEditor, refreshVersion }: DocumentEvidenceModalProps) {
+export function DocumentEvidenceModal({ 
+  open, lineId, onClose, 
+  onOpenProduct, onOpenEditor, 
+  onExcludeFromMapping, onMarkExpenseOnly, onRestoreStatus,
+  refreshVersion 
+}: DocumentEvidenceModalProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<DocumentEvidencePayload | null>(null)
 
   useEffect(() => {
     if (!open || !lineId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setData(null)
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setError(null)
       return
     }
@@ -72,16 +77,21 @@ export function DocumentEvidenceModal({ open, lineId, onClose, portalTarget, onO
     return data.provenanceChain.find((p) => !supersededIds.has(p.id)) || data.provenanceChain[0]
   }, [data])
 
-  if (!open || !portalTarget) return null
+  if (!open) return null
 
-  return createPortal(
-    <div
-      className="fixed inset-0 z-[10100] bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center animate-in fade-in duration-150"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose()
-      }}
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      hideHeader={true}
+      wrapperClassName="max-w-5xl"
+      panelHostClassName="p-0"
+      className="max-h-[90vh]"
+      /** Por encima del detalle de albarán (z-[10050]); no apilar otras superficies encima. */
+      zIndexClass="z-[10100]"
+      title="Auditoría de Evidencia Documental"
     >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="flex flex-col h-full w-full">
         {/* HEADER */}
         <div className="bg-[#36606F] px-5 py-4 flex items-center justify-between gap-3 text-white shrink-0">
           <div className="min-w-0 flex items-center gap-3">
@@ -138,12 +148,51 @@ export function DocumentEvidenceModal({ open, lineId, onClose, portalTarget, onO
                       <button
                         type="button"
                         onClick={() => {
-                          onClose()
                           onOpenProduct()
                         }}
                         className="text-[10px] font-black uppercase tracking-wider text-sky-600 bg-sky-50 hover:bg-sky-100 px-3 py-1.5 rounded-lg transition active:scale-[0.98]"
                       >
                         Ver producto
+                      </button>
+                    )}
+                    {data.line && data.line.status !== 'excluded' && data.line.status !== 'expense_only' && (
+                      <>
+                        {onExcludeFromMapping && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onExcludeFromMapping()
+                              onClose()
+                            }}
+                            className="text-[10px] font-black uppercase tracking-wider text-zinc-600 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-lg transition active:scale-[0.98]"
+                          >
+                            Portes/Ajuste
+                          </button>
+                        )}
+                        {onMarkExpenseOnly && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onMarkExpenseOnly()
+                              onClose()
+                            }}
+                            className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg transition active:scale-[0.98]"
+                          >
+                            Gasto (Sin stock)
+                          </button>
+                        )}
+                      </>
+                    )}
+                    {data.line && (data.line.status === 'excluded' || data.line.status === 'expense_only') && onRestoreStatus && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onRestoreStatus()
+                          onClose()
+                        }}
+                        className="text-[10px] font-black uppercase tracking-wider text-zinc-600 bg-white border border-zinc-200 hover:bg-zinc-50 px-3 py-1.5 rounded-lg transition active:scale-[0.98]"
+                      >
+                        Restaurar estado (volver a mapear)
                       </button>
                     )}
                   </div>
@@ -313,7 +362,6 @@ export function DocumentEvidenceModal({ open, lineId, onClose, portalTarget, onO
           ) : null}
         </div>
       </div>
-    </div>,
-    portalTarget
+    </Modal>
   )
 }

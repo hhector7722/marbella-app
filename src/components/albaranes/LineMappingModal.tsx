@@ -1,9 +1,9 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { createPortal } from 'react-dom'
-import { Check, Loader2, Search, X } from 'lucide-react'
+import { Check, Loader2, Search, X, Plus, Settings } from 'lucide-react'
 import { toast } from 'sonner'
+import { Modal } from '@/components/ui/modal'
 import {
   ALBARAN_LINE_CONTENT_UNITS,
   billingMassVolumeNormForAuto,
@@ -69,19 +69,38 @@ export type LineMappingModalProps = {
   line: PurchaseInvoiceLine | null
   invoiceId: string | null
   supplierId: number | null
-  portalTarget?: HTMLElement | null
+  stockApplied?: boolean
+  needsRepair?: boolean
+  busy?: boolean
   onClose: () => void
   onSuccess: () => void | Promise<void>
+  onOpenWizardNew?: () => void
+  onOpenWizardPrice?: () => void
+  onRepairStock?: () => void
+  onRectifyStock?: () => void
+  onEditMapping?: () => void
+  onRemoveMapping?: () => void
 }
+
+/** Por encima del detalle de albarán (z-[10050]); una sola superficie derivada a la vez. */
+const ALBARAN_DERIVED_MODAL_Z = 'z-[10100]'
 
 export function LineMappingModal({
   open,
   line,
   invoiceId,
   supplierId,
-  portalTarget,
+  stockApplied = false,
+  needsRepair = false,
+  busy = false,
   onClose,
   onSuccess,
+  onOpenWizardNew,
+  onOpenWizardPrice,
+  onRepairStock,
+  onRectifyStock,
+  onEditMapping,
+  onRemoveMapping,
 }: LineMappingModalProps) {
   useModalUsageTracking({ open, usageId: 'albaran-line-mapping', usageLabel: 'Mapear línea albarán' })
   const trackLineMapping = useTrackModalApply('albaran-line-mapping', 'Mapear línea albarán')
@@ -476,38 +495,35 @@ export function LineMappingModal({
     }
   }
 
-  if (!open || !line || !mounted) return null
-
-  const target = portalTarget ?? (typeof document !== 'undefined' ? document.body : null)
-  if (!target) return null
+  if (!mounted || !open || !line) return null
 
   const headerTitle = `${line.original_name || 'Sin nombre'} — ${formatLineTotal(line.total_price)}`
 
-  return createPortal(
-    <div
-      className="fixed inset-0 z-[10070] flex flex-col justify-end sm:justify-center bg-black/70 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-150"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="line-mapping-title"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !saving) onClose()
-      }}
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      hideHeader={true}
+      wrapperClassName="sm:max-w-4xl"
+      panelHostClassName="p-0"
+      className="max-h-[95vh] sm:max-h-[90vh] bg-zinc-50"
+      zIndexClass={ALBARAN_DERIVED_MODAL_Z}
+      usageId="albaran-line-mapping"
+      usageLabel="Mapear línea albarán"
+      title="Producto / vínculo"
     >
-      <div
-        className="flex flex-col w-full sm:max-w-lg sm:mx-auto max-h-[92vh] sm:max-h-[88vh] bg-zinc-50 sm:rounded-2xl shadow-2xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="flex flex-col h-full w-full">
         <div className="bg-[#36606F] px-4 py-3 flex items-start justify-between gap-3 text-white shrink-0">
           <div className="min-w-0 flex-1">
             <p id="line-mapping-title" className="text-xs font-black uppercase tracking-wider text-white/80">
-              Vincular producto
+              Producto
             </p>
             <p className="text-sm font-black truncate mt-0.5">{headerTitle}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            disabled={saving}
+            disabled={saving || busy}
             className="min-h-12 min-w-12 shrink-0 inline-flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 active:scale-[0.99] transition"
             aria-label="Cerrar"
           >
@@ -531,14 +547,29 @@ export function LineMappingModal({
                   Busca el artículo del catálogo que coincide con esta línea del albarán.
                 </p>
 
-                <div className="relative min-h-12">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
-                  <input
-                    value={searchQuery}
-                    onChange={(e) => void runSearch(e.target.value)}
-                    placeholder="Buscar ingrediente en catálogo…"
-                    className="w-full min-h-12 rounded-xl border border-zinc-200 bg-white pl-11 pr-3 text-sm font-semibold text-zinc-900 outline-none focus:border-[#36606F]/50"
-                  />
+                <div className="flex gap-2">
+                  <div className="relative min-h-12 flex-1">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
+                    <input
+                      value={searchQuery}
+                      onChange={(e) => void runSearch(e.target.value)}
+                      placeholder="Buscar ingrediente en catálogo…"
+                      className="w-full min-h-12 rounded-xl border border-zinc-200 bg-white pl-11 pr-3 text-sm font-semibold text-zinc-900 outline-none focus:border-[#36606F]/50"
+                    />
+                  </div>
+                  {onOpenWizardNew && !ingredientId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose()
+                        onOpenWizardNew()
+                      }}
+                      className="shrink-0 min-h-12 px-4 inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white text-xs font-black uppercase tracking-wide text-zinc-700 hover:bg-zinc-50 active:scale-[0.99] transition"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Nuevo
+                    </button>
+                  )}
                 </div>
 
                 {ingredientId ? (
@@ -552,18 +583,33 @@ export function LineMappingModal({
                         €/{ingredientPurchaseUnit}
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      className="shrink-0 min-h-12 px-2 text-[10px] font-bold uppercase text-emerald-900 underline"
-                      onClick={() => {
-                        setIngredientId(null)
-                        setIngredientLabel(null)
-                        setSelectedIngredientMeta(null)
-                        setShowAdvancedCalibration(false)
-                      }}
-                    >
-                      Cambiar
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {onOpenWizardPrice && (
+                        <button
+                          type="button"
+                          className="shrink-0 min-h-12 px-2 text-[10px] font-bold uppercase text-[#36606F] underline flex items-center gap-1"
+                          onClick={() => {
+                            onClose()
+                            onOpenWizardPrice()
+                          }}
+                        >
+                          <Settings className="h-3.5 w-3.5" />
+                          Precio
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="shrink-0 min-h-12 px-2 text-[10px] font-bold uppercase text-emerald-900 underline"
+                        onClick={() => {
+                          setIngredientId(null)
+                          setIngredientLabel(null)
+                          setSelectedIngredientMeta(null)
+                          setShowAdvancedCalibration(false)
+                        }}
+                      >
+                        Cambiar
+                      </button>
+                    </div>
                   </div>
                 ) : null}
 
@@ -767,6 +813,68 @@ export function LineMappingModal({
                   Asigna un proveedor al albarán antes de vincular líneas.
                 </p>
               ) : null}
+
+              {line.ingredient_id ? (
+                <section className="rounded-xl border border-zinc-100 bg-white shadow-sm p-4 flex flex-col gap-2">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">
+                    Acciones de vínculo / stock
+                  </p>
+                  {needsRepair && onRepairStock ? (
+                    <button
+                      type="button"
+                      onClick={() => void onRepairStock()}
+                      disabled={busy || saving}
+                      className={cn(
+                        'w-full min-h-12 rounded-xl bg-amber-500 text-white text-xs font-black uppercase tracking-wide',
+                        (busy || saving) && 'opacity-60 pointer-events-none'
+                      )}
+                    >
+                      Aplicar stock pendiente
+                    </button>
+                  ) : null}
+                  <div className="flex flex-wrap gap-2">
+                    {stockApplied && onRectifyStock ? (
+                      <button
+                        type="button"
+                        onClick={() => void onRectifyStock()}
+                        disabled={busy || saving}
+                        className={cn(
+                          'min-h-12 flex-1 min-w-[8rem] rounded-xl border border-amber-200 bg-amber-50 text-[10px] font-bold uppercase text-amber-800',
+                          (busy || saving) && 'opacity-60 pointer-events-none'
+                        )}
+                      >
+                        Rectificar stock
+                      </button>
+                    ) : null}
+                    {onEditMapping ? (
+                      <button
+                        type="button"
+                        onClick={() => void onEditMapping()}
+                        disabled={busy || saving}
+                        className={cn(
+                          'min-h-12 flex-1 min-w-[8rem] rounded-xl border border-zinc-200 bg-white text-[10px] font-bold uppercase text-zinc-700',
+                          (busy || saving) && 'opacity-60 pointer-events-none'
+                        )}
+                      >
+                        Editar match
+                      </button>
+                    ) : null}
+                    {onRemoveMapping ? (
+                      <button
+                        type="button"
+                        onClick={() => void onRemoveMapping()}
+                        disabled={busy || saving}
+                        className={cn(
+                          'min-h-12 flex-1 min-w-[8rem] rounded-xl border border-rose-200 bg-rose-50 text-[10px] font-bold uppercase text-rose-700',
+                          (busy || saving) && 'opacity-60 pointer-events-none'
+                        )}
+                      >
+                        Eliminar match
+                      </button>
+                    ) : null}
+                  </div>
+                </section>
+              ) : null}
             </>
           )}
         </div>
@@ -775,7 +883,7 @@ export function LineMappingModal({
           <button
             type="button"
             onClick={onClose}
-            disabled={saving}
+            disabled={saving || busy}
             className="min-h-12 flex-1 rounded-xl border border-zinc-200 bg-white text-sm font-black uppercase tracking-wide text-zinc-700 hover:bg-zinc-50 active:scale-[0.99] transition"
           >
             Cancelar
@@ -783,10 +891,10 @@ export function LineMappingModal({
           <button
             type="button"
             onClick={() => void handleSave()}
-            disabled={!canSave || saving || loading}
+            disabled={!canSave || saving || loading || busy}
             className={cn(
               'min-h-12 flex-1 rounded-xl bg-[#36606F] text-sm font-black uppercase tracking-wide text-white shadow-sm hover:bg-[#2d4f5c] active:scale-[0.99] transition',
-              (!canSave || saving || loading) && 'opacity-50 pointer-events-none'
+              (!canSave || saving || loading || busy) && 'opacity-50 pointer-events-none'
             )}
           >
             {saving ? (
@@ -802,7 +910,6 @@ export function LineMappingModal({
           </button>
         </div>
       </div>
-    </div>,
-    target
+    </Modal>
   )
 }

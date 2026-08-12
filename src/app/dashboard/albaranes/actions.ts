@@ -2414,6 +2414,7 @@ export type DocumentEvidencePayload = {
     unit_price: number | null
     total_price: number | null
     original_name: string | null
+    status: string | null
   }
   provenanceChain: Array<{
     id: string
@@ -2449,9 +2450,9 @@ export async function getInvoiceLineEvidenceAction(lineId: string): Promise<{ su
   try {
     const { data: line, error: lineErr } = await gate.supabase
       .from('purchase_invoice_lines')
-      .select('id, quantity, unit_price, total_price, original_name')
+      .select('id, quantity, unit_price, total_price, original_name, status')
       .eq('id', lineId)
-      .maybeSingle()
+      .single()
     
     if (lineErr) throw new Error(`Error loading line: ${lineErr.message}`)
     if (!line) return { success: false, message: 'Línea no encontrada' }

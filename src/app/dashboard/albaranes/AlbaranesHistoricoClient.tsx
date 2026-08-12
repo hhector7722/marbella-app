@@ -13,7 +13,6 @@ import {
   Filter,
   Loader2,
   MinusCircle,
-  Pencil,
   RefreshCw,
   RotateCcw,
   Search,
@@ -21,7 +20,6 @@ import {
   Trash2,
   Truck,
   X,
-  XCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { assessScannerImageReadability } from '@/lib/scanner-image-quality'
@@ -41,6 +39,7 @@ import {
   isInvoiceLineResolved,
 } from '@/lib/albaranes-line-status'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
+import { Modal } from '@/components/ui/modal'
 import { IngredientWizard, type IngredientWizardInvoiceContext } from '@/components/ingredients/IngredientWizard'
 import type {
   PurchaseInvoiceDetail,
@@ -777,6 +776,8 @@ export default function AlbaranesHistoricoClient({
   }
 
   function openLineMappingModal(line: PurchaseInvoiceLine) {
+    setLineForEditModal(null)
+    setLineForEvidenceModal(null)
     setLineForMappingModal(line)
   }
 
@@ -799,6 +800,9 @@ export default function AlbaranesHistoricoClient({
     setWizardIngredientId(opts.ingredientId)
     setWizardInitialName(opts.initialName)
     setWizardTargetLineId(line.id)
+    setLineForEvidenceModal(null)
+    setLineForEditModal(null)
+    setLineForMappingModal(null)
     setWizardOpen(true)
   }
 
@@ -849,6 +853,7 @@ export default function AlbaranesHistoricoClient({
       return
     }
     setDetail(dRes.detail)
+    setEvidenceVersion((v) => v + 1)
     setLineForEditModal((prev) => {
       if (!prev) return null
       return dRes.detail.lines.find((l) => l.id === prev.id) ?? null
@@ -1618,7 +1623,6 @@ export default function AlbaranesHistoricoClient({
                               <div className="w-[100px] text-right text-[10px] font-black uppercase tracking-widest text-zinc-400">Cantidad</div>
                               <div className="w-[110px] text-right text-[10px] font-black uppercase tracking-widest text-zinc-400">Precio Ud.</div>
                               <div className="w-[110px] text-right text-[10px] font-black uppercase tracking-widest text-zinc-400">Importe</div>
-                              <div className="w-[32px] shrink-0" />
                             </div>
                           </div>
                           
@@ -1636,7 +1640,11 @@ export default function AlbaranesHistoricoClient({
                             return (
                               <div 
                                 key={l.id} 
-                                onClick={() => setLineForEvidenceModal(l.id)}
+                                onClick={() => {
+                                  setLineForEditModal(null)
+                                  setLineForMappingModal(null)
+                                  setLineForEvidenceModal(l.id)
+                                }}
                                 className="group flex flex-col md:flex-row md:items-center gap-2 md:gap-4 px-2 md:px-4 py-3 hover:bg-zinc-50 rounded-xl transition-colors cursor-pointer"
                               >
                                 {/* Nombre + Estado + Original OCR en la misma línea */}
@@ -1652,7 +1660,26 @@ export default function AlbaranesHistoricoClient({
                                       <span className="inline-flex text-zinc-400" aria-label="Portes o ajuste" title="Portes / ajuste / sin cargo"><MinusCircle className="h-4 w-4" strokeWidth={2.5} /></span>
                                     ) : null}
                                     {needsRepair ? (
-                                      <span className="inline-flex text-amber-500" aria-label="Sin stock aplicado" title="Sin stock aplicado"><AlertCircle className="h-4 w-4" strokeWidth={2.5} /></span>
+                                      <button
+                                        type="button"
+                                        aria-label="Sin stock aplicado — reparar"
+                                        title="Sin stock aplicado — pulsa para aplicar"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          void repairStockForLine(l.id)
+                                        }}
+                                        disabled={repairingStockLineId !== null || lineActionBusy}
+                                        className={cn(
+                                          'inline-flex min-h-12 min-w-12 items-center justify-center rounded-xl text-amber-500 hover:bg-amber-50 active:scale-[0.99] transition',
+                                          (repairingStockLineId !== null || lineActionBusy) && 'opacity-60 pointer-events-none'
+                                        )}
+                                      >
+                                        {repairingStockLineId === l.id ? (
+                                          <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} />
+                                        ) : (
+                                          <AlertCircle className="h-4 w-4" strokeWidth={2.5} />
+                                        )}
+                                      </button>
                                     ) : null}
                                     {stockApplied ? (
                                       <span className="inline-flex text-emerald-600" aria-label="Stock aplicado" title="Stock aplicado"><Check className="h-4 w-4" strokeWidth={3} /></span>
@@ -1668,7 +1695,7 @@ export default function AlbaranesHistoricoClient({
                                   ) : null}
                                 </div>
 
-                                {/* Valores Económicos y Acciones flotantes */}
+                                {/* Valores económicos */}
                                 <div className="flex items-center justify-between md:justify-end shrink-0 gap-4 mt-2 md:mt-0 pl-2 md:pl-0 border-l-2 border-zinc-100 md:border-none">
                                   <div className="w-[100px] text-right">
                                     <span className="text-sm font-bold text-zinc-900">
@@ -1686,11 +1713,6 @@ export default function AlbaranesHistoricoClient({
                                       {l.total_price != null ? `${Number(l.total_price).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : '—'}
                                     </span>
                                   </div>
-
-                                  {/* Acciones flotantes integradas (sin card) */}
-                                  <div className="w-[32px] flex justify-end shrink-0">
-                                    {/* El botón Editar ha sido eliminado, y la fila completa abre Evidencia */}
-                                  </div>
                                 </div>
                               </div>
                             )
@@ -1705,14 +1727,7 @@ export default function AlbaranesHistoricoClient({
                   open={!!lineForEditModal}
                   line={lineForEditModal}
                   draft={lineForEditModal ? draftLines[lineForEditModal.id] ?? null : null}
-                  invoiceId={detail?.id ?? null}
-                  supplierId={detail?.supplier_id ?? null}
-                  portalTarget={modalContainer}
-                  isManager={isManager}
-                  stockApplied={lineForEditModal ? Boolean(stockStatusByLineId[lineForEditModal.id]?.stockApplied) : false}
-                  needsRepair={lineForEditModal ? lineNeedsStockRepair(lineForEditModal) : false}
                   saving={lineForEditModal ? savingLineId === lineForEditModal.id : false}
-                  busy={lineActionBusy || repairingStockLineId !== null}
                   isDirty={lineForEditModal ? isLineDirty(lineForEditModal) : false}
                   onClose={() => setLineForEditModal(null)}
                   onDraftChange={(patch) => {
@@ -1723,44 +1738,6 @@ export default function AlbaranesHistoricoClient({
                     if (!lineForEditModal) return
                     await saveLine(lineForEditModal.id)
                   }}
-                  onOpenMapping={() => {
-                    if (lineForEditModal) openLineMappingModal(lineForEditModal)
-                  }}
-                  onOpenWizardNew={() => {
-                    if (!lineForEditModal) return
-                    openWizardForLine(lineForEditModal, { ingredientId: null, initialName: lineForEditModal.original_name || '' })
-                  }}
-                  onOpenWizardPrice={() => {
-                    if (!lineForEditModal) return
-                    openWizardForLine(lineForEditModal, {
-                      ingredientId: lineForEditModal.ingredient_id ? String(lineForEditModal.ingredient_id) : null,
-                      initialName: null,
-                    })
-                  }}
-                  onRectifyStock={() => {
-                    if (lineForEditModal) void rectifyLine(lineForEditModal.id)
-                  }}
-                  onEditMapping={() => {
-                    if (lineForEditModal) void editMapping(lineForEditModal.id)
-                  }}
-                  onRemoveMapping={() => {
-                    if (lineForEditModal) void removeMapping(lineForEditModal.id)
-                  }}
-                  onRepairStock={() => {
-                    if (lineForEditModal) void repairStockForLine(lineForEditModal.id)
-                  }}
-                  onExcludeFromMapping={() => {
-                    if (lineForEditModal) void excludeLineFromMapping(lineForEditModal.id)
-                  }}
-                  onRestoreFromExcluded={() => {
-                    if (lineForEditModal) void restoreExcludedLine(lineForEditModal.id)
-                  }}
-                  onMarkExpenseOnly={() => {
-                    if (lineForEditModal) void markLineExpenseOnly(lineForEditModal.id)
-                  }}
-                  onRestoreFromExpenseOnly={() => {
-                    if (lineForEditModal) void restoreExpenseOnlyLine(lineForEditModal.id)
-                  }}
                 />
 
                 <LineMappingModal
@@ -1768,9 +1745,38 @@ export default function AlbaranesHistoricoClient({
                   line={lineForMappingModal}
                   invoiceId={detail?.id ?? null}
                   supplierId={detail?.supplier_id ?? null}
-                  portalTarget={modalContainer}
+                  stockApplied={
+                    lineForMappingModal
+                      ? Boolean(stockStatusByLineId[lineForMappingModal.id]?.stockApplied)
+                      : false
+                  }
+                  needsRepair={lineForMappingModal ? lineNeedsStockRepair(lineForMappingModal) : false}
+                  busy={lineActionBusy || repairingStockLineId !== null}
                   onClose={() => setLineForMappingModal(null)}
                   onSuccess={() => refreshDetailAndStock()}
+                  onOpenWizardNew={() => {
+                    if (!lineForMappingModal) return
+                    openWizardForLine(lineForMappingModal, { ingredientId: null, initialName: lineForMappingModal.original_name || '' })
+                  }}
+                  onOpenWizardPrice={() => {
+                    if (!lineForMappingModal) return
+                    openWizardForLine(lineForMappingModal, {
+                      ingredientId: lineForMappingModal.ingredient_id ? String(lineForMappingModal.ingredient_id) : null,
+                      initialName: null,
+                    })
+                  }}
+                  onRepairStock={() => {
+                    if (lineForMappingModal) void repairStockForLine(lineForMappingModal.id)
+                  }}
+                  onRectifyStock={() => {
+                    if (lineForMappingModal) void rectifyLine(lineForMappingModal.id)
+                  }}
+                  onEditMapping={() => {
+                    if (lineForMappingModal) void editMapping(lineForMappingModal.id)
+                  }}
+                  onRemoveMapping={() => {
+                    if (lineForMappingModal) void removeMapping(lineForMappingModal.id)
+                  }}
                 />
 
                 <DocumentEvidenceModal
@@ -1778,26 +1784,48 @@ export default function AlbaranesHistoricoClient({
                   lineId={lineForEvidenceModal}
                   refreshVersion={evidenceVersion}
                   onClose={() => setLineForEvidenceModal(null)}
-                  portalTarget={modalContainer}
                   onOpenProduct={() => {
                     const l = detail?.lines.find((line) => line.id === lineForEvidenceModal)
-                    if (l) openLineMappingModal(l)
+                    if (!l) return
+                    setLineForEvidenceModal(null)
+                    setLineForEditModal(null)
+                    openLineMappingModal(l)
                   }}
                   onOpenEditor={() => {
                     const l = detail?.lines.find((line) => line.id === lineForEvidenceModal)
-                    if (l) setLineForEditModal(l)
+                    if (!l) return
+                    setLineForEvidenceModal(null)
+                    setLineForMappingModal(null)
+                    setLineForEditModal(l)
+                  }}
+                  onExcludeFromMapping={() => {
+                    if (lineForEvidenceModal) void excludeLineFromMapping(lineForEvidenceModal)
+                  }}
+                  onMarkExpenseOnly={() => {
+                    if (lineForEvidenceModal) void markLineExpenseOnly(lineForEvidenceModal)
+                  }}
+                  onRestoreStatus={() => {
+                    if (!lineForEvidenceModal) return
+                    const l = detail?.lines.find((line) => line.id === lineForEvidenceModal)
+                    if (l) {
+                      if (l.status === 'expense_only') void restoreExpenseOnlyLine(l.id)
+                      else void restoreExcludedLine(l.id)
+                    }
                   }}
                 />
 
-                {supplierPickerOpen ? (
-                  <div
-                    className="fixed inset-0 z-[10060] bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center animate-in fade-in duration-150"
-                    onClick={(e) => {
-                      if (e.target === e.currentTarget && !supplierSaving) setSupplierPickerOpen(false)
-                    }}
-                  >
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
-                      <div className="bg-[#36606F] px-5 py-4 flex items-center justify-between gap-3 text-white shrink-0">
+                <Modal
+                  open={supplierPickerOpen}
+                  onClose={() => { if (!supplierSaving) setSupplierPickerOpen(false) }}
+                  hideHeader={true}
+                  wrapperClassName="max-w-lg"
+                  className="max-h-[80vh]"
+                  panelHostClassName="p-0"
+                  zIndexClass="z-[10100]"
+                  title="Seleccionar proveedor"
+                >
+                  <div className="flex flex-col h-full w-full">
+                    <div className="bg-[#36606F] px-5 py-4 flex items-center justify-between gap-3 text-white shrink-0">
                         <div className="min-w-0">
                           <p className="text-sm font-black uppercase tracking-wider truncate">Asignar proveedor</p>
                           <p className="text-[11px] font-bold text-white/70 truncate mt-1">Busca y selecciona el proveedor correcto</p>
@@ -1869,21 +1897,20 @@ export default function AlbaranesHistoricoClient({
                           )}
                         </div>
                       </div>
-                    </div>
                   </div>
-                ) : null}
+                </Modal>
 
-                {wizardOpen ? (
-                  <div
-                    className="fixed inset-0 z-[10070] bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center animate-in fade-in duration-150"
-                    onClick={(e) => {
-                      if (e.target === e.currentTarget) setWizardOpen(false)
-                    }}
-                  >
-                    <div
-                      className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[86vh] overflow-auto p-3"
-                      onClick={(e) => e.stopPropagation()}
-                    >
+                <Modal
+                  open={wizardOpen}
+                  onClose={() => setWizardOpen(false)}
+                  hideHeader={true}
+                  wrapperClassName="max-w-lg"
+                  className="max-h-[86vh] p-3"
+                  panelHostClassName="p-0"
+                  zIndexClass="z-[10100]"
+                  title="Wizard de ingrediente"
+                >
+                  <div className="h-full w-full">
                       <IngredientWizard
                         key={wizardIngredientId ?? 'create'}
                         ingredientId={wizardIngredientId}
@@ -1914,9 +1941,8 @@ export default function AlbaranesHistoricoClient({
                           setWizardInvoiceContext(null)
                         }}
                       />
-                    </div>
                   </div>
-                ) : null}
+                </Modal>
               </div>
             </div>,
             modalContainer
@@ -2059,7 +2085,7 @@ export default function AlbaranesHistoricoClient({
 
       {filterOpen ? (
         <div
-          className="fixed inset-0 z-[10040] bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center animate-in fade-in duration-150"
+          className="fixed inset-0 z-[10010] bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center animate-in fade-in duration-150"
           onClick={(e) => {
             if (e.target === e.currentTarget) setFilterOpen(false)
           }}
