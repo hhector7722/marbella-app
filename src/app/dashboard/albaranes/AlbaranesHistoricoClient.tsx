@@ -32,6 +32,7 @@ import { useTrackModalApply } from '@/hooks/useTrackModalApply'
 import { albaranesFilterSummary, namedEntitySummary } from '@/lib/usage/modal-apply'
 import { LineEditModal } from '@/components/albaranes/LineEditModal'
 import { LineMappingModal } from '@/components/albaranes/LineMappingModal'
+import { DocumentEvidenceModal } from '@/components/albaranes/DocumentEvidenceModal'
 import { PinchZoomViewport } from '@/components/ui/PinchZoomViewport'
 import { getSupplierLogo } from '@/lib/supplier-logos'
 import {
@@ -139,6 +140,8 @@ export default function AlbaranesHistoricoClient({
   const [lineForEditModal, setLineForEditModal] = useState<PurchaseInvoiceLine | null>(null)
   /** Línea abierta en el modal de mapeo/calibración dimensional. */
   const [lineForMappingModal, setLineForMappingModal] = useState<PurchaseInvoiceLine | null>(null)
+  /** Línea abierta en el modal de evidencia (solo lectura). */
+  const [lineForEvidenceModal, setLineForEvidenceModal] = useState<string | null>(null)
   const [lineActionBusy, setLineActionBusy] = useState(false)
   const [wizardOpen, setWizardOpen] = useState(false)
   const [wizardIngredientId, setWizardIngredientId] = useState<string | null>(null)
@@ -616,6 +619,7 @@ export default function AlbaranesHistoricoClient({
     setStockStatusByLineId({})
     setLineForEditModal(null)
     setLineForMappingModal(null)
+    setLineForEvidenceModal(null)
     setLineActionBusy(false)
     setWizardOpen(false)
     setWizardIngredientId(null)
@@ -1672,6 +1676,15 @@ export default function AlbaranesHistoricoClient({
                                       </span>
                                     ) : null}
                                   </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => setLineForEvidenceModal(l.id)}
+                                    className="min-h-12 min-w-12 shrink-0 inline-flex items-center justify-center rounded-xl border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100 active:scale-[0.99] transition"
+                                    aria-label="Auditar Evidencia Documental"
+                                    title="Auditar Evidencia Documental"
+                                  >
+                                    <FileText className="h-4 w-4" strokeWidth={2.5} />
+                                  </button>
                                   {isManager ? (
                                     <button
                                       type="button"
@@ -1769,6 +1782,13 @@ export default function AlbaranesHistoricoClient({
                   portalTarget={modalContainer}
                   onClose={() => setLineForMappingModal(null)}
                   onSuccess={() => refreshDetailAndStock()}
+                />
+
+                <DocumentEvidenceModal
+                  open={!!lineForEvidenceModal}
+                  lineId={lineForEvidenceModal}
+                  onClose={() => setLineForEvidenceModal(null)}
+                  portalTarget={modalContainer}
                 />
 
                 {supplierPickerOpen ? (

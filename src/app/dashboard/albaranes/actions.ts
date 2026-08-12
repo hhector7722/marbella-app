@@ -2406,3 +2406,127 @@ export async function autoMapKnownLinesAction(params?: {
     },
   }
 }
+
+export type DocumentEvidencePayload = {
+  line: {
+    id: string
+    quantity: number | null
+    unit_price: number | null
+    total_price: number | null
+    original_name: string | null
+  }
+  provenanceChain: Array<{
+    id: string
+    invoice_line_id: string
+    document_row_id: string
+    supersedes_id: string | null
+    linked_by: string | null
+    created_at: string
+  }>
+  extraction: {
+    id: string
+    extractor_version: string
+    status: string
+    extracted_at: string
+    file_version_hash: string | null
+  } | null
+  tables: Array<{
+    id: string
+    table_index: number
+    columns: Array<{ id: string; col_index: number; original_name: string | null }>
+    rows: Array<{
+      id: string
+      row_index: number
+      cells: Array<{ column_id: string; raw_value: string | null }>
+    }>
+  }>
+}
+
+export async function getInvoiceLineEvidenceAction(lineId: string): Promise<{ success: true; data: DocumentEvidencePayload } | { success: false; message: string }> {
+  const gate = await gateAuthenticated()
+  if (!gate.ok) return { success: false, message: gate.message }
+
+  try {
+    const { data: line, error: lineErr } = await gate.supabase
+      .from('purchase_invoice_lines')
+      .select('id, quantity, unit_price, total_price, original_name')
+      .eq('id', lineId)
+      .maybeSingle()
+    
+    if (lineErr) throw new Error(`Error loading line: ${lineErr.message}`)
+    if (!line) return { success: false, message: 'Línea no encontrada' }
+
+    const { data: provRows, error: provErr } = await gate.supabase
+      .from('purchase_line_provenance')
+      .select('*')
+      .eq('invoice_line_id', lineId)
+      .order('created_at', { ascending: false })
+      
+    if (provErr) throw new Error(`Error loading provenance: ${provErr.message}`)
+
+    if (!provRows || provRows.length === 0) {
+      return { success: true, data: { line, provenanceChain: [], extraction: null, tables: [] } }
+    }
+
+    const supersededIds = new Set(provRows.map(p => p.supersedes_id).filter(Boolean))
+    const activeProvenance = provRows.find(p => !supersededIds.has(p.id)) || provRows[0]
+
+    const { data: docRow, error: rowErr } = await gate.supabase
+      .from('document_rows')
+      .select('id, table_id, document_tables!inner(extraction_id)')
+      .eq('id', activeProvenance.document_row_id)
+      .maybeSingle()
+      
+    if (rowErr) throw new Error(`Error loading document row: ${rowErr.message}`)
+    if (!docRow) return { success: false, message: 'Fila documental no encontrada (posible inconsistencia)' }
+
+    const extractionId = Array.isArray(docRow.document_tables) ? docRow.document_tables[0]?.extraction_id : (docRow.document_tables as any)?.extraction_id
+
+    const { data: extraction, error: extErr } = await gate.supabase
+      .from('document_extractions')
+      .select('id, extractor_version, status, extracted_at, file_version_hash')
+      .eq('id', extractionId)
+      .maybeSingle()
+      
+    if (extErr) throw new Error(`Error loading extraction: ${extErr.message}`)
+
+    const { data: tablesData, error: tablesErr } = await gate.supabase
+      .from('document_tables')
+      .select(`
+        id, table_index,
+        document_columns ( id, col_index, original_name ),
+        document_rows (
+          id, row_index,
+          document_cells ( column_id, raw_value )
+        )
+      `)
+      .eq('extraction_id', extractionId)
+      .order('table_index', { ascending: true })
+
+    if (tablesErr) throw new Error(`Error loading tables: ${tablesErr.message}`)
+
+    const tables = (tablesData || []).map((t: any) => ({
+      id: t.id,
+      table_index: t.table_index,
+      columns: (t.document_columns || []).sort((a: any, b: any) => a.col_index - b.col_index),
+      rows: (t.document_rows || []).sort((a: any, b: any) => a.row_index - b.row_index).map((r: any) => ({
+        id: r.id,
+        row_index: r.row_index,
+        cells: r.document_cells || []
+      }))
+    }))
+
+    return {
+      success: true,
+      data: {
+        line,
+        provenanceChain: provRows,
+        extraction: extraction || null,
+        tables
+      }
+    }
+  } catch (err: unknown) {
+    console.error('getInvoiceLineEvidenceAction error:', err)
+    return { success: false, message: err instanceof Error ? err.message : 'Unknown error' }
+  }
+}

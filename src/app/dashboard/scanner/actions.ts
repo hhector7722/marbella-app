@@ -39,13 +39,22 @@ function parseBase64DataUri(base64DataUri: string): { mimeType: string; rawBase6
   return { mimeType, rawBase64, buffer }
 }
 
-type GeminiAlbaranLine = {
-  nombre?: string
-  cantidad?: number
-  unidad_medida?: string | null
-  precio_unidad?: number
-  tipo_iva_linea?: number | null
-  total_linea?: number
+type GeminiDocumentColumn = {
+  index: number
+  name: string | null
+}
+type GeminiDocumentCell = {
+  column_index: number
+  raw_value: string | null
+}
+type GeminiDocumentRow = {
+  index: number
+  cells: GeminiDocumentCell[]
+}
+type GeminiDocumentTable = {
+  index: number
+  columns: GeminiDocumentColumn[]
+  rows: GeminiDocumentRow[]
 }
 
 type GeminiAlbaranData = {
@@ -55,7 +64,7 @@ type GeminiAlbaranData = {
   tipo_iva?: number | null
   total_iva?: number | null
   total?: number
-  lineas?: GeminiAlbaranLine[]
+  tables?: GeminiDocumentTable[]
 }
 
 function toFiniteNumber(value: unknown): number | null {
@@ -92,22 +101,83 @@ function invoiceTaxInsertFields(data: GeminiAlbaranData) {
   }
 }
 
-function mapScannerLineToInsert(line: GeminiAlbaranLine, invoiceId: string, headerTaxRate: number | null) {
-  const tipoIvaLinea = toFiniteNumber(line.tipo_iva_linea) ?? headerTaxRate
-  const precioUnidad = toFiniteNumber(line.precio_unidad) ?? 0
+import { randomUUID } from 'node:crypto'
 
-  return {
-    invoice_id: invoiceId,
-    original_name: line.nombre || 'Sin nombre',
-    quantity: line.cantidad || 0,
-    line_unit: line.unidad_medida || null,
-    unit_price: precioUnidad,
-    total_price: line.total_linea || 0,
-    status: 'pending' as const,
-    tax_rate: tipoIvaLinea,
-    base_price:
-      precioUnidad && tipoIvaLinea != null ? precioUnidad / (1 + tipoIvaLinea) : null,
+function parseInvoiceLinesFromTables(
+  tables: GeminiDocumentTable[],
+  rowMapping: Record<string, string>,
+  invoiceId: string,
+  headerTaxRate: number | null
+) {
+  const linesToInsert: Record<string, unknown>[] = []
+  const provenancesToInsert: Record<string, unknown>[] = []
+
+  for (const table of tables || []) {
+    let descColIndex = -1
+    let qtyColIndex = -1
+    let priceColIndex = -1
+    let unitColIndex = -1
+
+    for (const col of table.columns || []) {
+      const name = (col.name || '').toLowerCase()
+      if (/descripci|art[íi]culo|producto|concepto|nombre/i.test(name)) descColIndex = col.index
+      else if (/cant|uds|unidades|emb|cajas|bultos/i.test(name)) qtyColIndex = col.index
+      else if (/precio|importe|tarifa/i.test(name)) priceColIndex = col.index
+      else if (/unidad|um|unid/i.test(name)) unitColIndex = col.index
+    }
+
+    if (descColIndex === -1) continue
+
+    for (const row of table.rows || []) {
+      let desc = ''
+      let qty = 0
+      let price = 0
+      let unit = ''
+
+      for (const cell of row.cells || []) {
+        if (cell.column_index === descColIndex) desc = cell.raw_value || ''
+        if (cell.column_index === qtyColIndex) {
+          const val = parseFloat((cell.raw_value || '').replace(',', '.'))
+          if (!isNaN(val)) qty = val
+        }
+        if (cell.column_index === priceColIndex) {
+          const val = parseFloat((cell.raw_value || '').replace(',', '.'))
+          if (!isNaN(val)) price = val
+        }
+        if (cell.column_index === unitColIndex) {
+          unit = cell.raw_value || ''
+        }
+      }
+
+      if (!desc.trim()) continue
+
+      const lineId = randomUUID()
+      linesToInsert.push({
+        id: lineId,
+        invoice_id: invoiceId,
+        original_name: desc.trim(),
+        quantity: qty,
+        line_unit: unit || null,
+        unit_price: price,
+        total_price: qty * price,
+        status: 'pending' as const,
+        tax_rate: headerTaxRate,
+        base_price: price && headerTaxRate != null ? price / (1 + headerTaxRate) : null,
+      })
+
+      const rowMappingKey = `${table.index}_${row.index}`
+      const docRowId = rowMapping[rowMappingKey]
+      if (docRowId) {
+        provenancesToInsert.push({
+          invoice_line_id: lineId,
+          document_row_id: docRowId,
+          linked_by: 'auto-parser-gemini',
+        })
+      }
+    }
   }
+
+  return { linesToInsert, provenancesToInsert }
 }
 
 function todayYmdLocal(): string {
@@ -127,38 +197,48 @@ function revalidateScannerPaths() {
 async function extractAlbaranWithGemini(
   mimeType: string,
   rawBase64: string
-): Promise<{ ok: true; data: GeminiAlbaranData } | { ok: false; message: string }> {
+): Promise<{ ok: true; data: GeminiAlbaranData; rawJson: unknown } | { ok: false; message: string }> {
   const geminiKey = process.env.GEMINI_API_KEY
   if (!geminiKey) return { ok: false, message: 'GEMINI_API_KEY no configurada' }
 
   const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`
   const geminiPrompt = `
-Eres un auditor contable de hostelería. Analiza esta imagen de un albarán y extrae los datos.
-Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
+Eres un procesador de datos ciego de OCR de documentos.
+Tu única tarea es transcribir la estructura tabular de este documento (normalmente un albarán o factura) a un JSON estructurado.
+
+REGLAS ABSOLUTAS:
+1. DEBES TRANSCRIBIR, no interpretar.
+2. NO calcules conversiones. NO inventes columnas. NO normalices valores ni unidades.
+3. Si la columna no tiene título explícito, usa null. NO inventes "COLUMNA_1" o similares.
+4. Si la celda está vacía en el documento, usa null.
+5. El índice de las tablas, columnas y filas debe empezar en 0 y mantener el orden físico del documento.
+6. Devuelve ÚNICAMENTE un JSON válido que siga esta estructura:
 {
-    "numero_factura": "Identificador del albarán",
+    "numero_factura": "Identificador del albarán (si se ve claro)",
     "fecha": "YYYY-MM-DD",
     "base_imponible": 0.00,
     "tipo_iva": 0.10,
     "total_iva": 0.00,
     "total": 0.00,
-    "lineas": [
-        { 
-          "nombre": "Nombre original exacto", 
-          "cantidad": 0.000, 
-          "unidad_medida": "garrafa|caja|bolsa|l|kg|ud (extrae la unidad literal del papel, NO la inventes. Si no hay, pon null)",
-          "precio_unidad": 0.0000,
-          "tipo_iva_linea": 0.10,
-          "total_linea": 0.00 
-        }
+    "tables": [
+      {
+        "index": 0,
+        "columns": [
+          { "index": 0, "name": "DESCRIPCIÓN" },
+          { "index": 1, "name": "CANTIDAD" }
+        ],
+        "rows": [
+          {
+            "index": 0,
+            "cells": [
+              { "column_index": 0, "raw_value": "CASERAS 60G-28U" },
+              { "column_index": 1, "raw_value": "6" }
+            ]
+          }
+        ]
+      }
     ]
 }
-Instrucciones IVA:
-- tipo_iva: tipo impositivo de la factura como decimal (0.10 = 10%, 0.04 = 4%, 0.21 = 21%, 0.00 = exento). Si hay múltiples tipos, usar el predominante en la cabecera.
-- base_imponible: total sin IVA. Si no aparece explícitamente, calcular: total / (1 + tipo_iva).
-- total_iva: importe del IVA. Si no aparece, calcular: base_imponible * tipo_iva.
-- tipo_iva_linea: tipo IVA de esa línea específica (puede diferir si hay líneas a tipos distintos). Si no se puede determinar, usar el tipo_iva de la cabecera.
-- Si el albarán no desglosa IVA (solo muestra total), inferir tipo_iva = 0.10 (hostelería España) y calcular base_imponible y total_iva.
 `
 
   const geminiRes = await fetch(geminiUrl, {
@@ -185,8 +265,9 @@ Instrucciones IVA:
   if (!rawText || typeof rawText !== 'string') return { ok: false, message: 'Respuesta vacía de Gemini' }
 
   try {
-    const data = normalizeGeminiAlbaranData(JSON.parse(rawText))
-    return { ok: true, data }
+    const rawParsed = JSON.parse(rawText)
+    const data = normalizeGeminiAlbaranData(rawParsed)
+    return { ok: true, data, rawJson: rawParsed }
   } catch {
     return { ok: false, message: 'JSON inválido de Gemini' }
   }
@@ -326,21 +407,55 @@ async function runOcrForInvoice(invoiceId: string) {
       return
     }
 
+    const hasTables = Array.isArray(aiData.tables) && aiData.tables.length > 0
+    const { data: rpcData, error: rpcError } = await supabase.rpc('persist_document_evidence', {
+      p_invoice_id: invoiceId,
+      p_file_version_hash: contentSha256 || 'unknown',
+      p_extractor_version: 'gemini-2.5-flash-tabular-v1',
+      p_raw_json_artifact: gemini.rawJson,
+      p_status: hasTables ? 'success' : 'no_table',
+      p_tables: hasTables ? aiData.tables : null,
+    })
+
+    if (rpcError) {
+      console.error('runOcrForInvoice persist_document_evidence:', rpcError)
+      await markInvoiceOcrFailed(supabase, invoiceId, `Error guardando la evidencia documental: ${rpcError.message}`)
+      revalidateScannerPaths()
+      return
+    }
+
+    const { row_mapping } = (rpcData as { row_mapping?: Record<string, string> }) || {}
+
     // Evitar duplicar líneas si se reintenta OCR sobre factura ya leída
     const { count: existingLines } = await supabase
       .from('purchase_invoice_lines')
       .select('id', { count: 'exact', head: true })
       .eq('invoice_id', invoiceId)
 
-    if ((existingLines ?? 0) === 0 && Array.isArray(aiData.lineas) && aiData.lineas.length > 0) {
+    if ((existingLines ?? 0) === 0 && hasTables) {
       const headerTaxRate = toFiniteNumber(aiData.tipo_iva)
-      const linesToInsert = aiData.lineas.map((line) => mapScannerLineToInsert(line, invoiceId, headerTaxRate))
-      const { error: linesError } = await supabase.from('purchase_invoice_lines').insert(linesToInsert)
-      if (linesError) {
-        console.error('runOcrForInvoice lines:', linesError)
-        await markInvoiceOcrFailed(supabase, invoiceId, `Error guardando líneas: ${linesError.message}`)
-        revalidateScannerPaths()
-        return
+      const { linesToInsert, provenancesToInsert } = parseInvoiceLinesFromTables(
+        aiData.tables!,
+        row_mapping || {},
+        invoiceId,
+        headerTaxRate
+      )
+
+      if (linesToInsert.length > 0) {
+        const { error: linesError } = await supabase.from('purchase_invoice_lines').insert(linesToInsert)
+        if (linesError) {
+          console.error('runOcrForInvoice lines:', linesError)
+          await markInvoiceOcrFailed(supabase, invoiceId, `Error guardando líneas: ${linesError.message}`)
+          revalidateScannerPaths()
+          return
+        }
+
+        if (provenancesToInsert.length > 0) {
+          const { error: provError } = await supabase.from('purchase_line_provenance').insert(provenancesToInsert)
+          if (provError) {
+            console.error('runOcrForInvoice provenance:', provError)
+          }
+        }
       }
     }
 
@@ -366,7 +481,7 @@ async function runOcrForPendingAttachments(
 ) {
   const { data: rows, error } = await supabase
     .from('purchase_invoice_attachments')
-    .select('id, file_path, page_order, ocr_status')
+    .select('id, file_path, page_order, ocr_status, content_sha256')
     .eq('invoice_id', invoiceId)
     .eq('ocr_status', 'pending')
     .order('page_order', { ascending: true })
@@ -394,7 +509,7 @@ async function runOcrForAttachmentRow(
     .update({ ocr_status: 'processing', ocr_error: null })
     .eq('id', attId)
     .eq('ocr_status', 'pending')
-    .select('id, file_path')
+    .select('id, file_path, content_sha256')
     .maybeSingle()
 
   if (claimErr) {
@@ -443,17 +558,55 @@ async function runOcrForAttachmentRow(
   }
 
   const aiData = gemini.data
-  if (Array.isArray(aiData.lineas) && aiData.lineas.length > 0) {
+  const contentSha256 = String((claimed as { content_sha256?: string }).content_sha256 ?? (row as { content_sha256?: string }).content_sha256 ?? '').trim()
+  
+  const hasTables = Array.isArray(aiData.tables) && aiData.tables.length > 0
+  const { data: rpcData, error: rpcError } = await supabase.rpc('persist_document_evidence', {
+    p_invoice_id: invoiceId,
+    p_file_version_hash: contentSha256 || 'unknown',
+    p_extractor_version: 'gemini-2.5-flash-tabular-v1',
+    p_raw_json_artifact: gemini.rawJson,
+    p_status: hasTables ? 'success' : 'no_table',
+    p_tables: hasTables ? aiData.tables : null,
+  })
+
+  if (rpcError) {
+    console.error('runOcrForAttachmentRow persist_document_evidence:', rpcError)
+    await supabase
+      .from('purchase_invoice_attachments')
+      .update({ ocr_status: 'failed', ocr_error: rpcError.message })
+      .eq('id', attId)
+    return
+  }
+
+  const { row_mapping } = (rpcData as { row_mapping?: Record<string, string> }) || {}
+
+  if (hasTables) {
     const headerTaxRate = toFiniteNumber(aiData.tipo_iva)
-    const linesToInsert = aiData.lineas.map((line) => mapScannerLineToInsert(line, invoiceId, headerTaxRate))
-    const { error: linesError } = await supabase.from('purchase_invoice_lines').insert(linesToInsert)
-    if (linesError) {
-      console.error('runOcrForAttachmentRow lines:', linesError)
-      await supabase
-        .from('purchase_invoice_attachments')
-        .update({ ocr_status: 'failed', ocr_error: linesError.message })
-        .eq('id', attId)
-      return
+    const { linesToInsert, provenancesToInsert } = parseInvoiceLinesFromTables(
+      aiData.tables!,
+      row_mapping || {},
+      invoiceId,
+      headerTaxRate
+    )
+
+    if (linesToInsert.length > 0) {
+      const { error: linesError } = await supabase.from('purchase_invoice_lines').insert(linesToInsert)
+      if (linesError) {
+        console.error('runOcrForAttachmentRow lines:', linesError)
+        await supabase
+          .from('purchase_invoice_attachments')
+          .update({ ocr_status: 'failed', ocr_error: linesError.message })
+          .eq('id', attId)
+        return
+      }
+
+      if (provenancesToInsert.length > 0) {
+        const { error: provError } = await supabase.from('purchase_line_provenance').insert(provenancesToInsert)
+        if (provError) {
+          console.error('runOcrForAttachmentRow provenance:', provError)
+        }
+      }
     }
   }
 

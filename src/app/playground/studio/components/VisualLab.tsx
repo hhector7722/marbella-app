@@ -77,31 +77,11 @@ function overrideFor(element: HTMLElement, overrides: VisualOverrides, viewport:
 }
 
 function applyOverrideAttributes(element: HTMLElement, override: VisualOverride): void {
-    const attributes = ['shape', 'weight', 'elevation', 'tone', 'padding'] as const;
-    attributes.forEach(attribute => {
-        const value = override[attribute];
-        if (value) element.dataset[`studio${attribute[0].toUpperCase()}${attribute.slice(1)}`] = value;
-        else delete element.dataset[`studio${attribute[0].toUpperCase()}${attribute.slice(1)}`];
-    });
-    if (override.fontFamily) element.style.setProperty('--studio-font-family', `'${override.fontFamily}'`);
-    else element.style.removeProperty('--studio-font-family');
-    if (override.textColor) element.style.setProperty('--studio-text-color', override.textColor);
-    else element.style.removeProperty('--studio-text-color');
-    if (override.textColor) element.dataset.studioTextColor = 'true';
-    else delete element.dataset.studioTextColor;
-    if (override.fillColor) {
-        element.style.setProperty('--studio-fill-color', override.fillColor);
-        element.dataset.studioFillColor = 'true';
-    } else {
-        element.style.removeProperty('--studio-fill-color');
-        delete element.dataset.studioFillColor;
-    }
-    if (override.fillOpacity !== undefined) element.style.setProperty('--studio-fill-opacity', String(override.fillOpacity));
-    else element.style.removeProperty('--studio-fill-opacity');
-    if (override.outlineColor) element.style.setProperty('--studio-outline-color', override.outlineColor);
-    else element.style.removeProperty('--studio-outline-color');
-    if (override.outlineWidth) element.dataset.studioOutlineWidth = override.outlineWidth;
-    else delete element.dataset.studioOutlineWidth;
+    if (override.fontFamily) element.style.setProperty('font-family', `"${override.fontFamily}"`, 'important');
+    else element.style.removeProperty('font-family');
+
+    if (override.textColor) element.style.setProperty('color', override.textColor, 'important');
+    else element.style.removeProperty('color');
 
     if (override.tone === 'transparent') {
         element.style.setProperty('background-color', 'transparent', 'important');
@@ -114,20 +94,20 @@ function applyOverrideAttributes(element: HTMLElement, override: VisualOverride)
         element.style.removeProperty('background-image');
     }
 
+    if (override.opacity !== undefined) element.style.setProperty('opacity', String(override.opacity), 'important');
+    else element.style.removeProperty('opacity');
+
+    if (override.fontSize) element.style.setProperty('font-size', override.fontSize, 'important');
+    else element.style.removeProperty('font-size');
+
+    if (override.fontWeight) element.style.setProperty('font-weight', override.fontWeight, 'important');
+    else element.style.removeProperty('font-weight');
+
     if (override.width) element.style.setProperty('width', override.width, 'important');
     else element.style.removeProperty('width');
     if (override.height) element.style.setProperty('height', override.height, 'important');
     else element.style.removeProperty('height');
-    if (override.minWidth) element.style.setProperty('min-width', override.minWidth, 'important');
-    else element.style.removeProperty('min-width');
-    if (override.maxWidth) element.style.setProperty('max-width', override.maxWidth, 'important');
-    else element.style.removeProperty('max-width');
-    if (override.minHeight) element.style.setProperty('min-height', override.minHeight, 'important');
-    else element.style.removeProperty('min-height');
-    if (override.maxHeight) element.style.setProperty('max-height', override.maxHeight, 'important');
-    else element.style.removeProperty('max-height');
 
-    // Transform (X, Y)
     if (override.x || override.y) {
         const x = override.x || '0px';
         const y = override.y || '0px';
@@ -135,9 +115,6 @@ function applyOverrideAttributes(element: HTMLElement, override: VisualOverride)
     } else {
         element.style.removeProperty('transform');
     }
-
-    if (override.position) element.style.setProperty('position', override.position, 'important');
-    else element.style.removeProperty('position');
 
     if (override.margin) element.style.setProperty('margin', override.margin, 'important');
     else element.style.removeProperty('margin');
@@ -163,49 +140,6 @@ function applyOverrideAttributes(element: HTMLElement, override: VisualOverride)
 
     if (override.gap) element.style.setProperty('gap', override.gap, 'important');
     else element.style.removeProperty('gap');
-
-    if (override.display) element.style.setProperty('display', override.display, 'important');
-    else element.style.removeProperty('display');
-    if (override.flexDirection) element.style.setProperty('flex-direction', override.flexDirection, 'important');
-    else element.style.removeProperty('flex-direction');
-    if (override.alignItems) element.style.setProperty('align-items', override.alignItems, 'important');
-    else element.style.removeProperty('align-items');
-    if (override.justifyContent) element.style.setProperty('justify-content', override.justifyContent, 'important');
-    else element.style.removeProperty('justify-content');
-
-    if (override.borderWidth) element.style.setProperty('border-width', override.borderWidth, 'important');
-    else element.style.removeProperty('border-width');
-    if (override.borderColor) element.style.setProperty('border-color', override.borderColor, 'important');
-    else element.style.removeProperty('border-color');
-    if (override.borderStyle) element.style.setProperty('border-style', override.borderStyle, 'important');
-    else element.style.removeProperty('border-style');
-
-    if (override.boxShadow) {
-        const shadowMap = {
-            none: 'none',
-            subtle: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-            medium: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-            strong: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
-        };
-        element.style.setProperty('box-shadow', shadowMap[override.boxShadow], 'important');
-    } else {
-        element.style.removeProperty('box-shadow');
-    }
-
-    if (override.opacity !== undefined) element.style.setProperty('opacity', String(override.opacity), 'important');
-    else element.style.removeProperty('opacity');
-
-    if (override.fontSize) element.style.setProperty('font-size', override.fontSize, 'important');
-    else element.style.removeProperty('font-size');
-
-    if (override.fontWeight) element.style.setProperty('font-weight', override.fontWeight, 'important');
-    else element.style.removeProperty('font-weight');
-
-    if (override.fontStyle) element.style.setProperty('font-style', override.fontStyle, 'important');
-    else element.style.removeProperty('font-style');
-
-    if (override.textAlign) element.style.setProperty('text-align', override.textAlign, 'important');
-    else element.style.removeProperty('text-align');
 }
 
 function realElements(root: HTMLElement): HTMLElement[] {
@@ -223,17 +157,6 @@ function realElements(root: HTMLElement): HTMLElement[] {
         if (tag === 'svg') {
             const isChart = element.classList.contains('recharts-surface') || element.clientWidth > 100;
             if (isChart) return false;
-        }
-
-        // Descartar spans internos puramente estructurales (ej. textos dentro de botones sin diseño particular)
-        if (tag === 'span') {
-            const parentBtn = element.closest('button, [role="button"]');
-            if (parentBtn) {
-                // Si el span tiene un rol decorativo evidente (fondo o borde), lo mantenemos. Si no, recaerá en el botón.
-                if (!element.className.includes('bg-') && !element.className.includes('border')) {
-                    return false;
-                }
-            }
         }
 
         return true;
@@ -643,6 +566,13 @@ export function VisualLabPanel({
                                         <button onClick={() => update({ tone: 'transparent' })} className="mt-2 w-full rounded bg-zinc-800 py-1 text-[8px] font-black uppercase text-zinc-400 hover:bg-zinc-700 hover:text-white">Transparente</button>
                                     </label>
                                 </div>
+                                <label className="block">
+                                    <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">Opacidad {current.opacity !== undefined && <button onClick={() => reset(['opacity'])} className="text-zinc-600 hover:text-white">✕</button>}</span>
+                                    <div className="flex items-center gap-2 h-[32px]">
+                                        <input type="range" min="0" max="1" step="0.05" value={current.opacity ?? 1} onChange={e => update({ opacity: Number(e.target.value) })} className="w-full accent-[#36606F]" />
+                                        <span className="text-[10px] text-zinc-400">{Math.round((current.opacity ?? 1) * 100)}%</span>
+                                    </div>
+                                </label>
                             </div>
                         </Section>
 
@@ -718,108 +648,6 @@ export function VisualLabPanel({
                                         </div>
                                     )}
                                 </div>
-                            </div>
-                        </Section>
-
-                        <Section id="avanzado" title="Avanzado">
-                            <div className="grid grid-cols-2 gap-2 mb-4">
-                                <label className="block">
-                                    <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">Opacidad {current.opacity !== undefined && <button onClick={() => reset(['opacity'])} className="text-zinc-600 hover:text-white">✕</button>}</span>
-                                    <div className="flex items-center gap-2">
-                                        <input type="range" min="0" max="1" step="0.05" value={current.opacity ?? 1} onChange={e => update({ opacity: Number(e.target.value) })} className="w-full accent-[#36606F]" />
-                                        <span className="text-[10px] text-zinc-400">{Math.round((current.opacity ?? 1) * 100)}%</span>
-                                    </div>
-                                </label>
-                                <label className="block">
-                                    <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">Alineación {current.textAlign && <button onClick={() => reset(['textAlign'])} className="text-zinc-600 hover:text-white">✕</button>}</span>
-                                    <select value={current.textAlign ?? ''} onChange={e => update({ textAlign: e.target.value as any })} className="w-full rounded bg-zinc-900 p-2 text-[10px] uppercase font-black text-white outline-none">
-                                        <option value="">Auto</option>
-                                        <option value="left">Izquierda</option>
-                                        <option value="center">Centro</option>
-                                        <option value="right">Derecha</option>
-                                    </select>
-                                </label>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                                <label className="block rounded-lg bg-zinc-900 p-2">
-                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Color Borde</span>
-                                    <input type="color" value={current.borderColor ?? '#000000'} onChange={e => update({ borderColor: e.target.value })} className="h-6 w-full rounded border-0 bg-transparent p-0" />
-                                </label>
-                                <label className="block">
-                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Grosor</span>
-                                    <input type="text" placeholder="1px" value={current.borderWidth ?? ''} onChange={e => update({ borderWidth: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none" />
-                                </label>
-                                <label className="block col-span-2">
-                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Estilo</span>
-                                    <select value={current.borderStyle ?? ''} onChange={e => update({ borderStyle: e.target.value as any })} className="w-full rounded bg-zinc-900 p-2 text-[10px] uppercase font-black text-white outline-none">
-                                        <option value="">Auto</option>
-                                        <option value="solid">Sólido</option>
-                                        <option value="dashed">Discontinuo</option>
-                                        <option value="dotted">Punteado</option>
-                                    </select>
-                                </label>
-                                <div className="col-span-2">
-                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Sombra</span>
-                                    <div className="grid grid-cols-4 gap-1">
-                                        {(['none', 'subtle', 'medium', 'strong'] as const).map(s => (
-                                            <button key={s} onClick={() => update({ boxShadow: s })} className={`rounded py-1 text-[9px] font-black uppercase tracking-widest ${current.boxShadow === s ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-500'}`}>{s === 'none' ? 'Sin' : s}</button>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        </Section>
-
-                        <Section id="avanzado" title="Avanzado (Layout)">
-                            <div className="grid grid-cols-2 gap-2">
-                                <label className="block">
-                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Display</span>
-                                    <select value={current.display ?? ''} onChange={e => update({ display: e.target.value as any })} className="w-full rounded bg-zinc-900 p-2 text-[10px] uppercase font-black text-white outline-none">
-                                        <option value="">Auto</option>
-                                        <option value="block">Block</option>
-                                        <option value="flex">Flex</option>
-                                        <option value="grid">Grid</option>
-                                        <option value="inline-block">Inline Block</option>
-                                        <option value="none">None</option>
-                                    </select>
-                                </label>
-                                <label className="block">
-                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Position</span>
-                                    <select value={current.position ?? ''} onChange={e => update({ position: e.target.value as any })} className="w-full rounded bg-zinc-900 p-2 text-[10px] uppercase font-black text-white outline-none">
-                                        <option value="">Auto</option>
-                                        <option value="static">Static</option>
-                                        <option value="relative">Relative</option>
-                                        <option value="absolute">Absolute</option>
-                                        <option value="fixed">Fixed</option>
-                                    </select>
-                                </label>
-                                <label className="block col-span-2">
-                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Flex Direction</span>
-                                    <div className="flex gap-1">
-                                        {(['row', 'column', 'row-reverse', 'column-reverse'] as const).map(d => (
-                                            <button key={d} onClick={() => update({ flexDirection: d })} className={`flex-1 rounded py-1 text-[8px] font-black uppercase tracking-widest ${current.flexDirection === d ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-500'}`}>{d.split('-')[0]}</button>
-                                        ))}
-                                    </div>
-                                </label>
-                                <label className="block col-span-2">
-                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Align Items</span>
-                                    <select value={current.alignItems ?? ''} onChange={e => update({ alignItems: e.target.value as any })} className="w-full rounded bg-zinc-900 p-2 text-[10px] uppercase font-black text-white outline-none">
-                                        <option value="">Auto</option>
-                                        <option value="center">Center</option>
-                                        <option value="flex-start">Start</option>
-                                        <option value="flex-end">End</option>
-                                        <option value="stretch">Stretch</option>
-                                    </select>
-                                </label>
-                                <label className="block col-span-2">
-                                    <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Justify Content</span>
-                                    <select value={current.justifyContent ?? ''} onChange={e => update({ justifyContent: e.target.value as any })} className="w-full rounded bg-zinc-900 p-2 text-[10px] uppercase font-black text-white outline-none">
-                                        <option value="">Auto</option>
-                                        <option value="center">Center</option>
-                                        <option value="flex-start">Start</option>
-                                        <option value="flex-end">End</option>
-                                        <option value="space-between">Space Between</option>
-                                    </select>
-                                </label>
                             </div>
                         </Section>
 
