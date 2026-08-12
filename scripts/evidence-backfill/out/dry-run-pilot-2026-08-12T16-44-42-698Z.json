@@ -1,0 +1,43 @@
+{
+  "summary": {
+    "event": "summary",
+    "mode": "write",
+    "total": 1,
+    "by_outcome": {
+      "SKIP_ALREADY_HAS_EVIDENCE": 1
+    },
+    "total_writes_entries": 0,
+    "any_writes": false
+  },
+  "results": [
+    {
+      "invoice_id": "37b5ed7e-f03a-4782-bb6f-303e00da540e",
+      "outcome": "SKIP_ALREADY_HAS_EVIDENCE",
+      "mode": "write",
+      "invoice_date": "2018-06-26",
+      "supplier": "Cava",
+      "source": "scanner",
+      "status": "mapped",
+      "file_path": "2a45bdcd-8850-4dc2-bd1e-50be0196106c/2026/6/1781855688050_scanner_image.jpg",
+      "mime": null,
+      "size_bytes": null,
+      "ext": "jpg",
+      "content_sha256_db": "06dee1c25a6553cdcb7a312621705dbdb53876dfe2291ba38ebc8521cc0f9816",
+      "content_sha256_computed": null,
+      "sha_source": null,
+      "ocr_ok": false,
+      "ocr_error": null,
+      "header_comparison": null,
+      "table_metrics": null,
+      "operative_line_count": 0,
+      "matcher": null,
+      "provenance_would_create": [],
+      "writes": [],
+      "errors": [],
+      "extraction_status": null,
+      "notes": [
+        "extractions_existing=1"
+      ]
+    }
+  ]
+}

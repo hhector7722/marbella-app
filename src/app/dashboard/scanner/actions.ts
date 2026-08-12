@@ -4,6 +4,13 @@ import { createHash } from 'node:crypto'
 import { after } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
+import {
+  extractAlbaranWithGemini,
+  parseOcrDate,
+  toFiniteNumber,
+  type GeminiAlbaranData,
+  type GeminiDocumentTable,
+} from '@/lib/albaranes/gemini-extract-albaran'
 
 async function gateAuthenticated() {
   const supabase = await createClient()
@@ -37,60 +44,6 @@ function parseBase64DataUri(base64DataUri: string): { mimeType: string; rawBase6
   const rawBase64 = matches[2]
   const buffer = Buffer.from(rawBase64, 'base64')
   return { mimeType, rawBase64, buffer }
-}
-
-type GeminiDocumentColumn = {
-  index: number
-  name: string | null
-}
-type GeminiDocumentCell = {
-  column_index: number
-  raw_value: string | null
-}
-type GeminiDocumentRow = {
-  index: number
-  cells: GeminiDocumentCell[]
-}
-type GeminiDocumentTable = {
-  index: number
-  columns: GeminiDocumentColumn[]
-  rows: GeminiDocumentRow[]
-}
-
-type GeminiAlbaranData = {
-  numero_factura?: string
-  fecha?: string
-  base_imponible?: number | null
-  tipo_iva?: number | null
-  total_iva?: number | null
-  total?: number
-  tables?: GeminiDocumentTable[]
-}
-
-function toFiniteNumber(value: unknown): number | null {
-  if (value == null) return null
-  const n = Number(value)
-  return Number.isFinite(n) ? n : null
-}
-
-/** Normaliza cabecera IVA: calcula base si falta pero hay total + tipo. */
-function normalizeGeminiAlbaranData(raw: unknown): GeminiAlbaranData {
-  const data = raw as GeminiAlbaranData
-  const total = toFiniteNumber(data.total) ?? 0
-  const tipoIva = toFiniteNumber(data.tipo_iva)
-  let baseImponible = toFiniteNumber(data.base_imponible)
-  let totalIva = toFiniteNumber(data.total_iva)
-
-  if ((baseImponible == null || baseImponible === 0) && total > 0 && tipoIva != null && tipoIva > 0) {
-    baseImponible = total / (1 + tipoIva)
-    data.base_imponible = baseImponible
-    if (totalIva == null || totalIva === 0) {
-      totalIva = baseImponible * tipoIva
-      data.total_iva = totalIva
-    }
-  }
-
-  return data
 }
 
 function invoiceTaxInsertFields(data: GeminiAlbaranData) {
@@ -180,28 +133,6 @@ function parseInvoiceLinesFromTables(
   return { linesToInsert, provenancesToInsert }
 }
 
-function parseOcrDate(raw: string | undefined | null): string | null {
-  if (typeof raw !== 'string') return null
-  const str = raw.trim()
-  if (!str) return null
-
-  // YYYY-MM-DD
-  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
-    return str
-  }
-
-  // DD/MM/YYYY or DD-MM-YYYY
-  const esMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/)
-  if (esMatch) {
-    const day = esMatch[1].padStart(2, '0')
-    const month = esMatch[2].padStart(2, '0')
-    const year = esMatch[3]
-    return `${year}-${month}-${day}`
-  }
-
-  return str
-}
-
 function todayYmdLocal(): string {
   const d = new Date()
   const y = d.getFullYear()
@@ -214,85 +145,6 @@ function revalidateScannerPaths() {
   revalidatePath('/dashboard/albaranes-precios')
   revalidatePath('/dashboard/scanner')
   revalidatePath('/dashboard/albaranes')
-}
-
-async function extractAlbaranWithGemini(
-  mimeType: string,
-  rawBase64: string
-): Promise<{ ok: true; data: GeminiAlbaranData; rawJson: unknown } | { ok: false; message: string }> {
-  const geminiKey = process.env.GEMINI_API_KEY
-  if (!geminiKey) return { ok: false, message: 'GEMINI_API_KEY no configurada' }
-
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`
-  const geminiPrompt = `
-Eres un procesador de datos ciego de OCR de documentos.
-Tu única tarea es transcribir la estructura tabular de este documento (normalmente un albarán o factura) a un JSON estructurado.
-
-REGLAS ABSOLUTAS:
-1. DEBES TRANSCRIBIR, no interpretar.
-2. NO calcules conversiones. NO inventes columnas. NO normalices valores ni unidades.
-3. Si la columna no tiene título explícito, usa null. NO inventes "COLUMNA_1" o similares.
-4. Si la celda está vacía en el documento, usa null.
-5. El índice de las tablas, columnas y filas debe empezar en 0 y mantener el orden físico del documento.
-6. Devuelve ÚNICAMENTE un JSON válido que siga esta estructura:
-{
-    "numero_factura": "Identificador del albarán (si se ve claro)",
-    "fecha": "YYYY-MM-DD",
-    "base_imponible": 0.00,
-    "tipo_iva": 0.10,
-    "total_iva": 0.00,
-    "total": 0.00,
-    "tables": [
-      {
-        "index": 0,
-        "columns": [
-          { "index": 0, "name": "DESCRIPCIÓN" },
-          { "index": 1, "name": "CANTIDAD" }
-        ],
-        "rows": [
-          {
-            "index": 0,
-            "cells": [
-              { "column_index": 0, "raw_value": "CASERAS 60G-28U" },
-              { "column_index": 1, "raw_value": "6" }
-            ]
-          }
-        ]
-      }
-    ]
-}
-`
-
-  const geminiRes = await fetch(geminiUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [
-        {
-          parts: [{ text: geminiPrompt }, { inline_data: { mime_type: mimeType, data: rawBase64 } }],
-        },
-      ],
-      generationConfig: { response_mime_type: 'application/json' },
-    }),
-  })
-
-  if (!geminiRes.ok) {
-    const errText = await geminiRes.text().catch(() => '')
-    console.error('Scanner Gemini error:', errText)
-    return { ok: false, message: 'Fallo en la extracción (Gemini). Repite la foto o prueba con más luz.' }
-  }
-
-  const geminiData = await geminiRes.json()
-  const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text
-  if (!rawText || typeof rawText !== 'string') return { ok: false, message: 'Respuesta vacía de Gemini' }
-
-  try {
-    const rawParsed = JSON.parse(rawText)
-    const data = normalizeGeminiAlbaranData(rawParsed)
-    return { ok: true, data, rawJson: rawParsed }
-  } catch {
-    return { ok: false, message: 'JSON inválido de Gemini' }
-  }
 }
 
 async function downloadStorageAsBase64(

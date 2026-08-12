@@ -1,0 +1,67 @@
+{
+  "label": "BEFORE",
+  "captured_at": "2026-08-12T16:43:35.063Z",
+  "invoice": {
+    "id": "37b5ed7e-f03a-4782-bb6f-303e00da540e",
+    "supplier_id": 18,
+    "invoice_number": "771",
+    "invoice_date": "2018-06-26",
+    "total_amount": 217.8,
+    "file_path": "2a45bdcd-8850-4dc2-bd1e-50be0196106c/2026/6/1781855688050_scanner_image.jpg",
+    "status": "mapped",
+    "created_at": "2026-06-19T07:54:48.960765+00:00",
+    "source": "scanner",
+    "content_sha256": "06dee1c25a6553cdcb7a312621705dbdb53876dfe2291ba38ebc8521cc0f9816",
+    "duplicate_of_invoice_id": null,
+    "created_by": "2a45bdcd-8850-4dc2-bd1e-50be0196106c",
+    "base_amount": 180,
+    "tax_amount": 37.8,
+    "tax_rate": 0.21,
+    "ocr_error": null
+  },
+  "lines": [
+    {
+      "id": "89f4cdc0-3d2a-4d56-b8ad-4d6a9677b999",
+      "invoice_id": "37b5ed7e-f03a-4782-bb6f-303e00da540e",
+      "original_name": "CAVA RESERVA BRUT NATURE J.LLOPART",
+      "quantity": 30,
+      "unit_price": 6,
+      "total_price": 180,
+      "mapped_ingredient_id": "943a0f57-cb00-47c4-bc4f-9030ff6e3a55",
+      "status": "mapped",
+      "line_unit": null,
+      "tax_rate": 0.21,
+      "base_price": 4.9587
+    }
+  ],
+  "stock_movements": [
+    {
+      "id": "8e305446-36f7-4c8d-bd43-3e79df89eb1a",
+      "movement_type": "PURCHASE",
+      "ingredient_id": "943a0f57-cb00-47c4-bc4f-9030ff6e3a55",
+      "supplier_id": null,
+      "quantity": 30000,
+      "unit": "ml",
+      "unit_price": null,
+      "total_amount": null,
+      "movement_date": "2026-06-19T07:54:49.435118+00:00",
+      "reference_doc": "ALB-LINE-89f4cdc0-3d2a-4d56-b8ad-4d6a9677b999",
+      "original_description": "Recepción (auto): CAVA RESERVA BRUT NATURE J.LLOPART",
+      "notes": null,
+      "processed_by": "Auto-Albaranes",
+      "created_at": "2026-06-19T07:54:49.435118+00:00"
+    }
+  ],
+  "counts": {
+    "purchase_invoices_total": 164,
+    "purchase_invoice_lines_total": 1293,
+    "supplier_item_mappings_total": 366,
+    "stock_movements_for_invoice_lines": 1,
+    "document_extractions_for_invoice": 0,
+    "purchase_line_provenance_for_lines": 0,
+    "document_tables": 0,
+    "document_columns": 0,
+    "document_rows": 0,
+    "document_cells": 0
+  }
+}

@@ -1,0 +1,107 @@
+[
+  {
+    "id": "37b5ed7e-f03a-4782-bb6f-303e00da540e",
+    "bucket": "pre2020",
+    "invoice_date": "2018-06-26",
+    "supplier": "Cava",
+    "notes": "documento historico 2018"
+  },
+  {
+    "id": "194892fa-6353-4308-be97-ca6873042146",
+    "bucket": "pre2020",
+    "invoice_date": "2019-11-06",
+    "supplier": "Otros",
+    "notes": "pending_mapping 14 lineas"
+  },
+  {
+    "id": "c1dca150-0ac0-4814-8a29-53ec11a327fa",
+    "bucket": "y2020",
+    "invoice_date": "2020-05-21",
+    "supplier": "Hielo Fenix",
+    "notes": "pending_mapping"
+  },
+  {
+    "id": "08da1117-b97e-431f-85c5-212261068639",
+    "bucket": "y2020",
+    "invoice_date": "2020-06-30",
+    "supplier": "Hielo Fenix",
+    "notes": "simple mapped"
+  },
+  {
+    "id": "b53e8f96-9553-475c-8cc9-a26f792a8111",
+    "bucket": "y2023_25",
+    "invoice_date": "2023-06-10",
+    "supplier": "Fritz Ravich",
+    "notes": "mapped"
+  },
+  {
+    "id": "7a74d9fc-12ed-40fa-ad09-50d3f9112b81",
+    "bucket": "y2023_25",
+    "invoice_date": "2023-06-17",
+    "supplier": "Fritz Ravich",
+    "notes": "pending_mapping"
+  },
+  {
+    "id": "080d6c45-affb-40e9-8943-7e848493f137",
+    "bucket": "y2023_25",
+    "invoice_date": "2024-06-10",
+    "supplier": "Fritz Ravich",
+    "notes": "mapped 2024"
+  },
+  {
+    "id": "cfdd763f-046b-4b1c-8fcb-50cd6d9b83b4",
+    "bucket": "pdf_email",
+    "invoice_date": "2026-01-15",
+    "supplier": "Santa Teresa",
+    "notes": "PDF email sin content_sha256"
+  },
+  {
+    "id": "96d8363b-3538-4037-b7ce-483b664fc3f3",
+    "bucket": "pdf_email",
+    "invoice_date": "2026-04-09",
+    "supplier": "Sanilec",
+    "notes": "PDF email sin content_sha256"
+  },
+  {
+    "id": "0b6b4f8c-0d77-4aa0-b10c-3c7f3b8bc0e5",
+    "bucket": "pending",
+    "invoice_date": "2026-05-06",
+    "supplier": "Santa Teresa",
+    "notes": "pending_mapping 25 lineas"
+  },
+  {
+    "id": "2598a02d-9ec1-4f95-b3cd-982169700792",
+    "bucket": "dense",
+    "invoice_date": "2026-05-13",
+    "supplier": "Ametller",
+    "notes": "48 lineas; tiene adjuntos — v1 solo hoja principal"
+  },
+  {
+    "id": "c32e1f4c-5949-46bf-87bb-142c858a0647",
+    "bucket": "pending",
+    "invoice_date": "2026-05-27",
+    "supplier": "Santa Teresa",
+    "notes": "pending_mapping 34 lineas"
+  },
+  {
+    "id": "1f57887e-0499-46c4-8bed-2b32d5bbe40d",
+    "bucket": "dense",
+    "invoice_date": "2026-06-04",
+    "supplier": "Santa Teresa",
+    "notes": "37 lineas; tiene adjuntos — v1 solo hoja principal"
+  },
+  {
+    "id": "18aed1f2-686d-461f-a848-a7a168b4f420",
+    "bucket": "simple",
+    "invoice_date": "2026-07-22",
+    "supplier": "Sant Aniol",
+    "notes": "simple 1 linea"
+  },
+  {
+    "id": "85577bb8-926c-4fbe-a561-af43a4415039",
+    "bucket": "simple",
+    "invoice_date": "2026-07-24",
+    "supplier": "Hielo Fenix",
+    "notes": "simple 1 linea"
+  }
+]

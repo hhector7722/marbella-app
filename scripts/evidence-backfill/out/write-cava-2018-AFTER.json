@@ -1,0 +1,235 @@
+{
+  "label": "AFTER",
+  "captured_at": "2026-08-12T16:44:23.750Z",
+  "invoice": {
+    "id": "37b5ed7e-f03a-4782-bb6f-303e00da540e",
+    "supplier_id": 18,
+    "invoice_number": "771",
+    "invoice_date": "2018-06-26",
+    "total_amount": 217.8,
+    "file_path": "2a45bdcd-8850-4dc2-bd1e-50be0196106c/2026/6/1781855688050_scanner_image.jpg",
+    "status": "mapped",
+    "created_at": "2026-06-19T07:54:48.960765+00:00",
+    "source": "scanner",
+    "content_sha256": "06dee1c25a6553cdcb7a312621705dbdb53876dfe2291ba38ebc8521cc0f9816",
+    "duplicate_of_invoice_id": null,
+    "created_by": "2a45bdcd-8850-4dc2-bd1e-50be0196106c",
+    "base_amount": 180,
+    "tax_amount": 37.8,
+    "tax_rate": 0.21,
+    "ocr_error": null
+  },
+  "lines": [
+    {
+      "id": "89f4cdc0-3d2a-4d56-b8ad-4d6a9677b999",
+      "invoice_id": "37b5ed7e-f03a-4782-bb6f-303e00da540e",
+      "original_name": "CAVA RESERVA BRUT NATURE J.LLOPART",
+      "quantity": 30,
+      "unit_price": 6,
+      "total_price": 180,
+      "mapped_ingredient_id": "943a0f57-cb00-47c4-bc4f-9030ff6e3a55",
+      "status": "mapped",
+      "line_unit": null,
+      "tax_rate": 0.21,
+      "base_price": 4.9587
+    }
+  ],
+  "stock_movements": [
+    {
+      "id": "8e305446-36f7-4c8d-bd43-3e79df89eb1a",
+      "movement_type": "PURCHASE",
+      "ingredient_id": "943a0f57-cb00-47c4-bc4f-9030ff6e3a55",
+      "supplier_id": null,
+      "quantity": 30000,
+      "unit": "ml",
+      "unit_price": null,
+      "total_amount": null,
+      "movement_date": "2026-06-19T07:54:49.435118+00:00",
+      "reference_doc": "ALB-LINE-89f4cdc0-3d2a-4d56-b8ad-4d6a9677b999",
+      "original_description": "Recepción (auto): CAVA RESERVA BRUT NATURE J.LLOPART",
+      "notes": null,
+      "processed_by": "Auto-Albaranes",
+      "created_at": "2026-06-19T07:54:49.435118+00:00"
+    }
+  ],
+  "evidence": {
+    "extractions": [
+      {
+        "id": "fbcb35e0-07ea-4b96-9c09-6f88a361bc21",
+        "invoice_id": "37b5ed7e-f03a-4782-bb6f-303e00da540e",
+        "file_version_hash": "06dee1c25a6553cdcb7a312621705dbdb53876dfe2291ba38ebc8521cc0f9816",
+        "extractor_version": "gemini-2.5-flash-tabular-v1",
+        "raw_json_artifact": {
+          "fecha": "2018-06-26",
+          "total": 217.8,
+          "tables": [
+            {
+              "rows": [
+                {
+                  "cells": [
+                    {
+                      "raw_value": "3",
+                      "column_index": 0
+                    },
+                    {
+                      "raw_value": "CAVA RESERVA BRUT NATURE J.LLOPART",
+                      "column_index": 1
+                    },
+                    {
+                      "raw_value": "30,00",
+                      "column_index": 2
+                    },
+                    {
+                      "raw_value": "6,000",
+                      "column_index": 3
+                    },
+                    {
+                      "raw_value": "180,00",
+                      "column_index": 4
+                    }
+                  ],
+                  "index": 0
+                }
+              ],
+              "index": 0,
+              "columns": [
+                {
+                  "name": "Artículo",
+                  "index": 0
+                },
+                {
+                  "name": "Descripción",
+                  "index": 1
+                },
+                {
+                  "name": "Cantidad",
+                  "index": 2
+                },
+                {
+                  "name": "Precio",
+                  "index": 3
+                },
+                {
+                  "name": "Importe",
+                  "index": 4
+                }
+              ]
+            }
+          ],
+          "tipo_iva": null,
+          "total_iva": 37.8,
+          "base_imponible": 180,
+          "numero_factura": "771"
+        },
+        "status": "success",
+        "extracted_at": "2026-08-12T16:43:54.25574+00:00"
+      }
+    ],
+    "tables": [
+      {
+        "id": "d5be3e3f-2c8d-4e19-9ac3-c1630c74c3c1",
+        "extraction_id": "fbcb35e0-07ea-4b96-9c09-6f88a361bc21",
+        "table_index": 0
+      }
+    ],
+    "columns": [
+      {
+        "id": "15f31462-29da-4b76-a30e-6583d188252c",
+        "table_id": "d5be3e3f-2c8d-4e19-9ac3-c1630c74c3c1",
+        "col_index": 0,
+        "original_name": "Artículo"
+      },
+      {
+        "id": "cfcaf7c2-d485-4a18-aae4-36e921fdb875",
+        "table_id": "d5be3e3f-2c8d-4e19-9ac3-c1630c74c3c1",
+        "col_index": 1,
+        "original_name": "Descripción"
+      },
+      {
+        "id": "3462315a-11a7-41c3-b05a-ed2aa8bcec7f",
+        "table_id": "d5be3e3f-2c8d-4e19-9ac3-c1630c74c3c1",
+        "col_index": 2,
+        "original_name": "Cantidad"
+      },
+      {
+        "id": "0aed74d6-199d-4c35-9dca-d832f934e9c1",
+        "table_id": "d5be3e3f-2c8d-4e19-9ac3-c1630c74c3c1",
+        "col_index": 3,
+        "original_name": "Precio"
+      },
+      {
+        "id": "1fbd86d6-b861-475d-bf30-bb7e8e5ea094",
+        "table_id": "d5be3e3f-2c8d-4e19-9ac3-c1630c74c3c1",
+        "col_index": 4,
+        "original_name": "Importe"
+      }
+    ],
+    "rows": [
+      {
+        "id": "01726929-add3-419f-8946-44cb47c336b3",
+        "table_id": "d5be3e3f-2c8d-4e19-9ac3-c1630c74c3c1",
+        "row_index": 0
+      }
+    ],
+    "cells": [
+      {
+        "id": "d8523ba3-10f3-4fd3-b279-8c3b9e8527a6",
+        "table_id": "d5be3e3f-2c8d-4e19-9ac3-c1630c74c3c1",
+        "row_id": "01726929-add3-419f-8946-44cb47c336b3",
+        "column_id": "15f31462-29da-4b76-a30e-6583d188252c",
+        "raw_value": "3"
+      },
+      {
+        "id": "56a95a89-66e6-4f31-8646-a44c1b857885",
+        "table_id": "d5be3e3f-2c8d-4e19-9ac3-c1630c74c3c1",
+        "row_id": "01726929-add3-419f-8946-44cb47c336b3",
+        "column_id": "cfcaf7c2-d485-4a18-aae4-36e921fdb875",
+        "raw_value": "CAVA RESERVA BRUT NATURE J.LLOPART"
+      },
+      {
+        "id": "efcd3b2a-d02d-46fc-906d-2e13ad2798ca",
+        "table_id": "d5be3e3f-2c8d-4e19-9ac3-c1630c74c3c1",
+        "row_id": "01726929-add3-419f-8946-44cb47c336b3",
+        "column_id": "3462315a-11a7-41c3-b05a-ed2aa8bcec7f",
+        "raw_value": "30,00"
+      },
+      {
+        "id": "7705c809-9133-4384-8730-cc9501d5f11e",
+        "table_id": "d5be3e3f-2c8d-4e19-9ac3-c1630c74c3c1",
+        "row_id": "01726929-add3-419f-8946-44cb47c336b3",
+        "column_id": "0aed74d6-199d-4c35-9dca-d832f934e9c1",
+        "raw_value": "6,000"
+      },
+      {
+        "id": "37d07cf3-35ac-42b0-be43-5a657115304d",
+        "table_id": "d5be3e3f-2c8d-4e19-9ac3-c1630c74c3c1",
+        "row_id": "01726929-add3-419f-8946-44cb47c336b3",
+        "column_id": "1fbd86d6-b861-475d-bf30-bb7e8e5ea094",
+        "raw_value": "180,00"
+      }
+    ],
+    "provenance": [
+      {
+        "id": "e31995f1-2289-44aa-979e-dad29df9b6a0",
+        "invoice_line_id": "89f4cdc0-3d2a-4d56-b8ad-4d6a9677b999",
+        "document_row_id": "01726929-add3-419f-8946-44cb47c336b3",
+        "supersedes_id": null,
+        "linked_by": "backfill-matcher-v1",
+        "confidence_score": 1,
+        "created_at": "2026-08-12T16:43:54.544558+00:00"
+      }
+    ]
+  },
+  "counts": {
+    "purchase_invoices_total": 164,
+    "purchase_invoice_lines_total": 1293,
+    "supplier_item_mappings_total": 366,
+    "stock_movements_for_invoice_lines": 1,
+    "document_extractions_for_invoice": 1,
+    "purchase_line_provenance_for_lines": 1,
+    "document_tables": 1,
+    "document_columns": 5,
+    "document_rows": 1,
+    "document_cells": 5
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "event": "SHA_PREFLIGHT",
+  "pipeline_note": "evidence-backfill NUNCA usa file_version_hash=unknown; siempre SHA-256 del buffer descargado",
+  "candidates_no_evidence": 148,
+  "with_content_sha256_in_db": 147,
+  "without_content_sha256_in_db": 1,
+  "download_ok_real_sha_computable": 148,
+  "download_fail_count": 0,
+  "would_use_unknown_or_fictitious": 0,
+  "sha_mismatches": 0,
+  "by_ext": {
+    "jpg": 146,
+    "pdf": 2
+  },
+  "null_sha_details": [
+    {
+      "id": "8ca18d87-ee0e-4d28-9299-72d3c26e0b45",
+      "date": "2026-01-22",
+      "source": "email",
+      "supplier": "Santa Teresa",
+      "path": "2026/3/1772942885796_2026-01-22-000642-N-B0976162816-53000.pdf",
+      "ext": "pdf"
+    }
+  ],
+  "download_fail": [],
+  "would_use_unknown": [],
+  "sha_mismatch_db_vs_computed": [],
+  "PASS": true
+}

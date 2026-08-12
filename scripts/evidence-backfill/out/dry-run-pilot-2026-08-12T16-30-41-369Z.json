@@ -1,0 +1,4627 @@
+{
+  "summary": {
+    "event": "summary",
+    "mode": "dry-run",
+    "total": 15,
+    "by_outcome": {
+      "OK": 15
+    },
+    "total_writes_entries": 0,
+    "any_writes": false
+  },
+  "results": [
+    {
+      "invoice_id": "37b5ed7e-f03a-4782-bb6f-303e00da540e",
+      "outcome": "OK",
+      "mode": "dry-run",
+      "invoice_date": "2018-06-26",
+      "supplier": "Cava",
+      "source": "scanner",
+      "status": "mapped",
+      "file_path": "2a45bdcd-8850-4dc2-bd1e-50be0196106c/2026/6/1781855688050_scanner_image.jpg",
+      "mime": "image/jpeg",
+      "size_bytes": 444129,
+      "ext": "jpg",
+      "content_sha256_db": "06dee1c25a6553cdcb7a312621705dbdb53876dfe2291ba38ebc8521cc0f9816",
+      "content_sha256_computed": "06dee1c25a6553cdcb7a312621705dbdb53876dfe2291ba38ebc8521cc0f9816",
+      "sha_source": "db",
+      "ocr_ok": true,
+      "ocr_error": null,
+      "header_comparison": {
+        "fecha_ocr": "2018-06-26",
+        "fecha_bd": "2018-06-26",
+        "fecha_equal": true,
+        "numero_ocr": "771",
+        "numero_bd": "771",
+        "numero_equal": true,
+        "total_ocr": 217.8,
+        "total_bd": 217.8,
+        "total_equal": true
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 1,
+        "cells": 5
+      },
+      "operative_line_count": 1,
+      "matcher": {
+        "rows": [
+          {
+            "rowMappingKey": "0_0",
+            "decision": "MATCH",
+            "invoiceLineId": "89f4cdc0-3d2a-4d56-b8ad-4d6a9677b999",
+            "confidence": 1,
+            "bestScore": 1.04,
+            "secondScore": 0,
+            "reason": "nombre_unico_fuerte"
+          }
+        ],
+        "matches": [
+          {
+            "rowMappingKey": "0_0",
+            "decision": "MATCH",
+            "invoiceLineId": "89f4cdc0-3d2a-4d56-b8ad-4d6a9677b999",
+            "confidence": 1,
+            "bestScore": 1.04,
+            "secondScore": 0,
+            "reason": "nombre_unico_fuerte"
+          }
+        ],
+        "ambiguous": [],
+        "noMatch": [],
+        "unmatchedLineIds": []
+      },
+      "provenance_would_create": [
+        {
+          "invoice_line_id": "89f4cdc0-3d2a-4d56-b8ad-4d6a9677b999",
+          "row_mapping_key": "0_0",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        }
+      ],
+      "writes": [],
+      "errors": [],
+      "extraction_status": "success",
+      "notes": []
+    },
+    {
+      "invoice_id": "194892fa-6353-4308-be97-ca6873042146",
+      "outcome": "OK",
+      "mode": "dry-run",
+      "invoice_date": "2019-11-06",
+      "supplier": "Otros",
+      "source": "scanner",
+      "status": "pending_mapping",
+      "file_path": "baacc78a-b7da-438e-8ea4-c9f3ce6f90e6/2026/7/1785357045772_scanner_image.jpg",
+      "mime": "image/jpeg",
+      "size_bytes": 472191,
+      "ext": "jpg",
+      "content_sha256_db": "65f79ebae2f45dc050173273183fed450ba4fb4db5adccc43903a5f0c02a432d",
+      "content_sha256_computed": "65f79ebae2f45dc050173273183fed450ba4fb4db5adccc43903a5f0c02a432d",
+      "sha_source": "db",
+      "ocr_ok": true,
+      "ocr_error": null,
+      "header_comparison": {
+        "fecha_ocr": null,
+        "fecha_bd": "2019-11-06",
+        "fecha_equal": null,
+        "numero_ocr": null,
+        "numero_bd": "034779447",
+        "numero_equal": null,
+        "total_ocr": 114.27,
+        "total_bd": 114.27,
+        "total_equal": true
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 14,
+        "cells": 56
+      },
+      "operative_line_count": 14,
+      "matcher": {
+        "rows": [],
+        "matches": [],
+        "ambiguous": [],
+        "noMatch": [],
+        "unmatchedLineIds": [
+          "16e7ebff-0280-47c6-ace0-09fe803ff7ef",
+          "1fcb9db0-b1de-471a-a6e0-7811874ae473",
+          "2058698b-cae8-4bdf-b8a4-3fc1f14981a5",
+          "233a4028-2adf-4b89-bb98-fec4f37153a1",
+          "2da1eee3-83e8-4aca-97f4-a6e4eec26675",
+          "3e79e09d-11ab-49bb-a62b-d16386e07464",
+          "67e7d4cc-f0a8-49e5-89cf-83bc32e0e141",
+          "7146606a-e31e-4cd8-a158-637ab6706535",
+          "8b1989a6-9723-464d-9ee9-317c8124f8b1",
+          "8f81a1ff-63a8-4667-a86f-59823abbe302",
+          "966f199e-b768-4fcb-8322-db377fd2f377",
+          "d3bac46f-f67e-486f-b972-3551c1a4edad",
+          "ed707ef9-443a-4a81-a2f4-109d299dd57c",
+          "fe6781f2-48bf-4277-8a83-2e74b7035a1d"
+        ]
+      },
+      "provenance_would_create": [],
+      "writes": [],
+      "errors": [],
+      "extraction_status": "success",
+      "notes": []
+    },
+    {
+      "invoice_id": "c1dca150-0ac0-4814-8a29-53ec11a327fa",
+      "outcome": "OK",
+      "mode": "dry-run",
+      "invoice_date": "2020-05-21",
+      "supplier": "Hielo Fenix",
+      "source": "scanner",
+      "status": "pending_mapping",
+      "file_path": "baacc78a-b7da-438e-8ea4-c9f3ce6f90e6/2026/5/1779389759507_scanner_image.jpg",
+      "mime": "image/jpeg",
+      "size_bytes": 449667,
+      "ext": "jpg",
+      "content_sha256_db": "1710c015e9939e27f55a1413d2c02db95ee4d69a52c0302e20872eb1e7e894d5",
+      "content_sha256_computed": "1710c015e9939e27f55a1413d2c02db95ee4d69a52c0302e20872eb1e7e894d5",
+      "sha_source": "db",
+      "ocr_ok": true,
+      "ocr_error": null,
+      "header_comparison": {
+        "fecha_ocr": "2020-05-21",
+        "fecha_bd": "2020-05-21",
+        "fecha_equal": true,
+        "numero_ocr": null,
+        "numero_bd": "DESCONOCIDO",
+        "numero_equal": null,
+        "total_ocr": null,
+        "total_bd": 17.25,
+        "total_equal": null
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 5,
+        "cells": 20
+      },
+      "operative_line_count": 3,
+      "matcher": {
+        "rows": [],
+        "matches": [],
+        "ambiguous": [],
+        "noMatch": [],
+        "unmatchedLineIds": [
+          "0db8bc96-7d79-494e-b266-639dca13165c",
+          "61359cac-641c-4cde-aee8-4e97ec7b46dd",
+          "a44cff36-8360-4434-84b6-4d5a5c7a31fe"
+        ]
+      },
+      "provenance_would_create": [],
+      "writes": [],
+      "errors": [],
+      "extraction_status": "success",
+      "notes": []
+    },
+    {
+      "invoice_id": "08da1117-b97e-431f-85c5-212261068639",
+      "outcome": "OK",
+      "mode": "dry-run",
+      "invoice_date": "2020-06-30",
+      "supplier": "Hielo Fenix",
+      "source": "scanner",
+      "status": "mapped",
+      "file_path": "baacc78a-b7da-438e-8ea4-c9f3ce6f90e6/2026/7/1783201380369_scanner_image.jpg",
+      "mime": "image/jpeg",
+      "size_bytes": 444183,
+      "ext": "jpg",
+      "content_sha256_db": "498e7bc2fecd9361a0bb8a19ce3ceaefa5d25ce9b677c4f4f27dfbfac7c2dc87",
+      "content_sha256_computed": "498e7bc2fecd9361a0bb8a19ce3ceaefa5d25ce9b677c4f4f27dfbfac7c2dc87",
+      "sha_source": "db",
+      "ocr_ok": true,
+      "ocr_error": null,
+      "header_comparison": {
+        "fecha_ocr": "2020-06-30",
+        "fecha_bd": "2020-06-30",
+        "fecha_equal": true,
+        "numero_ocr": "485 2240",
+        "numero_bd": "485/2240",
+        "numero_equal": false,
+        "total_ocr": 20.75,
+        "total_bd": 28.75,
+        "total_equal": false
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 3,
+        "cells": 12
+      },
+      "operative_line_count": 1,
+      "matcher": {
+        "rows": [],
+        "matches": [],
+        "ambiguous": [],
+        "noMatch": [],
+        "unmatchedLineIds": [
+          "65613688-edf9-43e0-926b-42fb43fd54d7"
+        ]
+      },
+      "provenance_would_create": [],
+      "writes": [],
+      "errors": [],
+      "extraction_status": "success",
+      "notes": []
+    },
+    {
+      "invoice_id": "b53e8f96-9553-475c-8cc9-a26f792a8111",
+      "outcome": "OK",
+      "mode": "dry-run",
+      "invoice_date": "2023-06-10",
+      "supplier": "Fritz Ravich",
+      "source": "scanner",
+      "status": "mapped",
+      "file_path": "baacc78a-b7da-438e-8ea4-c9f3ce6f90e6/2026/6/1781203450357_scanner_image.jpg",
+      "mime": "image/jpeg",
+      "size_bytes": 446831,
+      "ext": "jpg",
+      "content_sha256_db": "58c6326ae4c289348363ac877b8cec241da370ab584a639497c4c6bc7d2d149c",
+      "content_sha256_computed": "58c6326ae4c289348363ac877b8cec241da370ab584a639497c4c6bc7d2d149c",
+      "sha_source": "db",
+      "ocr_ok": true,
+      "ocr_error": null,
+      "header_comparison": {
+        "fecha_ocr": "2024-06-10",
+        "fecha_bd": "2023-06-10",
+        "fecha_equal": false,
+        "numero_ocr": "3",
+        "numero_bd": "D314787",
+        "numero_equal": false,
+        "total_ocr": null,
+        "total_bd": 582.58,
+        "total_equal": null
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 7,
+        "cells": 56
+      },
+      "operative_line_count": 7,
+      "matcher": {
+        "rows": [
+          {
+            "rowMappingKey": "0_0",
+            "decision": "MATCH",
+            "invoiceLineId": "0cd00416-f84f-4d8f-bf6b-a18da32c54c9",
+            "confidence": 1,
+            "bestScore": 1.03,
+            "secondScore": 0.025,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_1",
+            "decision": "NO_MATCH",
+            "invoiceLineId": null,
+            "confidence": 0.5,
+            "bestScore": 0.515,
+            "secondScore": 0.17285714285714285,
+            "reason": "bajo_umbral"
+          },
+          {
+            "rowMappingKey": "0_2",
+            "decision": "MATCH",
+            "invoiceLineId": "c726992e-ec5a-4299-9e16-6208af2d29ad",
+            "confidence": 1,
+            "bestScore": 1.01,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_3",
+            "decision": "MATCH",
+            "invoiceLineId": "b61db5a8-6a8d-4bd4-ba47-fcd93469df6a",
+            "confidence": 1,
+            "bestScore": 1.02,
+            "secondScore": 0.16785714285714284,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_4",
+            "decision": "MATCH",
+            "invoiceLineId": "14098b37-47e3-441f-8085-d4fb0d4ff7b4",
+            "confidence": 1,
+            "bestScore": 1.015,
+            "secondScore": 0.17285714285714285,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_5",
+            "decision": "MATCH",
+            "invoiceLineId": "8166c959-b05a-461d-8403-e07c4550bf77",
+            "confidence": 0.92,
+            "bestScore": 0.9400000000000001,
+            "secondScore": 0.135,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_6",
+            "decision": "MATCH",
+            "invoiceLineId": "3b2d3162-df78-4e21-9f52-c159392e12f3",
+            "confidence": 1,
+            "bestScore": 1.01,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          }
+        ],
+        "matches": [
+          {
+            "rowMappingKey": "0_0",
+            "decision": "MATCH",
+            "invoiceLineId": "0cd00416-f84f-4d8f-bf6b-a18da32c54c9",
+            "confidence": 1,
+            "bestScore": 1.03,
+            "secondScore": 0.025,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_2",
+            "decision": "MATCH",
+            "invoiceLineId": "c726992e-ec5a-4299-9e16-6208af2d29ad",
+            "confidence": 1,
+            "bestScore": 1.01,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_3",
+            "decision": "MATCH",
+            "invoiceLineId": "b61db5a8-6a8d-4bd4-ba47-fcd93469df6a",
+            "confidence": 1,
+            "bestScore": 1.02,
+            "secondScore": 0.16785714285714284,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_4",
+            "decision": "MATCH",
+            "invoiceLineId": "14098b37-47e3-441f-8085-d4fb0d4ff7b4",
+            "confidence": 1,
+            "bestScore": 1.015,
+            "secondScore": 0.17285714285714285,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_5",
+            "decision": "MATCH",
+            "invoiceLineId": "8166c959-b05a-461d-8403-e07c4550bf77",
+            "confidence": 0.92,
+            "bestScore": 0.9400000000000001,
+            "secondScore": 0.135,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_6",
+            "decision": "MATCH",
+            "invoiceLineId": "3b2d3162-df78-4e21-9f52-c159392e12f3",
+            "confidence": 1,
+            "bestScore": 1.01,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          }
+        ],
+        "ambiguous": [],
+        "noMatch": [
+          {
+            "rowMappingKey": "0_1",
+            "decision": "NO_MATCH",
+            "invoiceLineId": null,
+            "confidence": 0.5,
+            "bestScore": 0.515,
+            "secondScore": 0.17285714285714285,
+            "reason": "bajo_umbral"
+          }
+        ],
+        "unmatchedLineIds": [
+          "9e95f2fb-512d-4042-b01c-5c584cdca33f"
+        ]
+      },
+      "provenance_would_create": [
+        {
+          "invoice_line_id": "0cd00416-f84f-4d8f-bf6b-a18da32c54c9",
+          "row_mapping_key": "0_0",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "c726992e-ec5a-4299-9e16-6208af2d29ad",
+          "row_mapping_key": "0_2",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "b61db5a8-6a8d-4bd4-ba47-fcd93469df6a",
+          "row_mapping_key": "0_3",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "14098b37-47e3-441f-8085-d4fb0d4ff7b4",
+          "row_mapping_key": "0_4",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "8166c959-b05a-461d-8403-e07c4550bf77",
+          "row_mapping_key": "0_5",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 0.92
+        },
+        {
+          "invoice_line_id": "3b2d3162-df78-4e21-9f52-c159392e12f3",
+          "row_mapping_key": "0_6",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        }
+      ],
+      "writes": [],
+      "errors": [],
+      "extraction_status": "success",
+      "notes": []
+    },
+    {
+      "invoice_id": "7a74d9fc-12ed-40fa-ad09-50d3f9112b81",
+      "outcome": "OK",
+      "mode": "dry-run",
+      "invoice_date": "2023-06-17",
+      "supplier": "Fritz Ravich",
+      "source": "scanner",
+      "status": "pending_mapping",
+      "file_path": "97a9cb0d-f9c5-4a01-800e-a5a0bcde5848/2026/6/1781773995459_scanner_image.jpg",
+      "mime": "image/jpeg",
+      "size_bytes": 355423,
+      "ext": "jpg",
+      "content_sha256_db": "2fc2b440e20df242b043c97e3138ba9fec055e3579f6e464cc1f293bf7d0d057",
+      "content_sha256_computed": "2fc2b440e20df242b043c97e3138ba9fec055e3579f6e464cc1f293bf7d0d057",
+      "sha_source": "db",
+      "ocr_ok": true,
+      "ocr_error": null,
+      "header_comparison": {
+        "fecha_ocr": "2023-06-17",
+        "fecha_bd": "2023-06-17",
+        "fecha_equal": true,
+        "numero_ocr": null,
+        "numero_bd": "3",
+        "numero_equal": null,
+        "total_ocr": null,
+        "total_bd": 234.11,
+        "total_equal": null
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 6,
+        "cells": 48
+      },
+      "operative_line_count": 6,
+      "matcher": {
+        "rows": [
+          {
+            "rowMappingKey": "0_0",
+            "decision": "MATCH",
+            "invoiceLineId": "3988a168-02fe-4053-ab80-81c695c883e1",
+            "confidence": 1,
+            "bestScore": 1.03,
+            "secondScore": 0.024,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_1",
+            "decision": "MATCH",
+            "invoiceLineId": "fb1e435f-24ea-4720-b631-2796994d542a",
+            "confidence": 1,
+            "bestScore": 1.006,
+            "secondScore": 0.1411111111111111,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_2",
+            "decision": "MATCH",
+            "invoiceLineId": "7dc18382-d620-40db-a697-dd99a95b1a90",
+            "confidence": 1,
+            "bestScore": 1.018,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_3",
+            "decision": "MATCH",
+            "invoiceLineId": "576eb014-87b6-4aab-82a0-7222245ecc57",
+            "confidence": 1,
+            "bestScore": 1.018,
+            "secondScore": 0.16685714285714284,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_4",
+            "decision": "MATCH",
+            "invoiceLineId": "66cf4ec4-9d7a-4313-b6c2-6b2a2bee4640",
+            "confidence": 1,
+            "bestScore": 1.018,
+            "secondScore": 0.15485714285714286,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_5",
+            "decision": "MATCH",
+            "invoiceLineId": "6d74dd15-0dd1-417e-b669-9f252f632d64",
+            "confidence": 1,
+            "bestScore": 1.018,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          }
+        ],
+        "matches": [
+          {
+            "rowMappingKey": "0_0",
+            "decision": "MATCH",
+            "invoiceLineId": "3988a168-02fe-4053-ab80-81c695c883e1",
+            "confidence": 1,
+            "bestScore": 1.03,
+            "secondScore": 0.024,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_1",
+            "decision": "MATCH",
+            "invoiceLineId": "fb1e435f-24ea-4720-b631-2796994d542a",
+            "confidence": 1,
+            "bestScore": 1.006,
+            "secondScore": 0.1411111111111111,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_2",
+            "decision": "MATCH",
+            "invoiceLineId": "7dc18382-d620-40db-a697-dd99a95b1a90",
+            "confidence": 1,
+            "bestScore": 1.018,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_3",
+            "decision": "MATCH",
+            "invoiceLineId": "576eb014-87b6-4aab-82a0-7222245ecc57",
+            "confidence": 1,
+            "bestScore": 1.018,
+            "secondScore": 0.16685714285714284,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_4",
+            "decision": "MATCH",
+            "invoiceLineId": "66cf4ec4-9d7a-4313-b6c2-6b2a2bee4640",
+            "confidence": 1,
+            "bestScore": 1.018,
+            "secondScore": 0.15485714285714286,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_5",
+            "decision": "MATCH",
+            "invoiceLineId": "6d74dd15-0dd1-417e-b669-9f252f632d64",
+            "confidence": 1,
+            "bestScore": 1.018,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          }
+        ],
+        "ambiguous": [],
+        "noMatch": [],
+        "unmatchedLineIds": []
+      },
+      "provenance_would_create": [
+        {
+          "invoice_line_id": "3988a168-02fe-4053-ab80-81c695c883e1",
+          "row_mapping_key": "0_0",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "fb1e435f-24ea-4720-b631-2796994d542a",
+          "row_mapping_key": "0_1",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "7dc18382-d620-40db-a697-dd99a95b1a90",
+          "row_mapping_key": "0_2",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "576eb014-87b6-4aab-82a0-7222245ecc57",
+          "row_mapping_key": "0_3",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "66cf4ec4-9d7a-4313-b6c2-6b2a2bee4640",
+          "row_mapping_key": "0_4",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "6d74dd15-0dd1-417e-b669-9f252f632d64",
+          "row_mapping_key": "0_5",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        }
+      ],
+      "writes": [],
+      "errors": [],
+      "extraction_status": "success",
+      "notes": []
+    },
+    {
+      "invoice_id": "080d6c45-affb-40e9-8943-7e848493f137",
+      "outcome": "OK",
+      "mode": "dry-run",
+      "invoice_date": "2024-06-10",
+      "supplier": "Fritz Ravich",
+      "source": "scanner",
+      "status": "mapped",
+      "file_path": "baacc78a-b7da-438e-8ea4-c9f3ce6f90e6/2026/6/1781203359174_scanner_image.jpg",
+      "mime": "image/jpeg",
+      "size_bytes": 428338,
+      "ext": "jpg",
+      "content_sha256_db": "7115342beb8d952008a7e7c0401422b48eafacd66f954964ba8a6fd2f762b945",
+      "content_sha256_computed": "7115342beb8d952008a7e7c0401422b48eafacd66f954964ba8a6fd2f762b945",
+      "sha_source": "db",
+      "ocr_ok": true,
+      "ocr_error": null,
+      "header_comparison": {
+        "fecha_ocr": "2024-06-10",
+        "fecha_bd": "2024-06-10",
+        "fecha_equal": true,
+        "numero_ocr": "3",
+        "numero_bd": "3",
+        "numero_equal": true,
+        "total_ocr": null,
+        "total_bd": 582.58,
+        "total_equal": null
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 7,
+        "cells": 56
+      },
+      "operative_line_count": 7,
+      "matcher": {
+        "rows": [
+          {
+            "rowMappingKey": "0_0",
+            "decision": "MATCH",
+            "invoiceLineId": "54a2bd0d-eb78-4e0a-8985-a97eb96653d4",
+            "confidence": 0.92,
+            "bestScore": 0.9400000000000001,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_1",
+            "decision": "NO_MATCH",
+            "invoiceLineId": null,
+            "confidence": 0.5,
+            "bestScore": 0.51,
+            "secondScore": 0.17285714285714285,
+            "reason": "bajo_umbral"
+          },
+          {
+            "rowMappingKey": "0_2",
+            "decision": "MATCH",
+            "invoiceLineId": "2220379a-391d-4209-96ac-79510f4511fd",
+            "confidence": 0.92,
+            "bestScore": 0.9400000000000001,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_3",
+            "decision": "MATCH",
+            "invoiceLineId": "caf7d26e-07a3-4c03-afce-8ea8aadbd6a1",
+            "confidence": 1,
+            "bestScore": 1.015,
+            "secondScore": 0.16285714285714284,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_4",
+            "decision": "MATCH",
+            "invoiceLineId": "4ee90008-b245-4d81-9649-94d92ec00982",
+            "confidence": 1,
+            "bestScore": 1.015,
+            "secondScore": 0.16785714285714284,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_5",
+            "decision": "NO_MATCH",
+            "invoiceLineId": null,
+            "confidence": 0.4,
+            "bestScore": 0.42000000000000004,
+            "secondScore": 0.135,
+            "reason": "bajo_umbral"
+          },
+          {
+            "rowMappingKey": "0_6",
+            "decision": "MATCH",
+            "invoiceLineId": "8799e2b0-9a86-455a-9a69-c7ec5b989153",
+            "confidence": 1,
+            "bestScore": 1.02,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          }
+        ],
+        "matches": [
+          {
+            "rowMappingKey": "0_0",
+            "decision": "MATCH",
+            "invoiceLineId": "54a2bd0d-eb78-4e0a-8985-a97eb96653d4",
+            "confidence": 0.92,
+            "bestScore": 0.9400000000000001,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_2",
+            "decision": "MATCH",
+            "invoiceLineId": "2220379a-391d-4209-96ac-79510f4511fd",
+            "confidence": 0.92,
+            "bestScore": 0.9400000000000001,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_3",
+            "decision": "MATCH",
+            "invoiceLineId": "caf7d26e-07a3-4c03-afce-8ea8aadbd6a1",
+            "confidence": 1,
+            "bestScore": 1.015,
+            "secondScore": 0.16285714285714284,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_4",
+            "decision": "MATCH",
+            "invoiceLineId": "4ee90008-b245-4d81-9649-94d92ec00982",
+            "confidence": 1,
+            "bestScore": 1.015,
+            "secondScore": 0.16785714285714284,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_6",
+            "decision": "MATCH",
+            "invoiceLineId": "8799e2b0-9a86-455a-9a69-c7ec5b989153",
+            "confidence": 1,
+            "bestScore": 1.02,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          }
+        ],
+        "ambiguous": [],
+        "noMatch": [
+          {
+            "rowMappingKey": "0_1",
+            "decision": "NO_MATCH",
+            "invoiceLineId": null,
+            "confidence": 0.5,
+            "bestScore": 0.51,
+            "secondScore": 0.17285714285714285,
+            "reason": "bajo_umbral"
+          },
+          {
+            "rowMappingKey": "0_5",
+            "decision": "NO_MATCH",
+            "invoiceLineId": null,
+            "confidence": 0.4,
+            "bestScore": 0.42000000000000004,
+            "secondScore": 0.135,
+            "reason": "bajo_umbral"
+          }
+        ],
+        "unmatchedLineIds": [
+          "710ac7bd-3e1e-4689-84cf-8ece6403b8ee",
+          "89d2b433-4a6f-4095-b8be-dd011e117f32"
+        ]
+      },
+      "provenance_would_create": [
+        {
+          "invoice_line_id": "54a2bd0d-eb78-4e0a-8985-a97eb96653d4",
+          "row_mapping_key": "0_0",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 0.92
+        },
+        {
+          "invoice_line_id": "2220379a-391d-4209-96ac-79510f4511fd",
+          "row_mapping_key": "0_2",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 0.92
+        },
+        {
+          "invoice_line_id": "caf7d26e-07a3-4c03-afce-8ea8aadbd6a1",
+          "row_mapping_key": "0_3",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "4ee90008-b245-4d81-9649-94d92ec00982",
+          "row_mapping_key": "0_4",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "8799e2b0-9a86-455a-9a69-c7ec5b989153",
+          "row_mapping_key": "0_6",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        }
+      ],
+      "writes": [],
+      "errors": [],
+      "extraction_status": "success",
+      "notes": []
+    },
+    {
+      "invoice_id": "cfdd763f-046b-4b1c-8fcb-50cd6d9b83b4",
+      "outcome": "OK",
+      "mode": "dry-run",
+      "invoice_date": "2026-01-15",
+      "supplier": "Santa Teresa",
+      "source": "email",
+      "status": "mapped",
+      "file_path": "2026/3/1772995606349_2026-01-15-000439-N-B0976162807-79900.pdf",
+      "mime": "application/pdf",
+      "size_bytes": 125461,
+      "ext": "pdf",
+      "content_sha256_db": null,
+      "content_sha256_computed": "28a8f943c2dfe8fdf1ba59498b1b5314cb47ca9d47d5f1026f8a87a4dcc27f6b",
+      "sha_source": "computed_only",
+      "ocr_ok": true,
+      "ocr_error": null,
+      "header_comparison": {
+        "fecha_ocr": "2026-01-15",
+        "fecha_bd": "2026-01-15",
+        "fecha_equal": true,
+        "numero_ocr": "FV-000439",
+        "numero_bd": "FV-000439",
+        "numero_equal": true,
+        "total_ocr": 1034.87,
+        "total_bd": 1034.87,
+        "total_equal": true
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 24,
+        "cells": 168
+      },
+      "operative_line_count": 24,
+      "matcher": {
+        "rows": [
+          {
+            "rowMappingKey": "0_0",
+            "decision": "MATCH",
+            "invoiceLineId": "d1c65d83-18f4-4590-9270-bcc3ffa4ff89",
+            "confidence": 1,
+            "bestScore": 1.0291304347826087,
+            "secondScore": 0.6984057971014492,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_1",
+            "decision": "MATCH",
+            "invoiceLineId": "c6f6303b-289e-45ef-8c50-125d90d0a53e",
+            "confidence": 1,
+            "bestScore": 1.0330434782608695,
+            "secondScore": 0.9504347826086957,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_2",
+            "decision": "MATCH",
+            "invoiceLineId": "56d66dab-cf8d-4f18-9b68-85d4db78846d",
+            "confidence": 1,
+            "bestScore": 1.0434782608695652,
+            "secondScore": 0.1411111111111111,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_3",
+            "decision": "MATCH",
+            "invoiceLineId": "3b5b07a3-7dce-47ef-b9d5-9696ada2762e",
+            "confidence": 1,
+            "bestScore": 1.05,
+            "secondScore": 0.11569169960474308,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_4",
+            "decision": "MATCH",
+            "invoiceLineId": "2b44c871-6a24-4724-bdcb-c8cb9b7ac8cf",
+            "confidence": 1,
+            "bestScore": 1.047391304347826,
+            "secondScore": 0.13719806763285022,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_5",
+            "decision": "MATCH",
+            "invoiceLineId": "e058a5ad-f607-4657-bb81-89e6786efd15",
+            "confidence": 1,
+            "bestScore": 1.0304347826086957,
+            "secondScore": 0.36246376811594205,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_6",
+            "decision": "MATCH",
+            "invoiceLineId": "f665211c-fbd9-4aad-8eed-3becefc8a429",
+            "confidence": 1,
+            "bestScore": 1.0304347826086957,
+            "secondScore": 0.2817391304347826,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_7",
+            "decision": "MATCH",
+            "invoiceLineId": "4acc690e-f498-42a3-857d-8acda2280d80",
+            "confidence": 1,
+            "bestScore": 1.048695652173913,
+            "secondScore": 0.2247826086956522,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_8",
+            "decision": "MATCH",
+            "invoiceLineId": "fc196fd8-52d7-4796-84c8-30ef4a524da8",
+            "confidence": 1,
+            "bestScore": 1.0304347826086957,
+            "secondScore": 0.1367391304347826,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_9",
+            "decision": "MATCH",
+            "invoiceLineId": "492bd80d-edd9-402c-bd38-449594b81ca0",
+            "confidence": 1,
+            "bestScore": 1.0447826086956522,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_10",
+            "decision": "MATCH",
+            "invoiceLineId": "dd4cdd3d-be3e-4641-b3f6-782c73a5f62b",
+            "confidence": 1,
+            "bestScore": 1.0382608695652173,
+            "secondScore": 0.13458937198067633,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_11",
+            "decision": "MATCH",
+            "invoiceLineId": "63ab827c-c636-41d2-be63-0a3df95a8a0f",
+            "confidence": 1,
+            "bestScore": 1.0460869565217392,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_12",
+            "decision": "MATCH",
+            "invoiceLineId": "94e31cc0-e468-4ae4-8789-e24786f93d18",
+            "confidence": 1,
+            "bestScore": 1.048695652173913,
+            "secondScore": 0.22217391304347828,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_13",
+            "decision": "MATCH",
+            "invoiceLineId": "d9f29e63-6eda-43b3-b39b-f45d365549c0",
+            "confidence": 1,
+            "bestScore": 1.0434782608695652,
+            "secondScore": 0.19405797101449274,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_14",
+            "decision": "MATCH",
+            "invoiceLineId": "0668e6d3-710a-4721-a1fe-e3b7837a5219",
+            "confidence": 1,
+            "bestScore": 1.0330434782608695,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_15",
+            "decision": "MATCH",
+            "invoiceLineId": "f8cb2e05-f0db-4754-a91e-2cbdb147333d",
+            "confidence": 1,
+            "bestScore": 1.0408695652173914,
+            "secondScore": 0.14456521739130435,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_16",
+            "decision": "MATCH",
+            "invoiceLineId": "6488707b-02bf-410d-abee-2929d1504a36",
+            "confidence": 1,
+            "bestScore": 1.0408695652173914,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_17",
+            "decision": "MATCH",
+            "invoiceLineId": "c9818cde-7c12-4b49-930d-f91f334512b3",
+            "confidence": 1,
+            "bestScore": 1.047391304347826,
+            "secondScore": 0.15239130434782608,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_18",
+            "decision": "MATCH",
+            "invoiceLineId": "02c7109f-69de-4c54-aec1-126ea7538ce6",
+            "confidence": 1,
+            "bestScore": 1.0265217391304349,
+            "secondScore": 0.15108695652173912,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_19",
+            "decision": "MATCH",
+            "invoiceLineId": "b9424b6f-be36-4746-bda9-1b7832ee3bf2",
+            "confidence": 1,
+            "bestScore": 1.0421739130434782,
+            "secondScore": 0.03043478260869565,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_20",
+            "decision": "MATCH",
+            "invoiceLineId": "41fc0067-916c-4d3e-add3-aed7026c3391",
+            "confidence": 1,
+            "bestScore": 1.0291304347826087,
+            "secondScore": 0.15108695652173912,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_21",
+            "decision": "MATCH",
+            "invoiceLineId": "a1f8a863-31da-4cff-ba42-7f8c46566170",
+            "confidence": 1,
+            "bestScore": 1.0382608695652173,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_22",
+            "decision": "MATCH",
+            "invoiceLineId": "7edf1961-5271-48b7-a2ee-cad3bc6efce7",
+            "confidence": 1,
+            "bestScore": 1.0343478260869565,
+            "secondScore": 0.08855072463768116,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_23",
+            "decision": "MATCH",
+            "invoiceLineId": "d6aeb23a-e372-4548-8669-fa1d2eda8865",
+            "confidence": 1,
+            "bestScore": 1.0421739130434782,
+            "secondScore": 0.1302173913043478,
+            "reason": "nombre_unico_fuerte"
+          }
+        ],
+        "matches": [
+          {
+            "rowMappingKey": "0_0",
+            "decision": "MATCH",
+            "invoiceLineId": "d1c65d83-18f4-4590-9270-bcc3ffa4ff89",
+            "confidence": 1,
+            "bestScore": 1.0291304347826087,
+            "secondScore": 0.6984057971014492,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_1",
+            "decision": "MATCH",
+            "invoiceLineId": "c6f6303b-289e-45ef-8c50-125d90d0a53e",
+            "confidence": 1,
+            "bestScore": 1.0330434782608695,
+            "secondScore": 0.9504347826086957,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_2",
+            "decision": "MATCH",
+            "invoiceLineId": "56d66dab-cf8d-4f18-9b68-85d4db78846d",
+            "confidence": 1,
+            "bestScore": 1.0434782608695652,
+            "secondScore": 0.1411111111111111,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_3",
+            "decision": "MATCH",
+            "invoiceLineId": "3b5b07a3-7dce-47ef-b9d5-9696ada2762e",
+            "confidence": 1,
+            "bestScore": 1.05,
+            "secondScore": 0.11569169960474308,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_4",
+            "decision": "MATCH",
+            "invoiceLineId": "2b44c871-6a24-4724-bdcb-c8cb9b7ac8cf",
+            "confidence": 1,
+            "bestScore": 1.047391304347826,
+            "secondScore": 0.13719806763285022,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_5",
+            "decision": "MATCH",
+            "invoiceLineId": "e058a5ad-f607-4657-bb81-89e6786efd15",
+            "confidence": 1,
+            "bestScore": 1.0304347826086957,
+            "secondScore": 0.36246376811594205,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_6",
+            "decision": "MATCH",
+            "invoiceLineId": "f665211c-fbd9-4aad-8eed-3becefc8a429",
+            "confidence": 1,
+            "bestScore": 1.0304347826086957,
+            "secondScore": 0.2817391304347826,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_7",
+            "decision": "MATCH",
+            "invoiceLineId": "4acc690e-f498-42a3-857d-8acda2280d80",
+            "confidence": 1,
+            "bestScore": 1.048695652173913,
+            "secondScore": 0.2247826086956522,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_8",
+            "decision": "MATCH",
+            "invoiceLineId": "fc196fd8-52d7-4796-84c8-30ef4a524da8",
+            "confidence": 1,
+            "bestScore": 1.0304347826086957,
+            "secondScore": 0.1367391304347826,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_9",
+            "decision": "MATCH",
+            "invoiceLineId": "492bd80d-edd9-402c-bd38-449594b81ca0",
+            "confidence": 1,
+            "bestScore": 1.0447826086956522,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_10",
+            "decision": "MATCH",
+            "invoiceLineId": "dd4cdd3d-be3e-4641-b3f6-782c73a5f62b",
+            "confidence": 1,
+            "bestScore": 1.0382608695652173,
+            "secondScore": 0.13458937198067633,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_11",
+            "decision": "MATCH",
+            "invoiceLineId": "63ab827c-c636-41d2-be63-0a3df95a8a0f",
+            "confidence": 1,
+            "bestScore": 1.0460869565217392,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_12",
+            "decision": "MATCH",
+            "invoiceLineId": "94e31cc0-e468-4ae4-8789-e24786f93d18",
+            "confidence": 1,
+            "bestScore": 1.048695652173913,
+            "secondScore": 0.22217391304347828,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_13",
+            "decision": "MATCH",
+            "invoiceLineId": "d9f29e63-6eda-43b3-b39b-f45d365549c0",
+            "confidence": 1,
+            "bestScore": 1.0434782608695652,
+            "secondScore": 0.19405797101449274,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_14",
+            "decision": "MATCH",
+            "invoiceLineId": "0668e6d3-710a-4721-a1fe-e3b7837a5219",
+            "confidence": 1,
+            "bestScore": 1.0330434782608695,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_15",
+            "decision": "MATCH",
+            "invoiceLineId": "f8cb2e05-f0db-4754-a91e-2cbdb147333d",
+            "confidence": 1,
+            "bestScore": 1.0408695652173914,
+            "secondScore": 0.14456521739130435,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_16",
+            "decision": "MATCH",
+            "invoiceLineId": "6488707b-02bf-410d-abee-2929d1504a36",
+            "confidence": 1,
+            "bestScore": 1.0408695652173914,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_17",
+            "decision": "MATCH",
+            "invoiceLineId": "c9818cde-7c12-4b49-930d-f91f334512b3",
+            "confidence": 1,
+            "bestScore": 1.047391304347826,
+            "secondScore": 0.15239130434782608,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_18",
+            "decision": "MATCH",
+            "invoiceLineId": "02c7109f-69de-4c54-aec1-126ea7538ce6",
+            "confidence": 1,
+            "bestScore": 1.0265217391304349,
+            "secondScore": 0.15108695652173912,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_19",
+            "decision": "MATCH",
+            "invoiceLineId": "b9424b6f-be36-4746-bda9-1b7832ee3bf2",
+            "confidence": 1,
+            "bestScore": 1.0421739130434782,
+            "secondScore": 0.03043478260869565,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_20",
+            "decision": "MATCH",
+            "invoiceLineId": "41fc0067-916c-4d3e-add3-aed7026c3391",
+            "confidence": 1,
+            "bestScore": 1.0291304347826087,
+            "secondScore": 0.15108695652173912,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_21",
+            "decision": "MATCH",
+            "invoiceLineId": "a1f8a863-31da-4cff-ba42-7f8c46566170",
+            "confidence": 1,
+            "bestScore": 1.0382608695652173,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_22",
+            "decision": "MATCH",
+            "invoiceLineId": "7edf1961-5271-48b7-a2ee-cad3bc6efce7",
+            "confidence": 1,
+            "bestScore": 1.0343478260869565,
+            "secondScore": 0.08855072463768116,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_23",
+            "decision": "MATCH",
+            "invoiceLineId": "d6aeb23a-e372-4548-8669-fa1d2eda8865",
+            "confidence": 1,
+            "bestScore": 1.0421739130434782,
+            "secondScore": 0.1302173913043478,
+            "reason": "nombre_unico_fuerte"
+          }
+        ],
+        "ambiguous": [],
+        "noMatch": [],
+        "unmatchedLineIds": []
+      },
+      "provenance_would_create": [
+        {
+          "invoice_line_id": "d1c65d83-18f4-4590-9270-bcc3ffa4ff89",
+          "row_mapping_key": "0_0",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "c6f6303b-289e-45ef-8c50-125d90d0a53e",
+          "row_mapping_key": "0_1",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "56d66dab-cf8d-4f18-9b68-85d4db78846d",
+          "row_mapping_key": "0_2",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "3b5b07a3-7dce-47ef-b9d5-9696ada2762e",
+          "row_mapping_key": "0_3",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "2b44c871-6a24-4724-bdcb-c8cb9b7ac8cf",
+          "row_mapping_key": "0_4",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "e058a5ad-f607-4657-bb81-89e6786efd15",
+          "row_mapping_key": "0_5",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "f665211c-fbd9-4aad-8eed-3becefc8a429",
+          "row_mapping_key": "0_6",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "4acc690e-f498-42a3-857d-8acda2280d80",
+          "row_mapping_key": "0_7",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "fc196fd8-52d7-4796-84c8-30ef4a524da8",
+          "row_mapping_key": "0_8",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "492bd80d-edd9-402c-bd38-449594b81ca0",
+          "row_mapping_key": "0_9",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "dd4cdd3d-be3e-4641-b3f6-782c73a5f62b",
+          "row_mapping_key": "0_10",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "63ab827c-c636-41d2-be63-0a3df95a8a0f",
+          "row_mapping_key": "0_11",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "94e31cc0-e468-4ae4-8789-e24786f93d18",
+          "row_mapping_key": "0_12",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "d9f29e63-6eda-43b3-b39b-f45d365549c0",
+          "row_mapping_key": "0_13",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "0668e6d3-710a-4721-a1fe-e3b7837a5219",
+          "row_mapping_key": "0_14",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "f8cb2e05-f0db-4754-a91e-2cbdb147333d",
+          "row_mapping_key": "0_15",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "6488707b-02bf-410d-abee-2929d1504a36",
+          "row_mapping_key": "0_16",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "c9818cde-7c12-4b49-930d-f91f334512b3",
+          "row_mapping_key": "0_17",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "02c7109f-69de-4c54-aec1-126ea7538ce6",
+          "row_mapping_key": "0_18",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "b9424b6f-be36-4746-bda9-1b7832ee3bf2",
+          "row_mapping_key": "0_19",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "41fc0067-916c-4d3e-add3-aed7026c3391",
+          "row_mapping_key": "0_20",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "a1f8a863-31da-4cff-ba42-7f8c46566170",
+          "row_mapping_key": "0_21",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "7edf1961-5271-48b7-a2ee-cad3bc6efce7",
+          "row_mapping_key": "0_22",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "d6aeb23a-e372-4548-8669-fa1d2eda8865",
+          "row_mapping_key": "0_23",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        }
+      ],
+      "writes": [],
+      "errors": [],
+      "extraction_status": "success",
+      "notes": [
+        "content_sha256 ausente en BD; hash solo en memoria"
+      ]
+    },
+    {
+      "invoice_id": "96d8363b-3538-4037-b7ce-483b664fc3f3",
+      "outcome": "OK",
+      "mode": "dry-run",
+      "invoice_date": "2026-04-09",
+      "supplier": "Sanilec",
+      "source": "email",
+      "status": "mapped",
+      "file_path": "2026/4/1775738551090_El Fogo Torrat A-61645.pdf",
+      "mime": "application/pdf",
+      "size_bytes": 296517,
+      "ext": "pdf",
+      "content_sha256_db": null,
+      "content_sha256_computed": "e3cde92a4cff1d7772d3eb21284cd46fb46d746359241e1bf28a44abe938ab2a",
+      "sha_source": "computed_only",
+      "ocr_ok": true,
+      "ocr_error": null,
+      "header_comparison": {
+        "fecha_ocr": "2026-04-09",
+        "fecha_bd": "2026-04-09",
+        "fecha_equal": true,
+        "numero_ocr": "A/61645",
+        "numero_bd": "A/61645",
+        "numero_equal": true,
+        "total_ocr": 130.47,
+        "total_bd": 130.47,
+        "total_equal": true
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 7,
+        "cells": 56
+      },
+      "operative_line_count": 7,
+      "matcher": {
+        "rows": [
+          {
+            "rowMappingKey": "0_0",
+            "decision": "MATCH",
+            "invoiceLineId": "8a197964-3bfa-45ca-ad4f-026a6f54ce46",
+            "confidence": 0.92,
+            "bestScore": 0.9750000000000001,
+            "secondScore": 0.28809523809523807,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_1",
+            "decision": "MATCH",
+            "invoiceLineId": "53e3f9f0-8803-4682-b9c7-b880d030c17b",
+            "confidence": 0.92,
+            "bestScore": 0.9900000000000001,
+            "secondScore": 0.20230769230769233,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_2",
+            "decision": "MATCH",
+            "invoiceLineId": "4cda8d5c-6d75-430a-aafc-21696d58e313",
+            "confidence": 0.92,
+            "bestScore": 0.9800000000000001,
+            "secondScore": 0.30272727272727273,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_3",
+            "decision": "MATCH",
+            "invoiceLineId": "c2de9174-b944-4709-a0cd-af30ecbf0d88",
+            "confidence": 0.92,
+            "bestScore": 0.9800000000000001,
+            "secondScore": 0.5744117647058824,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_4",
+            "decision": "MATCH",
+            "invoiceLineId": "bb77873c-254e-462b-a8ff-d6ff11493b97",
+            "confidence": 0.92,
+            "bestScore": 0.9900000000000001,
+            "secondScore": 0.5744117647058824,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_5",
+            "decision": "MATCH",
+            "invoiceLineId": "623b7150-e137-44f8-bf89-717ae33fab06",
+            "confidence": 0.92,
+            "bestScore": 0.9750000000000001,
+            "secondScore": 0.8485294117647059,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_6",
+            "decision": "MATCH",
+            "invoiceLineId": "dedd1152-7445-4501-8836-dc96aa760ddf",
+            "confidence": 0.92,
+            "bestScore": 0.9900000000000001,
+            "secondScore": 0.8335294117647059,
+            "reason": "nombre_unico_fuerte"
+          }
+        ],
+        "matches": [
+          {
+            "rowMappingKey": "0_0",
+            "decision": "MATCH",
+            "invoiceLineId": "8a197964-3bfa-45ca-ad4f-026a6f54ce46",
+            "confidence": 0.92,
+            "bestScore": 0.9750000000000001,
+            "secondScore": 0.28809523809523807,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_1",
+            "decision": "MATCH",
+            "invoiceLineId": "53e3f9f0-8803-4682-b9c7-b880d030c17b",
+            "confidence": 0.92,
+            "bestScore": 0.9900000000000001,
+            "secondScore": 0.20230769230769233,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_2",
+            "decision": "MATCH",
+            "invoiceLineId": "4cda8d5c-6d75-430a-aafc-21696d58e313",
+            "confidence": 0.92,
+            "bestScore": 0.9800000000000001,
+            "secondScore": 0.30272727272727273,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_3",
+            "decision": "MATCH",
+            "invoiceLineId": "c2de9174-b944-4709-a0cd-af30ecbf0d88",
+            "confidence": 0.92,
+            "bestScore": 0.9800000000000001,
+            "secondScore": 0.5744117647058824,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_4",
+            "decision": "MATCH",
+            "invoiceLineId": "bb77873c-254e-462b-a8ff-d6ff11493b97",
+            "confidence": 0.92,
+            "bestScore": 0.9900000000000001,
+            "secondScore": 0.5744117647058824,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_5",
+            "decision": "MATCH",
+            "invoiceLineId": "623b7150-e137-44f8-bf89-717ae33fab06",
+            "confidence": 0.92,
+            "bestScore": 0.9750000000000001,
+            "secondScore": 0.8485294117647059,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_6",
+            "decision": "MATCH",
+            "invoiceLineId": "dedd1152-7445-4501-8836-dc96aa760ddf",
+            "confidence": 0.92,
+            "bestScore": 0.9900000000000001,
+            "secondScore": 0.8335294117647059,
+            "reason": "nombre_unico_fuerte"
+          }
+        ],
+        "ambiguous": [],
+        "noMatch": [],
+        "unmatchedLineIds": []
+      },
+      "provenance_would_create": [
+        {
+          "invoice_line_id": "8a197964-3bfa-45ca-ad4f-026a6f54ce46",
+          "row_mapping_key": "0_0",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 0.92
+        },
+        {
+          "invoice_line_id": "53e3f9f0-8803-4682-b9c7-b880d030c17b",
+          "row_mapping_key": "0_1",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 0.92
+        },
+        {
+          "invoice_line_id": "4cda8d5c-6d75-430a-aafc-21696d58e313",
+          "row_mapping_key": "0_2",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 0.92
+        },
+        {
+          "invoice_line_id": "c2de9174-b944-4709-a0cd-af30ecbf0d88",
+          "row_mapping_key": "0_3",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 0.92
+        },
+        {
+          "invoice_line_id": "bb77873c-254e-462b-a8ff-d6ff11493b97",
+          "row_mapping_key": "0_4",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 0.92
+        },
+        {
+          "invoice_line_id": "623b7150-e137-44f8-bf89-717ae33fab06",
+          "row_mapping_key": "0_5",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 0.92
+        },
+        {
+          "invoice_line_id": "dedd1152-7445-4501-8836-dc96aa760ddf",
+          "row_mapping_key": "0_6",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 0.92
+        }
+      ],
+      "writes": [],
+      "errors": [],
+      "extraction_status": "success",
+      "notes": [
+        "content_sha256 ausente en BD; hash solo en memoria"
+      ]
+    },
+    {
+      "invoice_id": "0b6b4f8c-0d77-4aa0-b10c-3c7f3b8bc0e5",
+      "outcome": "OK",
+      "mode": "dry-run",
+      "invoice_date": "2026-05-06",
+      "supplier": "Santa Teresa",
+      "source": "scanner",
+      "status": "pending_mapping",
+      "file_path": "8185b707-41db-4a58-a64c-94f4b1c1e861/2026/5/1778575642186_scanner_image.jpg",
+      "mime": "image/jpeg",
+      "size_bytes": 542896,
+      "ext": "jpg",
+      "content_sha256_db": "aae44698732d8f7dcee267cf81dce722d2f296db9c077c7209a83c77b4e8e563",
+      "content_sha256_computed": "aae44698732d8f7dcee267cf81dce722d2f296db9c077c7209a83c77b4e8e563",
+      "sha_source": "db",
+      "ocr_ok": true,
+      "ocr_error": null,
+      "header_comparison": {
+        "fecha_ocr": "2026-05-06",
+        "fecha_bd": "2026-05-06",
+        "fecha_equal": true,
+        "numero_ocr": "FV-004370",
+        "numero_bd": "FV-004370",
+        "numero_equal": true,
+        "total_ocr": 1039.41,
+        "total_bd": 1039.41,
+        "total_equal": true
+      },
+      "table_metrics": {
+        "tables": 2,
+        "rows": 28,
+        "cells": 196
+      },
+      "operative_line_count": 25,
+      "matcher": {
+        "rows": [
+          {
+            "rowMappingKey": "0_0",
+            "decision": "MATCH",
+            "invoiceLineId": "ab6607b8-e804-4b7a-9d5b-2163da6c3635",
+            "confidence": 1,
+            "bestScore": 1.02625,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_1",
+            "decision": "MATCH",
+            "invoiceLineId": "cc425ca6-2e77-4eae-8e39-e0b5d5082833",
+            "confidence": 1,
+            "bestScore": 1.0225,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_2",
+            "decision": "MATCH",
+            "invoiceLineId": "43e6dca4-dc84-4174-80ef-972a714daa09",
+            "confidence": 1,
+            "bestScore": 1.04375,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_3",
+            "decision": "MATCH",
+            "invoiceLineId": "d82f09d0-a310-47ed-9bab-f490b88281aa",
+            "confidence": 1,
+            "bestScore": 1.02375,
+            "secondScore": 0.0325,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_4",
+            "decision": "MATCH",
+            "invoiceLineId": "724be5c1-4555-447c-8b79-8cc27a2e8c70",
+            "confidence": 1,
+            "bestScore": 1.0375,
+            "secondScore": 0.41625,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_5",
+            "decision": "MATCH",
+            "invoiceLineId": "43ce19ce-f632-49a2-876c-b9ad6304e532",
+            "confidence": 1,
+            "bestScore": 1.04875,
+            "secondScore": 0.14375,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_6",
+            "decision": "MATCH",
+            "invoiceLineId": "94a19642-b352-4548-95a0-b23c0efbdbc7",
+            "confidence": 1,
+            "bestScore": 1.0375,
+            "secondScore": 0.7116666666666667,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_7",
+            "decision": "MATCH",
+            "invoiceLineId": "12232a3b-deec-488d-b541-4de822a31c6b",
+            "confidence": 1,
+            "bestScore": 1.04375,
+            "secondScore": 0.9587500000000001,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_8",
+            "decision": "MATCH",
+            "invoiceLineId": "3607dad7-bb86-4346-be51-c4049bd4f742",
+            "confidence": 1,
+            "bestScore": 1.0462500000000001,
+            "secondScore": 0.52125,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_9",
+            "decision": "MATCH",
+            "invoiceLineId": "6a4df5b8-e863-4f5d-8009-349c248e374e",
+            "confidence": 1,
+            "bestScore": 1.0475,
+            "secondScore": 0.245,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_10",
+            "decision": "MATCH",
+            "invoiceLineId": "a4b98559-c4b3-4dbf-828d-f3025f9ba57f",
+            "confidence": 1,
+            "bestScore": 1.04,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_11",
+            "decision": "MATCH",
+            "invoiceLineId": "c5c31d3b-9efe-4029-ac5f-facc551dabcb",
+            "confidence": 1,
+            "bestScore": 1.0375,
+            "secondScore": 0.29625,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_12",
+            "decision": "MATCH",
+            "invoiceLineId": "22994039-c2a9-460f-b493-3848f78f59ad",
+            "confidence": 1,
+            "bestScore": 1.03875,
+            "secondScore": 0.545,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_13",
+            "decision": "MATCH",
+            "invoiceLineId": "44d0d67f-68cb-4e8b-b552-925822bbd20a",
+            "confidence": 1,
+            "bestScore": 1.04375,
+            "secondScore": 0.5375,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_14",
+            "decision": "MATCH",
+            "invoiceLineId": "6d943bcc-935d-4fbe-8b55-3800759519c9",
+            "confidence": 1,
+            "bestScore": 1.0475,
+            "secondScore": 0.41875,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_15",
+            "decision": "MATCH",
+            "invoiceLineId": "926efac1-fd79-4d90-8871-33a9c7bd9e7a",
+            "confidence": 1,
+            "bestScore": 1.05,
+            "secondScore": 0.3620833333333333,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_16",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 0.92,
+            "bestScore": 0.96625,
+            "secondScore": 0.94125,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "0_17",
+            "decision": "MATCH",
+            "invoiceLineId": "512b3c15-8d0d-409d-819f-4c30b00a47af",
+            "confidence": 1,
+            "bestScore": 1.04,
+            "secondScore": 0.9450000000000001,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_18",
+            "decision": "MATCH",
+            "invoiceLineId": "01485b50-377a-4f29-8a57-af5d93734cf7",
+            "confidence": 1,
+            "bestScore": 1.0275,
+            "secondScore": 0.04375,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_19",
+            "decision": "MATCH",
+            "invoiceLineId": "9646cedc-41de-4832-8953-896a42f13bb3",
+            "confidence": 1,
+            "bestScore": 1.0475,
+            "secondScore": 0.03375,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_20",
+            "decision": "MATCH",
+            "invoiceLineId": "c24fb780-af3e-4365-a03d-f6df345a4071",
+            "confidence": 1,
+            "bestScore": 1.05,
+            "secondScore": 0.1425,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_21",
+            "decision": "MATCH",
+            "invoiceLineId": "5e3c5683-14ee-492e-b7eb-47ff33309989",
+            "confidence": 1,
+            "bestScore": 1.0362500000000001,
+            "secondScore": 0.15375,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_22",
+            "decision": "MATCH",
+            "invoiceLineId": "262b6b81-5f76-4126-b4e9-b060b599e909",
+            "confidence": 1,
+            "bestScore": 1.0275,
+            "secondScore": 0.04875,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_23",
+            "decision": "MATCH",
+            "invoiceLineId": "cbf0af0d-785a-4a02-b034-e7d9cf4d96dc",
+            "confidence": 1,
+            "bestScore": 1.04875,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_24",
+            "decision": "MATCH",
+            "invoiceLineId": "070944d2-5e4b-4c47-9834-4c4fabfbae7a",
+            "confidence": 1,
+            "bestScore": 1.02125,
+            "secondScore": 0.50625,
+            "reason": "nombre_unico_fuerte"
+          }
+        ],
+        "matches": [
+          {
+            "rowMappingKey": "0_0",
+            "decision": "MATCH",
+            "invoiceLineId": "ab6607b8-e804-4b7a-9d5b-2163da6c3635",
+            "confidence": 1,
+            "bestScore": 1.02625,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_1",
+            "decision": "MATCH",
+            "invoiceLineId": "cc425ca6-2e77-4eae-8e39-e0b5d5082833",
+            "confidence": 1,
+            "bestScore": 1.0225,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_2",
+            "decision": "MATCH",
+            "invoiceLineId": "43e6dca4-dc84-4174-80ef-972a714daa09",
+            "confidence": 1,
+            "bestScore": 1.04375,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_3",
+            "decision": "MATCH",
+            "invoiceLineId": "d82f09d0-a310-47ed-9bab-f490b88281aa",
+            "confidence": 1,
+            "bestScore": 1.02375,
+            "secondScore": 0.0325,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_4",
+            "decision": "MATCH",
+            "invoiceLineId": "724be5c1-4555-447c-8b79-8cc27a2e8c70",
+            "confidence": 1,
+            "bestScore": 1.0375,
+            "secondScore": 0.41625,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_5",
+            "decision": "MATCH",
+            "invoiceLineId": "43ce19ce-f632-49a2-876c-b9ad6304e532",
+            "confidence": 1,
+            "bestScore": 1.04875,
+            "secondScore": 0.14375,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_6",
+            "decision": "MATCH",
+            "invoiceLineId": "94a19642-b352-4548-95a0-b23c0efbdbc7",
+            "confidence": 1,
+            "bestScore": 1.0375,
+            "secondScore": 0.7116666666666667,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_7",
+            "decision": "MATCH",
+            "invoiceLineId": "12232a3b-deec-488d-b541-4de822a31c6b",
+            "confidence": 1,
+            "bestScore": 1.04375,
+            "secondScore": 0.9587500000000001,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_8",
+            "decision": "MATCH",
+            "invoiceLineId": "3607dad7-bb86-4346-be51-c4049bd4f742",
+            "confidence": 1,
+            "bestScore": 1.0462500000000001,
+            "secondScore": 0.52125,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_9",
+            "decision": "MATCH",
+            "invoiceLineId": "6a4df5b8-e863-4f5d-8009-349c248e374e",
+            "confidence": 1,
+            "bestScore": 1.0475,
+            "secondScore": 0.245,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_10",
+            "decision": "MATCH",
+            "invoiceLineId": "a4b98559-c4b3-4dbf-828d-f3025f9ba57f",
+            "confidence": 1,
+            "bestScore": 1.04,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_11",
+            "decision": "MATCH",
+            "invoiceLineId": "c5c31d3b-9efe-4029-ac5f-facc551dabcb",
+            "confidence": 1,
+            "bestScore": 1.0375,
+            "secondScore": 0.29625,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_12",
+            "decision": "MATCH",
+            "invoiceLineId": "22994039-c2a9-460f-b493-3848f78f59ad",
+            "confidence": 1,
+            "bestScore": 1.03875,
+            "secondScore": 0.545,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_13",
+            "decision": "MATCH",
+            "invoiceLineId": "44d0d67f-68cb-4e8b-b552-925822bbd20a",
+            "confidence": 1,
+            "bestScore": 1.04375,
+            "secondScore": 0.5375,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_14",
+            "decision": "MATCH",
+            "invoiceLineId": "6d943bcc-935d-4fbe-8b55-3800759519c9",
+            "confidence": 1,
+            "bestScore": 1.0475,
+            "secondScore": 0.41875,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_15",
+            "decision": "MATCH",
+            "invoiceLineId": "926efac1-fd79-4d90-8871-33a9c7bd9e7a",
+            "confidence": 1,
+            "bestScore": 1.05,
+            "secondScore": 0.3620833333333333,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_17",
+            "decision": "MATCH",
+            "invoiceLineId": "512b3c15-8d0d-409d-819f-4c30b00a47af",
+            "confidence": 1,
+            "bestScore": 1.04,
+            "secondScore": 0.9450000000000001,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_18",
+            "decision": "MATCH",
+            "invoiceLineId": "01485b50-377a-4f29-8a57-af5d93734cf7",
+            "confidence": 1,
+            "bestScore": 1.0275,
+            "secondScore": 0.04375,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_19",
+            "decision": "MATCH",
+            "invoiceLineId": "9646cedc-41de-4832-8953-896a42f13bb3",
+            "confidence": 1,
+            "bestScore": 1.0475,
+            "secondScore": 0.03375,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_20",
+            "decision": "MATCH",
+            "invoiceLineId": "c24fb780-af3e-4365-a03d-f6df345a4071",
+            "confidence": 1,
+            "bestScore": 1.05,
+            "secondScore": 0.1425,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_21",
+            "decision": "MATCH",
+            "invoiceLineId": "5e3c5683-14ee-492e-b7eb-47ff33309989",
+            "confidence": 1,
+            "bestScore": 1.0362500000000001,
+            "secondScore": 0.15375,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_22",
+            "decision": "MATCH",
+            "invoiceLineId": "262b6b81-5f76-4126-b4e9-b060b599e909",
+            "confidence": 1,
+            "bestScore": 1.0275,
+            "secondScore": 0.04875,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_23",
+            "decision": "MATCH",
+            "invoiceLineId": "cbf0af0d-785a-4a02-b034-e7d9cf4d96dc",
+            "confidence": 1,
+            "bestScore": 1.04875,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_24",
+            "decision": "MATCH",
+            "invoiceLineId": "070944d2-5e4b-4c47-9834-4c4fabfbae7a",
+            "confidence": 1,
+            "bestScore": 1.02125,
+            "secondScore": 0.50625,
+            "reason": "nombre_unico_fuerte"
+          }
+        ],
+        "ambiguous": [
+          {
+            "rowMappingKey": "0_16",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 0.92,
+            "bestScore": 0.96625,
+            "secondScore": 0.94125,
+            "reason": "margen_insuficiente"
+          }
+        ],
+        "noMatch": [],
+        "unmatchedLineIds": [
+          "70367880-feb6-4f0a-aff4-670418fa51e6"
+        ]
+      },
+      "provenance_would_create": [
+        {
+          "invoice_line_id": "ab6607b8-e804-4b7a-9d5b-2163da6c3635",
+          "row_mapping_key": "0_0",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "cc425ca6-2e77-4eae-8e39-e0b5d5082833",
+          "row_mapping_key": "0_1",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "43e6dca4-dc84-4174-80ef-972a714daa09",
+          "row_mapping_key": "0_2",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "d82f09d0-a310-47ed-9bab-f490b88281aa",
+          "row_mapping_key": "0_3",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "724be5c1-4555-447c-8b79-8cc27a2e8c70",
+          "row_mapping_key": "0_4",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "43ce19ce-f632-49a2-876c-b9ad6304e532",
+          "row_mapping_key": "0_5",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "94a19642-b352-4548-95a0-b23c0efbdbc7",
+          "row_mapping_key": "0_6",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "12232a3b-deec-488d-b541-4de822a31c6b",
+          "row_mapping_key": "0_7",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "3607dad7-bb86-4346-be51-c4049bd4f742",
+          "row_mapping_key": "0_8",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "6a4df5b8-e863-4f5d-8009-349c248e374e",
+          "row_mapping_key": "0_9",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "a4b98559-c4b3-4dbf-828d-f3025f9ba57f",
+          "row_mapping_key": "0_10",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "c5c31d3b-9efe-4029-ac5f-facc551dabcb",
+          "row_mapping_key": "0_11",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "22994039-c2a9-460f-b493-3848f78f59ad",
+          "row_mapping_key": "0_12",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "44d0d67f-68cb-4e8b-b552-925822bbd20a",
+          "row_mapping_key": "0_13",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "6d943bcc-935d-4fbe-8b55-3800759519c9",
+          "row_mapping_key": "0_14",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "926efac1-fd79-4d90-8871-33a9c7bd9e7a",
+          "row_mapping_key": "0_15",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "512b3c15-8d0d-409d-819f-4c30b00a47af",
+          "row_mapping_key": "0_17",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "01485b50-377a-4f29-8a57-af5d93734cf7",
+          "row_mapping_key": "0_18",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "9646cedc-41de-4832-8953-896a42f13bb3",
+          "row_mapping_key": "0_19",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "c24fb780-af3e-4365-a03d-f6df345a4071",
+          "row_mapping_key": "0_20",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "5e3c5683-14ee-492e-b7eb-47ff33309989",
+          "row_mapping_key": "0_21",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "262b6b81-5f76-4126-b4e9-b060b599e909",
+          "row_mapping_key": "0_22",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "cbf0af0d-785a-4a02-b034-e7d9cf4d96dc",
+          "row_mapping_key": "0_23",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "070944d2-5e4b-4c47-9834-4c4fabfbae7a",
+          "row_mapping_key": "0_24",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        }
+      ],
+      "writes": [],
+      "errors": [],
+      "extraction_status": "success",
+      "notes": []
+    },
+    {
+      "invoice_id": "2598a02d-9ec1-4f95-b3cd-982169700792",
+      "outcome": "OK",
+      "mode": "dry-run",
+      "invoice_date": "2026-05-13",
+      "supplier": "Ametller",
+      "source": "scanner",
+      "status": "mapped",
+      "file_path": "56e8aa3b-a2d9-4bee-9caa-b302df71f988/2026/5/1778679402735_scanner_image.jpg",
+      "mime": "image/jpeg",
+      "size_bytes": 539897,
+      "ext": "jpg",
+      "content_sha256_db": "048317922c1b2963d31384ce0cbd9d800333b627efce63d6a039fed779642a77",
+      "content_sha256_computed": "048317922c1b2963d31384ce0cbd9d800333b627efce63d6a039fed779642a77",
+      "sha_source": "db",
+      "ocr_ok": true,
+      "ocr_error": null,
+      "header_comparison": {
+        "fecha_ocr": "2026-05-13",
+        "fecha_bd": "2026-05-13",
+        "fecha_equal": true,
+        "numero_ocr": "01/0213302",
+        "numero_bd": "01/0213302",
+        "numero_equal": true,
+        "total_ocr": null,
+        "total_bd": 259.84,
+        "total_equal": null
+      },
+      "table_metrics": {
+        "tables": 3,
+        "rows": 26,
+        "cells": 200
+      },
+      "operative_line_count": 48,
+      "matcher": {
+        "rows": [
+          {
+            "rowMappingKey": "2_0",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0629787234042554,
+            "secondScore": 1.0572340425531914,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_1",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.069972247918594,
+            "secondScore": 1.0419426456984273,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_2",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0489916743755783,
+            "secondScore": 1.0464384828862165,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_3",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.069444958371878,
+            "secondScore": 1.0490194264569843,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_4",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.060536540240518,
+            "secondScore": 1.0496854764107308,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_5",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0682238667900092,
+            "secondScore": 1.0541813135985199,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_6",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.066336725254394,
+            "secondScore": 1.0561239592969474,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_7",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 0.6666666666666666,
+            "bestScore": 0.7298396546407647,
+            "secondScore": 0.7189885908109774,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_8",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0600092506938021,
+            "secondScore": 1.0595652173913044,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_9",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0691119333950048,
+            "secondScore": 1.0684736355226643,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_10",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0575948196114708,
+            "secondScore": 1.0530434782608695,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_11",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.069694727104533,
+            "secondScore": 1.0677798334875115,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_12",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0569010175763183,
+            "secondScore": 1.0562627197039778,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_13",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.06836262719704,
+            "secondScore": 1.0568732654949122,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_14",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0689731729879741,
+            "secondScore": 1.0651433857539316,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_15",
+            "decision": "MATCH",
+            "invoiceLineId": "f19d84a4-c402-4f06-a57a-88aedea0e543",
+            "confidence": 1,
+            "bestScore": 1.0614801110083256,
+            "secondScore": 0.9768177613321,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "2_16",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0698057354301573,
+            "secondScore": 1.0689176688251618,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_17",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0656984273820538,
+            "secondScore": 1.0644218316373728,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_18",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0692229417206291,
+            "secondScore": 1.0522664199814986,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_19",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.066059204440333,
+            "secondScore": 1.04840888066605,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_20",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0668917668825162,
+            "secondScore": 1.0528492136910268,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_21",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0521831637372803,
+            "secondScore": 1.050268270120259,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_22",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0687511563367253,
+            "secondScore": 1.0598149861239594,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_23",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0591489361702129,
+            "secondScore": 1.0451063829787235,
+            "reason": "margen_insuficiente"
+          }
+        ],
+        "matches": [
+          {
+            "rowMappingKey": "2_15",
+            "decision": "MATCH",
+            "invoiceLineId": "f19d84a4-c402-4f06-a57a-88aedea0e543",
+            "confidence": 1,
+            "bestScore": 1.0614801110083256,
+            "secondScore": 0.9768177613321,
+            "reason": "nombre_unico_fuerte"
+          }
+        ],
+        "ambiguous": [
+          {
+            "rowMappingKey": "2_0",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0629787234042554,
+            "secondScore": 1.0572340425531914,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_1",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.069972247918594,
+            "secondScore": 1.0419426456984273,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_2",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0489916743755783,
+            "secondScore": 1.0464384828862165,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_3",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.069444958371878,
+            "secondScore": 1.0490194264569843,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_4",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.060536540240518,
+            "secondScore": 1.0496854764107308,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_5",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0682238667900092,
+            "secondScore": 1.0541813135985199,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_6",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.066336725254394,
+            "secondScore": 1.0561239592969474,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_7",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 0.6666666666666666,
+            "bestScore": 0.7298396546407647,
+            "secondScore": 0.7189885908109774,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_8",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0600092506938021,
+            "secondScore": 1.0595652173913044,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_9",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0691119333950048,
+            "secondScore": 1.0684736355226643,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_10",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0575948196114708,
+            "secondScore": 1.0530434782608695,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_11",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.069694727104533,
+            "secondScore": 1.0677798334875115,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_12",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0569010175763183,
+            "secondScore": 1.0562627197039778,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_13",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.06836262719704,
+            "secondScore": 1.0568732654949122,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_14",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0689731729879741,
+            "secondScore": 1.0651433857539316,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_16",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0698057354301573,
+            "secondScore": 1.0689176688251618,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_17",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0656984273820538,
+            "secondScore": 1.0644218316373728,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_18",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0692229417206291,
+            "secondScore": 1.0522664199814986,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_19",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.066059204440333,
+            "secondScore": 1.04840888066605,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_20",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0668917668825162,
+            "secondScore": 1.0528492136910268,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_21",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0521831637372803,
+            "secondScore": 1.050268270120259,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_22",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0687511563367253,
+            "secondScore": 1.0598149861239594,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "2_23",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0591489361702129,
+            "secondScore": 1.0451063829787235,
+            "reason": "margen_insuficiente"
+          }
+        ],
+        "noMatch": [],
+        "unmatchedLineIds": [
+          "0266fd18-cc66-4fab-8d13-b92a60e06d2c",
+          "0722e97b-ace2-4e48-90da-cc1022dc7bc3",
+          "1b88ce81-7456-404c-ae8d-5181dad1e00f",
+          "1bf008ee-979e-4425-9f10-b04354535cca",
+          "2359e604-5d9b-4d36-96bf-d061bf856bc4",
+          "260eaf6c-aacc-49d8-9213-d24347db2190",
+          "277d6c2b-5872-46c7-889e-0b247df71d04",
+          "2a2ccef8-48fb-405b-9492-6b2f53c60629",
+          "2ff86aab-b1e7-48c6-be9f-2d98a8df5ecc",
+          "43fdebe3-b42c-4990-829f-dc5406349aed",
+          "455cd5d5-39eb-4434-8099-0798321c6d77",
+          "457d7ba8-c92b-4c94-933c-8777f10aca2d",
+          "4b1bc287-6e9c-47c8-a487-1b76701cf084",
+          "4fa3c037-e5b6-4694-acf3-9a4c89cb94aa",
+          "53b533c0-a7f9-49d8-a7c4-58c787c951eb",
+          "613b95ed-9aba-4a37-90a2-bc8954d27d6b",
+          "652d8775-80fd-49c2-8cbb-a84ffe62ff22",
+          "666a5d7c-0f3a-4c00-bd6e-c6bf63e1298f",
+          "66840a38-2160-4218-b731-cd92e1b0a84d",
+          "6b41457a-60f4-4c53-97bb-5bebec91fac8",
+          "6df1e38f-c1ee-47d5-84bd-80d2e20bb29a",
+          "78b63bb4-362d-4570-bec4-f6dfb36c9ff2",
+          "7ce7cca2-d765-42d6-8d29-b40df301f235",
+          "814139d9-9ba9-4be0-b062-d9eb758d6528",
+          "81b43ca2-31d1-43a6-9adb-b707e71ea992",
+          "828cdc9c-60a3-4c18-b050-d3411fc8696c",
+          "8a374344-dad8-40ee-b79c-0fbfbdb53a13",
+          "8cc9a4b7-2c3a-45c5-8da4-0079af9317f0",
+          "8fd2d462-12f5-42b0-be28-a65f2e9d4e21",
+          "8fea7a79-4577-4d5d-a5b3-11da1dd3605b",
+          "9564e20b-84f3-48bb-9333-2fbfc8a7dca0",
+          "98478841-97d0-495b-832f-a31d68427585",
+          "a09b4d83-201b-481b-969c-b3d658a12dfc",
+          "a4053897-c397-4434-bd2b-5abdf575e17e",
+          "bb94019f-24f8-471a-878d-79cbd68e3934",
+          "d63ab68a-3a29-4293-a083-ef3aa7bf5633",
+          "d84250ba-78e7-4543-9cf4-7cd61ecf0e18",
+          "d858a795-2b87-4364-8dae-a35a2d103619",
+          "d9e349cf-4bf7-47c1-9594-a39656274725",
+          "e06b530f-15a7-4a83-9520-cea0355bf6ba",
+          "e8003de2-1876-4e06-8f78-41d7f3aa3ae2",
+          "e85974d7-23e3-4c11-89d3-85b7ba6c0a1d",
+          "f0045e18-0e82-40e6-b03b-91296b9eb1d0",
+          "f0dcd1ef-7055-427b-9085-c811249e1da8",
+          "f530dc89-0c55-4a6e-8083-5237006fa471",
+          "fb198d5a-71c5-47bf-9532-5a82e0a0e99c",
+          "fde11b6e-cd36-440c-8ea1-a0ef4e9e0881"
+        ]
+      },
+      "provenance_would_create": [
+        {
+          "invoice_line_id": "f19d84a4-c402-4f06-a57a-88aedea0e543",
+          "row_mapping_key": "2_15",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        }
+      ],
+      "writes": [],
+      "errors": [],
+      "extraction_status": "success",
+      "notes": []
+    },
+    {
+      "invoice_id": "c32e1f4c-5949-46bf-87bb-142c858a0647",
+      "outcome": "OK",
+      "mode": "dry-run",
+      "invoice_date": "2026-05-27",
+      "supplier": "Santa Teresa",
+      "source": "scanner",
+      "status": "pending_mapping",
+      "file_path": "baacc78a-b7da-438e-8ea4-c9f3ce6f90e6/2026/6/1780323717811_scanner_image.jpg",
+      "mime": "image/jpeg",
+      "size_bytes": 578403,
+      "ext": "jpg",
+      "content_sha256_db": "3b062ad42d2b04d8bb2151df1ec8bbc1a8a8e7dc1874967802ecbb18ba75d82f",
+      "content_sha256_computed": "3b062ad42d2b04d8bb2151df1ec8bbc1a8a8e7dc1874967802ecbb18ba75d82f",
+      "sha_source": "db",
+      "ocr_ok": true,
+      "ocr_error": null,
+      "header_comparison": {
+        "fecha_ocr": "2026-05-27",
+        "fecha_bd": "2026-05-27",
+        "fecha_equal": true,
+        "numero_ocr": "FV-005159",
+        "numero_bd": "FV-005159",
+        "numero_equal": true,
+        "total_ocr": 2693.43,
+        "total_bd": 2693.43,
+        "total_equal": true
+      },
+      "table_metrics": {
+        "tables": 2,
+        "rows": 37,
+        "cells": 259
+      },
+      "operative_line_count": 34,
+      "matcher": {
+        "rows": [
+          {
+            "rowMappingKey": "0_0",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 0.75,
+            "bestScore": 0.8,
+            "secondScore": 0.10363636363636364,
+            "reason": "nombre_insuficiente"
+          },
+          {
+            "rowMappingKey": "0_1",
+            "decision": "MATCH",
+            "invoiceLineId": "2a49c389-491d-46a4-86a2-45334ff273c3",
+            "confidence": 1,
+            "bestScore": 1.0491193181818181,
+            "secondScore": 0.22184659090909092,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_2",
+            "decision": "MATCH",
+            "invoiceLineId": "73c7fe89-8e1e-400b-82e1-c78e0cb88a9d",
+            "confidence": 1,
+            "bestScore": 1.0400568181818182,
+            "secondScore": 0.29903409090909094,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_3",
+            "decision": "MATCH",
+            "invoiceLineId": "174a4a74-0fea-449e-903a-7923329eafd5",
+            "confidence": 1,
+            "bestScore": 1.048096590909091,
+            "secondScore": 0.2909943181818182,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_4",
+            "decision": "MATCH",
+            "invoiceLineId": "2d5b6a30-f869-4460-b6fa-66f2c3094fa7",
+            "confidence": 1,
+            "bestScore": 1.0489772727272728,
+            "secondScore": 0.029886363636363635,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_5",
+            "decision": "MATCH",
+            "invoiceLineId": "cd8bbb6e-72af-4c84-a4bf-b6f1686bbde4",
+            "confidence": 1,
+            "bestScore": 1.0283238636363636,
+            "secondScore": 0.029857954545454545,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_6",
+            "decision": "MATCH",
+            "invoiceLineId": "76623b6b-bac0-44da-8f51-fc1675522096",
+            "confidence": 1,
+            "bestScore": 1.0428977272727273,
+            "secondScore": 0.6977462121212121,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_7",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0320170454545454,
+            "secondScore": 0.9638352272727273,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "0_8",
+            "decision": "MATCH",
+            "invoiceLineId": "6e563751-8117-44be-97f3-e94b5584bb63",
+            "confidence": 1,
+            "bestScore": 1.0475,
+            "secondScore": 0.35446969696969693,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_9",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 0.6666666666666666,
+            "bestScore": 0.7041950757575758,
+            "secondScore": 0.4284375,
+            "reason": "nombre_insuficiente"
+          },
+          {
+            "rowMappingKey": "0_10",
+            "decision": "MATCH",
+            "invoiceLineId": "6f3daf68-046b-4b73-8d48-9da71630a97c",
+            "confidence": 1,
+            "bestScore": 1.0484659090909092,
+            "secondScore": 0.4166477272727273,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_11",
+            "decision": "MATCH",
+            "invoiceLineId": "e1054a5c-fcf0-474e-afc3-cddce0818d58",
+            "confidence": 1,
+            "bestScore": 1.031221590909091,
+            "secondScore": 0.5175852272727273,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_12",
+            "decision": "MATCH",
+            "invoiceLineId": "5a79990d-a64d-43f8-8ab6-bae2324bd3d3",
+            "confidence": 1,
+            "bestScore": 1.0460227272727274,
+            "secondScore": 0.54125,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_13",
+            "decision": "MATCH",
+            "invoiceLineId": "9ec2abc7-582b-4ef2-93e6-3a80fcc0eeb5",
+            "confidence": 1,
+            "bestScore": 1.0421875,
+            "secondScore": 0.5450852272727273,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_14",
+            "decision": "MATCH",
+            "invoiceLineId": "76d8c067-efaf-40bd-919f-9137894dc678",
+            "confidence": 1,
+            "bestScore": 1.0494886363636364,
+            "secondScore": 0.029602272727272727,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_15",
+            "decision": "MATCH",
+            "invoiceLineId": "7a012bdc-9b03-4abc-a644-d28ffdc1f8df",
+            "confidence": 1,
+            "bestScore": 1.0486079545454545,
+            "secondScore": 0.04315340909090909,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_16",
+            "decision": "MATCH",
+            "invoiceLineId": "87c83375-9912-49b8-9cbf-3374784ce054",
+            "confidence": 1,
+            "bestScore": 1.0468181818181819,
+            "secondScore": 0.18694805194805192,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_17",
+            "decision": "MATCH",
+            "invoiceLineId": "2de00e4e-dba8-4c79-8b26-473ace5f886c",
+            "confidence": 1,
+            "bestScore": 1.0376988636363635,
+            "secondScore": 0.30886769480519477,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_18",
+            "decision": "MATCH",
+            "invoiceLineId": "5f68dc67-ea44-4092-a265-5fb7fdb6a43b",
+            "confidence": 0.92,
+            "bestScore": 0.9613068181818183,
+            "secondScore": 0.2250568181818182,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_19",
+            "decision": "MATCH",
+            "invoiceLineId": "da53e8e5-2385-4ae2-a5bc-028369e4147d",
+            "confidence": 1,
+            "bestScore": 1.0405397727272727,
+            "secondScore": 0.9487215909090909,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_20",
+            "decision": "MATCH",
+            "invoiceLineId": "958d0b34-55e6-4ee8-8cf1-d9d5f0fb5ea0",
+            "confidence": 1,
+            "bestScore": 1.0496590909090908,
+            "secondScore": 0.9414772727272728,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_21",
+            "decision": "MATCH",
+            "invoiceLineId": "77e6c167-7fe9-4f04-a9fc-bf86e27179b0",
+            "confidence": 1,
+            "bestScore": 1.0448579545454546,
+            "secondScore": 0.0296875,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_22",
+            "decision": "MATCH",
+            "invoiceLineId": "38dcdc86-ff98-4ec5-ab05-06a3489bd3a3",
+            "confidence": 1,
+            "bestScore": 1.0339204545454546,
+            "secondScore": 0.029715909090909088,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_23",
+            "decision": "MATCH",
+            "invoiceLineId": "b9866b92-4dff-40a6-b4f0-8fea18542b11",
+            "confidence": 1,
+            "bestScore": 1.0479261363636363,
+            "secondScore": 0.030255681818181817,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_24",
+            "decision": "MATCH",
+            "invoiceLineId": "3ec4132f-a9f6-4446-8a16-b7355352c7ae",
+            "confidence": 1,
+            "bestScore": 1.0329545454545455,
+            "secondScore": 0.14068181818181819,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_25",
+            "decision": "MATCH",
+            "invoiceLineId": "50d541d9-4ea0-498a-9466-5066746a4261",
+            "confidence": 1,
+            "bestScore": 1.0329261363636364,
+            "secondScore": 0.15760146103896103,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_26",
+            "decision": "MATCH",
+            "invoiceLineId": "e08e41bf-2a26-417a-819f-fdbc592649a6",
+            "confidence": 1,
+            "bestScore": 1.0461931818181818,
+            "secondScore": 0.2147159090909091,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_27",
+            "decision": "MATCH",
+            "invoiceLineId": "6d265260-1cd4-4ab3-a722-1dc9b95eaef1",
+            "confidence": 1,
+            "bestScore": 1.033778409090909,
+            "secondScore": 0.2940381493506493,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_28",
+            "decision": "MATCH",
+            "invoiceLineId": "e7fdbf73-6af3-4df7-91a4-e6b8bfe11480",
+            "confidence": 1,
+            "bestScore": 1.0462500000000001,
+            "secondScore": 0.19405303030303028,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_29",
+            "decision": "MATCH",
+            "invoiceLineId": "7d5c36ea-87f5-403c-bebb-0875c0e14625",
+            "confidence": 1,
+            "bestScore": 1.0391761363636365,
+            "secondScore": 0.029914772727272727,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_30",
+            "decision": "MATCH",
+            "invoiceLineId": "8153fbf5-529b-4d0b-9c20-cc5f2b50a3cf",
+            "confidence": 1,
+            "bestScore": 1.0391477272727272,
+            "secondScore": 0.1320770202020202,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_31",
+            "decision": "MATCH",
+            "invoiceLineId": "b81038ad-f60b-4bf2-910b-b77915823d94",
+            "confidence": 1,
+            "bestScore": 1.0436647727272728,
+            "secondScore": 0.529971590909091,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_32",
+            "decision": "MATCH",
+            "invoiceLineId": "b5a28de3-1b21-466c-822c-b7ff1d717393",
+            "confidence": 1,
+            "bestScore": 1.0418181818181818,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          }
+        ],
+        "matches": [
+          {
+            "rowMappingKey": "0_1",
+            "decision": "MATCH",
+            "invoiceLineId": "2a49c389-491d-46a4-86a2-45334ff273c3",
+            "confidence": 1,
+            "bestScore": 1.0491193181818181,
+            "secondScore": 0.22184659090909092,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_2",
+            "decision": "MATCH",
+            "invoiceLineId": "73c7fe89-8e1e-400b-82e1-c78e0cb88a9d",
+            "confidence": 1,
+            "bestScore": 1.0400568181818182,
+            "secondScore": 0.29903409090909094,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_3",
+            "decision": "MATCH",
+            "invoiceLineId": "174a4a74-0fea-449e-903a-7923329eafd5",
+            "confidence": 1,
+            "bestScore": 1.048096590909091,
+            "secondScore": 0.2909943181818182,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_4",
+            "decision": "MATCH",
+            "invoiceLineId": "2d5b6a30-f869-4460-b6fa-66f2c3094fa7",
+            "confidence": 1,
+            "bestScore": 1.0489772727272728,
+            "secondScore": 0.029886363636363635,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_5",
+            "decision": "MATCH",
+            "invoiceLineId": "cd8bbb6e-72af-4c84-a4bf-b6f1686bbde4",
+            "confidence": 1,
+            "bestScore": 1.0283238636363636,
+            "secondScore": 0.029857954545454545,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_6",
+            "decision": "MATCH",
+            "invoiceLineId": "76623b6b-bac0-44da-8f51-fc1675522096",
+            "confidence": 1,
+            "bestScore": 1.0428977272727273,
+            "secondScore": 0.6977462121212121,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_8",
+            "decision": "MATCH",
+            "invoiceLineId": "6e563751-8117-44be-97f3-e94b5584bb63",
+            "confidence": 1,
+            "bestScore": 1.0475,
+            "secondScore": 0.35446969696969693,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_10",
+            "decision": "MATCH",
+            "invoiceLineId": "6f3daf68-046b-4b73-8d48-9da71630a97c",
+            "confidence": 1,
+            "bestScore": 1.0484659090909092,
+            "secondScore": 0.4166477272727273,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_11",
+            "decision": "MATCH",
+            "invoiceLineId": "e1054a5c-fcf0-474e-afc3-cddce0818d58",
+            "confidence": 1,
+            "bestScore": 1.031221590909091,
+            "secondScore": 0.5175852272727273,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_12",
+            "decision": "MATCH",
+            "invoiceLineId": "5a79990d-a64d-43f8-8ab6-bae2324bd3d3",
+            "confidence": 1,
+            "bestScore": 1.0460227272727274,
+            "secondScore": 0.54125,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_13",
+            "decision": "MATCH",
+            "invoiceLineId": "9ec2abc7-582b-4ef2-93e6-3a80fcc0eeb5",
+            "confidence": 1,
+            "bestScore": 1.0421875,
+            "secondScore": 0.5450852272727273,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_14",
+            "decision": "MATCH",
+            "invoiceLineId": "76d8c067-efaf-40bd-919f-9137894dc678",
+            "confidence": 1,
+            "bestScore": 1.0494886363636364,
+            "secondScore": 0.029602272727272727,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_15",
+            "decision": "MATCH",
+            "invoiceLineId": "7a012bdc-9b03-4abc-a644-d28ffdc1f8df",
+            "confidence": 1,
+            "bestScore": 1.0486079545454545,
+            "secondScore": 0.04315340909090909,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_16",
+            "decision": "MATCH",
+            "invoiceLineId": "87c83375-9912-49b8-9cbf-3374784ce054",
+            "confidence": 1,
+            "bestScore": 1.0468181818181819,
+            "secondScore": 0.18694805194805192,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_17",
+            "decision": "MATCH",
+            "invoiceLineId": "2de00e4e-dba8-4c79-8b26-473ace5f886c",
+            "confidence": 1,
+            "bestScore": 1.0376988636363635,
+            "secondScore": 0.30886769480519477,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_18",
+            "decision": "MATCH",
+            "invoiceLineId": "5f68dc67-ea44-4092-a265-5fb7fdb6a43b",
+            "confidence": 0.92,
+            "bestScore": 0.9613068181818183,
+            "secondScore": 0.2250568181818182,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_19",
+            "decision": "MATCH",
+            "invoiceLineId": "da53e8e5-2385-4ae2-a5bc-028369e4147d",
+            "confidence": 1,
+            "bestScore": 1.0405397727272727,
+            "secondScore": 0.9487215909090909,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_20",
+            "decision": "MATCH",
+            "invoiceLineId": "958d0b34-55e6-4ee8-8cf1-d9d5f0fb5ea0",
+            "confidence": 1,
+            "bestScore": 1.0496590909090908,
+            "secondScore": 0.9414772727272728,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_21",
+            "decision": "MATCH",
+            "invoiceLineId": "77e6c167-7fe9-4f04-a9fc-bf86e27179b0",
+            "confidence": 1,
+            "bestScore": 1.0448579545454546,
+            "secondScore": 0.0296875,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_22",
+            "decision": "MATCH",
+            "invoiceLineId": "38dcdc86-ff98-4ec5-ab05-06a3489bd3a3",
+            "confidence": 1,
+            "bestScore": 1.0339204545454546,
+            "secondScore": 0.029715909090909088,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_23",
+            "decision": "MATCH",
+            "invoiceLineId": "b9866b92-4dff-40a6-b4f0-8fea18542b11",
+            "confidence": 1,
+            "bestScore": 1.0479261363636363,
+            "secondScore": 0.030255681818181817,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_24",
+            "decision": "MATCH",
+            "invoiceLineId": "3ec4132f-a9f6-4446-8a16-b7355352c7ae",
+            "confidence": 1,
+            "bestScore": 1.0329545454545455,
+            "secondScore": 0.14068181818181819,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_25",
+            "decision": "MATCH",
+            "invoiceLineId": "50d541d9-4ea0-498a-9466-5066746a4261",
+            "confidence": 1,
+            "bestScore": 1.0329261363636364,
+            "secondScore": 0.15760146103896103,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_26",
+            "decision": "MATCH",
+            "invoiceLineId": "e08e41bf-2a26-417a-819f-fdbc592649a6",
+            "confidence": 1,
+            "bestScore": 1.0461931818181818,
+            "secondScore": 0.2147159090909091,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_27",
+            "decision": "MATCH",
+            "invoiceLineId": "6d265260-1cd4-4ab3-a722-1dc9b95eaef1",
+            "confidence": 1,
+            "bestScore": 1.033778409090909,
+            "secondScore": 0.2940381493506493,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_28",
+            "decision": "MATCH",
+            "invoiceLineId": "e7fdbf73-6af3-4df7-91a4-e6b8bfe11480",
+            "confidence": 1,
+            "bestScore": 1.0462500000000001,
+            "secondScore": 0.19405303030303028,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_29",
+            "decision": "MATCH",
+            "invoiceLineId": "7d5c36ea-87f5-403c-bebb-0875c0e14625",
+            "confidence": 1,
+            "bestScore": 1.0391761363636365,
+            "secondScore": 0.029914772727272727,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_30",
+            "decision": "MATCH",
+            "invoiceLineId": "8153fbf5-529b-4d0b-9c20-cc5f2b50a3cf",
+            "confidence": 1,
+            "bestScore": 1.0391477272727272,
+            "secondScore": 0.1320770202020202,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_31",
+            "decision": "MATCH",
+            "invoiceLineId": "b81038ad-f60b-4bf2-910b-b77915823d94",
+            "confidence": 1,
+            "bestScore": 1.0436647727272728,
+            "secondScore": 0.529971590909091,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_32",
+            "decision": "MATCH",
+            "invoiceLineId": "b5a28de3-1b21-466c-822c-b7ff1d717393",
+            "confidence": 1,
+            "bestScore": 1.0418181818181818,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          }
+        ],
+        "ambiguous": [
+          {
+            "rowMappingKey": "0_0",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 0.75,
+            "bestScore": 0.8,
+            "secondScore": 0.10363636363636364,
+            "reason": "nombre_insuficiente"
+          },
+          {
+            "rowMappingKey": "0_7",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 1,
+            "bestScore": 1.0320170454545454,
+            "secondScore": 0.9638352272727273,
+            "reason": "margen_insuficiente"
+          },
+          {
+            "rowMappingKey": "0_9",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 0.6666666666666666,
+            "bestScore": 0.7041950757575758,
+            "secondScore": 0.4284375,
+            "reason": "nombre_insuficiente"
+          }
+        ],
+        "noMatch": [],
+        "unmatchedLineIds": [
+          "07e93a0d-6a35-458a-a6fe-45ec7857d36c",
+          "b2cc0209-96fb-4a60-afdd-99f84f35c47d",
+          "c333ded8-8489-4dbd-9acd-fdde94bf9e95",
+          "c4b443eb-8c8a-45d2-a22f-d1396c123a96"
+        ]
+      },
+      "provenance_would_create": [
+        {
+          "invoice_line_id": "2a49c389-491d-46a4-86a2-45334ff273c3",
+          "row_mapping_key": "0_1",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "73c7fe89-8e1e-400b-82e1-c78e0cb88a9d",
+          "row_mapping_key": "0_2",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "174a4a74-0fea-449e-903a-7923329eafd5",
+          "row_mapping_key": "0_3",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "2d5b6a30-f869-4460-b6fa-66f2c3094fa7",
+          "row_mapping_key": "0_4",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "cd8bbb6e-72af-4c84-a4bf-b6f1686bbde4",
+          "row_mapping_key": "0_5",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "76623b6b-bac0-44da-8f51-fc1675522096",
+          "row_mapping_key": "0_6",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "6e563751-8117-44be-97f3-e94b5584bb63",
+          "row_mapping_key": "0_8",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "6f3daf68-046b-4b73-8d48-9da71630a97c",
+          "row_mapping_key": "0_10",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "e1054a5c-fcf0-474e-afc3-cddce0818d58",
+          "row_mapping_key": "0_11",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "5a79990d-a64d-43f8-8ab6-bae2324bd3d3",
+          "row_mapping_key": "0_12",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "9ec2abc7-582b-4ef2-93e6-3a80fcc0eeb5",
+          "row_mapping_key": "0_13",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "76d8c067-efaf-40bd-919f-9137894dc678",
+          "row_mapping_key": "0_14",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "7a012bdc-9b03-4abc-a644-d28ffdc1f8df",
+          "row_mapping_key": "0_15",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "87c83375-9912-49b8-9cbf-3374784ce054",
+          "row_mapping_key": "0_16",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "2de00e4e-dba8-4c79-8b26-473ace5f886c",
+          "row_mapping_key": "0_17",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "5f68dc67-ea44-4092-a265-5fb7fdb6a43b",
+          "row_mapping_key": "0_18",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 0.92
+        },
+        {
+          "invoice_line_id": "da53e8e5-2385-4ae2-a5bc-028369e4147d",
+          "row_mapping_key": "0_19",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "958d0b34-55e6-4ee8-8cf1-d9d5f0fb5ea0",
+          "row_mapping_key": "0_20",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "77e6c167-7fe9-4f04-a9fc-bf86e27179b0",
+          "row_mapping_key": "0_21",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "38dcdc86-ff98-4ec5-ab05-06a3489bd3a3",
+          "row_mapping_key": "0_22",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "b9866b92-4dff-40a6-b4f0-8fea18542b11",
+          "row_mapping_key": "0_23",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "3ec4132f-a9f6-4446-8a16-b7355352c7ae",
+          "row_mapping_key": "0_24",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "50d541d9-4ea0-498a-9466-5066746a4261",
+          "row_mapping_key": "0_25",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "e08e41bf-2a26-417a-819f-fdbc592649a6",
+          "row_mapping_key": "0_26",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "6d265260-1cd4-4ab3-a722-1dc9b95eaef1",
+          "row_mapping_key": "0_27",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "e7fdbf73-6af3-4df7-91a4-e6b8bfe11480",
+          "row_mapping_key": "0_28",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "7d5c36ea-87f5-403c-bebb-0875c0e14625",
+          "row_mapping_key": "0_29",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "8153fbf5-529b-4d0b-9c20-cc5f2b50a3cf",
+          "row_mapping_key": "0_30",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "b81038ad-f60b-4bf2-910b-b77915823d94",
+          "row_mapping_key": "0_31",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "b5a28de3-1b21-466c-822c-b7ff1d717393",
+          "row_mapping_key": "0_32",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        }
+      ],
+      "writes": [],
+      "errors": [],
+      "extraction_status": "success",
+      "notes": []
+    },
+    {
+      "invoice_id": "1f57887e-0499-46c4-8bed-2b32d5bbe40d",
+      "outcome": "OK",
+      "mode": "dry-run",
+      "invoice_date": "2026-06-04",
+      "supplier": "Santa Teresa",
+      "source": "scanner",
+      "status": "mapped",
+      "file_path": "baacc78a-b7da-438e-8ea4-c9f3ce6f90e6/2026/6/1780922252077_scanner_image.jpg",
+      "mime": "image/jpeg",
+      "size_bytes": 507056,
+      "ext": "jpg",
+      "content_sha256_db": "75b70ccaf0d4702978b5db444294dc27c51ab70540b9b8040dc142906ffa7d42",
+      "content_sha256_computed": "75b70ccaf0d4702978b5db444294dc27c51ab70540b9b8040dc142906ffa7d42",
+      "sha_source": "db",
+      "ocr_ok": true,
+      "ocr_error": null,
+      "header_comparison": {
+        "fecha_ocr": "2026-06-04",
+        "fecha_bd": "2026-06-04",
+        "fecha_equal": true,
+        "numero_ocr": "FV-005501",
+        "numero_bd": "FV-005501",
+        "numero_equal": true,
+        "total_ocr": null,
+        "total_bd": 541.43,
+        "total_equal": null
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 31,
+        "cells": 217
+      },
+      "operative_line_count": 37,
+      "matcher": {
+        "rows": [
+          {
+            "rowMappingKey": "0_0",
+            "decision": "MATCH",
+            "invoiceLineId": "96afb45e-a74b-45cc-9a25-881a306b0f49",
+            "confidence": 1,
+            "bestScore": 1.0325,
+            "secondScore": 0.14083333333333334,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_1",
+            "decision": "MATCH",
+            "invoiceLineId": "88bf8674-a89f-4e59-8646-9af9961ed05f",
+            "confidence": 1,
+            "bestScore": 1.036,
+            "secondScore": 0.15183333333333332,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_2",
+            "decision": "MATCH",
+            "invoiceLineId": "ab4a9692-f395-46fd-90cb-0a3f215019b4",
+            "confidence": 1,
+            "bestScore": 1.0511666666666668,
+            "secondScore": 0.049666666666666665,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_3",
+            "decision": "MATCH",
+            "invoiceLineId": "0909a671-60f6-4a34-ae7b-c24856779baf",
+            "confidence": 1,
+            "bestScore": 1.0486666666666666,
+            "secondScore": 0.2788333333333333,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_4",
+            "decision": "MATCH",
+            "invoiceLineId": "30885e70-2924-44c5-80f0-4da20958dac9",
+            "confidence": 1,
+            "bestScore": 1.049,
+            "secondScore": 0.18816666666666665,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_5",
+            "decision": "MATCH",
+            "invoiceLineId": "2085276f-8c22-446b-904b-9ca20242c475",
+            "confidence": 1,
+            "bestScore": 1.0491666666666666,
+            "secondScore": 0.27666666666666667,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_6",
+            "decision": "MATCH",
+            "invoiceLineId": "45cf3c0d-33a2-4a46-b1c6-c8b4bb1200db",
+            "confidence": 1,
+            "bestScore": 1.0476666666666667,
+            "secondScore": 0.029833333333333333,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_7",
+            "decision": "MATCH",
+            "invoiceLineId": "c4746ea0-7e5b-47f3-86aa-baf254422d12",
+            "confidence": 1,
+            "bestScore": 1.0303333333333333,
+            "secondScore": 0.029666666666666668,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_8",
+            "decision": "MATCH",
+            "invoiceLineId": "96ba7868-49c4-414a-b3de-bd8e3015c06b",
+            "confidence": 1,
+            "bestScore": 1.0596666666666668,
+            "secondScore": 0.03883333333333333,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_9",
+            "decision": "MATCH",
+            "invoiceLineId": "a264acc4-2c27-4515-961a-724f5b79e87d",
+            "confidence": 1,
+            "bestScore": 1.0398333333333334,
+            "secondScore": 0.029833333333333333,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_10",
+            "decision": "MATCH",
+            "invoiceLineId": "4add675d-a169-46f6-91db-02fef3e32080",
+            "confidence": 1,
+            "bestScore": 1.0491666666666666,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_11",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 0.6666666666666666,
+            "bestScore": 0.7135,
+            "secondScore": 0.1485,
+            "reason": "nombre_insuficiente"
+          },
+          {
+            "rowMappingKey": "0_12",
+            "decision": "MATCH",
+            "invoiceLineId": "75c711a2-c3d0-4adb-892b-668984ad6115",
+            "confidence": 1,
+            "bestScore": 1.0495,
+            "secondScore": 0.048666666666666664,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_13",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 0.75,
+            "bestScore": 0.7963333333333333,
+            "secondScore": 0.09658974358974359,
+            "reason": "nombre_insuficiente"
+          },
+          {
+            "rowMappingKey": "0_14",
+            "decision": "NO_MATCH",
+            "invoiceLineId": null,
+            "confidence": 0.5,
+            "bestScore": 0.5365,
+            "secondScore": 0.04566666666666666,
+            "reason": "bajo_umbral"
+          },
+          {
+            "rowMappingKey": "0_15",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 0.7142857142857143,
+            "bestScore": 0.7576190476190476,
+            "secondScore": 0.04666666666666666,
+            "reason": "nombre_insuficiente"
+          },
+          {
+            "rowMappingKey": "0_16",
+            "decision": "MATCH",
+            "invoiceLineId": "02fd6432-c106-4bd1-9967-46b38f4a943e",
+            "confidence": 1,
+            "bestScore": 1.034,
+            "secondScore": 0.5456666666666666,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_17",
+            "decision": "MATCH",
+            "invoiceLineId": "b5cb461b-29da-4569-ac6f-741f3b79d86a",
+            "confidence": 1,
+            "bestScore": 1.0445,
+            "secondScore": 0.378,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_18",
+            "decision": "MATCH",
+            "invoiceLineId": "743ea88c-fcdc-4c33-8f51-6a0c7021155f",
+            "confidence": 1,
+            "bestScore": 1.0436666666666667,
+            "secondScore": 0.532,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_19",
+            "decision": "MATCH",
+            "invoiceLineId": "db36b61b-67f0-4845-ba8a-a1f856b09234",
+            "confidence": 1,
+            "bestScore": 1.039,
+            "secondScore": 0.24183333333333334,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_20",
+            "decision": "MATCH",
+            "invoiceLineId": "b7292d2b-34e4-4f2f-93fa-3c05ead13cd0",
+            "confidence": 1,
+            "bestScore": 1.0258333333333334,
+            "secondScore": 0.311547619047619,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_21",
+            "decision": "MATCH",
+            "invoiceLineId": "32b63d6e-e21c-4dc2-a8aa-f3f72469b532",
+            "confidence": 1,
+            "bestScore": 1.0148333333333333,
+            "secondScore": 0.5198333333333334,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_22",
+            "decision": "MATCH",
+            "invoiceLineId": "ce3ac81c-3da5-4754-9e3c-aa3c4d49b90f",
+            "confidence": 1,
+            "bestScore": 1.0436666666666667,
+            "secondScore": 0.28550000000000003,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_23",
+            "decision": "MATCH",
+            "invoiceLineId": "7ddb0244-5694-4327-89ee-51957067e633",
+            "confidence": 1,
+            "bestScore": 1.0403333333333333,
+            "secondScore": 0.2788333333333333,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_24",
+            "decision": "MATCH",
+            "invoiceLineId": "0830372a-2627-4f69-8648-718f2730673e",
+            "confidence": 1,
+            "bestScore": 1.0268333333333333,
+            "secondScore": 0.3615,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_25",
+            "decision": "NO_MATCH",
+            "invoiceLineId": null,
+            "confidence": 0.42857142857142855,
+            "bestScore": 0.4602380952380952,
+            "secondScore": 0.04583333333333333,
+            "reason": "bajo_umbral"
+          },
+          {
+            "rowMappingKey": "0_26",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 0.6666666666666666,
+            "bestScore": 0.7165,
+            "secondScore": 0.4048333333333334,
+            "reason": "nombre_insuficiente"
+          },
+          {
+            "rowMappingKey": "0_27",
+            "decision": "MATCH",
+            "invoiceLineId": "1e270964-0983-4e75-b130-a26cabf8e102",
+            "confidence": 1,
+            "bestScore": 1.0263333333333333,
+            "secondScore": 0.41383333333333333,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_28",
+            "decision": "MATCH",
+            "invoiceLineId": "8fabfcd5-8a6f-46c0-a295-c4b266005e93",
+            "confidence": 1,
+            "bestScore": 1.0178333333333334,
+            "secondScore": 0.31188095238095237,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_29",
+            "decision": "MATCH",
+            "invoiceLineId": "a59216c3-1f07-45ba-b999-af538d09c287",
+            "confidence": 1,
+            "bestScore": 1.041,
+            "secondScore": 0.9460000000000001,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_30",
+            "decision": "MATCH",
+            "invoiceLineId": "baf3072e-77da-4361-a10e-10de9a5c6af6",
+            "confidence": 1,
+            "bestScore": 1.045,
+            "secondScore": 0.9400000000000001,
+            "reason": "nombre_unico_fuerte"
+          }
+        ],
+        "matches": [
+          {
+            "rowMappingKey": "0_0",
+            "decision": "MATCH",
+            "invoiceLineId": "96afb45e-a74b-45cc-9a25-881a306b0f49",
+            "confidence": 1,
+            "bestScore": 1.0325,
+            "secondScore": 0.14083333333333334,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_1",
+            "decision": "MATCH",
+            "invoiceLineId": "88bf8674-a89f-4e59-8646-9af9961ed05f",
+            "confidence": 1,
+            "bestScore": 1.036,
+            "secondScore": 0.15183333333333332,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_2",
+            "decision": "MATCH",
+            "invoiceLineId": "ab4a9692-f395-46fd-90cb-0a3f215019b4",
+            "confidence": 1,
+            "bestScore": 1.0511666666666668,
+            "secondScore": 0.049666666666666665,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_3",
+            "decision": "MATCH",
+            "invoiceLineId": "0909a671-60f6-4a34-ae7b-c24856779baf",
+            "confidence": 1,
+            "bestScore": 1.0486666666666666,
+            "secondScore": 0.2788333333333333,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_4",
+            "decision": "MATCH",
+            "invoiceLineId": "30885e70-2924-44c5-80f0-4da20958dac9",
+            "confidence": 1,
+            "bestScore": 1.049,
+            "secondScore": 0.18816666666666665,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_5",
+            "decision": "MATCH",
+            "invoiceLineId": "2085276f-8c22-446b-904b-9ca20242c475",
+            "confidence": 1,
+            "bestScore": 1.0491666666666666,
+            "secondScore": 0.27666666666666667,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_6",
+            "decision": "MATCH",
+            "invoiceLineId": "45cf3c0d-33a2-4a46-b1c6-c8b4bb1200db",
+            "confidence": 1,
+            "bestScore": 1.0476666666666667,
+            "secondScore": 0.029833333333333333,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_7",
+            "decision": "MATCH",
+            "invoiceLineId": "c4746ea0-7e5b-47f3-86aa-baf254422d12",
+            "confidence": 1,
+            "bestScore": 1.0303333333333333,
+            "secondScore": 0.029666666666666668,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_8",
+            "decision": "MATCH",
+            "invoiceLineId": "96ba7868-49c4-414a-b3de-bd8e3015c06b",
+            "confidence": 1,
+            "bestScore": 1.0596666666666668,
+            "secondScore": 0.03883333333333333,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_9",
+            "decision": "MATCH",
+            "invoiceLineId": "a264acc4-2c27-4515-961a-724f5b79e87d",
+            "confidence": 1,
+            "bestScore": 1.0398333333333334,
+            "secondScore": 0.029833333333333333,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_10",
+            "decision": "MATCH",
+            "invoiceLineId": "4add675d-a169-46f6-91db-02fef3e32080",
+            "confidence": 1,
+            "bestScore": 1.0491666666666666,
+            "secondScore": 0.03,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_12",
+            "decision": "MATCH",
+            "invoiceLineId": "75c711a2-c3d0-4adb-892b-668984ad6115",
+            "confidence": 1,
+            "bestScore": 1.0495,
+            "secondScore": 0.048666666666666664,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_16",
+            "decision": "MATCH",
+            "invoiceLineId": "02fd6432-c106-4bd1-9967-46b38f4a943e",
+            "confidence": 1,
+            "bestScore": 1.034,
+            "secondScore": 0.5456666666666666,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_17",
+            "decision": "MATCH",
+            "invoiceLineId": "b5cb461b-29da-4569-ac6f-741f3b79d86a",
+            "confidence": 1,
+            "bestScore": 1.0445,
+            "secondScore": 0.378,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_18",
+            "decision": "MATCH",
+            "invoiceLineId": "743ea88c-fcdc-4c33-8f51-6a0c7021155f",
+            "confidence": 1,
+            "bestScore": 1.0436666666666667,
+            "secondScore": 0.532,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_19",
+            "decision": "MATCH",
+            "invoiceLineId": "db36b61b-67f0-4845-ba8a-a1f856b09234",
+            "confidence": 1,
+            "bestScore": 1.039,
+            "secondScore": 0.24183333333333334,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_20",
+            "decision": "MATCH",
+            "invoiceLineId": "b7292d2b-34e4-4f2f-93fa-3c05ead13cd0",
+            "confidence": 1,
+            "bestScore": 1.0258333333333334,
+            "secondScore": 0.311547619047619,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_21",
+            "decision": "MATCH",
+            "invoiceLineId": "32b63d6e-e21c-4dc2-a8aa-f3f72469b532",
+            "confidence": 1,
+            "bestScore": 1.0148333333333333,
+            "secondScore": 0.5198333333333334,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_22",
+            "decision": "MATCH",
+            "invoiceLineId": "ce3ac81c-3da5-4754-9e3c-aa3c4d49b90f",
+            "confidence": 1,
+            "bestScore": 1.0436666666666667,
+            "secondScore": 0.28550000000000003,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_23",
+            "decision": "MATCH",
+            "invoiceLineId": "7ddb0244-5694-4327-89ee-51957067e633",
+            "confidence": 1,
+            "bestScore": 1.0403333333333333,
+            "secondScore": 0.2788333333333333,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_24",
+            "decision": "MATCH",
+            "invoiceLineId": "0830372a-2627-4f69-8648-718f2730673e",
+            "confidence": 1,
+            "bestScore": 1.0268333333333333,
+            "secondScore": 0.3615,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_27",
+            "decision": "MATCH",
+            "invoiceLineId": "1e270964-0983-4e75-b130-a26cabf8e102",
+            "confidence": 1,
+            "bestScore": 1.0263333333333333,
+            "secondScore": 0.41383333333333333,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_28",
+            "decision": "MATCH",
+            "invoiceLineId": "8fabfcd5-8a6f-46c0-a295-c4b266005e93",
+            "confidence": 1,
+            "bestScore": 1.0178333333333334,
+            "secondScore": 0.31188095238095237,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_29",
+            "decision": "MATCH",
+            "invoiceLineId": "a59216c3-1f07-45ba-b999-af538d09c287",
+            "confidence": 1,
+            "bestScore": 1.041,
+            "secondScore": 0.9460000000000001,
+            "reason": "nombre_unico_fuerte"
+          },
+          {
+            "rowMappingKey": "0_30",
+            "decision": "MATCH",
+            "invoiceLineId": "baf3072e-77da-4361-a10e-10de9a5c6af6",
+            "confidence": 1,
+            "bestScore": 1.045,
+            "secondScore": 0.9400000000000001,
+            "reason": "nombre_unico_fuerte"
+          }
+        ],
+        "ambiguous": [
+          {
+            "rowMappingKey": "0_11",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 0.6666666666666666,
+            "bestScore": 0.7135,
+            "secondScore": 0.1485,
+            "reason": "nombre_insuficiente"
+          },
+          {
+            "rowMappingKey": "0_13",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 0.75,
+            "bestScore": 0.7963333333333333,
+            "secondScore": 0.09658974358974359,
+            "reason": "nombre_insuficiente"
+          },
+          {
+            "rowMappingKey": "0_15",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 0.7142857142857143,
+            "bestScore": 0.7576190476190476,
+            "secondScore": 0.04666666666666666,
+            "reason": "nombre_insuficiente"
+          },
+          {
+            "rowMappingKey": "0_26",
+            "decision": "AMBIGUOUS",
+            "invoiceLineId": null,
+            "confidence": 0.6666666666666666,
+            "bestScore": 0.7165,
+            "secondScore": 0.4048333333333334,
+            "reason": "nombre_insuficiente"
+          }
+        ],
+        "noMatch": [
+          {
+            "rowMappingKey": "0_14",
+            "decision": "NO_MATCH",
+            "invoiceLineId": null,
+            "confidence": 0.5,
+            "bestScore": 0.5365,
+            "secondScore": 0.04566666666666666,
+            "reason": "bajo_umbral"
+          },
+          {
+            "rowMappingKey": "0_25",
+            "decision": "NO_MATCH",
+            "invoiceLineId": null,
+            "confidence": 0.42857142857142855,
+            "bestScore": 0.4602380952380952,
+            "secondScore": 0.04583333333333333,
+            "reason": "bajo_umbral"
+          }
+        ],
+        "unmatchedLineIds": [
+          "113df1d7-327f-49d4-ba6f-5b7ee368a595",
+          "37ee4fb3-e293-44d7-8ed6-99f0b3b63817",
+          "3a8c323a-8b43-4f03-b5d0-8e55a261a52a",
+          "562dadcf-eba5-4f37-91f7-d16eb4f03838",
+          "7368ea3c-01e7-449b-9aef-4587a94d86bc",
+          "7df2fe0a-6178-483f-ad3e-d685721744c2",
+          "94263517-92d4-4f38-987e-7486167f060d",
+          "ad896d36-ec33-44b6-b65a-1fb2b2fff30a",
+          "b5d837a8-c1b5-4265-a121-4d594ec7ede3",
+          "bc222fd1-5f3d-4120-b4bc-009961c953d1",
+          "c71c1736-d2e6-4a50-99c2-3a4f7cb6cb78",
+          "d75e9178-2b39-488a-9b1e-c6af3e3bc4b7"
+        ]
+      },
+      "provenance_would_create": [
+        {
+          "invoice_line_id": "96afb45e-a74b-45cc-9a25-881a306b0f49",
+          "row_mapping_key": "0_0",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "88bf8674-a89f-4e59-8646-9af9961ed05f",
+          "row_mapping_key": "0_1",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "ab4a9692-f395-46fd-90cb-0a3f215019b4",
+          "row_mapping_key": "0_2",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "0909a671-60f6-4a34-ae7b-c24856779baf",
+          "row_mapping_key": "0_3",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "30885e70-2924-44c5-80f0-4da20958dac9",
+          "row_mapping_key": "0_4",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "2085276f-8c22-446b-904b-9ca20242c475",
+          "row_mapping_key": "0_5",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "45cf3c0d-33a2-4a46-b1c6-c8b4bb1200db",
+          "row_mapping_key": "0_6",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "c4746ea0-7e5b-47f3-86aa-baf254422d12",
+          "row_mapping_key": "0_7",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "96ba7868-49c4-414a-b3de-bd8e3015c06b",
+          "row_mapping_key": "0_8",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "a264acc4-2c27-4515-961a-724f5b79e87d",
+          "row_mapping_key": "0_9",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "4add675d-a169-46f6-91db-02fef3e32080",
+          "row_mapping_key": "0_10",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "75c711a2-c3d0-4adb-892b-668984ad6115",
+          "row_mapping_key": "0_12",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "02fd6432-c106-4bd1-9967-46b38f4a943e",
+          "row_mapping_key": "0_16",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "b5cb461b-29da-4569-ac6f-741f3b79d86a",
+          "row_mapping_key": "0_17",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "743ea88c-fcdc-4c33-8f51-6a0c7021155f",
+          "row_mapping_key": "0_18",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "db36b61b-67f0-4845-ba8a-a1f856b09234",
+          "row_mapping_key": "0_19",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "b7292d2b-34e4-4f2f-93fa-3c05ead13cd0",
+          "row_mapping_key": "0_20",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "32b63d6e-e21c-4dc2-a8aa-f3f72469b532",
+          "row_mapping_key": "0_21",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "ce3ac81c-3da5-4754-9e3c-aa3c4d49b90f",
+          "row_mapping_key": "0_22",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "7ddb0244-5694-4327-89ee-51957067e633",
+          "row_mapping_key": "0_23",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "0830372a-2627-4f69-8648-718f2730673e",
+          "row_mapping_key": "0_24",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "1e270964-0983-4e75-b130-a26cabf8e102",
+          "row_mapping_key": "0_27",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "8fabfcd5-8a6f-46c0-a295-c4b266005e93",
+          "row_mapping_key": "0_28",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "a59216c3-1f07-45ba-b999-af538d09c287",
+          "row_mapping_key": "0_29",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        },
+        {
+          "invoice_line_id": "baf3072e-77da-4361-a10e-10de9a5c6af6",
+          "row_mapping_key": "0_30",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        }
+      ],
+      "writes": [],
+      "errors": [],
+      "extraction_status": "success",
+      "notes": []
+    },
+    {
+      "invoice_id": "18aed1f2-686d-461f-a848-a7a168b4f420",
+      "outcome": "OK",
+      "mode": "dry-run",
+      "invoice_date": "2026-07-22",
+      "supplier": "Sant Aniol",
+      "source": "scanner",
+      "status": "mapped",
+      "file_path": "baacc78a-b7da-438e-8ea4-c9f3ce6f90e6/2026/7/1784844125318_scanner_image.jpg",
+      "mime": "image/jpeg",
+      "size_bytes": 340999,
+      "ext": "jpg",
+      "content_sha256_db": "ec1a18c54e99fb8cb84ffdd41d6b65cdb530d184fbc8d40bf3602112beef0f78",
+      "content_sha256_computed": "ec1a18c54e99fb8cb84ffdd41d6b65cdb530d184fbc8d40bf3602112beef0f78",
+      "sha_source": "db",
+      "ocr_ok": true,
+      "ocr_error": null,
+      "header_comparison": {
+        "fecha_ocr": "2026-07-22",
+        "fecha_bd": "2026-07-22",
+        "fecha_equal": true,
+        "numero_ocr": "7028470/26",
+        "numero_bd": "7028470/26",
+        "numero_equal": true,
+        "total_ocr": 0,
+        "total_bd": 240,
+        "total_equal": false
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 1,
+        "cells": 12
+      },
+      "operative_line_count": 1,
+      "matcher": {
+        "rows": [
+          {
+            "rowMappingKey": "0_0",
+            "decision": "MATCH",
+            "invoiceLineId": "e5dcd83d-a4c2-41de-b716-1c53858e2672",
+            "confidence": 1,
+            "bestScore": 1.02,
+            "secondScore": 0,
+            "reason": "nombre_unico_fuerte"
+          }
+        ],
+        "matches": [
+          {
+            "rowMappingKey": "0_0",
+            "decision": "MATCH",
+            "invoiceLineId": "e5dcd83d-a4c2-41de-b716-1c53858e2672",
+            "confidence": 1,
+            "bestScore": 1.02,
+            "secondScore": 0,
+            "reason": "nombre_unico_fuerte"
+          }
+        ],
+        "ambiguous": [],
+        "noMatch": [],
+        "unmatchedLineIds": []
+      },
+      "provenance_would_create": [
+        {
+          "invoice_line_id": "e5dcd83d-a4c2-41de-b716-1c53858e2672",
+          "row_mapping_key": "0_0",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        }
+      ],
+      "writes": [],
+      "errors": [],
+      "extraction_status": "success",
+      "notes": []
+    },
+    {
+      "invoice_id": "85577bb8-926c-4fbe-a561-af43a4415039",
+      "outcome": "OK",
+      "mode": "dry-run",
+      "invoice_date": "2026-07-24",
+      "supplier": "Hielo Fenix",
+      "source": "scanner",
+      "status": "mapped",
+      "file_path": "7978ebc0-f264-4f69-b693-4d5d736b227e/2026/7/1784920758426_scanner_image.jpg",
+      "mime": "image/jpeg",
+      "size_bytes": 566764,
+      "ext": "jpg",
+      "content_sha256_db": "ae4633dc35bd405ca423fe35ae1b56b529dafbc23043bf9d50459fe7d513aa2a",
+      "content_sha256_computed": "ae4633dc35bd405ca423fe35ae1b56b529dafbc23043bf9d50459fe7d513aa2a",
+      "sha_source": "db",
+      "ocr_ok": true,
+      "ocr_error": null,
+      "header_comparison": {
+        "fecha_ocr": "2026-07-24",
+        "fecha_bd": "2026-07-24",
+        "fecha_equal": true,
+        "numero_ocr": null,
+        "numero_bd": "DESCONOCIDO",
+        "numero_equal": null,
+        "total_ocr": 28.75,
+        "total_bd": 28.75,
+        "total_equal": true
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 5,
+        "cells": 20
+      },
+      "operative_line_count": 1,
+      "matcher": {
+        "rows": [],
+        "matches": [],
+        "ambiguous": [],
+        "noMatch": [],
+        "unmatchedLineIds": [
+          "a11aaa42-b112-4500-aff4-60440c3391b3"
+        ]
+      },
+      "provenance_would_create": [],
+      "writes": [],
+      "errors": [],
+      "extraction_status": "success",
+      "notes": []
+    }
+  ]
+}

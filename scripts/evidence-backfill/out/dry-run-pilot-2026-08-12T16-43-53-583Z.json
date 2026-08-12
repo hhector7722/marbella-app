@@ -1,0 +1,97 @@
+{
+  "summary": {
+    "event": "summary",
+    "mode": "write",
+    "total": 1,
+    "by_outcome": {
+      "OK": 1
+    },
+    "total_writes_entries": 2,
+    "any_writes": true
+  },
+  "results": [
+    {
+      "invoice_id": "37b5ed7e-f03a-4782-bb6f-303e00da540e",
+      "outcome": "OK",
+      "mode": "write",
+      "invoice_date": "2018-06-26",
+      "supplier": "Cava",
+      "source": "scanner",
+      "status": "mapped",
+      "file_path": "2a45bdcd-8850-4dc2-bd1e-50be0196106c/2026/6/1781855688050_scanner_image.jpg",
+      "mime": "image/jpeg",
+      "size_bytes": 444129,
+      "ext": "jpg",
+      "content_sha256_db": "06dee1c25a6553cdcb7a312621705dbdb53876dfe2291ba38ebc8521cc0f9816",
+      "content_sha256_computed": "06dee1c25a6553cdcb7a312621705dbdb53876dfe2291ba38ebc8521cc0f9816",
+      "sha_source": "db",
+      "ocr_ok": true,
+      "ocr_error": null,
+      "header_comparison": {
+        "fecha_ocr": "2018-06-26",
+        "fecha_bd": "2018-06-26",
+        "fecha_equal": true,
+        "numero_ocr": "771",
+        "numero_bd": "771",
+        "numero_equal": true,
+        "total_ocr": 217.8,
+        "total_bd": 217.8,
+        "total_equal": true
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 1,
+        "cells": 5
+      },
+      "operative_line_count": 1,
+      "matcher": {
+        "rows": [
+          {
+            "rowMappingKey": "0_0",
+            "decision": "MATCH",
+            "invoiceLineId": "89f4cdc0-3d2a-4d56-b8ad-4d6a9677b999",
+            "confidence": 1,
+            "bestScore": 1.04,
+            "secondScore": 0,
+            "reason": "nombre_unico_fuerte"
+          }
+        ],
+        "matches": [
+          {
+            "rowMappingKey": "0_0",
+            "decision": "MATCH",
+            "invoiceLineId": "89f4cdc0-3d2a-4d56-b8ad-4d6a9677b999",
+            "confidence": 1,
+            "bestScore": 1.04,
+            "secondScore": 0,
+            "reason": "nombre_unico_fuerte"
+          }
+        ],
+        "ambiguous": [],
+        "noMatch": [],
+        "unmatchedLineIds": []
+      },
+      "provenance_would_create": [
+        {
+          "invoice_line_id": "89f4cdc0-3d2a-4d56-b8ad-4d6a9677b999",
+          "row_mapping_key": "0_0",
+          "linked_by": "backfill-matcher-v1",
+          "confidence_score": 1
+        }
+      ],
+      "writes": [
+        {
+          "type": "persist_document_evidence",
+          "extraction_id": "fbcb35e0-07ea-4b96-9c09-6f88a361bc21"
+        },
+        {
+          "type": "purchase_line_provenance",
+          "count": 1
+        }
+      ],
+      "errors": [],
+      "extraction_status": "success",
+      "notes": []
+    }
+  ]
+}

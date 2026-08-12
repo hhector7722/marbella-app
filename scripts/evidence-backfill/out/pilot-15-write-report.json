@@ -1,0 +1,1065 @@
+{
+  "event": "PILOT_15_SUMMARY",
+  "stopped": false,
+  "stopReason": null,
+  "total_in_run": 15,
+  "by_outcome": {
+    "SKIP_ALREADY_HAS_EVIDENCE": 1,
+    "OK": 14
+  },
+  "totals": {
+    "matches": 131,
+    "ambiguous": 31,
+    "no_match": 5,
+    "candidates": 167,
+    "provenance_created": 131,
+    "extractions_after_sum": 15,
+    "operative_diff_sum": 0
+  },
+  "pdf": [
+    {
+      "id": "cfdd763f-046b-4b1c-8fcb-50cd6d9b83b4",
+      "outcome": "OK",
+      "supplier": "Santa Teresa"
+    },
+    {
+      "id": "96d8363b-3538-4037-b7ce-483b664fc3f3",
+      "outcome": "OK",
+      "supplier": "Sanilec"
+    }
+  ],
+  "results": [
+    {
+      "invoice_id": "37b5ed7e-f03a-4782-bb6f-303e00da540e",
+      "is_cava": true,
+      "outcome": "SKIP_ALREADY_HAS_EVIDENCE",
+      "supplier": "Cava",
+      "invoice_date": "2018-06-26",
+      "mime": null,
+      "ext": "jpg",
+      "sha_source": null,
+      "header_comparison": null,
+      "table_metrics": null,
+      "operative_line_count": 0,
+      "matcher": {
+        "candidates": 0,
+        "matches": 0,
+        "ambiguous": 0,
+        "no_match": 0
+      },
+      "provenance_would_create": 0,
+      "provenance_before": 1,
+      "provenance_after": 1,
+      "provenance_created": 0,
+      "evidence_before": {
+        "extractions": 1,
+        "tables": 1,
+        "columns": 5,
+        "rows": 1,
+        "cells": 5
+      },
+      "evidence_after": {
+        "extractions": 1,
+        "tables": 1,
+        "columns": 5,
+        "rows": 1,
+        "cells": 5
+      },
+      "writes": [],
+      "errors": [],
+      "notes": [
+        "extractions_existing=1"
+      ],
+      "operative": {
+        "invoice_identical": true,
+        "lines_identical": true,
+        "stock_identical": true,
+        "mappings_related_identical": true,
+        "mappings_total_identical": true
+      },
+      "OPERATIVE_DIFF": 0
+    },
+    {
+      "invoice_id": "194892fa-6353-4308-be97-ca6873042146",
+      "is_cava": false,
+      "outcome": "OK",
+      "supplier": "Otros",
+      "invoice_date": "2019-11-06",
+      "mime": "image/jpeg",
+      "ext": "jpg",
+      "sha_source": "db",
+      "header_comparison": {
+        "fecha_ocr": null,
+        "fecha_bd": "2019-11-06",
+        "fecha_equal": null,
+        "numero_ocr": null,
+        "numero_bd": "034779447",
+        "numero_equal": null,
+        "total_ocr": 114.27,
+        "total_bd": 114.27,
+        "total_equal": true
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 14,
+        "cells": 42
+      },
+      "operative_line_count": 14,
+      "matcher": {
+        "candidates": 0,
+        "matches": 0,
+        "ambiguous": 0,
+        "no_match": 0
+      },
+      "provenance_would_create": 0,
+      "provenance_before": 0,
+      "provenance_after": 0,
+      "provenance_created": 0,
+      "evidence_before": {
+        "extractions": 0,
+        "tables": 0,
+        "columns": 0,
+        "rows": 0,
+        "cells": 0
+      },
+      "evidence_after": {
+        "extractions": 1,
+        "tables": 1,
+        "columns": 3,
+        "rows": 14,
+        "cells": 42
+      },
+      "writes": [
+        {
+          "type": "persist_document_evidence",
+          "extraction_id": "fdba0bea-d568-482e-9bc6-c36e456d4b69"
+        }
+      ],
+      "errors": [],
+      "notes": [],
+      "operative": {
+        "invoice_identical": true,
+        "lines_identical": true,
+        "stock_identical": true,
+        "mappings_related_identical": true,
+        "mappings_total_identical": true
+      },
+      "OPERATIVE_DIFF": 0
+    },
+    {
+      "invoice_id": "c1dca150-0ac0-4814-8a29-53ec11a327fa",
+      "is_cava": false,
+      "outcome": "OK",
+      "supplier": "Hielo Fenix",
+      "invoice_date": "2020-05-21",
+      "mime": "image/jpeg",
+      "ext": "jpg",
+      "sha_source": "db",
+      "header_comparison": {
+        "fecha_ocr": "2020-05-21",
+        "fecha_bd": "2020-05-21",
+        "fecha_equal": true,
+        "numero_ocr": null,
+        "numero_bd": "DESCONOCIDO",
+        "numero_equal": null,
+        "total_ocr": null,
+        "total_bd": 17.25,
+        "total_equal": null
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 3,
+        "cells": 12
+      },
+      "operative_line_count": 3,
+      "matcher": {
+        "candidates": 0,
+        "matches": 0,
+        "ambiguous": 0,
+        "no_match": 0
+      },
+      "provenance_would_create": 0,
+      "provenance_before": 0,
+      "provenance_after": 0,
+      "provenance_created": 0,
+      "evidence_before": {
+        "extractions": 0,
+        "tables": 0,
+        "columns": 0,
+        "rows": 0,
+        "cells": 0
+      },
+      "evidence_after": {
+        "extractions": 1,
+        "tables": 1,
+        "columns": 4,
+        "rows": 3,
+        "cells": 12
+      },
+      "writes": [
+        {
+          "type": "persist_document_evidence",
+          "extraction_id": "9d78ad20-d8ab-404b-96a0-504c0e7b223e"
+        }
+      ],
+      "errors": [],
+      "notes": [],
+      "operative": {
+        "invoice_identical": true,
+        "lines_identical": true,
+        "stock_identical": true,
+        "mappings_related_identical": true,
+        "mappings_total_identical": true
+      },
+      "OPERATIVE_DIFF": 0
+    },
+    {
+      "invoice_id": "08da1117-b97e-431f-85c5-212261068639",
+      "is_cava": false,
+      "outcome": "OK",
+      "supplier": "Hielo Fenix",
+      "invoice_date": "2020-06-30",
+      "mime": "image/jpeg",
+      "ext": "jpg",
+      "sha_source": "db",
+      "header_comparison": {
+        "fecha_ocr": "2020-06-30",
+        "fecha_bd": "2020-06-30",
+        "fecha_equal": true,
+        "numero_ocr": "485 / 2240",
+        "numero_bd": "485/2240",
+        "numero_equal": false,
+        "total_ocr": 28.75,
+        "total_bd": 28.75,
+        "total_equal": true
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 5,
+        "cells": 20
+      },
+      "operative_line_count": 1,
+      "matcher": {
+        "candidates": 0,
+        "matches": 0,
+        "ambiguous": 0,
+        "no_match": 0
+      },
+      "provenance_would_create": 0,
+      "provenance_before": 0,
+      "provenance_after": 0,
+      "provenance_created": 0,
+      "evidence_before": {
+        "extractions": 0,
+        "tables": 0,
+        "columns": 0,
+        "rows": 0,
+        "cells": 0
+      },
+      "evidence_after": {
+        "extractions": 1,
+        "tables": 1,
+        "columns": 4,
+        "rows": 5,
+        "cells": 20
+      },
+      "writes": [
+        {
+          "type": "persist_document_evidence",
+          "extraction_id": "4895f59a-1ced-4b7a-bc53-ab365cee5716"
+        }
+      ],
+      "errors": [],
+      "notes": [],
+      "operative": {
+        "invoice_identical": true,
+        "lines_identical": true,
+        "stock_identical": true,
+        "mappings_related_identical": true,
+        "mappings_total_identical": true
+      },
+      "OPERATIVE_DIFF": 0
+    },
+    {
+      "invoice_id": "b53e8f96-9553-475c-8cc9-a26f792a8111",
+      "is_cava": false,
+      "outcome": "OK",
+      "supplier": "Fritz Ravich",
+      "invoice_date": "2023-06-10",
+      "mime": "image/jpeg",
+      "ext": "jpg",
+      "sha_source": "db",
+      "header_comparison": {
+        "fecha_ocr": "2024-06-10",
+        "fecha_bd": "2023-06-10",
+        "fecha_equal": false,
+        "numero_ocr": "3",
+        "numero_bd": "D314787",
+        "numero_equal": false,
+        "total_ocr": null,
+        "total_bd": 582.58,
+        "total_equal": null
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 7,
+        "cells": 56
+      },
+      "operative_line_count": 7,
+      "matcher": {
+        "candidates": 7,
+        "matches": 7,
+        "ambiguous": 0,
+        "no_match": 0
+      },
+      "provenance_would_create": 7,
+      "provenance_before": 0,
+      "provenance_after": 7,
+      "provenance_created": 7,
+      "evidence_before": {
+        "extractions": 0,
+        "tables": 0,
+        "columns": 0,
+        "rows": 0,
+        "cells": 0
+      },
+      "evidence_after": {
+        "extractions": 1,
+        "tables": 1,
+        "columns": 8,
+        "rows": 7,
+        "cells": 56
+      },
+      "writes": [
+        {
+          "type": "persist_document_evidence",
+          "extraction_id": "399416a8-068b-46d7-abf8-bc4b89ab9c8b"
+        },
+        {
+          "type": "purchase_line_provenance",
+          "count": 7
+        }
+      ],
+      "errors": [],
+      "notes": [],
+      "operative": {
+        "invoice_identical": true,
+        "lines_identical": true,
+        "stock_identical": true,
+        "mappings_related_identical": true,
+        "mappings_total_identical": true
+      },
+      "OPERATIVE_DIFF": 0
+    },
+    {
+      "invoice_id": "7a74d9fc-12ed-40fa-ad09-50d3f9112b81",
+      "is_cava": false,
+      "outcome": "OK",
+      "supplier": "Fritz Ravich",
+      "invoice_date": "2023-06-17",
+      "mime": "image/jpeg",
+      "ext": "jpg",
+      "sha_source": "db",
+      "header_comparison": {
+        "fecha_ocr": "2023-06-17",
+        "fecha_bd": "2023-06-17",
+        "fecha_equal": true,
+        "numero_ocr": null,
+        "numero_bd": "3",
+        "numero_equal": null,
+        "total_ocr": null,
+        "total_bd": 234.11,
+        "total_equal": null
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 6,
+        "cells": 48
+      },
+      "operative_line_count": 6,
+      "matcher": {
+        "candidates": 6,
+        "matches": 6,
+        "ambiguous": 0,
+        "no_match": 0
+      },
+      "provenance_would_create": 6,
+      "provenance_before": 0,
+      "provenance_after": 6,
+      "provenance_created": 6,
+      "evidence_before": {
+        "extractions": 0,
+        "tables": 0,
+        "columns": 0,
+        "rows": 0,
+        "cells": 0
+      },
+      "evidence_after": {
+        "extractions": 1,
+        "tables": 1,
+        "columns": 8,
+        "rows": 6,
+        "cells": 48
+      },
+      "writes": [
+        {
+          "type": "persist_document_evidence",
+          "extraction_id": "e1c40051-2671-497a-9d19-44015dca8649"
+        },
+        {
+          "type": "purchase_line_provenance",
+          "count": 6
+        }
+      ],
+      "errors": [],
+      "notes": [],
+      "operative": {
+        "invoice_identical": true,
+        "lines_identical": true,
+        "stock_identical": true,
+        "mappings_related_identical": true,
+        "mappings_total_identical": true
+      },
+      "OPERATIVE_DIFF": 0
+    },
+    {
+      "invoice_id": "080d6c45-affb-40e9-8943-7e848493f137",
+      "is_cava": false,
+      "outcome": "OK",
+      "supplier": "Fritz Ravich",
+      "invoice_date": "2024-06-10",
+      "mime": "image/jpeg",
+      "ext": "jpg",
+      "sha_source": "db",
+      "header_comparison": {
+        "fecha_ocr": "2024-06-10",
+        "fecha_bd": "2024-06-10",
+        "fecha_equal": true,
+        "numero_ocr": "3",
+        "numero_bd": "3",
+        "numero_equal": true,
+        "total_ocr": null,
+        "total_bd": 582.58,
+        "total_equal": null
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 7,
+        "cells": 56
+      },
+      "operative_line_count": 7,
+      "matcher": {
+        "candidates": 7,
+        "matches": 6,
+        "ambiguous": 0,
+        "no_match": 1
+      },
+      "provenance_would_create": 6,
+      "provenance_before": 0,
+      "provenance_after": 6,
+      "provenance_created": 6,
+      "evidence_before": {
+        "extractions": 0,
+        "tables": 0,
+        "columns": 0,
+        "rows": 0,
+        "cells": 0
+      },
+      "evidence_after": {
+        "extractions": 1,
+        "tables": 1,
+        "columns": 8,
+        "rows": 7,
+        "cells": 56
+      },
+      "writes": [
+        {
+          "type": "persist_document_evidence",
+          "extraction_id": "c215fb5c-bd4a-4bca-b4b9-b53d0cf57ffc"
+        },
+        {
+          "type": "purchase_line_provenance",
+          "count": 6
+        }
+      ],
+      "errors": [],
+      "notes": [],
+      "operative": {
+        "invoice_identical": true,
+        "lines_identical": true,
+        "stock_identical": true,
+        "mappings_related_identical": true,
+        "mappings_total_identical": true
+      },
+      "OPERATIVE_DIFF": 0
+    },
+    {
+      "invoice_id": "cfdd763f-046b-4b1c-8fcb-50cd6d9b83b4",
+      "is_cava": false,
+      "outcome": "OK",
+      "supplier": "Santa Teresa",
+      "invoice_date": "2026-01-15",
+      "mime": "application/pdf",
+      "ext": "pdf",
+      "sha_source": "computed_only",
+      "header_comparison": {
+        "fecha_ocr": "2026-01-15",
+        "fecha_bd": "2026-01-15",
+        "fecha_equal": true,
+        "numero_ocr": "FV-000439",
+        "numero_bd": "FV-000439",
+        "numero_equal": true,
+        "total_ocr": 1034.87,
+        "total_bd": 1034.87,
+        "total_equal": true
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 24,
+        "cells": 168
+      },
+      "operative_line_count": 24,
+      "matcher": {
+        "candidates": 24,
+        "matches": 24,
+        "ambiguous": 0,
+        "no_match": 0
+      },
+      "provenance_would_create": 24,
+      "provenance_before": 0,
+      "provenance_after": 24,
+      "provenance_created": 24,
+      "evidence_before": {
+        "extractions": 0,
+        "tables": 0,
+        "columns": 0,
+        "rows": 0,
+        "cells": 0
+      },
+      "evidence_after": {
+        "extractions": 1,
+        "tables": 1,
+        "columns": 7,
+        "rows": 24,
+        "cells": 168
+      },
+      "writes": [
+        {
+          "type": "persist_document_evidence",
+          "extraction_id": "3af1bfb7-9fa4-4376-9542-2c488fe04a35"
+        },
+        {
+          "type": "purchase_line_provenance",
+          "count": 24
+        }
+      ],
+      "errors": [],
+      "notes": [
+        "content_sha256 ausente en BD; hash solo en memoria"
+      ],
+      "operative": {
+        "invoice_identical": true,
+        "lines_identical": true,
+        "stock_identical": true,
+        "mappings_related_identical": true,
+        "mappings_total_identical": true
+      },
+      "OPERATIVE_DIFF": 0
+    },
+    {
+      "invoice_id": "96d8363b-3538-4037-b7ce-483b664fc3f3",
+      "is_cava": false,
+      "outcome": "OK",
+      "supplier": "Sanilec",
+      "invoice_date": "2026-04-09",
+      "mime": "application/pdf",
+      "ext": "pdf",
+      "sha_source": "computed_only",
+      "header_comparison": {
+        "fecha_ocr": "2026-04-09",
+        "fecha_bd": "2026-04-09",
+        "fecha_equal": true,
+        "numero_ocr": "A/61645",
+        "numero_bd": "A/61645",
+        "numero_equal": true,
+        "total_ocr": 130.47,
+        "total_bd": 130.47,
+        "total_equal": true
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 7,
+        "cells": 56
+      },
+      "operative_line_count": 7,
+      "matcher": {
+        "candidates": 7,
+        "matches": 7,
+        "ambiguous": 0,
+        "no_match": 0
+      },
+      "provenance_would_create": 7,
+      "provenance_before": 0,
+      "provenance_after": 7,
+      "provenance_created": 7,
+      "evidence_before": {
+        "extractions": 0,
+        "tables": 0,
+        "columns": 0,
+        "rows": 0,
+        "cells": 0
+      },
+      "evidence_after": {
+        "extractions": 1,
+        "tables": 1,
+        "columns": 8,
+        "rows": 7,
+        "cells": 56
+      },
+      "writes": [
+        {
+          "type": "persist_document_evidence",
+          "extraction_id": "e0149cef-1895-4a49-8bbe-e4c4a9634fff"
+        },
+        {
+          "type": "purchase_line_provenance",
+          "count": 7
+        }
+      ],
+      "errors": [],
+      "notes": [
+        "content_sha256 ausente en BD; hash solo en memoria"
+      ],
+      "operative": {
+        "invoice_identical": true,
+        "lines_identical": true,
+        "stock_identical": true,
+        "mappings_related_identical": true,
+        "mappings_total_identical": true
+      },
+      "OPERATIVE_DIFF": 0
+    },
+    {
+      "invoice_id": "0b6b4f8c-0d77-4aa0-b10c-3c7f3b8bc0e5",
+      "is_cava": false,
+      "outcome": "OK",
+      "supplier": "Santa Teresa",
+      "invoice_date": "2026-05-06",
+      "mime": "image/jpeg",
+      "ext": "jpg",
+      "sha_source": "db",
+      "header_comparison": {
+        "fecha_ocr": "2026-05-06",
+        "fecha_bd": "2026-05-06",
+        "fecha_equal": true,
+        "numero_ocr": "FV-004370",
+        "numero_bd": "FV-004370",
+        "numero_equal": true,
+        "total_ocr": 1039.41,
+        "total_bd": 1039.41,
+        "total_equal": true
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 25,
+        "cells": 175
+      },
+      "operative_line_count": 25,
+      "matcher": {
+        "candidates": 25,
+        "matches": 24,
+        "ambiguous": 1,
+        "no_match": 0
+      },
+      "provenance_would_create": 24,
+      "provenance_before": 0,
+      "provenance_after": 24,
+      "provenance_created": 24,
+      "evidence_before": {
+        "extractions": 0,
+        "tables": 0,
+        "columns": 0,
+        "rows": 0,
+        "cells": 0
+      },
+      "evidence_after": {
+        "extractions": 1,
+        "tables": 1,
+        "columns": 7,
+        "rows": 25,
+        "cells": 175
+      },
+      "writes": [
+        {
+          "type": "persist_document_evidence",
+          "extraction_id": "d6d5a614-377e-4345-a049-ef6c4ef9f08c"
+        },
+        {
+          "type": "purchase_line_provenance",
+          "count": 24
+        }
+      ],
+      "errors": [],
+      "notes": [],
+      "operative": {
+        "invoice_identical": true,
+        "lines_identical": true,
+        "stock_identical": true,
+        "mappings_related_identical": true,
+        "mappings_total_identical": true
+      },
+      "OPERATIVE_DIFF": 0
+    },
+    {
+      "invoice_id": "2598a02d-9ec1-4f95-b3cd-982169700792",
+      "is_cava": false,
+      "outcome": "OK",
+      "supplier": "Ametller",
+      "invoice_date": "2026-05-13",
+      "mime": "image/jpeg",
+      "ext": "jpg",
+      "sha_source": "db",
+      "header_comparison": {
+        "fecha_ocr": "2026-05-13",
+        "fecha_bd": "2026-05-13",
+        "fecha_equal": true,
+        "numero_ocr": "01/0213302",
+        "numero_bd": "01/0213302",
+        "numero_equal": true,
+        "total_ocr": null,
+        "total_bd": 259.84,
+        "total_equal": null
+      },
+      "table_metrics": {
+        "tables": 3,
+        "rows": 26,
+        "cells": 200
+      },
+      "operative_line_count": 48,
+      "matcher": {
+        "candidates": 24,
+        "matches": 1,
+        "ambiguous": 23,
+        "no_match": 0
+      },
+      "provenance_would_create": 1,
+      "provenance_before": 0,
+      "provenance_after": 1,
+      "provenance_created": 1,
+      "evidence_before": {
+        "extractions": 0,
+        "tables": 0,
+        "columns": 0,
+        "rows": 0,
+        "cells": 0
+      },
+      "evidence_after": {
+        "extractions": 1,
+        "tables": 3,
+        "columns": 16,
+        "rows": 26,
+        "cells": 200
+      },
+      "writes": [
+        {
+          "type": "persist_document_evidence",
+          "extraction_id": "d2be8aaa-4fa4-4a48-95ff-3b26dfa61991"
+        },
+        {
+          "type": "purchase_line_provenance",
+          "count": 1
+        }
+      ],
+      "errors": [],
+      "notes": [],
+      "operative": {
+        "invoice_identical": true,
+        "lines_identical": true,
+        "stock_identical": true,
+        "mappings_related_identical": true,
+        "mappings_total_identical": true
+      },
+      "OPERATIVE_DIFF": 0
+    },
+    {
+      "invoice_id": "c32e1f4c-5949-46bf-87bb-142c858a0647",
+      "is_cava": false,
+      "outcome": "OK",
+      "supplier": "Santa Teresa",
+      "invoice_date": "2026-05-27",
+      "mime": "image/jpeg",
+      "ext": "jpg",
+      "sha_source": "db",
+      "header_comparison": {
+        "fecha_ocr": "2026-05-27",
+        "fecha_bd": "2026-05-27",
+        "fecha_equal": true,
+        "numero_ocr": "FV-005159",
+        "numero_bd": "FV-005159",
+        "numero_equal": true,
+        "total_ocr": 2693.43,
+        "total_bd": 2693.43,
+        "total_equal": true
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 34,
+        "cells": 238
+      },
+      "operative_line_count": 34,
+      "matcher": {
+        "candidates": 34,
+        "matches": 31,
+        "ambiguous": 3,
+        "no_match": 0
+      },
+      "provenance_would_create": 31,
+      "provenance_before": 0,
+      "provenance_after": 31,
+      "provenance_created": 31,
+      "evidence_before": {
+        "extractions": 0,
+        "tables": 0,
+        "columns": 0,
+        "rows": 0,
+        "cells": 0
+      },
+      "evidence_after": {
+        "extractions": 1,
+        "tables": 1,
+        "columns": 7,
+        "rows": 34,
+        "cells": 238
+      },
+      "writes": [
+        {
+          "type": "persist_document_evidence",
+          "extraction_id": "7885f9f8-14d6-4616-be18-ffba7ae5a620"
+        },
+        {
+          "type": "purchase_line_provenance",
+          "count": 31
+        }
+      ],
+      "errors": [],
+      "notes": [],
+      "operative": {
+        "invoice_identical": true,
+        "lines_identical": true,
+        "stock_identical": true,
+        "mappings_related_identical": true,
+        "mappings_total_identical": true
+      },
+      "OPERATIVE_DIFF": 0
+    },
+    {
+      "invoice_id": "1f57887e-0499-46c4-8bed-2b32d5bbe40d",
+      "is_cava": false,
+      "outcome": "OK",
+      "supplier": "Santa Teresa",
+      "invoice_date": "2026-06-04",
+      "mime": "image/jpeg",
+      "ext": "jpg",
+      "sha_source": "db",
+      "header_comparison": {
+        "fecha_ocr": "2026-06-04",
+        "fecha_bd": "2026-06-04",
+        "fecha_equal": true,
+        "numero_ocr": "FV-005501",
+        "numero_bd": "FV-005501",
+        "numero_equal": true,
+        "total_ocr": null,
+        "total_bd": 541.43,
+        "total_equal": null
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 32,
+        "cells": 224
+      },
+      "operative_line_count": 37,
+      "matcher": {
+        "candidates": 32,
+        "matches": 24,
+        "ambiguous": 4,
+        "no_match": 4
+      },
+      "provenance_would_create": 24,
+      "provenance_before": 0,
+      "provenance_after": 24,
+      "provenance_created": 24,
+      "evidence_before": {
+        "extractions": 0,
+        "tables": 0,
+        "columns": 0,
+        "rows": 0,
+        "cells": 0
+      },
+      "evidence_after": {
+        "extractions": 1,
+        "tables": 1,
+        "columns": 7,
+        "rows": 32,
+        "cells": 224
+      },
+      "writes": [
+        {
+          "type": "persist_document_evidence",
+          "extraction_id": "d0b6e221-b04a-4800-bf34-c39956f18a3e"
+        },
+        {
+          "type": "purchase_line_provenance",
+          "count": 24
+        }
+      ],
+      "errors": [],
+      "notes": [],
+      "operative": {
+        "invoice_identical": true,
+        "lines_identical": true,
+        "stock_identical": true,
+        "mappings_related_identical": true,
+        "mappings_total_identical": true
+      },
+      "OPERATIVE_DIFF": 0
+    },
+    {
+      "invoice_id": "18aed1f2-686d-461f-a848-a7a168b4f420",
+      "is_cava": false,
+      "outcome": "OK",
+      "supplier": "Sant Aniol",
+      "invoice_date": "2026-07-22",
+      "mime": "image/jpeg",
+      "ext": "jpg",
+      "sha_source": "db",
+      "header_comparison": {
+        "fecha_ocr": "2026-07-22",
+        "fecha_bd": "2026-07-22",
+        "fecha_equal": true,
+        "numero_ocr": "7028470/26",
+        "numero_bd": "7028470/26",
+        "numero_equal": true,
+        "total_ocr": 0,
+        "total_bd": 240,
+        "total_equal": false
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 1,
+        "cells": 12
+      },
+      "operative_line_count": 1,
+      "matcher": {
+        "candidates": 1,
+        "matches": 1,
+        "ambiguous": 0,
+        "no_match": 0
+      },
+      "provenance_would_create": 1,
+      "provenance_before": 0,
+      "provenance_after": 1,
+      "provenance_created": 1,
+      "evidence_before": {
+        "extractions": 0,
+        "tables": 0,
+        "columns": 0,
+        "rows": 0,
+        "cells": 0
+      },
+      "evidence_after": {
+        "extractions": 1,
+        "tables": 1,
+        "columns": 12,
+        "rows": 1,
+        "cells": 12
+      },
+      "writes": [
+        {
+          "type": "persist_document_evidence",
+          "extraction_id": "69cb8ccf-beb1-4d6d-bafe-85104ffcc3f4"
+        },
+        {
+          "type": "purchase_line_provenance",
+          "count": 1
+        }
+      ],
+      "errors": [],
+      "notes": [],
+      "operative": {
+        "invoice_identical": true,
+        "lines_identical": true,
+        "stock_identical": true,
+        "mappings_related_identical": true,
+        "mappings_total_identical": true
+      },
+      "OPERATIVE_DIFF": 0
+    },
+    {
+      "invoice_id": "85577bb8-926c-4fbe-a561-af43a4415039",
+      "is_cava": false,
+      "outcome": "OK",
+      "supplier": "Hielo Fenix",
+      "invoice_date": "2026-07-24",
+      "mime": "image/jpeg",
+      "ext": "jpg",
+      "sha_source": "db",
+      "header_comparison": {
+        "fecha_ocr": "2026-07-24",
+        "fecha_bd": "2026-07-24",
+        "fecha_equal": true,
+        "numero_ocr": null,
+        "numero_bd": "DESCONOCIDO",
+        "numero_equal": null,
+        "total_ocr": 28.75,
+        "total_bd": 28.75,
+        "total_equal": true
+      },
+      "table_metrics": {
+        "tables": 1,
+        "rows": 5,
+        "cells": 20
+      },
+      "operative_line_count": 1,
+      "matcher": {
+        "candidates": 0,
+        "matches": 0,
+        "ambiguous": 0,
+        "no_match": 0
+      },
+      "provenance_would_create": 0,
+      "provenance_before": 0,
+      "provenance_after": 0,
+      "provenance_created": 0,
+      "evidence_before": {
+        "extractions": 0,
+        "tables": 0,
+        "columns": 0,
+        "rows": 0,
+        "cells": 0
+      },
+      "evidence_after": {
+        "extractions": 1,
+        "tables": 1,
+        "columns": 4,
+        "rows": 5,
+        "cells": 20
+      },
+      "writes": [
+        {
+          "type": "persist_document_evidence",
+          "extraction_id": "469dd9e0-cc25-44c0-a16b-54c7d426faff"
+        }
+      ],
+      "errors": [],
+      "notes": [],
+      "operative": {
+        "invoice_identical": true,
+        "lines_identical": true,
+        "stock_identical": true,
+        "mappings_related_identical": true,
+        "mappings_total_identical": true
+      },
+      "OPERATIVE_DIFF": 0
+    }
+  ]
+}
