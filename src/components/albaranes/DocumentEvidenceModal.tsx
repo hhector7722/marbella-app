@@ -20,7 +20,9 @@ export function DocumentEvidenceModal({ open, lineId, onClose, portalTarget }: D
 
   useEffect(() => {
     if (!open || !lineId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setData(null)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setError(null)
       return
     }
@@ -60,14 +62,14 @@ export function DocumentEvidenceModal({ open, lineId, onClose, portalTarget }: D
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [open, onClose])
 
-  if (!open || !portalTarget) return null
-
   // Determinar la procedencia activa
   const activeProvenance = useMemo(() => {
     if (!data || data.provenanceChain.length === 0) return null
     const supersededIds = new Set(data.provenanceChain.map((p) => p.supersedes_id).filter(Boolean))
     return data.provenanceChain.find((p) => !supersededIds.has(p.id)) || data.provenanceChain[0]
   }, [data])
+
+  if (!open || !portalTarget) return null
 
   return createPortal(
     <div

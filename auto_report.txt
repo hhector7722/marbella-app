@@ -1,0 +1,106 @@
+### VEREDICTO
+
+NO EQUIVALENTE
+
+### RESUMEN
+
+- tablas: 34 encontradas, 0 en remoto.
+- columnas: (Comprobación aproximada realizada).
+- constraints: NO VERIFICABLE (No disponible en metadata simple).
+- índices: NO VERIFICABLE.
+- funciones: 45 locales encontradas.
+- triggers: Comprobación aproximada realizada.
+- RLS: NO VERIFICABLE.
+- policies: NO VERIFICABLE.
+- views: Comprobación aproximada.
+
+### DIFERENCIAS
+
+MISSING TABLE: bdp_articulos
+MISSING TABLE: bdp_departamentos
+MISSING TABLE: bdp_familias
+MISSING TABLE: cash_box_inventory
+MISSING TABLE: cash_boxes
+MISSING TABLE: cash_closings
+MISSING TABLE: categories
+MISSING TABLE: denominations_log
+MISSING TABLE: employee_documents
+MISSING TABLE: ingredient_price_history
+MISSING TABLE: ingredients
+MISSING TABLE: map_tpv_receta
+MISSING TABLE: nominas
+MISSING TABLE: nominas_excepciones
+MISSING TABLE: order_drafts
+MISSING TABLE: profiles
+MISSING TABLE: purchase_invoice_lines
+MISSING TABLE: purchase_invoices
+MISSING TABLE: purchase_order_items
+MISSING TABLE: purchase_orders
+MISSING TABLE: push_subscriptions
+MISSING TABLE: recipe_ingredients
+MISSING TABLE: recipes
+MISSING TABLE: shifts
+MISSING TABLE: stock_movements
+MISSING TABLE: supplier_item_mappings
+MISSING TABLE: suppliers
+MISSING TABLE: ticket_lines_marbella
+MISSING TABLE: tickets_marbella
+MISSING TABLE: time_logs
+MISSING TABLE: treasury_log
+MISSING TABLE: ventas_marbella
+MISSING TABLE: weekly_snapshots
+MISSING TABLE: weekly_closings_log
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISMATCH/MISSING FUNCTION: public
+MISSING VIEW: public
+MISSING VIEW: public
+MISSING VIEW: public
+MISSING VIEW: public
+
+### RECOMENDACIÓN
+
+- `migration repair`: NO AUTORIZABLE (Faltan objetos o hay discrepancias)
+- `db push`: NO EJECUTAR TODAVÍA

@@ -1,0 +1,86 @@
+### OBJETOS DE 20260220000000
+Objeto | Tipo | Estado remoto | Observación
+---|---|---|---
+bdp_articulos | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+bdp_departamentos | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+bdp_familias | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+cash_box_inventory | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+cash_boxes | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+cash_closings | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+categories | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+denominations_log | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+employee_documents | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+ingredient_price_history | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+ingredients | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+map_tpv_receta | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+nominas | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+nominas_excepciones | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+order_drafts | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+profiles | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+purchase_invoice_lines | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+purchase_invoices | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+purchase_order_items | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+purchase_orders | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+push_subscriptions | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+recipe_ingredients | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+recipes | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+shifts | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+stock_movements | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+supplier_item_mappings | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+suppliers | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+ticket_lines_marbella | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+tickets_marbella | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+time_logs | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+treasury_log | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+ventas_marbella | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+weekly_snapshots | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+weekly_closings_log | TABLE | PASS | Tabla expuesta en API. Columnas, tipos, PK, FK, Unique, Check, Indexes, Triggers, RLS, Policies: NO VERIFICABLE (Requiere conexión TCP 5432 o parseo profundo de SQL).
+public | VIEW | MISSING | No existe en PostgREST OpenAPI
+public | VIEW | MISSING | No existe en PostgREST OpenAPI
+public | VIEW | MISSING | No existe en PostgREST OpenAPI
+public | VIEW | MISSING | No existe en PostgREST OpenAPI
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.
+public | FUNCTION | NO VERIFICABLE | No expuesto como RPC. Podría existir.

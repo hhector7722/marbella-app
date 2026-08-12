@@ -1,0 +1,135 @@
+# BASELINE 20260220000000 — AUDITORÍA FINAL
+
+## PASS (525)
+Todos los 525 objetos coinciden.
+
+## MISMATCH (41)
+CONSTRAINT: categories_cover_articulo_id_fkey ON categories (def: FOREIGN KEY (cover_articulo_id) REFERENCES bdp_articulos(id) ON DELETE SET NULL)
+CONSTRAINT: purchase_invoices_duplicate_of_invoice_id_fkey ON purchase_invoices (def: FOREIGN KEY (duplicate_of_invoice_id) REFERENCES purchase_invoices(id) ON DELETE SET NULL)
+CONSTRAINT: ingredients_supplier_pricing_mode_check ON ingredients (def: CHECK ((supplier_pricing_mode = ANY (ARRAY['per_purchase_unit'::text, 'per_pack'::text]))))
+CONSTRAINT: purchase_invoices_created_by_fkey ON purchase_invoices (def: FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL)
+CONSTRAINT: order_drafts_pkey ON order_drafts (def: PRIMARY KEY (supplier_id, ingredient_id))
+CONSTRAINT: treasury_log_to_box_id_fkey ON treasury_log (def: FOREIGN KEY (to_box_id) REFERENCES cash_boxes(id) ON DELETE SET NULL)
+CONSTRAINT: cash_boxes_type_check ON cash_boxes (def: CHECK ((type = ANY (ARRAY['operational'::text, 'change'::text, 'tpv'::text]))))
+CONSTRAINT: treasury_log_type_check ON treasury_log (def: CHECK ((type = ANY (ARRAY['IN'::text, 'OUT'::text, 'SWAP'::text, 'CLOSE_ENTRY'::text, 'ADJUSTMENT'::text, 'EXCHANGE'::text]))))
+CONSTRAINT: profiles_role_check ON profiles (def: CHECK ((role = ANY (ARRAY['manager'::text, 'staff'::text, 'chef'::text, 'supervisor'::text, 'admin'::text]))))
+CONSTRAINT: purchase_invoices_source_check ON purchase_invoices (def: CHECK (((source)::text = ANY ((ARRAY['email'::character varying, 'scanner'::character varying, 'manual'::character varying])::text[]))))
+CONSTRAINT: ingredients_category_check ON ingredients (def: CHECK (((category IS NULL) OR ((category)::text = ANY (ARRAY[('Alimentos'::character varying)::text, ('Packaging'::character varying)::text, ('Bebidas'::character varying)::text, ('Limpieza'::character varying)::text, ('Otros'::character varying)::text])))))
+CONSTRAINT: ingredients_base_unit_check ON ingredients (def: CHECK ((base_unit = ANY (ARRAY['ml'::text, 'g'::text, 'ud'::text]))))
+CONSTRAINT: ingredients_recipe_unit_check ON ingredients (def: CHECK ((recipe_unit = ANY (ARRAY['g'::text, 'kg'::text, 'ml'::text, 'cl'::text, 'l'::text, 'ud'::text]))))
+CONSTRAINT: time_logs_justified_hours_nonneg ON time_logs (def: CHECK ((justified_hours >= (0)::numeric)))
+CONSTRAINT: map_tpv_receta_articulo_fk ON map_tpv_receta (def: FOREIGN KEY (articulo_id) REFERENCES bdp_articulos(id) ON DELETE CASCADE)
+CONSTRAINT: categories_cover_photo_scale_check ON categories (def: CHECK (((cover_photo_scale IS NULL) OR (cover_photo_scale = ANY (ARRAY['s'::text, 'm'::text, 'l'::text])))))
+CONSTRAINT: categories_parent_id_fkey ON categories (def: FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE CASCADE)
+CONSTRAINT: recipes_menu_category_id_fkey ON recipes (def: FOREIGN KEY (menu_category_id) REFERENCES categories(id) ON DELETE SET NULL)
+CONSTRAINT: profiles_last_display_mode_check ON profiles (def: CHECK (((last_display_mode IS NULL) OR (last_display_mode = ANY (ARRAY['standalone'::text, 'browser'::text])))))
+INDEX: ingredients_name_key ON ingredients
+INDEX: idx_ingredients_inventory_visible ON ingredients
+INDEX: uq_employee_doc ON employee_documents
+INDEX: push_subscriptions_user_id_key ON push_subscriptions
+INDEX: idx_stock_movements_legacy_notes ON stock_movements
+INDEX: idx_stock_movements_reference_doc ON stock_movements
+INDEX: weekly_closings_log_week_start_key ON weekly_closings_log
+INDEX: purchase_orders_order_number_key ON purchase_orders
+INDEX: recipes_name_key ON recipes
+INDEX: idx_recipes_menu_category_id ON recipes
+INDEX: recipe_ingredients_recipe_id_ingredient_id_key ON recipe_ingredients
+INDEX: categories_name_key ON categories
+INDEX: categories_scope_slug_unique ON categories
+INDEX: cash_boxes_name_key ON cash_boxes
+INDEX: cash_box_inventory_box_id_denomination_key ON cash_box_inventory
+INDEX: weekly_snapshots_user_id_week_start_key ON weekly_snapshots
+INDEX: profiles_codigo_empleado_key ON profiles
+INDEX: idx_profiles_visible_in_plantilla ON profiles
+INDEX: purchase_invoices_content_sha256_uidx ON purchase_invoices
+INDEX: purchase_invoices_created_by_idx ON purchase_invoices
+INDEX: supplier_item_mappings_supplier_id_supplier_item_name_key ON supplier_item_mappings
+INDEX: idx_sim_mappings_name ON supplier_item_mappings
+
+## MISSING (5)
+COLUMN: order_drafts.user_id
+FUNCTION: public
+POLICY: Lectura propia nomina
+POLICY: Managers can view all subscriptions
+POLICY: Users can manage own drafts
+
+## EXTRA REMOTE (55)
+Se encontraron 55 tablas/objetos adicionales (Ignorados por instrucción).
+
+## NO VERIFICABLE (66)
+COLUMN: ingredients.supplier_2
+COLUMN: ingredients.supplier_pricing_mode
+COLUMN: ingredients.pack_price
+COLUMN: ingredients.pack_units
+COLUMN: ingredients.pack_unit_size_qty
+COLUMN: ingredients.pack_unit_size_unit
+COLUMN: ingredients.inventory_visible
+COLUMN: ingredients.price_locked
+COLUMN: ingredients.base_unit
+COLUMN: ingredients.recipe_unit
+COLUMN: recipes.elaboration_video_url
+COLUMN: recipes.menu_category_id
+COLUMN: recipe_ingredients.umb_multiplier
+COLUMN: categories.parent_id
+COLUMN: categories.scope
+COLUMN: categories.slug
+COLUMN: categories.cover_articulo_id
+COLUMN: categories.cover_photo_url
+COLUMN: categories.cover_photo_scale
+COLUMN: time_logs.justified_hours
+COLUMN: order_drafts.supplier_id
+COLUMN: treasury_log.to_box_id
+COLUMN: treasury_log.exchange_group_id
+COLUMN: cash_boxes.image_url
+COLUMN: suppliers.image_url
+COLUMN: profiles.preferred_language
+COLUMN: profiles.ai_greeting_style
+COLUMN: profiles.end_date
+COLUMN: profiles.last_display_mode
+COLUMN: profiles.last_display_mode_at
+COLUMN: profiles.visible_in_plantilla
+COLUMN: profiles.payroll_name
+COLUMN: shifts.categoria
+COLUMN: shifts.draft_categoria
+COLUMN: shifts.activity_2
+COLUMN: shifts.draft_activity_2
+COLUMN: shifts.event_start_time_2
+COLUMN: shifts.event_end_time_2
+COLUMN: shifts.event_participants_2
+COLUMN: shifts.categoria_2
+COLUMN: shifts.draft_categoria_2
+COLUMN: cash_closings.dataphone_totals_photo_path
+COLUMN: cash_closings.bdp_closing_ticket_photo_path
+COLUMN: purchase_invoices.source
+COLUMN: purchase_invoices.content_sha256
+COLUMN: purchase_invoices.duplicate_of_invoice_id
+COLUMN: purchase_invoices.created_by
+COLUMN: purchase_invoices.base_amount
+COLUMN: purchase_invoices.tax_amount
+COLUMN: purchase_invoices.tax_rate
+COLUMN: purchase_invoices.ocr_error
+COLUMN: supplier_item_mappings.line_billing_unit
+COLUMN: supplier_item_mappings.line_content_qty
+COLUMN: supplier_item_mappings.line_content_unit
+COLUMN: purchase_invoice_lines.line_unit
+COLUMN: purchase_invoice_lines.tax_rate
+COLUMN: purchase_invoice_lines.base_price
+COLUMN: bdp_articulos.envia_a_kds
+COLUMN: bdp_departamentos.envia_a_kds
+COLUMN: ticket_lines_marbella.fecha_real
+COLUMN: ticket_lines_marbella.nombre
+COLUMN: tickets_marbella.mesa
+COLUMN: tickets_marbella.fecha_real
+COLUMN: tickets_marbella.cobro_efectivo
+COLUMN: tickets_marbella.cobro_tarjeta
+COLUMN: tickets_marbella.cobro_pendiente
+
+### CONCLUSIÓN
+
+BASELINE NO EQUIVALENTE
+
+### RECOMENDACIÓN
+
+migration repair: NO AUTORIZABLE
+
+db push: NO EJECUTAR
