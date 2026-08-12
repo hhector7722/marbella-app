@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useSandboxStore } from '../store';
+import { compositionAttributes, expandLegacyComposition } from '../composition';
 import type { StudioFontOption } from '../font-catalog';
 import type { Estetica, SandboxRoute, SelectedVisualElement, StudioFontFamily, VisualOverride, VisualOverrides, VisualTargetKind, ViewportPreset } from '../types';
 
@@ -81,21 +82,25 @@ function overrideFor(element: HTMLElement, overrides: VisualOverrides, viewport:
         };
     };
 
-    return {
+    return expandLegacyComposition({
         ...merge(`component:${element.dataset.studioComponent ?? ''}`),
         ...merge(element.dataset.studioNodeKey ?? ''),
-    };
+    });
 }
 
 function applyOverrideAttributes(element: HTMLElement, override: VisualOverride): void {
-    // Composition routing
-    if (override.composition) {
-        element.dataset.studioCompositionHost = 'true';
-        element.dataset.studioComposition = override.composition;
-    } else {
-        delete element.dataset.studioCompositionHost;
-        delete element.dataset.studioComposition;
-    }
+    // Composición: cada atributo es independiente del resto.
+    const composition = compositionAttributes(override);
+    const setAttribute = (name: string, value: string | undefined) => {
+        if (value) element.dataset[name] = value;
+        else delete element.dataset[name];
+    };
+    setAttribute('studioLayout', composition.layout);
+    setAttribute('studioOrder', composition.order);
+    setAttribute('studioAlign', composition.align);
+    setAttribute('studioHideText', composition.hideText ? 'true' : undefined);
+    setAttribute('studioHideIcon', composition.hideIcon ? 'true' : undefined);
+    setAttribute('studioIconBox', composition.iconBox);
 
     if (override.fontFamily) {
         element.dataset.studioHasFontFamily = 'true';
@@ -154,13 +159,14 @@ function applyOverrideAttributes(element: HTMLElement, override: VisualOverride)
     if (override.height) element.style.setProperty('height', override.height, 'important');
     else element.style.removeProperty('height');
 
-    if (override.x || override.y) {
-        const x = override.x || '0px';
-        const y = override.y || '0px';
-        element.style.setProperty('transform', `translate(${x}, ${y})`, 'important');
-    } else {
-        element.style.removeProperty('transform');
-    }
+    const transforms: string[] = [];
+    if (override.x || override.y) transforms.push(`translate(${override.x || '0px'}, ${override.y || '0px'})`);
+    if (override.scale) transforms.push(`scale(${(parseFloat(override.scale) || 100) / 100})`);
+    if (transforms.length > 0) element.style.setProperty('transform', transforms.join(' '), 'important');
+    else element.style.removeProperty('transform');
+
+    if (override.textAlign) element.style.setProperty('text-align', override.textAlign, 'important');
+    else element.style.removeProperty('text-align');
 
     if (override.margin) element.style.setProperty('margin', override.margin, 'important');
     else element.style.removeProperty('margin');
@@ -186,10 +192,6 @@ function applyOverrideAttributes(element: HTMLElement, override: VisualOverride)
 
     if (override.gap) element.style.setProperty('gap', override.gap, 'important');
     else element.style.removeProperty('gap');
-
-    // Caja de icono: el modo decide si el contenedor pinta superficie o desaparece.
-    if (override.iconBoxMode) element.dataset.studioIconBox = override.iconBoxMode;
-    else delete element.dataset.studioIconBox;
 
     if (override.iconBoxCorner) element.style.setProperty('--studio-icon-box-corner', override.iconBoxCorner);
     else element.style.removeProperty('--studio-icon-box-corner');
@@ -264,6 +266,9 @@ function buildSelection(element: HTMLElement, route: SandboxRoute): SelectedVisu
         label: descriptor.label,
         componentScope: descriptor.scope,
         tagName: element.tagName.toLowerCase(),
+        // Solo el propio contenedor de icono/texto ofrece composición: nunca
+        // se edita al padre desde la selección de un hijo.
+        hasComposition: Boolean(element.querySelector('[data-studio-target="bg"], [data-studio-target="icon"], [data-studio-target="text"]')),
         ...hostButtonInfo(element),
     };
 }
@@ -296,7 +301,7 @@ export function VisualLabSurface({
                 ...responsive[viewport],
             };
         };
-        applyOverrideAttributes(root, merge('global'));
+        applyOverrideAttributes(root, expandLegacyComposition(merge('global')));
 
         const elements = realElements(root);
         const counts = new Map<string, number>();
@@ -536,6 +541,36 @@ function StepperControl({ label, value, onChange, onReset, step = 1, unit = 'px'
     );
 }
 
+function ChoiceRow({ label, value, options, onChange, onReset }: {
+    label: string;
+    value: string | undefined;
+    options: [string, string][];
+    onChange: (value: string) => void;
+    onReset?: () => void;
+}) {
+    return (
+        <div>
+            <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">
+                {label}
+                {onReset && <button type="button" onClick={onReset} className="text-zinc-600 hover:text-white">✕</button>}
+            </span>
+            <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}>
+                {options.map(([optionValue, optionLabel]) => (
+                    <button
+                        key={optionValue}
+                        type="button"
+                        onClick={() => onChange(optionValue)}
+                        style={{ minHeight: 44 }}
+                        className={`rounded-lg text-[9px] font-black uppercase tracking-widest leading-tight ${value === optionValue ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}
+                    >
+                        {optionLabel}
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 export function VisualLabPanel({
     overrides,
     onOverrideChange,
@@ -562,35 +597,17 @@ export function VisualLabPanel({
                 : 'global'
         : 'global';
 
-    const compositionKey = selected
-        ? selected.kind === 'button'
-            ? overrideKey
-            : selected.hostKey
-                ? (scope === 'instance'
-                    ? selected.hostKey
-                    : scope === 'component'
-                        ? `component:${selected.hostComponentScope ?? 'button:secondary'}`
-                        : 'global')
-                : null
-        : null;
-
     const currentResponsive = overrides[overrideKey] ?? {};
-    const current = { ...currentResponsive.all, ...currentResponsive[viewport] };
-    const compositionResponsive = compositionKey ? (overrides[compositionKey] ?? {}) : {};
-    const compositionCurrent = { ...compositionResponsive.all, ...compositionResponsive[viewport] };
-    const showComposition = Boolean(compositionKey);
+    const current = expandLegacyComposition({ ...currentResponsive.all, ...currentResponsive[viewport] });
 
     const isIconBox = Boolean(selected?.componentScope?.startsWith('icon-box'));
+    const isAsset = Boolean(selected?.componentScope?.startsWith('icon-asset'));
+    const showComposition = Boolean(selected?.hasComposition);
     const iconBoxMode = current.iconBoxMode ?? 'box';
-    const activeSection = openSection ?? (isIconBox ? 'caja-icono' : 'composicion');
+    const activeSection = openSection ?? (isIconBox ? 'caja-icono' : showComposition ? 'composicion' : 'apariencia');
 
     const update = (patch: VisualOverride) => {
         onOverrideChange(overrideKey, scope === 'global' ? 'all' : viewport, patch);
-    };
-
-    const updateComposition = (patch: VisualOverride) => {
-        if (!compositionKey) return;
-        onOverrideChange(compositionKey, scope === 'global' ? 'all' : viewport, patch);
     };
 
     const reset = (keys: (keyof VisualOverride)[]) => {
@@ -686,11 +703,46 @@ export function VisualLabPanel({
                 {selected && (
                     <>
                         {showComposition && renderSection("composicion", "Composición", (
-                            <div className="grid grid-cols-2 gap-2">
-                                <button type="button" onClick={() => updateComposition({ composition: 'inside' })} className={`rounded p-2 text-xs font-bold ${(!compositionCurrent.composition || compositionCurrent.composition === 'inside') ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}>Dentro</button>
-                                <button type="button" onClick={() => updateComposition({ composition: 'outside' })} className={`rounded p-2 text-xs font-bold ${compositionCurrent.composition === 'outside' ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}>Icono arriba · texto fuera</button>
-                                <button type="button" onClick={() => updateComposition({ composition: 'icon-only' })} className={`rounded p-2 text-xs font-bold ${compositionCurrent.composition === 'icon-only' ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}>Solo icono</button>
-                                <button type="button" onClick={() => updateComposition({ composition: 'text-only' })} className={`rounded p-2 text-xs font-bold ${compositionCurrent.composition === 'text-only' ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}>Solo texto</button>
+                            <div className="grid gap-3">
+                                <ChoiceRow
+                                    label="Texto"
+                                    value={current.showText === false ? 'hidden' : 'visible'}
+                                    options={[['visible', 'Visible'], ['hidden', 'Oculto']]}
+                                    onChange={value => update({ showText: value === 'visible' })}
+                                    onReset={current.showText !== undefined ? () => reset(['showText']) : undefined}
+                                />
+                                <ChoiceRow
+                                    label="Icono"
+                                    value={current.showIcon === false ? 'hidden' : 'visible'}
+                                    options={[['visible', 'Visible'], ['hidden', 'Oculto']]}
+                                    onChange={value => update({ showIcon: value === 'visible' })}
+                                    onReset={current.showIcon !== undefined ? () => reset(['showIcon']) : undefined}
+                                />
+                                <ChoiceRow
+                                    label="Dirección"
+                                    value={current.layoutDirection}
+                                    options={[['vertical', 'Vertical'], ['horizontal', 'Horizontal']]}
+                                    onChange={value => update({ layoutDirection: value as VisualOverride['layoutDirection'] })}
+                                    onReset={current.layoutDirection ? () => reset(['layoutDirection']) : undefined}
+                                />
+                                <ChoiceRow
+                                    label="Orden"
+                                    value={current.layoutOrder}
+                                    options={[['icon-text', 'Icono → Texto'], ['text-icon', 'Texto → Icono']]}
+                                    onChange={value => update({ layoutOrder: value as VisualOverride['layoutOrder'] })}
+                                    onReset={current.layoutOrder ? () => reset(['layoutOrder']) : undefined}
+                                />
+                                <ChoiceRow
+                                    label="Alineación"
+                                    value={current.layoutAlign}
+                                    options={[['start', 'Izq'], ['center', 'Centro'], ['end', 'Der']]}
+                                    onChange={value => update({ layoutAlign: value as VisualOverride['layoutAlign'] })}
+                                    onReset={current.layoutAlign ? () => reset(['layoutAlign']) : undefined}
+                                />
+                                <StepperControl label="Separación icono · texto" value={current.gap} onChange={v => update({ gap: String(v) })} onReset={() => reset(['gap'])} min={0} max={80} />
+                                <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-600">
+                                    Cada control es independiente. El fondo, el borde y la sombra de este contenedor se editan en Apariencia; los de la caja del icono, seleccionando la caja.
+                                </p>
                             </div>
                         ))}
 
@@ -833,13 +885,51 @@ export function VisualLabPanel({
                                     </label>
                                 </div>
                                 <StepperControl label="Opacidad" value={current.opacity !== undefined ? `${Math.round(current.opacity * 100)}%` : undefined} onChange={v => update({ opacity: parseFloat(String(v)) / 100 })} onReset={() => reset(['opacity'])} step={1} unit="%" min={0} max={100} />
+
+                                {selected.kind === 'text' && (
+                                    <ChoiceRow
+                                        label="Alineación del texto"
+                                        value={current.textAlign}
+                                        options={[['left', 'Izq'], ['center', 'Centro'], ['right', 'Der']]}
+                                        onChange={value => update({ textAlign: value as VisualOverride['textAlign'] })}
+                                        onReset={current.textAlign ? () => reset(['textAlign']) : undefined}
+                                    />
+                                )}
+
+                                {!isIconBox && (
+                                    <>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <label className="block rounded-lg bg-zinc-900 p-2">
+                                                <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">
+                                                    Color borde
+                                                    {current.borderColor && <button type="button" onClick={() => reset(['borderColor'])} className="text-zinc-600 hover:text-white">✕</button>}
+                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    <input type="color" value={current.borderColor ?? '#e5e7eb'} onChange={e => update({ borderColor: e.target.value })} className="h-6 w-6 rounded border-0 bg-transparent p-0" />
+                                                    <span className="text-[10px] font-mono text-zinc-300">{current.borderColor ?? 'Auto'}</span>
+                                                </div>
+                                            </label>
+                                            <StepperControl label="Grosor borde" value={current.borderWidth} onChange={v => update({ borderWidth: String(v) })} onReset={() => reset(['borderWidth', 'borderColor'])} min={0} max={24} />
+                                        </div>
+                                        <ChoiceRow
+                                            label="Sombra"
+                                            value={current.boxShadow}
+                                            options={[['none', 'Sin'], ['subtle', 'Suave'], ['medium', 'Media'], ['strong', 'Fuerte']]}
+                                            onChange={value => update({ boxShadow: value as VisualOverride['boxShadow'] })}
+                                            onReset={current.boxShadow ? () => reset(['boxShadow']) : undefined}
+                                        />
+                                    </>
+                                )}
                             </div>
                         ))}
 
-                        {renderSection("tamano", "Tamaño", (
-                            <div className="grid grid-cols-2 gap-2">
-                                <StepperControl label="Ancho" value={current.width} onChange={v => update({ width: String(v) })} onReset={() => reset(['width'])} min={0} />
-                                <StepperControl label="Alto" value={current.height} onChange={v => update({ height: String(v) })} onReset={() => reset(['height'])} min={0} />
+                        {renderSection("tamano", isAsset ? "Tamaño del asset" : "Tamaño", (
+                            <div className="grid gap-2">
+                                <div className="grid grid-cols-2 gap-2">
+                                    <StepperControl label="Ancho" value={current.width} onChange={v => update({ width: String(v) })} onReset={() => reset(['width'])} min={0} />
+                                    <StepperControl label="Alto" value={current.height} onChange={v => update({ height: String(v) })} onReset={() => reset(['height'])} min={0} />
+                                </div>
+                                <StepperControl label="Escala" value={current.scale} onChange={v => update({ scale: String(v) })} onReset={() => reset(['scale'])} step={5} unit="%" min={10} max={400} />
                             </div>
                         ))}
 

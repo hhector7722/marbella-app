@@ -121,28 +121,35 @@
 
 [data-dl-font] * { font-family: var(--dl-font-family) !important; }
 
-/* Composición: host transparente + caja de icono / fondo */
-[data-studio-composition-host="true"][data-studio-composition="outside"] {
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    background: transparent !important;
-    background-color: transparent !important;
-    background-image: none !important;
-    border-color: transparent !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-}
+/* ── COMPOSICIÓN ──────────────────────────────────────────────
+   Cada atributo hace una sola cosa. Ninguno decide fondo, borde,
+   sombra ni tamaño: esas propiedades se editan por separado. */
+[data-studio-layout] { display: flex !important; }
+[data-studio-layout="vertical"] { flex-direction: column !important; }
+[data-studio-layout="horizontal"] { flex-direction: row !important; }
 
-/* "Icono arriba · texto fuera" solo decide el layout.
-   La superficie (fondo, borde, sombra) pertenece a la CAJA DE ICONO. */
-[data-studio-composition-host="true"][data-studio-composition="outside"] [data-studio-target="bg"],
-[data-studio-composition-host="true"][data-studio-composition="outside"] [data-studio-target="icon"] {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+/* La caja de icono deja de estirarse para que el eje mande de verdad. */
+[data-studio-layout] > [data-studio-target="bg"],
+[data-studio-layout] > [data-studio-target="icon"] {
     flex: 0 0 auto !important;
 }
+
+/* Orden de las piezas dentro del eje. */
+[data-studio-order="icon-text"] > [data-studio-target="text"] { order: 1 !important; }
+[data-studio-order="text-icon"] > [data-studio-target="text"] { order: -1 !important; }
+
+/* "Alineación" siempre significa colocación horizontal. */
+[data-studio-align="start"]:not([data-studio-layout="horizontal"]) { align-items: flex-start !important; }
+[data-studio-align="center"]:not([data-studio-layout="horizontal"]) { align-items: center !important; }
+[data-studio-align="end"]:not([data-studio-layout="horizontal"]) { align-items: flex-end !important; }
+[data-studio-layout="horizontal"][data-studio-align="start"] { justify-content: flex-start !important; }
+[data-studio-layout="horizontal"][data-studio-align="center"] { justify-content: center !important; }
+[data-studio-layout="horizontal"][data-studio-align="end"] { justify-content: flex-end !important; }
+
+/* Visibilidad: ocultar una pieza no toca la otra. */
+[data-studio-hide-text="true"] [data-studio-target="text"] { display: none !important; }
+[data-studio-hide-icon="true"] [data-studio-target="bg"],
+[data-studio-hide-icon="true"] [data-studio-target="icon"] { display: none !important; }
 
 /* CAJA DE ICONO: presentación del contenedor. Nunca altera el asset. */
 [data-studio-icon-box="none"] {
@@ -158,17 +165,10 @@
     border-radius: var(--studio-icon-box-corner, 0px) !important;
 }
 
+/* Cuadrada: el lado lo deriva la altura salvo que se fije un ancho explícito. */
 [data-studio-icon-box="square"] {
     aspect-ratio: 1 / 1 !important;
-}
-
-[data-studio-composition-host="true"][data-studio-composition="icon-only"] [data-studio-target="text"] {
-    display: none !important;
-}
-
-[data-studio-composition-host="true"][data-studio-composition="text-only"] [data-studio-target="bg"],
-[data-studio-composition-host="true"][data-studio-composition="text-only"] [data-studio-target="icon"] {
-    display: none !important;
+    width: auto !important;
 }
 
 :is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-fill-color] {

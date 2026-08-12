@@ -147,8 +147,27 @@ export type VisualOverride = {
     boxShadow?: 'none' | 'subtle' | 'medium' | 'strong';
     opacity?: number;
     
-    // Composición del botón
+    // ── COMPOSICIÓN ──────────────────────────────────────────────
+    // Propiedades independientes: cada una hace una sola cosa y ninguna
+    // decide por su cuenta fondo, borde, tamaño ni las demás.
+    /** Muestra u oculta el TEXTO. No altera el icono. */
+    showText?: boolean;
+    /** Muestra u oculta la CAJA DE ICONO. No altera el texto. */
+    showIcon?: boolean;
+    /** Eje en el que se apilan icono y texto. */
+    layoutDirection?: 'vertical' | 'horizontal';
+    /** Orden de las piezas dentro del eje. */
+    layoutOrder?: 'icon-text' | 'text-icon';
+    /** Colocación horizontal de las piezas. */
+    layoutAlign?: 'start' | 'center' | 'end';
+    /**
+     * @deprecated Modo cerrado antiguo. Solo se lee para expandir estéticas
+     * ya guardadas a propiedades independientes. El Studio nunca lo escribe.
+     */
     composition?: 'inside' | 'outside' | 'icon-only' | 'text-only';
+
+    /** Escala visual del elemento en porcentaje, p. ej. '120%'. */
+    scale?: string;
 
     // Caja de icono: presentación del contenedor que envuelve al asset.
     // 'none' = contenedor transparente sin borde ni sombra (el asset flota).
@@ -185,6 +204,8 @@ export interface SelectedVisualElement {
     hostKey?: string;
     hostComponentScope?: string;
     hostLabel?: string;
+    /** El elemento contiene caja de icono y/o texto: admite controles de composición. */
+    hasComposition?: boolean;
 }
 
 // ============================================================
