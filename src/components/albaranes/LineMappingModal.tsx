@@ -294,7 +294,19 @@ export function LineMappingModal({
 
   useEffect(() => {
     if (open && line && invoiceId) void loadResolve()
-  }, [open, line?.id, invoiceId, loadResolve])
+    // Recargar también cuando cambia el vínculo (p.ej. tras «Editar match»), no solo el id.
+  }, [
+    open,
+    line?.id,
+    line?.ingredient_id,
+    line?.status,
+    line?.conversion_factor,
+    line?.line_billing_unit,
+    line?.line_content_qty,
+    line?.line_content_unit,
+    invoiceId,
+    loadResolve,
+  ])
 
   async function runSearch(q: string) {
     const query = q.trim()
@@ -561,7 +573,6 @@ export function LineMappingModal({
                     <button
                       type="button"
                       onClick={() => {
-                        onClose()
                         onOpenWizardNew()
                       }}
                       className="shrink-0 min-h-12 px-4 inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white text-xs font-black uppercase tracking-wide text-zinc-700 hover:bg-zinc-50 active:scale-[0.99] transition"
@@ -589,7 +600,6 @@ export function LineMappingModal({
                           type="button"
                           className="shrink-0 min-h-12 px-2 text-[10px] font-bold uppercase text-[#36606F] underline flex items-center gap-1"
                           onClick={() => {
-                            onClose()
                             onOpenWizardPrice()
                           }}
                         >

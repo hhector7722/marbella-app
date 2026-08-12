@@ -141,6 +141,8 @@ export default function AlbaranesHistoricoClient({
   const [lineForMappingModal, setLineForMappingModal] = useState<PurchaseInvoiceLine | null>(null)
   const [lineForEvidenceModal, setLineForEvidenceModal] = useState<string | null>(null)
   const [evidenceVersion, setEvidenceVersion] = useState(0)
+  /** Línea de Evidence a reabrir al cerrar Edit/Mapping (Evidence-first). */
+  const evidenceContextLineIdRef = useRef<string | null>(null)
   const [lineActionBusy, setLineActionBusy] = useState(false)
   const [wizardOpen, setWizardOpen] = useState(false)
   const [wizardIngredientId, setWizardIngredientId] = useState<string | null>(null)
@@ -619,6 +621,7 @@ export default function AlbaranesHistoricoClient({
     setLineForEditModal(null)
     setLineForMappingModal(null)
     setLineForEvidenceModal(null)
+    evidenceContextLineIdRef.current = null
     setLineActionBusy(false)
     setWizardOpen(false)
     setWizardIngredientId(null)
@@ -645,8 +648,17 @@ export default function AlbaranesHistoricoClient({
     }))
   }
 
-  async function saveLine(lineId: string) {
-    if (!detail) return
+  function reopenEvidenceFromContext() {
+    const lineId = evidenceContextLineIdRef.current
+    setLineForEditModal(null)
+    setLineForMappingModal(null)
+    if (!lineId) return
+    setEvidenceVersion((v) => v + 1)
+    setLineForEvidenceModal(lineId)
+  }
+
+  async function saveLine(lineId: string): Promise<boolean> {
+    if (!detail) return false
     setSaveError(null)
     setSaveWarning(null)
     setSavingLineId(lineId)
@@ -654,7 +666,7 @@ export default function AlbaranesHistoricoClient({
       const d = draftLines[lineId]
       if (!d) {
         setSaveError('No hay borrador para esta línea.')
-        return
+        return false
       }
 
       const qty = d.quantity.trim() === '' ? null : Number(d.quantity)
@@ -663,15 +675,15 @@ export default function AlbaranesHistoricoClient({
 
       if (qty != null && !Number.isFinite(qty)) {
         setSaveError('Cantidad inválida.')
-        return
+        return false
       }
       if (unit != null && !Number.isFinite(unit)) {
         setSaveError('Precio unitario inválido.')
-        return
+        return false
       }
       if (total != null && !Number.isFinite(total)) {
         setSaveError('Total inválido.')
-        return
+        return false
       }
 
       const res = await updatePurchaseInvoiceLineAction({
@@ -685,7 +697,7 @@ export default function AlbaranesHistoricoClient({
       })
       if (!res.success) {
         setSaveError(res.message)
-        return
+        return false
       }
       if (res.warning) setSaveWarning(res.warning)
 
@@ -693,7 +705,7 @@ export default function AlbaranesHistoricoClient({
       const refreshed = await getPurchaseInvoiceDetailAction(detail.id)
       if (!refreshed.success) {
         setSaveError(`Guardado OK, pero no se pudo recargar: ${refreshed.message}`)
-        return
+        return false
       }
       setDetail(refreshed.detail)
       setEvidenceVersion((v) => v + 1)
@@ -707,6 +719,7 @@ export default function AlbaranesHistoricoClient({
         }
       }
       setDraftLines(nextDraft)
+      return true
     } finally {
       setSavingLineId(null)
     }
@@ -778,6 +791,7 @@ export default function AlbaranesHistoricoClient({
   function openLineMappingModal(line: PurchaseInvoiceLine) {
     setLineForEditModal(null)
     setLineForEvidenceModal(null)
+    setWizardOpen(false)
     setLineForMappingModal(line)
   }
 
@@ -800,10 +814,26 @@ export default function AlbaranesHistoricoClient({
     setWizardIngredientId(opts.ingredientId)
     setWizardInitialName(opts.initialName)
     setWizardTargetLineId(line.id)
+    // Conserva evidenceContextLineIdRef: al cerrar Mapping se vuelve a Evidence.
     setLineForEvidenceModal(null)
     setLineForEditModal(null)
     setLineForMappingModal(null)
     setWizardOpen(true)
+  }
+
+  async function returnToMappingAfterWizard(lineId: string | null) {
+    setWizardOpen(false)
+    setWizardIngredientId(null)
+    setWizardInitialName(null)
+    setWizardTargetLineId(null)
+    setWizardInvoiceContext(null)
+    if (!lineId || !detail) return
+    await refreshDetailAndStock()
+    const dRes = await getPurchaseInvoiceDetailAction(detail.id)
+    if (!dRes.success) return
+    setDetail(dRes.detail)
+    const line = dRes.detail.lines.find((l) => l.id === lineId)
+    if (line) openLineMappingModal(line)
   }
 
   async function rectifyLine(lineId: string) {
@@ -1026,6 +1056,8 @@ export default function AlbaranesHistoricoClient({
       if (lineForEditModal?.id === lineId) setLineForEditModal(null)
       if (lineForMappingModal?.id === lineId) setLineForMappingModal(null)
       await refreshDetailAndStock()
+      evidenceContextLineIdRef.current = lineId
+      reopenEvidenceFromContext()
     } finally {
       setLineActionBusy(false)
     }
@@ -1643,6 +1675,7 @@ export default function AlbaranesHistoricoClient({
                                 onClick={() => {
                                   setLineForEditModal(null)
                                   setLineForMappingModal(null)
+                                  evidenceContextLineIdRef.current = l.id
                                   setLineForEvidenceModal(l.id)
                                 }}
                                 className="group flex flex-col md:flex-row md:items-center gap-2 md:gap-4 px-2 md:px-4 py-3 hover:bg-zinc-50 rounded-xl transition-colors cursor-pointer"
@@ -1729,14 +1762,17 @@ export default function AlbaranesHistoricoClient({
                   draft={lineForEditModal ? draftLines[lineForEditModal.id] ?? null : null}
                   saving={lineForEditModal ? savingLineId === lineForEditModal.id : false}
                   isDirty={lineForEditModal ? isLineDirty(lineForEditModal) : false}
-                  onClose={() => setLineForEditModal(null)}
+                  onClose={() => {
+                    reopenEvidenceFromContext()
+                  }}
                   onDraftChange={(patch) => {
                     if (!lineForEditModal) return
                     setDraft(lineForEditModal.id, patch)
                   }}
                   onSaveLine={async () => {
                     if (!lineForEditModal) return
-                    await saveLine(lineForEditModal.id)
+                    const ok = await saveLine(lineForEditModal.id)
+                    if (ok) reopenEvidenceFromContext()
                   }}
                 />
 
@@ -1752,7 +1788,9 @@ export default function AlbaranesHistoricoClient({
                   }
                   needsRepair={lineForMappingModal ? lineNeedsStockRepair(lineForMappingModal) : false}
                   busy={lineActionBusy || repairingStockLineId !== null}
-                  onClose={() => setLineForMappingModal(null)}
+                  onClose={() => {
+                    reopenEvidenceFromContext()
+                  }}
                   onSuccess={() => refreshDetailAndStock()}
                   onOpenWizardNew={() => {
                     if (!lineForMappingModal) return
@@ -1783,10 +1821,14 @@ export default function AlbaranesHistoricoClient({
                   open={!!lineForEvidenceModal}
                   lineId={lineForEvidenceModal}
                   refreshVersion={evidenceVersion}
-                  onClose={() => setLineForEvidenceModal(null)}
+                  onClose={() => {
+                    evidenceContextLineIdRef.current = null
+                    setLineForEvidenceModal(null)
+                  }}
                   onOpenProduct={() => {
                     const l = detail?.lines.find((line) => line.id === lineForEvidenceModal)
                     if (!l) return
+                    evidenceContextLineIdRef.current = l.id
                     setLineForEvidenceModal(null)
                     setLineForEditModal(null)
                     openLineMappingModal(l)
@@ -1794,6 +1836,7 @@ export default function AlbaranesHistoricoClient({
                   onOpenEditor={() => {
                     const l = detail?.lines.find((line) => line.id === lineForEvidenceModal)
                     if (!l) return
+                    evidenceContextLineIdRef.current = l.id
                     setLineForEvidenceModal(null)
                     setLineForMappingModal(null)
                     setLineForEditModal(l)
@@ -1902,7 +1945,10 @@ export default function AlbaranesHistoricoClient({
 
                 <Modal
                   open={wizardOpen}
-                  onClose={() => setWizardOpen(false)}
+                  onClose={() => {
+                    const lineId = wizardTargetLineId
+                    void returnToMappingAfterWizard(lineId)
+                  }}
                   hideHeader={true}
                   wrapperClassName="max-w-lg"
                   className="max-h-[86vh] p-3"
@@ -1920,25 +1966,11 @@ export default function AlbaranesHistoricoClient({
                         invoiceContext={wizardInvoiceContext ?? undefined}
                         onSaved={async () => {
                           const lineId = wizardTargetLineId
-                          const invoiceId = detail?.id
-                          setWizardOpen(false)
-                          setWizardIngredientId(null)
-                          setWizardInitialName(null)
-                          setWizardTargetLineId(null)
-                          setWizardInvoiceContext(null)
-                          if (!lineId || !invoiceId) return
-                          await refreshDetailAndStock()
-                          const dRes = await getPurchaseInvoiceDetailAction(invoiceId)
-                          if (!dRes.success) return
-                          const line = dRes.detail.lines.find((l) => l.id === lineId)
-                          if (line) openLineMappingModal(line)
+                          await returnToMappingAfterWizard(lineId)
                         }}
                         onClose={() => {
-                          setWizardOpen(false)
-                          setWizardIngredientId(null)
-                          setWizardInitialName(null)
-                          setWizardTargetLineId(null)
-                          setWizardInvoiceContext(null)
+                          const lineId = wizardTargetLineId
+                          void returnToMappingAfterWizard(lineId)
                         }}
                       />
                   </div>
