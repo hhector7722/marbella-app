@@ -148,7 +148,9 @@ export type VisualOverride = {
     opacity?: number;
     
     // Typography advanced
+    composition?: 'inside' | 'outside' | 'icon-only' | 'text-only';
     fontSize?: string;
+
     fontWeight?: string;
     fontStyle?: 'normal' | 'italic';
     textAlign?: 'left' | 'center' | 'right' | 'justify';

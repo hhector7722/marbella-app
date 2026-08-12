@@ -54,26 +54,28 @@ export default function DashboardIosIcon({
                     {badgeLabel}
                 </span>
             ) : null}
-            <div className={cn('flex-1 flex items-center justify-center w-full min-h-0 min-w-0 md:flex-none md:h-11 md:w-11', contentClassName)}>
-                {children ?? (
-                    <div className="w-12 h-12 md:w-11 md:h-11 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden shrink-0">
-                        {img ? (
-                            <Image
-                                src={img}
-                                alt={label}
-                                width={48}
-                                height={48}
-                                className="w-full h-full object-contain"
-                            />
-                        ) : Icon ? (
-                            <div className={cn('w-12 h-12 md:w-11 md:h-11 rounded-xl flex items-center justify-center shadow-sm', iconColor, !iconClassName && 'text-white')}>
-                                <Icon size={28} strokeWidth={2.5} className={cn('w-6 h-6 md:w-7 md:h-7', iconClassName)} />
-                            </div>
-                        ) : null}
-                    </div>
-                )}
+            <div data-studio-target="bg" className={cn('flex-1 flex items-center justify-center w-full min-h-0 min-w-0 md:flex-none md:h-11 md:w-11', contentClassName)}>
+                <div data-studio-target="icon" className="w-full h-full flex items-center justify-center">
+                    {children ?? (
+                        <div className="w-12 h-12 md:w-11 md:h-11 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden shrink-0">
+                            {img ? (
+                                <Image
+                                    src={img}
+                                    alt={label}
+                                    width={48}
+                                    height={48}
+                                    className="w-full h-full object-contain"
+                                />
+                            ) : Icon ? (
+                                <div className={cn('w-12 h-12 md:w-11 md:h-11 rounded-xl flex items-center justify-center shadow-sm', iconColor, !iconClassName && 'text-white')}>
+                                    <Icon size={28} strokeWidth={2.5} className={cn('w-6 h-6 md:w-7 md:h-7', iconClassName)} />
+                                </div>
+                            ) : null}
+                        </div>
+                    )}
+                </div>
             </div>
-            <span className={cn('text-[9px] md:text-[8px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5 shrink-0', labelClassName)}>
+            <span data-studio-target="text" className={cn('text-[9px] md:text-[8px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5 shrink-0', labelClassName)}>
                 {label}
             </span>
         </button>

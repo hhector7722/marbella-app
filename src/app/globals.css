@@ -118,11 +118,16 @@
 :is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-padding='compact'] { padding: 0.5rem !important; }
 :is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-padding='standard'] { padding: 1rem !important; }
 :is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-padding='spacious'] { padding: 1.75rem !important; }
-:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-font-family] { font-family: var(--studio-font-family) !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-has-font-family="true"],
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-has-font-family="true"] * { font-family: var(--studio-font-family) !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-has-font-size="true"],
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-has-font-size="true"] * { font-size: var(--studio-font-size) !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-has-font-weight="true"],
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-has-font-weight="true"] * { font-weight: var(--studio-font-weight) !important; }
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-has-text-color="true"],
+:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-has-text-color="true"] * { color: var(--studio-text-color) !important; }
+
 [data-dl-font] * { font-family: var(--dl-font-family) !important; }
-:is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-text-color] {
-  color: var(--studio-text-color) !important;
-}
 :is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-fill-color] {
   -webkit-text-fill-color: color-mix(in srgb, var(--studio-fill-color) calc(var(--studio-fill-opacity, 1) * 100%), transparent) !important;
 }
@@ -585,4 +590,20 @@ html[data-modal-open="true"] .marbella-fixed-bottombar {
 
 .n8n-chat-send-button {
   background-color: #3F5E7A !important;
+}
+
+/* --- ESTUDIO: COMPOSICIÓN TIPO IOS --- */
+[data-studio-composition-host="true"][data-studio-composition="outside"] {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+[data-studio-composition-host="true"][data-studio-composition="outside"] [data-studio-target="bg"] {
+  background-color: white;
+  border-radius: 1rem;
+  padding: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  border: 1px solid #f3f4f6;
 }

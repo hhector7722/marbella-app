@@ -1359,8 +1359,9 @@ export default function AlbaranesHistoricoClient({
                   className="hidden"
                   onChange={handleReplaceImageFileChange}
                 />
-                <div className="flex shrink-0 items-center justify-between bg-[#36606F] px-6 py-4">
-                  <div className="min-w-0 flex-1 flex flex-col gap-0.5 md:flex-row md:items-baseline md:gap-3">
+                {/* 1. CABECERA */}
+                <div className="flex shrink-0 items-start justify-between bg-[#36606F] px-6 py-5 relative">
+                  <div className="min-w-0 flex-1 flex flex-col gap-1 pr-16">
                     {detail ? (
                       <button
                         type="button"
@@ -1370,13 +1371,13 @@ export default function AlbaranesHistoricoClient({
                           setSupplierResults([])
                           setSupplierError(null)
                         }}
-                        className="text-left w-full min-w-0 text-sm font-black uppercase tracking-widest text-white md:text-lg md:tracking-widest truncate hover:opacity-80 transition-opacity"
+                        className="text-left w-full min-w-0 text-xl font-black uppercase tracking-widest text-white truncate hover:opacity-80 transition-opacity"
                         title="Cambiar proveedor"
                       >
                         {detail.supplier_name ?? 'Añadir proveedor'}
                       </button>
                     ) : (
-                      <p className="text-sm font-black uppercase tracking-widest text-white truncate min-w-0 md:text-lg">
+                      <p className="text-xl font-black uppercase tracking-widest text-white truncate min-w-0">
                         Proveedor pendiente
                       </p>
                     )}
@@ -1386,16 +1387,15 @@ export default function AlbaranesHistoricoClient({
                       const hasDate = dateStr && dateStr !== '—'
                       if (!hasDate && !invNum) return null
                       return (
-                        <p className="text-[11px] font-medium text-white/70 truncate min-w-0 md:text-[12px] md:shrink-0">
-                          {hasDate ? dateStr : ''}
-                          {hasDate && invNum ? ' · ' : ''}
-                          {invNum ? invNum : ''}
+                        <p className="text-sm font-bold text-white/80 uppercase tracking-widest truncate min-w-0">
+                          ALBARÁN {invNum ? `· ${invNum}` : ''} {hasDate ? `· ${dateStr}` : ''}
                         </p>
                       )
                     })()}
                   </div>
 
-                  <div className="flex items-center gap-1 shrink-0 md:gap-2">
+                  {/* Acciones flotantes en la cabecera */}
+                  <div className="absolute top-5 right-6 flex items-center gap-2">
                     {detail?.id && detail?.supplier_id ? (
                       <button
                         type="button"
@@ -1445,7 +1445,8 @@ export default function AlbaranesHistoricoClient({
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto bg-[#fafafa] p-4 sm:p-6 space-y-4">
+                <div className="flex-1 overflow-y-auto bg-[#fafafa] p-6 space-y-8">
+                  {/* Status & Errors */}
                   {deleteError ? (
                     <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-sm font-bold text-red-700">
                       Eliminar: {deleteError}
@@ -1542,70 +1543,53 @@ export default function AlbaranesHistoricoClient({
                     </div>
                   ) : null}
 
-                  <div className="flex flex-col md:flex-row gap-4">
-                    {detail?.id && !isLoadingDetail && invoiceImageSheetOptions.length >= 1 ? (
-                      <div className="shrink-0 flex flex-col gap-3 w-full md:w-56">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setInvoiceCarouselIndex(0)
-                            invoiceCarouselIndexRef.current = 0
-                            setInvoiceImageViewerOpen(true)
-                          }}
-                          aria-label="Ver imagen del albarán"
-                          title={
-                            invoiceImageSheetOptions.length > 1
-                              ? 'Ver todas las hojas: desliza o usa los puntos'
-                              : 'Ver fotografía del albarán'
-                          }
-                          className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl border-2 border-dashed border-gray-300 bg-white hover:border-[#5E35B1] transition-colors flex items-center justify-center group"
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={invoiceImageSheetOptions[0]?.url}
-                            alt={invoiceImageSheetOptions[0]?.label ?? 'Hoja del albarán'}
-                            className="absolute inset-0 h-full w-full object-cover object-top opacity-90 group-hover:opacity-100 transition-opacity"
-                          />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                          {invoiceImageSheetOptions.length > 1 ? (
-                            <span className="absolute bottom-2 right-2 rounded-lg bg-zinc-900/80 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-white backdrop-blur-sm shadow-sm">
-                              +{invoiceImageSheetOptions.length - 1} HOJAS
-                            </span>
-                          ) : null}
-                        </button>
-                        {detail.supplier_id != null ? (
-                          <button
-                            type="button"
-                            onClick={() => appendSheetInputRef.current?.click()}
-                            disabled={appendSheetBusy}
-                            className={cn(
-                              'w-full min-h-12 inline-flex items-center justify-center gap-2 rounded-xl bg-white border border-zinc-200 px-4 text-xs font-black uppercase tracking-wider text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 transition active:scale-[0.99] shadow-sm',
-                              appendSheetBusy && 'opacity-60 pointer-events-none'
-                            )}
-                          >
-                            {appendSheetBusy ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" /> : <Camera className="h-4 w-4" />}
-                            {appendSheetBusy ? 'Subiendo…' : 'Añadir hoja'}
-                          </button>
-                        ) : null}
+                  {/* 3. BLOQUE DE INFORMACIÓN DEL DOCUMENTO */}
+                  {detail && !isLoadingDetail && (
+                    <div className="flex flex-col gap-4">
+                      <div className="text-[11px] font-black uppercase tracking-widest text-zinc-400 pl-1">
+                        Documento
                       </div>
-                    ) : null}
-
-                    {detail && !isLoadingDetail && detail.lines.length > 0 && (
-                      <div className="flex-1 rounded-2xl border border-zinc-100 bg-white p-5 flex flex-col justify-center shadow-sm">
-                        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                          <div className="space-y-1">
-                            <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Artículos</div>
-                            <div className="text-xl font-black text-zinc-900">{detail.lines.length}</div>
-                          </div>
-                          <div className="space-y-1">
-                            <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Total Albarán</div>
-                            <div className="text-xl font-black text-[#36606F]">{detail.total_amount != null ? `${Number(detail.total_amount).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€` : '—'}</div>
-                          </div>
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-y-6 gap-x-4">
+                        <div className="space-y-1.5 col-span-2 md:col-span-1">
+                          <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Proveedor</div>
+                          <div className="text-sm font-bold text-zinc-900">{detail.supplier_name ?? '—'}</div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Nº Albarán</div>
+                          <div className="text-sm font-bold text-zinc-900">{detail.invoice_number ?? '—'}</div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Fecha</div>
+                          <div className="text-sm font-bold text-zinc-900">{formatDateTitle(detail.invoice_date) ?? '—'}</div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Total</div>
+                          <div className="text-sm font-black text-[#36606F]">{detail.total_amount != null ? `${Number(detail.total_amount).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : '—'}</div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Original</div>
+                          {invoiceImageSheetOptions.length > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setInvoiceCarouselIndex(0)
+                                invoiceCarouselIndexRef.current = 0
+                                setInvoiceImageViewerOpen(true)
+                              }}
+                              className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#36606F] hover:text-[#284955] transition-colors"
+                            >
+                              <FileText className="h-3.5 w-3.5" />
+                              Ver Original
+                            </button>
+                          ) : (
+                            <div className="text-sm font-bold text-zinc-400">No hay imagen</div>
+                          )}
                         </div>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
 
+                  {/* 4. SECCIÓN ARTÍCULOS */}
                   {isLoadingDetail ? (
                     <div className="flex flex-col items-center justify-center py-12 gap-3 text-sm font-bold text-zinc-600">
                       <Loader2 className="h-8 w-8 animate-spin text-[#36606F]" />
@@ -1614,18 +1598,31 @@ export default function AlbaranesHistoricoClient({
                   ) : detailError ? (
                     <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-sm font-bold text-red-700">{detailError}</div>
                   ) : detail ? (
-                    <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm overflow-hidden flex flex-col">
-                      <div className="divide-y divide-zinc-100">
-                        {detail.lines.length === 0 ? (
-                          <div className="p-6 text-center text-sm font-bold text-zinc-500">
-                            {String(detail.status ?? '').toLowerCase() === 'processing'
-                              ? 'Esperando lectura OCR…'
-                              : String(detail.status ?? '').toLowerCase() === 'ocr_failed'
-                                ? 'Sin líneas: corrige la foto o reintenta la lectura.'
-                                : 'No hay líneas guardadas.'}
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-end justify-between pb-2 border-b-2 border-zinc-900/5 px-2">
+                        <div className="text-[11px] font-black uppercase tracking-widest text-zinc-400">Artículos</div>
+                        <div className="text-[11px] font-black uppercase tracking-widest text-zinc-400">{detail.lines.length} ARTÍCULOS</div>
+                      </div>
+
+                      {detail.lines.length === 0 ? (
+                        <div className="py-12 text-center text-sm font-bold text-zinc-500">
+                          {String(detail.status ?? '').toLowerCase() === 'processing'
+                            ? 'Esperando lectura OCR…'
+                            : String(detail.status ?? '').toLowerCase() === 'ocr_failed'
+                              ? 'Sin líneas: corrige la foto o reintenta la lectura.'
+                              : 'No hay líneas guardadas.'}
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-1">
+                          {/* Cabecera de columnas para los artículos */}
+                          <div className="hidden md:flex items-center px-4 py-2 border-b border-zinc-100">
+                            <div className="flex-1 text-[10px] font-black uppercase tracking-widest text-zinc-400">Artículo</div>
+                            <div className="w-[100px] text-right text-[10px] font-black uppercase tracking-widest text-zinc-400">Cantidad</div>
+                            <div className="w-[110px] text-right text-[10px] font-black uppercase tracking-widest text-zinc-400">Precio Ud.</div>
+                            <div className="w-[110px] text-right text-[10px] font-black uppercase tracking-widest text-zinc-400 pr-[120px]">Importe</div>
                           </div>
-                        ) : (
-                          detail.lines.map((l) => {
+                          
+                          {detail.lines.map((l) => {
                             const stock = stockStatusByLineId[l.id]
                             const stockApplied = Boolean(stock?.stockApplied)
                             const rectified = (stock?.rectifiedCount ?? 0) > 0
@@ -1639,60 +1636,62 @@ export default function AlbaranesHistoricoClient({
                               : l.original_name || 'Sin nombre'
 
                             return (
-                              <div key={l.id} className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 px-4 py-3 hover:bg-zinc-50 transition-colors">
-                                <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm font-black text-zinc-900 truncate" title={displayName}>{displayName}</span>
+                              <div key={l.id} className="group flex flex-col md:flex-row md:items-center gap-2 md:gap-4 px-2 md:px-4 py-3 hover:bg-zinc-50 rounded-xl transition-colors">
+                                {/* Nombre + Estado + Original OCR en la misma línea */}
+                                <div className="flex-1 min-w-0 flex items-center gap-2">
+                                  <span className="text-sm font-bold text-zinc-900 truncate shrink-0" title={displayName}>{displayName}</span>
+                                  
+                                  {/* Estado */}
+                                  <div className="shrink-0 flex items-center">
                                     {noMatch ? (
-                                      <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-rose-600 text-white" aria-label="Sin match" title="Sin match"><X className="h-3 w-3" strokeWidth={3.5} /></span>
+                                      <span className="inline-flex text-rose-600" aria-label="Sin match" title="Sin match"><X className="h-4 w-4" strokeWidth={3} /></span>
                                     ) : null}
                                     {excluded ? (
-                                      <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-500 text-white" aria-label="Portes o ajuste (sin ingrediente)" title="Portes / ajuste / sin cargo"><MinusCircle className="h-3 w-3" strokeWidth={2.5} /></span>
+                                      <span className="inline-flex text-zinc-400" aria-label="Portes o ajuste" title="Portes / ajuste / sin cargo"><MinusCircle className="h-4 w-4" strokeWidth={2.5} /></span>
                                     ) : null}
                                     {needsRepair ? (
-                                      <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white" aria-label="Sin stock aplicado" title="Sin stock aplicado"><AlertCircle className="h-3 w-3" strokeWidth={2.5} /></span>
+                                      <span className="inline-flex text-amber-500" aria-label="Sin stock aplicado" title="Sin stock aplicado"><AlertCircle className="h-4 w-4" strokeWidth={2.5} /></span>
                                     ) : null}
                                     {stockApplied ? (
-                                      <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white" aria-label="Stock aplicado" title="Stock aplicado"><Check className="h-3 w-3" strokeWidth={3.5} /></span>
+                                      <span className="inline-flex text-emerald-600" aria-label="Stock aplicado" title="Stock aplicado"><Check className="h-4 w-4" strokeWidth={3} /></span>
                                     ) : null}
                                     {rectified ? (
-                                      <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white" aria-label={`Stock rectificado (REV${stock?.rectifiedCount})`} title={`Stock rectificado (REV${stock?.rectifiedCount})`}><RotateCcw className="h-3 w-3" strokeWidth={3} /></span>
+                                      <span className="inline-flex text-amber-500" aria-label={`Stock rectificado (REV${stock?.rectifiedCount})`} title={`Stock rectificado (REV${stock?.rectifiedCount})`}><RotateCcw className="h-4 w-4" strokeWidth={2.5} /></span>
                                     ) : null}
                                   </div>
+
+                                  {/* Nombre Original OCR */}
                                   {l.ingredient_name && l.original_name && l.ingredient_name !== l.original_name ? (
-                                    <span className="text-[11px] font-medium text-zinc-500 truncate mt-0.5">Original: {l.original_name}</span>
+                                    <span className="text-sm text-zinc-400 truncate min-w-0" title={l.original_name}>{l.original_name}</span>
                                   ) : null}
                                 </div>
 
-                                <div className="flex shrink-0 items-center justify-between md:justify-end gap-6 md:w-auto">
-                                  <div className="flex gap-4 md:gap-6 text-right">
-                                    <div className="flex flex-col items-end min-w-[70px]">
-                                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Cantidad</span>
-                                      <span className="text-sm font-bold text-zinc-900">
-                                        {l.quantity != null ? Number(l.quantity).toLocaleString('es-ES', { maximumFractionDigits: 3 }) : '—'}
-                                        {l.line_unit ? ` ${l.line_unit}` : ''}
-                                      </span>
-                                    </div>
-                                    <div className="flex flex-col items-end min-w-[80px]">
-                                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Precio Ud.</span>
-                                      <span className="text-sm font-bold text-zinc-900">
-                                        {l.unit_price != null ? `${Number(l.unit_price).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}€` : '—'}
-                                      </span>
-                                    </div>
-                                    <div className="flex flex-col items-end min-w-[80px]">
-                                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Importe</span>
-                                      <span className="text-sm font-black text-[#36606F]">
-                                        {l.total_price != null ? `${Number(l.total_price).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€` : '—'}
-                                      </span>
-                                    </div>
+                                {/* Valores Económicos y Acciones flotantes */}
+                                <div className="flex items-center justify-between md:justify-end shrink-0 gap-4 mt-2 md:mt-0 pl-2 md:pl-0 border-l-2 border-zinc-100 md:border-none">
+                                  <div className="w-[100px] text-right">
+                                    <span className="text-sm font-bold text-zinc-900">
+                                      {l.quantity != null ? Number(l.quantity).toLocaleString('es-ES', { maximumFractionDigits: 3 }) : '—'}
+                                      {l.line_unit ? ` ${l.line_unit}` : ''}
+                                    </span>
+                                  </div>
+                                  <div className="w-[110px] text-right">
+                                    <span className="text-sm font-bold text-zinc-900">
+                                      {l.unit_price != null ? `${Number(l.unit_price).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} €` : '—'}
+                                    </span>
+                                  </div>
+                                  <div className="w-[110px] text-right">
+                                    <span className="text-sm font-bold text-zinc-900">
+                                      {l.total_price != null ? `${Number(l.total_price).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : '—'}
+                                    </span>
                                   </div>
 
-                                  <div className="flex shrink-0 items-center gap-1.5 ml-2 md:ml-4 border-l border-zinc-100 pl-2 md:pl-4">
+                                  {/* Acciones flotantes integradas (sin card) */}
+                                  <div className="w-[104px] flex justify-end gap-1 shrink-0">
                                     <button
                                       type="button"
                                       onClick={() => setLineForEvidenceModal(l.id)}
-                                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100 active:scale-[0.99] transition"
-                                      aria-label="Auditar Evidencia Documental"
+                                      className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 hover:text-sky-600 hover:bg-sky-50 active:scale-[0.95] transition-all opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                                      aria-label="Auditar Evidencia"
                                       title="Auditar Evidencia Documental"
                                     >
                                       <FileText className="h-4 w-4" strokeWidth={2.5} />
@@ -1703,7 +1702,7 @@ export default function AlbaranesHistoricoClient({
                                         onClick={() => openLineEditModal(l)}
                                         disabled={stockBusy}
                                         className={cn(
-                                          'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-[#36606F] hover:bg-zinc-100 active:scale-[0.99] transition',
+                                          'flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 hover:text-[#36606F] hover:bg-zinc-100 active:scale-[0.95] transition-all opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
                                           stockBusy && 'opacity-60 pointer-events-none'
                                         )}
                                         aria-label="Editar línea"
@@ -1716,9 +1715,9 @@ export default function AlbaranesHistoricoClient({
                                 </div>
                               </div>
                             )
-                          })
-                        )}
-                      </div>
+                          })}
+                        </div>
+                      )}
                     </div>
                   ) : null}
                 </div>
