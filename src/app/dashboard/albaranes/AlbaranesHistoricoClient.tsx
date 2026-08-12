@@ -1342,7 +1342,7 @@ export default function AlbaranesHistoricoClient({
                 if (e.target === e.currentTarget) closeModal()
               }}
             >
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[88vh] overflow-hidden flex flex-col">
+              <div className="bg-white rounded-[20px] shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
                 <input
                   ref={appendSheetInputRef}
                   type="file"
@@ -1359,9 +1359,7 @@ export default function AlbaranesHistoricoClient({
                   className="hidden"
                   onChange={handleReplaceImageFileChange}
                 />
-                <div className="bg-[#36606F] px-3 py-2.5 md:px-5 md:py-4 flex items-center justify-between gap-2 md:gap-3 text-white shrink-0">
-                  {/* Cabecera: por debajo de md, nombre en línea propia + metadato debajo; iconos compactos.
-                      Desde md, fila única + targets 48px como antes. */}
+                <div className="flex shrink-0 items-center justify-between bg-[#36606F] px-6 py-4">
                   <div className="min-w-0 flex-1 flex flex-col gap-0.5 md:flex-row md:items-baseline md:gap-3">
                     {detail ? (
                       <button
@@ -1372,13 +1370,13 @@ export default function AlbaranesHistoricoClient({
                           setSupplierResults([])
                           setSupplierError(null)
                         }}
-                        className="text-left w-full min-w-0 text-xs font-black uppercase tracking-wide md:text-sm md:tracking-wider truncate hover:opacity-80"
+                        className="text-left w-full min-w-0 text-sm font-black uppercase tracking-widest text-white md:text-lg md:tracking-widest truncate hover:opacity-80 transition-opacity"
                         title="Cambiar proveedor"
                       >
                         {detail.supplier_name ?? 'Añadir proveedor'}
                       </button>
                     ) : (
-                      <p className="text-xs font-black uppercase tracking-wide truncate min-w-0 md:text-sm md:tracking-wider">
+                      <p className="text-sm font-black uppercase tracking-widest text-white truncate min-w-0 md:text-lg">
                         Proveedor pendiente
                       </p>
                     )}
@@ -1388,7 +1386,7 @@ export default function AlbaranesHistoricoClient({
                       const hasDate = dateStr && dateStr !== '—'
                       if (!hasDate && !invNum) return null
                       return (
-                        <p className="text-[10px] font-medium text-white/70 truncate min-w-0 md:text-[11px] md:shrink-0">
+                        <p className="text-[11px] font-medium text-white/70 truncate min-w-0 md:text-[12px] md:shrink-0">
                           {hasDate ? dateStr : ''}
                           {hasDate && invNum ? ' · ' : ''}
                           {invNum ? invNum : ''}
@@ -1397,7 +1395,7 @@ export default function AlbaranesHistoricoClient({
                     })()}
                   </div>
 
-                  <div className="flex items-center gap-0.5 shrink-0 md:gap-2">
+                  <div className="flex items-center gap-1 shrink-0 md:gap-2">
                     {detail?.id && detail?.supplier_id ? (
                       <button
                         type="button"
@@ -1406,14 +1404,14 @@ export default function AlbaranesHistoricoClient({
                         aria-label="Auto-mapear aprendidos"
                         title="Auto-mapear líneas pendientes con texto ya aprendido para este proveedor"
                         className={cn(
-                          'min-h-9 min-w-9 md:min-h-[48px] md:min-w-[48px] inline-flex items-center justify-center rounded-lg md:rounded-xl text-white hover:opacity-80 transition active:scale-[0.99]',
+                          'flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 active:scale-[0.99]',
                           autoMapLoading && 'opacity-60 pointer-events-none'
                         )}
                       >
                         {autoMapLoading ? (
-                          <Loader2 className="h-4 w-4 animate-spin md:h-5 md:w-5" />
+                          <Loader2 className="h-5 w-5 animate-spin" />
                         ) : (
-                          <Sparkles className="h-4 w-4 md:h-5 md:w-5" />
+                          <Sparkles className="h-5 w-5" />
                         )}
                       </button>
                     ) : null}
@@ -1425,88 +1423,39 @@ export default function AlbaranesHistoricoClient({
                         aria-label="Eliminar albarán"
                         title="Eliminar albarán y revertir su stock"
                         className={cn(
-                          'min-h-9 min-w-9 md:min-h-[48px] md:min-w-[48px] inline-flex items-center justify-center rounded-lg md:rounded-xl hover:bg-rose-500/30 transition active:scale-[0.99] text-white',
+                          'flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-rose-500/80 active:scale-[0.99]',
                           deletingInvoice && 'opacity-60 pointer-events-none'
                         )}
                       >
                         {deletingInvoice ? (
-                          <Loader2 className="h-4 w-4 animate-spin md:h-5 md:w-5" />
+                          <Loader2 className="h-5 w-5 animate-spin" />
                         ) : (
-                          <Trash2 className="h-4 w-4 md:h-5 md:w-5" />
+                          <Trash2 className="h-5 w-5" />
                         )}
                       </button>
                     ) : null}
                     <button
                       type="button"
                       onClick={closeModal}
-                      className="min-h-9 min-w-9 md:min-h-[48px] md:min-w-[48px] inline-flex items-center justify-center rounded-lg md:rounded-xl hover:opacity-80 transition active:scale-[0.99]"
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 active:scale-[0.99]"
                       aria-label="Cerrar"
                     >
-                      <X className="h-4 w-4 md:h-5 md:w-5" />
+                      <X className="h-5 w-5" />
                     </button>
                   </div>
                 </div>
 
-                <div className="p-4 overflow-auto flex-1 min-h-0">
-                  {detail?.id && !isLoadingDetail ? (
-                    <div className="mb-3 shrink-0 flex flex-col items-center gap-2">
-                      {invoiceImageSheetOptions.length >= 1 ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setInvoiceCarouselIndex(0)
-                            invoiceCarouselIndexRef.current = 0
-                            setInvoiceImageViewerOpen(true)
-                          }}
-                          aria-label="Ver imagen del albarán"
-                          title={
-                            invoiceImageSheetOptions.length > 1
-                              ? 'Ver todas las hojas: desliza o usa los puntos'
-                              : 'Ver fotografía del albarán'
-                          }
-                          className="relative min-h-12 w-full max-w-[10rem] overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm transition active:scale-[0.99] hover:ring-2 hover:ring-[#36606F]/25"
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={invoiceImageSheetOptions[0]?.url}
-                            alt={invoiceImageSheetOptions[0]?.label ?? 'Hoja del albarán'}
-                            className="block h-20 w-full object-cover object-top"
-                          />
-                          {invoiceImageSheetOptions.length > 1 ? (
-                            <span className="absolute bottom-1 right-1 rounded-md bg-zinc-900/75 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
-                              +{invoiceImageSheetOptions.length - 1}
-                            </span>
-                          ) : null}
-                        </button>
-                      ) : null}
-                      {detail.supplier_id != null ? (
-                        <button
-                          type="button"
-                          onClick={() => appendSheetInputRef.current?.click()}
-                          disabled={appendSheetBusy}
-                          aria-label="Añadir hoja"
-                          title="Añadir otra página del mismo albarán (fotografía)"
-                          className={cn(
-                            'w-full min-h-12 inline-flex items-center justify-center gap-2 rounded-xl px-4 text-xs font-medium uppercase tracking-wide text-[#36606F] hover:bg-zinc-50 active:scale-[0.99] transition border-0 bg-transparent shadow-none',
-                            appendSheetBusy && 'opacity-60 pointer-events-none'
-                          )}
-                        >
-                          {appendSheetBusy ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" /> : null}
-                          {appendSheetBusy ? 'Subiendo…' : 'Añadir hoja'}
-                        </button>
-                      ) : null}
-                    </div>
-                  ) : null}
+                <div className="flex-1 overflow-y-auto bg-[#fafafa] p-4 sm:p-6 space-y-4">
                   {deleteError ? (
-                    <div className="mb-3 bg-red-50 border border-red-200 rounded-xl p-3 text-sm font-bold text-red-700">
+                    <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-sm font-bold text-red-700">
                       Eliminar: {deleteError}
                     </div>
                   ) : null}
                   {saveError ? (
-                    <div className="mb-3 bg-red-50 border border-red-200 rounded-xl p-3 text-sm font-bold text-red-700">{saveError}</div>
+                    <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-sm font-bold text-red-700">{saveError}</div>
                   ) : null}
                   {saveWarning ? (
-                    <div className="mb-3 bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm font-bold text-amber-800">
+                    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm font-bold text-amber-800">
                       {saveWarning}
                     </div>
                   ) : null}
@@ -1516,9 +1465,9 @@ export default function AlbaranesHistoricoClient({
                       const st = String(detail.status ?? '').toLowerCase()
                       if (st === 'processing') {
                         return (
-                          <div className="mb-3 flex items-center gap-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-3">
-                            <Loader2 className="h-5 w-5 shrink-0 animate-spin text-sky-700" />
-                            <p className="text-xs font-black text-sky-900 leading-snug">
+                          <div className="flex items-center gap-3 rounded-2xl border border-sky-200 bg-sky-50 p-4">
+                            <Loader2 className="h-6 w-6 shrink-0 animate-spin text-sky-700" />
+                            <p className="text-sm font-black text-sky-900 leading-snug">
                               Leyendo el albarán en segundo plano. Las líneas aparecerán en unos segundos.
                             </p>
                           </div>
@@ -1526,12 +1475,12 @@ export default function AlbaranesHistoricoClient({
                       }
                       if (st === 'ocr_failed') {
                         return (
-                          <div className="mb-3 flex flex-col gap-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-3">
-                            <div className="flex items-start gap-2">
-                              <AlertCircle className="h-5 w-5 shrink-0 text-rose-700 mt-0.5" />
+                          <div className="flex flex-col gap-4 rounded-2xl border border-rose-200 bg-rose-50 p-4">
+                            <div className="flex items-start gap-3">
+                              <AlertCircle className="h-6 w-6 shrink-0 text-rose-700" />
                               <div className="min-w-0">
-                                <p className="text-xs font-black text-rose-900">No se pudo leer el albarán</p>
-                                <p className="mt-1 text-xs font-medium text-rose-800">
+                                <p className="text-sm font-black text-rose-900">No se pudo leer el albarán</p>
+                                <p className="mt-1 text-sm font-medium text-rose-800">
                                   {detail.ocr_error?.trim() || 'Error de OCR. Reintenta o sustituye la foto.'}
                                 </p>
                               </div>
@@ -1570,10 +1519,9 @@ export default function AlbaranesHistoricoClient({
                   ) : null}
 
                   {mappedLinesWithoutStockCount > 0 && detail && !isLoadingDetail ? (
-                    <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3">
-                      <p className="text-xs font-black text-amber-900 leading-snug min-w-0 flex-1">
-                        {mappedLinesWithoutStockCount} línea{mappedLinesWithoutStockCount === 1 ? '' : 's'} mapeada
-                        {mappedLinesWithoutStockCount === 1 ? '' : 's'} sin movimiento de stock. Pulsa el aviso en cada
+                    <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                      <p className="text-sm font-black text-amber-900 leading-snug min-w-0 flex-1">
+                        {mappedLinesWithoutStockCount} línea{mappedLinesWithoutStockCount === 1 ? '' : 's'} mapeada{mappedLinesWithoutStockCount === 1 ? '' : 's'} sin movimiento de stock. Pulsa el aviso en cada
                         línea o repáralas todas aquí.
                       </p>
                       <button
@@ -1581,7 +1529,7 @@ export default function AlbaranesHistoricoClient({
                         onClick={() => void repairAllMappedLinesWithoutStock()}
                         disabled={repairingInvoiceStockBatch || repairingStockLineId !== null || lineActionBusy}
                         className={cn(
-                          'shrink-0 min-h-[48px] px-4 rounded-xl bg-amber-700 text-white text-xs font-black uppercase tracking-wider active:scale-[0.99] transition inline-flex items-center justify-center gap-2',
+                          'shrink-0 min-h-[48px] px-6 rounded-xl bg-amber-700 text-white text-xs font-black uppercase tracking-wider active:scale-[0.99] transition inline-flex items-center justify-center gap-2 hover:bg-amber-800',
                           (repairingInvoiceStockBatch || repairingStockLineId !== null || lineActionBusy) &&
                             'opacity-60 pointer-events-none'
                         )}
@@ -1594,122 +1542,185 @@ export default function AlbaranesHistoricoClient({
                     </div>
                   ) : null}
 
+                  <div className="flex flex-col md:flex-row gap-4">
+                    {detail?.id && !isLoadingDetail && invoiceImageSheetOptions.length >= 1 ? (
+                      <div className="shrink-0 flex flex-col gap-3 w-full md:w-56">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setInvoiceCarouselIndex(0)
+                            invoiceCarouselIndexRef.current = 0
+                            setInvoiceImageViewerOpen(true)
+                          }}
+                          aria-label="Ver imagen del albarán"
+                          title={
+                            invoiceImageSheetOptions.length > 1
+                              ? 'Ver todas las hojas: desliza o usa los puntos'
+                              : 'Ver fotografía del albarán'
+                          }
+                          className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl border-2 border-dashed border-gray-300 bg-white hover:border-[#5E35B1] transition-colors flex items-center justify-center group"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={invoiceImageSheetOptions[0]?.url}
+                            alt={invoiceImageSheetOptions[0]?.label ?? 'Hoja del albarán'}
+                            className="absolute inset-0 h-full w-full object-cover object-top opacity-90 group-hover:opacity-100 transition-opacity"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                          {invoiceImageSheetOptions.length > 1 ? (
+                            <span className="absolute bottom-2 right-2 rounded-lg bg-zinc-900/80 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-white backdrop-blur-sm shadow-sm">
+                              +{invoiceImageSheetOptions.length - 1} HOJAS
+                            </span>
+                          ) : null}
+                        </button>
+                        {detail.supplier_id != null ? (
+                          <button
+                            type="button"
+                            onClick={() => appendSheetInputRef.current?.click()}
+                            disabled={appendSheetBusy}
+                            className={cn(
+                              'w-full min-h-12 inline-flex items-center justify-center gap-2 rounded-xl bg-white border border-zinc-200 px-4 text-xs font-black uppercase tracking-wider text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 transition active:scale-[0.99] shadow-sm',
+                              appendSheetBusy && 'opacity-60 pointer-events-none'
+                            )}
+                          >
+                            {appendSheetBusy ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" /> : <Camera className="h-4 w-4" />}
+                            {appendSheetBusy ? 'Subiendo…' : 'Añadir hoja'}
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    {detail && !isLoadingDetail && detail.lines.length > 0 && (
+                      <div className="flex-1 rounded-2xl border border-zinc-100 bg-white p-5 flex flex-col justify-center shadow-sm">
+                        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                          <div className="space-y-1">
+                            <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Artículos</div>
+                            <div className="text-xl font-black text-zinc-900">{detail.lines.length}</div>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Total Albarán</div>
+                            <div className="text-xl font-black text-[#36606F]">{detail.total_amount != null ? `${Number(detail.total_amount).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€` : '—'}</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   {isLoadingDetail ? (
-                    <div className="flex items-center gap-3 text-sm font-bold text-zinc-600">
-                      <Loader2 className="h-5 w-5 animate-spin text-[#36606F]" />
+                    <div className="flex flex-col items-center justify-center py-12 gap-3 text-sm font-bold text-zinc-600">
+                      <Loader2 className="h-8 w-8 animate-spin text-[#36606F]" />
                       Cargando detalle…
                     </div>
                   ) : detailError ? (
-                    <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm font-bold text-red-700">{detailError}</div>
+                    <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-sm font-bold text-red-700">{detailError}</div>
                   ) : detail ? (
-                    <div className="flex flex-col gap-4">
+                    <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm overflow-hidden flex flex-col">
                       <div className="divide-y divide-zinc-100">
-                          {detail.lines.length === 0 ? (
-                            <div className="p-3 text-sm font-bold text-zinc-500">
-                              {String(detail.status ?? '').toLowerCase() === 'processing'
-                                ? 'Esperando lectura OCR…'
-                                : String(detail.status ?? '').toLowerCase() === 'ocr_failed'
-                                  ? 'Sin líneas: corrige la foto o reintenta la lectura.'
-                                  : 'No hay líneas guardadas.'}
-                            </div>
-                          ) : (
-                            detail.lines.map((l) => {
-                              const stock = stockStatusByLineId[l.id]
-                              const stockApplied = Boolean(stock?.stockApplied)
-                              const rectified = (stock?.rectifiedCount ?? 0) > 0
-                              const excluded = isInvoiceLineExcluded(l)
-                              const noMatch = !excluded && !l.ingredient_name
-                              const needsRepair = lineNeedsStockRepair(l)
-                              const stockBusy =
-                                repairingStockLineId !== null || repairingInvoiceStockBatch || lineActionBusy
-                              const displayName = l.ingredient_name
-                                ? l.ingredient_name
-                                : l.original_name || 'Sin nombre'
+                        {detail.lines.length === 0 ? (
+                          <div className="p-6 text-center text-sm font-bold text-zinc-500">
+                            {String(detail.status ?? '').toLowerCase() === 'processing'
+                              ? 'Esperando lectura OCR…'
+                              : String(detail.status ?? '').toLowerCase() === 'ocr_failed'
+                                ? 'Sin líneas: corrige la foto o reintenta la lectura.'
+                                : 'No hay líneas guardadas.'}
+                          </div>
+                        ) : (
+                          detail.lines.map((l) => {
+                            const stock = stockStatusByLineId[l.id]
+                            const stockApplied = Boolean(stock?.stockApplied)
+                            const rectified = (stock?.rectifiedCount ?? 0) > 0
+                            const excluded = isInvoiceLineExcluded(l)
+                            const noMatch = !excluded && !l.ingredient_name
+                            const needsRepair = lineNeedsStockRepair(l)
+                            const stockBusy =
+                              repairingStockLineId !== null || repairingInvoiceStockBatch || lineActionBusy
+                            const displayName = l.ingredient_name
+                              ? l.ingredient_name
+                              : l.original_name || 'Sin nombre'
 
-                              return (
-                                <div key={l.id} className="flex items-center gap-2 px-3 py-2.5 min-h-[56px]">
-                                  <div className="flex-1 min-w-0 flex items-center gap-2">
-                                    <span className="text-sm font-black text-zinc-900 truncate">{displayName}</span>
+                            return (
+                              <div key={l.id} className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 px-4 py-3 hover:bg-zinc-50 transition-colors">
+                                <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-black text-zinc-900 truncate" title={displayName}>{displayName}</span>
                                     {noMatch ? (
-                                      <span
-                                        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-rose-600 text-white"
-                                        aria-label="Sin match"
-                                        title="Sin match"
-                                      >
-                                        <X className="h-3 w-3" strokeWidth={3.5} />
-                                      </span>
+                                      <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-rose-600 text-white" aria-label="Sin match" title="Sin match"><X className="h-3 w-3" strokeWidth={3.5} /></span>
                                     ) : null}
                                     {excluded ? (
-                                      <span
-                                        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-500 text-white"
-                                        aria-label="Portes o ajuste (sin ingrediente)"
-                                        title="Portes / ajuste / sin cargo"
-                                      >
-                                        <MinusCircle className="h-3 w-3" strokeWidth={2.5} />
-                                      </span>
+                                      <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-500 text-white" aria-label="Portes o ajuste (sin ingrediente)" title="Portes / ajuste / sin cargo"><MinusCircle className="h-3 w-3" strokeWidth={2.5} /></span>
                                     ) : null}
                                     {needsRepair ? (
-                                      <span
-                                        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white"
-                                        aria-label="Sin stock aplicado"
-                                        title="Sin stock aplicado"
-                                      >
-                                        <AlertCircle className="h-3 w-3" strokeWidth={2.5} />
-                                      </span>
+                                      <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white" aria-label="Sin stock aplicado" title="Sin stock aplicado"><AlertCircle className="h-3 w-3" strokeWidth={2.5} /></span>
                                     ) : null}
                                     {stockApplied ? (
-                                      <span
-                                        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white"
-                                        aria-label="Stock aplicado"
-                                        title="Stock aplicado"
-                                      >
-                                        <Check className="h-3 w-3" strokeWidth={3.5} />
-                                      </span>
+                                      <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white" aria-label="Stock aplicado" title="Stock aplicado"><Check className="h-3 w-3" strokeWidth={3.5} /></span>
                                     ) : null}
                                     {rectified ? (
-                                      <span
-                                        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white"
-                                        aria-label={`Stock rectificado (REV${stock?.rectifiedCount})`}
-                                        title={`Stock rectificado (REV${stock?.rectifiedCount})`}
-                                      >
-                                        <RotateCcw className="h-3 w-3" strokeWidth={3} />
-                                      </span>
+                                      <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white" aria-label={`Stock rectificado (REV${stock?.rectifiedCount})`} title={`Stock rectificado (REV${stock?.rectifiedCount})`}><RotateCcw className="h-3 w-3" strokeWidth={3} /></span>
                                     ) : null}
                                   </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => setLineForEvidenceModal(l.id)}
-                                    className="min-h-12 min-w-12 shrink-0 inline-flex items-center justify-center rounded-xl border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100 active:scale-[0.99] transition"
-                                    aria-label="Auditar Evidencia Documental"
-                                    title="Auditar Evidencia Documental"
-                                  >
-                                    <FileText className="h-4 w-4" strokeWidth={2.5} />
-                                  </button>
-                                  {isManager ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => openLineEditModal(l)}
-                                      disabled={stockBusy}
-                                      className={cn(
-                                        'min-h-12 min-w-12 shrink-0 inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-[#36606F] hover:bg-zinc-100 active:scale-[0.99] transition',
-                                        stockBusy && 'opacity-60 pointer-events-none'
-                                      )}
-                                      aria-label="Editar línea"
-                                      title="Editar línea"
-                                    >
-                                      <Pencil className="h-4 w-4" strokeWidth={2.5} />
-                                    </button>
+                                  {l.ingredient_name && l.original_name && l.ingredient_name !== l.original_name ? (
+                                    <span className="text-[11px] font-medium text-zinc-500 truncate mt-0.5">Original: {l.original_name}</span>
                                   ) : null}
                                 </div>
-                              )
-                            
-                            })
-                          )}
-                        </div>
+
+                                <div className="flex shrink-0 items-center justify-between md:justify-end gap-6 md:w-auto">
+                                  <div className="flex gap-4 md:gap-6 text-right">
+                                    <div className="flex flex-col items-end min-w-[70px]">
+                                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Cantidad</span>
+                                      <span className="text-sm font-bold text-zinc-900">
+                                        {l.quantity != null ? Number(l.quantity).toLocaleString('es-ES', { maximumFractionDigits: 3 }) : '—'}
+                                        {l.line_unit ? ` ${l.line_unit}` : ''}
+                                      </span>
+                                    </div>
+                                    <div className="flex flex-col items-end min-w-[80px]">
+                                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Precio Ud.</span>
+                                      <span className="text-sm font-bold text-zinc-900">
+                                        {l.unit_price != null ? `${Number(l.unit_price).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}€` : '—'}
+                                      </span>
+                                    </div>
+                                    <div className="flex flex-col items-end min-w-[80px]">
+                                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Importe</span>
+                                      <span className="text-sm font-black text-[#36606F]">
+                                        {l.total_price != null ? `${Number(l.total_price).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€` : '—'}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex shrink-0 items-center gap-1.5 ml-2 md:ml-4 border-l border-zinc-100 pl-2 md:pl-4">
+                                    <button
+                                      type="button"
+                                      onClick={() => setLineForEvidenceModal(l.id)}
+                                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100 active:scale-[0.99] transition"
+                                      aria-label="Auditar Evidencia Documental"
+                                      title="Auditar Evidencia Documental"
+                                    >
+                                      <FileText className="h-4 w-4" strokeWidth={2.5} />
+                                    </button>
+                                    {isManager ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => openLineEditModal(l)}
+                                        disabled={stockBusy}
+                                        className={cn(
+                                          'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-[#36606F] hover:bg-zinc-100 active:scale-[0.99] transition',
+                                          stockBusy && 'opacity-60 pointer-events-none'
+                                        )}
+                                        aria-label="Editar línea"
+                                        title="Editar línea"
+                                      >
+                                        <Pencil className="h-4 w-4" strokeWidth={2.5} />
+                                      </button>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          })
+                        )}
+                      </div>
                     </div>
-                  ) : (
-                    <div className="text-sm font-bold text-zinc-500">Sin datos.</div>
-                  )}
+                  ) : null}
                 </div>
 
                 <LineEditModal
