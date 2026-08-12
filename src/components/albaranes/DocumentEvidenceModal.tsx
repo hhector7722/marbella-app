@@ -11,9 +11,12 @@ interface DocumentEvidenceModalProps {
   lineId: string | null
   onClose: () => void
   portalTarget: HTMLElement | null
+  onOpenProduct?: () => void
+  onOpenEditor?: () => void
+  refreshVersion?: number
 }
 
-export function DocumentEvidenceModal({ open, lineId, onClose, portalTarget }: DocumentEvidenceModalProps) {
+export function DocumentEvidenceModal({ open, lineId, onClose, portalTarget, onOpenProduct, onOpenEditor, refreshVersion }: DocumentEvidenceModalProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<DocumentEvidencePayload | null>(null)
@@ -51,7 +54,7 @@ export function DocumentEvidenceModal({ open, lineId, onClose, portalTarget }: D
     return () => {
       isSubscribed = false
     }
-  }, [open, lineId])
+  }, [open, lineId, refreshVersion])
 
   useEffect(() => {
     if (!open) return
@@ -119,7 +122,32 @@ export function DocumentEvidenceModal({ open, lineId, onClose, portalTarget }: D
               
               {/* LÍNEA OPERATIVA */}
               <section className="bg-white rounded-xl border border-zinc-200 p-4 shadow-sm">
-                <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Línea Operativa Actual</h3>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+                  <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Línea Operativa Actual</h3>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {onOpenEditor && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenEditor()}
+                        className="text-[10px] font-black uppercase tracking-wider text-[#36606F] bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-lg transition active:scale-[0.98]"
+                      >
+                        Corregir valores operativos
+                      </button>
+                    )}
+                    {onOpenProduct && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClose()
+                          onOpenProduct()
+                        }}
+                        className="text-[10px] font-black uppercase tracking-wider text-sky-600 bg-sky-50 hover:bg-sky-100 px-3 py-1.5 rounded-lg transition active:scale-[0.98]"
+                      >
+                        Ver producto
+                      </button>
+                    )}
+                  </div>
+                </div>
                 <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold text-zinc-500 mb-1 uppercase tracking-wider">Descripción</p>

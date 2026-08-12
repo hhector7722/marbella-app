@@ -128,6 +128,24 @@
 :is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-has-text-color="true"] * { color: var(--studio-text-color) !important; }
 
 [data-dl-font] * { font-family: var(--dl-font-family) !important; }
+[data-studio-composition-host="true"][data-studio-composition="outside"] {
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+
+[data-studio-composition-host="true"][data-studio-composition="icon-only"] [data-studio-target="text"] {
+    display: none !important;
+}
+
+[data-studio-composition-host="true"][data-studio-composition="text-only"] [data-studio-target="bg"],
+[data-studio-composition-host="true"][data-studio-composition="text-only"] [data-studio-target="icon"] {
+    display: none !important;
+}
+
 :is([data-marbella-sandbox='true'], [data-marbella-sandbox='true'] *)[data-studio-fill-color] {
   -webkit-text-fill-color: color-mix(in srgb, var(--studio-fill-color) calc(var(--studio-fill-opacity, 1) * 100%), transparent) !important;
 }

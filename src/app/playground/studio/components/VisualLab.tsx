@@ -5,7 +5,7 @@ import { useSandboxStore } from '../store';
 import type { StudioFontOption } from '../font-catalog';
 import type { Estetica, SandboxRoute, SelectedVisualElement, StudioFontFamily, VisualOverride, VisualOverrides, VisualTargetKind, ViewportPreset } from '../types';
 
-const TARGET_SELECTOR = 'button, input, textarea, select, table, thead, tbody, tr, th, td, nav, header, [role="dialog"], [role="tab"], [class*="rounded"], svg, span, p, h1, h2, h3, h4, h5, h6, img, a, li, ul, ol';
+const TARGET_SELECTOR = 'button, input, textarea, select, table, thead, tbody, tr, th, td, nav, header, [role="dialog"], [role="tab"], [class*="rounded"], svg, span, p, h1, h2, h3, h4, h5, h6, img, a, li, ul, ol, [data-studio-target="icon"], [data-studio-target="text"], [data-studio-target="bg"]';
 
 function cleanLabel(value: string): string {
     return value.replace(/\s+/g, ' ').trim().slice(0, 48);
@@ -30,6 +30,10 @@ function scopeLabel(kind: VisualTargetKind, scope: 'instance' | 'component' | 'g
 }
 
 function classify(element: HTMLElement): { kind: VisualTargetKind; scope: string; label: string } {
+    if (element.getAttribute('data-studio-target') === 'icon') return { kind: 'element', scope: 'icon-box:default', label: 'ICONO' };
+    if (element.getAttribute('data-studio-target') === 'text') return { kind: 'text', scope: 'text:default', label: 'TEXTO' };
+    if (element.getAttribute('data-studio-target') === 'bg') return { kind: 'element', scope: 'bg-box:default', label: 'FONDO' };
+
     const tag = element.tagName.toLowerCase();
     const classes = String(element.className ?? '');
     let rawText = element.getAttribute('aria-label') || element.textContent || '';
@@ -70,7 +74,6 @@ function overrideFor(element: HTMLElement, overrides: VisualOverrides, viewport:
     };
 
     return {
-        ...merge('global'),
         ...merge(`component:${element.dataset.studioComponent ?? ''}`),
         ...merge(element.dataset.studioNodeKey ?? ''),
     };
@@ -84,41 +87,6 @@ function applyOverrideAttributes(element: HTMLElement, override: VisualOverride)
     } else {
         delete element.dataset.studioCompositionHost;
         delete element.dataset.studioComposition;
-    }
-
-    let targetBg = element;
-    const targetIcon = element.querySelector<HTMLElement>('[data-studio-target="icon"]');
-    const targetText = element.querySelector<HTMLElement>('[data-studio-target="text"]');
-
-    if (override.composition === 'outside') {
-        const innerBg = element.querySelector<HTMLElement>('[data-studio-target="bg"]');
-        if (innerBg) {
-            targetBg = innerBg;
-            // Clear outer element styles so it becomes purely a wrapper
-            element.style.setProperty('background-color', 'transparent', 'important');
-            element.style.setProperty('background-image', 'none', 'important');
-            element.style.removeProperty('padding');
-            element.style.removeProperty('padding-top');
-            element.style.removeProperty('padding-right');
-            element.style.removeProperty('padding-bottom');
-            element.style.removeProperty('padding-left');
-        }
-    }
-
-    if (override.composition === 'icon-only' && targetText) {
-        targetText.style.setProperty('display', 'none', 'important');
-    } else if (targetText) {
-        targetText.style.removeProperty('display');
-    }
-
-    if (override.composition === 'text-only' && targetIcon) {
-        targetIcon.style.setProperty('display', 'none', 'important');
-        const innerBg = element.querySelector<HTMLElement>('[data-studio-target="bg"]');
-        if (innerBg) innerBg.style.setProperty('display', 'none', 'important');
-    } else if (targetIcon) {
-        targetIcon.style.removeProperty('display');
-        const innerBg = element.querySelector<HTMLElement>('[data-studio-target="bg"]');
-        if (innerBg) innerBg.style.removeProperty('display');
     }
 
     if (override.fontFamily) {
@@ -154,14 +122,14 @@ function applyOverrideAttributes(element: HTMLElement, override: VisualOverride)
     }
 
     if (override.tone === 'transparent') {
-        targetBg.style.setProperty('background-color', 'transparent', 'important');
-        targetBg.style.setProperty('background-image', 'none', 'important');
+        element.style.setProperty('background-color', 'transparent', 'important');
+        element.style.setProperty('background-image', 'none', 'important');
     } else if (override.tone === 'custom' && override.backgroundColor) {
-        targetBg.style.setProperty('background-color', override.backgroundColor, 'important');
-        targetBg.style.setProperty('background-image', 'none', 'important');
+        element.style.setProperty('background-color', override.backgroundColor, 'important');
+        element.style.setProperty('background-image', 'none', 'important');
     } else {
-        targetBg.style.removeProperty('background-color');
-        targetBg.style.removeProperty('background-image');
+        element.style.removeProperty('background-color');
+        element.style.removeProperty('background-image');
     }
 
     if (override.opacity !== undefined) element.style.setProperty('opacity', String(override.opacity), 'important');
@@ -197,16 +165,16 @@ function applyOverrideAttributes(element: HTMLElement, override: VisualOverride)
     if (override.marginLeft) element.style.setProperty('margin-left', override.marginLeft, 'important');
     else element.style.removeProperty('margin-left');
 
-    if (override.customPadding) targetBg.style.setProperty('padding', override.customPadding, 'important');
-    else targetBg.style.removeProperty('padding');
-    if (override.paddingTop) targetBg.style.setProperty('padding-top', override.paddingTop, 'important');
-    else targetBg.style.removeProperty('padding-top');
-    if (override.paddingRight) targetBg.style.setProperty('padding-right', override.paddingRight, 'important');
-    else targetBg.style.removeProperty('padding-right');
-    if (override.paddingBottom) targetBg.style.setProperty('padding-bottom', override.paddingBottom, 'important');
-    else targetBg.style.removeProperty('padding-bottom');
-    if (override.paddingLeft) targetBg.style.setProperty('padding-left', override.paddingLeft, 'important');
-    else targetBg.style.removeProperty('padding-left');
+    if (override.customPadding) element.style.setProperty('padding', override.customPadding, 'important');
+    else element.style.removeProperty('padding');
+    if (override.paddingTop) element.style.setProperty('padding-top', override.paddingTop, 'important');
+    else element.style.removeProperty('padding-top');
+    if (override.paddingRight) element.style.setProperty('padding-right', override.paddingRight, 'important');
+    else element.style.removeProperty('padding-right');
+    if (override.paddingBottom) element.style.setProperty('padding-bottom', override.paddingBottom, 'important');
+    else element.style.removeProperty('padding-bottom');
+    if (override.paddingLeft) element.style.setProperty('padding-left', override.paddingLeft, 'important');
+    else element.style.removeProperty('padding-left');
 
     if (override.gap) element.style.setProperty('gap', override.gap, 'important');
     else element.style.removeProperty('gap');
@@ -223,10 +191,13 @@ function realElements(root: HTMLElement): HTMLElement[] {
 
         const tag = element.tagName.toLowerCase();
 
-        // Descartar SVGs que pertenezcan a Recharts o sean muy grandes (gráficos, no iconos)
-        if (tag === 'svg') {
-            const isChart = element.classList.contains('recharts-surface') || element.clientWidth > 100;
-            if (isChart) return false;
+        // Descartar SVGs si están dentro de un target="icon" o target="bg" explícito
+        if (tag === 'svg' && (element.closest('[data-studio-target="icon"]') || element.closest('[data-studio-target="bg"]'))) {
+            return false;
+        }
+        // Descartar spans si están dentro de un target="text" explícito (salvo que sea el target="text" mismo)
+        if (tag === 'span' && element.closest('[data-studio-target="text"]') && element.getAttribute('data-studio-target') !== 'text') {
+            return false;
         }
 
         return true;
@@ -252,6 +223,17 @@ export function VisualLabSurface({
     const indexElements = React.useCallback(() => {
         const root = rootRef.current;
         if (!root) return;
+
+        const merge = (key: string) => {
+            const responsive = overrides[key];
+            if (!responsive) return {};
+            return {
+                ...responsive.all,
+                ...responsive[viewport],
+            };
+        };
+        applyOverrideAttributes(root, merge('global'));
+
         const elements = realElements(root);
         const counts = new Map<string, number>();
         elements.forEach(element => {
@@ -511,7 +493,7 @@ function StepperControl({ label, value, onChange, onReset, step = 1, unit = 'px'
             </span>
             <div className="flex items-center justify-between rounded bg-zinc-900 p-1">
                 <button type="button" onClick={handleDecrement} className="h-6 w-6 rounded bg-zinc-800 text-white hover:bg-zinc-700 flex items-center justify-center font-bold text-xs">-</button>
-                <span className="text-xs font-mono text-white text-center flex-1">{value === undefined ? 'Auto' : value}</span>
+                <span className="text-xs font-mono text-white text-center flex-1">{value === undefined || String(value).toLowerCase() === 'auto' ? 'AUTO' : value}</span>
                 <button type="button" onClick={handleIncrement} className="h-6 w-6 rounded bg-zinc-800 text-white hover:bg-zinc-700 flex items-center justify-center font-bold text-xs">+</button>
             </div>
         </label>
@@ -620,10 +602,10 @@ export function VisualLabPanel({
                     <>
                         {selected.tagName === 'button' && renderSection("composicion", "Composición", (
                             <div className="grid grid-cols-2 gap-2">
-                                <button type="button" onClick={() => update({ composition: 'inside' })} className={`rounded p-2 text-xs font-bold ${(!current.composition || current.composition === 'inside') ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}>Icono + Texto Dentro</button>
-                                <button type="button" onClick={() => update({ composition: 'outside' })} className={`rounded p-2 text-xs font-bold ${current.composition === 'outside' ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}>Icono Arriba + Texto Fuera</button>
-                                <button type="button" onClick={() => update({ composition: 'icon-only' })} className={`rounded p-2 text-xs font-bold ${current.composition === 'icon-only' ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}>Solo Icono</button>
-                                <button type="button" onClick={() => update({ composition: 'text-only' })} className={`rounded p-2 text-xs font-bold ${current.composition === 'text-only' ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}>Solo Texto</button>
+                                <button type="button" onClick={() => update({ composition: 'inside' })} className={`rounded p-2 text-xs font-bold ${(!current.composition || current.composition === 'inside') ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}>Dentro</button>
+                                <button type="button" onClick={() => update({ composition: 'outside' })} className={`rounded p-2 text-xs font-bold ${current.composition === 'outside' ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}>Icono arriba · texto fuera</button>
+                                <button type="button" onClick={() => update({ composition: 'icon-only' })} className={`rounded p-2 text-xs font-bold ${current.composition === 'icon-only' ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}>Solo icono</button>
+                                <button type="button" onClick={() => update({ composition: 'text-only' })} className={`rounded p-2 text-xs font-bold ${current.composition === 'text-only' ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}>Solo texto</button>
                             </div>
                         ))}
 

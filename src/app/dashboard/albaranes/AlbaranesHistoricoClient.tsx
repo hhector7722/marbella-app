@@ -140,8 +140,8 @@ export default function AlbaranesHistoricoClient({
   const [lineForEditModal, setLineForEditModal] = useState<PurchaseInvoiceLine | null>(null)
   /** Línea abierta en el modal de mapeo/calibración dimensional. */
   const [lineForMappingModal, setLineForMappingModal] = useState<PurchaseInvoiceLine | null>(null)
-  /** Línea abierta en el modal de evidencia (solo lectura). */
   const [lineForEvidenceModal, setLineForEvidenceModal] = useState<string | null>(null)
+  const [evidenceVersion, setEvidenceVersion] = useState(0)
   const [lineActionBusy, setLineActionBusy] = useState(false)
   const [wizardOpen, setWizardOpen] = useState(false)
   const [wizardIngredientId, setWizardIngredientId] = useState<string | null>(null)
@@ -697,6 +697,7 @@ export default function AlbaranesHistoricoClient({
         return
       }
       setDetail(refreshed.detail)
+      setEvidenceVersion((v) => v + 1)
       const nextDraft: Record<string, { original_name: string; quantity: string; unit_price: string; total_price: string }> = {}
       for (const l of refreshed.detail.lines) {
         nextDraft[l.id] = {
@@ -773,10 +774,6 @@ export default function AlbaranesHistoricoClient({
     } finally {
       setSupplierSaving(false)
     }
-  }
-
-  function openLineEditModal(line: PurchaseInvoiceLine) {
-    setLineForEditModal(line)
   }
 
   function openLineMappingModal(line: PurchaseInvoiceLine) {
@@ -1615,11 +1612,14 @@ export default function AlbaranesHistoricoClient({
                       ) : (
                         <div className="flex flex-col gap-1">
                           {/* Cabecera de columnas para los artículos */}
-                          <div className="hidden md:flex items-center px-4 py-2 border-b border-zinc-100">
+                          <div className="hidden md:flex items-center gap-4 px-4 py-2 border-b border-zinc-100">
                             <div className="flex-1 text-[10px] font-black uppercase tracking-widest text-zinc-400">Artículo</div>
-                            <div className="w-[100px] text-right text-[10px] font-black uppercase tracking-widest text-zinc-400">Cantidad</div>
-                            <div className="w-[110px] text-right text-[10px] font-black uppercase tracking-widest text-zinc-400">Precio Ud.</div>
-                            <div className="w-[110px] text-right text-[10px] font-black uppercase tracking-widest text-zinc-400 pr-[120px]">Importe</div>
+                            <div className="flex items-center justify-end shrink-0 gap-4">
+                              <div className="w-[100px] text-right text-[10px] font-black uppercase tracking-widest text-zinc-400">Cantidad</div>
+                              <div className="w-[110px] text-right text-[10px] font-black uppercase tracking-widest text-zinc-400">Precio Ud.</div>
+                              <div className="w-[110px] text-right text-[10px] font-black uppercase tracking-widest text-zinc-400">Importe</div>
+                              <div className="w-[32px] shrink-0" />
+                            </div>
                           </div>
                           
                           {detail.lines.map((l) => {
@@ -1629,14 +1629,16 @@ export default function AlbaranesHistoricoClient({
                             const excluded = isInvoiceLineExcluded(l)
                             const noMatch = !excluded && !l.ingredient_name
                             const needsRepair = lineNeedsStockRepair(l)
-                            const stockBusy =
-                              repairingStockLineId !== null || repairingInvoiceStockBatch || lineActionBusy
                             const displayName = l.ingredient_name
                               ? l.ingredient_name
                               : l.original_name || 'Sin nombre'
 
                             return (
-                              <div key={l.id} className="group flex flex-col md:flex-row md:items-center gap-2 md:gap-4 px-2 md:px-4 py-3 hover:bg-zinc-50 rounded-xl transition-colors">
+                              <div 
+                                key={l.id} 
+                                onClick={() => setLineForEvidenceModal(l.id)}
+                                className="group flex flex-col md:flex-row md:items-center gap-2 md:gap-4 px-2 md:px-4 py-3 hover:bg-zinc-50 rounded-xl transition-colors cursor-pointer"
+                              >
                                 {/* Nombre + Estado + Original OCR en la misma línea */}
                                 <div className="flex-1 min-w-0 flex items-center gap-2">
                                   <span className="text-sm font-bold text-zinc-900 truncate shrink-0" title={displayName}>{displayName}</span>
@@ -1686,31 +1688,8 @@ export default function AlbaranesHistoricoClient({
                                   </div>
 
                                   {/* Acciones flotantes integradas (sin card) */}
-                                  <div className="w-[104px] flex justify-end gap-1 shrink-0">
-                                    <button
-                                      type="button"
-                                      onClick={() => setLineForEvidenceModal(l.id)}
-                                      className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 hover:text-sky-600 hover:bg-sky-50 active:scale-[0.95] transition-all opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-                                      aria-label="Auditar Evidencia"
-                                      title="Auditar Evidencia Documental"
-                                    >
-                                      <FileText className="h-4 w-4" strokeWidth={2.5} />
-                                    </button>
-                                    {isManager ? (
-                                      <button
-                                        type="button"
-                                        onClick={() => openLineEditModal(l)}
-                                        disabled={stockBusy}
-                                        className={cn(
-                                          'flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 hover:text-[#36606F] hover:bg-zinc-100 active:scale-[0.95] transition-all opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
-                                          stockBusy && 'opacity-60 pointer-events-none'
-                                        )}
-                                        aria-label="Editar línea"
-                                        title="Editar línea"
-                                      >
-                                        <Pencil className="h-4 w-4" strokeWidth={2.5} />
-                                      </button>
-                                    ) : null}
+                                  <div className="w-[32px] flex justify-end shrink-0">
+                                    {/* El botón Editar ha sido eliminado, y la fila completa abre Evidencia */}
                                   </div>
                                 </div>
                               </div>
@@ -1797,8 +1776,17 @@ export default function AlbaranesHistoricoClient({
                 <DocumentEvidenceModal
                   open={!!lineForEvidenceModal}
                   lineId={lineForEvidenceModal}
+                  refreshVersion={evidenceVersion}
                   onClose={() => setLineForEvidenceModal(null)}
                   portalTarget={modalContainer}
+                  onOpenProduct={() => {
+                    const l = detail?.lines.find((line) => line.id === lineForEvidenceModal)
+                    if (l) openLineMappingModal(l)
+                  }}
+                  onOpenEditor={() => {
+                    const l = detail?.lines.find((line) => line.id === lineForEvidenceModal)
+                    if (l) setLineForEditModal(l)
+                  }}
                 />
 
                 {supplierPickerOpen ? (
