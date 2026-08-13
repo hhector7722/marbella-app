@@ -725,8 +725,6 @@ export default function AlbaranesHistoricoClient({
     }
   }
 
-  const activeItem = useMemo(() => items.find((it) => it.id === selectedId) ?? null, [items, selectedId])
-
   async function runSupplierSearch(nextQuery: string) {
     setSupplierError(null)
     const q = nextQuery.trim()
@@ -1394,8 +1392,8 @@ export default function AlbaranesHistoricoClient({
                   onChange={handleReplaceImageFileChange}
                 />
                 {/* 1. CABECERA */}
-                <div className="flex shrink-0 items-start justify-between bg-[#36606F] px-6 py-5 relative">
-                  <div className="min-w-0 flex-1 flex flex-col gap-1 pr-16">
+                <div className="flex shrink-0 items-center justify-between bg-[#36606F] px-4 py-3 relative">
+                  <div className="min-w-0 flex-1 pr-[9.5rem]">
                     {detail ? (
                       <button
                         type="button"
@@ -1405,31 +1403,20 @@ export default function AlbaranesHistoricoClient({
                           setSupplierResults([])
                           setSupplierError(null)
                         }}
-                        className="text-left w-full min-w-0 text-xl font-black uppercase tracking-widest text-white truncate hover:opacity-80 transition-opacity"
+                        className="text-left w-full min-w-0 text-sm font-black uppercase tracking-wider text-white truncate hover:opacity-80 transition-opacity"
                         title="Cambiar proveedor"
                       >
                         {detail.supplier_name ?? 'Añadir proveedor'}
                       </button>
                     ) : (
-                      <p className="text-xl font-black uppercase tracking-widest text-white truncate min-w-0">
+                      <p className="text-sm font-black uppercase tracking-wider text-white truncate min-w-0">
                         Proveedor pendiente
                       </p>
                     )}
-                    {(() => {
-                      const dateStr = formatDateTitle(detail?.invoice_date ?? activeItem?.invoice_date)
-                      const invNum = detail?.invoice_number ?? activeItem?.invoice_number ?? ''
-                      const hasDate = dateStr && dateStr !== '—'
-                      if (!hasDate && !invNum) return null
-                      return (
-                        <p className="text-sm font-bold text-white/80 uppercase tracking-widest truncate min-w-0">
-                          ALBARÁN {invNum ? `· ${invNum}` : ''} {hasDate ? `· ${dateStr}` : ''}
-                        </p>
-                      )
-                    })()}
                   </div>
 
-                  {/* Acciones flotantes en la cabecera */}
-                  <div className="absolute top-5 right-6 flex items-center gap-2">
+                  {/* Acciones flotantes en la cabecera: iconos sin fondo circular */}
+                  <div className="absolute top-1/2 -translate-y-1/2 right-2 flex items-center gap-0.5">
                     {detail?.id && detail?.supplier_id ? (
                       <button
                         type="button"
@@ -1438,7 +1425,7 @@ export default function AlbaranesHistoricoClient({
                         aria-label="Auto-mapear aprendidos"
                         title="Auto-mapear líneas pendientes con texto ya aprendido para este proveedor"
                         className={cn(
-                          'flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 active:scale-[0.99]',
+                          'flex min-h-12 min-w-12 items-center justify-center text-white/90 transition-opacity hover:opacity-100 opacity-90 active:scale-[0.99]',
                           autoMapLoading && 'opacity-60 pointer-events-none'
                         )}
                       >
@@ -1457,7 +1444,7 @@ export default function AlbaranesHistoricoClient({
                         aria-label="Eliminar albarán"
                         title="Eliminar albarán y revertir su stock"
                         className={cn(
-                          'flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-rose-500/80 active:scale-[0.99]',
+                          'flex min-h-12 min-w-12 items-center justify-center text-white/90 transition-opacity hover:text-rose-200 hover:opacity-100 opacity-90 active:scale-[0.99]',
                           deletingInvoice && 'opacity-60 pointer-events-none'
                         )}
                       >
@@ -1471,7 +1458,7 @@ export default function AlbaranesHistoricoClient({
                     <button
                       type="button"
                       onClick={closeModal}
-                      className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 active:scale-[0.99]"
+                      className="flex min-h-12 min-w-12 items-center justify-center text-white/90 transition-opacity hover:opacity-100 opacity-90 active:scale-[0.99]"
                       aria-label="Cerrar"
                     >
                       <X className="h-5 w-5" />
@@ -1479,7 +1466,7 @@ export default function AlbaranesHistoricoClient({
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto bg-[#fafafa] p-6 space-y-8">
+                <div className="flex-1 overflow-y-auto bg-[#fafafa] p-3 sm:p-4 space-y-4">
                   {/* Status & Errors */}
                   {deleteError ? (
                     <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-sm font-bold text-red-700">
@@ -1579,67 +1566,69 @@ export default function AlbaranesHistoricoClient({
 
                   {/* 3. BLOQUE DE INFORMACIÓN DEL DOCUMENTO */}
                   {detail && !isLoadingDetail && (
-                    <div className="flex flex-col gap-4">
-                      <div className="text-[11px] font-black uppercase tracking-widest text-zinc-400 pl-1">
-                        Documento
+                    <div className="flex flex-nowrap items-end gap-2 sm:gap-4 overflow-x-auto min-w-0">
+                      <div className="min-w-0 shrink space-y-0.5">
+                        <div className="text-[9px] font-black uppercase tracking-wider text-zinc-400">Nº</div>
+                        <div className="text-xs font-semibold text-zinc-900 tabular-nums whitespace-nowrap truncate">
+                          {detail.invoice_number ?? '—'}
+                        </div>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-y-6 gap-x-4">
-                        <div className="space-y-1.5 col-span-2 md:col-span-1">
-                          <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Proveedor</div>
-                          <div className="text-sm font-bold text-zinc-900">{detail.supplier_name ?? '—'}</div>
+                      <div className="shrink-0 space-y-0.5">
+                        <div className="text-[9px] font-black uppercase tracking-wider text-zinc-400">Fecha</div>
+                        <div className="text-xs font-semibold text-zinc-900 tabular-nums whitespace-nowrap">
+                          {(() => {
+                            const raw = String(detail.invoice_date ?? '').trim()
+                            const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw)
+                            return m ? `${m[3]}/${m[2]}/${m[1]}` : formatDateTitle(detail.invoice_date)
+                          })()}
                         </div>
-                        <div className="space-y-1.5">
-                          <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Nº Albarán</div>
-                          <div className="text-sm font-bold text-zinc-900">{detail.invoice_number ?? '—'}</div>
+                      </div>
+                      <div className="shrink-0 space-y-0.5">
+                        <div className="text-[9px] font-black uppercase tracking-wider text-zinc-400">Total</div>
+                        <div className="text-xs font-semibold text-[#36606F] tabular-nums whitespace-nowrap">
+                          {detail.total_amount != null
+                            ? `${Number(detail.total_amount).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
+                            : '—'}
                         </div>
-                        <div className="space-y-1.5">
-                          <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Fecha</div>
-                          <div className="text-sm font-bold text-zinc-900">{formatDateTitle(detail.invoice_date) ?? '—'}</div>
-                        </div>
-                        <div className="space-y-1.5">
-                          <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Total</div>
-                          <div className="text-sm font-black text-[#36606F]">{detail.total_amount != null ? `${Number(detail.total_amount).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : '—'}</div>
-                        </div>
-                        <div className="space-y-1.5">
-                          <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Original</div>
-                          {invoiceImageSheetOptions.length > 0 ? (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setInvoiceCarouselIndex(0)
-                                invoiceCarouselIndexRef.current = 0
-                                setInvoiceImageViewerOpen(true)
-                              }}
-                              className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#36606F] hover:text-[#284955] transition-colors"
-                            >
-                              <FileText className="h-3.5 w-3.5" />
-                              Ver Original
-                            </button>
-                          ) : (
-                            <div className="text-sm font-bold text-zinc-400">No hay imagen</div>
-                          )}
-                        </div>
+                      </div>
+                      <div className="shrink-0 ml-auto self-end">
+                        {invoiceImageSheetOptions.length > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setInvoiceCarouselIndex(0)
+                              invoiceCarouselIndexRef.current = 0
+                              setInvoiceImageViewerOpen(true)
+                            }}
+                            className="inline-flex min-h-12 items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-[#36606F] hover:text-[#284955] transition-colors whitespace-nowrap"
+                          >
+                            <FileText className="h-3.5 w-3.5" />
+                            Ver original
+                          </button>
+                        ) : (
+                          <div className="flex min-h-12 items-center text-xs font-medium text-zinc-400 whitespace-nowrap">Sin imagen</div>
+                        )}
                       </div>
                     </div>
                   )}
 
                   {/* 4. SECCIÓN ARTÍCULOS */}
                   {isLoadingDetail ? (
-                    <div className="flex flex-col items-center justify-center py-12 gap-3 text-sm font-bold text-zinc-600">
+                    <div className="flex flex-col items-center justify-center py-8 gap-2 text-sm font-bold text-zinc-600">
                       <Loader2 className="h-8 w-8 animate-spin text-[#36606F]" />
                       Cargando detalle…
                     </div>
                   ) : detailError ? (
                     <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-sm font-bold text-red-700">{detailError}</div>
                   ) : detail ? (
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-end justify-between pb-2 border-b-2 border-zinc-900/5 px-2">
-                        <div className="text-[11px] font-black uppercase tracking-widest text-zinc-400">Artículos</div>
-                        <div className="text-[11px] font-black uppercase tracking-widest text-zinc-400">{detail.lines.length} ARTÍCULOS</div>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-baseline justify-between gap-2 pb-1 border-b border-zinc-900/5 px-1">
+                        <div className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Artículos</div>
+                        <div className="text-[10px] font-black uppercase tracking-wider text-zinc-400">{detail.lines.length} artículos</div>
                       </div>
 
                       {detail.lines.length === 0 ? (
-                        <div className="py-12 text-center text-sm font-bold text-zinc-500">
+                        <div className="py-8 text-center text-sm font-bold text-zinc-500">
                           {String(detail.status ?? '').toLowerCase() === 'processing'
                             ? 'Esperando lectura OCR…'
                             : String(detail.status ?? '').toLowerCase() === 'ocr_failed'
@@ -1647,17 +1636,17 @@ export default function AlbaranesHistoricoClient({
                               : 'No hay líneas guardadas.'}
                         </div>
                       ) : (
-                        <div className="flex flex-col gap-1">
-                          {/* Cabecera de columnas para los artículos */}
-                          <div className="hidden md:flex items-center gap-4 px-4 py-2 border-b border-zinc-100">
-                            <div className="flex-1 text-[10px] font-black uppercase tracking-widest text-zinc-400">Artículo</div>
-                            <div className="flex items-center justify-end shrink-0 gap-4">
-                              <div className="w-[100px] text-right text-[10px] font-black uppercase tracking-widest text-zinc-400">Cantidad</div>
-                              <div className="w-[110px] text-right text-[10px] font-black uppercase tracking-widest text-zinc-400">Precio Ud.</div>
-                              <div className="w-[110px] text-right text-[10px] font-black uppercase tracking-widest text-zinc-400">Importe</div>
+                        <div className="flex flex-col gap-0 min-w-0">
+                          {/* Cabecera de columnas: siempre visible, alineada con filas */}
+                          <div className="flex items-center gap-1.5 sm:gap-3 px-1 py-1 border-b border-zinc-100">
+                            <div className="flex-1 min-w-0 text-[9px] font-black uppercase tracking-wider text-zinc-400">Producto</div>
+                            <div className="flex items-center justify-end shrink-0 gap-1.5 sm:gap-3">
+                              <div className="w-[3.25rem] sm:w-[4.5rem] text-right text-[9px] font-black uppercase tracking-wider text-zinc-400">Cant.</div>
+                              <div className="w-[3.75rem] sm:w-[5rem] text-right text-[9px] font-black uppercase tracking-wider text-zinc-400">Precio ud.</div>
+                              <div className="w-[3.75rem] sm:w-[5rem] text-right text-[9px] font-black uppercase tracking-wider text-zinc-400">Importe</div>
                             </div>
                           </div>
-                          
+
                           {detail.lines.map((l) => {
                             const stock = stockStatusByLineId[l.id]
                             const stockApplied = Boolean(stock?.stockApplied)
@@ -1670,27 +1659,26 @@ export default function AlbaranesHistoricoClient({
                               : l.original_name || 'Sin nombre'
 
                             return (
-                              <div 
-                                key={l.id} 
+                              <div
+                                key={l.id}
                                 onClick={() => {
                                   setLineForEditModal(null)
                                   setLineForMappingModal(null)
                                   evidenceContextLineIdRef.current = l.id
                                   setLineForEvidenceModal(l.id)
                                 }}
-                                className="group flex flex-row items-center gap-2 md:gap-4 px-2 md:px-4 py-3 min-h-12 hover:bg-zinc-50 rounded-xl transition-colors cursor-pointer"
+                                className="group flex flex-row items-center gap-1.5 sm:gap-3 px-1 py-1.5 min-h-12 hover:bg-zinc-50 rounded-lg transition-colors cursor-pointer"
                               >
-                                {/* Prioridad móvil: nombre → estado → qty → precio → importe (una sola fila) */}
-                                <div className="flex-1 min-w-0 flex items-center gap-2">
-                                  <span className="text-sm font-bold text-zinc-900 truncate min-w-0" title={displayName}>{displayName}</span>
+                                <div className="flex-1 min-w-0 flex items-center gap-1.5">
+                                  <span className="text-xs font-medium text-zinc-900 truncate min-w-0" title={displayName}>{displayName}</span>
 
                                   {/* Estado */}
                                   <div className="shrink-0 flex items-center">
                                     {noMatch ? (
-                                      <span className="inline-flex text-rose-600" aria-label="Sin match" title="Sin match"><X className="h-4 w-4" strokeWidth={3} /></span>
+                                      <span className="inline-flex text-rose-600" aria-label="Sin match" title="Sin match"><X className="h-3.5 w-3.5" strokeWidth={3} /></span>
                                     ) : null}
                                     {excluded ? (
-                                      <span className="inline-flex text-zinc-400" aria-label="Portes o ajuste" title="Portes / ajuste / sin cargo"><MinusCircle className="h-4 w-4" strokeWidth={2.5} /></span>
+                                      <span className="inline-flex text-zinc-400" aria-label="Portes o ajuste" title="Portes / ajuste / sin cargo"><MinusCircle className="h-3.5 w-3.5" strokeWidth={2.5} /></span>
                                     ) : null}
                                     {needsRepair ? (
                                       <button
@@ -1708,41 +1696,36 @@ export default function AlbaranesHistoricoClient({
                                         )}
                                       >
                                         {repairingStockLineId === l.id ? (
-                                          <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} />
+                                          <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={2.5} />
                                         ) : (
-                                          <AlertCircle className="h-4 w-4" strokeWidth={2.5} />
+                                          <AlertCircle className="h-3.5 w-3.5" strokeWidth={2.5} />
                                         )}
                                       </button>
                                     ) : null}
                                     {stockApplied ? (
-                                      <span className="inline-flex text-emerald-600" aria-label="Stock aplicado" title="Stock aplicado"><Check className="h-4 w-4" strokeWidth={3} /></span>
+                                      <span className="inline-flex text-emerald-600" aria-label="Stock aplicado" title="Stock aplicado"><Check className="h-3.5 w-3.5" strokeWidth={3} /></span>
                                     ) : null}
                                     {rectified ? (
-                                      <span className="inline-flex text-amber-500" aria-label={`Stock rectificado (REV${stock?.rectifiedCount})`} title={`Stock rectificado (REV${stock?.rectifiedCount})`}><RotateCcw className="h-4 w-4" strokeWidth={2.5} /></span>
+                                      <span className="inline-flex text-amber-500" aria-label={`Stock rectificado (REV${stock?.rectifiedCount})`} title={`Stock rectificado (REV${stock?.rectifiedCount})`}><RotateCcw className="h-3.5 w-3.5" strokeWidth={2.5} /></span>
                                     ) : null}
                                   </div>
-
-                                  {/* Nombre OCR del proveedor: solo desktop (en móvil se oculta primero) */}
-                                  {l.ingredient_name && l.original_name && l.ingredient_name !== l.original_name ? (
-                                    <span className="hidden md:inline text-sm text-zinc-400 truncate min-w-0" title={l.original_name}>{l.original_name}</span>
-                                  ) : null}
                                 </div>
 
-                                {/* Valores económicos: siempre visibles; anchos fijos = columnas alineadas */}
-                                <div className="flex items-center justify-end shrink-0 gap-2 md:gap-4">
-                                  <div className="w-[72px] md:w-[100px] text-right">
-                                    <span className="text-sm font-bold text-zinc-900 tabular-nums">
+                                {/* Valores económicos: tipografía densa, peso normal, columnas fijas */}
+                                <div className="flex items-center justify-end shrink-0 gap-1.5 sm:gap-3">
+                                  <div className="w-[3.25rem] sm:w-[4.5rem] text-right">
+                                    <span className="text-[10px] sm:text-[11px] font-normal text-zinc-800 tabular-nums">
                                       {l.quantity != null ? Number(l.quantity).toLocaleString('es-ES', { maximumFractionDigits: 3 }) : '—'}
                                       {l.line_unit ? ` ${l.line_unit}` : ''}
                                     </span>
                                   </div>
-                                  <div className="w-[80px] md:w-[110px] text-right">
-                                    <span className="text-sm font-bold text-zinc-900 tabular-nums">
+                                  <div className="w-[3.75rem] sm:w-[5rem] text-right">
+                                    <span className="text-[10px] sm:text-[11px] font-normal text-zinc-800 tabular-nums">
                                       {l.unit_price != null ? `${Number(l.unit_price).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} €` : '—'}
                                     </span>
                                   </div>
-                                  <div className="w-[80px] md:w-[110px] text-right">
-                                    <span className="text-sm font-bold text-zinc-900 tabular-nums">
+                                  <div className="w-[3.75rem] sm:w-[5rem] text-right">
+                                    <span className="text-[10px] sm:text-[11px] font-normal text-zinc-800 tabular-nums">
                                       {l.total_price != null ? `${Number(l.total_price).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : '—'}
                                     </span>
                                   </div>
@@ -1820,6 +1803,8 @@ export default function AlbaranesHistoricoClient({
                 <DocumentEvidenceModal
                   open={!!lineForEvidenceModal}
                   lineId={lineForEvidenceModal}
+                  supplierName={detail?.supplier_name}
+                  invoiceNumber={detail?.invoice_number}
                   refreshVersion={evidenceVersion}
                   isManager={isManager}
                   onClose={() => {
