@@ -36,6 +36,10 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
 
+## 2026-08-13
+
+- **Evidence en albaranes permite revisión manual de provenance.** Si una línea no tiene vínculo documental, el modal carga el OCR existente y deja confirmar la fila OCR sin tocar el mapeo de producto ni los valores operativos.
+
 ## 2026-08-10
 
 - **Se integra la IA Diseñadora (Copiloto Creativo) en la arquitectura de Marbella Design Studio.** Convivencia entre diseño manual y asistido por IA para todas las superficies (modales, formularios, tablas, KPIs, dashboards, etc.) con selección inicial "¿Cómo quieres empezar?", generación múltiple de variantes editables y panel de chat conversacional para refinamiento continuo sin destruir variantes previas.

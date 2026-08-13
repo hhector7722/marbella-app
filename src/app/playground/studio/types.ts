@@ -206,6 +206,8 @@ export interface SelectedVisualElement {
     hostLabel?: string;
     /** El elemento contiene caja de icono y/o texto: admite controles de composición. */
     hasComposition?: boolean;
+    /** Node key de la CAJA ICONO hermana del texto (para presets de composición). */
+    iconBoxKey?: string;
 }
 
 // ============================================================

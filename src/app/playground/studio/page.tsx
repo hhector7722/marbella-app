@@ -157,8 +157,13 @@ export default function StudioPage() {
         return () => window.removeEventListener('keydown', onKeyDown);
     }, [undo, redo]);
 
-    const setDraftOverride = (key: string, vp: 'all' | 'mobile' | 'tablet' | 'desktop', patch: VisualOverride | null) => {
-        const currentOverride = draftOverrides[key] || {};
+    const applyOverridePatch = (
+        overrides: typeof draftOverrides,
+        key: string,
+        vp: 'all' | 'mobile' | 'tablet' | 'desktop',
+        patch: VisualOverride | null,
+    ) => {
+        const currentOverride = overrides[key] || {};
         let newViewportData: VisualOverride | undefined = undefined;
 
         if (patch !== null) {
@@ -182,16 +187,36 @@ export default function StudioPage() {
             delete newOverride[vp];
         }
 
-        const newOverrides = { ...draftOverrides, [key]: newOverride };
-
+        const next = { ...overrides, [key]: newOverride };
         if (Object.keys(newOverride).length === 0) {
-            delete newOverrides[key];
+            delete next[key];
         }
+        return next;
+    };
 
+    const setDraftOverride = (key: string, vp: 'all' | 'mobile' | 'tablet' | 'desktop', patch: VisualOverride | null) => {
         commitDraft({
             id: activeEstetica.id,
             recipe: draftRecipe,
-            overrides: newOverrides,
+            overrides: applyOverridePatch(draftOverrides, key, vp, patch),
+            fontFamily: draftFontFamily,
+            globalScale: draftGlobalScale,
+            background: draftBackground,
+        });
+    };
+
+    /** Varios overrides en un solo snapshot de historial (p. ej. presets de composición). */
+    const setDraftOverridesBatch = (
+        patches: Array<{ key: string; vp: 'all' | 'mobile' | 'tablet' | 'desktop'; patch: VisualOverride | null }>,
+    ) => {
+        let next = draftOverrides;
+        for (const { key, vp, patch } of patches) {
+            next = applyOverridePatch(next, key, vp, patch);
+        }
+        commitDraft({
+            id: activeEstetica.id,
+            recipe: draftRecipe,
+            overrides: next,
             fontFamily: draftFontFamily,
             globalScale: draftGlobalScale,
             background: draftBackground,
@@ -279,7 +304,7 @@ export default function StudioPage() {
     );
 
     const inspectorPanel = (
-        <VisualLabPanel overrides={draftOverrides} onOverrideChange={setDraftOverride} fonts={fonts} viewport={viewport} />
+        <VisualLabPanel overrides={draftOverrides} onOverrideChange={setDraftOverride} onOverridesBatch={setDraftOverridesBatch} fonts={fonts} viewport={viewport} />
     );
 
     const preview = (

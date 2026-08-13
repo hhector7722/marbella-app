@@ -21,7 +21,7 @@
     "test:studio-composition": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/app/playground/studio/composition.test.ts",
     "test:studio-history": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/app/playground/studio/history.test.ts",
     "test:payroll": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/lib/payroll/company-summary-parser.test.ts",
-    "test:evidence-backfill": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/lib/evidence-backfill/*.test.ts src/lib/albaranes/evidence-column-heuristics.test.ts",
+    "test:evidence-backfill": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/lib/evidence-backfill/*.test.ts src/lib/albaranes/evidence-column-heuristics.test.ts src/lib/albaranes/document-evidence.test.ts",
     "evidence:backfill:dry-run": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/evidence-backfill/run.ts --dry-run --pilot",
     "test:k2:allowlist": "node scripts/k2/k2b-allowlist.test.cjs",
     "test:k2:runner": "node --test scripts/k2/k2-runner.test.cjs",

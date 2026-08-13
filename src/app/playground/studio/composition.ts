@@ -74,3 +74,141 @@ export const COMPOSITION_KEYS = [
     'layoutOrder',
     'layoutAlign',
 ] as const satisfies readonly (keyof VisualOverride)[];
+
+/**
+ * Presets cómodos: solo escriben combinaciones de propiedades
+ * independientes. Nunca reintroducen el enum `composition`.
+ *
+ * Cada preset produce dos ámbitos:
+ * - host: el COMPONENTE (layout + superficie del contenedor)
+ * - iconBox: la CAJA ICONO (hermana del texto)
+ */
+export type CompositionPresetId = 'together' | 'icon-card-text-out' | 'separated';
+
+export type CompositionPresetPatches = {
+    host: VisualOverride;
+    iconBox: VisualOverride;
+};
+
+const CLEAR_HOST_SURFACE: VisualOverride = {
+    tone: undefined,
+    backgroundColor: undefined,
+    fillColor: undefined,
+    borderWidth: undefined,
+    borderColor: undefined,
+    boxShadow: undefined,
+    customPadding: undefined,
+};
+
+const CLEAR_ICON_BOX_SURFACE: VisualOverride = {
+    tone: undefined,
+    backgroundColor: undefined,
+    fillColor: undefined,
+    borderWidth: undefined,
+    borderColor: undefined,
+    boxShadow: undefined,
+    iconBoxCorner: undefined,
+    customPadding: undefined,
+    width: undefined,
+    height: undefined,
+};
+
+export function compositionPresetPatches(id: CompositionPresetId): CompositionPresetPatches {
+    const sharedLayout: VisualOverride = {
+        showText: true,
+        showIcon: true,
+        layoutDirection: 'vertical',
+        layoutOrder: 'icon-text',
+        layoutAlign: 'center',
+    };
+
+    if (id === 'together') {
+        // Icono + texto dentro de la misma superficie del componente.
+        // La caja del icono no pinta card propia.
+        return {
+            host: {
+                ...CLEAR_HOST_SURFACE,
+                ...sharedLayout,
+            },
+            iconBox: {
+                ...CLEAR_ICON_BOX_SURFACE,
+                iconBoxMode: 'none',
+            },
+        };
+    }
+
+    if (id === 'separated') {
+        // Ni el componente ni la caja aportan card: asset y texto flotan.
+        return {
+            host: {
+                ...sharedLayout,
+                tone: 'transparent',
+                borderWidth: '0px',
+                boxShadow: 'none',
+                customPadding: '0px',
+                backgroundColor: undefined,
+                fillColor: undefined,
+                borderColor: undefined,
+            },
+            iconBox: {
+                ...CLEAR_ICON_BOX_SURFACE,
+                iconBoxMode: 'none',
+            },
+        };
+    }
+
+    // icon-card-text-out — la card es SOLO de la caja; el texto es hermano.
+    return {
+        host: {
+            ...sharedLayout,
+            gap: '8px',
+            tone: 'transparent',
+            borderWidth: '0px',
+            boxShadow: 'none',
+            customPadding: '0px',
+            backgroundColor: undefined,
+            fillColor: undefined,
+            borderColor: undefined,
+        },
+        iconBox: {
+            iconBoxMode: 'box',
+            tone: 'custom',
+            backgroundColor: '#ffffff',
+            borderWidth: '1px',
+            borderColor: '#f3f4f6',
+            boxShadow: 'subtle',
+            iconBoxCorner: '16px',
+            customPadding: '8px',
+        },
+    };
+}
+
+/**
+ * Heurística de lectura para resaltar el preset activo.
+ * No es una fuente de verdad: el estado real son las propiedades.
+ */
+export function detectCompositionPreset(
+    host: VisualOverride,
+    iconBox: VisualOverride,
+): CompositionPresetId | null {
+    const layoutOk = (host.layoutDirection === 'vertical' || !host.layoutDirection)
+        && (host.layoutOrder === 'icon-text' || !host.layoutOrder)
+        && host.showText !== false
+        && host.showIcon !== false;
+
+    if (!layoutOk) return null;
+
+    const hostTransparent = host.tone === 'transparent';
+    const boxMode = iconBox.iconBoxMode;
+
+    if (hostTransparent && (boxMode === 'box' || boxMode === 'square')) {
+        return 'icon-card-text-out';
+    }
+    if (hostTransparent && (boxMode === 'none' || !boxMode)) {
+        return 'separated';
+    }
+    if (!hostTransparent && (boxMode === 'none' || !boxMode)) {
+        return 'together';
+    }
+    return null;
+}

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useSandboxStore } from '../store';
-import { compositionAttributes, expandLegacyComposition } from '../composition';
+import { compositionAttributes, compositionPresetPatches, detectCompositionPreset, expandLegacyComposition, type CompositionPresetId } from '../composition';
 import type { StudioFontOption } from '../font-catalog';
 import type { Estetica, SandboxRoute, SelectedVisualElement, StudioFontFamily, VisualOverride, VisualOverrides, VisualTargetKind, ViewportPreset } from '../types';
 
@@ -257,6 +257,19 @@ function hostButtonInfo(element: HTMLElement): Pick<SelectedVisualElement, 'host
     };
 }
 
+function resolveIconBoxKey(element: HTMLElement): string | undefined {
+    const ownTarget = element.getAttribute('data-studio-target');
+    if (ownTarget === 'bg' || ownTarget === 'icon') return element.dataset.studioNodeKey;
+
+    const host = (ownTarget === 'asset' || ownTarget === 'text')
+        ? element.closest<HTMLElement>('button, [role="button"]')
+        : element;
+    if (!host) return undefined;
+
+    const box = host.querySelector<HTMLElement>('[data-studio-target="bg"], [data-studio-target="icon"]');
+    return box?.dataset.studioNodeKey;
+}
+
 function buildSelection(element: HTMLElement, route: SandboxRoute): SelectedVisualElement {
     const descriptor = classify(element);
     return {
@@ -269,6 +282,7 @@ function buildSelection(element: HTMLElement, route: SandboxRoute): SelectedVisu
         // Solo el propio contenedor de icono/texto ofrece composición: nunca
         // se edita al padre desde la selección de un hijo.
         hasComposition: Boolean(element.querySelector('[data-studio-target="bg"], [data-studio-target="icon"], [data-studio-target="text"]')),
+        iconBoxKey: resolveIconBoxKey(element),
         ...hostButtonInfo(element),
     };
 }
@@ -599,11 +613,13 @@ function ColorRow({ label, value, fallback = '#ffffff', onChange, onReset, trans
 export function VisualLabPanel({
     overrides,
     onOverrideChange,
+    onOverridesBatch,
     fonts,
     viewport,
 }: {
     overrides: VisualOverrides;
     onOverrideChange: (key: string, vp: 'all' | 'mobile' | 'tablet' | 'desktop', patch: VisualOverride) => void;
+    onOverridesBatch?: (patches: Array<{ key: string; vp: 'all' | 'mobile' | 'tablet' | 'desktop'; patch: VisualOverride | null }>) => void;
     fonts: StudioFontOption[];
     viewport: ViewportPreset;
 }) {
@@ -622,17 +638,40 @@ export function VisualLabPanel({
                 : 'global'
         : 'global';
 
+    const iconBoxOverrideKey = selected
+        ? scope === 'instance'
+            ? selected.iconBoxKey
+            : 'component:icon-box:default'
+        : undefined;
+
     const currentResponsive = overrides[overrideKey] ?? {};
     const current = expandLegacyComposition({ ...currentResponsive.all, ...currentResponsive[viewport] });
+
+    const iconBoxResponsive = iconBoxOverrideKey ? overrides[iconBoxOverrideKey] ?? {} : {};
+    const iconBoxCurrent = expandLegacyComposition({ ...iconBoxResponsive.all, ...iconBoxResponsive[viewport] });
 
     const isIconBox = Boolean(selected?.componentScope?.startsWith('icon-box'));
     const isAsset = Boolean(selected?.componentScope?.startsWith('icon-asset'));
     const showComposition = Boolean(selected?.hasComposition);
     const iconBoxMode = current.iconBoxMode ?? 'box';
     const activeSection = openSection ?? (isIconBox ? 'caja-icono' : showComposition ? 'composicion' : 'apariencia');
+    const activePreset = showComposition ? detectCompositionPreset(current, iconBoxCurrent) : null;
 
     const update = (patch: VisualOverride) => {
         onOverrideChange(overrideKey, scope === 'global' ? 'all' : viewport, patch);
+    };
+
+    const applyCompositionPreset = (id: CompositionPresetId) => {
+        if (!selected || !onOverridesBatch) return;
+        const patches = compositionPresetPatches(id);
+        const vp = scope === 'global' ? 'all' as const : viewport;
+        const batch: Array<{ key: string; vp: typeof vp; patch: VisualOverride | null }> = [
+            { key: overrideKey, vp, patch: patches.host },
+        ];
+        if (iconBoxOverrideKey) {
+            batch.push({ key: iconBoxOverrideKey, vp, patch: patches.iconBox });
+        }
+        onOverridesBatch(batch);
     };
 
     const reset = (keys: (keyof VisualOverride)[]) => {
@@ -725,6 +764,10 @@ export function VisualLabPanel({
                             label: selected.hostLabel ?? 'BOTÓN',
                             componentScope: selected.hostComponentScope ?? 'button:secondary',
                             tagName: 'button',
+                            hasComposition: true,
+                            iconBoxKey: selected.componentScope?.startsWith('icon-box')
+                                ? selected.key
+                                : selected.iconBoxKey,
                         })}
                         className="mt-1.5 h-7 w-full rounded-md border border-zinc-200 bg-zinc-50 px-2 text-left text-[10px] font-medium text-zinc-600 hover:bg-zinc-100"
                     >
@@ -744,6 +787,35 @@ export function VisualLabPanel({
                     <>
                         {showComposition && renderSection("composicion", "Composición", (
                             <>
+                                <div className="space-y-1">
+                                    <div className="text-[10px] font-medium text-zinc-500">Preset</div>
+                                    <div className="grid grid-cols-1 gap-1">
+                                        {([
+                                            ['together', 'Icono + texto'],
+                                            ['icon-card-text-out', 'Icono en card + texto fuera'],
+                                            ['separated', 'Icono + texto separados'],
+                                        ] as const).map(([id, label]) => (
+                                            <button
+                                                key={id}
+                                                type="button"
+                                                disabled={!onOverridesBatch || (scope === 'instance' && !iconBoxOverrideKey)}
+                                                onClick={() => applyCompositionPreset(id)}
+                                                className={`h-8 rounded-md border px-2 text-left text-[11px] font-medium ${
+                                                    activePreset === id
+                                                        ? 'border-[#36606F] bg-[#36606F]/10 text-[#36606F]'
+                                                        : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'
+                                                } disabled:cursor-not-allowed disabled:opacity-40`}
+                                            >
+                                                {label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {scope === 'instance' && !iconBoxOverrideKey && (
+                                        <p className="text-[10px] leading-snug text-zinc-400">
+                                            Selecciona el componente completo para aplicar presets con caja de icono.
+                                        </p>
+                                    )}
+                                </div>
                                 <ChoiceRow
                                     label="Texto"
                                     value={current.showText === false ? 'hidden' : 'visible'}

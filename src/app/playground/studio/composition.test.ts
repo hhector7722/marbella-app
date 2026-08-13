@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { COMPOSITION_KEYS, compositionAttributes, expandLegacyComposition } from './composition.ts';
+import { COMPOSITION_KEYS, compositionAttributes, compositionPresetPatches, detectCompositionPreset, expandLegacyComposition } from './composition.ts';
 import type { VisualOverride } from './types.ts';
 
 // El componente y su caja de icono son ámbitos distintos: cada uno guarda
@@ -153,5 +153,69 @@ describe('estéticas guardadas con los modos antiguos', () => {
     it('sin modo antiguo el override pasa intacto', () => {
         const override: VisualOverride = { layoutDirection: 'horizontal' };
         assert.equal(expandLegacyComposition(override), override);
+    });
+});
+
+describe('preset Icono en card + texto fuera', () => {
+    it('produce host transparente y caja con superficie, sin escribir composition', () => {
+        const { host, iconBox } = compositionPresetPatches('icon-card-text-out');
+        assert.equal(host.composition, undefined);
+        assert.equal(iconBox.composition, undefined);
+        assert.equal(host.tone, 'transparent');
+        assert.equal(host.borderWidth, '0px');
+        assert.equal(host.boxShadow, 'none');
+        assert.equal(host.showText, true);
+        assert.equal(host.showIcon, true);
+        assert.equal(host.layoutDirection, 'vertical');
+        assert.equal(host.layoutOrder, 'icon-text');
+        assert.equal(iconBox.iconBoxMode, 'box');
+        assert.equal(iconBox.backgroundColor, '#ffffff');
+        assert.notEqual(host.backgroundColor, iconBox.backgroundColor);
+    });
+
+    it('la card y el texto son ámbitos independientes en el preset', () => {
+        const { host, iconBox } = compositionPresetPatches('icon-card-text-out');
+        assert.equal(iconBox.showText, undefined, 'la caja no decide el texto');
+        assert.equal(iconBox.layoutDirection, undefined, 'la caja no decide el layout');
+        assert.equal(host.iconBoxMode, undefined, 'el host no decide el modo de caja');
+        assert.equal(host.iconBoxCorner, undefined);
+    });
+
+    it('ocultar texto/icono sigue siendo propiedad del host, no de la caja', () => {
+        const { host, iconBox } = compositionPresetPatches('icon-card-text-out');
+        const hideText = compositionAttributes({ ...host, showText: false });
+        const hideIcon = compositionAttributes({ ...host, showIcon: false });
+        assert.equal(hideText.hideText, true);
+        assert.equal(hideText.hideIcon, undefined);
+        assert.equal(hideIcon.hideIcon, true);
+        assert.equal(compositionAttributes(iconBox).hideText, undefined);
+        assert.equal(compositionAttributes(iconBox).hideIcon, undefined);
+    });
+
+    it('cambiar la caja no altera el asset ni el texto del host', () => {
+        const { host, iconBox } = compositionPresetPatches('icon-card-text-out');
+        const resized = { ...iconBox, width: '64px', height: '64px' };
+        assert.equal(host.fontSize, undefined);
+        assert.equal(resized.scale, undefined, 'la caja no escala el asset');
+        assert.equal(host.gap, '8px', 'el gap sigue en el host');
+    });
+
+    it('los tres presets siguen siendo representables', () => {
+        assert.equal(compositionPresetPatches('together').iconBox.iconBoxMode, 'none');
+        assert.equal(compositionPresetPatches('together').host.tone, undefined);
+        assert.equal(compositionPresetPatches('separated').iconBox.iconBoxMode, 'none');
+        assert.equal(compositionPresetPatches('separated').host.tone, 'transparent');
+        assert.equal(detectCompositionPreset(
+            compositionPresetPatches('icon-card-text-out').host,
+            compositionPresetPatches('icon-card-text-out').iconBox,
+        ), 'icon-card-text-out');
+    });
+
+    it('ningún preset reintroduce el enum composition', () => {
+        for (const id of ['together', 'icon-card-text-out', 'separated'] as const) {
+            const patches = compositionPresetPatches(id);
+            assert.equal(patches.host.composition, undefined);
+            assert.equal(patches.iconBox.composition, undefined);
+        }
     });
 });

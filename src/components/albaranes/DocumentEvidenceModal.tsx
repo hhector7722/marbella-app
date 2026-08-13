@@ -1,10 +1,15 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { AlertCircle, FileText, Loader2, X, ChevronRight, Info } from 'lucide-react'
+import { AlertCircle, FileText, Loader2, X, ChevronRight, Info, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { getInvoiceLineEvidenceAction, type DocumentEvidencePayload } from '@/app/dashboard/albaranes/actions'
+import {
+  confirmInvoiceLineProvenanceAction,
+  getInvoiceLineEvidenceAction,
+  type DocumentEvidencePayload,
+} from '@/app/dashboard/albaranes/actions'
 import { Modal } from '@/components/ui/modal'
+import { resolveActiveProvenance } from '@/lib/albaranes/document-evidence'
 
 interface DocumentEvidenceModalProps {
   open: boolean
@@ -19,6 +24,16 @@ interface DocumentEvidenceModalProps {
   refreshVersion?: number
 }
 
+function formatNum(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return '—'
+  return value.toLocaleString('es-ES', { maximumFractionDigits: 4 })
+}
+
+function formatMoney(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return '—'
+  return `${value.toFixed(2)} €`
+}
+
 export function DocumentEvidenceModal({ 
   open, lineId, onClose,
   isManager = false,
@@ -29,39 +44,51 @@ export function DocumentEvidenceModal({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<DocumentEvidencePayload | null>(null)
+  const [selectedRowId, setSelectedRowId] = useState<string | null>(null)
+  const [confirming, setConfirming] = useState(false)
+  const [confirmError, setConfirmError] = useState<string | null>(null)
+  const [localRefresh, setLocalRefresh] = useState(0)
 
   useEffect(() => {
-    if (!open || !lineId) {
-      setData(null)
-      setError(null)
-      return
-    }
+    if (!open || !lineId) return
 
     let isSubscribed = true
-    setLoading(true)
-    setError(null)
 
-    getInvoiceLineEvidenceAction(lineId)
-      .then((res) => {
+    void (async () => {
+      // Diferir setState fuera del cuerpo síncrono del effect (react-hooks/set-state-in-effect).
+      await Promise.resolve()
+      if (!isSubscribed) return
+
+      setLoading(true)
+      setError(null)
+      setConfirmError(null)
+
+      try {
+        const res = await getInvoiceLineEvidenceAction(lineId)
         if (!isSubscribed) return
         if (res.success) {
           setData(res.data)
+          const active = resolveActiveProvenance(res.data.provenanceChain)
+          setSelectedRowId(active?.document_row_id ?? null)
         } else {
+          setData(null)
+          setSelectedRowId(null)
           setError(res.message)
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         if (!isSubscribed) return
+        setData(null)
+        setSelectedRowId(null)
         setError(err instanceof Error ? err.message : 'Error desconocido')
-      })
-      .finally(() => {
+      } finally {
         if (isSubscribed) setLoading(false)
-      })
+      }
+    })()
 
     return () => {
       isSubscribed = false
     }
-  }, [open, lineId, refreshVersion])
+  }, [open, lineId, refreshVersion, localRefresh])
 
   useEffect(() => {
     if (!open) return
@@ -72,12 +99,33 @@ export function DocumentEvidenceModal({
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [open, onClose])
 
-  // Determinar la procedencia activa
   const activeProvenance = useMemo(() => {
-    if (!data || data.provenanceChain.length === 0) return null
-    const supersededIds = new Set(data.provenanceChain.map((p) => p.supersedes_id).filter(Boolean))
-    return data.provenanceChain.find((p) => !supersededIds.has(p.id)) || data.provenanceChain[0]
+    if (!data) return null
+    return resolveActiveProvenance(data.provenanceChain)
   }, [data])
+
+  const canSelectRows = Boolean(isManager && data && !activeProvenance && data.documentRows.length > 0)
+
+  async function handleConfirmEvidence() {
+    if (!lineId || !selectedRowId || !canSelectRows || confirming) return
+    setConfirming(true)
+    setConfirmError(null)
+    try {
+      const res = await confirmInvoiceLineProvenanceAction({
+        invoiceLineId: lineId,
+        documentRowId: selectedRowId,
+      })
+      if (!res.success) {
+        setConfirmError(res.message)
+        return
+      }
+      setLocalRefresh((v) => v + 1)
+    } catch (err) {
+      setConfirmError(err instanceof Error ? err.message : 'Error al confirmar evidencia')
+    } finally {
+      setConfirming(false)
+    }
+  }
 
   if (!open) return null
 
@@ -108,7 +156,7 @@ export function DocumentEvidenceModal({
           <button
             type="button"
             onClick={onClose}
-            className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center rounded-xl hover:bg-white/10 transition active:scale-[0.99] shrink-0"
+            className="min-h-[48px] min-w-[48px] inline-flex items-center justify-center rounded-xl hover:bg-white/10 transition active:scale-[0.99] shrink-0"
             aria-label="Cerrar"
           >
             <X className="h-5 w-5" />
@@ -141,7 +189,7 @@ export function DocumentEvidenceModal({
                       <button
                         type="button"
                         onClick={() => onOpenEditor()}
-                        className="text-[10px] font-black uppercase tracking-wider text-[#36606F] bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-lg transition active:scale-[0.98]"
+                        className="min-h-[48px] text-[10px] font-black uppercase tracking-wider text-[#36606F] bg-zinc-100 hover:bg-zinc-200 px-3 rounded-lg transition active:scale-[0.98]"
                       >
                         Corregir valores operativos
                       </button>
@@ -152,7 +200,7 @@ export function DocumentEvidenceModal({
                         onClick={() => {
                           onOpenProduct()
                         }}
-                        className="text-[10px] font-black uppercase tracking-wider text-sky-600 bg-sky-50 hover:bg-sky-100 px-3 py-1.5 rounded-lg transition active:scale-[0.98]"
+                        className="min-h-[48px] text-[10px] font-black uppercase tracking-wider text-sky-600 bg-sky-50 hover:bg-sky-100 px-3 rounded-lg transition active:scale-[0.98]"
                       >
                         Ver producto
                       </button>
@@ -166,7 +214,7 @@ export function DocumentEvidenceModal({
                               onExcludeFromMapping()
                               onClose()
                             }}
-                            className="text-[10px] font-black uppercase tracking-wider text-zinc-600 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-lg transition active:scale-[0.98]"
+                            className="min-h-[48px] text-[10px] font-black uppercase tracking-wider text-zinc-600 bg-zinc-100 hover:bg-zinc-200 px-3 rounded-lg transition active:scale-[0.98]"
                           >
                             Portes/Ajuste
                           </button>
@@ -178,7 +226,7 @@ export function DocumentEvidenceModal({
                               onMarkExpenseOnly()
                               onClose()
                             }}
-                            className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg transition active:scale-[0.98]"
+                            className="min-h-[48px] text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-50 hover:bg-amber-100 px-3 rounded-lg transition active:scale-[0.98]"
                           >
                             Gasto (Sin stock)
                           </button>
@@ -192,7 +240,7 @@ export function DocumentEvidenceModal({
                           onRestoreStatus()
                           onClose()
                         }}
-                        className="text-[10px] font-black uppercase tracking-wider text-zinc-600 bg-white border border-zinc-200 hover:bg-zinc-50 px-3 py-1.5 rounded-lg transition active:scale-[0.98]"
+                        className="min-h-[48px] text-[10px] font-black uppercase tracking-wider text-zinc-600 bg-white border border-zinc-200 hover:bg-zinc-50 px-3 rounded-lg transition active:scale-[0.98]"
                       >
                         Restaurar estado (volver a mapear)
                       </button>
@@ -232,9 +280,10 @@ export function DocumentEvidenceModal({
                 <div>
                   <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5">Vínculo de Procedencia (Provenance)</h3>
                   {activeProvenance ? (
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-black text-emerald-800 uppercase tracking-wide">
-                        Vinculado
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-black text-emerald-800 uppercase tracking-wide">
+                        <Check className="h-3 w-3" strokeWidth={3} />
+                        Evidencia vinculada
                       </span>
                       <p className="text-sm font-bold text-zinc-700">
                         por <span className="text-zinc-900">{activeProvenance.linked_by || 'sistema'}</span>
@@ -242,12 +291,14 @@ export function DocumentEvidenceModal({
                       </p>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center rounded-full bg-rose-100 px-2.5 py-0.5 text-[10px] font-black text-rose-800 uppercase tracking-wide">
-                        Sin Evidencia
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-black text-amber-900 uppercase tracking-wide">
+                        Evidencia pendiente de verificar
                       </span>
                       <p className="text-sm font-bold text-zinc-500">
-                        Esta línea no tiene procedencia documental registrada.
+                        {data.extraction
+                          ? 'Hay OCR del albarán; confirma la fila documental correspondiente.'
+                          : 'No hay extracción OCR disponible para este albarán.'}
                       </p>
                     </div>
                   )}
@@ -261,8 +312,138 @@ export function DocumentEvidenceModal({
                 )}
               </section>
 
-              {/* EVIDENCIA DOCUMENTAL */}
-              {activeProvenance && data.extraction ? (
+              {/* FILAS DEL DOCUMENTO — revisión manual */}
+              {data.extraction && data.documentRows.length > 0 ? (
+                <section className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden flex flex-col">
+                  <div className="bg-zinc-100/50 px-4 py-3 border-b border-zinc-200 flex flex-col gap-1">
+                    <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                      <FileText className="h-3.5 w-3.5" />
+                      Filas del documento
+                    </h3>
+                    <p className="text-[11px] font-medium text-zinc-500">
+                      Confirmar evidencia vincula la línea con la fila OCR. No cambia producto, cantidad ni precio operativo.
+                    </p>
+                  </div>
+
+                  <div className="divide-y divide-zinc-100">
+                    {data.documentRows.map((row) => {
+                      const isActive = activeProvenance?.document_row_id === row.document_row_id
+                      const isSelected = selectedRowId === row.document_row_id
+                      const occupied = row.linkedOtherLines.length > 0
+
+                      return (
+                        <button
+                          key={row.document_row_id}
+                          type="button"
+                          disabled={!canSelectRows}
+                          onClick={() => {
+                            if (!canSelectRows) return
+                            setSelectedRowId(row.document_row_id)
+                            setConfirmError(null)
+                          }}
+                          className={cn(
+                            'w-full text-left min-h-[48px] px-4 py-3 flex flex-col gap-1.5 transition',
+                            canSelectRows && 'hover:bg-zinc-50 active:bg-zinc-100',
+                            isActive && 'bg-sky-50 ring-1 ring-inset ring-sky-200',
+                            !isActive && isSelected && canSelectRows && 'bg-[#36606F]/[0.06]',
+                            !canSelectRows && !isActive && 'opacity-80'
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {isActive ? (
+                                  <ChevronRight className="h-3.5 w-3.5 text-sky-600 shrink-0" strokeWidth={3} />
+                                ) : canSelectRows ? (
+                                  <span
+                                    className={cn(
+                                      'h-4 w-4 rounded-full border-2 shrink-0',
+                                      isSelected ? 'border-[#36606F] bg-[#36606F]' : 'border-zinc-300'
+                                    )}
+                                    aria-hidden
+                                  />
+                                ) : null}
+                                <p className={cn(
+                                  'text-sm font-bold truncate',
+                                  isActive ? 'text-sky-950' : 'text-zinc-900'
+                                )}>
+                                  {row.description || 'Sin descripción OCR'}
+                                </p>
+                              </div>
+                              <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mt-1">
+                                Tabla {row.table_index + 1} · Fila {row.row_index}
+                                {!row.isHeuristicCandidate ? ' · Fuera de heurística de artículo' : null}
+                              </p>
+                            </div>
+                            <div className="shrink-0 flex items-center gap-4 text-right">
+                              <div>
+                                <p className="text-[9px] font-black uppercase text-zinc-400">Cant.</p>
+                                <p className="text-xs font-black tabular-nums text-zinc-800">{formatNum(row.quantity)}</p>
+                              </div>
+                              <div>
+                                <p className="text-[9px] font-black uppercase text-zinc-400">Precio</p>
+                                <p className="text-xs font-black tabular-nums text-zinc-800">{formatMoney(row.unit_price)}</p>
+                              </div>
+                              <div>
+                                <p className="text-[9px] font-black uppercase text-zinc-400">Importe</p>
+                                <p className="text-xs font-black tabular-nums text-zinc-800">{formatMoney(row.amount)}</p>
+                              </div>
+                            </div>
+                          </div>
+                          {occupied ? (
+                            <p className="text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-2 py-1.5">
+                              Ya vinculada a otra línea
+                              {row.linkedOtherLines[0]?.original_name
+                                ? `: «${row.linkedOtherLines[0].original_name}»`
+                                : ''}
+                              . El esquema permite varios vínculos a la misma fila OCR.
+                            </p>
+                          ) : null}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {canSelectRows ? (
+                    <div className="shrink-0 border-t border-zinc-200 p-4 flex flex-col gap-2 bg-white">
+                      {confirmError ? (
+                        <p className="text-sm font-semibold text-red-600">{confirmError}</p>
+                      ) : null}
+                      <button
+                        type="button"
+                        disabled={!selectedRowId || confirming}
+                        onClick={() => void handleConfirmEvidence()}
+                        className={cn(
+                          'w-full min-h-[48px] rounded-xl text-xs font-black uppercase tracking-widest transition active:scale-[0.99]',
+                          selectedRowId && !confirming
+                            ? 'bg-[#36606F] text-white hover:bg-[#2c4f5c]'
+                            : 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
+                        )}
+                      >
+                        {confirming ? 'Confirmando…' : 'Confirmar evidencia'}
+                      </button>
+                      <p className="text-[10px] font-medium text-zinc-400 text-center">
+                        Solo vínculo documental · no modifica mapping de producto
+                      </p>
+                    </div>
+                  ) : null}
+                </section>
+              ) : data.extraction && data.extraction.status === 'no_table' ? (
+                <section className="bg-white rounded-xl border border-zinc-200 p-8 text-center text-sm font-bold text-zinc-500">
+                  No se ha detectado una tabla documental en el archivo original.
+                </section>
+              ) : data.extraction && data.tables.length === 0 ? (
+                <section className="bg-white rounded-xl border border-zinc-200 p-8 text-center text-sm font-bold text-zinc-500">
+                  El OCR no devolvió ninguna estructura tabular para esta extracción.
+                </section>
+              ) : !data.extraction ? (
+                <section className="bg-white rounded-xl border border-zinc-200 p-8 text-center text-sm font-bold text-zinc-500">
+                  No hay extracción OCR registrada para este albarán.
+                </section>
+              ) : null}
+
+              {/* Tabla completa solo cuando ya hay provenance (auditoría detallada) */}
+              {activeProvenance && data.extraction && data.tables.length > 0 ? (
                 <section className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden flex flex-col">
                   <div className="bg-zinc-100/50 px-4 py-3 border-b border-zinc-200 flex flex-col md:flex-row md:items-center justify-between gap-2">
                     <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2">
@@ -274,89 +455,79 @@ export function DocumentEvidenceModal({
                     </p>
                   </div>
                   
-                  {data.extraction.status === 'no_table' ? (
-                    <div className="p-8 text-center text-sm font-bold text-zinc-500">
-                      No se ha detectado una tabla documental en el archivo original.
-                    </div>
-                  ) : data.tables.length === 0 ? (
-                    <div className="p-8 text-center text-sm font-bold text-zinc-500">
-                      El OCR no devolvió ninguna estructura tabular para esta extracción.
-                    </div>
-                  ) : (
-                    <div className="p-4 overflow-x-auto flex flex-col gap-8">
-                      {data.tables.map((table) => {
-                        const isTargetTable = table.rows.some((r) => r.id === activeProvenance.document_row_id)
-                        
-                        return (
-                          <div key={table.id} className="flex flex-col">
-                            <h4 className="text-xs font-black text-zinc-400 uppercase tracking-wider mb-2">
-                              Tabla {table.table_index + 1}
-                              {!isTargetTable && <span className="ml-2 text-[10px] font-bold bg-zinc-100 text-zinc-500 px-2 py-0.5 rounded-full">Sin coincidencia activa</span>}
-                            </h4>
-                            
-                            <table className="w-full text-left border-collapse min-w-[600px]">
-                              <thead>
-                                <tr>
-                                  <th className="w-8 border-b-2 border-zinc-200 px-3 py-2 text-[10px] font-black uppercase text-zinc-400 bg-zinc-50 rounded-tl-lg">
-                                    #
+                  <div className="p-4 overflow-x-auto flex flex-col gap-8">
+                    {data.tables.map((table) => {
+                      const isTargetTable = table.rows.some((r) => r.id === activeProvenance.document_row_id)
+                      
+                      return (
+                        <div key={table.id} className="flex flex-col">
+                          <h4 className="text-xs font-black text-zinc-400 uppercase tracking-wider mb-2">
+                            Tabla {table.table_index + 1}
+                            {!isTargetTable && <span className="ml-2 text-[10px] font-bold bg-zinc-100 text-zinc-500 px-2 py-0.5 rounded-full">Sin coincidencia activa</span>}
+                          </h4>
+                          
+                          <table className="w-full text-left border-collapse min-w-[600px]">
+                            <thead>
+                              <tr>
+                                <th className="w-8 border-b-2 border-zinc-200 px-3 py-2 text-[10px] font-black uppercase text-zinc-400 bg-zinc-50 rounded-tl-lg">
+                                  #
+                                </th>
+                                {table.columns.map((col) => (
+                                  <th
+                                    key={col.id}
+                                    className="border-b-2 border-zinc-200 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-zinc-500 bg-zinc-50 first:rounded-tl-lg last:rounded-tr-lg"
+                                  >
+                                    {col.original_name || <span className="text-zinc-300 italic normal-case">Sin encabezado</span>}
                                   </th>
-                                  {table.columns.map((col) => (
-                                    <th
-                                      key={col.id}
-                                      className="border-b-2 border-zinc-200 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-zinc-500 bg-zinc-50 first:rounded-tl-lg last:rounded-tr-lg"
-                                    >
-                                      {col.original_name || <span className="text-zinc-300 italic normal-case">Sin encabezado</span>}
-                                    </th>
-                                  ))}
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-zinc-100">
-                                {table.rows.map((row) => {
-                                  const isActiveRow = row.id === activeProvenance.document_row_id
-                                  
-                                  return (
-                                    <tr
-                                      key={row.id}
-                                      className={cn(
-                                        'transition-colors',
-                                        isActiveRow ? 'bg-sky-50 ring-1 ring-sky-200 ring-inset' : 'hover:bg-zinc-50',
-                                        !isActiveRow && isTargetTable && 'opacity-60'
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-zinc-100">
+                              {table.rows.map((row) => {
+                                const isActiveRow = row.id === activeProvenance.document_row_id
+                                
+                                return (
+                                  <tr
+                                    key={row.id}
+                                    className={cn(
+                                      'transition-colors',
+                                      isActiveRow ? 'bg-sky-50 ring-1 ring-sky-200 ring-inset' : 'hover:bg-zinc-50',
+                                      !isActiveRow && isTargetTable && 'opacity-60'
+                                    )}
+                                  >
+                                    <td className="px-3 py-2.5 text-[10px] font-black text-zinc-300 whitespace-nowrap">
+                                      {isActiveRow ? (
+                                        <div className="flex items-center gap-1 text-sky-600">
+                                          <ChevronRight className="h-3 w-3" strokeWidth={3} />
+                                          {row.row_index}
+                                        </div>
+                                      ) : (
+                                        row.row_index
                                       )}
-                                    >
-                                      <td className="px-3 py-2.5 text-[10px] font-black text-zinc-300 whitespace-nowrap">
-                                        {isActiveRow ? (
-                                          <div className="flex items-center gap-1 text-sky-600">
-                                            <ChevronRight className="h-3 w-3" strokeWidth={3} />
-                                            {row.row_index}
-                                          </div>
-                                        ) : (
-                                          row.row_index
-                                        )}
-                                      </td>
-                                      {table.columns.map((col) => {
-                                        const cell = row.cells.find((c) => c.column_id === col.id)
-                                        return (
-                                          <td
-                                            key={`${row.id}-${col.id}`}
-                                            className={cn(
-                                              'px-3 py-2.5 text-xs font-mono font-medium whitespace-nowrap',
-                                              isActiveRow ? 'text-sky-950 font-bold' : 'text-zinc-700'
-                                            )}
-                                          >
-                                            {cell?.raw_value != null ? cell.raw_value : <span className="text-zinc-300">—</span>}
-                                          </td>
-                                        )
-                                      })}
-                                    </tr>
-                                  )
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
+                                    </td>
+                                    {table.columns.map((col) => {
+                                      const cell = row.cells.find((c) => c.column_id === col.id)
+                                      return (
+                                        <td
+                                          key={`${row.id}-${col.id}`}
+                                          className={cn(
+                                            'px-3 py-2.5 text-xs font-mono font-medium whitespace-nowrap',
+                                            isActiveRow ? 'text-sky-950 font-bold' : 'text-zinc-700'
+                                          )}
+                                        >
+                                          {cell?.raw_value != null ? cell.raw_value : <span className="text-zinc-300">—</span>}
+                                        </td>
+                                      )
+                                    })}
+                                  </tr>
+                                )
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )
+                    })}
+                  </div>
                 </section>
               ) : null}
 
