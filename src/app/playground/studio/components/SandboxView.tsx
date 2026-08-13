@@ -66,8 +66,8 @@ export function SandboxView({
 export function RutaBadge() {
     const route = useSandboxStore(s => s.route);
     return (
-        <span className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900/60 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-zinc-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+        <span className="inline-flex items-center gap-1.5 rounded-md bg-zinc-100 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-zinc-500">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#36606F]" />
             {SANDBOX_ROUTE_META[route]?.title ?? route}
         </span>
     );

@@ -520,24 +520,27 @@ function StepperControl({ label, value, onChange, onReset, step = 1, unit = 'px'
         const next = Math.min(current + step, max);
         onChange(unit ? `${next}${unit}` : next);
     };
-    
+
     const handleDecrement = () => {
         const current = value !== undefined ? parseFloat(String(value)) || 0 : 0;
         const next = Math.max(current - step, min);
         onChange(unit ? `${next}${unit}` : next);
     };
-    
+
+    const display = value === undefined || String(value).toLowerCase() === 'auto' ? '—' : value;
+
     return (
-        <label className="block">
-            <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">
-                {label} {value !== undefined && onReset && <button type="button" onClick={onReset} className="text-zinc-600 hover:text-white">✕</button>}
-            </span>
-            <div className="flex items-center justify-between rounded bg-zinc-900 p-1">
-                <button type="button" onClick={handleDecrement} className="h-6 w-6 rounded bg-zinc-800 text-white hover:bg-zinc-700 flex items-center justify-center font-bold text-xs">-</button>
-                <span className="text-xs font-mono text-white text-center flex-1">{value === undefined || String(value).toLowerCase() === 'auto' ? 'AUTO' : value}</span>
-                <button type="button" onClick={handleIncrement} className="h-6 w-6 rounded bg-zinc-800 text-white hover:bg-zinc-700 flex items-center justify-center font-bold text-xs">+</button>
+        <div className="flex h-7 items-center gap-2">
+            <span className="min-w-0 flex-1 truncate text-[11px] text-zinc-500">{label}</span>
+            {value !== undefined && onReset && (
+                <button type="button" onClick={onReset} className="text-[10px] text-zinc-400 hover:text-zinc-700" aria-label="Restablecer">×</button>
+            )}
+            <div className="flex shrink-0 items-center rounded-md border border-zinc-200 bg-zinc-50">
+                <button type="button" onClick={handleDecrement} className="flex h-7 w-6 items-center justify-center text-[12px] text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800" aria-label="Decrementar">−</button>
+                <span className="min-w-[3.25rem] px-0.5 text-center font-mono text-[11px] tabular-nums text-zinc-800">{display}</span>
+                <button type="button" onClick={handleIncrement} className="flex h-7 w-6 items-center justify-center text-[12px] text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800" aria-label="Incrementar">+</button>
             </div>
-        </label>
+        </div>
     );
 }
 
@@ -549,24 +552,46 @@ function ChoiceRow({ label, value, options, onChange, onReset }: {
     onReset?: () => void;
 }) {
     return (
-        <div>
-            <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">
-                {label}
-                {onReset && <button type="button" onClick={onReset} className="text-zinc-600 hover:text-white">✕</button>}
-            </span>
-            <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}>
+        <div className="flex min-h-7 items-center gap-2">
+            <span className="min-w-0 flex-1 truncate text-[11px] text-zinc-500">{label}</span>
+            {onReset && (
+                <button type="button" onClick={onReset} className="text-[10px] text-zinc-400 hover:text-zinc-700" aria-label="Restablecer">×</button>
+            )}
+            <div className="flex shrink-0 overflow-hidden rounded-md border border-zinc-200">
                 {options.map(([optionValue, optionLabel]) => (
                     <button
                         key={optionValue}
                         type="button"
                         onClick={() => onChange(optionValue)}
-                        style={{ minHeight: 44 }}
-                        className={`rounded-lg text-[9px] font-black uppercase tracking-widest leading-tight ${value === optionValue ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}
+                        className={`h-7 px-2 text-[10px] font-medium ${value === optionValue ? 'bg-[#36606F] text-white' : 'bg-white text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800'}`}
                     >
                         {optionLabel}
                     </button>
                 ))}
             </div>
+        </div>
+    );
+}
+
+function ColorRow({ label, value, fallback = '#ffffff', onChange, onReset, transparentAction }: {
+    label: string;
+    value?: string;
+    fallback?: string;
+    onChange: (color: string) => void;
+    onReset?: () => void;
+    transparentAction?: () => void;
+}) {
+    return (
+        <div className="flex min-h-7 items-center gap-2">
+            <span className="min-w-0 flex-1 truncate text-[11px] text-zinc-500">{label}</span>
+            {onReset && (
+                <button type="button" onClick={onReset} className="text-[10px] text-zinc-400 hover:text-zinc-700" aria-label="Restablecer">×</button>
+            )}
+            {transparentAction && (
+                <button type="button" onClick={transparentAction} className="rounded border border-zinc-200 px-1.5 py-0.5 text-[9px] font-medium text-zinc-500 hover:bg-zinc-50">Transp.</button>
+            )}
+            <input type="color" value={value ?? fallback} onChange={e => onChange(e.target.value)} className="h-6 w-6 cursor-pointer rounded border border-zinc-200 bg-transparent p-0" aria-label={label} />
+            <span className="w-14 truncate font-mono text-[10px] text-zinc-400">{value ?? 'Auto'}</span>
         </div>
     );
 }
@@ -630,16 +655,16 @@ export function VisualLabPanel({
     const renderSection = (id: string, title: string, children: React.ReactNode) => {
         const isOpen = activeSection === id;
         return (
-            <div className="border-t border-zinc-800">
+            <div className="border-t border-zinc-100">
                 <button
                     type="button"
                     onClick={() => setOpenSection(isOpen ? '' : id)}
-                    className="flex w-full items-center justify-between p-4 text-left font-bold text-white hover:bg-zinc-800"
+                    className="flex h-8 w-full items-center justify-between px-3 text-left hover:bg-zinc-50"
                 >
-                    <span className="text-[10px] uppercase tracking-widest">{title}</span>
-                    <span className="text-zinc-500">{isOpen ? '▼' : '▶'}</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-600">{title}</span>
+                    <span className="text-[10px] text-zinc-400">{isOpen ? '▾' : '▸'}</span>
                 </button>
-                {isOpen && <div className="p-4 pt-0">{children}</div>}
+                {isOpen && <div className="space-y-1.5 px-3 pb-3">{children}</div>}
             </div>
         );
     };
@@ -647,29 +672,45 @@ export function VisualLabPanel({
     const [paddingUnlocked, setPaddingUnlocked] = React.useState(false);
     const [marginUnlocked, setMarginUnlocked] = React.useState(false);
 
+    const scopeShort: Record<'instance' | 'component' | 'global', string> = {
+        instance: 'Este',
+        component: 'Tipo',
+        global: 'Global',
+    };
+
     return (
-        <div data-studio-chrome="true" className="flex h-full flex-col bg-zinc-950">
-            <div className="border-b border-zinc-800 px-4 py-3 shrink-0">
-                <div className="flex items-center justify-between gap-2">
-                    <div>
-                        <div className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Inspector Visual</div>
-                        <div className="mt-1 text-sm font-black text-white">{selected ? selected.label : 'Nada seleccionado'}</div>
+        <div data-studio-chrome="true" className="flex h-full min-h-0 flex-col bg-white text-zinc-800">
+            <div className="shrink-0 border-b border-zinc-100 px-3 py-2.5">
+                <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                        <div className="text-[9px] font-semibold uppercase tracking-wide text-zinc-400">Inspector</div>
+                        <div className="truncate text-[13px] font-semibold text-zinc-900">{selected ? selected.label : 'Nada seleccionado'}</div>
                     </div>
-                    <button type="button" onClick={() => setLabMode(!labMode)} style={{ minHeight: 48 }} className={`rounded-xl px-3 text-[9px] font-black uppercase tracking-widest ${labMode ? 'bg-emerald-500 text-white' : 'bg-zinc-800 text-zinc-300'}`}>
+                    <button
+                        type="button"
+                        onClick={() => setLabMode(!labMode)}
+                        className={`h-7 shrink-0 rounded-md px-2 text-[10px] font-semibold uppercase tracking-wide ${labMode ? 'bg-[#36606F] text-white' : 'border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50'}`}
+                    >
                         {labMode ? 'Seleccionando' : 'Seleccionar'}
                     </button>
                 </div>
 
                 {selected && (
-                    <div className="mt-3 flex gap-2 items-center">
-                        <div className="flex-1 grid grid-cols-3 gap-1">
+                    <div className="mt-2 flex items-center gap-1.5">
+                        <div className="flex flex-1 overflow-hidden rounded-md border border-zinc-200">
                             {(['instance', 'component', 'global'] as const).map(option => (
-                                <button key={option} type="button" onClick={() => setScope(option)} style={{ minHeight: 44 }} className={`rounded-lg text-[9px] font-black uppercase tracking-widest leading-tight ${scope === option ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-500 hover:bg-zinc-800'}`}>
-                                    {scopeLabel(selected.kind, option)}
+                                <button
+                                    key={option}
+                                    type="button"
+                                    title={scopeLabel(selected.kind, option)}
+                                    onClick={() => setScope(option)}
+                                    className={`h-7 flex-1 text-[10px] font-semibold uppercase tracking-wide ${scope === option ? 'bg-[#36606F] text-white' : 'bg-white text-zinc-500 hover:bg-zinc-50'}`}
+                                >
+                                    {scopeShort[option]}
                                 </button>
                             ))}
                         </div>
-                        <button type="button" onClick={resetAll} style={{ minHeight: 44 }} className="shrink-0 rounded-lg bg-rose-500/10 px-3 text-[9px] font-black uppercase tracking-widest text-rose-300 hover:bg-rose-500/20" title="Restablecer este elemento al original">
+                        <button type="button" onClick={resetAll} className="h-7 shrink-0 rounded-md border border-rose-100 bg-rose-50 px-2 text-[10px] font-semibold uppercase tracking-wide text-rose-600" title="Restablecer este elemento al original">
                             Reset
                         </button>
                     </div>
@@ -685,25 +726,24 @@ export function VisualLabPanel({
                             componentScope: selected.hostComponentScope ?? 'button:secondary',
                             tagName: 'button',
                         })}
-                        style={{ minHeight: 44 }}
-                        className="mt-2 w-full rounded-lg bg-zinc-900 px-3 text-left text-[9px] font-black uppercase tracking-widest text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                        className="mt-1.5 h-7 w-full rounded-md border border-zinc-200 bg-zinc-50 px-2 text-left text-[10px] font-medium text-zinc-600 hover:bg-zinc-100"
                     >
                         ↑ Componente · {selected.hostLabel ?? 'BOTÓN'}
                     </button>
                 )}
             </div>
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="min-h-0 flex-1 overflow-y-auto">
                 {!selected && (
-                    <div className="py-8 text-center text-zinc-500 text-xs">
-                        Activa el modo <strong>Seleccionar</strong> y haz click en cualquier elemento del preview para editarlo.
+                    <div className="px-4 py-8 text-center text-[12px] text-zinc-400">
+                        Activa <strong className="font-semibold text-zinc-600">Seleccionar</strong> y haz click en cualquier elemento del preview.
                     </div>
                 )}
 
                 {selected && (
                     <>
                         {showComposition && renderSection("composicion", "Composición", (
-                            <div className="grid gap-3">
+                            <>
                                 <ChoiceRow
                                     label="Texto"
                                     value={current.showText === false ? 'hidden' : 'visible'}
@@ -728,7 +768,7 @@ export function VisualLabPanel({
                                 <ChoiceRow
                                     label="Orden"
                                     value={current.layoutOrder}
-                                    options={[['icon-text', 'Icono → Texto'], ['text-icon', 'Texto → Icono']]}
+                                    options={[['icon-text', 'Icono→Texto'], ['text-icon', 'Texto→Icono']]}
                                     onChange={value => update({ layoutOrder: value as VisualOverride['layoutOrder'] })}
                                     onReset={current.layoutOrder ? () => reset(['layoutOrder']) : undefined}
                                 />
@@ -739,178 +779,48 @@ export function VisualLabPanel({
                                     onChange={value => update({ layoutAlign: value as VisualOverride['layoutAlign'] })}
                                     onReset={current.layoutAlign ? () => reset(['layoutAlign']) : undefined}
                                 />
-                                <StepperControl label="Separación icono · texto" value={current.gap} onChange={v => update({ gap: String(v) })} onReset={() => reset(['gap'])} min={0} max={80} />
-                                <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-600">
-                                    Cada control es independiente. El fondo, el borde y la sombra de este contenedor se editan en Apariencia; los de la caja del icono, seleccionando la caja.
-                                </p>
-                            </div>
+                                <StepperControl label="Separación" value={current.gap} onChange={v => update({ gap: String(v) })} onReset={() => reset(['gap'])} min={0} max={80} />
+                            </>
                         ))}
 
                         {isIconBox && renderSection("caja-icono", "Caja de icono", (
-                            <div className="grid gap-3">
-                                <div className="grid grid-cols-3 gap-1">
-                                    {([
-                                        ['none', 'Sin fondo'],
-                                        ['box', 'Caja'],
-                                        ['square', 'Cuadrada'],
-                                    ] as const).map(([mode, modeLabel]) => (
-                                        <button
-                                            key={mode}
-                                            type="button"
-                                            onClick={() => update(mode === 'square' && current.width ? { iconBoxMode: mode, height: current.width } : { iconBoxMode: mode })}
-                                            style={{ minHeight: 44 }}
-                                            className={`rounded-lg text-[9px] font-black uppercase tracking-widest ${iconBoxMode === mode ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}
-                                        >
-                                            {modeLabel}
-                                        </button>
-                                    ))}
-                                </div>
+                            <>
+                                <ChoiceRow
+                                    label="Tipo"
+                                    value={iconBoxMode}
+                                    options={[['none', 'Sin caja'], ['box', 'Caja'], ['square', 'Cuadrada']]}
+                                    onChange={value => update(value === 'square' && current.width ? { iconBoxMode: value as VisualOverride['iconBoxMode'], height: current.width } : { iconBoxMode: value as VisualOverride['iconBoxMode'] })}
+                                />
 
                                 {iconBoxMode === 'none' ? (
-                                    <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500">
-                                        Contenedor transparente: sin fondo, sin borde y sin sombra. El asset se muestra tal cual es.
+                                    <p className="text-[11px] leading-snug text-zinc-400">
+                                        Contenedor transparente. El asset se muestra tal cual.
                                     </p>
                                 ) : (
                                     <>
-                                        <label className="block rounded-lg bg-zinc-900 p-2">
-                                            <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">
-                                                Fondo de la caja
-                                                {(current.backgroundColor || current.tone) && <button type="button" onClick={() => reset(['backgroundColor', 'fillColor', 'tone'])} className="text-zinc-600 hover:text-white">✕</button>}
-                                            </span>
-                                            <div className="flex items-center gap-2">
-                                                <input type="color" value={current.backgroundColor ?? '#ffffff'} onChange={e => update({ tone: 'custom', backgroundColor: e.target.value })} className="h-6 w-6 rounded border-0 bg-transparent p-0" />
-                                                <span className="text-[10px] font-mono text-zinc-300">{current.tone === 'transparent' ? 'Transparente' : current.backgroundColor ?? 'Auto'}</span>
-                                            </div>
-                                            <button type="button" onClick={() => update({ tone: 'transparent' })} className="mt-2 w-full rounded bg-zinc-800 py-1 text-[8px] font-black uppercase text-zinc-400 hover:bg-zinc-700 hover:text-white">Transparente</button>
-                                        </label>
-
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <label className="block rounded-lg bg-zinc-900 p-2">
-                                                <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">
-                                                    Color borde
-                                                    {current.borderColor && <button type="button" onClick={() => reset(['borderColor'])} className="text-zinc-600 hover:text-white">✕</button>}
-                                                </span>
-                                                <div className="flex items-center gap-2">
-                                                    <input type="color" value={current.borderColor ?? '#e5e7eb'} onChange={e => update({ borderColor: e.target.value })} className="h-6 w-6 rounded border-0 bg-transparent p-0" />
-                                                    <span className="text-[10px] font-mono text-zinc-300">{current.borderColor ?? 'Auto'}</span>
-                                                </div>
-                                            </label>
-                                            <StepperControl label="Grosor borde" value={current.borderWidth} onChange={v => update({ borderWidth: String(v) })} onReset={() => reset(['borderWidth', 'borderColor'])} min={0} max={24} />
-                                        </div>
-
-                                        <StepperControl label="Esquinas de la caja" value={current.iconBoxCorner} onChange={v => update({ iconBoxCorner: String(v) })} onReset={() => reset(['iconBoxCorner'])} min={0} max={96} />
-
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <StepperControl label={iconBoxMode === 'square' ? 'Lado' : 'Ancho'} value={current.width} onChange={v => updateIconBoxSize('width', String(v))} onReset={() => reset(['width', 'height'])} min={0} max={320} />
-                                            <StepperControl label={iconBoxMode === 'square' ? 'Lado' : 'Alto'} value={iconBoxMode === 'square' ? current.width : current.height} onChange={v => updateIconBoxSize('height', String(v))} onReset={() => reset(['height'])} min={0} max={320} />
-                                        </div>
-
-                                        <StepperControl label="Padding interior" value={current.customPadding} onChange={v => update({ customPadding: String(v) })} onReset={() => reset(['customPadding'])} min={0} max={64} />
-
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <StepperControl label="Eje X" value={current.x} onChange={v => update({ x: String(v) })} onReset={() => reset(['x'])} />
-                                            <StepperControl label="Eje Y" value={current.y} onChange={v => update({ y: String(v) })} onReset={() => reset(['y'])} />
-                                        </div>
-
-                                        <div>
-                                            <span className="mb-1 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Sombra</span>
-                                            <div className="grid grid-cols-4 gap-1">
-                                                {([
-                                                    ['none', 'Sin'],
-                                                    ['subtle', 'Suave'],
-                                                    ['medium', 'Media'],
-                                                    ['strong', 'Fuerte'],
-                                                ] as const).map(([shadow, shadowLabel]) => (
-                                                    <button
-                                                        key={shadow}
-                                                        type="button"
-                                                        onClick={() => update({ boxShadow: shadow })}
-                                                        style={{ minHeight: 44 }}
-                                                        className={`rounded-lg text-[9px] font-black uppercase tracking-widest ${current.boxShadow === shadow ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}
-                                                    >
-                                                        {shadowLabel}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        ))}
-
-                        {renderSection("apariencia", "Apariencia", (
-                            <div className="grid gap-3">
-                                <label className="block">
-                                    <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">Fuente {current.fontFamily && <button onClick={() => reset(['fontFamily'])} className="text-zinc-600 hover:text-white">✕</button>}</span>
-                                    <select value={current.fontFamily ?? ''} onChange={e => update({ fontFamily: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none">
-                                        <option value="">Heredada</option>
-                                        {fonts.map(font => <option key={font.id} value={font.family} style={{ fontFamily: font.family }}>{font.label}</option>)}
-                                    </select>
-                                </label>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <StepperControl label="Tamaño" value={current.fontSize} onChange={v => update({ fontSize: String(v) })} onReset={() => reset(['fontSize'])} min={8} max={120} />
-                                    <label className="block">
-                                        <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">Peso {current.fontWeight && <button onClick={() => reset(['fontWeight'])} className="text-zinc-600 hover:text-white">✕</button>}</span>
-                                        <select value={current.fontWeight ?? ''} onChange={e => update({ fontWeight: e.target.value })} className="w-full rounded bg-zinc-900 p-2 text-xs text-white outline-none">
-                                            <option value="">Heredado</option>
-                                            <option value="400">Normal</option>
-                                            <option value="500">Medium</option>
-                                            <option value="600">Semibold</option>
-                                            <option value="700">Bold</option>
-                                            <option value="900">Black</option>
-                                        </select>
-                                    </label>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <label className="block rounded-lg bg-zinc-900 p-2">
-                                        <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">
-                                            Color Texto
-                                            {current.textColor && <button onClick={() => reset(['textColor'])} className="text-zinc-600 hover:text-white">✕</button>}
-                                        </span>
-                                        <div className="flex items-center gap-2">
-                                            <input type="color" value={current.textColor ?? '#ffffff'} onChange={e => update({ textColor: e.target.value })} className="h-6 w-6 rounded border-0 bg-transparent p-0" />
-                                            <span className="text-[10px] text-zinc-300 font-mono">{current.textColor ?? 'Auto'}</span>
-                                        </div>
-                                    </label>
-                                    <label className="block rounded-lg bg-zinc-900 p-2">
-                                        <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">
-                                            Fondo
-                                            {(current.backgroundColor || current.fillColor) && <button onClick={() => reset(['backgroundColor', 'fillColor', 'tone'])} className="text-zinc-600 hover:text-white">✕</button>}
-                                        </span>
-                                        <div className="flex items-center gap-2">
-                                            <input type="color" value={current.backgroundColor ?? current.fillColor ?? '#000000'} onChange={e => update({ tone: 'custom', backgroundColor: e.target.value, fillColor: e.target.value })} className="h-6 w-6 rounded border-0 bg-transparent p-0" />
-                                            <span className="text-[10px] text-zinc-300 font-mono">{current.backgroundColor ?? current.fillColor ?? 'Auto'}</span>
-                                        </div>
-                                        <button onClick={() => update({ tone: 'transparent' })} className="mt-2 w-full rounded bg-zinc-800 py-1 text-[8px] font-black uppercase text-zinc-400 hover:bg-zinc-700 hover:text-white">Transparente</button>
-                                    </label>
-                                </div>
-                                <StepperControl label="Opacidad" value={current.opacity !== undefined ? `${Math.round(current.opacity * 100)}%` : undefined} onChange={v => update({ opacity: parseFloat(String(v)) / 100 })} onReset={() => reset(['opacity'])} step={1} unit="%" min={0} max={100} />
-
-                                {selected.kind === 'text' && (
-                                    <ChoiceRow
-                                        label="Alineación del texto"
-                                        value={current.textAlign}
-                                        options={[['left', 'Izq'], ['center', 'Centro'], ['right', 'Der']]}
-                                        onChange={value => update({ textAlign: value as VisualOverride['textAlign'] })}
-                                        onReset={current.textAlign ? () => reset(['textAlign']) : undefined}
-                                    />
-                                )}
-
-                                {!isIconBox && (
-                                    <>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <label className="block rounded-lg bg-zinc-900 p-2">
-                                                <span className="mb-1 flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-500">
-                                                    Color borde
-                                                    {current.borderColor && <button type="button" onClick={() => reset(['borderColor'])} className="text-zinc-600 hover:text-white">✕</button>}
-                                                </span>
-                                                <div className="flex items-center gap-2">
-                                                    <input type="color" value={current.borderColor ?? '#e5e7eb'} onChange={e => update({ borderColor: e.target.value })} className="h-6 w-6 rounded border-0 bg-transparent p-0" />
-                                                    <span className="text-[10px] font-mono text-zinc-300">{current.borderColor ?? 'Auto'}</span>
-                                                </div>
-                                            </label>
-                                            <StepperControl label="Grosor borde" value={current.borderWidth} onChange={v => update({ borderWidth: String(v) })} onReset={() => reset(['borderWidth', 'borderColor'])} min={0} max={24} />
-                                        </div>
+                                        <ColorRow
+                                            label="Fondo"
+                                            value={current.tone === 'transparent' ? undefined : current.backgroundColor}
+                                            onChange={color => update({ tone: 'custom', backgroundColor: color })}
+                                            onReset={() => reset(['backgroundColor', 'fillColor', 'tone'])}
+                                            transparentAction={() => update({ tone: 'transparent' })}
+                                        />
+                                        <ColorRow
+                                            label="Borde"
+                                            value={current.borderColor}
+                                            fallback="#e5e7eb"
+                                            onChange={color => update({ borderColor: color })}
+                                            onReset={() => reset(['borderColor'])}
+                                        />
+                                        <StepperControl label="Grosor borde" value={current.borderWidth} onChange={v => update({ borderWidth: String(v) })} onReset={() => reset(['borderWidth', 'borderColor'])} min={0} max={24} />
+                                        <StepperControl label="Esquinas" value={current.iconBoxCorner} onChange={v => update({ iconBoxCorner: String(v) })} onReset={() => reset(['iconBoxCorner'])} min={0} max={96} />
+                                        <StepperControl label={iconBoxMode === 'square' ? 'Lado' : 'Ancho'} value={current.width} onChange={v => updateIconBoxSize('width', String(v))} onReset={() => reset(['width', 'height'])} min={0} max={320} />
+                                        {iconBoxMode !== 'square' && (
+                                            <StepperControl label="Alto" value={current.height} onChange={v => updateIconBoxSize('height', String(v))} onReset={() => reset(['height'])} min={0} max={320} />
+                                        )}
+                                        <StepperControl label="Padding" value={current.customPadding} onChange={v => update({ customPadding: String(v) })} onReset={() => reset(['customPadding'])} min={0} max={64} />
+                                        <StepperControl label="X" value={current.x} onChange={v => update({ x: String(v) })} onReset={() => reset(['x'])} />
+                                        <StepperControl label="Y" value={current.y} onChange={v => update({ y: String(v) })} onReset={() => reset(['y'])} />
                                         <ChoiceRow
                                             label="Sombra"
                                             value={current.boxShadow}
@@ -920,73 +830,125 @@ export function VisualLabPanel({
                                         />
                                     </>
                                 )}
-                            </div>
+                            </>
+                        ))}
+
+                        {renderSection("apariencia", "Apariencia", (
+                            <>
+                                <div className="flex h-7 items-center gap-2">
+                                    <span className="min-w-0 flex-1 truncate text-[11px] text-zinc-500">Fuente</span>
+                                    {current.fontFamily && <button type="button" onClick={() => reset(['fontFamily'])} className="text-[10px] text-zinc-400 hover:text-zinc-700">×</button>}
+                                    <select value={current.fontFamily ?? ''} onChange={e => update({ fontFamily: e.target.value })} className="h-7 max-w-[60%] rounded-md border border-zinc-200 bg-white px-1.5 text-[11px] text-zinc-700 outline-none">
+                                        <option value="">Heredada</option>
+                                        {fonts.map(font => <option key={font.id} value={font.family} style={{ fontFamily: font.family }}>{font.label}</option>)}
+                                    </select>
+                                </div>
+                                <StepperControl label="Tamaño" value={current.fontSize} onChange={v => update({ fontSize: String(v) })} onReset={() => reset(['fontSize'])} min={8} max={120} />
+                                <div className="flex h-7 items-center gap-2">
+                                    <span className="min-w-0 flex-1 truncate text-[11px] text-zinc-500">Peso</span>
+                                    {current.fontWeight && <button type="button" onClick={() => reset(['fontWeight'])} className="text-[10px] text-zinc-400 hover:text-zinc-700">×</button>}
+                                    <select value={current.fontWeight ?? ''} onChange={e => update({ fontWeight: e.target.value })} className="h-7 rounded-md border border-zinc-200 bg-white px-1.5 text-[11px] text-zinc-700 outline-none">
+                                        <option value="">Heredado</option>
+                                        <option value="400">Normal</option>
+                                        <option value="500">Medium</option>
+                                        <option value="600">Semibold</option>
+                                        <option value="700">Bold</option>
+                                        <option value="900">Black</option>
+                                    </select>
+                                </div>
+                                <ColorRow label="Color texto" value={current.textColor} fallback="#18181b" onChange={color => update({ textColor: color })} onReset={() => reset(['textColor'])} />
+                                <ColorRow
+                                    label="Fondo"
+                                    value={current.backgroundColor ?? current.fillColor}
+                                    fallback="#000000"
+                                    onChange={color => update({ tone: 'custom', backgroundColor: color, fillColor: color })}
+                                    onReset={() => reset(['backgroundColor', 'fillColor', 'tone'])}
+                                    transparentAction={() => update({ tone: 'transparent' })}
+                                />
+                                <StepperControl label="Opacidad" value={current.opacity !== undefined ? `${Math.round(current.opacity * 100)}%` : undefined} onChange={v => update({ opacity: parseFloat(String(v)) / 100 })} onReset={() => reset(['opacity'])} step={1} unit="%" min={0} max={100} />
+
+                                {selected.kind === 'text' && (
+                                    <ChoiceRow
+                                        label="Alineación"
+                                        value={current.textAlign}
+                                        options={[['left', 'Izq'], ['center', 'Centro'], ['right', 'Der']]}
+                                        onChange={value => update({ textAlign: value as VisualOverride['textAlign'] })}
+                                        onReset={current.textAlign ? () => reset(['textAlign']) : undefined}
+                                    />
+                                )}
+
+                                {!isIconBox && (
+                                    <>
+                                        <ColorRow label="Borde" value={current.borderColor} fallback="#e5e7eb" onChange={color => update({ borderColor: color })} onReset={() => reset(['borderColor'])} />
+                                        <StepperControl label="Grosor borde" value={current.borderWidth} onChange={v => update({ borderWidth: String(v) })} onReset={() => reset(['borderWidth', 'borderColor'])} min={0} max={24} />
+                                        <ChoiceRow
+                                            label="Sombra"
+                                            value={current.boxShadow}
+                                            options={[['none', 'Sin'], ['subtle', 'Suave'], ['medium', 'Media'], ['strong', 'Fuerte']]}
+                                            onChange={value => update({ boxShadow: value as VisualOverride['boxShadow'] })}
+                                            onReset={current.boxShadow ? () => reset(['boxShadow']) : undefined}
+                                        />
+                                    </>
+                                )}
+                            </>
                         ))}
 
                         {renderSection("tamano", isAsset ? "Tamaño del asset" : "Tamaño", (
-                            <div className="grid gap-2">
-                                <div className="grid grid-cols-2 gap-2">
-                                    <StepperControl label="Ancho" value={current.width} onChange={v => update({ width: String(v) })} onReset={() => reset(['width'])} min={0} />
-                                    <StepperControl label="Alto" value={current.height} onChange={v => update({ height: String(v) })} onReset={() => reset(['height'])} min={0} />
-                                </div>
+                            <>
+                                <StepperControl label="Ancho" value={current.width} onChange={v => update({ width: String(v) })} onReset={() => reset(['width'])} min={0} />
+                                <StepperControl label="Alto" value={current.height} onChange={v => update({ height: String(v) })} onReset={() => reset(['height'])} min={0} />
                                 <StepperControl label="Escala" value={current.scale} onChange={v => update({ scale: String(v) })} onReset={() => reset(['scale'])} step={5} unit="%" min={10} max={400} />
-                            </div>
+                            </>
                         ))}
 
-                        {renderSection("posicion", "Posición Visual", (
-                            <div className="grid grid-cols-2 gap-2">
-                                <StepperControl label="Eje X" value={current.x} onChange={v => update({ x: String(v) })} onReset={() => reset(['x'])} />
-                                <StepperControl label="Eje Y" value={current.y} onChange={v => update({ y: String(v) })} onReset={() => reset(['y'])} />
-                            </div>
+                        {renderSection("posicion", "Posición", (
+                            <>
+                                <StepperControl label="X" value={current.x} onChange={v => update({ x: String(v) })} onReset={() => reset(['x'])} />
+                                <StepperControl label="Y" value={current.y} onChange={v => update({ y: String(v) })} onReset={() => reset(['y'])} />
+                            </>
                         ))}
 
-                        {renderSection("espaciado", "Espaciado (Margin, Padding, Gap)", (
-                            <div className="grid gap-4">
-                                <StepperControl label="Gap (Espacio entre hijos)" value={current.gap} onChange={v => update({ gap: String(v) })} onReset={() => reset(['gap'])} min={0} />
-
-                                <div className="rounded-lg bg-zinc-900/50 p-2 border border-zinc-800">
-                                    <div className="mb-2 flex items-center justify-between">
-                                        <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Padding</span>
-                                        <button onClick={() => { setPaddingUnlocked(!paddingUnlocked); if (paddingUnlocked) { update({ paddingTop: undefined, paddingRight: undefined, paddingBottom: undefined, paddingLeft: undefined }); } }} className="text-zinc-500 hover:text-white" title={paddingUnlocked ? 'Bloquear y usar valor único' : 'Desbloquear lados'}>
-                                            {paddingUnlocked ? '🔓' : '🔒'}
-                                        </button>
-                                    </div>
-                                    {!paddingUnlocked ? (
-                                        <StepperControl label="Padding" value={current.customPadding} onChange={v => update({ customPadding: String(v) })} min={0} />
-                                    ) : (
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <StepperControl label="Top" value={current.paddingTop} onChange={v => update({ paddingTop: String(v) })} min={0} />
-                                            <StepperControl label="Right" value={current.paddingRight} onChange={v => update({ paddingRight: String(v) })} min={0} />
-                                            <StepperControl label="Bottom" value={current.paddingBottom} onChange={v => update({ paddingBottom: String(v) })} min={0} />
-                                            <StepperControl label="Left" value={current.paddingLeft} onChange={v => update({ paddingLeft: String(v) })} min={0} />
-                                        </div>
-                                    )}
+                        {renderSection("espaciado", "Espaciado", (
+                            <>
+                                <StepperControl label="Gap" value={current.gap} onChange={v => update({ gap: String(v) })} onReset={() => reset(['gap'])} min={0} />
+                                <div className="flex items-center justify-between pt-1">
+                                    <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">Padding</span>
+                                    <button type="button" onClick={() => { setPaddingUnlocked(!paddingUnlocked); if (paddingUnlocked) { update({ paddingTop: undefined, paddingRight: undefined, paddingBottom: undefined, paddingLeft: undefined }); } }} className="text-[10px] text-zinc-400 hover:text-zinc-700" title={paddingUnlocked ? 'Bloquear y usar valor único' : 'Desbloquear lados'}>
+                                        {paddingUnlocked ? 'Lados' : 'Único'}
+                                    </button>
                                 </div>
-
-                                <div className="rounded-lg bg-zinc-900/50 p-2 border border-zinc-800">
-                                    <div className="mb-2 flex items-center justify-between">
-                                        <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Margin</span>
-                                        <button onClick={() => { setMarginUnlocked(!marginUnlocked); if (marginUnlocked) { update({ marginTop: undefined, marginRight: undefined, marginBottom: undefined, marginLeft: undefined }); } }} className="text-zinc-500 hover:text-white" title={marginUnlocked ? 'Bloquear y usar valor único' : 'Desbloquear lados'}>
-                                            {marginUnlocked ? '🔓' : '🔒'}
-                                        </button>
-                                    </div>
-                                    {!marginUnlocked ? (
-                                        <StepperControl label="Margin" value={current.margin} onChange={v => update({ margin: String(v) })} />
-                                    ) : (
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <StepperControl label="Top" value={current.marginTop} onChange={v => update({ marginTop: String(v) })} />
-                                            <StepperControl label="Right" value={current.marginRight} onChange={v => update({ marginRight: String(v) })} />
-                                            <StepperControl label="Bottom" value={current.marginBottom} onChange={v => update({ marginBottom: String(v) })} />
-                                            <StepperControl label="Left" value={current.marginLeft} onChange={v => update({ marginLeft: String(v) })} />
-                                        </div>
-                                    )}
+                                {!paddingUnlocked ? (
+                                    <StepperControl label="Padding" value={current.customPadding} onChange={v => update({ customPadding: String(v) })} min={0} />
+                                ) : (
+                                    <>
+                                        <StepperControl label="Top" value={current.paddingTop} onChange={v => update({ paddingTop: String(v) })} min={0} />
+                                        <StepperControl label="Right" value={current.paddingRight} onChange={v => update({ paddingRight: String(v) })} min={0} />
+                                        <StepperControl label="Bottom" value={current.paddingBottom} onChange={v => update({ paddingBottom: String(v) })} min={0} />
+                                        <StepperControl label="Left" value={current.paddingLeft} onChange={v => update({ paddingLeft: String(v) })} min={0} />
+                                    </>
+                                )}
+                                <div className="flex items-center justify-between pt-1">
+                                    <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">Margin</span>
+                                    <button type="button" onClick={() => { setMarginUnlocked(!marginUnlocked); if (marginUnlocked) { update({ marginTop: undefined, marginRight: undefined, marginBottom: undefined, marginLeft: undefined }); } }} className="text-[10px] text-zinc-400 hover:text-zinc-700" title={marginUnlocked ? 'Bloquear y usar valor único' : 'Desbloquear lados'}>
+                                        {marginUnlocked ? 'Lados' : 'Único'}
+                                    </button>
                                 </div>
-                            </div>
+                                {!marginUnlocked ? (
+                                    <StepperControl label="Margin" value={current.margin} onChange={v => update({ margin: String(v) })} />
+                                ) : (
+                                    <>
+                                        <StepperControl label="Top" value={current.marginTop} onChange={v => update({ marginTop: String(v) })} />
+                                        <StepperControl label="Right" value={current.marginRight} onChange={v => update({ marginRight: String(v) })} />
+                                        <StepperControl label="Bottom" value={current.marginBottom} onChange={v => update({ marginBottom: String(v) })} />
+                                        <StepperControl label="Left" value={current.marginLeft} onChange={v => update({ marginLeft: String(v) })} />
+                                    </>
+                                )}
+                            </>
                         ))}
 
-                        <div className="mt-4 border-t border-zinc-800 pt-4">
-                            <button onClick={resetAll} className="w-full rounded-xl bg-red-500/10 py-3 text-[9px] font-black uppercase tracking-widest text-red-400 hover:bg-red-500/20">
-                                Restablecer todo en este ámbito
+                        <div className="border-t border-zinc-100 px-3 py-3">
+                            <button type="button" onClick={resetAll} className="h-8 w-full rounded-md border border-rose-100 bg-rose-50 text-[10px] font-semibold uppercase tracking-wide text-rose-600 hover:bg-rose-100">
+                                Restablecer ámbito
                             </button>
                         </div>
                     </>
@@ -1036,75 +998,87 @@ export function GlobalAestheticPanel({
     // Usar el background pasado (draft) o el de la estética guardada como fallback
     const activeBackground = background ?? estetica.background;
     return (
-        <div data-studio-chrome="true" className="border-b border-zinc-800 bg-zinc-950 px-4 py-3">
-            <div className="flex items-center justify-between gap-2">
-                <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Estética global</span>
-                <span className="rounded-md bg-emerald-500/10 px-2 py-1 text-[8px] font-black uppercase tracking-widest text-emerald-300">Live</span>
+        <div data-studio-chrome="true" className="border-b border-zinc-100 bg-white px-3 py-3 text-zinc-800">
+            <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="text-[9px] font-semibold uppercase tracking-wide text-zinc-400">Estética global</span>
+                <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-zinc-500">Live</span>
             </div>
-            <input value={estetica.name} disabled={Boolean(estetica.isOriginal || estetica.isSystem)} onChange={event => onRename(event.target.value)} className="mt-2 min-h-12 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 text-base font-black text-white outline-none focus:border-[#36606F] disabled:text-zinc-400" aria-label="Nombre de la estética" />
-            <select value={estetica.id} onChange={event => onSelect(event.target.value)} className="mt-2 min-h-12 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 text-base font-bold text-zinc-200" aria-label="Estética global">
+            <input
+                value={estetica.name}
+                disabled={Boolean(estetica.isOriginal || estetica.isSystem)}
+                onChange={event => onRename(event.target.value)}
+                className="h-8 w-full rounded-md border border-zinc-200 bg-white px-2 text-[13px] font-semibold text-zinc-900 outline-none focus:border-[#36606F] disabled:bg-zinc-50 disabled:text-zinc-400"
+                aria-label="Nombre de la estética"
+            />
+            <select value={estetica.id} onChange={event => onSelect(event.target.value)} className="mt-1.5 h-8 w-full rounded-md border border-zinc-200 bg-white px-2 text-[12px] text-zinc-700" aria-label="Estética global">
                 {esteticas.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}
             </select>
-            <select value={fontFamily ?? ''} onChange={event => onFontFamilyChange((event.target.value || undefined) as StudioFontFamily | undefined)} className="mt-2 min-h-12 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 text-sm font-bold text-zinc-200" aria-label="Tipografía global">
+            <select value={fontFamily ?? ''} onChange={event => onFontFamilyChange((event.target.value || undefined) as StudioFontFamily | undefined)} className="mt-1.5 h-8 w-full rounded-md border border-zinc-200 bg-white px-2 text-[12px] text-zinc-700" aria-label="Tipografía global">
                 <option value="">Tipografía de Marbella</option>
                 {fonts.map(font => <option key={font.id} value={font.family}>{font.label}</option>)}
             </select>
-            <select value={globalScale ?? ''} onChange={event => onGlobalScaleChange?.(event.target.value || undefined)} className="mt-2 min-h-12 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 text-sm font-bold text-zinc-200" aria-label="Escala global">
-                <option value="">Escala por defecto (100%)</option>
-                <option value="80%">80% (Extra compacto)</option>
-                <option value="90%">90% (Compacto)</option>
-                <option value="110%">110% (Amplio)</option>
-                <option value="120%">120% (Muy amplio)</option>
+            <select value={globalScale ?? ''} onChange={event => onGlobalScaleChange?.(event.target.value || undefined)} className="mt-1.5 h-8 w-full rounded-md border border-zinc-200 bg-white px-2 text-[12px] text-zinc-700" aria-label="Escala global">
+                <option value="">Escala 100%</option>
+                <option value="80%">80%</option>
+                <option value="90%">90%</option>
+                <option value="110%">110%</option>
+                <option value="120%">120%</option>
             </select>
-            <div className="mt-2 grid grid-cols-3 gap-1">
+
+            <div className="mt-2 flex overflow-hidden rounded-md border border-zinc-200">
                 {(['mobile', 'tablet', 'desktop'] as const).map(option => (
-                    <button key={option} type="button" onClick={() => onViewportChange(option)} style={{ minHeight: 44 }} className={`rounded-xl text-[9px] font-black uppercase tracking-widest ${viewport === option ? 'bg-[#36606F] text-white' : 'bg-zinc-900 text-zinc-500'}`}>
-                        {option === 'mobile' ? '375px' : option === 'tablet' ? '768px' : '1280px+'}
+                    <button
+                        key={option}
+                        type="button"
+                        onClick={() => onViewportChange(option)}
+                        className={`h-8 flex-1 text-[10px] font-semibold uppercase tracking-wide ${viewport === option ? 'bg-[#36606F] text-white' : 'bg-white text-zinc-500 hover:bg-zinc-50'}`}
+                    >
+                        {option === 'mobile' ? '375px' : option === 'tablet' ? '768px' : '1280+'}
                     </button>
                 ))}
             </div>
 
-            <div className="mt-2 rounded-xl bg-zinc-900 p-3">
-                <span className="mb-2 block text-[8px] font-black uppercase tracking-widest text-zinc-500">Fondo Global de App</span>
-                <div className="grid grid-cols-3 gap-1 mb-2">
-                    <button type="button" onClick={() => onBackgroundChange?.({ type: 'solid', color1: '#000000', opacity: 1 })} style={{ minHeight: 36 }} className={`rounded-lg text-[9px] font-black uppercase tracking-widest ${activeBackground?.type === 'solid' ? 'bg-[#36606F] text-white' : 'bg-zinc-800 text-zinc-400'}`}>Sólido</button>
-                    <button type="button" onClick={() => onBackgroundChange?.({ type: 'gradient', gradientType: 'linear', color1: '#111827', color2: '#000000', gradientDirection: 'to bottom' })} style={{ minHeight: 36 }} className={`rounded-lg text-[9px] font-black uppercase tracking-widest ${activeBackground?.type === 'gradient' ? 'bg-[#36606F] text-white' : 'bg-zinc-800 text-zinc-400'}`}>Degradado</button>
-                    <button type="button" onClick={() => onBackgroundChange?.({ type: 'none' })} style={{ minHeight: 36 }} className={`rounded-lg text-[9px] font-black uppercase tracking-widest ${activeBackground?.type === 'none' || !activeBackground ? 'bg-[#36606F] text-white' : 'bg-zinc-800 text-zinc-400'}`}>Por defecto</button>
+            <div className="mt-2 rounded-md border border-zinc-100 bg-zinc-50 p-2">
+                <span className="mb-1.5 block text-[9px] font-semibold uppercase tracking-wide text-zinc-400">Fondo de app</span>
+                <div className="flex overflow-hidden rounded-md border border-zinc-200">
+                    <button type="button" onClick={() => onBackgroundChange?.({ type: 'solid', color1: '#000000', opacity: 1 })} className={`h-7 flex-1 text-[10px] font-medium ${activeBackground?.type === 'solid' ? 'bg-[#36606F] text-white' : 'bg-white text-zinc-500'}`}>Sólido</button>
+                    <button type="button" onClick={() => onBackgroundChange?.({ type: 'gradient', gradientType: 'linear', color1: '#111827', color2: '#000000', gradientDirection: 'to bottom' })} className={`h-7 flex-1 text-[10px] font-medium ${activeBackground?.type === 'gradient' ? 'bg-[#36606F] text-white' : 'bg-white text-zinc-500'}`}>Degradado</button>
+                    <button type="button" onClick={() => onBackgroundChange?.({ type: 'none' })} className={`h-7 flex-1 text-[10px] font-medium ${activeBackground?.type === 'none' || !activeBackground ? 'bg-[#36606F] text-white' : 'bg-white text-zinc-500'}`}>Default</button>
                 </div>
                 {activeBackground && activeBackground.type !== 'none' && (
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                        <label className="flex items-center gap-2">
-                            <input type="color" value={activeBackground.color1 ?? '#000000'} onChange={e => onBackgroundChange?.({ ...activeBackground, color1: e.target.value })} className="h-8 w-8 rounded border-0 bg-transparent" />
-                            <span className="text-[9px] text-zinc-400 font-bold uppercase">Color {activeBackground.type === 'gradient' ? '1' : ''}</span>
+                    <div className="mt-2 grid grid-cols-2 gap-1.5">
+                        <label className="flex items-center gap-1.5">
+                            <input type="color" value={activeBackground.color1 ?? '#000000'} onChange={e => onBackgroundChange?.({ ...activeBackground, color1: e.target.value })} className="h-6 w-6 rounded border border-zinc-200 bg-transparent p-0" />
+                            <span className="text-[10px] text-zinc-500">Color {activeBackground.type === 'gradient' ? '1' : ''}</span>
                         </label>
                         {activeBackground.type === 'gradient' && (
-                            <label className="flex items-center gap-2">
-                                <input type="color" value={activeBackground.color2 ?? '#000000'} onChange={e => onBackgroundChange?.({ ...activeBackground, color2: e.target.value })} className="h-8 w-8 rounded border-0 bg-transparent" />
-                                <span className="text-[9px] text-zinc-400 font-bold uppercase">Color 2</span>
+                            <label className="flex items-center gap-1.5">
+                                <input type="color" value={activeBackground.color2 ?? '#000000'} onChange={e => onBackgroundChange?.({ ...activeBackground, color2: e.target.value })} className="h-6 w-6 rounded border border-zinc-200 bg-transparent p-0" />
+                                <span className="text-[10px] text-zinc-500">Color 2</span>
                             </label>
                         )}
                         {activeBackground.type === 'gradient' && (
-                            <select value={activeBackground.gradientType ?? 'linear'} onChange={e => onBackgroundChange?.({ ...activeBackground, gradientType: e.target.value as any })} className="col-span-2 min-h-8 rounded bg-zinc-800 px-2 text-[9px] font-black uppercase text-zinc-300">
+                            <select value={activeBackground.gradientType ?? 'linear'} onChange={e => onBackgroundChange?.({ ...activeBackground, gradientType: e.target.value as 'linear' | 'radial' | 'conic' })} className="col-span-2 h-7 rounded-md border border-zinc-200 bg-white px-1.5 text-[10px] text-zinc-600">
                                 <option value="linear">Lineal</option>
                                 <option value="radial">Radial</option>
                                 <option value="conic">Cónico</option>
                             </select>
                         )}
-                        <div className="col-span-2 flex gap-1 mt-1">
-                            <button onClick={() => onBackgroundChange?.({ ...activeBackground, effects: { ...activeBackground.effects, blur: (activeBackground.effects?.blur || 0) ? 0 : 20 } })} className={`flex-1 rounded p-1 text-[8px] font-bold uppercase ${activeBackground.effects?.blur ? 'bg-indigo-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>Blur</button>
-                            <button onClick={() => onBackgroundChange?.({ ...activeBackground, effects: { ...activeBackground.effects, grain: !activeBackground.effects?.grain } })} className={`flex-1 rounded p-1 text-[8px] font-bold uppercase ${activeBackground.effects?.grain ? 'bg-amber-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>Ruido</button>
-                            <button onClick={() => onBackgroundChange?.({ ...activeBackground, effects: { ...activeBackground.effects, vignette: !activeBackground.effects?.vignette } })} className={`flex-1 rounded p-1 text-[8px] font-bold uppercase ${activeBackground.effects?.vignette ? 'bg-rose-500 text-white' : 'bg-zinc-800 text-zinc-400'}`}>Viñeta</button>
+                        <div className="col-span-2 flex gap-1">
+                            <button type="button" onClick={() => onBackgroundChange?.({ ...activeBackground, effects: { ...activeBackground.effects, blur: (activeBackground.effects?.blur || 0) ? 0 : 20 } })} className={`h-7 flex-1 rounded-md text-[9px] font-semibold uppercase ${activeBackground.effects?.blur ? 'bg-zinc-800 text-white' : 'border border-zinc-200 bg-white text-zinc-500'}`}>Blur</button>
+                            <button type="button" onClick={() => onBackgroundChange?.({ ...activeBackground, effects: { ...activeBackground.effects, grain: !activeBackground.effects?.grain } })} className={`h-7 flex-1 rounded-md text-[9px] font-semibold uppercase ${activeBackground.effects?.grain ? 'bg-zinc-800 text-white' : 'border border-zinc-200 bg-white text-zinc-500'}`}>Ruido</button>
+                            <button type="button" onClick={() => onBackgroundChange?.({ ...activeBackground, effects: { ...activeBackground.effects, vignette: !activeBackground.effects?.vignette } })} className={`h-7 flex-1 rounded-md text-[9px] font-semibold uppercase ${activeBackground.effects?.vignette ? 'bg-zinc-800 text-white' : 'border border-zinc-200 bg-white text-zinc-500'}`}>Viñeta</button>
                         </div>
                     </div>
                 )}
             </div>
 
-            <div className="mt-2 flex gap-2">
-                <button type="button" onClick={onSave} style={{ minHeight: 48 }} className="flex-1 rounded-xl bg-[#36606F] text-[9px] font-black uppercase tracking-widest text-white">Guardar</button>
-                <button type="button" onClick={onDuplicate} style={{ minHeight: 48 }} className="rounded-xl bg-zinc-800 px-3 text-[9px] font-black uppercase tracking-widest text-zinc-300">Duplicar</button>
-                <button type="button" onClick={onDelete} disabled={Boolean(estetica.isOriginal || estetica.isSystem)} title={estetica.isSystem ? 'Las estéticas predeterminadas no se pueden eliminar' : undefined} style={{ minHeight: 48 }} className="rounded-xl bg-rose-500/10 px-3 text-[9px] font-black uppercase tracking-widest text-rose-300 disabled:opacity-30">Eliminar</button>
+            <div className="mt-2 flex gap-1.5">
+                <button type="button" onClick={onSave} className="h-8 flex-1 rounded-md bg-[#36606F] text-[10px] font-semibold uppercase tracking-wide text-white">Guardar</button>
+                <button type="button" onClick={onDuplicate} className="h-8 rounded-md border border-zinc-200 bg-white px-2.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-600">Duplicar</button>
+                <button type="button" onClick={onDelete} disabled={Boolean(estetica.isOriginal || estetica.isSystem)} title={estetica.isSystem ? 'Las estéticas predeterminadas no se pueden eliminar' : undefined} className="h-8 rounded-md border border-rose-100 bg-rose-50 px-2.5 text-[10px] font-semibold uppercase tracking-wide text-rose-600 disabled:opacity-30">Eliminar</button>
             </div>
-            <button type="button" onClick={onCompare} style={{ minHeight: 44 }} className="mt-2 w-full rounded-xl bg-zinc-900 text-[9px] font-black uppercase tracking-widest text-zinc-400">Comparar exploraciones</button>
+            <button type="button" onClick={onCompare} className="mt-1.5 h-8 w-full rounded-md border border-zinc-200 bg-white text-[10px] font-semibold uppercase tracking-wide text-zinc-500 hover:bg-zinc-50">Comparar exploraciones</button>
         </div>
     );
 }

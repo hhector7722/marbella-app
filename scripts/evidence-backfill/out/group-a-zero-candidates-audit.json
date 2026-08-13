@@ -1,0 +1,2846 @@
+{
+  "event": "GROUP_A_AUDIT_READONLY",
+  "count": 29,
+  "break_reasons": {
+    "HEURISTIC_NO_DESC_COLUMN": 29
+  },
+  "column_name_frequency": [
+    {
+      "name": "(vacío)",
+      "n": 29
+    },
+    {
+      "name": "COD",
+      "n": 11
+    },
+    {
+      "name": "QUILOS",
+      "n": 11
+    },
+    {
+      "name": "ARTICLE",
+      "n": 11
+    },
+    {
+      "name": "LOT",
+      "n": 11
+    },
+    {
+      "name": "PREU",
+      "n": 11
+    },
+    {
+      "name": "IMPORT",
+      "n": 11
+    },
+    {
+      "name": "%",
+      "n": 11
+    },
+    {
+      "name": "UNIT",
+      "n": 10
+    },
+    {
+      "name": "Precio",
+      "n": 8
+    },
+    {
+      "name": "Importe",
+      "n": 8
+    },
+    {
+      "name": "Preu",
+      "n": 8
+    },
+    {
+      "name": "Cantidad",
+      "n": 7
+    },
+    {
+      "name": "%Dto",
+      "n": 7
+    },
+    {
+      "name": "Lliurament",
+      "n": 7
+    },
+    {
+      "name": "Producte",
+      "n": 7
+    },
+    {
+      "name": "a cobrar",
+      "n": 7
+    },
+    {
+      "name": "SUB TOTAL",
+      "n": 4
+    },
+    {
+      "name": "BASE",
+      "n": 4
+    },
+    {
+      "name": "R.EQUIV",
+      "n": 4
+    },
+    {
+      "name": "TOTAL",
+      "n": 4
+    },
+    {
+      "name": "PES TOTAL",
+      "n": 4
+    },
+    {
+      "name": "PAQUETS FRESC",
+      "n": 4
+    },
+    {
+      "name": "PAQUETS SEC",
+      "n": 4
+    },
+    {
+      "name": "P.P",
+      "n": 3
+    },
+    {
+      "name": "D.S",
+      "n": 3
+    },
+    {
+      "name": "I.V.A",
+      "n": 2
+    },
+    {
+      "name": "IVA",
+      "n": 1
+    },
+    {
+      "name": "UNIT.",
+      "n": 1
+    },
+    {
+      "name": "P.P.",
+      "n": 1
+    },
+    {
+      "name": "D.S.",
+      "n": 1
+    },
+    {
+      "name": "I.V.A.",
+      "n": 1
+    },
+    {
+      "name": "%Iva",
+      "n": 1
+    },
+    {
+      "name": "Unidades",
+      "n": 1
+    },
+    {
+      "name": "Unitats",
+      "n": 1
+    },
+    {
+      "name": "Article",
+      "n": 1
+    },
+    {
+      "name": "Iva",
+      "n": 1
+    },
+    {
+      "name": "Total",
+      "n": 1
+    },
+    {
+      "name": "EUR",
+      "n": 1
+    }
+  ],
+  "by_supplier": {
+    "Abril": {
+      "n": 11,
+      "breaks": {
+        "HEURISTIC_NO_DESC_COLUMN": 11
+      },
+      "distinct_column_layouts": [
+        "COD | UNIT | QUILOS | ARTICLE | LOT | PREU | IMPORT",
+        "SUB TOTAL | % | P.P | D.S | BASE | % | IVA | % | R.EQUIV | TOTAL",
+        "PES TOTAL | PAQUETS FRESC | PAQUETS SEC",
+        "SUB TOTAL | % | P.P. | D.S. | BASE | % | I.V.A. | % | R.EQUIV | TOTAL",
+        "SUB TOTAL |  | P.P | D.S | BASE | % | I.V.A | % | R.EQUIV | TOTAL",
+        "COD | UNIT. | QUILOS | ARTICLE | LOT | PREU | IMPORT",
+        "SUB TOTAL | % | P.P | D.S | BASE | % | I.V.A | % | R.EQUIV | TOTAL"
+      ]
+    },
+    "Hielo Fenix": {
+      "n": 7,
+      "breaks": {
+        "HEURISTIC_NO_DESC_COLUMN": 7
+      },
+      "distinct_column_layouts": [
+        "Lliurament | Producte | Preu | a cobrar"
+      ]
+    },
+    "Nestle": {
+      "n": 7,
+      "breaks": {
+        "HEURISTIC_NO_DESC_COLUMN": 7
+      },
+      "distinct_column_layouts": [
+        " |  | Cantidad | Precio | %Dto | Importe |  | ",
+        " | Cantidad |  | Precio | %Dto | Importe | ",
+        "Cantidad |  | Precio | %Dto | Importe | ",
+        "Cantidad |  | Precio | %Dto | Importe"
+      ]
+    },
+    "Otros": {
+      "n": 2,
+      "breaks": {
+        "HEURISTIC_NO_DESC_COLUMN": 2
+      },
+      "distinct_column_layouts": [
+        "Unitats | Article | Iva | Preu | Total",
+        " |  | EUR"
+      ]
+    },
+    "Panabad": {
+      "n": 1,
+      "breaks": {
+        "HEURISTIC_NO_DESC_COLUMN": 1
+      },
+      "distinct_column_layouts": [
+        " |  |  |  |  |  | "
+      ]
+    },
+    "Videla": {
+      "n": 1,
+      "breaks": {
+        "HEURISTIC_NO_DESC_COLUMN": 1
+      },
+      "distinct_column_layouts": [
+        " | %Iva | Unidades | Precio | Importe"
+      ]
+    }
+  },
+  "invoices": [
+    {
+      "invoice_id": "18231ea0-4c8b-4fc2-9584-434e17585778",
+      "supplier": "Abril",
+      "invoice_date": "2026-04-24",
+      "invoice_number": "2186",
+      "ext": "jpg",
+      "operative_lines": 3,
+      "tables": 3,
+      "rows": 6,
+      "cells": 44,
+      "columns_all": [
+        "COD",
+        "UNIT",
+        "QUILOS",
+        "ARTICLE",
+        "LOT",
+        "PREU",
+        "IMPORT",
+        "SUB TOTAL",
+        "%",
+        "P.P",
+        "D.S",
+        "BASE",
+        "%",
+        "IVA",
+        "%",
+        "R.EQUIV",
+        "TOTAL",
+        "PES TOTAL",
+        "PAQUETS FRESC",
+        "PAQUETS SEC"
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        },
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        },
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "32b586bf-0b6c-4af0-a30a-f63d851d65da",
+      "supplier": "Abril",
+      "invoice_date": "2026-05-07",
+      "invoice_number": "A 2409",
+      "ext": "jpg",
+      "operative_lines": 3,
+      "tables": 1,
+      "rows": 3,
+      "cells": 21,
+      "columns_all": [
+        "COD",
+        "UNIT",
+        "QUILOS",
+        "ARTICLE",
+        "LOT",
+        "PREU",
+        "IMPORT"
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "fefc24ae-ef18-4ef6-b953-a40e1b866a56",
+      "supplier": "Abril",
+      "invoice_date": "2026-05-14",
+      "invoice_number": "A 2540",
+      "ext": "jpg",
+      "operative_lines": 4,
+      "tables": 1,
+      "rows": 4,
+      "cells": 28,
+      "columns_all": [
+        "COD",
+        "UNIT",
+        "QUILOS",
+        "ARTICLE",
+        "LOT",
+        "PREU",
+        "IMPORT"
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "860de1f4-79be-4fe7-a619-f482993b5ed2",
+      "supplier": "Abril",
+      "invoice_date": "2026-05-27",
+      "invoice_number": "2740",
+      "ext": "jpg",
+      "operative_lines": 4,
+      "tables": 3,
+      "rows": 7,
+      "cells": 51,
+      "columns_all": [
+        "COD",
+        "UNIT",
+        "QUILOS",
+        "ARTICLE",
+        "LOT",
+        "PREU",
+        "IMPORT",
+        "SUB TOTAL",
+        "%",
+        "P.P.",
+        "D.S.",
+        "BASE",
+        "%",
+        "I.V.A.",
+        "%",
+        "R.EQUIV",
+        "TOTAL",
+        "PES TOTAL",
+        "PAQUETS FRESC",
+        "PAQUETS SEC"
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        },
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        },
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "f55094a9-97c0-4d4f-93fc-c97322b05fbb",
+      "supplier": "Abril",
+      "invoice_date": "2026-06-04",
+      "invoice_number": "2911",
+      "ext": "jpg",
+      "operative_lines": 2,
+      "tables": 1,
+      "rows": 2,
+      "cells": 14,
+      "columns_all": [
+        "COD",
+        "UNIT",
+        "QUILOS",
+        "ARTICLE",
+        "LOT",
+        "PREU",
+        "IMPORT"
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "ec25da4e-08c2-4a0e-a951-39ad4387eceb",
+      "supplier": "Abril",
+      "invoice_date": "2026-06-09",
+      "invoice_number": "A 2971",
+      "ext": "jpg",
+      "operative_lines": 2,
+      "tables": 3,
+      "rows": 4,
+      "cells": 27,
+      "columns_all": [
+        "COD",
+        "UNIT",
+        "QUILOS",
+        "ARTICLE",
+        "LOT",
+        "PREU",
+        "IMPORT",
+        "SUB TOTAL",
+        null,
+        "P.P",
+        "D.S",
+        "BASE",
+        "%",
+        "I.V.A",
+        "%",
+        "R.EQUIV",
+        "TOTAL",
+        "PES TOTAL",
+        "PAQUETS FRESC",
+        "PAQUETS SEC"
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        },
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        },
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "3e2f184a-7313-45f9-a03a-a3082bb6c6ea",
+      "supplier": "Abril",
+      "invoice_date": "2026-06-12",
+      "invoice_number": "3055",
+      "ext": "jpg",
+      "operative_lines": 1,
+      "tables": 1,
+      "rows": 1,
+      "cells": 7,
+      "columns_all": [
+        "COD",
+        "UNIT",
+        "QUILOS",
+        "ARTICLE",
+        "LOT",
+        "PREU",
+        "IMPORT"
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "04fce116-13b3-40ff-a142-6c02324869eb",
+      "supplier": "Abril",
+      "invoice_date": "2026-06-19",
+      "invoice_number": "3178",
+      "ext": "jpg",
+      "operative_lines": 2,
+      "tables": 1,
+      "rows": 2,
+      "cells": 14,
+      "columns_all": [
+        "COD",
+        "UNIT.",
+        "QUILOS",
+        "ARTICLE",
+        "LOT",
+        "PREU",
+        "IMPORT"
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "ac6d83af-5d4b-4e27-98c5-30073fcd252e",
+      "supplier": "Abril",
+      "invoice_date": "2026-06-22",
+      "invoice_number": "3194",
+      "ext": "jpg",
+      "operative_lines": 4,
+      "tables": 3,
+      "rows": 7,
+      "cells": 51,
+      "columns_all": [
+        "COD",
+        "UNIT",
+        "QUILOS",
+        "ARTICLE",
+        "LOT",
+        "PREU",
+        "IMPORT",
+        "SUB TOTAL",
+        "%",
+        "P.P",
+        "D.S",
+        "BASE",
+        "%",
+        "I.V.A",
+        "%",
+        "R.EQUIV",
+        "TOTAL",
+        "PES TOTAL",
+        "PAQUETS FRESC",
+        "PAQUETS SEC"
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        },
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        },
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "3a3c787f-28ae-4445-8056-76e79893c008",
+      "supplier": "Abril",
+      "invoice_date": "2026-07-08",
+      "invoice_number": "3450",
+      "ext": "jpg",
+      "operative_lines": 2,
+      "tables": 1,
+      "rows": 2,
+      "cells": 14,
+      "columns_all": [
+        "COD",
+        "UNIT",
+        "QUILOS",
+        "ARTICLE",
+        "LOT",
+        "PREU",
+        "IMPORT"
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "314e46ea-6f4a-49ed-968a-df8d62ceded5",
+      "supplier": "Abril",
+      "invoice_date": "2026-07-13",
+      "invoice_number": "A 3526",
+      "ext": "jpg",
+      "operative_lines": 1,
+      "tables": 1,
+      "rows": 1,
+      "cells": 7,
+      "columns_all": [
+        "COD",
+        "UNIT",
+        "QUILOS",
+        "ARTICLE",
+        "LOT",
+        "PREU",
+        "IMPORT"
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "397cca52-1abb-4aa4-8bc5-a3fbee1ff497",
+      "supplier": "Hielo Fenix",
+      "invoice_date": "2025-06-18",
+      "invoice_number": "DESCONOCIDO",
+      "ext": "jpg",
+      "operative_lines": 1,
+      "tables": 1,
+      "rows": 5,
+      "cells": 20,
+      "columns_all": [
+        "Lliurament",
+        "Producte",
+        "Preu",
+        "a cobrar"
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "49115b5a-e7b1-4b8b-9bf2-fe6e21702097",
+      "supplier": "Hielo Fenix",
+      "invoice_date": "2026-05-28",
+      "invoice_number": "DESCONOCIDO",
+      "ext": "jpg",
+      "operative_lines": 1,
+      "tables": 1,
+      "rows": 5,
+      "cells": 20,
+      "columns_all": [
+        "Lliurament",
+        "Producte",
+        "Preu",
+        "a cobrar"
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "c10d3026-898c-4b52-bee5-3ac0ff9970dd",
+      "supplier": "Hielo Fenix",
+      "invoice_date": "2026-06-08",
+      "invoice_number": "DESCONOCIDO",
+      "ext": "jpg",
+      "operative_lines": 1,
+      "tables": 1,
+      "rows": 5,
+      "cells": 20,
+      "columns_all": [
+        "Lliurament",
+        "Producte",
+        "Preu",
+        "a cobrar"
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "fdb30e8b-12d0-445a-b252-61a5d362d613",
+      "supplier": "Hielo Fenix",
+      "invoice_date": "2026-06-14",
+      "invoice_number": "DESCONOCIDO",
+      "ext": "jpg",
+      "operative_lines": 1,
+      "tables": 1,
+      "rows": 5,
+      "cells": 20,
+      "columns_all": [
+        "Lliurament",
+        "Producte",
+        "Preu",
+        "a cobrar"
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "0d8a968d-5f64-4691-8fd1-283a8c367843",
+      "supplier": "Hielo Fenix",
+      "invoice_date": "2026-07-06",
+      "invoice_number": "DESCONOCIDO",
+      "ext": "jpg",
+      "operative_lines": 1,
+      "tables": 1,
+      "rows": 5,
+      "cells": 20,
+      "columns_all": [
+        "Lliurament",
+        "Producte",
+        "Preu",
+        "a cobrar"
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "92259c4a-b4b3-46ef-a484-6607fad80f1a",
+      "supplier": "Hielo Fenix",
+      "invoice_date": "2026-07-10",
+      "invoice_number": "DESCONOCIDO",
+      "ext": "jpg",
+      "operative_lines": 0,
+      "tables": 1,
+      "rows": 6,
+      "cells": 24,
+      "columns_all": [
+        "Lliurament",
+        "Producte",
+        "Preu",
+        "a cobrar"
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "87bba53d-ab47-48f9-9f7a-cc49938d74a8",
+      "supplier": "Hielo Fenix",
+      "invoice_date": "2026-07-18",
+      "invoice_number": "DESCONOCIDO",
+      "ext": "jpg",
+      "operative_lines": 1,
+      "tables": 1,
+      "rows": 3,
+      "cells": 12,
+      "columns_all": [
+        "Lliurament",
+        "Producte",
+        "Preu",
+        "a cobrar"
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "0e9e7cf1-988d-444b-9895-cec44340a252",
+      "supplier": "Nestle",
+      "invoice_date": "2026-05-08",
+      "invoice_number": "26P0122067",
+      "ext": "jpg",
+      "operative_lines": 9,
+      "tables": 1,
+      "rows": 9,
+      "cells": 72,
+      "columns_all": [
+        null,
+        null,
+        "Cantidad",
+        "Precio",
+        "%Dto",
+        "Importe",
+        null,
+        null
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": 2,
+          "priceColIndex": 3,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "dc150a86-9793-460c-847d-5f270d47454a",
+      "supplier": "Nestle",
+      "invoice_date": "2026-05-15",
+      "invoice_number": "26P0131264",
+      "ext": "jpg",
+      "operative_lines": 10,
+      "tables": 1,
+      "rows": 10,
+      "cells": 70,
+      "columns_all": [
+        null,
+        "Cantidad",
+        null,
+        "Precio",
+        "%Dto",
+        "Importe",
+        null
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": 1,
+          "priceColIndex": 3,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "3e620cd9-f334-43f1-8ed0-412debe2e778",
+      "supplier": "Nestle",
+      "invoice_date": "2026-05-21",
+      "invoice_number": "26P0137670",
+      "ext": "jpg",
+      "operative_lines": 7,
+      "tables": 1,
+      "rows": 7,
+      "cells": 42,
+      "columns_all": [
+        "Cantidad",
+        null,
+        "Precio",
+        "%Dto",
+        "Importe",
+        null
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": 0,
+          "priceColIndex": 2,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "bb1e116b-c316-434b-90c8-6007d41ec0b6",
+      "supplier": "Nestle",
+      "invoice_date": "2026-06-05",
+      "invoice_number": "26P0166227",
+      "ext": "jpg",
+      "operative_lines": 7,
+      "tables": 1,
+      "rows": 7,
+      "cells": 42,
+      "columns_all": [
+        "Cantidad",
+        null,
+        "Precio",
+        "%Dto",
+        "Importe",
+        null
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": 0,
+          "priceColIndex": 2,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "39390ec2-f125-4aa5-94bd-f69ef3d70af8",
+      "supplier": "Nestle",
+      "invoice_date": "2026-06-19",
+      "invoice_number": "26P0191692",
+      "ext": "jpg",
+      "operative_lines": 7,
+      "tables": 1,
+      "rows": 14,
+      "cells": 98,
+      "columns_all": [
+        null,
+        "Cantidad",
+        null,
+        "Precio",
+        "%Dto",
+        "Importe",
+        null
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": 1,
+          "priceColIndex": 3,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "13a5feef-42eb-4f5a-b633-b77f03fc2f97",
+      "supplier": "Nestle",
+      "invoice_date": "2026-07-03",
+      "invoice_number": "26P0218515",
+      "ext": "jpg",
+      "operative_lines": 8,
+      "tables": 1,
+      "rows": 24,
+      "cells": 168,
+      "columns_all": [
+        null,
+        "Cantidad",
+        null,
+        "Precio",
+        "%Dto",
+        "Importe",
+        null
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": 1,
+          "priceColIndex": 3,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "9c045f60-b11f-455e-95ae-03153c61de18",
+      "supplier": "Nestle",
+      "invoice_date": "2026-07-10",
+      "invoice_number": "26P0233210",
+      "ext": "jpg",
+      "operative_lines": 7,
+      "tables": 1,
+      "rows": 7,
+      "cells": 35,
+      "columns_all": [
+        "Cantidad",
+        null,
+        "Precio",
+        "%Dto",
+        "Importe"
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": 0,
+          "priceColIndex": 2,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "aba553d9-bee3-4116-acaf-0c4e9a335a59",
+      "supplier": "Otros",
+      "invoice_date": "2026-07-17",
+      "invoice_number": "1/0002321",
+      "ext": "jpg",
+      "operative_lines": 8,
+      "tables": 1,
+      "rows": 8,
+      "cells": 40,
+      "columns_all": [
+        "Unitats",
+        "Article",
+        "Iva",
+        "Preu",
+        "Total"
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "efee0fb8-3192-4b41-8685-9a88c3ec6bda",
+      "supplier": "Otros",
+      "invoice_date": "2026-07-20",
+      "invoice_number": "00000005",
+      "ext": "jpg",
+      "operative_lines": 14,
+      "tables": 1,
+      "rows": 14,
+      "cells": 42,
+      "columns_all": [
+        null,
+        null,
+        "EUR"
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "9669c907-0b08-4299-bda2-085995724d9f",
+      "supplier": "Panabad",
+      "invoice_date": "2026-06-05",
+      "invoice_number": "3083-213",
+      "ext": "jpg",
+      "operative_lines": 4,
+      "tables": 1,
+      "rows": 4,
+      "cells": 28,
+      "columns_all": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": -1,
+          "priceColIndex": -1,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    },
+    {
+      "invoice_id": "4e3cbab4-1469-4f16-a21e-169c39b66636",
+      "supplier": "Videla",
+      "invoice_date": "2026-07-14",
+      "invoice_number": "CEN/07/2558/26",
+      "ext": "jpg",
+      "operative_lines": 4,
+      "tables": 1,
+      "rows": 7,
+      "cells": 35,
+      "columns_all": [
+        null,
+        "%Iva",
+        "Unidades",
+        "Precio",
+        "Importe"
+      ],
+      "heuristics_per_table": [
+        {
+          "descColIndex": -1,
+          "qtyColIndex": 2,
+          "priceColIndex": 3,
+          "unitColIndex": -1
+        }
+      ],
+      "candidates": 0,
+      "break_at": "HEURISTIC_NO_DESC_COLUMN"
+    }
+  ],
+  "examples_by_supplier": {
+    "Nestle": [
+      {
+        "invoice_id": "0e9e7cf1-988d-444b-9895-cec44340a252",
+        "supplier": "Nestle",
+        "invoice_date": "2026-05-08",
+        "invoice_number": "26P0122067",
+        "total_amount": 258.27,
+        "ext": "jpg",
+        "operative_lines": 9,
+        "extraction_id": "a8250060-fb5e-448d-bbcf-e85520056056",
+        "artifact_shape": "aiData_root",
+        "ocr_header": {
+          "fecha": "2026-05-08",
+          "numero": "26P0122067",
+          "total": 258.27,
+          "proveedor": null
+        },
+        "table_metrics": {
+          "tables": 1,
+          "rows": 9,
+          "cells": 72
+        },
+        "table_analyses": [
+          {
+            "tableIndex": 0,
+            "columnCount": 8,
+            "rowCount": 9,
+            "columns": [
+              {
+                "index": 0,
+                "name": null
+              },
+              {
+                "index": 1,
+                "name": null
+              },
+              {
+                "index": 2,
+                "name": "Cantidad"
+              },
+              {
+                "index": 3,
+                "name": "Precio"
+              },
+              {
+                "index": 4,
+                "name": "%Dto"
+              },
+              {
+                "index": 5,
+                "name": "Importe"
+              },
+              {
+                "index": 6,
+                "name": null
+              },
+              {
+                "index": 7,
+                "name": null
+              }
+            ],
+            "heuristics": {
+              "descColIndex": -1,
+              "qtyColIndex": 2,
+              "priceColIndex": 3,
+              "unitColIndex": -1
+            },
+            "sampleRows": [
+              {
+                "index": 0,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "031027686"
+                  },
+                  {
+                    "col": 1,
+                    "val": "PIRULO TROPICALN1 20x70ml"
+                  },
+                  {
+                    "col": 2,
+                    "val": "1,00 CJ"
+                  },
+                  {
+                    "col": 3,
+                    "val": "27,000"
+                  },
+                  {
+                    "col": 4,
+                    "val": "20,00"
+                  },
+                  {
+                    "col": 5,
+                    "val": "21,60"
+                  },
+                  {
+                    "col": 6,
+                    "val": "Lote:AR5346"
+                  },
+                  {
+                    "col": 7,
+                    "val": "Cad:31/12/27"
+                  }
+                ]
+              },
+              {
+                "index": 1,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "031015496"
+                  },
+                  {
+                    "col": 1,
+                    "val": "PIR FANTASMIKOS NS 18X75"
+                  },
+                  {
+                    "col": 2,
+                    "val": "1,00 CJ"
+                  },
+                  {
+                    "col": 3,
+                    "val": "24,840"
+                  },
+                  {
+                    "col": 4,
+                    "val": "20,00"
+                  },
+                  {
+                    "col": 5,
+                    "val": "19,87"
+                  },
+                  {
+                    "col": 6,
+                    "val": "Lote:AR6064"
+                  },
+                  {
+                    "col": 7,
+                    "val": "Cad:31/03/28"
+                  }
+                ]
+              },
+              {
+                "index": 2,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "031024478"
+                  },
+                  {
+                    "col": 1,
+                    "val": "PIRL COOL LIMON N3 24X99"
+                  },
+                  {
+                    "col": 2,
+                    "val": "1,00 CJ"
+                  },
+                  {
+                    "col": 3,
+                    "val": "32,400"
+                  },
+                  {
+                    "col": 4,
+                    "val": "20,00"
+                  },
+                  {
+                    "col": 5,
+                    "val": "25,92"
+                  },
+                  {
+                    "col": 6,
+                    "val": "Lote:NA6027"
+                  },
+                  {
+                    "col": 7,
+                    "val": "Cad:31/01/28"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "candidates_generated": 0,
+        "break_at": "HEURISTIC_NO_DESC_COLUMN"
+      },
+      {
+        "invoice_id": "dc150a86-9793-460c-847d-5f270d47454a",
+        "supplier": "Nestle",
+        "invoice_date": "2026-05-15",
+        "invoice_number": "26P0131264",
+        "total_amount": 332.29,
+        "ext": "jpg",
+        "operative_lines": 10,
+        "extraction_id": "7041fd27-b79b-4ea3-b806-26a824590524",
+        "artifact_shape": "aiData_root",
+        "ocr_header": {
+          "fecha": "2026-05-15",
+          "numero": "26P0131264",
+          "total": 332.29,
+          "proveedor": null
+        },
+        "table_metrics": {
+          "tables": 1,
+          "rows": 10,
+          "cells": 70
+        },
+        "table_analyses": [
+          {
+            "tableIndex": 0,
+            "columnCount": 7,
+            "rowCount": 10,
+            "columns": [
+              {
+                "index": 0,
+                "name": null
+              },
+              {
+                "index": 1,
+                "name": "Cantidad"
+              },
+              {
+                "index": 2,
+                "name": null
+              },
+              {
+                "index": 3,
+                "name": "Precio"
+              },
+              {
+                "index": 4,
+                "name": "%Dto"
+              },
+              {
+                "index": 5,
+                "name": "Importe"
+              },
+              {
+                "index": 6,
+                "name": null
+              }
+            ],
+            "heuristics": {
+              "descColIndex": -1,
+              "qtyColIndex": 1,
+              "priceColIndex": 3,
+              "unitColIndex": -1
+            },
+            "sampleRows": [
+              {
+                "index": 0,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "031015496"
+                  },
+                  {
+                    "col": 1,
+                    "val": "1,00 CJ"
+                  },
+                  {
+                    "col": 2,
+                    "val": "PIR FANTASNIKOS N5 18X75\nLote:AR6071"
+                  },
+                  {
+                    "col": 3,
+                    "val": "24,840"
+                  },
+                  {
+                    "col": 4,
+                    "val": "20,00"
+                  },
+                  {
+                    "col": 5,
+                    "val": "19,87"
+                  },
+                  {
+                    "col": 6,
+                    "val": "Cad:31/03/23"
+                  }
+                ]
+              },
+              {
+                "index": 1,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "031027916"
+                  },
+                  {
+                    "col": 1,
+                    "val": "1,00 CJ"
+                  },
+                  {
+                    "col": 2,
+                    "val": "NUII CRM AUSTRAL.N4 20X90\nLote:MI6062"
+                  },
+                  {
+                    "col": 3,
+                    "val": "45,400"
+                  },
+                  {
+                    "col": 4,
+                    "val": "20,00"
+                  },
+                  {
+                    "col": 5,
+                    "val": "36,32"
+                  },
+                  {
+                    "col": 6,
+                    "val": "Cad:31/03/28"
+                  }
+                ]
+              },
+              {
+                "index": 2,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "031027933"
+                  },
+                  {
+                    "col": 1,
+                    "val": "1,00 CJ"
+                  },
+                  {
+                    "col": 2,
+                    "val": "NUII PISTACHO 20X90ML\nLote:MI6037"
+                  },
+                  {
+                    "col": 3,
+                    "val": "45,400"
+                  },
+                  {
+                    "col": 4,
+                    "val": "20,00"
+                  },
+                  {
+                    "col": 5,
+                    "val": "36,32"
+                  },
+                  {
+                    "col": 6,
+                    "val": "Cad:29/02/28"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "candidates_generated": 0,
+        "break_at": "HEURISTIC_NO_DESC_COLUMN"
+      }
+    ],
+    "Abril": [
+      {
+        "invoice_id": "18231ea0-4c8b-4fc2-9584-434e17585778",
+        "supplier": "Abril",
+        "invoice_date": "2026-04-24",
+        "invoice_number": "2186",
+        "total_amount": 169.89,
+        "ext": "jpg",
+        "operative_lines": 3,
+        "extraction_id": "bd912381-1759-4b22-bf11-09e0a8544075",
+        "artifact_shape": "aiData_root",
+        "ocr_header": {
+          "fecha": "2026-04-24",
+          "numero": "2186",
+          "total": 169.89,
+          "proveedor": null
+        },
+        "table_metrics": {
+          "tables": 3,
+          "rows": 6,
+          "cells": 44
+        },
+        "table_analyses": [
+          {
+            "tableIndex": 0,
+            "columnCount": 7,
+            "rowCount": 3,
+            "columns": [
+              {
+                "index": 0,
+                "name": "COD"
+              },
+              {
+                "index": 1,
+                "name": "UNIT"
+              },
+              {
+                "index": 2,
+                "name": "QUILOS"
+              },
+              {
+                "index": 3,
+                "name": "ARTICLE"
+              },
+              {
+                "index": 4,
+                "name": "LOT"
+              },
+              {
+                "index": 5,
+                "name": "PREU"
+              },
+              {
+                "index": 6,
+                "name": "IMPORT"
+              }
+            ],
+            "heuristics": {
+              "descColIndex": -1,
+              "qtyColIndex": -1,
+              "priceColIndex": -1,
+              "unitColIndex": -1
+            },
+            "sampleRows": [
+              {
+                "index": 0,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "1393"
+                  },
+                  {
+                    "col": 1,
+                    "val": "2"
+                  },
+                  {
+                    "col": 2,
+                    "val": "7,60"
+                  },
+                  {
+                    "col": 3,
+                    "val": "ESPATLLLE CUITA EXTRA (11x11)"
+                  },
+                  {
+                    "col": 4,
+                    "val": "4945"
+                  },
+                  {
+                    "col": 5,
+                    "val": "5,65"
+                  },
+                  {
+                    "col": 6,
+                    "val": "42,94"
+                  }
+                ]
+              },
+              {
+                "index": 1,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "2615"
+                  },
+                  {
+                    "col": 1,
+                    "val": "1"
+                  },
+                  {
+                    "col": 2,
+                    "val": "3,06"
+                  },
+                  {
+                    "col": 3,
+                    "val": "QUESO SEMI-CURAT capricho castellano"
+                  },
+                  {
+                    "col": 4,
+                    "val": "97999"
+                  },
+                  {
+                    "col": 5,
+                    "val": "10,79"
+                  },
+                  {
+                    "col": 6,
+                    "val": "33,02"
+                  }
+                ]
+              },
+              {
+                "index": 2,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "2796"
+                  },
+                  {
+                    "col": 1,
+                    "val": "1"
+                  },
+                  {
+                    "col": 2,
+                    "val": "2,08"
+                  },
+                  {
+                    "col": 3,
+                    "val": "CENTRO PALETA CEBO 50%"
+                  },
+                  {
+                    "col": 4,
+                    "val": "94062"
+                  },
+                  {
+                    "col": 5,
+                    "val": "38,60"
+                  },
+                  {
+                    "col": 6,
+                    "val": "80,29"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "tableIndex": 1,
+            "columnCount": 10,
+            "rowCount": 2,
+            "columns": [
+              {
+                "index": 0,
+                "name": "SUB TOTAL"
+              },
+              {
+                "index": 1,
+                "name": "%"
+              },
+              {
+                "index": 2,
+                "name": "P.P"
+              },
+              {
+                "index": 3,
+                "name": "D.S"
+              },
+              {
+                "index": 4,
+                "name": "BASE"
+              },
+              {
+                "index": 5,
+                "name": "%"
+              },
+              {
+                "index": 6,
+                "name": "IVA"
+              },
+              {
+                "index": 7,
+                "name": "%"
+              },
+              {
+                "index": 8,
+                "name": "R.EQUIV"
+              },
+              {
+                "index": 9,
+                "name": "TOTAL"
+              }
+            ],
+            "heuristics": {
+              "descColIndex": -1,
+              "qtyColIndex": -1,
+              "priceColIndex": -1,
+              "unitColIndex": -1
+            },
+            "sampleRows": [
+              {
+                "index": 0,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "156,25"
+                  },
+                  {
+                    "col": 1,
+                    "val": ""
+                  },
+                  {
+                    "col": 2,
+                    "val": ""
+                  },
+                  {
+                    "col": 3,
+                    "val": ""
+                  },
+                  {
+                    "col": 4,
+                    "val": "123,23"
+                  },
+                  {
+                    "col": 5,
+                    "val": "10,00"
+                  },
+                  {
+                    "col": 6,
+                    "val": "12,32"
+                  },
+                  {
+                    "col": 7,
+                    "val": ""
+                  },
+                  {
+                    "col": 8,
+                    "val": ""
+                  },
+                  {
+                    "col": 9,
+                    "val": "169,89"
+                  }
+                ]
+              },
+              {
+                "index": 1,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": ""
+                  },
+                  {
+                    "col": 1,
+                    "val": ""
+                  },
+                  {
+                    "col": 2,
+                    "val": ""
+                  },
+                  {
+                    "col": 3,
+                    "val": ""
+                  },
+                  {
+                    "col": 4,
+                    "val": "33,02"
+                  },
+                  {
+                    "col": 5,
+                    "val": "4,00"
+                  },
+                  {
+                    "col": 6,
+                    "val": "1,32"
+                  },
+                  {
+                    "col": 7,
+                    "val": ""
+                  },
+                  {
+                    "col": 8,
+                    "val": ""
+                  },
+                  {
+                    "col": 9,
+                    "val": ""
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "tableIndex": 2,
+            "columnCount": 3,
+            "rowCount": 1,
+            "columns": [
+              {
+                "index": 0,
+                "name": "PES TOTAL"
+              },
+              {
+                "index": 1,
+                "name": "PAQUETS FRESC"
+              },
+              {
+                "index": 2,
+                "name": "PAQUETS SEC"
+              }
+            ],
+            "heuristics": {
+              "descColIndex": -1,
+              "qtyColIndex": -1,
+              "priceColIndex": -1,
+              "unitColIndex": -1
+            },
+            "sampleRows": [
+              {
+                "index": 0,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "12,74"
+                  },
+                  {
+                    "col": 1,
+                    "val": "0"
+                  },
+                  {
+                    "col": 2,
+                    "val": "2"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "candidates_generated": 0,
+        "break_at": "HEURISTIC_NO_DESC_COLUMN"
+      },
+      {
+        "invoice_id": "32b586bf-0b6c-4af0-a30a-f63d851d65da",
+        "supplier": "Abril",
+        "invoice_date": "2026-05-07",
+        "invoice_number": "A 2409",
+        "total_amount": 174.79,
+        "ext": "jpg",
+        "operative_lines": 3,
+        "extraction_id": "29a0bf98-3433-43c8-a048-416e022d7696",
+        "artifact_shape": "aiData_root",
+        "ocr_header": {
+          "fecha": "2026-05-07",
+          "numero": "A 2409",
+          "total": 174.79,
+          "proveedor": null
+        },
+        "table_metrics": {
+          "tables": 1,
+          "rows": 3,
+          "cells": 21
+        },
+        "table_analyses": [
+          {
+            "tableIndex": 0,
+            "columnCount": 7,
+            "rowCount": 3,
+            "columns": [
+              {
+                "index": 0,
+                "name": "COD"
+              },
+              {
+                "index": 1,
+                "name": "UNIT"
+              },
+              {
+                "index": 2,
+                "name": "QUILOS"
+              },
+              {
+                "index": 3,
+                "name": "ARTICLE"
+              },
+              {
+                "index": 4,
+                "name": "LOT"
+              },
+              {
+                "index": 5,
+                "name": "PREU"
+              },
+              {
+                "index": 6,
+                "name": "IMPORT"
+              }
+            ],
+            "heuristics": {
+              "descColIndex": -1,
+              "qtyColIndex": -1,
+              "priceColIndex": -1,
+              "unitColIndex": -1
+            },
+            "sampleRows": [
+              {
+                "index": 0,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "1011"
+                  },
+                  {
+                    "col": 1,
+                    "val": ""
+                  },
+                  {
+                    "col": 2,
+                    "val": "2,64"
+                  },
+                  {
+                    "col": 3,
+                    "val": "LLONGANISSA PAGES"
+                  },
+                  {
+                    "col": 4,
+                    "val": "0836"
+                  },
+                  {
+                    "col": 5,
+                    "val": "13,52"
+                  },
+                  {
+                    "col": 6,
+                    "val": "35,69"
+                  }
+                ]
+              },
+              {
+                "index": 1,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "1393"
+                  },
+                  {
+                    "col": 1,
+                    "val": "1"
+                  },
+                  {
+                    "col": 2,
+                    "val": "3,84"
+                  },
+                  {
+                    "col": 3,
+                    "val": "ESPATLLE CUITA EXTRA (11x11)"
+                  },
+                  {
+                    "col": 4,
+                    "val": "070526"
+                  },
+                  {
+                    "col": 5,
+                    "val": "5,95"
+                  },
+                  {
+                    "col": 6,
+                    "val": "22,85"
+                  }
+                ]
+              },
+              {
+                "index": 2,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "2796"
+                  },
+                  {
+                    "col": 1,
+                    "val": "1"
+                  },
+                  {
+                    "col": 2,
+                    "val": "2,60"
+                  },
+                  {
+                    "col": 3,
+                    "val": "CENTRO PALETA CEBO 50%"
+                  },
+                  {
+                    "col": 4,
+                    "val": "280525"
+                  },
+                  {
+                    "col": 5,
+                    "val": "38,60"
+                  },
+                  {
+                    "col": 6,
+                    "val": "100,36"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "candidates_generated": 0,
+        "break_at": "HEURISTIC_NO_DESC_COLUMN"
+      }
+    ],
+    "Hielo Fenix": [
+      {
+        "invoice_id": "49115b5a-e7b1-4b8b-9bf2-fe6e21702097",
+        "supplier": "Hielo Fenix",
+        "invoice_date": "2026-05-28",
+        "invoice_number": "DESCONOCIDO",
+        "total_amount": 28.75,
+        "ext": "jpg",
+        "operative_lines": 1,
+        "extraction_id": "baf9ae35-c57f-4189-8824-762cf3118b6f",
+        "artifact_shape": "aiData_root",
+        "ocr_header": {
+          "fecha": "2026-05-28",
+          "numero": null,
+          "total": 28.75,
+          "proveedor": null
+        },
+        "table_metrics": {
+          "tables": 1,
+          "rows": 5,
+          "cells": 20
+        },
+        "table_analyses": [
+          {
+            "tableIndex": 0,
+            "columnCount": 4,
+            "rowCount": 5,
+            "columns": [
+              {
+                "index": 0,
+                "name": "Lliurament"
+              },
+              {
+                "index": 1,
+                "name": "Producte"
+              },
+              {
+                "index": 2,
+                "name": "Preu"
+              },
+              {
+                "index": 3,
+                "name": "a cobrar"
+              }
+            ],
+            "heuristics": {
+              "descColIndex": -1,
+              "qtyColIndex": -1,
+              "priceColIndex": -1,
+              "unitColIndex": -1
+            },
+            "sampleRows": [
+              {
+                "index": 0,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": ""
+                  },
+                  {
+                    "col": 1,
+                    "val": "Bossa de 2 Kg. (40 g.)"
+                  },
+                  {
+                    "col": 2,
+                    "val": ""
+                  },
+                  {
+                    "col": 3,
+                    "val": ""
+                  }
+                ]
+              },
+              {
+                "index": 1,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": ""
+                  },
+                  {
+                    "col": 1,
+                    "val": "Bossa de 2 Kg. \"Hielitos\""
+                  },
+                  {
+                    "col": 2,
+                    "val": ""
+                  },
+                  {
+                    "col": 3,
+                    "val": ""
+                  }
+                ]
+              },
+              {
+                "index": 2,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "25"
+                  },
+                  {
+                    "col": 1,
+                    "val": "Bossa de 2 Kg. (60 g.)"
+                  },
+                  {
+                    "col": 2,
+                    "val": ""
+                  },
+                  {
+                    "col": 3,
+                    "val": "28,75"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "candidates_generated": 0,
+        "break_at": "HEURISTIC_NO_DESC_COLUMN"
+      },
+      {
+        "invoice_id": "397cca52-1abb-4aa4-8bc5-a3fbee1ff497",
+        "supplier": "Hielo Fenix",
+        "invoice_date": "2025-06-18",
+        "invoice_number": "DESCONOCIDO",
+        "total_amount": 28.45,
+        "ext": "jpg",
+        "operative_lines": 1,
+        "extraction_id": "31907992-e7ca-4e29-9ac4-70b349dccf95",
+        "artifact_shape": "aiData_root",
+        "ocr_header": {
+          "fecha": "2078-06-18",
+          "numero": null,
+          "total": null,
+          "proveedor": null
+        },
+        "table_metrics": {
+          "tables": 1,
+          "rows": 5,
+          "cells": 20
+        },
+        "table_analyses": [
+          {
+            "tableIndex": 0,
+            "columnCount": 4,
+            "rowCount": 5,
+            "columns": [
+              {
+                "index": 0,
+                "name": "Lliurament"
+              },
+              {
+                "index": 1,
+                "name": "Producte"
+              },
+              {
+                "index": 2,
+                "name": "Preu"
+              },
+              {
+                "index": 3,
+                "name": "a cobrar"
+              }
+            ],
+            "heuristics": {
+              "descColIndex": -1,
+              "qtyColIndex": -1,
+              "priceColIndex": -1,
+              "unitColIndex": -1
+            },
+            "sampleRows": [
+              {
+                "index": 0,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": ""
+                  },
+                  {
+                    "col": 1,
+                    "val": "Bossa de 2 Kg. (40 g.)"
+                  },
+                  {
+                    "col": 2,
+                    "val": ""
+                  },
+                  {
+                    "col": 3,
+                    "val": ""
+                  }
+                ]
+              },
+              {
+                "index": 1,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": ""
+                  },
+                  {
+                    "col": 1,
+                    "val": "Bossa de 2 Kg. \"Hielitos\""
+                  },
+                  {
+                    "col": 2,
+                    "val": ""
+                  },
+                  {
+                    "col": 3,
+                    "val": ""
+                  }
+                ]
+              },
+              {
+                "index": 2,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "25"
+                  },
+                  {
+                    "col": 1,
+                    "val": "Bossa de 2 Kg. (60 g.)"
+                  },
+                  {
+                    "col": 2,
+                    "val": "28.49"
+                  },
+                  {
+                    "col": 3,
+                    "val": ""
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "candidates_generated": 0,
+        "break_at": "HEURISTIC_NO_DESC_COLUMN"
+      }
+    ],
+    "Panabad": [
+      {
+        "invoice_id": "9669c907-0b08-4299-bda2-085995724d9f",
+        "supplier": "Panabad",
+        "invoice_date": "2026-06-05",
+        "invoice_number": "3083-213",
+        "total_amount": 243.61,
+        "ext": "jpg",
+        "operative_lines": 4,
+        "extraction_id": "b23d36b6-a6c6-436b-8015-a0f8405fff10",
+        "artifact_shape": "aiData_root",
+        "ocr_header": {
+          "fecha": "2026-06-05",
+          "numero": "3883.213",
+          "total": 257.55,
+          "proveedor": null
+        },
+        "table_metrics": {
+          "tables": 1,
+          "rows": 4,
+          "cells": 28
+        },
+        "table_analyses": [
+          {
+            "tableIndex": 0,
+            "columnCount": 7,
+            "rowCount": 4,
+            "columns": [
+              {
+                "index": 0,
+                "name": null
+              },
+              {
+                "index": 1,
+                "name": null
+              },
+              {
+                "index": 2,
+                "name": null
+              },
+              {
+                "index": 3,
+                "name": null
+              },
+              {
+                "index": 4,
+                "name": null
+              },
+              {
+                "index": 5,
+                "name": null
+              },
+              {
+                "index": 6,
+                "name": null
+              }
+            ],
+            "heuristics": {
+              "descColIndex": -1,
+              "qtyColIndex": -1,
+              "priceColIndex": -1,
+              "unitColIndex": -1
+            },
+            "sampleRows": [
+              {
+                "index": 0,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "17104016"
+                  },
+                  {
+                    "col": 1,
+                    "val": "CROISSANT 75 GR MANTEQUILLA FERMENTADO"
+                  },
+                  {
+                    "col": 2,
+                    "val": "Caja 55 u"
+                  },
+                  {
+                    "col": 3,
+                    "val": "1,000"
+                  },
+                  {
+                    "col": 4,
+                    "val": "CAJA"
+                  },
+                  {
+                    "col": 5,
+                    "val": "44,33"
+                  },
+                  {
+                    "col": 6,
+                    "val": "31,03"
+                  }
+                ]
+              },
+              {
+                "index": 1,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "1505126"
+                  },
+                  {
+                    "col": 1,
+                    "val": "BRIOCHE BURGER"
+                  },
+                  {
+                    "col": 2,
+                    "val": "40 uds."
+                  },
+                  {
+                    "col": 3,
+                    "val": "7,000"
+                  },
+                  {
+                    "col": 4,
+                    "val": "CAJA"
+                  },
+                  {
+                    "col": 5,
+                    "val": "32,87"
+                  },
+                  {
+                    "col": 6,
+                    "val": "142,65"
+                  }
+                ]
+              },
+              {
+                "index": 2,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "1530007"
+                  },
+                  {
+                    "col": 1,
+                    "val": "BOCATA MEDITERRANEO"
+                  },
+                  {
+                    "col": 2,
+                    "val": "60 Uds."
+                  },
+                  {
+                    "col": 3,
+                    "val": "1,000"
+                  },
+                  {
+                    "col": 4,
+                    "val": "CAJA"
+                  },
+                  {
+                    "col": 5,
+                    "val": "43,98"
+                  },
+                  {
+                    "col": 6,
+                    "val": "32,98"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "candidates_generated": 0,
+        "break_at": "HEURISTIC_NO_DESC_COLUMN"
+      }
+    ],
+    "Videla": [
+      {
+        "invoice_id": "4e3cbab4-1469-4f16-a21e-169c39b66636",
+        "supplier": "Videla",
+        "invoice_date": "2026-07-14",
+        "invoice_number": "CEN/07/2558/26",
+        "total_amount": 237.58,
+        "ext": "jpg",
+        "operative_lines": 4,
+        "extraction_id": "6a5ba609-6183-41a2-a403-f358198e5afe",
+        "artifact_shape": "aiData_root",
+        "ocr_header": {
+          "fecha": "2026-07-14",
+          "numero": "CEN/07/2558/26",
+          "total": 237.58,
+          "proveedor": null
+        },
+        "table_metrics": {
+          "tables": 1,
+          "rows": 7,
+          "cells": 35
+        },
+        "table_analyses": [
+          {
+            "tableIndex": 0,
+            "columnCount": 5,
+            "rowCount": 7,
+            "columns": [
+              {
+                "index": 0,
+                "name": null
+              },
+              {
+                "index": 1,
+                "name": "%Iva"
+              },
+              {
+                "index": 2,
+                "name": "Unidades"
+              },
+              {
+                "index": 3,
+                "name": "Precio"
+              },
+              {
+                "index": 4,
+                "name": "Importe"
+              }
+            ],
+            "heuristics": {
+              "descColIndex": -1,
+              "qtyColIndex": 2,
+              "priceColIndex": 3,
+              "unitColIndex": -1
+            },
+            "sampleRows": [
+              {
+                "index": 0,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "TERNERA MASA HAMBURGUESA"
+                  },
+                  {
+                    "col": 1,
+                    "val": "10"
+                  },
+                  {
+                    "col": 2,
+                    "val": ""
+                  },
+                  {
+                    "col": 3,
+                    "val": ""
+                  },
+                  {
+                    "col": 4,
+                    "val": ""
+                  }
+                ]
+              },
+              {
+                "index": 1,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": ""
+                  },
+                  {
+                    "col": 1,
+                    "val": ""
+                  },
+                  {
+                    "col": 2,
+                    "val": "2,11 KG"
+                  },
+                  {
+                    "col": 3,
+                    "val": "9,99"
+                  },
+                  {
+                    "col": 4,
+                    "val": "21,08"
+                  }
+                ]
+              },
+              {
+                "index": 2,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "CALAMAR CONG. Calamar o Calamar patagónico o calamar del Perú o chipirón o chipirón patagónico o chi"
+                  },
+                  {
+                    "col": 1,
+                    "val": "10"
+                  },
+                  {
+                    "col": 2,
+                    "val": "2,00 BU"
+                  },
+                  {
+                    "col": 3,
+                    "val": "10,40 KG 9,75"
+                  },
+                  {
+                    "col": 4,
+                    "val": "101,40"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "candidates_generated": 0,
+        "break_at": "HEURISTIC_NO_DESC_COLUMN"
+      }
+    ],
+    "Otros": [
+      {
+        "invoice_id": "aba553d9-bee3-4116-acaf-0c4e9a335a59",
+        "supplier": "Otros",
+        "invoice_date": "2026-07-17",
+        "invoice_number": "1/0002321",
+        "total_amount": 1661,
+        "ext": "jpg",
+        "operative_lines": 8,
+        "extraction_id": "5fbb27d4-49b4-4c27-97f7-b8bad17169bb",
+        "artifact_shape": "aiData_root",
+        "ocr_header": {
+          "fecha": "2026-07-17",
+          "numero": "1/0002321",
+          "total": 1661,
+          "proveedor": null
+        },
+        "table_metrics": {
+          "tables": 1,
+          "rows": 8,
+          "cells": 40
+        },
+        "table_analyses": [
+          {
+            "tableIndex": 0,
+            "columnCount": 5,
+            "rowCount": 8,
+            "columns": [
+              {
+                "index": 0,
+                "name": "Unitats"
+              },
+              {
+                "index": 1,
+                "name": "Article"
+              },
+              {
+                "index": 2,
+                "name": "Iva"
+              },
+              {
+                "index": 3,
+                "name": "Preu"
+              },
+              {
+                "index": 4,
+                "name": "Total"
+              }
+            ],
+            "heuristics": {
+              "descColIndex": -1,
+              "qtyColIndex": -1,
+              "priceColIndex": -1,
+              "unitColIndex": -1
+            },
+            "sampleRows": [
+              {
+                "index": 0,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "2"
+                  },
+                  {
+                    "col": 1,
+                    "val": "Yucca rostata"
+                  },
+                  {
+                    "col": 2,
+                    "val": "10%"
+                  },
+                  {
+                    "col": 3,
+                    "val": "159,50 €"
+                  },
+                  {
+                    "col": 4,
+                    "val": "319,00 €"
+                  }
+                ]
+              },
+              {
+                "index": 1,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "1"
+                  },
+                  {
+                    "col": 1,
+                    "val": "Chamaerops"
+                  },
+                  {
+                    "col": 2,
+                    "val": "10%"
+                  },
+                  {
+                    "col": 3,
+                    "val": "142,80 €"
+                  },
+                  {
+                    "col": 4,
+                    "val": "142,80 €"
+                  }
+                ]
+              },
+              {
+                "index": 2,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "2"
+                  },
+                  {
+                    "col": 1,
+                    "val": "Cyca"
+                  },
+                  {
+                    "col": 2,
+                    "val": "10%"
+                  },
+                  {
+                    "col": 3,
+                    "val": "220,00 €"
+                  },
+                  {
+                    "col": 4,
+                    "val": "440,00 €"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "candidates_generated": 0,
+        "break_at": "HEURISTIC_NO_DESC_COLUMN"
+      },
+      {
+        "invoice_id": "efee0fb8-3192-4b41-8685-9a88c3ec6bda",
+        "supplier": "Otros",
+        "invoice_date": "2026-07-20",
+        "invoice_number": "00000005",
+        "total_amount": 114.27,
+        "ext": "jpg",
+        "operative_lines": 14,
+        "extraction_id": "816b1c56-de81-4f42-b8c6-02bfe662a53c",
+        "artifact_shape": "aiData_root",
+        "ocr_header": {
+          "fecha": "2026-07-29",
+          "numero": null,
+          "total": 114.27,
+          "proveedor": null
+        },
+        "table_metrics": {
+          "tables": 1,
+          "rows": 14,
+          "cells": 42
+        },
+        "table_analyses": [
+          {
+            "tableIndex": 0,
+            "columnCount": 3,
+            "rowCount": 14,
+            "columns": [
+              {
+                "index": 0,
+                "name": null
+              },
+              {
+                "index": 1,
+                "name": null
+              },
+              {
+                "index": 2,
+                "name": "EUR"
+              }
+            ],
+            "heuristics": {
+              "descColIndex": -1,
+              "qtyColIndex": -1,
+              "priceColIndex": -1,
+              "unitColIndex": -1
+            },
+            "sampleRows": [
+              {
+                "index": 0,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "RECANVI AMBIENTADOR"
+                  },
+                  {
+                    "col": 1,
+                    "val": "1,69x 3"
+                  },
+                  {
+                    "col": 2,
+                    "val": "5,07 C"
+                  }
+                ]
+              },
+              {
+                "index": 1,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "SAND. CHICKEN ROYAL"
+                  },
+                  {
+                    "col": 1,
+                    "val": ""
+                  },
+                  {
+                    "col": 2,
+                    "val": "2,99 B"
+                  }
+                ]
+              },
+              {
+                "index": 2,
+                "cells": [
+                  {
+                    "col": 0,
+                    "val": "ARCS DENTALS"
+                  },
+                  {
+                    "col": 1,
+                    "val": ""
+                  },
+                  {
+                    "col": 2,
+                    "val": "1,69 C"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "candidates_generated": 0,
+        "break_at": "HEURISTIC_NO_DESC_COLUMN"
+      }
+    ]
+  }
+}

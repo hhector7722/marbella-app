@@ -1,0 +1,2643 @@
+{
+  "event": "DRY_RUN_HEURISTICS_V4",
+  "mode": "artifact-replay-readonly",
+  "note": "Replay raw_json_artifact; no Gemini; no WRITE. Matcher untouched. Prefer Descripción>Artículo; Lote: embebido no invalida producto.",
+  "invoices_processed": 164,
+  "totals_all_164": {
+    "candidates": 1284,
+    "MATCH": 1079,
+    "AMBIGUOUS": 91,
+    "NO_MATCH": 114,
+    "provenance_potential": 1079,
+    "zero_candidate_invoices": 4
+  },
+  "mass_148_vs_old_heuristics_ab": {
+    "old_candidates": 926,
+    "new_candidates": 1093,
+    "old_MATCH": 831,
+    "new_MATCH": 929,
+    "delta_MATCH": 98,
+    "old_AMBIGUOUS": 55,
+    "new_AMBIGUOUS": 59,
+    "old_NO_MATCH": 40,
+    "new_NO_MATCH": 105,
+    "invoices_with_match_regression": 0,
+    "match_regression_sample": []
+  },
+  "mass_148_comparison_to_baseline_report": {
+    "before": {
+      "candidates": 926,
+      "matches": 827,
+      "ambiguous": 59,
+      "no_match": 40
+    },
+    "after": {
+      "candidates": 1093,
+      "matches": 929,
+      "ambiguous": 59,
+      "no_match": 105
+    },
+    "delta": {
+      "candidates": 167,
+      "MATCH": 102,
+      "AMBIGUOUS": 0,
+      "NO_MATCH": 65
+    }
+  },
+  "group_a_29": {
+    "before_zero": 29,
+    "now_with_candidates": 27,
+    "still_zero": 2,
+    "new_matches_from_group_a": 93,
+    "new_ambiguous_from_group_a": 9,
+    "new_nomatch_from_group_a": 18,
+    "detail": [
+      {
+        "invoice_id": "397cca52-1abb-4aa4-8bc5-a3fbee1ff497",
+        "supplier": "Hielo Fenix",
+        "before": 0,
+        "after": 3,
+        "matches_after": 1,
+        "ambiguous_after": 0,
+        "no_match_after": 2,
+        "motivo": "header:header:producte",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "headers": [
+              "Lliurament",
+              "Producte",
+              "Preu",
+              "a cobrar"
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "Bossa de 2 Kg. (40 g.)",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "Bossa de 2 Kg. \"Hielitos\"",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "Bossa de 2 Kg. (60 g.)",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "quantity": null,
+            "unitPrice": 28.49
+          }
+        ]
+      },
+      {
+        "invoice_id": "18231ea0-4c8b-4fc2-9584-434e17585778",
+        "supplier": "Abril",
+        "before": 0,
+        "after": 3,
+        "matches_after": 2,
+        "ambiguous_after": 1,
+        "no_match_after": 0,
+        "motivo": "header:header:article",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "headers": [
+              "COD",
+              "UNIT",
+              "QUILOS",
+              "ARTICLE",
+              "LOT",
+              "PREU",
+              "IMPORT"
+            ]
+          },
+          {
+            "tableIndex": 1,
+            "descColIndex": -1,
+            "descSource": "none",
+            "descConfidence": 0,
+            "descReason": null,
+            "headers": [
+              "SUB TOTAL",
+              "%",
+              "P.P",
+              "D.S",
+              "BASE",
+              "%",
+              "IVA",
+              "%",
+              "R.EQUIV",
+              "TOTAL"
+            ]
+          },
+          {
+            "tableIndex": 2,
+            "descColIndex": -1,
+            "descSource": "none",
+            "descConfidence": 0,
+            "descReason": null,
+            "headers": [
+              "PES TOTAL",
+              "PAQUETS FRESC",
+              "PAQUETS SEC"
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "ESPATLLLE CUITA EXTRA (11x11)",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 7.6,
+            "unitPrice": 5.65
+          },
+          {
+            "description": "QUESO SEMI-CURAT capricho castellano",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 3.06,
+            "unitPrice": 10.79
+          },
+          {
+            "description": "CENTRO PALETA CEBO 50%",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 2.08,
+            "unitPrice": 38.6
+          }
+        ]
+      },
+      {
+        "invoice_id": "32b586bf-0b6c-4af0-a30a-f63d851d65da",
+        "supplier": "Abril",
+        "before": 0,
+        "after": 3,
+        "matches_after": 3,
+        "ambiguous_after": 0,
+        "no_match_after": 0,
+        "motivo": "header:header:article",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "headers": [
+              "COD",
+              "UNIT",
+              "QUILOS",
+              "ARTICLE",
+              "LOT",
+              "PREU",
+              "IMPORT"
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "LLONGANISSA PAGES",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 2.64,
+            "unitPrice": 13.52
+          },
+          {
+            "description": "ESPATLLE CUITA EXTRA (11x11)",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 3.84,
+            "unitPrice": 5.95
+          },
+          {
+            "description": "CENTRO PALETA CEBO 50%",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 2.6,
+            "unitPrice": 38.6
+          }
+        ]
+      },
+      {
+        "invoice_id": "0e9e7cf1-988d-444b-9895-cec44340a252",
+        "supplier": "Nestle",
+        "before": 0,
+        "after": 9,
+        "matches_after": 9,
+        "ambiguous_after": 0,
+        "no_match_after": 0,
+        "motivo": "inferida:contenido_descriptivo_9/9_filas_ratio_1.00_avgLen_24",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_9/9_filas_ratio_1.00_avgLen_24",
+            "headers": [
+              null,
+              null,
+              "Cantidad",
+              "Precio",
+              "%Dto",
+              "Importe",
+              null,
+              null
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "PIRULO TROPICALN1 20x70ml",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_9/9_filas_ratio_1.00_avgLen_24",
+            "quantity": 1,
+            "unitPrice": 27
+          },
+          {
+            "description": "PIR FANTASMIKOS NS 18X75",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_9/9_filas_ratio_1.00_avgLen_24",
+            "quantity": 1,
+            "unitPrice": 24.84
+          },
+          {
+            "description": "PIRL COOL LIMON N3 24X99",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_9/9_filas_ratio_1.00_avgLen_24",
+            "quantity": 1,
+            "unitPrice": 32.4
+          },
+          {
+            "description": "PIR COOL FRESA N3 24X99ML",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_9/9_filas_ratio_1.00_avgLen_24",
+            "quantity": 1,
+            "unitPrice": 32.4
+          },
+          {
+            "description": "EXTR VAINILLA N4 16X120ML",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_9/9_filas_ratio_1.00_avgLen_24",
+            "quantity": 1,
+            "unitPrice": 28.32
+          },
+          {
+            "description": "EXTR DOBLE CHON2 16X120ML",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_9/9_filas_ratio_1.00_avgLen_24",
+            "quantity": 1,
+            "unitPrice": 28.32
+          },
+          {
+            "description": "MAXIBON CLASIC N5 24X140",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_9/9_filas_ratio_1.00_avgLen_24",
+            "quantity": 1,
+            "unitPrice": 49.68
+          },
+          {
+            "description": "MDLZ BB OREO 20X90ML",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_9/9_filas_ratio_1.00_avgLen_24",
+            "quantity": 1,
+            "unitPrice": 42.4
+          },
+          {
+            "description": "MDLZ SNDW OREO 24X110",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_9/9_filas_ratio_1.00_avgLen_24",
+            "quantity": 1,
+            "unitPrice": 51.6
+          }
+        ]
+      },
+      {
+        "invoice_id": "fefc24ae-ef18-4ef6-b953-a40e1b866a56",
+        "supplier": "Abril",
+        "before": 0,
+        "after": 4,
+        "matches_after": 3,
+        "ambiguous_after": 1,
+        "no_match_after": 0,
+        "motivo": "header:header:article",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "headers": [
+              "COD",
+              "UNIT",
+              "QUILOS",
+              "ARTICLE",
+              "LOT",
+              "PREU",
+              "IMPORT"
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "LLONGANISSA PAGES",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 2.94,
+            "unitPrice": 13.52
+          },
+          {
+            "description": "ESPATLLLE CUITA EXTRA (11x11)",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 3.82,
+            "unitPrice": 5.95
+          },
+          {
+            "description": "QUESO SEMI-CURAT capricho castellano",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 3.16,
+            "unitPrice": 10.79
+          },
+          {
+            "description": "CENTRO PALETA CEBO 50%",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 2.26,
+            "unitPrice": 38.6
+          }
+        ]
+      },
+      {
+        "invoice_id": "dc150a86-9793-460c-847d-5f270d47454a",
+        "supplier": "Nestle",
+        "before": 0,
+        "after": 10,
+        "matches_after": 4,
+        "ambiguous_after": 4,
+        "no_match_after": 2,
+        "motivo": "inferida:contenido_descriptivo_10/10_filas_ratio_1.00_avgLen_35",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 2,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_10/10_filas_ratio_1.00_avgLen_35",
+            "headers": [
+              null,
+              "Cantidad",
+              null,
+              "Precio",
+              "%Dto",
+              "Importe",
+              null
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "PIR FANTASNIKOS N5 18X75",
+            "descColumnIndex": 2,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_10/10_filas_ratio_1.00_avgLen_35",
+            "quantity": 1,
+            "unitPrice": 24.84
+          },
+          {
+            "description": "NUII CRM AUSTRAL.N4 20X90",
+            "descColumnIndex": 2,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_10/10_filas_ratio_1.00_avgLen_35",
+            "quantity": 1,
+            "unitPrice": 45.4
+          },
+          {
+            "description": "NUII PISTACHO 20X90ML",
+            "descColumnIndex": 2,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_10/10_filas_ratio_1.00_avgLen_35",
+            "quantity": 1,
+            "unitPrice": 45.4
+          },
+          {
+            "description": "NUII ALM.JAVA N5 20X90",
+            "descColumnIndex": 2,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_10/10_filas_ratio_1.00_avgLen_35",
+            "quantity": 1,
+            "unitPrice": 45.4
+          },
+          {
+            "description": "CHOCOCACK N2 24X90ML",
+            "descColumnIndex": 2,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_10/10_filas_ratio_1.00_avgLen_35",
+            "quantity": 1,
+            "unitPrice": 34.08
+          },
+          {
+            "description": "PIRL COOL LIMON N3 24X99",
+            "descColumnIndex": 2,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_10/10_filas_ratio_1.00_avgLen_35",
+            "quantity": 1,
+            "unitPrice": 32.4
+          },
+          {
+            "description": "PIR COOL FRESA N3 24X99ML",
+            "descColumnIndex": 2,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_10/10_filas_ratio_1.00_avgLen_35",
+            "quantity": 2,
+            "unitPrice": 32.4
+          },
+          {
+            "description": "EXTR DOBLE CHON2 16x120ML",
+            "descColumnIndex": 2,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_10/10_filas_ratio_1.00_avgLen_35",
+            "quantity": 1,
+            "unitPrice": 28.32
+          },
+          {
+            "description": "MAXIBON CLASIC N5 24X140",
+            "descColumnIndex": 2,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_10/10_filas_ratio_1.00_avgLen_35",
+            "quantity": 1,
+            "unitPrice": 49.68
+          },
+          {
+            "description": "MDLZ BB OREO 20X90ML",
+            "descColumnIndex": 2,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_10/10_filas_ratio_1.00_avgLen_35",
+            "quantity": 1,
+            "unitPrice": 42.4
+          }
+        ]
+      },
+      {
+        "invoice_id": "3e620cd9-f334-43f1-8ed0-412debe2e778",
+        "supplier": "Nestle",
+        "before": 0,
+        "after": 7,
+        "matches_after": 7,
+        "ambiguous_after": 0,
+        "no_match_after": 0,
+        "motivo": "inferida:contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+            "headers": [
+              "Cantidad",
+              null,
+              "Precio",
+              "%Dto",
+              "Importe",
+              null
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "PIRULO TROPICALN1 20x70ml",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+            "quantity": 310276861,
+            "unitPrice": 27
+          },
+          {
+            "description": "PIR FANTASMIKOS N5 18X75",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+            "quantity": 310154962,
+            "unitPrice": 24.84
+          },
+          {
+            "description": "NUII CRM AUSTRAL.N4 20X90",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+            "quantity": 310279161,
+            "unitPrice": 45.4
+          },
+          {
+            "description": "PIRL COOL LIMON N3 24X99",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+            "quantity": 310244781,
+            "unitPrice": 32.4
+          },
+          {
+            "description": "MAXIBON CLASIC N5 24X140",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+            "quantity": 310262531,
+            "unitPrice": 49.68
+          },
+          {
+            "description": "MDLZ BB OREO 20X90ML",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+            "quantity": 310226791,
+            "unitPrice": 42.4
+          },
+          {
+            "description": "MDLZ SNDW OREO 24X110",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+            "quantity": 310264351,
+            "unitPrice": 51.6
+          }
+        ]
+      },
+      {
+        "invoice_id": "860de1f4-79be-4fe7-a619-f482993b5ed2",
+        "supplier": "Abril",
+        "before": 0,
+        "after": 4,
+        "matches_after": 3,
+        "ambiguous_after": 1,
+        "no_match_after": 0,
+        "motivo": "header:header:article",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "headers": [
+              "COD",
+              "UNIT",
+              "QUILOS",
+              "ARTICLE",
+              "LOT",
+              "PREU",
+              "IMPORT"
+            ]
+          },
+          {
+            "tableIndex": 1,
+            "descColIndex": -1,
+            "descSource": "none",
+            "descConfidence": 0,
+            "descReason": null,
+            "headers": [
+              "SUB TOTAL",
+              "%",
+              "P.P.",
+              "D.S.",
+              "BASE",
+              "%",
+              "I.V.A.",
+              "%",
+              "R.EQUIV",
+              "TOTAL"
+            ]
+          },
+          {
+            "tableIndex": 2,
+            "descColIndex": -1,
+            "descSource": "none",
+            "descConfidence": 0,
+            "descReason": null,
+            "headers": [
+              "PES TOTAL",
+              "PAQUETS FRESC",
+              "PAQUETS SEC"
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "LLONGANISSA PAGES",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 3.21,
+            "unitPrice": 13.52
+          },
+          {
+            "description": "ESPATLLLE CUITA EXTRA (11x11)",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 7.6,
+            "unitPrice": 5.65
+          },
+          {
+            "description": "QUESO SEMI-CURAT capricho castellano",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 6.59,
+            "unitPrice": 10.79
+          },
+          {
+            "description": "CENTRE PERNIL.C/V",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 6.19,
+            "unitPrice": 14.33
+          }
+        ]
+      },
+      {
+        "invoice_id": "49115b5a-e7b1-4b8b-9bf2-fe6e21702097",
+        "supplier": "Hielo Fenix",
+        "before": 0,
+        "after": 3,
+        "matches_after": 1,
+        "ambiguous_after": 0,
+        "no_match_after": 2,
+        "motivo": "header:header:producte",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "headers": [
+              "Lliurament",
+              "Producte",
+              "Preu",
+              "a cobrar"
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "Bossa de 2 Kg. (40 g.)",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "Bossa de 2 Kg. \"Hielitos\"",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "Bossa de 2 Kg. (60 g.)",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "quantity": null,
+            "unitPrice": null
+          }
+        ]
+      },
+      {
+        "invoice_id": "f55094a9-97c0-4d4f-93fc-c97322b05fbb",
+        "supplier": "Abril",
+        "before": 0,
+        "after": 2,
+        "matches_after": 2,
+        "ambiguous_after": 0,
+        "no_match_after": 0,
+        "motivo": "header:header:article",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "headers": [
+              "COD",
+              "UNIT",
+              "QUILOS",
+              "ARTICLE",
+              "LOT",
+              "PREU",
+              "IMPORT"
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "LLONGANISSA PAGES",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 3.21,
+            "unitPrice": 13.52
+          },
+          {
+            "description": "CENTRE PERNIL C/V",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 5.53,
+            "unitPrice": 14.33
+          }
+        ]
+      },
+      {
+        "invoice_id": "bb1e116b-c316-434b-90c8-6007d41ec0b6",
+        "supplier": "Nestle",
+        "before": 0,
+        "after": 7,
+        "matches_after": 5,
+        "ambiguous_after": 2,
+        "no_match_after": 0,
+        "motivo": "inferida:contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+            "headers": [
+              "Cantidad",
+              null,
+              "Precio",
+              "%Dto",
+              "Importe",
+              null
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "PIRULO TROPICALN1 20x70ml",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+            "quantity": 310276863,
+            "unitPrice": 27
+          },
+          {
+            "description": "RIR FANTASMIKOS N5 18x75",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+            "quantity": 310154963,
+            "unitPrice": 24.84
+          },
+          {
+            "description": "NUIT ALM. JAVA N5 20x90",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+            "quantity": 310281192,
+            "unitPrice": 45.4
+          },
+          {
+            "description": "PIRL COOL LIMON N3 24x99",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+            "quantity": 310244783,
+            "unitPrice": 32.4
+          },
+          {
+            "description": "PIR COOL FRESA N3 24x99ML",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+            "quantity": 310245213,
+            "unitPrice": 32.4
+          },
+          {
+            "description": "MAXIBON CLASIC N5 24x140",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+            "quantity": 310262533,
+            "unitPrice": 49.68
+          },
+          {
+            "description": "HOLZ SNOW OREO 24x110",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+            "quantity": 310264352,
+            "unitPrice": 51.6
+          }
+        ]
+      },
+      {
+        "invoice_id": "9669c907-0b08-4299-bda2-085995724d9f",
+        "supplier": "Panabad",
+        "before": 0,
+        "after": 4,
+        "matches_after": 4,
+        "ambiguous_after": 0,
+        "no_match_after": 0,
+        "motivo": "inferida:contenido_descriptivo_4/4_filas_ratio_1.00_avgLen_25",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 0.98,
+            "descReason": "contenido_descriptivo_4/4_filas_ratio_1.00_avgLen_25",
+            "headers": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "CROISSANT 75 GR MANTEQUILLA FERMENTADO",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 0.98,
+            "descReason": "contenido_descriptivo_4/4_filas_ratio_1.00_avgLen_25",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "BRIOCHE BURGER",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 0.98,
+            "descReason": "contenido_descriptivo_4/4_filas_ratio_1.00_avgLen_25",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "BOCATA MEDITERRANEO",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 0.98,
+            "descReason": "contenido_descriptivo_4/4_filas_ratio_1.00_avgLen_25",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "CROISSANT BOMBON FERMENTADO",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 0.98,
+            "descReason": "contenido_descriptivo_4/4_filas_ratio_1.00_avgLen_25",
+            "quantity": null,
+            "unitPrice": null
+          }
+        ]
+      },
+      {
+        "invoice_id": "c10d3026-898c-4b52-bee5-3ac0ff9970dd",
+        "supplier": "Hielo Fenix",
+        "before": 0,
+        "after": 3,
+        "matches_after": 1,
+        "ambiguous_after": 0,
+        "no_match_after": 2,
+        "motivo": "header:header:producte",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "headers": [
+              "Lliurament",
+              "Producte",
+              "Preu",
+              "a cobrar"
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "Bossa de 2 Kg. (40 g.)",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "Bossa de 2 Kg. \"Hielitos\"",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "Bossa de 2 Kg. (60 g.)",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "quantity": null,
+            "unitPrice": null
+          }
+        ]
+      },
+      {
+        "invoice_id": "ec25da4e-08c2-4a0e-a951-39ad4387eceb",
+        "supplier": "Abril",
+        "before": 0,
+        "after": 2,
+        "matches_after": 2,
+        "ambiguous_after": 0,
+        "no_match_after": 0,
+        "motivo": "header:header:article",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "headers": [
+              "COD",
+              "UNIT",
+              "QUILOS",
+              "ARTICLE",
+              "LOT",
+              "PREU",
+              "IMPORT"
+            ]
+          },
+          {
+            "tableIndex": 1,
+            "descColIndex": -1,
+            "descSource": "none",
+            "descConfidence": 0,
+            "descReason": null,
+            "headers": [
+              "SUB TOTAL",
+              null,
+              "P.P",
+              "D.S",
+              "BASE",
+              "%",
+              "I.V.A",
+              "%",
+              "R.EQUIV",
+              "TOTAL"
+            ]
+          },
+          {
+            "tableIndex": 2,
+            "descColIndex": -1,
+            "descSource": "none",
+            "descConfidence": 0,
+            "descReason": null,
+            "headers": [
+              "PES TOTAL",
+              "PAQUETS FRESC",
+              "PAQUETS SEC"
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "LLONGANISSA PAGES",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 3.22,
+            "unitPrice": 13.52
+          },
+          {
+            "description": "ESPATLLE CUITA EXTRA (11x11)",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 3.86,
+            "unitPrice": 5.95
+          }
+        ]
+      },
+      {
+        "invoice_id": "3e2f184a-7313-45f9-a03a-a3082bb6c6ea",
+        "supplier": "Abril",
+        "before": 0,
+        "after": 1,
+        "matches_after": 1,
+        "ambiguous_after": 0,
+        "no_match_after": 0,
+        "motivo": "header:header:article",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "headers": [
+              "COD",
+              "UNIT",
+              "QUILOS",
+              "ARTICLE",
+              "LOT",
+              "PREU",
+              "IMPORT"
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "ESPATLLE CUITA EXTRA (11x11)",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 3.72,
+            "unitPrice": 5.95
+          }
+        ]
+      },
+      {
+        "invoice_id": "fdb30e8b-12d0-445a-b252-61a5d362d613",
+        "supplier": "Hielo Fenix",
+        "before": 0,
+        "after": 3,
+        "matches_after": 1,
+        "ambiguous_after": 0,
+        "no_match_after": 2,
+        "motivo": "header:header:producte",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "headers": [
+              "Lliurament",
+              "Producte",
+              "Preu",
+              "a cobrar"
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "Bossa de 2 Kg. (40 g.)",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "Bossa de 2 Kg. \"Hielitos\"",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "Bossa de 2 Kg. (60 g.)",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "quantity": null,
+            "unitPrice": 5.75
+          }
+        ]
+      },
+      {
+        "invoice_id": "04fce116-13b3-40ff-a142-6c02324869eb",
+        "supplier": "Abril",
+        "before": 0,
+        "after": 2,
+        "matches_after": 2,
+        "ambiguous_after": 0,
+        "no_match_after": 0,
+        "motivo": "header:header:article",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "headers": [
+              "COD",
+              "UNIT.",
+              "QUILOS",
+              "ARTICLE",
+              "LOT",
+              "PREU",
+              "IMPORT"
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "LLONGANISSA PAGES",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 2.97,
+            "unitPrice": 13.52
+          },
+          {
+            "description": "ESPATLLE CUITA EXTRA (11x11)",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 3.76,
+            "unitPrice": 5.95
+          }
+        ]
+      },
+      {
+        "invoice_id": "39390ec2-f125-4aa5-94bd-f69ef3d70af8",
+        "supplier": "Nestle",
+        "before": 0,
+        "after": 0,
+        "matches_after": 0,
+        "ambiguous_after": 0,
+        "no_match_after": 0,
+        "motivo": "sigue_0",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": -1,
+            "descSource": "none",
+            "descConfidence": 0,
+            "descReason": null,
+            "headers": [
+              null,
+              "Cantidad",
+              null,
+              "Precio",
+              "%Dto",
+              "Importe",
+              null
+            ]
+          }
+        ],
+        "newCandidates": []
+      },
+      {
+        "invoice_id": "ac6d83af-5d4b-4e27-98c5-30073fcd252e",
+        "supplier": "Abril",
+        "before": 0,
+        "after": 4,
+        "matches_after": 4,
+        "ambiguous_after": 0,
+        "no_match_after": 0,
+        "motivo": "header:header:article",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "headers": [
+              "COD",
+              "UNIT",
+              "QUILOS",
+              "ARTICLE",
+              "LOT",
+              "PREU",
+              "IMPORT"
+            ]
+          },
+          {
+            "tableIndex": 1,
+            "descColIndex": -1,
+            "descSource": "none",
+            "descConfidence": 0,
+            "descReason": null,
+            "headers": [
+              "SUB TOTAL",
+              "%",
+              "P.P",
+              "D.S",
+              "BASE",
+              "%",
+              "I.V.A",
+              "%",
+              "R.EQUIV",
+              "TOTAL"
+            ]
+          },
+          {
+            "tableIndex": 2,
+            "descColIndex": -1,
+            "descSource": "none",
+            "descConfidence": 0,
+            "descReason": null,
+            "headers": [
+              "PES TOTAL",
+              "PAQUETS FRESC",
+              "PAQUETS SEC"
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "LLONGANISSA PAGES",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 3.14,
+            "unitPrice": 13.52
+          },
+          {
+            "description": "ESPATLLE CUITA EXTRA (11x11)",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 3.7,
+            "unitPrice": 5.95
+          },
+          {
+            "description": "QUESO SEMI-CURAT capricho castellano",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 3.32,
+            "unitPrice": 10.79
+          },
+          {
+            "description": "CENTRE PERNIL.C/V",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 6.7,
+            "unitPrice": 14.33
+          }
+        ]
+      },
+      {
+        "invoice_id": "13a5feef-42eb-4f5a-b633-b77f03fc2f97",
+        "supplier": "Nestle",
+        "before": 0,
+        "after": 0,
+        "matches_after": 0,
+        "ambiguous_after": 0,
+        "no_match_after": 0,
+        "motivo": "sigue_0",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": -1,
+            "descSource": "none",
+            "descConfidence": 0,
+            "descReason": null,
+            "headers": [
+              null,
+              "Cantidad",
+              null,
+              "Precio",
+              "%Dto",
+              "Importe",
+              null
+            ]
+          }
+        ],
+        "newCandidates": []
+      },
+      {
+        "invoice_id": "0d8a968d-5f64-4691-8fd1-283a8c367843",
+        "supplier": "Hielo Fenix",
+        "before": 0,
+        "after": 3,
+        "matches_after": 1,
+        "ambiguous_after": 0,
+        "no_match_after": 2,
+        "motivo": "header:header:producte",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "headers": [
+              "Lliurament",
+              "Producte",
+              "Preu",
+              "a cobrar"
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "Bossa de 2 Kg. (40 g.)",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "Bossa de 2 Kg. \"Hielitos\"",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "Bossa de 2 Kg. (60 g.)",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "quantity": null,
+            "unitPrice": null
+          }
+        ]
+      },
+      {
+        "invoice_id": "3a3c787f-28ae-4445-8056-76e79893c008",
+        "supplier": "Abril",
+        "before": 0,
+        "after": 2,
+        "matches_after": 2,
+        "ambiguous_after": 0,
+        "no_match_after": 0,
+        "motivo": "header:header:article",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "headers": [
+              "COD",
+              "UNIT",
+              "QUILOS",
+              "ARTICLE",
+              "LOT",
+              "PREU",
+              "IMPORT"
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "ESPATLLE CUITA EXTRA (11x11)",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 3.76,
+            "unitPrice": 5.95
+          },
+          {
+            "description": "CENTRO PALETA CEBO 50%",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 2.92,
+            "unitPrice": 41.2
+          }
+        ]
+      },
+      {
+        "invoice_id": "9c045f60-b11f-455e-95ae-03153c61de18",
+        "supplier": "Nestle",
+        "before": 0,
+        "after": 7,
+        "matches_after": 7,
+        "ambiguous_after": 0,
+        "no_match_after": 0,
+        "motivo": "inferida:contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_36",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_36",
+            "headers": [
+              "Cantidad",
+              null,
+              "Precio",
+              "%Dto",
+              "Importe"
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "PIRULO TROPICALN1 20x70ml",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_36",
+            "quantity": 310276861,
+            "unitPrice": 27
+          },
+          {
+            "description": "PIR FANTASMIKOS N5 18X75",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_36",
+            "quantity": 310154961,
+            "unitPrice": 24.84
+          },
+          {
+            "description": "NUII ALM.JAVA N5 20X90",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_36",
+            "quantity": 310281191,
+            "unitPrice": 45.4
+          },
+          {
+            "description": "PIRL COOL LIMON N3 24X99",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_36",
+            "quantity": 310244781,
+            "unitPrice": 32.4
+          },
+          {
+            "description": "PIR COOL FRESA N3 24X99ML",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_36",
+            "quantity": 310245211,
+            "unitPrice": 32.4
+          },
+          {
+            "description": "MAXIBON CLASIC N5 24X140",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_36",
+            "quantity": 310262531,
+            "unitPrice": 49.68
+          },
+          {
+            "description": "MDLZ SNDW OREO N1 24X110",
+            "descColumnIndex": 1,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_36",
+            "quantity": 310280551,
+            "unitPrice": 51.6
+          }
+        ]
+      },
+      {
+        "invoice_id": "92259c4a-b4b3-46ef-a484-6607fad80f1a",
+        "supplier": "Hielo Fenix",
+        "before": 0,
+        "after": 4,
+        "matches_after": 0,
+        "ambiguous_after": 0,
+        "no_match_after": 4,
+        "motivo": "header:header:producte",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "headers": [
+              "Lliurament",
+              "Producte",
+              "Preu",
+              "a cobrar"
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "Bossa de 2 Kg. (40 g.)",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "Bossa de 2 Kg. \"Hielitos\"",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "Bossa de 2 Kg. (60 g.)",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "TOTAL 10% I.V.A. inclòs",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "quantity": null,
+            "unitPrice": null
+          }
+        ]
+      },
+      {
+        "invoice_id": "314e46ea-6f4a-49ed-968a-df8d62ceded5",
+        "supplier": "Abril",
+        "before": 0,
+        "after": 1,
+        "matches_after": 1,
+        "ambiguous_after": 0,
+        "no_match_after": 0,
+        "motivo": "header:header:article",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "headers": [
+              "COD",
+              "UNIT",
+              "QUILOS",
+              "ARTICLE",
+              "LOT",
+              "PREU",
+              "IMPORT"
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "QUESO SEMI-CURAT capricho castellano",
+            "descColumnIndex": 3,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 3.46,
+            "unitPrice": 10.79
+          }
+        ]
+      },
+      {
+        "invoice_id": "4e3cbab4-1469-4f16-a21e-169c39b66636",
+        "supplier": "Videla",
+        "before": 0,
+        "after": 4,
+        "matches_after": 4,
+        "ambiguous_after": 0,
+        "no_match_after": 0,
+        "motivo": "inferida:contenido_descriptivo_4/4_filas_ratio_1.00_avgLen_75",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 0,
+            "descSource": "inferred",
+            "descConfidence": 0.98,
+            "descReason": "contenido_descriptivo_4/4_filas_ratio_1.00_avgLen_75",
+            "headers": [
+              null,
+              "%Iva",
+              "Unidades",
+              "Precio",
+              "Importe"
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "TERNERA MASA HAMBURGUESA",
+            "descColumnIndex": 0,
+            "descSource": "inferred",
+            "descConfidence": 0.98,
+            "descReason": "contenido_descriptivo_4/4_filas_ratio_1.00_avgLen_75",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "CALAMAR CONG. Calamar o Calamar patagónico o calamar del Perú o chipirón o chipirón patagónico o chipirón del Perú (Doryteuthis gahi). Lote: X56948. FAO: SQP. Capturado. - Redes de arrastre. - Zona Captura: 41 Océano Atlántico Sudoccidental - .",
+            "descColumnIndex": 0,
+            "descSource": "inferred",
+            "descConfidence": 0.98,
+            "descReason": "contenido_descriptivo_4/4_filas_ratio_1.00_avgLen_75",
+            "quantity": 2,
+            "unitPrice": 10.4
+          },
+          {
+            "description": "ENTRAÑA",
+            "descColumnIndex": 0,
+            "descSource": "inferred",
+            "descConfidence": 0.98,
+            "descReason": "contenido_descriptivo_4/4_filas_ratio_1.00_avgLen_75",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "CERDO LOMO CAÑA FILETEADO",
+            "descColumnIndex": 0,
+            "descSource": "inferred",
+            "descConfidence": 0.98,
+            "descReason": "contenido_descriptivo_4/4_filas_ratio_1.00_avgLen_75",
+            "quantity": null,
+            "unitPrice": null
+          }
+        ]
+      },
+      {
+        "invoice_id": "aba553d9-bee3-4116-acaf-0c4e9a335a59",
+        "supplier": "Otros",
+        "before": 0,
+        "after": 8,
+        "matches_after": 8,
+        "ambiguous_after": 0,
+        "no_match_after": 0,
+        "motivo": "header:header:article",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "headers": [
+              "Unitats",
+              "Article",
+              "Iva",
+              "Preu",
+              "Total"
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "Yucca rostata",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 2,
+            "unitPrice": 159.5
+          },
+          {
+            "description": "Chamaerops",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 1,
+            "unitPrice": 142.8
+          },
+          {
+            "description": "Cyca",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 2,
+            "unitPrice": 220
+          },
+          {
+            "description": "Testos Basalt",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 2,
+            "unitPrice": 69
+          },
+          {
+            "description": "Test Basalt",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 1,
+            "unitPrice": 76.5
+          },
+          {
+            "description": "Sacs terra J2, 45 lt",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 10,
+            "unitPrice": 12.5
+          },
+          {
+            "description": "Sacs volcànica, 20 lt",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 3,
+            "unitPrice": 9.9
+          },
+          {
+            "description": "Feina i port",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:article",
+            "quantity": 1,
+            "unitPrice": 390
+          }
+        ]
+      },
+      {
+        "invoice_id": "87bba53d-ab47-48f9-9f7a-cc49938d74a8",
+        "supplier": "Hielo Fenix",
+        "before": 0,
+        "after": 3,
+        "matches_after": 1,
+        "ambiguous_after": 0,
+        "no_match_after": 2,
+        "motivo": "header:header:producte",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "headers": [
+              "Lliurament",
+              "Producte",
+              "Preu",
+              "a cobrar"
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "Bossa de 2 Kg. (40 g.)",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "Bossa de 2 Kg. \"Hielitos\"",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "Bossa de 2 Kg. (60 g.)",
+            "descColumnIndex": 1,
+            "descSource": "header",
+            "descConfidence": 1,
+            "descReason": "header:producte",
+            "quantity": null,
+            "unitPrice": null
+          }
+        ]
+      },
+      {
+        "invoice_id": "efee0fb8-3192-4b41-8685-9a88c3ec6bda",
+        "supplier": "Otros",
+        "before": 0,
+        "after": 14,
+        "matches_after": 14,
+        "ambiguous_after": 0,
+        "no_match_after": 0,
+        "motivo": "inferida:contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+        "tableMeta": [
+          {
+            "tableIndex": 0,
+            "descColIndex": 0,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+            "headers": [
+              null,
+              null,
+              "EUR"
+            ]
+          }
+        ],
+        "newCandidates": [
+          {
+            "description": "RECANVI AMBIENTADOR",
+            "descColumnIndex": 0,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "SAND. CHICKEN ROYAL",
+            "descColumnIndex": 0,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "ARCS DENTALS",
+            "descColumnIndex": 0,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "Desc.",
+            "descColumnIndex": 0,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "SUPORT COTXE-0516303",
+            "descColumnIndex": 0,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "NIVELL LASER-0487349",
+            "descColumnIndex": 0,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "AMBIENTADOR SPRAY",
+            "descColumnIndex": 0,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "COLA PACK",
+            "descColumnIndex": 0,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "COCA COLA ZERO",
+            "descColumnIndex": 0,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "SANEX GEL DE DUTXA",
+            "descColumnIndex": 0,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "RED BULL SENSE SUCRE",
+            "descColumnIndex": 0,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+            "quantity": null,
+            "unitPrice": null
+          },
+          {
+            "description": "JOC PINTAR-0487351",
+            "descColumnIndex": 0,
+            "descSource": "inferred",
+            "descConfidence": 1,
+            "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+            "quantity": null,
+            "unitPrice": null
+          }
+        ]
+      }
+    ]
+  },
+  "inferred_candidates_audit": [
+    {
+      "invoice_id": "0e9e7cf1-988d-444b-9895-cec44340a252",
+      "supplier": "Nestle",
+      "description": "PIRULO TROPICALN1 20x70ml",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_9/9_filas_ratio_1.00_avgLen_24",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "0e9e7cf1-988d-444b-9895-cec44340a252",
+      "supplier": "Nestle",
+      "description": "PIR FANTASMIKOS NS 18X75",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_9/9_filas_ratio_1.00_avgLen_24",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "0e9e7cf1-988d-444b-9895-cec44340a252",
+      "supplier": "Nestle",
+      "description": "PIRL COOL LIMON N3 24X99",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_9/9_filas_ratio_1.00_avgLen_24",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "0e9e7cf1-988d-444b-9895-cec44340a252",
+      "supplier": "Nestle",
+      "description": "PIR COOL FRESA N3 24X99ML",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_9/9_filas_ratio_1.00_avgLen_24",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "0e9e7cf1-988d-444b-9895-cec44340a252",
+      "supplier": "Nestle",
+      "description": "EXTR VAINILLA N4 16X120ML",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_9/9_filas_ratio_1.00_avgLen_24",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "0e9e7cf1-988d-444b-9895-cec44340a252",
+      "supplier": "Nestle",
+      "description": "EXTR DOBLE CHON2 16X120ML",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_9/9_filas_ratio_1.00_avgLen_24",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "0e9e7cf1-988d-444b-9895-cec44340a252",
+      "supplier": "Nestle",
+      "description": "MAXIBON CLASIC N5 24X140",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_9/9_filas_ratio_1.00_avgLen_24",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "0e9e7cf1-988d-444b-9895-cec44340a252",
+      "supplier": "Nestle",
+      "description": "MDLZ BB OREO 20X90ML",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_9/9_filas_ratio_1.00_avgLen_24",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "0e9e7cf1-988d-444b-9895-cec44340a252",
+      "supplier": "Nestle",
+      "description": "MDLZ SNDW OREO 24X110",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_9/9_filas_ratio_1.00_avgLen_24",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "dc150a86-9793-460c-847d-5f270d47454a",
+      "supplier": "Nestle",
+      "description": "PIR FANTASNIKOS N5 18X75",
+      "descColumnIndex": 2,
+      "descReason": "contenido_descriptivo_10/10_filas_ratio_1.00_avgLen_35",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "dc150a86-9793-460c-847d-5f270d47454a",
+      "supplier": "Nestle",
+      "description": "NUII CRM AUSTRAL.N4 20X90",
+      "descColumnIndex": 2,
+      "descReason": "contenido_descriptivo_10/10_filas_ratio_1.00_avgLen_35",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "dc150a86-9793-460c-847d-5f270d47454a",
+      "supplier": "Nestle",
+      "description": "NUII PISTACHO 20X90ML",
+      "descColumnIndex": 2,
+      "descReason": "contenido_descriptivo_10/10_filas_ratio_1.00_avgLen_35",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "dc150a86-9793-460c-847d-5f270d47454a",
+      "supplier": "Nestle",
+      "description": "NUII ALM.JAVA N5 20X90",
+      "descColumnIndex": 2,
+      "descReason": "contenido_descriptivo_10/10_filas_ratio_1.00_avgLen_35",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "dc150a86-9793-460c-847d-5f270d47454a",
+      "supplier": "Nestle",
+      "description": "CHOCOCACK N2 24X90ML",
+      "descColumnIndex": 2,
+      "descReason": "contenido_descriptivo_10/10_filas_ratio_1.00_avgLen_35",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "dc150a86-9793-460c-847d-5f270d47454a",
+      "supplier": "Nestle",
+      "description": "PIRL COOL LIMON N3 24X99",
+      "descColumnIndex": 2,
+      "descReason": "contenido_descriptivo_10/10_filas_ratio_1.00_avgLen_35",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "dc150a86-9793-460c-847d-5f270d47454a",
+      "supplier": "Nestle",
+      "description": "PIR COOL FRESA N3 24X99ML",
+      "descColumnIndex": 2,
+      "descReason": "contenido_descriptivo_10/10_filas_ratio_1.00_avgLen_35",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "dc150a86-9793-460c-847d-5f270d47454a",
+      "supplier": "Nestle",
+      "description": "EXTR DOBLE CHON2 16x120ML",
+      "descColumnIndex": 2,
+      "descReason": "contenido_descriptivo_10/10_filas_ratio_1.00_avgLen_35",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "dc150a86-9793-460c-847d-5f270d47454a",
+      "supplier": "Nestle",
+      "description": "MAXIBON CLASIC N5 24X140",
+      "descColumnIndex": 2,
+      "descReason": "contenido_descriptivo_10/10_filas_ratio_1.00_avgLen_35",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "dc150a86-9793-460c-847d-5f270d47454a",
+      "supplier": "Nestle",
+      "description": "MDLZ BB OREO 20X90ML",
+      "descColumnIndex": 2,
+      "descReason": "contenido_descriptivo_10/10_filas_ratio_1.00_avgLen_35",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "3e620cd9-f334-43f1-8ed0-412debe2e778",
+      "supplier": "Nestle",
+      "description": "PIRULO TROPICALN1 20x70ml",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "3e620cd9-f334-43f1-8ed0-412debe2e778",
+      "supplier": "Nestle",
+      "description": "PIR FANTASMIKOS N5 18X75",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "3e620cd9-f334-43f1-8ed0-412debe2e778",
+      "supplier": "Nestle",
+      "description": "NUII CRM AUSTRAL.N4 20X90",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "3e620cd9-f334-43f1-8ed0-412debe2e778",
+      "supplier": "Nestle",
+      "description": "PIRL COOL LIMON N3 24X99",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "3e620cd9-f334-43f1-8ed0-412debe2e778",
+      "supplier": "Nestle",
+      "description": "MAXIBON CLASIC N5 24X140",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "3e620cd9-f334-43f1-8ed0-412debe2e778",
+      "supplier": "Nestle",
+      "description": "MDLZ BB OREO 20X90ML",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "3e620cd9-f334-43f1-8ed0-412debe2e778",
+      "supplier": "Nestle",
+      "description": "MDLZ SNDW OREO 24X110",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "bb1e116b-c316-434b-90c8-6007d41ec0b6",
+      "supplier": "Nestle",
+      "description": "PIRULO TROPICALN1 20x70ml",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "bb1e116b-c316-434b-90c8-6007d41ec0b6",
+      "supplier": "Nestle",
+      "description": "RIR FANTASMIKOS N5 18x75",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "bb1e116b-c316-434b-90c8-6007d41ec0b6",
+      "supplier": "Nestle",
+      "description": "NUIT ALM. JAVA N5 20x90",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "bb1e116b-c316-434b-90c8-6007d41ec0b6",
+      "supplier": "Nestle",
+      "description": "PIRL COOL LIMON N3 24x99",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "bb1e116b-c316-434b-90c8-6007d41ec0b6",
+      "supplier": "Nestle",
+      "description": "PIR COOL FRESA N3 24x99ML",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "bb1e116b-c316-434b-90c8-6007d41ec0b6",
+      "supplier": "Nestle",
+      "description": "MAXIBON CLASIC N5 24x140",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "bb1e116b-c316-434b-90c8-6007d41ec0b6",
+      "supplier": "Nestle",
+      "description": "HOLZ SNOW OREO 24x110",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_35",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "9669c907-0b08-4299-bda2-085995724d9f",
+      "supplier": "Panabad",
+      "description": "CROISSANT 75 GR MANTEQUILLA FERMENTADO",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_4/4_filas_ratio_1.00_avgLen_25",
+      "descConfidence": 0.98
+    },
+    {
+      "invoice_id": "9669c907-0b08-4299-bda2-085995724d9f",
+      "supplier": "Panabad",
+      "description": "BRIOCHE BURGER",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_4/4_filas_ratio_1.00_avgLen_25",
+      "descConfidence": 0.98
+    },
+    {
+      "invoice_id": "9669c907-0b08-4299-bda2-085995724d9f",
+      "supplier": "Panabad",
+      "description": "BOCATA MEDITERRANEO",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_4/4_filas_ratio_1.00_avgLen_25",
+      "descConfidence": 0.98
+    },
+    {
+      "invoice_id": "9669c907-0b08-4299-bda2-085995724d9f",
+      "supplier": "Panabad",
+      "description": "CROISSANT BOMBON FERMENTADO",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_4/4_filas_ratio_1.00_avgLen_25",
+      "descConfidence": 0.98
+    },
+    {
+      "invoice_id": "9c045f60-b11f-455e-95ae-03153c61de18",
+      "supplier": "Nestle",
+      "description": "PIRULO TROPICALN1 20x70ml",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_36",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "9c045f60-b11f-455e-95ae-03153c61de18",
+      "supplier": "Nestle",
+      "description": "PIR FANTASMIKOS N5 18X75",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_36",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "9c045f60-b11f-455e-95ae-03153c61de18",
+      "supplier": "Nestle",
+      "description": "NUII ALM.JAVA N5 20X90",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_36",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "9c045f60-b11f-455e-95ae-03153c61de18",
+      "supplier": "Nestle",
+      "description": "PIRL COOL LIMON N3 24X99",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_36",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "9c045f60-b11f-455e-95ae-03153c61de18",
+      "supplier": "Nestle",
+      "description": "PIR COOL FRESA N3 24X99ML",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_36",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "9c045f60-b11f-455e-95ae-03153c61de18",
+      "supplier": "Nestle",
+      "description": "MAXIBON CLASIC N5 24X140",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_36",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "9c045f60-b11f-455e-95ae-03153c61de18",
+      "supplier": "Nestle",
+      "description": "MDLZ SNDW OREO N1 24X110",
+      "descColumnIndex": 1,
+      "descReason": "contenido_descriptivo_7/7_filas_ratio_1.00_avgLen_36",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "4e3cbab4-1469-4f16-a21e-169c39b66636",
+      "supplier": "Videla",
+      "description": "TERNERA MASA HAMBURGUESA",
+      "descColumnIndex": 0,
+      "descReason": "contenido_descriptivo_4/4_filas_ratio_1.00_avgLen_75",
+      "descConfidence": 0.98
+    },
+    {
+      "invoice_id": "4e3cbab4-1469-4f16-a21e-169c39b66636",
+      "supplier": "Videla",
+      "description": "CALAMAR CONG. Calamar o Calamar patagónico o calamar del Perú o chipirón o chipirón patagónico o chipirón del Perú (Doryteuthis gahi). Lote: X56948. FAO: SQP. Capturado. - Redes de arrastre. - Zona Captura: 41 Océano Atlántico Sudoccidental - .",
+      "descColumnIndex": 0,
+      "descReason": "contenido_descriptivo_4/4_filas_ratio_1.00_avgLen_75",
+      "descConfidence": 0.98
+    },
+    {
+      "invoice_id": "4e3cbab4-1469-4f16-a21e-169c39b66636",
+      "supplier": "Videla",
+      "description": "ENTRAÑA",
+      "descColumnIndex": 0,
+      "descReason": "contenido_descriptivo_4/4_filas_ratio_1.00_avgLen_75",
+      "descConfidence": 0.98
+    },
+    {
+      "invoice_id": "4e3cbab4-1469-4f16-a21e-169c39b66636",
+      "supplier": "Videla",
+      "description": "CERDO LOMO CAÑA FILETEADO",
+      "descColumnIndex": 0,
+      "descReason": "contenido_descriptivo_4/4_filas_ratio_1.00_avgLen_75",
+      "descConfidence": 0.98
+    },
+    {
+      "invoice_id": "efee0fb8-3192-4b41-8685-9a88c3ec6bda",
+      "supplier": "Otros",
+      "description": "RECANVI AMBIENTADOR",
+      "descColumnIndex": 0,
+      "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "efee0fb8-3192-4b41-8685-9a88c3ec6bda",
+      "supplier": "Otros",
+      "description": "SAND. CHICKEN ROYAL",
+      "descColumnIndex": 0,
+      "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "efee0fb8-3192-4b41-8685-9a88c3ec6bda",
+      "supplier": "Otros",
+      "description": "ARCS DENTALS",
+      "descColumnIndex": 0,
+      "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "efee0fb8-3192-4b41-8685-9a88c3ec6bda",
+      "supplier": "Otros",
+      "description": "Desc.",
+      "descColumnIndex": 0,
+      "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "efee0fb8-3192-4b41-8685-9a88c3ec6bda",
+      "supplier": "Otros",
+      "description": "SUPORT COTXE-0516303",
+      "descColumnIndex": 0,
+      "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "efee0fb8-3192-4b41-8685-9a88c3ec6bda",
+      "supplier": "Otros",
+      "description": "NIVELL LASER-0487349",
+      "descColumnIndex": 0,
+      "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "efee0fb8-3192-4b41-8685-9a88c3ec6bda",
+      "supplier": "Otros",
+      "description": "AMBIENTADOR SPRAY",
+      "descColumnIndex": 0,
+      "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "efee0fb8-3192-4b41-8685-9a88c3ec6bda",
+      "supplier": "Otros",
+      "description": "COLA PACK",
+      "descColumnIndex": 0,
+      "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "efee0fb8-3192-4b41-8685-9a88c3ec6bda",
+      "supplier": "Otros",
+      "description": "COCA COLA ZERO",
+      "descColumnIndex": 0,
+      "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "efee0fb8-3192-4b41-8685-9a88c3ec6bda",
+      "supplier": "Otros",
+      "description": "SANEX GEL DE DUTXA",
+      "descColumnIndex": 0,
+      "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "efee0fb8-3192-4b41-8685-9a88c3ec6bda",
+      "supplier": "Otros",
+      "description": "RED BULL SENSE SUCRE",
+      "descColumnIndex": 0,
+      "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "efee0fb8-3192-4b41-8685-9a88c3ec6bda",
+      "supplier": "Otros",
+      "description": "JOC PINTAR-0487351",
+      "descColumnIndex": 0,
+      "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "efee0fb8-3192-4b41-8685-9a88c3ec6bda",
+      "supplier": "Otros",
+      "description": "AQUARIUS LLIMONA",
+      "descColumnIndex": 0,
+      "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+      "descConfidence": 1
+    },
+    {
+      "invoice_id": "efee0fb8-3192-4b41-8685-9a88c3ec6bda",
+      "supplier": "Otros",
+      "description": "AIGUA AMB GAS",
+      "descColumnIndex": 0,
+      "descReason": "contenido_descriptivo_14/14_filas_ratio_1.00_avgLen_16",
+      "descConfidence": 1
+    }
+  ],
+  "pilot_15_diff_vs_old_heuristics": [
+    {
+      "invoice_id": "194892fa-6353-4308-be97-ca6873042146",
+      "supplier": "Otros",
+      "old": {
+        "c": 0,
+        "m": 0,
+        "a": 0,
+        "n": 0
+      },
+      "neu": {
+        "c": 13,
+        "m": 13,
+        "a": 0,
+        "n": 0
+      }
+    },
+    {
+      "invoice_id": "c1dca150-0ac0-4814-8a29-53ec11a327fa",
+      "supplier": "Hielo Fenix",
+      "old": {
+        "c": 0,
+        "m": 0,
+        "a": 0,
+        "n": 0
+      },
+      "neu": {
+        "c": 3,
+        "m": 3,
+        "a": 0,
+        "n": 0
+      }
+    },
+    {
+      "invoice_id": "08da1117-b97e-431f-85c5-212261068639",
+      "supplier": "Hielo Fenix",
+      "old": {
+        "c": 0,
+        "m": 0,
+        "a": 0,
+        "n": 0
+      },
+      "neu": {
+        "c": 3,
+        "m": 1,
+        "a": 0,
+        "n": 2
+      }
+    },
+    {
+      "invoice_id": "85577bb8-926c-4fbe-a561-af43a4415039",
+      "supplier": "Hielo Fenix",
+      "old": {
+        "c": 0,
+        "m": 0,
+        "a": 0,
+        "n": 0
+      },
+      "neu": {
+        "c": 3,
+        "m": 1,
+        "a": 0,
+        "n": 2
+      }
+    }
+  ]
+}
