@@ -312,16 +312,18 @@ export function DocumentEvidenceModal({
                 )}
               </section>
 
-              {/* FILAS DEL DOCUMENTO — revisión manual */}
+              {/* Candidatas OCR de ESTA línea — no el documento entero */}
               {data.extraction && data.documentRows.length > 0 ? (
                 <section className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden flex flex-col">
                   <div className="bg-zinc-100/50 px-4 py-3 border-b border-zinc-200 flex flex-col gap-1">
                     <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2">
                       <FileText className="h-3.5 w-3.5" />
-                      Filas del documento
+                      {activeProvenance ? 'Evidencia documental vinculada' : 'Candidatas del documento'}
                     </h3>
                     <p className="text-[11px] font-medium text-zinc-500">
-                      Confirmar evidencia vincula la línea con la fila OCR. No cambia producto, cantidad ni precio operativo.
+                      {activeProvenance
+                        ? 'Fila OCR vinculada a esta línea. La tabla completa aparece abajo para auditoría.'
+                        : 'Solo filas OCR razonablemente similares a esta línea. Confirmar evidencia no cambia producto, cantidad ni precio operativo.'}
                     </p>
                   </div>
 
@@ -427,6 +429,15 @@ export function DocumentEvidenceModal({
                       </p>
                     </div>
                   ) : null}
+                </section>
+              ) : data.extraction && !activeProvenance && data.tables.length > 0 ? (
+                <section className="bg-white rounded-xl border border-zinc-200 p-8 text-center flex flex-col gap-2">
+                  <p className="text-sm font-black text-zinc-800 uppercase tracking-wider">
+                    Sin coincidencia automática
+                  </p>
+                  <p className="text-sm font-medium text-zinc-500">
+                    No hay filas OCR razonablemente similares a esta línea. No se listan el resto de artículos del albarán.
+                  </p>
                 </section>
               ) : data.extraction && data.extraction.status === 'no_table' ? (
                 <section className="bg-white rounded-xl border border-zinc-200 p-8 text-center text-sm font-bold text-zinc-500">

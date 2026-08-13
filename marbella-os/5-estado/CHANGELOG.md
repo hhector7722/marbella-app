@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-13
 
+- **Evidence en albaranes filtra candidatas OCR por línea.** Sin provenance, el modal solo lista filas del documento razonablemente similares a la línea seleccionada (reutiliza `nameSimilarity` del matcher con umbral de UI `0.4`); con provenance, solo la fila vinculada. Ya no se vuelcan AGUA/APEROL al abrir FRANKFURT.
+- **Líneas de albarán en móvil van en una sola fila horizontal.** En smartphone se oculta el nombre OCR del proveedor y se mantienen visibles cantidad, precio e importe alineados; el escritorio conserva la composición previa.
 - **Evidence en albaranes permite revisión manual de provenance.** Si una línea no tiene vínculo documental, el modal carga el OCR existente y deja confirmar la fila OCR sin tocar el mapeo de producto ni los valores operativos.
 
 ## 2026-08-10

@@ -2413,6 +2413,7 @@ import {
   decideManualProvenanceInsert,
   isUniqueViolationError,
   resolveActiveProvenance,
+  selectDocumentRowsForEvidenceReview,
   type DocumentRowOccupancy,
   type DocumentRowSummary,
   type ProvenanceRecord,
@@ -2438,7 +2439,10 @@ export type DocumentEvidencePayload = {
     file_version_hash: string | null
   } | null
   tables: StoredEvidenceTable[]
-  /** Filas OCR compactas para revisión manual (vacío si no hay extracción). */
+  /**
+   * Filas OCR candidatas (o la vinculada si hay provenance) para ESTA línea.
+   * No incluye el volcado completo del documento: ver selectDocumentRowsForEvidenceReview.
+   */
   documentRows: DocumentRowSummary[]
 }
 
@@ -2589,7 +2593,12 @@ export async function getInvoiceLineEvidenceAction(lineId: string): Promise<{ su
 
     const allRowIds = tables.flatMap((t) => t.rows.map((r) => r.id))
     const occupancy = await loadRowOccupancy(gate.supabase, allRowIds)
-    const documentRows = buildDocumentRowSummaries(tables, occupancy, line.id)
+    const allDocumentRows = buildDocumentRowSummaries(tables, occupancy, line.id)
+    const documentRows = selectDocumentRowsForEvidenceReview({
+      rows: allDocumentRows,
+      lineOriginalName: line.original_name,
+      activeDocumentRowId: activeProvenance?.document_row_id ?? null,
+    })
 
     return {
       success: true,

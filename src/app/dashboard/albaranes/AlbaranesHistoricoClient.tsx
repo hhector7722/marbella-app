@@ -1678,12 +1678,12 @@ export default function AlbaranesHistoricoClient({
                                   evidenceContextLineIdRef.current = l.id
                                   setLineForEvidenceModal(l.id)
                                 }}
-                                className="group flex flex-col md:flex-row md:items-center gap-2 md:gap-4 px-2 md:px-4 py-3 hover:bg-zinc-50 rounded-xl transition-colors cursor-pointer"
+                                className="group flex flex-row items-center gap-2 md:gap-4 px-2 md:px-4 py-3 min-h-12 hover:bg-zinc-50 rounded-xl transition-colors cursor-pointer"
                               >
-                                {/* Nombre + Estado + Original OCR en la misma línea */}
+                                {/* Prioridad móvil: nombre → estado → qty → precio → importe (una sola fila) */}
                                 <div className="flex-1 min-w-0 flex items-center gap-2">
-                                  <span className="text-sm font-bold text-zinc-900 truncate shrink-0" title={displayName}>{displayName}</span>
-                                  
+                                  <span className="text-sm font-bold text-zinc-900 truncate min-w-0" title={displayName}>{displayName}</span>
+
                                   {/* Estado */}
                                   <div className="shrink-0 flex items-center">
                                     {noMatch ? (
@@ -1722,27 +1722,27 @@ export default function AlbaranesHistoricoClient({
                                     ) : null}
                                   </div>
 
-                                  {/* Nombre Original OCR */}
+                                  {/* Nombre OCR del proveedor: solo desktop (en móvil se oculta primero) */}
                                   {l.ingredient_name && l.original_name && l.ingredient_name !== l.original_name ? (
-                                    <span className="text-sm text-zinc-400 truncate min-w-0" title={l.original_name}>{l.original_name}</span>
+                                    <span className="hidden md:inline text-sm text-zinc-400 truncate min-w-0" title={l.original_name}>{l.original_name}</span>
                                   ) : null}
                                 </div>
 
-                                {/* Valores económicos */}
-                                <div className="flex items-center justify-between md:justify-end shrink-0 gap-4 mt-2 md:mt-0 pl-2 md:pl-0 border-l-2 border-zinc-100 md:border-none">
-                                  <div className="w-[100px] text-right">
-                                    <span className="text-sm font-bold text-zinc-900">
+                                {/* Valores económicos: siempre visibles; anchos fijos = columnas alineadas */}
+                                <div className="flex items-center justify-end shrink-0 gap-2 md:gap-4">
+                                  <div className="w-[72px] md:w-[100px] text-right">
+                                    <span className="text-sm font-bold text-zinc-900 tabular-nums">
                                       {l.quantity != null ? Number(l.quantity).toLocaleString('es-ES', { maximumFractionDigits: 3 }) : '—'}
                                       {l.line_unit ? ` ${l.line_unit}` : ''}
                                     </span>
                                   </div>
-                                  <div className="w-[110px] text-right">
-                                    <span className="text-sm font-bold text-zinc-900">
+                                  <div className="w-[80px] md:w-[110px] text-right">
+                                    <span className="text-sm font-bold text-zinc-900 tabular-nums">
                                       {l.unit_price != null ? `${Number(l.unit_price).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} €` : '—'}
                                     </span>
                                   </div>
-                                  <div className="w-[110px] text-right">
-                                    <span className="text-sm font-bold text-zinc-900">
+                                  <div className="w-[80px] md:w-[110px] text-right">
+                                    <span className="text-sm font-bold text-zinc-900 tabular-nums">
                                       {l.total_price != null ? `${Number(l.total_price).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : '—'}
                                     </span>
                                   </div>

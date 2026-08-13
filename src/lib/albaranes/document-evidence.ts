@@ -11,6 +11,7 @@
  */
 
 import type { GeminiDocumentTable } from './gemini-extract-albaran.ts'
+import { nameSimilarity } from '../evidence-backfill/matcher.ts'
 import {
   findColumnIndices,
   isGarbageDocumentDescription,
@@ -18,6 +19,19 @@ import {
 } from './evidence-column-heuristics.ts'
 
 export const MANUAL_PROVENANCE_LINKED_BY = 'manual-review'
+
+/**
+ * Umbral SOLO para listar candidatas en revisión manual de Evidence (UI/lectura).
+ * No modifica MATCHER_THRESHOLDS ni el backfill.
+ *
+ * Por qué 0.4 (y no 0.85 del matcher):
+ * - El matcher escribe provenance automática y exige nombre muy fuerte.
+ * - Aquí solo se filtra ruido: filas OCR irrelevantes del mismo albarán
+ *   (p. ej. AGUA/APEROL frente a FRANKFURT → score 0).
+ * - 0.4 deja pasar similitudes parciales razonables (p. ej. Jaccard ≥ ~2/5)
+ *   para que AMBIGUOUS siga siendo seleccionable a mano.
+ */
+export const MANUAL_EVIDENCE_CANDIDATE_NAME_THRESHOLD = 0.4
 
 export type StoredEvidenceColumn = {
   id: string
@@ -115,8 +129,9 @@ function cleanDescription(raw: string): string {
 }
 
 /**
- * Resumen compacto de TODAS las filas OCR de las tablas (caso 0 candidatos incluido).
- * No inventa scores de matching; solo usa heurística de columnas existente.
+ * Resumen compacto de TODAS las filas OCR de las tablas.
+ * No filtra por similitud con la línea: eso lo hace `selectDocumentRowsForEvidenceReview`.
+ * Solo usa heurística de columnas existente + ocupación por otras líneas.
  */
 export function buildDocumentRowSummaries(
   tables: StoredEvidenceTable[],
@@ -194,6 +209,68 @@ export function buildDocumentRowSummaries(
   return out.sort(
     (a, b) => a.table_index - b.table_index || a.row_index - b.row_index
   )
+}
+
+/** Similitud de nombre línea↔fila OCR reutilizando nameSimilarity del matcher. */
+export function scoreDocumentRowNameForLine(
+  rowDescription: string | null,
+  lineOriginalName: string | null,
+  lineIngredientName?: string | null
+): number {
+  return Math.max(
+    nameSimilarity(rowDescription ?? '', lineOriginalName ?? ''),
+    nameSimilarity(rowDescription ?? '', lineIngredientName ?? '')
+  )
+}
+
+/**
+ * Filas OCR a mostrar en Evidence para UNA purchase_invoice_line.
+ *
+ * - Con provenance activa (MATCH): solo la fila vinculada.
+ * - Sin provenance: candidatas con nombre ≥ MANUAL_EVIDENCE_CANDIDATE_NAME_THRESHOLD
+ *   y heurística de artículo; ordenadas por score desc.
+ * - Filas ya vinculadas a otra línea pueden aparecer si pasan el umbral
+ *   (schema permite N:1); el UI las diferencia vía linkedOtherLines.
+ * - 0 candidatas → lista vacía (el UI dice «Sin coincidencia automática»).
+ */
+export function selectDocumentRowsForEvidenceReview(params: {
+  rows: DocumentRowSummary[]
+  lineOriginalName: string | null
+  lineIngredientName?: string | null
+  activeDocumentRowId: string | null
+}): DocumentRowSummary[] {
+  const {
+    rows,
+    lineOriginalName,
+    lineIngredientName = null,
+    activeDocumentRowId,
+  } = params
+
+  if (activeDocumentRowId) {
+    return rows.filter((r) => r.document_row_id === activeDocumentRowId)
+  }
+
+  return rows
+    .map((row) => ({
+      row,
+      score: scoreDocumentRowNameForLine(
+        row.description,
+        lineOriginalName,
+        lineIngredientName
+      ),
+    }))
+    .filter(
+      ({ row, score }) =>
+        row.isHeuristicCandidate &&
+        score >= MANUAL_EVIDENCE_CANDIDATE_NAME_THRESHOLD
+    )
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        a.row.table_index - b.row.table_index ||
+        a.row.row_index - b.row.row_index
+    )
+    .map(({ row }) => row)
 }
 
 export type ManualProvenanceDecision =
