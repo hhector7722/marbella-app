@@ -2438,7 +2438,13 @@ export type DocumentEvidencePayload = {
     extracted_at: string
     file_version_hash: string | null
   } | null
+  /**
+   * Solo filas del subconjunto presentado (evidencia de la línea), no el volcado OCR completo.
+   * Concepto A (tabla completa del documento) no se expone aquí.
+   */
   tables: StoredEvidenceTable[]
+  /** true si la extracción tenía tablas OCR antes del filtro de presentación. */
+  hasExtractedTables: boolean
   /**
    * Filas OCR candidatas (o la vinculada si hay provenance) para ESTA línea.
    * No incluye el volcado completo del documento: ver selectDocumentRowsForEvidenceReview.
@@ -2600,13 +2606,24 @@ export async function getInvoiceLineEvidenceAction(lineId: string): Promise<{ su
       activeDocumentRowId: activeProvenance?.document_row_id ?? null,
     })
 
+    // Presentación = evidencia de la línea (B), no tabla OCR completa (A).
+    const hasExtractedTables = tables.some((t) => t.rows.length > 0)
+    const presentedRowIds = new Set(documentRows.map((r) => r.document_row_id))
+    const tablesPresented = tables
+      .map((t) => ({
+        ...t,
+        rows: t.rows.filter((r) => presentedRowIds.has(r.id)),
+      }))
+      .filter((t) => t.rows.length > 0)
+
     return {
       success: true,
       data: {
         line,
         provenanceChain,
         extraction,
-        tables,
+        tables: tablesPresented,
+        hasExtractedTables,
         documentRows,
       }
     }

@@ -58,43 +58,43 @@ export function LineEditModal({
       title="Editar línea"
     >
       <div className="flex flex-col h-full w-full">
-        <div className="bg-[#36606F] px-4 py-3 flex items-start justify-between gap-3 text-white shrink-0">
+        <div className="bg-[#36606F] px-3 py-2 flex items-start justify-between gap-2 text-white shrink-0">
           <div className="min-w-0 flex-1">
-            <p id="line-edit-title" className="text-xs font-black uppercase tracking-wider text-white/80">
+            <p id="line-edit-title" className="text-[11px] font-semibold uppercase tracking-wide text-white/90">
               Editar línea
             </p>
-            <p className="text-sm font-black truncate mt-0.5">{displayName}</p>
+            <p className="text-xs font-medium truncate mt-0.5">{displayName}</p>
             {linkedName ? (
-              <p className="text-[11px] font-semibold text-white/70 truncate mt-0.5">En albarán: {linkedName}</p>
+              <p className="text-[10px] font-normal text-white/65 truncate mt-0.5">En albarán: {linkedName}</p>
             ) : null}
           </div>
           <button
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="min-h-12 min-w-12 shrink-0 inline-flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 active:scale-[0.99] transition"
+            className="min-h-12 min-w-12 shrink-0 inline-flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-[0.99] transition"
             aria-label="Cerrar"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-4">
-          <section className="rounded-xl border border-zinc-100 bg-white shadow-sm p-4 space-y-3">
-            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Datos del albarán</p>
-            <label className="block space-y-1">
-              <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Nombre en factura</span>
+        <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 flex flex-col gap-2">
+          <section className="rounded-lg border border-zinc-200 bg-white p-2 space-y-2">
+            <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">Datos del albarán</p>
+            <label className="block space-y-0.5 px-1">
+              <span className="text-[9px] font-black uppercase tracking-wider text-zinc-400">Nombre en factura</span>
               <input
                 value={draft.original_name}
                 onChange={(e) => onDraftChange({ original_name: e.target.value })}
-                className="w-full min-h-12 px-3 rounded-xl border border-zinc-200 bg-white text-sm font-black text-zinc-900 outline-none focus:border-[#36606F]/50"
+                className="w-full min-h-12 px-2 rounded-lg border border-zinc-200 bg-white text-xs font-medium text-zinc-900 outline-none focus:border-[#36606F]/50"
                 placeholder="Nombre línea"
               />
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-1.5 px-1">
               <label className="min-w-0 block">
                 <span
-                  className="text-[9px] font-black uppercase tracking-wider text-zinc-500"
+                  className="text-[9px] font-black uppercase tracking-wider text-zinc-400"
                   title="Si el PU es €/kg, indica los kg totales de la línea."
                 >
                   Cant.
@@ -103,27 +103,27 @@ export function LineEditModal({
                   inputMode="decimal"
                   value={draft.quantity}
                   onChange={(e) => onDraftChange({ quantity: e.target.value })}
-                  className="mt-0.5 w-full min-h-12 px-2 rounded-xl border border-zinc-200 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
+                  className="mt-0.5 w-full min-h-12 px-2 rounded-lg border border-zinc-200 bg-white text-[11px] font-normal text-zinc-800 tabular-nums outline-none focus:border-[#36606F]/50"
                   placeholder=" "
                 />
               </label>
               <label className="min-w-0 block">
-                <span className="text-[9px] font-black uppercase tracking-wider text-zinc-500">PU</span>
+                <span className="text-[9px] font-black uppercase tracking-wider text-zinc-400">PU</span>
                 <input
                   inputMode="decimal"
                   value={draft.unit_price}
                   onChange={(e) => onDraftChange({ unit_price: e.target.value })}
-                  className="mt-0.5 w-full min-h-12 px-2 rounded-xl border border-zinc-200 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
+                  className="mt-0.5 w-full min-h-12 px-2 rounded-lg border border-zinc-200 bg-white text-[11px] font-normal text-zinc-800 tabular-nums outline-none focus:border-[#36606F]/50"
                   placeholder=" "
                 />
               </label>
               <label className="min-w-0 block">
-                <span className="text-[9px] font-black uppercase tracking-wider text-zinc-500">Total</span>
+                <span className="text-[9px] font-black uppercase tracking-wider text-zinc-400">Total</span>
                 <input
                   inputMode="decimal"
                   value={draft.total_price}
                   onChange={(e) => onDraftChange({ total_price: e.target.value })}
-                  className="mt-0.5 w-full min-h-12 px-2 rounded-xl border border-zinc-200 bg-white text-sm font-bold text-zinc-800 outline-none focus:border-[#36606F]/50"
+                  className="mt-0.5 w-full min-h-12 px-2 rounded-lg border border-zinc-200 bg-white text-[11px] font-normal text-zinc-800 tabular-nums outline-none focus:border-[#36606F]/50"
                   placeholder=" "
                 />
               </label>
@@ -134,7 +134,7 @@ export function LineEditModal({
                 onClick={() => void onSaveLine()}
                 disabled={saving}
                 className={cn(
-                  'w-full min-h-12 rounded-xl bg-[#36606F] text-white text-xs font-black uppercase tracking-wider',
+                  'w-full min-h-12 rounded-lg bg-[#36606F] text-white text-[10px] font-semibold uppercase tracking-wider',
                   saving && 'opacity-60 pointer-events-none'
                 )}
               >
@@ -144,12 +144,12 @@ export function LineEditModal({
           </section>
         </div>
 
-        <div className="shrink-0 border-t border-zinc-200 bg-white p-4">
+        <div className="shrink-0 border-t border-zinc-200 bg-white px-3 py-2">
           <button
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="w-full min-h-12 rounded-xl border border-zinc-200 bg-white text-sm font-black uppercase tracking-wide text-zinc-700 hover:bg-zinc-50"
+            className="w-full min-h-12 rounded-lg border border-zinc-200 bg-white text-xs font-semibold uppercase tracking-wide text-zinc-700 hover:bg-zinc-50"
           >
             Cerrar
           </button>

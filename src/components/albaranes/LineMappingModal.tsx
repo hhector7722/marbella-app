@@ -525,48 +525,48 @@ export function LineMappingModal({
       title="Producto / vínculo"
     >
       <div className="flex flex-col h-full w-full">
-        <div className="bg-[#36606F] px-4 py-3 flex items-start justify-between gap-3 text-white shrink-0">
+        <div className="bg-[#36606F] px-3 py-2 flex items-start justify-between gap-2 text-white shrink-0">
           <div className="min-w-0 flex-1">
-            <p id="line-mapping-title" className="text-xs font-black uppercase tracking-wider text-white/80">
+            <p id="line-mapping-title" className="text-[11px] font-semibold uppercase tracking-wide text-white/90">
               Producto
             </p>
-            <p className="text-sm font-black truncate mt-0.5">{headerTitle}</p>
+            <p className="text-xs font-medium truncate mt-0.5">{headerTitle}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             disabled={saving || busy}
-            className="min-h-12 min-w-12 shrink-0 inline-flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 active:scale-[0.99] transition"
+            className="min-h-12 min-w-12 shrink-0 inline-flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-[0.99] transition"
             aria-label="Cerrar"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-4">
+        <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 flex flex-col gap-2">
           {loading ? (
-            <div className="flex items-center justify-center gap-2 py-12 text-sm font-semibold text-zinc-600">
+            <div className="flex items-center justify-center gap-2 py-10 text-xs font-medium text-zinc-600">
               <Loader2 className="h-5 w-5 animate-spin text-[#36606F]" />
               Preparando sugerencias…
             </div>
           ) : (
             <>
-              <section className="rounded-xl border border-zinc-100 bg-white shadow-sm p-4 flex flex-col gap-3">
-                <p className="text-[10px] font-black uppercase tracking-wider text-[#36606F]">
+              <section className="rounded-lg border border-zinc-200 bg-white p-2 flex flex-col gap-2">
+                <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">
                   Producto en almacén
                 </p>
-                <p className="text-xs font-semibold text-zinc-600 leading-snug">
+                <p className="text-[10px] font-normal text-zinc-600 leading-snug px-1">
                   Busca el artículo del catálogo que coincide con esta línea del albarán.
                 </p>
 
-                <div className="flex gap-2">
+                <div className="flex gap-1.5 px-1">
                   <div className="relative min-h-12 flex-1">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
+                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                     <input
                       value={searchQuery}
                       onChange={(e) => void runSearch(e.target.value)}
                       placeholder="Buscar ingrediente en catálogo…"
-                      className="w-full min-h-12 rounded-xl border border-zinc-200 bg-white pl-11 pr-3 text-sm font-semibold text-zinc-900 outline-none focus:border-[#36606F]/50"
+                      className="w-full min-h-12 rounded-lg border border-zinc-200 bg-white pl-9 pr-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#36606F]/50"
                     />
                   </div>
                   {onOpenWizardNew && !ingredientId && (
@@ -575,7 +575,7 @@ export function LineMappingModal({
                       onClick={() => {
                         onOpenWizardNew()
                       }}
-                      className="shrink-0 min-h-12 px-4 inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white text-xs font-black uppercase tracking-wide text-zinc-700 hover:bg-zinc-50 active:scale-[0.99] transition"
+                      className="shrink-0 min-h-12 px-3 inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white text-[10px] font-semibold uppercase tracking-wide text-zinc-700 hover:bg-zinc-50 active:scale-[0.99] transition"
                     >
                       <Plus className="h-4 w-4" />
                       Nuevo
@@ -584,21 +584,21 @@ export function LineMappingModal({
                 </div>
 
                 {ingredientId ? (
-                  <div className="flex items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 min-h-12">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <Check className="h-5 w-5 shrink-0 text-emerald-700" strokeWidth={2.5} />
-                      <span className="truncate text-sm font-black text-emerald-950">
+                  <div className="flex items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1.5 min-h-12 mx-1">
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <Check className="h-4 w-4 shrink-0 text-emerald-700" strokeWidth={2.5} />
+                      <span className="truncate text-xs font-medium text-emerald-950">
                         {ingredientLabel?.trim() || 'Seleccionado'}
                       </span>
-                      <span className="shrink-0 text-xs font-semibold text-emerald-800">
+                      <span className="shrink-0 text-[10px] font-normal text-emerald-800">
                         €/{ingredientPurchaseUnit}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       {onOpenWizardPrice && (
                         <button
                           type="button"
-                          className="shrink-0 min-h-12 px-2 text-[10px] font-bold uppercase text-[#36606F] underline flex items-center gap-1"
+                          className="shrink-0 min-h-12 px-2 text-[10px] font-medium uppercase text-[#36606F] underline flex items-center gap-1"
                           onClick={() => {
                             onOpenWizardPrice()
                           }}
@@ -609,7 +609,7 @@ export function LineMappingModal({
                       )}
                       <button
                         type="button"
-                        className="shrink-0 min-h-12 px-2 text-[10px] font-bold uppercase text-emerald-900 underline"
+                        className="shrink-0 min-h-12 px-2 text-[10px] font-medium uppercase text-emerald-900 underline"
                         onClick={() => {
                           setIngredientId(null)
                           setIngredientLabel(null)
@@ -624,12 +624,12 @@ export function LineMappingModal({
                 ) : null}
 
                 {searchLoading ? (
-                  <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500 py-2">
+                  <div className="flex items-center gap-2 text-[10px] font-medium text-zinc-500 py-1 px-1">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Buscando…
                   </div>
                 ) : searchResults.length > 0 ? (
-                  <div className="max-h-40 overflow-y-auto space-y-1.5">
+                  <div className="max-h-40 overflow-y-auto space-y-1 px-1">
                     {searchResults.map((it) => (
                       <button
                         key={it.id}
@@ -640,39 +640,39 @@ export function LineMappingModal({
                           applySuggestion(it, { lineUnitFromInvoice: line.line_unit })
                         }}
                         className={cn(
-                          'flex w-full min-h-12 items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left transition active:scale-[0.99]',
+                          'flex w-full min-h-12 items-center justify-between gap-2 rounded-lg border px-2 py-1.5 text-left transition active:scale-[0.99]',
                           ingredientId === it.id
                             ? 'border-[#36606F] bg-[#36606F]/8 ring-1 ring-[#36606F]/20'
                             : 'border-zinc-100 bg-zinc-50 hover:bg-white'
                         )}
                       >
-                        <span className="truncate text-sm font-bold text-zinc-900">{it.name}</span>
-                        <span className="shrink-0 text-xs font-semibold text-zinc-500">
+                        <span className="truncate text-xs font-medium text-zinc-900">{it.name}</span>
+                        <span className="shrink-0 text-[10px] font-normal text-zinc-500 tabular-nums">
                           {Number(it.current_price || 0).toFixed(2)}€/{it.purchase_unit}
                         </span>
                       </button>
                     ))}
                   </div>
                 ) : searchQuery.trim().length >= 2 ? (
-                  <p className="text-xs text-zinc-500">Sin resultados.</p>
+                  <p className="text-[10px] text-zinc-500 px-1">Sin resultados.</p>
                 ) : (
-                  <p className="text-xs text-zinc-500">Escribe al menos 2 caracteres para buscar.</p>
+                  <p className="text-[10px] text-zinc-500 px-1">Escribe al menos 2 caracteres para buscar.</p>
                 )}
               </section>
 
               {ingredientId ? (
-                <section className="rounded-xl border border-zinc-100 bg-white shadow-sm p-4 flex flex-col gap-3">
+                <section className="rounded-lg border border-zinc-200 bg-white p-2 flex flex-col gap-2">
                   {isAutoSameFamilyMode ? (
                     <>
-                      <p className="text-[10px] font-black uppercase tracking-wider text-[#36606F]">
+                      <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">
                         Unidades
                       </p>
-                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 space-y-1">
-                        <p className="text-sm font-black text-emerald-950">
+                      <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-2 space-y-0.5 mx-1">
+                        <p className="text-xs font-medium text-emerald-950">
                           {autoSameFamilyCaption ??
                             `Conversión automática: 1 ${billingMassVolumeNorm} = 1 ${purchaseMassVolumeNorm}`}
                         </p>
-                        <p className="text-xs font-medium text-emerald-900/80 leading-snug">
+                        <p className="text-[10px] font-normal text-emerald-900/80 leading-snug">
                           Misma familia de medida (masa o volumen): no hace falta indicar garrafas ni
                           cajas; el precio y el stock se ajustan con la equivalencia estándar.
                         </p>
@@ -680,21 +680,21 @@ export function LineMappingModal({
                       <button
                         type="button"
                         onClick={() => setShowAdvancedCalibration(true)}
-                        className="min-h-12 w-full rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-3 text-xs font-bold uppercase tracking-wide text-zinc-600 hover:bg-white active:scale-[0.99] transition"
+                        className="min-h-12 w-full rounded-lg border border-dashed border-zinc-300 bg-zinc-50 px-2 text-[10px] font-semibold uppercase tracking-wide text-zinc-600 hover:bg-white active:scale-[0.99] transition"
                       >
                         Caja, ud u otra conversión…
                       </button>
                     </>
                   ) : isSimpleMode ? (
                     <>
-                      <p className="text-[10px] font-black uppercase tracking-wider text-[#36606F]">
+                      <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">
                         Unidades
                       </p>
-                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 space-y-1">
-                        <p className="text-sm font-black text-emerald-950">
+                      <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-2 space-y-0.5 mx-1">
+                        <p className="text-xs font-medium text-emerald-950">
                           1 unidad en el albarán = 1 unidad en almacén
                         </p>
-                        <p className="text-xs font-medium text-emerald-900/80 leading-snug">
+                        <p className="text-[10px] font-normal text-emerald-900/80 leading-snug">
                           No hace falta calibrar litros ni cajas: cada línea suma una unidad al stock
                           (€/ud).
                         </p>
@@ -702,21 +702,21 @@ export function LineMappingModal({
                       <button
                         type="button"
                         onClick={() => setShowAdvancedCalibration(true)}
-                        className="min-h-12 w-full rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-3 text-xs font-bold uppercase tracking-wide text-zinc-600 hover:bg-white active:scale-[0.99] transition"
+                        className="min-h-12 w-full rounded-lg border border-dashed border-zinc-300 bg-zinc-50 px-2 text-[10px] font-semibold uppercase tracking-wide text-zinc-600 hover:bg-white active:scale-[0.99] transition"
                       >
                         Caja, litros u otra conversión…
                       </button>
                     </>
                   ) : (
                     <>
-                      <p className="text-[10px] font-black uppercase tracking-wider text-[#36606F]">
+                      <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">
                         Conversión albarán → almacén
                       </p>
-                      <p className="text-xs font-medium text-zinc-600 leading-snug">
+                      <p className="text-[10px] font-normal text-zinc-600 leading-snug px-1">
                         Indica qué trae cada unidad de factura (ej. una garrafa contiene 5 litros).
                       </p>
 
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5 px-1">
                     <input
                       value={dimensional.lineBillingUnit}
                       onChange={(e) =>
@@ -724,9 +724,9 @@ export function LineMappingModal({
                       }
                       placeholder="Garrafa"
                       aria-label="Unidad de facturación"
-                      className="min-h-12 min-w-[7rem] flex-1 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 outline-none focus:border-[#36606F]/50"
+                      className="min-h-12 min-w-[7rem] flex-1 rounded-lg border border-zinc-200 bg-white px-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#36606F]/50"
                     />
-                    <span className="text-sm font-bold text-zinc-500 shrink-0 px-1">contiene</span>
+                    <span className="text-[11px] font-normal text-zinc-500 shrink-0 px-0.5">contiene</span>
                     <input
                       inputMode="decimal"
                       value={dimensional.lineContentQty}
@@ -735,7 +735,7 @@ export function LineMappingModal({
                       }
                       placeholder="5"
                       aria-label="Cantidad por unidad"
-                      className="min-h-12 w-20 shrink-0 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 outline-none focus:border-[#36606F]/50"
+                      className="min-h-12 w-20 shrink-0 rounded-lg border border-zinc-200 bg-white px-2 text-[11px] font-normal text-zinc-900 tabular-nums outline-none focus:border-[#36606F]/50"
                     />
                     <select
                       value={dimensional.lineContentUnit}
@@ -743,7 +743,7 @@ export function LineMappingModal({
                         setDimensional((d) => ({ ...d, lineContentUnit: e.target.value }))
                       }
                       aria-label="Unidad de contenido"
-                      className="min-h-12 min-w-[5.5rem] shrink-0 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 outline-none focus:border-[#36606F]/50"
+                      className="min-h-12 min-w-[5.5rem] shrink-0 rounded-lg border border-zinc-200 bg-white px-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#36606F]/50"
                     >
                       <option value="">—</option>
                       {ALBARAN_LINE_CONTENT_UNITS.map((u) => (
@@ -754,13 +754,13 @@ export function LineMappingModal({
                     </select>
                   </div>
 
-                  <p className="text-xs font-medium text-zinc-600 leading-relaxed border-t border-zinc-100 pt-3">
+                  <p className="text-[10px] font-normal text-zinc-600 leading-snug border-t border-zinc-100 pt-2 mx-1">
                     El sistema calculará y guardará el precio exacto por{' '}
-                    <span className="font-black text-[#36606F]">{ingredientPurchaseUnit || 'ud'}</span> de
+                    <span className="font-semibold text-[#36606F]">{ingredientPurchaseUnit || 'ud'}</span> de
                     compra del ingrediente seleccionado.
                   </p>
 
-                  <label className="block pt-1">
+                  <label className="block pt-0.5 px-1">
                     <span className="text-[9px] font-black uppercase tracking-wider text-zinc-400">
                       Factor de conversión (avanzado)
                     </span>
@@ -768,7 +768,7 @@ export function LineMappingModal({
                       inputMode="decimal"
                       value={factor}
                       onChange={(e) => setFactor(e.target.value)}
-                      className="mt-1 w-full min-h-12 rounded-xl border border-zinc-100 bg-zinc-50 px-3 text-sm font-bold text-zinc-700 outline-none focus:border-[#36606F]/40"
+                      className="mt-0.5 w-full min-h-12 rounded-lg border border-zinc-200 bg-zinc-50 px-2 text-[11px] font-normal text-zinc-700 tabular-nums outline-none focus:border-[#36606F]/40"
                     />
                   </label>
 
@@ -795,7 +795,7 @@ export function LineMappingModal({
                             }
                             setShowAdvancedCalibration(false)
                           }}
-                          className="min-h-12 w-full rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-xs font-bold uppercase tracking-wide text-emerald-900 hover:bg-emerald-100 active:scale-[0.99] transition"
+                          className="min-h-12 w-full rounded-lg border border-emerald-200 bg-emerald-50 px-2 text-[10px] font-semibold uppercase tracking-wide text-emerald-900 hover:bg-emerald-100 active:scale-[0.99] transition"
                         >
                           Volver a conversión automática
                         </button>
@@ -808,7 +808,7 @@ export function LineMappingModal({
                             setFactor('1')
                             setShowAdvancedCalibration(false)
                           }}
-                          className="min-h-12 w-full rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-xs font-bold uppercase tracking-wide text-emerald-900 hover:bg-emerald-100 active:scale-[0.99] transition"
+                          className="min-h-12 w-full rounded-lg border border-emerald-200 bg-emerald-50 px-2 text-[10px] font-semibold uppercase tracking-wide text-emerald-900 hover:bg-emerald-100 active:scale-[0.99] transition"
                         >
                           Volver a modo unidad simple
                         </button>
@@ -819,14 +819,14 @@ export function LineMappingModal({
               ) : null}
 
               {supplierId == null ? (
-                <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-800">
+                <p className="rounded-lg border border-rose-200 bg-rose-50 px-2 py-1.5 text-[10px] font-semibold text-rose-800">
                   Asigna un proveedor al albarán antes de vincular líneas.
                 </p>
               ) : null}
 
               {line.ingredient_id ? (
-                <section className="rounded-xl border border-zinc-100 bg-white shadow-sm p-4 flex flex-col gap-2">
-                  <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">
+                <section className="rounded-lg border border-zinc-200 bg-white p-2 flex flex-col gap-1.5">
+                  <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">
                     Acciones de vínculo / stock
                   </p>
                   {needsRepair && onRepairStock ? (
@@ -835,21 +835,21 @@ export function LineMappingModal({
                       onClick={() => void onRepairStock()}
                       disabled={busy || saving}
                       className={cn(
-                        'w-full min-h-12 rounded-xl bg-amber-500 text-white text-xs font-black uppercase tracking-wide',
+                        'w-full min-h-12 rounded-lg bg-amber-500 text-white text-[10px] font-semibold uppercase tracking-wide',
                         (busy || saving) && 'opacity-60 pointer-events-none'
                       )}
                     >
                       Aplicar stock pendiente
                     </button>
                   ) : null}
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5">
                     {stockApplied && onRectifyStock ? (
                       <button
                         type="button"
                         onClick={() => void onRectifyStock()}
                         disabled={busy || saving}
                         className={cn(
-                          'min-h-12 flex-1 min-w-[8rem] rounded-xl border border-amber-200 bg-amber-50 text-[10px] font-bold uppercase text-amber-800',
+                          'min-h-12 flex-1 min-w-[8rem] rounded-lg border border-amber-200 bg-amber-50 text-[10px] font-semibold uppercase text-amber-800',
                           (busy || saving) && 'opacity-60 pointer-events-none'
                         )}
                       >
@@ -862,7 +862,7 @@ export function LineMappingModal({
                         onClick={() => void onEditMapping()}
                         disabled={busy || saving}
                         className={cn(
-                          'min-h-12 flex-1 min-w-[8rem] rounded-xl border border-zinc-200 bg-white text-[10px] font-bold uppercase text-zinc-700',
+                          'min-h-12 flex-1 min-w-[8rem] rounded-lg border border-zinc-200 bg-white text-[10px] font-semibold uppercase text-zinc-700',
                           (busy || saving) && 'opacity-60 pointer-events-none'
                         )}
                       >
@@ -875,7 +875,7 @@ export function LineMappingModal({
                         onClick={() => void onRemoveMapping()}
                         disabled={busy || saving}
                         className={cn(
-                          'min-h-12 flex-1 min-w-[8rem] rounded-xl border border-rose-200 bg-rose-50 text-[10px] font-bold uppercase text-rose-700',
+                          'min-h-12 flex-1 min-w-[8rem] rounded-lg border border-rose-200 bg-rose-50 text-[10px] font-semibold uppercase text-rose-700',
                           (busy || saving) && 'opacity-60 pointer-events-none'
                         )}
                       >
@@ -889,12 +889,12 @@ export function LineMappingModal({
           )}
         </div>
 
-        <div className="shrink-0 border-t border-zinc-200 bg-white p-4 flex flex-col sm:flex-row gap-2">
+        <div className="shrink-0 border-t border-zinc-200 bg-white px-3 py-2 flex flex-col sm:flex-row gap-1.5">
           <button
             type="button"
             onClick={onClose}
             disabled={saving || busy}
-            className="min-h-12 flex-1 rounded-xl border border-zinc-200 bg-white text-sm font-black uppercase tracking-wide text-zinc-700 hover:bg-zinc-50 active:scale-[0.99] transition"
+            className="min-h-12 flex-1 rounded-lg border border-zinc-200 bg-white text-xs font-semibold uppercase tracking-wide text-zinc-700 hover:bg-zinc-50 active:scale-[0.99] transition"
           >
             Cancelar
           </button>
@@ -903,7 +903,7 @@ export function LineMappingModal({
             onClick={() => void handleSave()}
             disabled={!canSave || saving || loading || busy}
             className={cn(
-              'min-h-12 flex-1 rounded-xl bg-[#36606F] text-sm font-black uppercase tracking-wide text-white shadow-sm hover:bg-[#2d4f5c] active:scale-[0.99] transition',
+              'min-h-12 flex-1 rounded-lg bg-[#36606F] text-xs font-semibold uppercase tracking-wide text-white hover:bg-[#2d4f5c] active:scale-[0.99] transition',
               (!canSave || saving || loading || busy) && 'opacity-50 pointer-events-none'
             )}
           >

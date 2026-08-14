@@ -9,7 +9,6 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
-  FileText,
   Filter,
   Loader2,
   MinusCircle,
@@ -1569,7 +1568,7 @@ export default function AlbaranesHistoricoClient({
                     <div className="flex flex-nowrap items-end gap-2 sm:gap-4 overflow-x-auto min-w-0">
                       <div className="min-w-0 shrink space-y-0.5">
                         <div className="text-[9px] font-black uppercase tracking-wider text-zinc-400">Nº</div>
-                        <div className="text-xs font-semibold text-zinc-900 tabular-nums whitespace-nowrap truncate">
+                        <div className="text-[11px] font-normal text-zinc-600 tabular-nums whitespace-nowrap truncate">
                           {detail.invoice_number ?? '—'}
                         </div>
                       </div>
@@ -1600,9 +1599,8 @@ export default function AlbaranesHistoricoClient({
                               invoiceCarouselIndexRef.current = 0
                               setInvoiceImageViewerOpen(true)
                             }}
-                            className="inline-flex min-h-12 items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-[#36606F] hover:text-[#284955] transition-colors whitespace-nowrap"
+                            className="inline-flex min-h-12 items-center text-[10px] font-normal uppercase tracking-wide text-zinc-500 hover:text-[#36606F] transition-colors whitespace-nowrap"
                           >
-                            <FileText className="h-3.5 w-3.5" />
                             Ver original
                           </button>
                         ) : (
