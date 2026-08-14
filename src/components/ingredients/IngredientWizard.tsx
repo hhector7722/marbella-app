@@ -1020,15 +1020,27 @@ export function IngredientWizard({
 
   if (!ingredientHydrated) {
     return (
-      <div className="rounded-2xl border border-zinc-100 bg-white shadow-sm p-8 flex min-h-[12rem] flex-col items-center justify-center gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-[#36606F]" aria-hidden />
-        <p className="text-center text-sm font-bold text-zinc-600">Cargando configuración del ingrediente…</p>
+      <div
+        className={
+          isExpress
+            ? 'rounded-lg border border-zinc-100 bg-white p-4 flex min-h-[8rem] flex-col items-center justify-center gap-2'
+            : 'rounded-2xl border border-zinc-100 bg-white shadow-sm p-8 flex min-h-[12rem] flex-col items-center justify-center gap-3'
+        }
+      >
+        <Loader2 className="h-6 w-6 animate-spin text-[#36606F]" aria-hidden />
+        <p className="text-center text-xs font-medium text-zinc-600">Cargando configuración del ingrediente…</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-2xl border border-zinc-100 bg-white shadow-sm p-4 space-y-4">
+    <div
+      className={
+        isExpress
+          ? 'rounded-lg border border-zinc-200 bg-white p-3 space-y-2.5'
+          : 'rounded-2xl border border-zinc-100 bg-white shadow-sm p-4 space-y-4'
+      }
+    >
       {step === 'express' ? (
         <IngredientExpressPricePanel
           draft={{

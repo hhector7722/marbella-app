@@ -543,20 +543,17 @@ export function LineMappingModal({
           </button>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 flex flex-col gap-2">
+        <div className="flex-1 min-h-0 overflow-y-auto px-2.5 py-2.5 flex flex-col gap-1.5">
           {loading ? (
-            <div className="flex items-center justify-center gap-2 py-10 text-xs font-medium text-zinc-600">
+            <div className="flex items-center justify-center gap-2 py-8 text-xs font-medium text-zinc-600">
               <Loader2 className="h-5 w-5 animate-spin text-[#36606F]" />
               Preparando sugerencias…
             </div>
           ) : (
             <>
-              <section className="rounded-lg border border-zinc-200 bg-white p-2 flex flex-col gap-2">
+              <section className="rounded-lg border border-zinc-200 bg-white p-2 flex flex-col gap-1.5">
                 <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">
                   Producto en almacén
-                </p>
-                <p className="text-[10px] font-normal text-zinc-600 leading-snug px-1">
-                  Busca el artículo del catálogo que coincide con esta línea del albarán.
                 </p>
 
                 <div className="flex gap-1.5 px-1">
@@ -565,7 +562,7 @@ export function LineMappingModal({
                     <input
                       value={searchQuery}
                       onChange={(e) => void runSearch(e.target.value)}
-                      placeholder="Buscar ingrediente en catálogo…"
+                      placeholder="Buscar en catálogo…"
                       className="w-full min-h-12 rounded-lg border border-zinc-200 bg-white pl-9 pr-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#36606F]/50"
                     />
                   </div>
@@ -667,14 +664,10 @@ export function LineMappingModal({
                       <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">
                         Unidades
                       </p>
-                      <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-2 space-y-0.5 mx-1">
-                        <p className="text-xs font-medium text-emerald-950">
+                      <div className="rounded-lg border border-emerald-200/80 bg-emerald-50/90 px-2 py-1.5 mx-1">
+                        <p className="text-[11px] font-medium text-emerald-950 leading-snug">
                           {autoSameFamilyCaption ??
                             `Conversión automática: 1 ${billingMassVolumeNorm} = 1 ${purchaseMassVolumeNorm}`}
-                        </p>
-                        <p className="text-[10px] font-normal text-emerald-900/80 leading-snug">
-                          Misma familia de medida (masa o volumen): no hace falta indicar garrafas ni
-                          cajas; el precio y el stock se ajustan con la equivalencia estándar.
                         </p>
                       </div>
                       <button
@@ -690,13 +683,9 @@ export function LineMappingModal({
                       <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">
                         Unidades
                       </p>
-                      <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-2 space-y-0.5 mx-1">
-                        <p className="text-xs font-medium text-emerald-950">
+                      <div className="rounded-lg border border-emerald-200/80 bg-emerald-50/90 px-2 py-1.5 mx-1">
+                        <p className="text-[11px] font-medium text-emerald-950 leading-snug">
                           1 unidad en el albarán = 1 unidad en almacén
-                        </p>
-                        <p className="text-[10px] font-normal text-emerald-900/80 leading-snug">
-                          No hace falta calibrar litros ni cajas: cada línea suma una unidad al stock
-                          (€/ud).
                         </p>
                       </div>
                       <button
@@ -754,10 +743,9 @@ export function LineMappingModal({
                     </select>
                   </div>
 
-                  <p className="text-[10px] font-normal text-zinc-600 leading-snug border-t border-zinc-100 pt-2 mx-1">
-                    El sistema calculará y guardará el precio exacto por{' '}
-                    <span className="font-semibold text-[#36606F]">{ingredientPurchaseUnit || 'ud'}</span> de
-                    compra del ingrediente seleccionado.
+                  <p className="text-[10px] font-normal text-zinc-500 leading-snug mx-1">
+                    Precio guardado por{' '}
+                    <span className="font-semibold text-[#36606F]">{ingredientPurchaseUnit || 'ud'}</span>.
                   </p>
 
                   <label className="block pt-0.5 px-1">

@@ -1282,52 +1282,57 @@ export default function AlbaranesHistoricoClient({
       ) : null}
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col min-h-[320px]">
-          <div className="p-2 overflow-auto flex-1 min-h-0">
+          <div className="px-1.5 py-1 overflow-auto flex-1 min-h-0">
             {filtered.length === 0 ? (
-              <div className="p-6 text-sm font-bold text-zinc-500">No hay albaranes que coincidan.</div>
+              <div className="px-2 py-6 text-xs font-medium text-zinc-500">No hay albaranes que coincidan.</div>
             ) : (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col">
                 {filtered.map((it) => {
                   const supplier = it.supplier_name ? it.supplier_name : 'Proveedor pendiente'
                   // Prioridad: image_url de BD > logo local en /public/icons/prov > icono genérico.
                   const logo = getSupplierLogo(it.supplier_image_url, it.supplier_name)
+                  const invoiceNo = String(it.invoice_number ?? '').trim()
                   return (
                     <button
                       key={it.id}
                       type="button"
                       onClick={() => openDetail(it.id)}
-                      className="w-full text-left rounded-xl p-3 transition min-h-[72px] active:scale-[0.995] hover:bg-zinc-50"
+                      className="w-full text-left rounded-lg px-1.5 py-1.5 transition min-h-12 active:scale-[0.995] hover:bg-zinc-50 border-b border-zinc-100 last:border-b-0"
                     >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0 flex items-center gap-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0 flex items-center gap-2">
                           {/* Avatar proveedor: <img> nativo para no chocar con remotePatterns. Sin marco. */}
-                          <div className="shrink-0 h-10 w-10 flex items-center justify-center">
+                          <div className="shrink-0 h-8 w-8 flex items-center justify-center">
                             {logo ? (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img src={logo} alt={supplier} className="h-10 w-10 object-contain" />
+                              <img src={logo} alt={supplier} className="h-8 w-8 object-contain" />
                             ) : (
-                              <Truck className="h-6 w-6 text-zinc-400" />
+                              <Truck className="h-5 w-5 text-zinc-400" />
                             )}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-sm font-black text-zinc-900 truncate">{supplier}</p>
-                            <p className="text-[11px] font-medium text-zinc-500 truncate">
-                              {formatDateTitle(it.invoice_date)}
+                            <p className="text-xs font-semibold text-zinc-900 truncate">{supplier}</p>
+                            <p className="text-[10px] font-normal text-zinc-500 truncate tabular-nums">
+                              {[invoiceNo ? `Nº ${invoiceNo}` : null, formatDateTitle(it.invoice_date)]
+                                .filter(Boolean)
+                                .join(' · ')}
                             </p>
                           </div>
                         </div>
-                        <div className="shrink-0 text-right flex items-center gap-2">
-                          <p className="text-sm font-black text-zinc-900">{formatMaybeMoney(it.total_amount)}</p>
+                        <div className="shrink-0 text-right flex items-center gap-1.5">
+                          <p className="text-xs font-semibold text-zinc-900 tabular-nums">
+                            {formatMaybeMoney(it.total_amount)}
+                          </p>
                           {(() => {
                             const st = String(it.status ?? '').toLowerCase()
                             if (st === 'processing') {
                               return (
                                 <span
-                                  className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-sky-800"
+                                  className="inline-flex items-center gap-0.5 rounded-md bg-sky-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-sky-800"
                                   aria-label="Procesando OCR"
                                   title="Leyendo albarán en segundo plano"
                                 >
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  <Loader2 className="h-3 w-3 animate-spin" />
                                   Leyendo
                                 </span>
                               )
@@ -1335,11 +1340,11 @@ export default function AlbaranesHistoricoClient({
                             if (st === 'ocr_failed') {
                               return (
                                 <span
-                                  className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-rose-800"
+                                  className="inline-flex items-center gap-0.5 rounded-md bg-rose-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-rose-800"
                                   aria-label="Error de lectura"
                                   title={it.ocr_error ?? 'No se pudo leer el albarán'}
                                 >
-                                  <AlertCircle className="h-3.5 w-3.5" />
+                                  <AlertCircle className="h-3 w-3" />
                                   Error
                                 </span>
                               )
@@ -1347,11 +1352,11 @@ export default function AlbaranesHistoricoClient({
                             const accountingReady = st === 'mapped' || st === 'completed'
                             return accountingReady ? (
                             <span
-                              className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-emerald-600 text-white"
+                              className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-emerald-600 text-white"
                               aria-label="Albarán contabilizado"
                               title="Albarán contabilizado (entra en PyG)"
                             >
-                              <Check className="h-4 w-4" strokeWidth={3} />
+                              <Check className="h-3 w-3" strokeWidth={3} />
                             </span>
                             ) : null
                           })()}
@@ -1465,18 +1470,18 @@ export default function AlbaranesHistoricoClient({
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto bg-[#fafafa] p-3 sm:p-4 space-y-4">
+                <div className="flex-1 overflow-y-auto bg-[#fafafa] p-2.5 sm:p-3 space-y-2.5">
                   {/* Status & Errors */}
                   {deleteError ? (
-                    <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-sm font-bold text-red-700">
+                    <div className="bg-red-50 border border-red-200 rounded-lg px-2.5 py-2 text-xs font-medium text-red-700">
                       Eliminar: {deleteError}
                     </div>
                   ) : null}
                   {saveError ? (
-                    <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-sm font-bold text-red-700">{saveError}</div>
+                    <div className="bg-red-50 border border-red-200 rounded-lg px-2.5 py-2 text-xs font-medium text-red-700">{saveError}</div>
                   ) : null}
                   {saveWarning ? (
-                    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm font-bold text-amber-800">
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-2 text-xs font-medium text-amber-800">
                       {saveWarning}
                     </div>
                   ) : null}
@@ -1540,23 +1545,23 @@ export default function AlbaranesHistoricoClient({
                   ) : null}
 
                   {mappedLinesWithoutStockCount > 0 && detail && !isLoadingDetail ? (
-                    <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                      <p className="text-sm font-black text-amber-900 leading-snug min-w-0 flex-1">
-                        {mappedLinesWithoutStockCount} línea{mappedLinesWithoutStockCount === 1 ? '' : 's'} mapeada{mappedLinesWithoutStockCount === 1 ? '' : 's'} sin movimiento de stock. Pulsa el aviso en cada
-                        línea o repáralas todas aquí.
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-amber-200/80 bg-amber-50/90 px-2 py-1.5">
+                      <p className="text-[11px] font-medium text-amber-900 leading-snug min-w-0 flex-1">
+                        {mappedLinesWithoutStockCount} línea
+                        {mappedLinesWithoutStockCount === 1 ? '' : 's'} sin movimiento
                       </p>
                       <button
                         type="button"
                         onClick={() => void repairAllMappedLinesWithoutStock()}
                         disabled={repairingInvoiceStockBatch || repairingStockLineId !== null || lineActionBusy}
                         className={cn(
-                          'shrink-0 min-h-[48px] px-6 rounded-xl bg-amber-700 text-white text-xs font-black uppercase tracking-wider active:scale-[0.99] transition inline-flex items-center justify-center gap-2 hover:bg-amber-800',
+                          'shrink-0 min-h-12 px-3 rounded-lg bg-amber-700/90 text-white text-[10px] font-semibold uppercase tracking-wide active:scale-[0.99] transition inline-flex items-center justify-center gap-1.5 hover:bg-amber-800',
                           (repairingInvoiceStockBatch || repairingStockLineId !== null || lineActionBusy) &&
                             'opacity-60 pointer-events-none'
                         )}
                       >
                         {repairingInvoiceStockBatch ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         ) : null}
                         Reparar todas
                       </button>
@@ -1935,7 +1940,7 @@ export default function AlbaranesHistoricoClient({
                   }}
                   hideHeader={true}
                   wrapperClassName="max-w-lg"
-                  className="max-h-[86vh] p-3"
+                  className="max-h-[86vh] p-2"
                   panelHostClassName="p-0"
                   zIndexClass="z-[10100]"
                   title="Wizard de ingrediente"
