@@ -246,6 +246,20 @@ Cada capacidad tiene sus piezas propias: cierre de caja, albaranes, carta, cocin
 
 Su contrato lo fija la [especificación de su capacidad](../1-producto/capacidades/). Este documento solo gobierna que respeten los tokens, los patrones y las leyes de experiencia.
 
+### Atajo de dashboard (`DashboardShortcut`)
+
+**Propósito**: acceso táctil a una capacidad desde los dashboards (rejilla de iconos).
+
+**Anatomía**: host → iconBox → asset; text como pieza hermana. Badge y `children` métricos son accesorios de instancia, no variantes.
+
+**Variantes** (cerradas, estructurales): `icon-text`, `icon-card-text-outside`, `separated`, `icon-only`, `text-only`. Se resuelven a propiedades independientes de composición; no existe el enum legacy `composition`.
+
+**Identidad**: `data-component="DashboardShortcut"`, `data-variant`, `data-instance` (id de negocio, p. ej. `asistencia`). El label visible no forma parte de la identidad. `data-studio-target` (`bg` / `asset` / `text`) se conserva para compatibilidad con Marbella Studio.
+
+**Estado**: existe. Primer consumidor: rejilla Master. Staff (`IOSIconBoxed`) y Admin (`renderQuickActionSquare`) aún no migrados.
+
+**Código**: `src/components/dashboards/DashboardShortcut.tsx`.
+
 ---
 
 ## 4. Reglas del sistema
@@ -262,11 +276,11 @@ Su contrato lo fija la [especificación de su capacidad](../1-producto/capacidad
 
 ## 5. Estado real del sistema
 
-Hay que decirlo con claridad: **Marbella no tiene hoy un sistema de componentes**. Tiene catorce piezas transversales, una estructura de pantalla de adopción parcial, y todo lo demás resuelto pantalla a pantalla con utilidades de estilo.
+Hay que decirlo con claridad: **Marbella aún no tiene un sistema de componentes completo**. Tiene piezas transversales, una estructura de pantalla de adopción parcial, el piloto `DashboardShortcut` como primer componente de Design System con tokens mínimos adoptados, y el resto resuelto pantalla a pantalla con utilidades de estilo.
 
 Consecuencias observables:
 - No existe botón, campo, tarjeta, insignia ni estado vacío de sistema.
-- El mismo bloque visual está reescrito decenas de veces con variaciones no intencionadas.
+- El mismo bloque visual está reescrito decenas de veces con variaciones no intencionadas (incluidos atajos Staff/Admin aún no unificados).
 - La navegación inferior está implementada dos veces.
 - Las piezas de dominio, muy numerosas, se apoyan directamente en utilidades y no en base.
 

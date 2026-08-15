@@ -1376,12 +1376,12 @@ export default function AlbaranesHistoricoClient({
       {selectedId && modalContainer
         ? createPortal(
             <div
-              className="fixed inset-0 z-[10050] bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center animate-in fade-in duration-150"
+              className="fixed inset-0 z-[10050] flex items-center justify-center bg-black/60 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm animate-in fade-in duration-150"
               onClick={(e) => {
                 if (e.target === e.currentTarget) closeModal()
               }}
             >
-              <div className="bg-white rounded-[20px] shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+              <div className="flex max-h-[min(90vh,calc(100dvh-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom)))] w-full max-w-5xl flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl">
                 <input
                   ref={appendSheetInputRef}
                   type="file"

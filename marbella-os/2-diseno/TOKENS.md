@@ -59,7 +59,7 @@ Es el único token con implementación centralizada real: existe como utilidad �
 
 | Token | Valor | Papel | Estado |
 |---|---|---|---|
-| `color.superficie` | `#FFFFFF` | Superficie de trabajo. Tarjetas, modales, paneles | declarado |
+| `color.superficie` | `#FFFFFF` | Superficie de trabajo. Tarjetas, modales, paneles | adoptado (piloto `DashboardShortcut` vía `--color-superficie`) |
 | `color.superficie.hundida` | `#FAFAFA` | Fondo de zonas agrupadas dentro de una superficie | declarado |
 | `color.superficie.inactiva` | `#F4F4F5` | Elementos deshabilitados, cabeceras de tabla | declarado |
 
@@ -68,7 +68,7 @@ Es el único token con implementación centralizada real: existe como utilidad �
 | Token | Valor | Papel | Estado |
 |---|---|---|---|
 | `color.texto` | `#18181B` | Texto principal y cifras | declarado |
-| `color.texto.fuerte` | `#27272A` | Títulos y énfasis | declarado |
+| `color.texto.fuerte` | `#27272A` | Títulos y énfasis | adoptado (piloto `DashboardShortcut` vía `--color-texto-fuerte`) |
 | `color.texto.medio` | `#52525B` | Texto de apoyo, descripciones | declarado |
 | `color.texto.suave` | `#71717A` | Etiquetas, metadatos | declarado |
 | `color.texto.tenue` | `#A1A1AA` | Texto de mínima jerarquía, marcas de posición | declarado |
@@ -78,7 +78,7 @@ Es el único token con implementación centralizada real: existe como utilidad �
 
 | Token | Valor | Papel | Estado |
 |---|---|---|---|
-| `color.borde` | `#F4F4F5` | Borde por defecto de superficies de trabajo | declarado |
+| `color.borde` | `#F4F4F5` | Borde por defecto de superficies de trabajo | adoptado (piloto `DashboardShortcut` vía `--color-borde`) |
 | `color.borde.marcado` | `#E4E4E7` | Separadores y bordes de campos de entrada | declarado |
 | `color.borde.impreso` | `#D9E2EC` | Filetes y separadores en documentos impresos | adoptado |
 
@@ -128,14 +128,14 @@ Escala de cuatro píxeles. **No existen valores intermedios.**
 | `espacio.8` | 32 px | Separación mayor y márgenes de página |
 | `espacio.12` | 48 px | Separación de zonas independientes |
 
-Estado: adoptado, por herencia de la escala del motor de estilos.
+Estado: `espacio.1` y `espacio.2` adoptados en el piloto `DashboardShortcut` (`--espacio-1`, `--espacio-2`). El resto de la escala permanece adoptado por herencia del motor de estilos, sin nombres de token en la mayoría del producto.
 
 ## 9. Forma
 
 | Token | Valor | Papel | Estado |
 |---|---|---|---|
-| `radio.control` | 12 px | Botones, campos, tarjetas de contenido. **Radio dominante del producto** | declarado |
-| `radio.superficie` | 16 px | Modales, paneles, superficies contenedoras | declarado |
+| `radio.control` | 12 px | Botones, campos, tarjetas de contenido. **Radio dominante del producto** | adoptado (piloto `DashboardShortcut` vía `--radio-control`) |
+| `radio.superficie` | 16 px | Modales, paneles, superficies contenedoras | adoptado (piloto `DashboardShortcut` vía `--radio-superficie`) |
 | `radio.amplio` | 24 px | Superficies destacadas de cliente | declarado |
 | `radio.circular` | pleno | Avatares, indicadores, botones circulares de acción | declarado |
 
@@ -145,7 +145,7 @@ Prohibido mezclar radios dentro de un mismo bloque, según [LENGUAJE-VISUAL §5]
 
 | Token | Valor | Papel | Estado |
 |---|---|---|---|
-| `elevacion.superficie` | sombra mínima | Separa la superficie de trabajo del envolvente. **Elevación por defecto** | declarado |
+| `elevacion.superficie` | sombra mínima | Separa la superficie de trabajo del envolvente. **Elevación por defecto** | adoptado (piloto `DashboardShortcut` vía `--elevacion-superficie`) |
 | `elevacion.flotante` | sombra media | Elementos que se despegan: menús, elementos arrastrados | declarado |
 | `elevacion.modal` | sombra amplia | Modales y capas superpuestas | declarado |
 | `elevacion.ninguna` | sin sombra | Elementos embebidos y filas de tabla | declarado |
@@ -154,7 +154,7 @@ Prohibido mezclar radios dentro de un mismo bloque, según [LENGUAJE-VISUAL §5]
 
 | Token | Valor | Papel | Estado |
 |---|---|---|---|
-| `tactil.minimo` | 48 px | Alto mínimo de todo objetivo pulsable. **No negociable** | declarado |
+| `tactil.minimo` | 48 px | Alto mínimo de todo objetivo pulsable. **No negociable** | adoptado (piloto `DashboardShortcut` vía `--tactil-minimo`) |
 | `tactil.reducido` | 44 px | Únicamente elementos secundarios en escritorio. Es un compromiso | declarado |
 | `tactil.separacion` | 8 px | Separación mínima entre objetivos pulsables adyacentes | declarado |
 
@@ -195,6 +195,6 @@ Añadir un token nuevo exige justificar por qué ninguno de los existentes sirve
 ## 15. Deuda de tokens conocida
 
 - **Dos escalas de neutros en uso.** Conviven la escala de grises fría y otra escala de grises distinta, con cientos de usos cada una. La canónica es la fría; la otra es deuda de migración.
-- **Ningún token de color está centralizado.** El tema del motor de estilos está vacío y el color de marca aparece repetido literalmente casi novecientas veces.
+- **La marca y la mayoría de colores de pantalla siguen sin centralizar.** El piloto `DashboardShortcut` adoptó un subconjunto mínimo (`superficie`, `borde`, `texto.fuerte`, radios, elevación, táctil, `espacio.1/2`) vía CSS variables y Tailwind. El color de marca sigue repetido literalmente cientos de veces.
 - **El azul de marca difiere entre pantalla y documento impreso.**
 - **Una tipografía ajena** se introdujo en una superficie pública sin declararse como excepción.

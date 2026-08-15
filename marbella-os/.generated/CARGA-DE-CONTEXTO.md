@@ -1,5 +1,5 @@
 <!-- Generado desde 50 documentos de marbella-os/.
-     Huella del origen: f4ccc06d457cbedf
+     Huella del origen: dae273e50a38371a
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -75,4 +75,4 @@ es `CANON §5`.
 | 20 | `marbella-os/GLOSARIO.md` |
 
 Todo lo que no aparece en esta tabla **no es normativo** y no autoriza ninguna
-decisión, empezando por los 43 documentos de `marbella-os/6-investigacion/`.
+decisión, empezando por los 45 documentos de `marbella-os/6-investigacion/`.

@@ -36,6 +36,10 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
 
+## 2026-08-15
+
+- **Nace el piloto de Design System de pantalla.** Tokens mínimos adoptados en CSS/Tailwind y primer componente oficial `DashboardShortcut`, usado por la rejilla Master. Staff/Admin aún no migrados. Studio sin capas nuevas; el componente emite identidad estable (`data-component` / `data-variant` / `data-instance`) para lectura futura.
+
 ## 2026-08-13
 
 - **Evidence en albaranes filtra candidatas OCR por línea.** Sin provenance, el modal solo lista filas del documento razonablemente similares a la línea seleccionada (reutiliza `nameSimilarity` del matcher con umbral de UI `0.4`); con provenance, solo la fila vinculada. Ya no se vuelcan AGUA/APEROL al abrir FRANKFURT.

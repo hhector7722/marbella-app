@@ -4,9 +4,10 @@ import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { BarChart3, Check } from 'lucide-react';
 import PremiumCountUp from '@/components/ui/PremiumCountUp';
-import DashboardIosIcon from '@/components/dashboards/DashboardIosIcon';
+import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { OvertimeWeekSnapshot } from '@/lib/master-overtime-snapshot';
+
 const WEB_URL = 'https://marbella-web.vercel.app';
 
 type MasterShortcutGridProps = {
@@ -53,7 +54,8 @@ export default function MasterShortcutGrid({
         {
             key: 'caja-inicial',
             node: (
-                <DashboardIosIcon
+                <DashboardShortcut
+                    instance="caja-inicial"
                     label="C INICIAL"
                     labelClassName="text-white/90"
                     contentClassName="w-full h-12 md:h-11 flex-none md:w-full items-center justify-center"
@@ -70,30 +72,102 @@ export default function MasterShortcutGrid({
                             className="text-sm font-black leading-none text-white tabular-nums whitespace-nowrap md:text-[11px]"
                         />
                     )}
-                </DashboardIosIcon>
+                </DashboardShortcut>
             ),
         },
-        { key: 'asistencia', node: <DashboardIosIcon label="Asistencia" img="/icons/calendar.png" onClick={() => router.push('/staff/history')} /> },
-        { key: 'recetas', node: <DashboardIosIcon label="Recetas" img="/icons/recipes.png" onClick={() => router.push('/recipes')} /> },
-        { key: 'ingredientes', node: <DashboardIosIcon label="Ingredientes" img="/icons/ingrediente.png" onClick={() => router.push('/ingredients')} /> },
-        { key: 'albaranes', node: <DashboardIosIcon label="Albaranes" img="/icons/scan.png" onClick={() => router.push('/dashboard/albaranes')} /> },
-        { key: 'carta', node: <DashboardIosIcon label="Carta" img="/icons/menu.png" onClick={() => router.push('/staff/carta')} /> },
-        { key: 'consumo', node: <DashboardIosIcon label="Consumo" img="/icons/consum.png" onClick={() => router.push('/dashboard/consumo-personal')} /> },
+        {
+            key: 'asistencia',
+            node: (
+                <DashboardShortcut
+                    instance="asistencia"
+                    label="Asistencia"
+                    img="/icons/calendar.png"
+                    onClick={() => router.push('/staff/history')}
+                />
+            ),
+        },
+        {
+            key: 'recetas',
+            node: (
+                <DashboardShortcut
+                    instance="recetas"
+                    label="Recetas"
+                    img="/icons/recipes.png"
+                    onClick={() => router.push('/recipes')}
+                />
+            ),
+        },
+        {
+            key: 'ingredientes',
+            node: (
+                <DashboardShortcut
+                    instance="ingredientes"
+                    label="Ingredientes"
+                    img="/icons/ingrediente.png"
+                    onClick={() => router.push('/ingredients')}
+                />
+            ),
+        },
+        {
+            key: 'albaranes',
+            node: (
+                <DashboardShortcut
+                    instance="albaranes"
+                    label="Albaranes"
+                    img="/icons/scan.png"
+                    onClick={() => router.push('/dashboard/albaranes')}
+                />
+            ),
+        },
+        {
+            key: 'carta',
+            node: (
+                <DashboardShortcut
+                    instance="carta"
+                    label="Carta"
+                    img="/icons/menu.png"
+                    onClick={() => router.push('/staff/carta')}
+                />
+            ),
+        },
+        {
+            key: 'consumo',
+            node: (
+                <DashboardShortcut
+                    instance="consumo"
+                    label="Consumo"
+                    img="/icons/consum.png"
+                    onClick={() => router.push('/dashboard/consumo-personal')}
+                />
+            ),
+        },
         {
             key: 'rentabilidad',
             node: (
-                <DashboardIosIcon
+                <DashboardShortcut
+                    instance="rentabilidad"
                     label="Rentabilidad"
                     img="/icons/rent.png"
                     onClick={() => router.push('/dashboard/insights')}
                 />
             ),
         },
-        { key: 'horarios', node: <DashboardIosIcon label="Horarios" img="/icons/schedule.png" onClick={onOpenHorarios} /> },
+        {
+            key: 'horarios',
+            node: (
+                <DashboardShortcut
+                    instance="horarios"
+                    label="Horarios"
+                    img="/icons/schedule.png"
+                    onClick={onOpenHorarios}
+                />
+            ),
+        },
         {
             key: 'hextras',
             node: (
-                <DashboardIosIcon
+                <DashboardShortcut
+                    instance="hextras"
                     label="H. extras"
                     contentClassName="w-12 h-12 md:w-11 md:h-11 flex-none"
                     onClick={() => router.push('/dashboard/overtime')}
@@ -120,17 +194,58 @@ export default function MasterShortcutGrid({
                             <span className="text-sm md:text-[11px] font-black text-zinc-300 leading-none"> </span>
                         )}
                     </div>
-                </DashboardIosIcon>
+                </DashboardShortcut>
             ),
         },
-        { key: 'plantilla', node: <DashboardIosIcon label="Plantilla" img="/icons/admin.png" onClick={onOpenPlantilla} /> },
-        { key: 'cierre', node: <DashboardIosIcon label="Cierre" img="/icons/lock.png" onClick={onOpenCierre} /> },
-        { key: 'cambio', node: <DashboardIosIcon label="Cambio" img="/icons/change.png" onClick={onOpenCambio} /> },
-        { key: 'web', node: <DashboardIosIcon label="Web" img="/icons/link.png" onClick={() => window.open(WEB_URL, '_blank', 'noopener,noreferrer')} /> },
+        {
+            key: 'plantilla',
+            node: (
+                <DashboardShortcut
+                    instance="plantilla"
+                    label="Plantilla"
+                    img="/icons/admin.png"
+                    onClick={onOpenPlantilla}
+                />
+            ),
+        },
+        {
+            key: 'cierre',
+            node: (
+                <DashboardShortcut
+                    instance="cierre"
+                    label="Cierre"
+                    img="/icons/lock.png"
+                    onClick={onOpenCierre}
+                />
+            ),
+        },
+        {
+            key: 'cambio',
+            node: (
+                <DashboardShortcut
+                    instance="cambio"
+                    label="Cambio"
+                    img="/icons/change.png"
+                    onClick={onOpenCambio}
+                />
+            ),
+        },
+        {
+            key: 'web',
+            node: (
+                <DashboardShortcut
+                    instance="web"
+                    label="Web"
+                    img="/icons/link.png"
+                    onClick={() => window.open(WEB_URL, '_blank', 'noopener,noreferrer')}
+                />
+            ),
+        },
         {
             key: 'reservas',
             node: (
-                <DashboardIosIcon
+                <DashboardShortcut
+                    instance="reservas"
                     label="Reservas"
                     img="/icons/reservas.png"
                     onClick={onOpenReservas}
@@ -138,11 +253,22 @@ export default function MasterShortcutGrid({
                 />
             ),
         },
-        { key: 'propinas', node: <DashboardIosIcon label="Propinas" img="/icons/tip.png" onClick={() => router.push('/dashboard/propinas')} /> },
+        {
+            key: 'propinas',
+            node: (
+                <DashboardShortcut
+                    instance="propinas"
+                    label="Propinas"
+                    img="/icons/tip.png"
+                    onClick={() => router.push('/dashboard/propinas')}
+                />
+            ),
+        },
         {
             key: 'uso-app',
             node: (
-                <DashboardIosIcon
+                <DashboardShortcut
+                    instance="uso-app"
                     label="Uso app"
                     icon={BarChart3}
                     iconClassName="text-[#36606F]"
@@ -156,9 +282,11 @@ export default function MasterShortcutGrid({
         items.push({
             key: 'cambio-1',
             node: (
-                <DashboardIosIcon label="Cambio 1" onClick={() => onOpenChangeBoxAudit(changeBox1)}>
-                    <span className="text-sm md:text-[11px] font-black text-zinc-800 leading-none tabular-nums text-center">{formatBoxEur(Number(changeBox1.current_balance ?? 0))}</span>
-                </DashboardIosIcon>
+                <DashboardShortcut instance="cambio-1" label="Cambio 1" onClick={() => onOpenChangeBoxAudit(changeBox1)}>
+                    <span className="text-sm md:text-[11px] font-black text-zinc-800 leading-none tabular-nums text-center">
+                        {formatBoxEur(Number(changeBox1.current_balance ?? 0))}
+                    </span>
+                </DashboardShortcut>
             ),
         });
     }
@@ -167,16 +295,25 @@ export default function MasterShortcutGrid({
         items.push({
             key: 'cambio-2',
             node: (
-                <DashboardIosIcon label="Cambio 2" onClick={() => onOpenChangeBoxAudit(changeBox2)}>
-                    <span className="text-sm md:text-[11px] font-black text-zinc-800 leading-none tabular-nums text-center">{formatBoxEur(Number(changeBox2.current_balance ?? 0))}</span>
-                </DashboardIosIcon>
+                <DashboardShortcut instance="cambio-2" label="Cambio 2" onClick={() => onOpenChangeBoxAudit(changeBox2)}>
+                    <span className="text-sm md:text-[11px] font-black text-zinc-800 leading-none tabular-nums text-center">
+                        {formatBoxEur(Number(changeBox2.current_balance ?? 0))}
+                    </span>
+                </DashboardShortcut>
             ),
         });
     }
 
     items.push({
         key: 'proveedores',
-        node: <DashboardIosIcon label="Proveedores" img="/icons/suplier.png" onClick={() => router.push('/suppliers')} />,
+        node: (
+            <DashboardShortcut
+                instance="proveedores"
+                label="Proveedores"
+                img="/icons/suplier.png"
+                onClick={() => router.push('/suppliers')}
+            />
+        ),
     });
 
     return (

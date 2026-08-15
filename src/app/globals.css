@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Design System de pantalla — tokens mínimos (piloto DashboardShortcut).
+ * Origen: marbella-os/2-diseno/TOKENS.md. No inventa valores nuevos.
+ */
+:root {
+  --color-superficie: #ffffff;
+  --color-borde: #f4f4f5;
+  --color-texto-fuerte: #27272a;
+  --radio-superficie: 16px;
+  --radio-control: 12px;
+  --espacio-1: 4px;
+  --espacio-2: 8px;
+  --tactil-minimo: 48px;
+  --elevacion-superficie: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
 /* Lente visual del sandbox: afecta a la expresión, nunca a datos o lógica. */
 [data-marbella-sandbox='true'][data-dl-elevation='0'] [class~='shadow-2xl'],
 [data-marbella-sandbox='true'][data-dl-elevation='0'] [class~='shadow-xl'],

@@ -27,11 +27,13 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 
 ## D1 · No hay tokens de diseño centralizados
 
-**Prioridad: alta.** El tema del motor de estilos está vacío. El color de marca aparece repetido literalmente casi novecientas veces, y conviven dos escalas de grises distintas con cientos de usos cada una.
+**Prioridad: alta.** El tema del motor de estilos estaba vacío. El color de marca aparece repetido literalmente casi novecientas veces, y conviven dos escalas de grises distintas con cientos de usos cada una.
 
-**Coste**: un cambio de color es un cambio en cientos de ficheros. Cualquier evolución visual del producto es hoy económicamente inviable.
+**Pago parcial (2026-08-15):** el piloto `DashboardShortcut` adoptó un subconjunto mínimo vía CSS variables y Tailwind (`superficie`, `borde`, `texto.fuerte`, radios, elevación, táctil, `espacio.1/2`). La marca y el resto del catálogo siguen declarados sin adopción global.
 
-**Disparador de pago**: antes de construir cualquier componente base. Está declarado en [TOKENS](../2-diseno/TOKENS.md), que es el paso previo ya dado; falta la propagación al código.
+**Coste residual**: un cambio de color de marca sigue siendo un cambio en cientos de ficheros.
+
+**Disparador de pago**: continuar la adopción token a token al construir cada componente base. Contrato en [TOKENS](../2-diseno/TOKENS.md).
 
 ---
 
@@ -39,9 +41,11 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 
 **Prioridad: alta.** No existe botón, campo, tarjeta, insignia ni estado vacío de sistema. Cada pantalla los reconstruye.
 
-**Coste**: deriva visual continua, imposibilidad de aplicar una mejora de accesibilidad o de comportamiento en un solo sitio, y el defecto recurrente de confundir «no hay datos» con «no se pudieron leer los datos».
+**Pago parcial (2026-08-15):** existe `DashboardShortcut` como primer componente oficial del Design System (consumido por Master). Siguen pendientes Staff/Admin (clones locales) y toda la base (botón, campo, tarjeta, vacío…).
 
-**Disparador de pago**: inmediatamente después de D1. El contrato está escrito en [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
+**Coste residual**: deriva visual continua fuera del piloto; riesgo de confundir «no hay datos» con fallo de lectura sin `EmptyState`.
+
+**Disparador de pago**: continuar tras D1 parcial. Contrato en [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 
 ---
 
