@@ -1383,7 +1383,7 @@ export default function AlbaranesHistoricoClient({
               }}
             >
               <div
-                className="flex min-h-0 w-full max-w-5xl flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl max-h-[min(58dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2.5rem))]"
+                className="flex min-h-0 w-full max-w-5xl flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl max-h-[min(62dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2.5rem))]"
               >
                 <input
                   ref={appendSheetInputRef}
@@ -1576,7 +1576,7 @@ export default function AlbaranesHistoricoClient({
 
                   {/* 3. BLOQUE DE INFORMACIÓN DEL DOCUMENTO */}
                   {detail && !isLoadingDetail && (
-                    <div className="grid w-full grid-cols-4 items-end gap-x-2 min-w-0">
+                    <div className="mb-3 grid w-full grid-cols-4 items-end gap-x-2 min-w-0">
                       <div className="min-w-0 space-y-0.5 text-center">
                         <div className="text-[9px] font-black uppercase tracking-wider text-zinc-400">Nº</div>
                         <div className="text-[11px] font-normal text-zinc-600 tabular-nums truncate">
