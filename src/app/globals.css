@@ -10,12 +10,25 @@
   --color-superficie: #ffffff;
   --color-borde: #f4f4f5;
   --color-texto-fuerte: #27272a;
+  --color-marca: #36606f;
   --radio-superficie: 16px;
   --radio-control: 12px;
   --espacio-1: 4px;
   --espacio-2: 8px;
+  --espacio-3: 12px;
+  --espacio-4: 16px;
   --tactil-minimo: 48px;
   --elevacion-superficie: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --elevacion-modal: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  --modal-max-height: min(
+    94svh,
+    calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 1rem)
+  );
+  --modal-overlay: rgb(0 0 0 / 0.4);
+  --z-modal-base: 200;
+  --z-modal-derived: 210;
+  --z-modal-system: 220;
+  --z-modal-sheet: 205;
 }
 
 /* Lente visual del sandbox: afecta a la expresión, nunca a datos o lógica. */

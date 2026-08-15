@@ -115,7 +115,7 @@ El modal es el patrón de interacción más usado del producto y por eso tiene l
 - **El modal respeta el área segura del dispositivo.** Nunca queda cortado por la muesca, la barra de inicio o el teclado, ni en navegador ni en aplicación instalada.
 - El contenido del modal se desplaza; su cabecera y su pie no.
 - Mientras hay un modal abierto, las barras fijas de la aplicación se atenúan y dejan de responder. No puede haber dos capas compitiendo por el mismo toque.
-- No se anidan modales. Si un modal necesita abrir otro, el flujo está mal diseñado.
+- **No se anidan modales de forma arbitraria.** Como máximo se permite **una superficie derivada** sobre el modal principal de la misma tarea ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)). Un tercer overlay de negocio está prohibido; no se resuelve con z-index manual.
 - Cerrar un modal con datos introducidos sin guardar pide confirmación.
 
 ---

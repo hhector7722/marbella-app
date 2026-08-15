@@ -1574,16 +1574,16 @@ export default function AlbaranesHistoricoClient({
 
                   {/* 3. BLOQUE DE INFORMACIÓN DEL DOCUMENTO */}
                   {detail && !isLoadingDetail && (
-                    <div className="flex flex-nowrap items-end gap-2 sm:gap-4 overflow-x-auto min-w-0">
-                      <div className="min-w-0 shrink space-y-0.5">
+                    <div className="grid w-full grid-cols-4 items-end gap-x-2 min-w-0">
+                      <div className="min-w-0 space-y-0.5">
                         <div className="text-[9px] font-black uppercase tracking-wider text-zinc-400">Nº</div>
-                        <div className="text-[11px] font-normal text-zinc-600 tabular-nums whitespace-nowrap truncate">
+                        <div className="text-[11px] font-normal text-zinc-600 tabular-nums truncate">
                           {detail.invoice_number ?? '—'}
                         </div>
                       </div>
-                      <div className="shrink-0 space-y-0.5">
+                      <div className="min-w-0 space-y-0.5">
                         <div className="text-[9px] font-black uppercase tracking-wider text-zinc-400">Fecha</div>
-                        <div className="text-xs font-semibold text-zinc-900 tabular-nums whitespace-nowrap">
+                        <div className="text-xs font-semibold text-zinc-900 tabular-nums truncate">
                           {(() => {
                             const raw = String(detail.invoice_date ?? '').trim()
                             const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw)
@@ -1591,15 +1591,15 @@ export default function AlbaranesHistoricoClient({
                           })()}
                         </div>
                       </div>
-                      <div className="shrink-0 space-y-0.5">
+                      <div className="min-w-0 space-y-0.5">
                         <div className="text-[9px] font-black uppercase tracking-wider text-zinc-400">Total</div>
-                        <div className="text-xs font-semibold text-[#36606F] tabular-nums whitespace-nowrap">
+                        <div className="text-xs font-semibold text-[#36606F] tabular-nums truncate">
                           {detail.total_amount != null
                             ? `${Number(detail.total_amount).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
                             : '—'}
                         </div>
                       </div>
-                      <div className="shrink-0 ml-auto self-end">
+                      <div className="min-w-0 self-end">
                         {invoiceImageSheetOptions.length > 0 ? (
                           <button
                             type="button"
@@ -1608,12 +1608,14 @@ export default function AlbaranesHistoricoClient({
                               invoiceCarouselIndexRef.current = 0
                               setInvoiceImageViewerOpen(true)
                             }}
-                            className="inline-flex min-h-12 items-center text-[10px] font-normal uppercase tracking-wide text-zinc-500 hover:text-[#36606F] transition-colors whitespace-nowrap"
+                            className="inline-flex min-h-12 w-full items-center justify-start text-[10px] font-normal uppercase tracking-wide text-zinc-500 hover:text-[#36606F] transition-colors"
                           >
                             Ver original
                           </button>
                         ) : (
-                          <div className="flex min-h-12 items-center text-xs font-medium text-zinc-400 whitespace-nowrap">Sin imagen</div>
+                          <div className="flex min-h-12 w-full items-center justify-start text-xs font-medium text-zinc-400">
+                            Sin imagen
+                          </div>
                         )}
                       </div>
                     </div>
@@ -1629,11 +1631,6 @@ export default function AlbaranesHistoricoClient({
                     <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-sm font-bold text-red-700">{detailError}</div>
                   ) : detail ? (
                     <div className="flex flex-col gap-1">
-                      <div className="flex items-baseline justify-between gap-2 pb-1 border-b border-zinc-900/5 px-1">
-                        <div className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Artículos</div>
-                        <div className="text-[10px] font-black uppercase tracking-wider text-zinc-400">{detail.lines.length} artículos</div>
-                      </div>
-
                       {detail.lines.length === 0 ? (
                         <div className="py-8 text-center text-sm font-bold text-zinc-500">
                           {String(detail.status ?? '').toLowerCase() === 'processing'

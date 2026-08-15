@@ -38,12 +38,19 @@ export function DashboardDetailLayout({
   children: ReactNode
 }) {
   const router = useRouter()
+  const hasFooter = Boolean(footerSlot)
 
   return (
     <div
       className={cn(
         fillViewport
-          ? 'flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden p-4 md:p-6 pb-24'
+          ? cn(
+              'flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden p-4 md:p-6',
+              // Reserva bottom nav (h-20 / md:h-16) + botón escanear (min-h-12) + gap.
+              hasFooter
+                ? 'pb-[calc(5rem+3.25rem+0.75rem)] md:pb-[calc(4rem+3.25rem+0.75rem)]'
+                : 'pb-24'
+            )
           : 'min-h-screen p-4 md:p-6 pb-24',
         className
       )}
@@ -52,13 +59,13 @@ export function DashboardDetailLayout({
         className={cn(
           'mx-auto flex w-full min-h-0',
           maxWidthClass,
-          fillViewport ? 'flex-1 flex-col gap-2' : null
+          fillViewport ? 'min-h-0 flex-1 flex-col' : null
         )}
       >
         <div
           className={cn(
             'bg-white rounded-2xl shadow-2xl flex flex-col min-h-0',
-            fillViewport ? 'flex-1 overflow-hidden' : 'min-h-[85vh]'
+            fillViewport ? 'min-h-0 flex-1 basis-0 overflow-hidden' : 'min-h-[85vh]'
           )}
         >
           <div
@@ -100,8 +107,19 @@ export function DashboardDetailLayout({
           </div>
           <div className={cn('p-4 md:p-6 flex-1 flex flex-col min-h-0', contentClassName)}>{children}</div>
         </div>
-        {footerSlot ? <div className="shrink-0 w-full">{footerSlot}</div> : null}
       </div>
+
+      {hasFooter ? (
+        <div
+          className={cn(
+            // Encima de StaffBottomNav (h-20 / md:h-16), por debajo de modales (z-95 nav).
+            'fixed inset-x-0 z-[90] px-4 md:px-6',
+            'bottom-20 md:bottom-16'
+          )}
+        >
+          <div className={cn('mx-auto w-full', maxWidthClass)}>{footerSlot}</div>
+        </div>
+      ) : null}
     </div>
   )
 }

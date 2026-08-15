@@ -122,19 +122,23 @@ Piezas transversales con comportamiento propio y contrato estricto. **Estas sí 
 
 **Propósito**: abrir una capa de trabajo o de confirmación sobre la pantalla actual.
 
-**Anatomía**: capa de oscurecimiento, panel con cabecera fija, cuerpo desplazable, pie fijo de acciones.
+**Anatomía**: capa de oscurecimiento, panel con cabecera fija, cuerpo desplazable, pie fijo de acciones (`footer`).
 
-**Variantes**: compacta, a pantalla completa, de día, de ampliación. Ver [PATRONES P2](PATRONES.md#p2--modal).
+**Variantes**: `compact`, `standard`, `work`, `day`, `amplify`. Ver [PATRONES P2](PATRONES.md#p2--modal) y el [contrato](../6-investigacion/spikes/2026-08-15-modal-design-system-contract.md).
 
 **Reglas**:
 - Respeta el área segura del dispositivo y usa el alto visible real, nunca el teórico.
 - Atenúa y desactiva las barras fijas de la aplicación mientras está abierto.
 - Cabecera y pie no se desplazan; el pie no se encoge.
-- No se anida.
+- **Nesting:** máximo una superficie derivada sobre el modal base ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)). Prohibida la tercera capa de negocio y el z-index ad hoc.
 - Cerrar con cambios sin guardar pide confirmación.
-- **Declara su identidad de uso** para la telemetría interna. Un modal sin identificar es invisible para la analítica de uso.
+- **Declara identidad estable** (`data-component="Modal"`, `data-variant`, `data-instance`, `data-layer`) para telemetría y lectura futura del Studio.
 
-**Estado**: existe y es la pieza mejor definida del sistema.
+**Excepción**: `ConsumptionBottomSheet` — hoja inferior de consumo; comparte portal/capas/Escape/scroll; no es Modal centrado ni vía libre de overlays nuevos.
+
+**Código**: `src/components/ui/modal.tsx`, `src/components/ui/ConsumptionBottomSheet.tsx`, `src/lib/design-system/modal-*.ts`.
+
+**Estado**: contrato oficial implementado; consumidores legacy pendientes de migración (piloto previsto: Albaranes).
 
 ### Estructura de pantalla de detalle
 
@@ -276,7 +280,7 @@ Su contrato lo fija la [especificación de su capacidad](../1-producto/capacidad
 
 ## 5. Estado real del sistema
 
-Hay que decirlo con claridad: **Marbella aún no tiene un sistema de componentes completo**. Tiene piezas transversales, una estructura de pantalla de adopción parcial, el piloto `DashboardShortcut` como primer componente de Design System con tokens mínimos adoptados, y el resto resuelto pantalla a pantalla con utilidades de estilo.
+Hay que decirlo con claridad: **Marbella aún no tiene un sistema de componentes completo**. Tiene piezas transversales, una estructura de pantalla de adopción parcial, el piloto `DashboardShortcut`, el **contrato oficial de Modal** (consumidores aún por migrar), y el resto resuelto pantalla a pantalla con utilidades de estilo.
 
 Consecuencias observables:
 - No existe botón, campo, tarjeta, insignia ni estado vacío de sistema.

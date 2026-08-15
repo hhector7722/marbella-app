@@ -13,6 +13,7 @@ const config: Config = {
                 "ds-superficie": "var(--color-superficie)",
                 "ds-borde": "var(--color-borde)",
                 "ds-texto-fuerte": "var(--color-texto-fuerte)",
+                "ds-marca": "var(--color-marca)",
             },
             borderRadius: {
                 "ds-control": "var(--radio-control)",
@@ -21,12 +22,21 @@ const config: Config = {
             spacing: {
                 "ds-1": "var(--espacio-1)",
                 "ds-2": "var(--espacio-2)",
+                "ds-3": "var(--espacio-3)",
+                "ds-4": "var(--espacio-4)",
             },
             minHeight: {
                 "ds-tactil": "var(--tactil-minimo)",
             },
+            minWidth: {
+                "ds-tactil": "var(--tactil-minimo)",
+            },
+            maxHeight: {
+                "ds-modal": "var(--modal-max-height)",
+            },
             boxShadow: {
                 "ds-superficie": "var(--elevacion-superficie)",
+                "ds-modal": "var(--elevacion-modal)",
             },
         },
     },

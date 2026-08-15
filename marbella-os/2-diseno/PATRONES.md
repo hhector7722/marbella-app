@@ -43,17 +43,19 @@ El patrón más usado del producto. Sus leyes están en [EXPERIENCIA §8](EXPERI
 
 **Anatomía**: capa de oscurecimiento, panel con cabecera fija, cuerpo desplazable y pie fijo con las acciones.
 
-**Variantes**:
-- **Compacta** — confirmaciones y formularios de dos o tres campos. Alto según contenido, ancho acotado, centrada.
-- **A pantalla completa** — trabajo real dentro del modal. Ocupa el alto visible menos el margen de seguridad.
-- **De día** — variante especializada de la anterior para el trabajo sobre una fecha concreta. Ver P4.
-- **De ampliación** — imagen o dato numérico ampliado para leerse a distancia, con gesto de acercamiento. Sin acciones.
+**Variantes** (API tipada del contrato):
+- **`compact`** — confirmaciones y formularios cortos (`max-w-sm`). Default histórico.
+- **`standard`** — formularios estándar (`max-w-md`).
+- **`work`** — trabajo real en panel ancho (`max-w-4xl`, alto útil preferente).
+- **`day`** — trabajo sobre una fecha concreta (`max-w-4xl`; ver P4).
+- **`amplify`** — imagen o dato ampliado (`max-w-2xl`).
 
 **Reglas**:
-- El pie de acciones no se desplaza y no se encoge nunca.
+- El pie de acciones no se desplaza y no se encoge nunca (slot `footer` del componente).
 - La cabecera dice de qué es el modal, no qué debe hacer la persona.
-- Un modal no abre otro modal.
+- Un modal no abre otro modal de tarea. Solo se admite **una superficie derivada** auxiliar ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)).
 - Al abrirse, las barras fijas de la aplicación se atenúan y dejan de responder al toque.
+- Contrato de implementación: [`2026-08-15-modal-design-system-contract.md`](../6-investigacion/spikes/2026-08-15-modal-design-system-contract.md).
 
 ---
 

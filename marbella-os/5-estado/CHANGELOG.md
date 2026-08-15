@@ -38,6 +38,7 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-15
 
+- **Contrato oficial de Modal del Design System.** Se evoluciona `ui/modal.tsx` con variantes tipadas (`compact`/`standard`/`work`/`day`/`amplify`), slot Footer fijo, capas semánticas, identidad `data-*` y excepción `ConsumptionBottomSheet`. Nesting limitado a una superficie derivada ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)). Consumidores (Albaranes, etc.) aún no migrados.
 - **Nace el piloto de Design System de pantalla.** Tokens mínimos adoptados en CSS/Tailwind y primer componente oficial `DashboardShortcut`, usado por la rejilla Master. Staff/Admin aún no migrados. Studio sin capas nuevas; el componente emite identidad estable (`data-component` / `data-variant` / `data-instance`) para lectura futura.
 
 ## 2026-08-13

@@ -26,6 +26,7 @@ satelites:
   - integrations/
   - reference/
   - sql/
+  - scripts/
 
 # Ni se indexa ni se cita. Configuración del repositorio, documentación de
 # terceros, copias espejo entre herramientas de agente y salidas de compilación.

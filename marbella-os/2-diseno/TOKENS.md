@@ -34,7 +34,7 @@ Los valores recogidos aquí **son los que el producto usa hoy**, no una propuest
 
 | Token | Valor | Papel | Estado |
 |---|---|---|---|
-| `color.marca` | `#36606F` | Identidad del producto en pantalla. Acción principal, cabeceras, elementos activos | declarado |
+| `color.marca` | `#36606F` | Identidad del producto en pantalla. Acción principal, cabeceras, elementos activos | adoptado (piloto Modal vía `--color-marca`; resto del producto aún literal) |
 | `color.marca.intenso` | `#2F5D6A` | Estado pulsado y variantes de mayor contraste de la marca | declarado |
 | `color.marca.profundo` | `#2A4A56` | Fondos de marca de máxima intensidad | declarado |
 | `color.marca.suave` | `#407080` | Marca sobre fondo oscuro, bordes de elementos de marca | declarado |
@@ -128,7 +128,7 @@ Escala de cuatro píxeles. **No existen valores intermedios.**
 | `espacio.8` | 32 px | Separación mayor y márgenes de página |
 | `espacio.12` | 48 px | Separación de zonas independientes |
 
-Estado: `espacio.1` y `espacio.2` adoptados en el piloto `DashboardShortcut` (`--espacio-1`, `--espacio-2`). El resto de la escala permanece adoptado por herencia del motor de estilos, sin nombres de token en la mayoría del producto.
+Estado: `espacio.1`–`espacio.4` adoptados en Design System (`--espacio-*`, clases `*-ds-*`) vía pilotos `DashboardShortcut` y Modal. El resto de la escala permanece adoptado por herencia del motor de estilos, sin nombres de token en la mayoría del producto.
 
 ## 9. Forma
 
@@ -147,7 +147,7 @@ Prohibido mezclar radios dentro de un mismo bloque, según [LENGUAJE-VISUAL §5]
 |---|---|---|---|
 | `elevacion.superficie` | sombra mínima | Separa la superficie de trabajo del envolvente. **Elevación por defecto** | adoptado (piloto `DashboardShortcut` vía `--elevacion-superficie`) |
 | `elevacion.flotante` | sombra media | Elementos que se despegan: menús, elementos arrastrados | declarado |
-| `elevacion.modal` | sombra amplia | Modales y capas superpuestas | declarado |
+| `elevacion.modal` | sombra amplia | Modales y capas superpuestas | adoptado (contrato Modal vía `--elevacion-modal`) |
 | `elevacion.ninguna` | sin sombra | Elementos embebidos y filas de tabla | declarado |
 
 ## 11. Táctil
@@ -168,7 +168,7 @@ Norma en [EXPERIENCIA §1](EXPERIENCIA.md#1-táctil).
 | `estructura.barra-inferior` | 80 px + área segura inferior | Alto reservado por la navegación inferior | adoptado |
 | `estructura.fin-de-lista` | 96 px + área segura | Hueco al final de listas táctiles | adoptado |
 | `estructura.fin-de-lista.tarjetas` | 240 px + área segura | Hueco al final de listas con barra de cantidad | adoptado |
-| `estructura.alto-modal` | 94% del alto visible real | Alto máximo de un modal a pantalla completa | adoptado |
+| `estructura.alto-modal` | 94% del alto visible real | Alto máximo de un modal a pantalla completa | adoptado (contrato Modal vía `--modal-max-height`) |
 | `estructura.ancho-lectura` | 1400 px | Ancho máximo de contenido en escritorio | declarado |
 
 Se usa la medida de alto visible real del dispositivo, no la teórica: es la causa histórica de modales cortados en la aplicación instalada.

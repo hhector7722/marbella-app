@@ -29,9 +29,9 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 
 **Prioridad: alta.** El tema del motor de estilos estaba vacío. El color de marca aparece repetido literalmente casi novecientas veces, y conviven dos escalas de grises distintas con cientos de usos cada una.
 
-**Pago parcial (2026-08-15):** el piloto `DashboardShortcut` adoptó un subconjunto mínimo vía CSS variables y Tailwind (`superficie`, `borde`, `texto.fuerte`, radios, elevación, táctil, `espacio.1/2`). La marca y el resto del catálogo siguen declarados sin adopción global.
+**Pago parcial (2026-08-15):** el piloto `DashboardShortcut` adoptó un subconjunto mínimo vía CSS variables y Tailwind (`superficie`, `borde`, `texto.fuerte`, radios, elevación, táctil, `espacio.1/2`). El contrato Modal adoptó además `color.marca`, `espacio.3/4`, `elevacion.modal`, `estructura.alto-modal` (como `--modal-max-height`) y capas `--z-modal-*`. El resto del catálogo y la adopción global de marca en pantallas legacy siguen pendientes.
 
-**Coste residual**: un cambio de color de marca sigue siendo un cambio en cientos de ficheros.
+**Coste residual**: un cambio de color de marca sigue siendo un cambio en cientos de ficheros fuera del Design System.
 
 **Disparador de pago**: continuar la adopción token a token al construir cada componente base. Contrato en [TOKENS](../2-diseno/TOKENS.md).
 
@@ -41,9 +41,9 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 
 **Prioridad: alta.** No existe botón, campo, tarjeta, insignia ni estado vacío de sistema. Cada pantalla los reconstruye.
 
-**Pago parcial (2026-08-15):** existe `DashboardShortcut` como primer componente oficial del Design System (consumido por Master). Siguen pendientes Staff/Admin (clones locales) y toda la base (botón, campo, tarjeta, vacío…).
+**Pago parcial (2026-08-15):** existe `DashboardShortcut` (Master) y el **contrato oficial de Modal** (`ui/modal.tsx` + capas/variantes). Siguen pendientes: migración de consumidores de Modal (piloto Albaranes), Staff/Admin shortcuts, y el resto de base (botón, campo, tarjeta, vacío…).
 
-**Coste residual**: deriva visual continua fuera del piloto; riesgo de confundir «no hay datos» con fallo de lectura sin `EmptyState`.
+**Coste residual**: deriva visual continua fuera de los pilotos; overlays legacy con z-index ad hoc hasta migrar.
 
 **Disparador de pago**: continuar tras D1 parcial. Contrato en [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 

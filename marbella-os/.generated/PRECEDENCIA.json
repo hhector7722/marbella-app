@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "b681f22981d2ea21",
+  "_huella": "8c4052286d8238bc",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -87,6 +87,20 @@
     {
       "ruta": "marbella-os/4-decisiones/ADR-0006-pipeline-nominas-y-dashboard.md",
       "documento": "ADR-0006",
+      "clase": "inmutable",
+      "estado": "vigente",
+      "capa": "decisiones",
+      "normativo": true,
+      "citable": true,
+      "precedencia": 80,
+      "vence": null,
+      "depende_de": [
+        "CANON"
+      ]
+    },
+    {
+      "ruta": "marbella-os/4-decisiones/ADR-0007-modal-superficie-derivada.md",
+      "documento": "ADR-0007",
       "clase": "inmutable",
       "estado": "vigente",
       "capa": "decisiones",
@@ -1386,6 +1400,18 @@
     {
       "ruta": "marbella-os/6-investigacion/spikes/2026-08-15-modal-design-system-audit.md",
       "documento": "SPIKE-MODAL-DESIGN-SYSTEM-AUDIT",
+      "clase": "inmutable",
+      "estado": "vigente",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": []
+    },
+    {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-15-modal-design-system-contract.md",
+      "documento": "SPIKE-MODAL-DESIGN-SYSTEM-CONTRACT",
       "clase": "inmutable",
       "estado": "vigente",
       "capa": "investigacion",
