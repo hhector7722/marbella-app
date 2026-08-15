@@ -1142,7 +1142,7 @@ export default function AlbaranesHistoricoClient({
         aria-label="Auto-mapear aprendidos"
         title="Auto-mapear líneas cuyo texto ya está en el diccionario del proveedor"
         className={cn(
-          'min-h-[40px] min-w-[40px] inline-flex items-center justify-center text-white hover:opacity-70 active:scale-[0.99] transition shrink-0',
+          'min-h-9 min-w-9 inline-flex items-center justify-center text-white hover:opacity-70 active:scale-[0.99] transition shrink-0',
           autoMapLoading && 'opacity-60 pointer-events-none'
         )}
       >
@@ -1154,7 +1154,7 @@ export default function AlbaranesHistoricoClient({
         disabled={isPending}
         aria-label="Recargar"
         className={cn(
-          'min-h-[40px] min-w-[40px] inline-flex items-center justify-center text-white hover:opacity-70 active:scale-[0.99] transition shrink-0',
+          'min-h-9 min-w-9 inline-flex items-center justify-center text-white hover:opacity-70 active:scale-[0.99] transition shrink-0',
           isPending && 'opacity-60 pointer-events-none'
         )}
       >
@@ -1320,15 +1320,15 @@ export default function AlbaranesHistoricoClient({
                         </div>
                         <div className="min-w-0 flex-1 overflow-hidden">
                           <div className="flex items-center gap-2 min-w-0">
-                            <p className="text-xs font-semibold text-zinc-900 truncate min-w-0 flex-1">
-                              {supplier}
-                            </p>
-                            <p className="text-[10px] font-normal text-zinc-500 tabular-nums shrink-0 whitespace-nowrap">
-                              {formatDateTitle(it.invoice_date)}
-                            </p>
-                          </div>
-                          <div className="flex items-center justify-end min-w-0">
-                            <p className="text-xs font-semibold text-zinc-900 tabular-nums shrink-0">
+                            <div className="min-w-0 flex items-center gap-1.5 overflow-hidden">
+                              <p className="text-xs font-semibold text-zinc-900 truncate min-w-0">
+                                {supplier}
+                              </p>
+                              <p className="text-[10px] font-normal text-zinc-500 tabular-nums shrink-0 whitespace-nowrap">
+                                {formatDateTitle(it.invoice_date)}
+                              </p>
+                            </div>
+                            <p className="text-xs font-semibold text-zinc-900 tabular-nums shrink-0 whitespace-nowrap ml-auto">
                               {formatMaybeMoney(it.total_amount)}
                             </p>
                           </div>
@@ -1556,7 +1556,7 @@ export default function AlbaranesHistoricoClient({
                         onClick={() => void repairAllMappedLinesWithoutStock()}
                         disabled={repairingInvoiceStockBatch || repairingStockLineId !== null || lineActionBusy}
                         className={cn(
-                          'shrink-0 min-h-12 px-3 rounded-lg bg-amber-700/90 text-white text-[10px] font-semibold uppercase tracking-wide active:scale-[0.99] transition inline-flex items-center justify-center gap-1.5 hover:bg-amber-800',
+                          'shrink-0 min-h-12 px-2.5 py-1 rounded-lg bg-amber-700/90 text-white text-[10px] font-semibold uppercase tracking-wide active:scale-[0.99] transition inline-flex items-center justify-center gap-1.5 hover:bg-amber-800',
                           (repairingInvoiceStockBatch || repairingStockLineId !== null || lineActionBusy) &&
                             'opacity-60 pointer-events-none'
                         )}
@@ -1564,7 +1564,7 @@ export default function AlbaranesHistoricoClient({
                         {repairingInvoiceStockBatch ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         ) : null}
-                        Reparar todas
+                        Reparar
                       </button>
                     </div>
                   ) : null}

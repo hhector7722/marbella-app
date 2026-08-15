@@ -40,7 +40,7 @@ export function DashboardDetailLayout({
           <div
             className={cn(
               'bg-[#36606F] rounded-t-2xl px-4 md:px-8 flex items-center justify-between gap-3 shrink-0',
-              compactHeader ? 'py-1.5 md:py-2' : 'py-4 md:py-5'
+              compactHeader ? 'py-0.5 md:py-1' : 'py-4 md:py-5'
             )}
           >
             <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -55,7 +55,12 @@ export function DashboardDetailLayout({
                 </button>
               ) : null}
               <div className="min-w-0">
-                <h1 className="text-lg md:text-xl font-black text-white uppercase tracking-wider truncate">
+                <h1
+                  className={cn(
+                    'font-black text-white uppercase tracking-wider truncate',
+                    compactHeader ? 'text-sm md:text-base' : 'text-lg md:text-xl'
+                  )}
+                >
                   {title}
                 </h1>
                 {subtitle ? (

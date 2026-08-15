@@ -322,11 +322,11 @@ export function ScannerClient({
             onClick={openModal}
             disabled={isProcessing}
             className={cn(
-              'min-h-12 w-full text-white hover:bg-[#2A4C58] active:scale-[0.99] transition-all',
+              'min-h-12 text-white hover:bg-[#2A4C58] active:scale-[0.99] transition-all',
               'bg-[#36606F] disabled:opacity-60 disabled:pointer-events-none shrink-0',
               compactTrigger
-                ? 'rounded-lg px-3 py-0 text-[11px] font-bold uppercase tracking-wider'
-                : 'rounded-xl px-4 font-black uppercase tracking-widest'
+                ? 'inline-flex w-auto self-start items-center justify-center rounded-lg px-3 py-0 text-[11px] font-bold uppercase tracking-wider'
+                : 'w-full rounded-xl px-4 font-black uppercase tracking-widest'
             )}
           >
             Escanear albarán
