@@ -29,12 +29,15 @@ export function ScannerClient({
   onSuccess,
   onInvoiceSaved,
   embedded = false,
+  compactTrigger = false,
 }: {
   onSuccess?: () => void
   /** Se invoca tras guardar la cabecera del albarán (processScannerImage). */
   onInvoiceSaved?: (invoiceId: string) => void
   /** Modo embebido (p. ej. paso del modal de compra): sin márgenes extra. */
   embedded?: boolean
+  /** Botón «Escanear albarán» más compacto (listado histórico). */
+  compactTrigger?: boolean
 }) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [preview, setPreview] = useState<string | null>(null)
@@ -302,7 +305,7 @@ export function ScannerClient({
   }
 
   return (
-    <div className={cn('flex flex-col', embedded ? 'gap-2' : 'gap-4')}>
+    <div className={cn('flex flex-col', embedded || compactTrigger ? 'gap-2' : 'gap-4')}>
       <input
         ref={fileInputRef}
         type="file"
@@ -312,16 +315,18 @@ export function ScannerClient({
         className="hidden"
       />
 
-      <div className="flex flex-col gap-3">
+      <div className={cn('flex flex-col', compactTrigger ? 'gap-2' : 'gap-3')}>
         {!pendingBatch ? (
           <button
             type="button"
             onClick={openModal}
             disabled={isProcessing}
             className={cn(
-              'min-h-12 w-full rounded-xl px-4 font-black uppercase tracking-widest',
-              'bg-[#36606F] text-white hover:bg-[#2A4C58] active:scale-[0.99] transition-all',
-              'disabled:opacity-60 disabled:pointer-events-none shrink-0'
+              'min-h-12 w-full text-white hover:bg-[#2A4C58] active:scale-[0.99] transition-all',
+              'bg-[#36606F] disabled:opacity-60 disabled:pointer-events-none shrink-0',
+              compactTrigger
+                ? 'rounded-lg px-3 py-0 text-[11px] font-bold uppercase tracking-wider'
+                : 'rounded-xl px-4 font-black uppercase tracking-widest'
             )}
           >
             Escanear albarán

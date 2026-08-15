@@ -12,7 +12,9 @@ export function DashboardDetailLayout({
   maxWidthClass = 'max-w-4xl',
   rightSlot,
   showBackButton = true,
+  compactHeader = false,
   className,
+  contentClassName,
   children,
 }: {
   title: string
@@ -21,8 +23,12 @@ export function DashboardDetailLayout({
   maxWidthClass?: string
   rightSlot?: ReactNode
   showBackButton?: boolean
+  /** Cabecera con menos padding vertical (listados densos). */
+  compactHeader?: boolean
   /** Clases extra para el contenedor exterior (p. ej. padding superior adicional). */
   className?: string
+  /** Clases extra para el área de contenido bajo la cabecera. */
+  contentClassName?: string
   children: ReactNode
 }) {
   const router = useRouter()
@@ -31,7 +37,12 @@ export function DashboardDetailLayout({
     <div className={cn('min-h-screen p-4 md:p-6 pb-24', className)}>
       <div className={cn('mx-auto w-full', maxWidthClass)}>
         <div className="bg-white rounded-2xl shadow-2xl flex flex-col min-h-[85vh]">
-          <div className="bg-[#36606F] rounded-t-2xl px-4 md:px-8 py-4 md:py-5 flex items-center justify-between gap-3 shrink-0">
+          <div
+            className={cn(
+              'bg-[#36606F] rounded-t-2xl px-4 md:px-8 flex items-center justify-between gap-3 shrink-0',
+              compactHeader ? 'py-1.5 md:py-2' : 'py-4 md:py-5'
+            )}
+          >
             <div className="flex items-center gap-2 min-w-0 flex-1">
               {showBackButton ? (
                 <button
@@ -58,7 +69,7 @@ export function DashboardDetailLayout({
               <div className="shrink-0 flex items-center justify-end gap-2">{rightSlot}</div>
             ) : null}
           </div>
-          <div className="p-4 md:p-6 flex-1 flex flex-col min-h-0">{children}</div>
+          <div className={cn('p-4 md:p-6 flex-1 flex flex-col min-h-0', contentClassName)}>{children}</div>
         </div>
       </div>
     </div>
