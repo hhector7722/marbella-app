@@ -1383,7 +1383,7 @@ export default function AlbaranesHistoricoClient({
               }}
             >
               <div
-                className="flex min-h-0 w-full max-w-5xl flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl max-h-[min(62dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2.5rem))]"
+                className="flex min-h-0 w-full max-w-5xl flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl max-h-[min(68dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2.5rem))]"
               >
                 <input
                   ref={appendSheetInputRef}
@@ -1648,10 +1648,10 @@ export default function AlbaranesHistoricoClient({
                             <div className="flex-1 min-w-0 text-[9px] font-black uppercase tracking-wider text-zinc-400">Producto</div>
                             <div className="flex items-center shrink-0 gap-1.5 sm:gap-3">
                               <div className="flex w-[3.25rem] sm:w-[4.5rem] justify-end text-[9px] font-black uppercase tracking-wider text-zinc-400">
-                                Cant.
+                                Cant
                               </div>
                               <div className="flex w-[3.75rem] sm:w-[5rem] justify-end text-[9px] font-black uppercase tracking-wider text-zinc-400">
-                                Precio ud.
+                                Precio ud
                               </div>
                               <div className="flex w-[3.75rem] sm:w-[5rem] justify-end text-[9px] font-black uppercase tracking-wider text-zinc-400">
                                 Importe
