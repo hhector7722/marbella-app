@@ -1383,7 +1383,7 @@ export default function AlbaranesHistoricoClient({
               }}
             >
               <div
-                className="flex min-h-0 w-full max-w-5xl flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl max-h-[min(55dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2.5rem))]"
+                className="flex min-h-0 w-full max-w-5xl flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl max-h-[min(58dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2.5rem))]"
               >
                 <input
                   ref={appendSheetInputRef}
