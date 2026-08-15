@@ -44,13 +44,8 @@ export function DashboardDetailLayout({
     <div
       className={cn(
         fillViewport
-          ? cn(
-              'flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden p-4 md:p-6',
-              // Reserva bottom nav (h-20 / md:h-16) + botón escanear (min-h-12) + gap.
-              hasFooter
-                ? 'pb-[calc(5rem+3.25rem+0.75rem)] md:pb-[calc(4rem+3.25rem+0.75rem)]'
-                : 'pb-24'
-            )
+          ? // pb-24: hueco para StaffBottomNav (h-20 / md:h-16)
+            'flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden p-4 md:p-6 pb-24'
           : 'min-h-screen p-4 md:p-6 pb-24',
         className
       )}
@@ -59,12 +54,13 @@ export function DashboardDetailLayout({
         className={cn(
           'mx-auto flex w-full min-h-0',
           maxWidthClass,
-          fillViewport ? 'min-h-0 flex-1 flex-col' : null
+          fillViewport ? 'min-h-0 flex-1 flex-col gap-3' : null
         )}
       >
         <div
           className={cn(
             'bg-white rounded-2xl shadow-2xl flex flex-col min-h-0',
+            // basis-0: la card cede espacio al footer; no lo solapa.
             fillViewport ? 'min-h-0 flex-1 basis-0 overflow-hidden' : 'min-h-[85vh]'
           )}
         >
@@ -107,19 +103,11 @@ export function DashboardDetailLayout({
           </div>
           <div className={cn('p-4 md:p-6 flex-1 flex flex-col min-h-0', contentClassName)}>{children}</div>
         </div>
-      </div>
 
-      {hasFooter ? (
-        <div
-          className={cn(
-            // Encima de StaffBottomNav (h-20 / md:h-16), por debajo de modales (z-95 nav).
-            'fixed inset-x-0 z-[90] px-4 md:px-6',
-            'bottom-20 md:bottom-16'
-          )}
-        >
-          <div className={cn('mx-auto w-full', maxWidthClass)}>{footerSlot}</div>
-        </div>
-      ) : null}
+        {hasFooter ? (
+          <div className="w-full shrink-0">{footerSlot}</div>
+        ) : null}
+      </div>
     </div>
   )
 }

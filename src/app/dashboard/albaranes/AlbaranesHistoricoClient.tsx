@@ -1383,7 +1383,7 @@ export default function AlbaranesHistoricoClient({
               }}
             >
               <div
-                className="flex min-h-0 w-full max-w-5xl flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl max-h-[min(62dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2.5rem))]"
+                className="flex min-h-0 w-full max-w-5xl flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl max-h-[min(55dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2.5rem))]"
               >
                 <input
                   ref={appendSheetInputRef}
@@ -1585,7 +1585,7 @@ export default function AlbaranesHistoricoClient({
                       </div>
                       <div className="min-w-0 space-y-0.5 text-center">
                         <div className="text-[9px] font-black uppercase tracking-wider text-zinc-400">Fecha</div>
-                        <div className="text-xs font-semibold text-zinc-900 tabular-nums truncate">
+                        <div className="text-[11px] font-normal text-zinc-600 tabular-nums truncate">
                           {(() => {
                             const raw = String(detail.invoice_date ?? '').trim()
                             const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw)
@@ -1595,7 +1595,7 @@ export default function AlbaranesHistoricoClient({
                       </div>
                       <div className="min-w-0 space-y-0.5 text-center">
                         <div className="text-[9px] font-black uppercase tracking-wider text-zinc-400">Total</div>
-                        <div className="text-xs font-semibold text-[#36606F] tabular-nums truncate">
+                        <div className="text-[11px] font-normal text-zinc-600 tabular-nums truncate">
                           {detail.total_amount != null
                             ? `${Number(detail.total_amount).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
                             : '—'}
