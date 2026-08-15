@@ -71,8 +71,9 @@ import type { AutoMapReport } from './actions'
 function formatDateTitle(v: string | null | undefined) {
   const t = String(v ?? '').trim()
   if (!t) return '—'
-  // `invoice_date` viene como YYYY-MM-DD (DATE). Mostrar tal cual evita líos de zona horaria.
-  return t
+  // `invoice_date` viene como YYYY-MM-DD (DATE). Reordenar por componentes (sin Date) → DD/MM/YYYY.
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(t)
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : t
 }
 
 function formatMaybeMoney(v: number | null | undefined) {
@@ -1174,34 +1175,35 @@ export default function AlbaranesHistoricoClient({
       contentClassName="p-3 md:p-4 pt-2 md:pt-3"
     >
     <div className="flex flex-col gap-2">
-      <ScannerClient onSuccess={refresh} compactTrigger />
-
-      <div className="bg-white rounded-xl border border-zinc-100 shadow-sm px-3 py-2 flex items-center gap-2">
-        <Search className="h-5 w-5 text-zinc-400 shrink-0" />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="w-full outline-none text-sm font-semibold text-zinc-800 placeholder:text-zinc-400 min-h-[40px]"
-        />
-        <button
-          type="button"
-          onClick={async () => {
-            setFilterOpen(true)
-            if (filterSuppliers.length === 0 && !filterSuppliersLoading) {
-              setFilterSuppliersLoading(true)
-              try {
-                const res = await listSuppliersForFilterAction()
-                if (res.success) setFilterSuppliers(res.suppliers)
-              } finally {
-                setFilterSuppliersLoading(false)
+      <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex-1 min-w-0 bg-white rounded-xl border border-zinc-100 shadow-sm px-2.5 py-0.5 flex items-center gap-1.5">
+          <Search className="h-4 w-4 text-zinc-400 shrink-0" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-full outline-none text-sm font-semibold text-zinc-800 placeholder:text-zinc-400 min-h-8"
+          />
+          <button
+            type="button"
+            onClick={async () => {
+              setFilterOpen(true)
+              if (filterSuppliers.length === 0 && !filterSuppliersLoading) {
+                setFilterSuppliersLoading(true)
+                try {
+                  const res = await listSuppliersForFilterAction()
+                  if (res.success) setFilterSuppliers(res.suppliers)
+                } finally {
+                  setFilterSuppliersLoading(false)
+                }
               }
-            }
-          }}
-          aria-label="Filtrar"
-          className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center text-[#36606F] hover:opacity-80 active:scale-[0.99] transition shrink-0"
-        >
-          <Filter className="h-5 w-5" />
-        </button>
+            }}
+            aria-label="Filtrar"
+            className="min-h-8 min-w-8 inline-flex items-center justify-center text-[#36606F] hover:opacity-80 active:scale-[0.99] transition shrink-0"
+          >
+            <Filter className="h-4 w-4" />
+          </button>
+        </div>
+        <ScannerClient onSuccess={refresh} compactTrigger />
       </div>
 
       {/* Banner de resultado del auto-mapeo (global o por albarán). */}
@@ -1556,7 +1558,7 @@ export default function AlbaranesHistoricoClient({
                         onClick={() => void repairAllMappedLinesWithoutStock()}
                         disabled={repairingInvoiceStockBatch || repairingStockLineId !== null || lineActionBusy}
                         className={cn(
-                          'shrink-0 min-h-12 px-2.5 py-1 rounded-lg bg-amber-700/90 text-white text-[10px] font-semibold uppercase tracking-wide active:scale-[0.99] transition inline-flex items-center justify-center gap-1.5 hover:bg-amber-800',
+                          'shrink-0 px-2.5 py-1 rounded-lg bg-amber-700/90 text-white text-[10px] font-semibold uppercase tracking-wide active:scale-[0.99] transition inline-flex items-center justify-center gap-1.5 hover:bg-amber-800',
                           (repairingInvoiceStockBatch || repairingStockLineId !== null || lineActionBusy) &&
                             'opacity-60 pointer-events-none'
                         )}
