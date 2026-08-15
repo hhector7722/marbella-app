@@ -1383,7 +1383,7 @@ export default function AlbaranesHistoricoClient({
               }}
             >
               <div
-                className="flex min-h-0 w-full max-w-5xl flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl max-h-[min(70dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2.5rem))]"
+                className="flex min-h-0 w-full max-w-5xl flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl max-h-[min(62dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2.5rem))]"
               >
                 <input
                   ref={appendSheetInputRef}
@@ -1577,13 +1577,13 @@ export default function AlbaranesHistoricoClient({
                   {/* 3. BLOQUE DE INFORMACIÓN DEL DOCUMENTO */}
                   {detail && !isLoadingDetail && (
                     <div className="grid w-full grid-cols-4 items-end gap-x-2 min-w-0">
-                      <div className="min-w-0 space-y-0.5">
+                      <div className="min-w-0 space-y-0.5 text-center">
                         <div className="text-[9px] font-black uppercase tracking-wider text-zinc-400">Nº</div>
                         <div className="text-[11px] font-normal text-zinc-600 tabular-nums truncate">
                           {detail.invoice_number ?? '—'}
                         </div>
                       </div>
-                      <div className="min-w-0 space-y-0.5">
+                      <div className="min-w-0 space-y-0.5 text-center">
                         <div className="text-[9px] font-black uppercase tracking-wider text-zinc-400">Fecha</div>
                         <div className="text-xs font-semibold text-zinc-900 tabular-nums truncate">
                           {(() => {
@@ -1593,7 +1593,7 @@ export default function AlbaranesHistoricoClient({
                           })()}
                         </div>
                       </div>
-                      <div className="min-w-0 space-y-0.5">
+                      <div className="min-w-0 space-y-0.5 text-center">
                         <div className="text-[9px] font-black uppercase tracking-wider text-zinc-400">Total</div>
                         <div className="text-xs font-semibold text-[#36606F] tabular-nums truncate">
                           {detail.total_amount != null
@@ -1601,7 +1601,7 @@ export default function AlbaranesHistoricoClient({
                             : '—'}
                         </div>
                       </div>
-                      <div className="min-w-0 self-end">
+                      <div className="min-w-0 self-end text-center">
                         {invoiceImageSheetOptions.length > 0 ? (
                           <button
                             type="button"
@@ -1610,12 +1610,12 @@ export default function AlbaranesHistoricoClient({
                               invoiceCarouselIndexRef.current = 0
                               setInvoiceImageViewerOpen(true)
                             }}
-                            className="inline-flex min-h-12 w-full items-center justify-start text-[10px] font-normal uppercase tracking-wide text-zinc-500 hover:text-[#36606F] transition-colors"
+                            className="inline-flex min-h-12 w-full items-center justify-center text-[10px] font-normal uppercase tracking-wide text-zinc-500 hover:text-[#36606F] transition-colors"
                           >
                             Ver original
                           </button>
                         ) : (
-                          <div className="flex min-h-12 w-full items-center justify-start text-xs font-medium text-zinc-400">
+                          <div className="flex min-h-12 w-full items-center justify-center text-xs font-medium text-zinc-400">
                             Sin imagen
                           </div>
                         )}
@@ -1646,10 +1646,16 @@ export default function AlbaranesHistoricoClient({
                           {/* Cabecera de columnas: siempre visible, alineada con filas */}
                           <div className="flex items-center gap-1.5 sm:gap-3 px-1 py-1 border-b border-zinc-100">
                             <div className="flex-1 min-w-0 text-[9px] font-black uppercase tracking-wider text-zinc-400">Producto</div>
-                            <div className="flex items-center justify-end shrink-0 gap-1.5 sm:gap-3">
-                              <div className="w-[3.25rem] sm:w-[4.5rem] text-right text-[9px] font-black uppercase tracking-wider text-zinc-400">Cant.</div>
-                              <div className="w-[3.75rem] sm:w-[5rem] text-right text-[9px] font-black uppercase tracking-wider text-zinc-400">Precio ud.</div>
-                              <div className="w-[3.75rem] sm:w-[5rem] text-right text-[9px] font-black uppercase tracking-wider text-zinc-400">Importe</div>
+                            <div className="flex items-center shrink-0 gap-1.5 sm:gap-3">
+                              <div className="flex w-[3.25rem] sm:w-[4.5rem] justify-end text-[9px] font-black uppercase tracking-wider text-zinc-400">
+                                Cant.
+                              </div>
+                              <div className="flex w-[3.75rem] sm:w-[5rem] justify-end text-[9px] font-black uppercase tracking-wider text-zinc-400">
+                                Precio ud.
+                              </div>
+                              <div className="flex w-[3.75rem] sm:w-[5rem] justify-end text-[9px] font-black uppercase tracking-wider text-zinc-400">
+                                Importe
+                              </div>
                             </div>
                           </div>
 
@@ -1718,20 +1724,20 @@ export default function AlbaranesHistoricoClient({
                                 </div>
 
                                 {/* Valores económicos: tipografía densa, peso normal, columnas fijas */}
-                                <div className="flex items-center justify-end shrink-0 gap-1.5 sm:gap-3">
-                                  <div className="w-[3.25rem] sm:w-[4.5rem] text-right">
-                                    <span className="text-[10px] sm:text-[11px] font-normal text-zinc-800 tabular-nums">
+                                <div className="flex items-center shrink-0 gap-1.5 sm:gap-3">
+                                  <div className="flex w-[3.25rem] sm:w-[4.5rem] justify-end">
+                                    <span className="text-right text-[10px] sm:text-[11px] font-normal text-zinc-800 tabular-nums">
                                       {l.quantity != null ? Number(l.quantity).toLocaleString('es-ES', { maximumFractionDigits: 3 }) : '—'}
                                       {l.line_unit ? ` ${l.line_unit}` : ''}
                                     </span>
                                   </div>
-                                  <div className="w-[3.75rem] sm:w-[5rem] text-right">
-                                    <span className="text-[10px] sm:text-[11px] font-normal text-zinc-800 tabular-nums">
+                                  <div className="flex w-[3.75rem] sm:w-[5rem] justify-end">
+                                    <span className="text-right text-[10px] sm:text-[11px] font-normal text-zinc-800 tabular-nums">
                                       {l.unit_price != null ? `${Number(l.unit_price).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} €` : '—'}
                                     </span>
                                   </div>
-                                  <div className="w-[3.75rem] sm:w-[5rem] text-right">
-                                    <span className="text-[10px] sm:text-[11px] font-normal text-zinc-800 tabular-nums">
+                                  <div className="flex w-[3.75rem] sm:w-[5rem] justify-end">
+                                    <span className="text-right text-[10px] sm:text-[11px] font-normal text-zinc-800 tabular-nums">
                                       {l.total_price != null ? `${Number(l.total_price).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : '—'}
                                     </span>
                                   </div>
