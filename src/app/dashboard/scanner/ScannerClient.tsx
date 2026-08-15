@@ -36,7 +36,7 @@ export function ScannerClient({
   onInvoiceSaved?: (invoiceId: string) => void
   /** Modo embebido (p. ej. paso del modal de compra): sin márgenes extra. */
   embedded?: boolean
-  /** Botón «Escanear albarán» más compacto (listado histórico). */
+  /** Botón «Escanear» más compacto (listado histórico). */
   compactTrigger?: boolean
 }) {
   const [isProcessing, setIsProcessing] = useState(false)
@@ -332,11 +332,11 @@ export function ScannerClient({
               'text-white hover:bg-[#2A4C58] active:scale-[0.99] transition-all',
               'bg-[#36606F] disabled:opacity-60 disabled:pointer-events-none shrink-0',
               compactTrigger
-                ? 'inline-flex w-auto self-start items-center justify-center rounded-lg px-3 py-1 text-[11px] font-bold uppercase tracking-wider'
+                ? 'inline-flex min-h-12 w-full items-center justify-center rounded-xl px-4 py-0 text-xs font-black uppercase tracking-widest leading-none'
                 : 'min-h-12 w-full rounded-xl px-4 font-black uppercase tracking-widest'
             )}
           >
-            Escanear albarán
+            {compactTrigger ? 'Escanear' : 'Escanear albarán'}
           </button>
         ) : (
           <div

@@ -13,6 +13,10 @@ export function DashboardDetailLayout({
   rightSlot,
   showBackButton = true,
   compactHeader = false,
+  /** Card a altura fija del viewport con scroll interno del contenido. */
+  fillViewport = false,
+  /** Contenido fuera de la card (p. ej. acción fija inferior). */
+  footerSlot,
   className,
   contentClassName,
   children,
@@ -25,6 +29,8 @@ export function DashboardDetailLayout({
   showBackButton?: boolean
   /** Cabecera con menos padding vertical (listados densos). */
   compactHeader?: boolean
+  fillViewport?: boolean
+  footerSlot?: ReactNode
   /** Clases extra para el contenedor exterior (p. ej. padding superior adicional). */
   className?: string
   /** Clases extra para el área de contenido bajo la cabecera. */
@@ -34,9 +40,27 @@ export function DashboardDetailLayout({
   const router = useRouter()
 
   return (
-    <div className={cn('min-h-screen p-4 md:p-6 pb-24', className)}>
-      <div className={cn('mx-auto w-full', maxWidthClass)}>
-        <div className="bg-white rounded-2xl shadow-2xl flex flex-col min-h-[85vh]">
+    <div
+      className={cn(
+        fillViewport
+          ? 'flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden p-4 md:p-6 pb-24'
+          : 'min-h-screen p-4 md:p-6 pb-24',
+        className
+      )}
+    >
+      <div
+        className={cn(
+          'mx-auto flex w-full min-h-0',
+          maxWidthClass,
+          fillViewport ? 'flex-1 flex-col gap-2' : null
+        )}
+      >
+        <div
+          className={cn(
+            'bg-white rounded-2xl shadow-2xl flex flex-col min-h-0',
+            fillViewport ? 'flex-1 overflow-hidden' : 'min-h-[85vh]'
+          )}
+        >
           <div
             className={cn(
               'bg-[#36606F] rounded-t-2xl px-4 md:px-8 flex items-center justify-between gap-3 shrink-0',
@@ -76,6 +100,7 @@ export function DashboardDetailLayout({
           </div>
           <div className={cn('p-4 md:p-6 flex-1 flex flex-col min-h-0', contentClassName)}>{children}</div>
         </div>
+        {footerSlot ? <div className="shrink-0 w-full">{footerSlot}</div> : null}
       </div>
     </div>
   )

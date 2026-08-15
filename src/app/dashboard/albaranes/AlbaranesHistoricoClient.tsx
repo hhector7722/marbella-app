@@ -1172,48 +1172,48 @@ export default function AlbaranesHistoricoClient({
       showBackButton={false}
       rightSlot={headerActions}
       compactHeader
-      contentClassName="p-3 md:p-4 pt-2 md:pt-3"
+      fillViewport
+      contentClassName="p-3 md:p-4 pt-2 md:pt-3 flex flex-col min-h-0 overflow-hidden"
+      footerSlot={<ScannerClient onSuccess={refresh} compactTrigger />}
     >
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <div className="flex-1 min-w-0 bg-white rounded-xl border border-zinc-100 shadow-sm px-2.5 py-0.5 flex items-center gap-1.5">
-          <Search className="h-4 w-4 text-zinc-400 shrink-0" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="w-full outline-none text-sm font-semibold text-zinc-800 placeholder:text-zinc-400 min-h-8"
-          />
-          <button
-            type="button"
-            onClick={async () => {
-              setFilterOpen(true)
-              if (filterSuppliers.length === 0 && !filterSuppliersLoading) {
-                setFilterSuppliersLoading(true)
-                try {
-                  const res = await listSuppliersForFilterAction()
-                  if (res.success) setFilterSuppliers(res.suppliers)
-                } finally {
-                  setFilterSuppliersLoading(false)
-                }
+    <div className="flex min-h-0 flex-1 flex-col gap-2">
+      {/* Buscador fijo: no scrollea con la lista */}
+      <div className="flex h-8 w-full shrink-0 items-center gap-1.5 rounded-lg border border-zinc-100 bg-white px-2 shadow-sm">
+        <Search className="h-3 w-3 text-zinc-400 shrink-0" />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="h-full w-full outline-none text-sm font-semibold text-zinc-800 placeholder:text-zinc-400"
+        />
+        <button
+          type="button"
+          onClick={async () => {
+            setFilterOpen(true)
+            if (filterSuppliers.length === 0 && !filterSuppliersLoading) {
+              setFilterSuppliersLoading(true)
+              try {
+                const res = await listSuppliersForFilterAction()
+                if (res.success) setFilterSuppliers(res.suppliers)
+              } finally {
+                setFilterSuppliersLoading(false)
               }
-            }}
-            aria-label="Filtrar"
-            className="min-h-8 min-w-8 inline-flex items-center justify-center text-[#36606F] hover:opacity-80 active:scale-[0.99] transition shrink-0"
-          >
-            <Filter className="h-4 w-4" />
-          </button>
-        </div>
-        <ScannerClient onSuccess={refresh} compactTrigger />
+            }
+          }}
+          aria-label="Filtrar"
+          className="inline-flex h-6 w-6 items-center justify-center text-[#36606F] hover:opacity-80 active:scale-[0.99] transition shrink-0"
+        >
+          <Filter className="h-3 w-3" />
+        </button>
       </div>
 
-      {/* Banner de resultado del auto-mapeo (global o por albarán). */}
+      {/* Banners fijos bajo el buscador (no scrollean con la lista). */}
       {autoMapError ? (
-        <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs font-black text-rose-700">
+        <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs font-black text-rose-700 shrink-0">
           Auto-mapeo: {autoMapError}
         </div>
       ) : null}
       {autoMapReport ? (
-        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs font-black text-emerald-800 flex items-start gap-2">
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs font-black text-emerald-800 flex items-start gap-2 shrink-0">
           <Sparkles className="h-4 w-4 mt-0.5 shrink-0" />
           <div className="min-w-0">
             <p className="leading-tight">
@@ -1263,7 +1263,7 @@ export default function AlbaranesHistoricoClient({
       ) : null}
 
       {error ? (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm font-bold text-red-700 flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm font-bold text-red-700 flex flex-col sm:flex-row sm:items-center gap-3 shrink-0">
           <span className="flex-1 min-w-0">{error}</span>
           <div className="flex items-center gap-2 shrink-0">
             <button
@@ -1291,8 +1291,9 @@ export default function AlbaranesHistoricoClient({
         </div>
       ) : null}
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col min-h-[320px]">
-          <div className="px-1.5 py-1 overflow-auto flex-1 min-h-0">
+      {/* Lista con scroll interno; buscador permanece fijo arriba */}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          <div className="px-1.5 py-1">
             {filtered.length === 0 ? (
               <div className="px-2 py-6 text-xs font-medium text-zinc-500">No hay albaranes que coincidan.</div>
             ) : (

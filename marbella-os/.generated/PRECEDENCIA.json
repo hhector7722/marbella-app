@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "71dd25b4a4d2a58b",
+  "_huella": "b681f22981d2ea21",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -1374,6 +1374,18 @@
     {
       "ruta": "marbella-os/6-investigacion/spikes/2026-08-15-design-system-foundations-implementation.md",
       "documento": "SPIKE-DESIGN-SYSTEM-FOUNDATIONS-IMPLEMENTATION",
+      "clase": "inmutable",
+      "estado": "vigente",
+      "capa": "investigacion",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": []
+    },
+    {
+      "ruta": "marbella-os/6-investigacion/spikes/2026-08-15-modal-design-system-audit.md",
+      "documento": "SPIKE-MODAL-DESIGN-SYSTEM-AUDIT",
       "clase": "inmutable",
       "estado": "vigente",
       "capa": "investigacion",
