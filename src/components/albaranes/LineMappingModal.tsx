@@ -1,9 +1,10 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Check, Loader2, Search, X, Plus, Settings } from 'lucide-react'
+import { Check, Loader2, Search, Plus, Settings } from 'lucide-react'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
 import {
   ALBARAN_LINE_CONTENT_UNITS,
   billingMassVolumeNormForAuto,
@@ -82,8 +83,7 @@ export type LineMappingModalProps = {
   onRemoveMapping?: () => void
 }
 
-/** Por encima del detalle de albarán (z-[10050]); una sola superficie derivada a la vez. */
-const ALBARAN_DERIVED_MODAL_Z = 'z-[10100]'
+/** Una sola superficie derivada a la vez (ADR-0007). */
 
 export function LineMappingModal({
   open,
@@ -104,7 +104,6 @@ export function LineMappingModal({
 }: LineMappingModalProps) {
   useModalUsageTracking({ open, usageId: 'albaran-line-mapping', usageLabel: 'Mapear línea albarán' })
   const trackLineMapping = useTrackModalApply('albaran-line-mapping', 'Mapear línea albarán')
-  const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -120,10 +119,6 @@ export function LineMappingModal({
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<IngredientMappingSearchItem[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   const applySuggestion = useCallback(
     (
@@ -507,7 +502,7 @@ export function LineMappingModal({
     }
   }
 
-  if (!mounted || !open || !line) return null
+  if (!open || !line) return null
 
   const headerTitle = `${line.original_name || 'Sin nombre'} — ${formatLineTotal(line.total_price)}`
 
@@ -515,36 +510,48 @@ export function LineMappingModal({
     <Modal
       open={open}
       onClose={onClose}
-      hideHeader={true}
-      wrapperClassName="sm:max-w-4xl"
-      panelHostClassName="p-0"
-      className="max-h-[95vh] sm:max-h-[90vh] bg-zinc-50"
-      zIndexClass={ALBARAN_DERIVED_MODAL_Z}
+      variant="work"
+      layer="derived"
+      instance="albaran-line-mapping"
       usageId="albaran-line-mapping"
       usageLabel="Mapear línea albarán"
-      title="Producto / vínculo"
-    >
-      <div className="flex flex-col h-full w-full">
-        <div className="bg-[#36606F] px-3 py-2 flex items-start justify-between gap-2 text-white shrink-0">
-          <div className="min-w-0 flex-1">
-            <p id="line-mapping-title" className="text-[11px] font-semibold uppercase tracking-wide text-white/90">
-              Producto
-            </p>
-            <p className="text-xs font-medium truncate mt-0.5">{headerTitle}</p>
-          </div>
-          <button
+      headerTone="petroleum"
+      headerTitleAlign="left"
+      title="Producto"
+      subtitle={headerTitle}
+      className="bg-zinc-50"
+      disableUsageTracking
+      footer={
+        <div className="flex w-full flex-col gap-1.5 sm:flex-row">
+          <Button
             type="button"
+            variant="tertiary"
+            layout="fill"
+            instance="albaran-line-mapping-cancel"
+            className="flex-1"
             onClick={onClose}
             disabled={saving || busy}
-            className="min-h-12 min-w-12 shrink-0 inline-flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-[0.99] transition"
-            aria-label="Cerrar"
           >
-            <X className="h-5 w-5" />
-          </button>
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            layout="fill"
+            instance="albaran-line-mapping-save"
+            className="flex-1"
+            onClick={() => void handleSave()}
+            disabled={!canSave || loading || busy}
+            loading={saving}
+            loadingLabel="Guardando…"
+          >
+            {alreadyMappedSameIngredient ? 'Guardar' : 'Vincular'}
+          </Button>
         </div>
-
-        <div className="flex-1 min-h-0 overflow-y-auto px-2.5 py-2.5 flex flex-col gap-1.5">
-          {loading ? (
+      }
+    >
+      <div className="px-2.5 py-2.5 flex flex-col gap-1.5 min-w-0 max-w-full">
+        {loading ? (
             <div className="flex items-center justify-center gap-2 py-8 text-xs font-medium text-zinc-600">
               <Loader2 className="h-5 w-5 animate-spin text-[#36606F]" />
               Preparando sugerencias…
@@ -875,38 +882,6 @@ export function LineMappingModal({
               ) : null}
             </>
           )}
-        </div>
-
-        <div className="shrink-0 border-t border-zinc-200 bg-white px-3 py-2 flex flex-col sm:flex-row gap-1.5">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={saving || busy}
-            className="min-h-12 flex-1 rounded-lg border border-zinc-200 bg-white text-xs font-semibold uppercase tracking-wide text-zinc-700 hover:bg-zinc-50 active:scale-[0.99] transition"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={() => void handleSave()}
-            disabled={!canSave || saving || loading || busy}
-            className={cn(
-              'min-h-12 flex-1 rounded-lg bg-[#36606F] text-xs font-semibold uppercase tracking-wide text-white hover:bg-[#2d4f5c] active:scale-[0.99] transition',
-              (!canSave || saving || loading || busy) && 'opacity-50 pointer-events-none'
-            )}
-          >
-            {saving ? (
-              <span className="inline-flex items-center justify-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Guardando…
-              </span>
-            ) : alreadyMappedSameIngredient ? (
-              'Guardar'
-            ) : (
-              'Vincular'
-            )}
-          </button>
-        </div>
       </div>
     </Modal>
   )

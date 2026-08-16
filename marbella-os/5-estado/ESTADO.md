@@ -6,12 +6,12 @@ capa: estado
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-07-29
+revisado: 2026-08-16
 caducidad: 1 mes
 supersede: PROJECT_STATUS.md §ESTADO GENERAL
 ---
 
-# ESTADO — Fotografía del 29 de julio de 2026
+# ESTADO — Fotografía del 16 de agosto de 2026
 
 Dónde está Marbella hoy. **Este documento se reescribe, no se acumula**: el historial vive en [CHANGELOG](CHANGELOG.md) y en git.
 
@@ -21,7 +21,7 @@ Techo duro: 200 líneas. Si no cabe, es que se está usando como changelog.
 
 ## Resumen en tres frases
 
-El producto está en producción y sostiene la operación diaria del negocio. El dominio de horas acaba de completar la reconstrucción de su motor de cálculo y es la zona en movimiento. La deuda dominante no es funcional sino estructural: no hay sistema de diseño y la mitad del código vive innecesariamente en el navegador.
+El producto está en producción y sostiene la operación diaria del negocio. El dominio de horas acaba de completar la reconstrucción de su motor de cálculo y es la zona en movimiento. La deuda dominante sigue siendo estructural: hay contrato oficial de Modal (Albaranes y Caja/Tesorería) y de Button (piloto de footers), y piloto de atajo Master, pero no hay sistema de componentes completo y la mitad del código vive innecesariamente en el navegador.
 
 ---
 
@@ -99,7 +99,7 @@ Sirven para dimensionar, no para presumir:
 - 40 módulos de acciones de servidor y 27 manejadores de ruta.
 - 26 ficheros de prueba, concentrados en el motor de horas, el sistema de comparación y el intérprete de nóminas. Cero pruebas de interfaz.
 - 14 componentes transversales para todo el producto. **Es la cifra que hay que subir.**
-- Cero tokens de color centralizados; el color de marca aparece repetido casi 900 veces.
+- **Cero tokens de color centralizados; el color de marca aparece repetido casi 900 veces.** El Design System ya materializa un subconjunto (superficie, marca, táctil, Button/Modal). El resto sigue literal.
 
 ---
 

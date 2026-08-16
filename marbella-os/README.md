@@ -26,7 +26,7 @@ Antes de leer cualquier otra cosa: [CANON.md](CANON.md) explica cómo funciona e
 | Si eres… | Lee en este orden |
 |---|---|
 | Nuevo en el proyecto | [CANON](CANON.md) → [GLOSARIO](GLOSARIO.md) → [VISION](1-producto/VISION.md) → [MAPA-DE-CAPACIDADES](1-producto/MAPA-DE-CAPACIDADES.md) → [ESTADO](5-estado/ESTADO.md) |
-| Vas a diseñar una pantalla | [PRINCIPIOS](1-producto/PRINCIPIOS.md) → [EXPERIENCIA](2-diseno/EXPERIENCIA.md) → [TOKENS](2-diseno/TOKENS.md) → [PATRONES](2-diseno/PATRONES.md) → [SISTEMA-DE-COMPONENTES](2-diseno/SISTEMA-DE-COMPONENTES.md) |
+| Vas a diseñar una pantalla | [PRINCIPIOS](1-producto/PRINCIPIOS.md) → [EXPERIENCIA](2-diseno/EXPERIENCIA.md) → [LENGUAJE-VISUAL](2-diseno/LENGUAJE-VISUAL.md) → [TOKENS](2-diseno/TOKENS.md) → [PATRONES](2-diseno/PATRONES.md) → [SISTEMA-DE-COMPONENTES](2-diseno/SISTEMA-DE-COMPONENTES.md) |
 | Vas a escribir código de interfaz | [FRONTEND](3-ingenieria/FRONTEND.md) → [SISTEMA-DE-COMPONENTES](2-diseno/SISTEMA-DE-COMPONENTES.md) → [TOKENS](2-diseno/TOKENS.md) |
 | Vas a tocar reglas de negocio | [GLOSARIO](GLOSARIO.md) → [ADR vigentes](4-decisiones/README.md) → el documento de [dominio](3-ingenieria/dominio/) correspondiente |
 | Vas a tocar datos o integraciones | [ARQUITECTURA](3-ingenieria/ARQUITECTURA.md) → [MODELO-DE-DATOS](3-ingenieria/MODELO-DE-DATOS.md) → [SEGURIDAD](3-ingenieria/SEGURIDAD.md) → [integraciones](3-ingenieria/integraciones/README.md) |
@@ -43,7 +43,8 @@ Es la fuente única de esta correspondencia. La regla de agente de `.cursor/rule
 |---|---|
 | Cualquier cosa, para situarte | [ARQUITECTURA](3-ingenieria/ARQUITECTURA.md) |
 | Cualquier cosa, para saber cómo está | [ESTADO](5-estado/ESTADO.md), [DEUDA](5-estado/DEUDA.md) |
-| Una pantalla o un componente | [EXPERIENCIA](2-diseno/EXPERIENCIA.md), [TOKENS](2-diseno/TOKENS.md), [PATRONES](2-diseno/PATRONES.md), [SISTEMA-DE-COMPONENTES](2-diseno/SISTEMA-DE-COMPONENTES.md) |
+| Una pantalla o un componente | [EXPERIENCIA](2-diseno/EXPERIENCIA.md), [LENGUAJE-VISUAL](2-diseno/LENGUAJE-VISUAL.md), [TOKENS](2-diseno/TOKENS.md), [PATRONES](2-diseno/PATRONES.md), [SISTEMA-DE-COMPONENTES](2-diseno/SISTEMA-DE-COMPONENTES.md) |
+| Un overlay, modal o capa superpuesta | [EXPERIENCIA §8](2-diseno/EXPERIENCIA.md#8-modales), [PATRONES P2](2-diseno/PATRONES.md#p2--modal), [SISTEMA-DE-COMPONENTES — Modal](2-diseno/SISTEMA-DE-COMPONENTES.md#modal), [ADR-0007](4-decisiones/ADR-0007-modal-superficie-derivada.md), [ADR-0008](4-decisiones/ADR-0008-modal-backdrop-capas.md) |
 | Código de interfaz | [FRONTEND](3-ingenieria/FRONTEND.md) |
 | Textos, etiquetas, formatos numéricos | [CONTENIDO-Y-TONO](2-diseno/CONTENIDO-Y-TONO.md) |
 | Un documento impreso | [DOCUMENTOS-IMPRESOS](2-diseno/DOCUMENTOS-IMPRESOS.md) |

@@ -31,6 +31,9 @@ Resumen operativo de lo que más se incumple (derivado de Marbella OS):
 - **Nunca concedas permisos a `anon`** sin decisión explícita escrita → `3-ingenieria/SEGURIDAD.md`.
 - **Ninguna condición laboral se lee del perfil para calcular un período pasado.** Se leen de las tablas con vigencia → `3-ingenieria/MODELO-DE-DATOS.md`.
 - **Nunca dejes un punto de acceso de depuración.** Las rutas de máquina no pasan por el guardián → `3-ingenieria/SEGURIDAD.md`.
+- **Antes de crear UI, se busca** la pieza en `2-diseno/SISTEMA-DE-COMPONENTES.md`. Si existe, se reutiliza.
+- **Prohibido un sistema paralelo** de overlay, portal, backdrop, z-index, Escape o scroll-lock cuando existe pieza de sistema → `2-diseno/SISTEMA-DE-COMPONENTES.md`, `4-decisiones/ADR-0007-modal-superficie-derivada.md`.
+- **Si el inventario no cubre la necesidad, se para y se pregunta.** No se inventa pieza ni variante de sistema → `3-ingenieria/PROTOCOLO-AGENTES.md` Fase ④.
 
 ## Validación
 

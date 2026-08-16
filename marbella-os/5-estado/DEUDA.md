@@ -6,7 +6,7 @@ capa: estado
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-07-29
+revisado: 2026-08-16
 caducidad: 3 meses
 supersede: —
 ---
@@ -29,7 +29,7 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 
 **Prioridad: alta.** El tema del motor de estilos estaba vacío. El color de marca aparece repetido literalmente casi novecientas veces, y conviven dos escalas de grises distintas con cientos de usos cada una.
 
-**Pago parcial (2026-08-15):** el piloto `DashboardShortcut` adoptó un subconjunto mínimo vía CSS variables y Tailwind (`superficie`, `borde`, `texto.fuerte`, radios, elevación, táctil, `espacio.1/2`). El contrato Modal adoptó además `color.marca`, `espacio.3/4`, `elevacion.modal`, `estructura.alto-modal` (como `--modal-max-height`) y capas `--z-modal-*`. El resto del catálogo y la adopción global de marca en pantallas legacy siguen pendientes.
+**Pago parcial (2026-08-16):** el piloto `DashboardShortcut` adoptó un subconjunto mínimo vía CSS variables y Tailwind (`superficie`, `borde`, `texto.fuerte`, radios, elevación, táctil, `espacio.1/2`). El contrato Modal adoptó además `color.marca`, `espacio.3/4`, `elevacion.modal`, `estructura.alto-modal` (como `--modal-max-height`) y capas `--z-modal-*`. El contrato Button adoptó `color.marca.intenso`, `color.negativo`, `color.negativo.fondo`, `color.superficie.inactiva` y `color.texto.invertido`. El resto del catálogo y la adopción global de marca en pantallas legacy siguen pendientes.
 
 **Coste residual**: un cambio de color de marca sigue siendo un cambio en cientos de ficheros fuera del Design System.
 
@@ -41,9 +41,9 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 
 **Prioridad: alta.** No existe botón, campo, tarjeta, insignia ni estado vacío de sistema. Cada pantalla los reconstruye.
 
-**Pago parcial (2026-08-15):** existe `DashboardShortcut` (Master) y el **contrato oficial de Modal** (`ui/modal.tsx` + capas/variantes). Siguen pendientes: migración de consumidores de Modal (piloto Albaranes), Staff/Admin shortcuts, y el resto de base (botón, campo, tarjeta, vacío…).
+**Pago parcial (2026-08-16):** existe `DashboardShortcut` (Master), el **contrato oficial de Modal** (Albaranes y Caja/Tesorería) y el **contrato oficial de Button** (piloto: footers de esos modales). Se retiró `ActionButton`. Siguen pendientes: resto de overlays de la allowlist (incluidos Staff/Admin que no son de caja), atajos Staff/Admin, botones fuera del piloto, y el resto de base (campo, tarjeta, vacío…).
 
-**Coste residual**: deriva visual continua fuera de los pilotos; overlays legacy con z-index ad hoc hasta migrar.
+**Coste residual**: deriva visual continua fuera de los pilotos; overlays legacy con z-index ad hoc hasta migrar. En Caja/Tesorería quedan deliberadamente legacy `QuickCalculatorModal` y `DenominationZoomModal` por el techo `base → derived` ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)).
 
 **Disparador de pago**: continuar tras D1 parcial. Contrato en [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 
@@ -286,16 +286,6 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 **Coste**: exposición de material sensible a quien conozca o adivine la ruta del archivo.
 
 **Disparador de pago**: inmediato. Es un cambio de una bandera más las políticas de lectura correspondientes.
-
----
-
-## D27 · Dos reglas de agente legislan por su cuenta
-
-**Prioridad: media.** `modals.mdc` fija el comportamiento obligatorio de los modales —centrado, fondo, bloqueo de desplazamiento— y `pdf-design-system-v2.mdc` define un sistema visual de documentos imprimibles con su estado de migración. Ninguna de las dos cita a Marbella OS, así que esa norma solo existe dentro de la configuración de una herramienta concreta.
-
-**Coste**: quien no use esa herramienta no ve la norma, y nadie la revisa cuando el producto cambia. Es la degradación que [CANON §13](../CANON.md) describe: una regla que no gobierna a todos deja de gobernar a nadie. Ya la detecta `npm run validate:corpus`, que avisa por cada regla que no cite el corpus.
-
-**Disparador de pago**: la próxima vez que se toque un modal o un documento imprimible. El comportamiento de los modales pertenece a [EXPERIENCIA](../2-diseno/EXPERIENCIA.md) y el sistema visual de impresos a [TOKENS](../2-diseno/TOKENS.md); la regla debe quedarse con el puntero, no con la norma.
 
 ---
 

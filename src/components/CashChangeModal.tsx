@@ -11,7 +11,8 @@ import { DenominationZoomModal } from '@/components/ui/DenominationZoomModal';
 
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 
 const BILLS = [100, 50, 20, 10, 5];
 const COINS = [2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
@@ -96,7 +97,6 @@ export const CashChangeModal = ({
     onClose,
     onSuccess
 }: CashChangeModalProps) => {
-    useModalUsageTracking({ open: true, usageId: 'cash-change', usageLabel: 'Cambio de caja' });
     const supabase = createClient();
     const useTwoBoxFlow = boxOptions.length > 0;
 
@@ -475,31 +475,67 @@ export const CashChangeModal = ({
     // ——— Flujo legacy: una caja (SWAP) ———
     if (!useTwoBoxFlow) {
         return (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
-                <div className="bg-[#f8fafb] w-full max-w-[420px] rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
-                    <div className="bg-[#36606F] shrink-0 shadow-lg z-30 relative">
-                        <div className="px-4 py-2.5 pb-3">
-                            <div className="flex items-center justify-between mb-3">
-                                <div className="flex items-end gap-2 pr-4">
-                                    <h2 className="text-lg font-black text-white uppercase tracking-tighter leading-none">Cambio</h2>
-                                    <p className="text-white/60 text-[10px] font-bold uppercase tracking-[0.1em] border-l border-white/20 pl-2 leading-none mb-[1px]">Caja {boxName}</p>
+            <Modal
+                open
+                onClose={onClose}
+                variant="standard"
+                layer="base"
+                instance="cash-change-single"
+                usageId="cash-change-single"
+                usageLabel="Cambio de caja"
+                headerTone="petroleum"
+                headerTitleAlign="left"
+                title="Cambio"
+                subtitle={boxName ? `Caja ${boxName}` : undefined}
+                footer={
+                    <div className="flex w-full flex-col gap-2">
+                        <div className="flex gap-2 w-full">
+                            <Button
+                                type="button"
+                                variant="primary"
+                                layout="fill"
+                                instance="cash-change-single-save"
+                                className="flex-[2]"
+                                onClick={handleSubmitLegacy}
+                                disabled={!isBalanced || (totalIn === 0 && totalOut === 0) || hasStockIssueLegacy}
+                            >
+                                {hasStockIssueLegacy ? 'STOCK INSUFICIENTE' : 'GUARDAR'}
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                layout="fill"
+                                instance="cash-change-single-exit"
+                                className="flex-1"
+                                icon={<X strokeWidth={3} />}
+                                onClick={onClose}
+                            >
+                                SALIR
+                            </Button>
+                        </div>
+                        {hasStockIssueLegacy && (
+                            <p className="text-center text-[10px] font-bold text-rose-500 uppercase tracking-tight italic">
+                                No hay suficiente stock en caja para realizar este cambio
+                            </p>
+                        )}
+                    </div>
+                }
+            >
+                    <div className="bg-[#36606F] px-4 py-2.5">
+                        <div className="flex items-center justify-between gap-1.5 px-0.5">
+                            <div className="flex-1 bg-black/10 rounded-2xl py-2 flex flex-col items-center border border-white/5">
+                                <span className="text-[8px] font-black text-rose-300/60 uppercase tracking-widest mb-0.5">Sale</span>
+                                <span className="text-base md:text-xl font-black text-rose-300 tabular-nums leading-none">{totalOut.toFixed(2)}€</span>
+                            </div>
+                            <div className="flex-1 bg-white/10 rounded-2xl py-2 flex flex-col items-center border border-white/10 shadow-inner">
+                                <span className="text-[8px] font-black text-white/40 uppercase tracking-widest mb-0.5">Dif:</span>
+                                <div className={cn("text-xs md:text-sm font-black px-3 py-0.5 rounded-full", isBalanced ? "text-emerald-400" : "text-rose-400")}>
+                                    {isBalanced ? "0.00€" : `${diff > 0 ? '+' : ''}${diff.toFixed(2)}€`}
                                 </div>
                             </div>
-                            <div className="flex items-center justify-between gap-1.5 px-0.5">
-                                <div className="flex-1 bg-black/10 rounded-2xl py-2 flex flex-col items-center border border-white/5">
-                                    <span className="text-[8px] font-black text-rose-300/60 uppercase tracking-widest mb-0.5">Sale</span>
-                                    <span className="text-base md:text-xl font-black text-rose-300 tabular-nums leading-none">{totalOut.toFixed(2)}€</span>
-                                </div>
-                                <div className="flex-1 bg-white/10 rounded-2xl py-2 flex flex-col items-center border border-white/10 shadow-inner">
-                                    <span className="text-[8px] font-black text-white/40 uppercase tracking-widest mb-0.5">Dif:</span>
-                                    <div className={cn("text-xs md:text-sm font-black px-3 py-0.5 rounded-full", isBalanced ? "text-emerald-400" : "text-rose-400")}>
-                                        {isBalanced ? "0.00€" : `${diff > 0 ? '+' : ''}${diff.toFixed(2)}€`}
-                                    </div>
-                                </div>
-                                <div className="flex-1 bg-black/10 rounded-2xl py-2 flex flex-col items-center border border-white/5">
-                                    <span className="text-[8px] font-black text-emerald-300/60 uppercase tracking-widest mb-0.5">Entra</span>
-                                    <span className="text-base md:text-xl font-black text-emerald-300 tabular-nums leading-none">{totalIn.toFixed(2)}€</span>
-                                </div>
+                            <div className="flex-1 bg-black/10 rounded-2xl py-2 flex flex-col items-center border border-white/5">
+                                <span className="text-[8px] font-black text-emerald-300/60 uppercase tracking-widest mb-0.5">Entra</span>
+                                <span className="text-base md:text-xl font-black text-emerald-300 tabular-nums leading-none">{totalIn.toFixed(2)}€</span>
                             </div>
                         </div>
                     </div>
@@ -531,36 +567,7 @@ export const CashChangeModal = ({
                             ))}
                         </div>
                     </div>
-                    <div className="p-3 bg-white border-t border-zinc-100 shrink-0">
-                        <div className="flex gap-2 w-full">
-                            <button
-                                onClick={handleSubmitLegacy}
-                                disabled={!isBalanced || (totalIn === 0 && totalOut === 0) || hasStockIssueLegacy}
-                                className={cn(
-                                    "flex-[2] h-10 min-h-[48px] rounded-xl font-black text-[11px] uppercase tracking-widest shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2",
-                                    (isBalanced && (totalIn > 0 || totalOut > 0) && !hasStockIssueLegacy)
-                                        ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-200"
-                                        : "bg-zinc-100 text-zinc-300 cursor-not-allowed border border-zinc-200"
-                                )}
-                            >
-                                {hasStockIssueLegacy ? 'STOCK INSUFICIENTE' : 'GUARDAR'}
-                            </button>
-                            <button
-                                onClick={onClose}
-                                className="flex-1 h-10 min-h-[48px] bg-rose-500 text-white font-black uppercase tracking-widest rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1.5 shadow-md shadow-rose-200 text-[11px]"
-                            >
-                                <X size={14} strokeWidth={3} />
-                                SALIR
-                            </button>
-                        </div>
-                        {hasStockIssueLegacy && (
-                            <p className="text-center text-[10px] font-bold text-rose-500 mt-2 uppercase tracking-tight italic">
-                                No hay suficiente stock en caja para realizar este cambio
-                            </p>
-                        )}
-                    </div>
-                </div>
-            </div>
+            </Modal>
         );
     }
 
@@ -582,28 +589,44 @@ export const CashChangeModal = ({
 
         return (
             <>
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
-                <div className="flex w-full max-w-[420px] flex-col max-h-[90vh] overflow-hidden rounded-3xl bg-white shadow-2xl" onClick={e => e.stopPropagation()}>
-                    <div className="bg-[#36606F] shrink-0 px-4 py-3">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-lg font-black text-white uppercase tracking-tighter leading-none">Cambio</h2>
-                            <div className="flex items-center gap-1 shrink-0">
-                                {canViewExchangeHistory && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowExchangeHistoryModal(true)}
-                                        className="w-10 h-10 flex items-center justify-center text-white min-h-[48px] min-w-[48px] opacity-90 hover:opacity-100 transition-opacity"
-                                        aria-label="Histórico de intercambios"
-                                    >
-                                        <Eye size={22} strokeWidth={2.5} className="stroke-current fill-none" />
-                                    </button>
-                                )}
-                                <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-white min-h-[48px] min-w-[48px]">
-                                    <X size={20} strokeWidth={3} />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+            <Modal
+                open
+                onClose={onClose}
+                variant="standard"
+                layer="base"
+                instance="cash-change-select"
+                usageId="cash-change-select"
+                usageLabel="Cambio de caja"
+                headerTone="petroleum"
+                headerTitleAlign="left"
+                title="Cambio"
+                headerTrailing={canViewExchangeHistory ? (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setCalculatorOpen(false);
+                            setZoomDenom(null);
+                            setShowExchangeHistoryModal(true);
+                        }}
+                        className="flex h-full min-w-ds-tactil items-center justify-center border-0 bg-transparent text-white opacity-90 shadow-none outline-none transition-opacity hover:opacity-100"
+                        aria-label="Histórico de intercambios"
+                    >
+                        <Eye size={22} strokeWidth={2.5} className="stroke-current fill-none" />
+                    </button>
+                ) : undefined}
+                footer={
+                    <Button
+                        type="button"
+                        variant="primary"
+                        layout="fill"
+                        instance="cash-change-select-next"
+                        onClick={() => canContinue && setStep('step1')}
+                        disabled={!canContinue}
+                    >
+                        Siguiente
+                    </Button>
+                }
+            >
                 <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
                 <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
                     <div className="flex-1 overflow-y-auto bg-white p-4">
@@ -677,71 +700,53 @@ export const CashChangeModal = ({
                             <p className="text-rose-600 text-[10px] font-bold mt-4 text-center">Elige dos cajas distintas</p>
                         )}
                     </div>
-                    <div className="p-3 bg-white border-t border-zinc-100 shrink-0">
+            </Modal>
+
+            <Modal
+                open={showExchangeHistoryModal}
+                onClose={() => { setShowExchangeHistoryModal(false); setSelectedExchangeDetail(null); }}
+                variant="standard"
+                layer="derived"
+                instance="cash-change-history"
+                usageId="cash-change-history"
+                usageLabel={selectedExchangeDetail ? 'Desglose del intercambio' : 'Histórico de intercambios'}
+                headerTone="petroleum"
+                headerTitleAlign="left"
+                title={selectedExchangeDetail ? 'Desglose del intercambio' : 'Histórico de intercambios'}
+                onBack={selectedExchangeDetail ? () => setSelectedExchangeDetail(null) : undefined}
+                headerTrailing={!selectedExchangeDetail ? (
+                    <div className="flex items-center gap-1">
                         <button
-                            onClick={() => canContinue && setStep('step1')}
-                            disabled={!canContinue}
-                            className={cn(
-                                "w-full h-12 min-h-[48px] rounded-xl font-black text-[11px] uppercase tracking-widest",
-                                canContinue ? "bg-emerald-600 text-white hover:bg-emerald-700" : "bg-zinc-100 text-zinc-400 cursor-not-allowed"
-                            )}
+                            type="button"
+                            onClick={() => setExchangeHistoryYearMonth(prev => {
+                                const m = prev.month === 1 ? 12 : prev.month - 1;
+                                const y = prev.month === 1 ? prev.year - 1 : prev.year;
+                                return { year: y, month: m };
+                            })}
+                            className="flex h-full min-w-ds-tactil items-center justify-center border-0 bg-transparent text-white shadow-none outline-none"
+                            aria-label="Mes anterior"
                         >
-                            Siguiente
+                            <ChevronLeft size={20} strokeWidth={3} />
+                        </button>
+                        <span className="text-white font-bold text-sm min-w-[7.5rem] text-center">
+                            {new Date(exchangeHistoryYearMonth.year, exchangeHistoryYearMonth.month - 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase())}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => setExchangeHistoryYearMonth(prev => {
+                                const m = prev.month === 12 ? 1 : prev.month + 1;
+                                const y = prev.month === 12 ? prev.year + 1 : prev.year;
+                                return { year: y, month: m };
+                            })}
+                            className="flex h-full min-w-ds-tactil items-center justify-center border-0 bg-transparent text-white shadow-none outline-none"
+                            aria-label="Mes siguiente"
+                        >
+                            <ChevronRight size={20} strokeWidth={3} />
                         </button>
                     </div>
-                </div>
-            </div>
-
-            {/* Modal histórico de intercambios (manager) */}
-            {showExchangeHistoryModal && (
-                <div className="fixed inset-0 z-[210] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => { setShowExchangeHistoryModal(false); setSelectedExchangeDetail(null); }}>
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] px-4 py-3 flex items-center justify-between shrink-0">
-                            <h3 className="text-lg font-black text-white uppercase tracking-tighter">
-                                {selectedExchangeDetail ? 'Desglose del intercambio' : 'Histórico de intercambios'}
-                            </h3>
-                            <div className="flex items-center gap-2">
-                                {!selectedExchangeDetail ? (
-                                    <>
-                                        <button
-                                            type="button"
-                                            onClick={() => setExchangeHistoryYearMonth(prev => {
-                                                const m = prev.month === 1 ? 12 : prev.month - 1;
-                                                const y = prev.month === 1 ? prev.year - 1 : prev.year;
-                                                return { year: y, month: m };
-                                            })}
-                                            className="w-9 h-9 flex items-center justify-center text-white rounded-lg hover:bg-white/10 min-h-[44px] min-w-[44px]"
-                                        >
-                                            <ChevronLeft size={20} strokeWidth={3} />
-                                        </button>
-                                        <span className="text-white font-bold text-sm min-w-[120px] text-center">
-                                            {new Date(exchangeHistoryYearMonth.year, exchangeHistoryYearMonth.month - 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase())}
-                                        </span>
-                                        <button
-                                            type="button"
-                                            onClick={() => setExchangeHistoryYearMonth(prev => {
-                                                const m = prev.month === 12 ? 1 : prev.month + 1;
-                                                const y = prev.month === 12 ? prev.year + 1 : prev.year;
-                                                return { year: y, month: m };
-                                            })}
-                                            className="w-9 h-9 flex items-center justify-center text-white rounded-lg hover:bg-white/10 min-h-[44px] min-w-[44px]"
-                                        >
-                                            <ChevronRight size={20} strokeWidth={3} />
-                                        </button>
-                                    </>
-                                ) : (
-                                    <button type="button" onClick={() => setSelectedExchangeDetail(null)} className="text-white font-black text-sm underline">Volver</button>
-                                )}
-                                <button
-                                    type="button"
-                                    onClick={() => { setShowExchangeHistoryModal(false); setSelectedExchangeDetail(null); }}
-                                    className="w-10 h-10 flex items-center justify-center text-white rounded-xl hover:bg-white/10 min-h-[44px] min-w-[44px]"
-                                >
-                                    <X size={20} strokeWidth={3} />
-                                </button>
-                            </div>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-4">
+                ) : undefined}
+            >
+                        <div className="p-4">
                             {selectedExchangeDetail ? (
                                 <div className="space-y-4">
                                     {selectedExchangeDetail.legs.map((leg, idx) => (
@@ -781,11 +786,8 @@ export const CashChangeModal = ({
                                 </ul>
                             )}
                         </div>
-                        <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
-                    </div>
-                </div>
-            )}
-        </>
+            </Modal>
+            </>
         );
     }
 
@@ -803,14 +805,18 @@ export const CashChangeModal = ({
     const titleText = isStep1 ? `Dinero que sale de ${boxA?.name}` : `Dinero que entra en ${boxA?.name}`;
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
-            <div className="bg-[#f8fafb] w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
-                <div className="bg-[#36606F] shrink-0 shadow-lg z-30 relative py-1 px-4 flex items-center justify-between">
-                    <h2 className="text-lg font-black text-white uppercase tracking-tighter leading-none">Cambio</h2>
-                    <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 text-white min-h-[48px] min-w-[48px]">
-                        <X size={20} strokeWidth={3} />
-                    </button>
-                </div>
+        <Modal
+            open
+            onClose={onClose}
+            variant="amplify"
+            layer="base"
+            instance="cash-change-count"
+            usageId="cash-change-count"
+            usageLabel="Cambio de caja"
+            headerTone="petroleum"
+            headerTitleAlign="left"
+            title="Cambio"
+        >
                 <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar bg-white p-2 flex flex-col">
@@ -955,7 +961,6 @@ export const CashChangeModal = ({
                     )}
                 </div>
                 <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
-            </div>
-        </div>
+        </Modal>
     );
 };

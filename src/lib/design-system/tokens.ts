@@ -14,6 +14,16 @@ export const DS_SCREEN_TOKENS = {
     colorTextoFuerte: '#27272A',
     /** TOKENS `color.marca` */
     colorMarca: '#36606F',
+    /** TOKENS `color.marca.intenso` — hover/pressed de marca */
+    colorMarcaIntenso: '#2F5D6A',
+    /** TOKENS `color.superficie.inactiva` — secondary en reposo */
+    colorSuperficieInactiva: '#F4F4F5',
+    /** TOKENS `color.texto.invertido` — texto sobre marca o negativo */
+    colorTextoInvertido: '#FFFFFF',
+    /** TOKENS `color.negativo` */
+    colorNegativo: '#E11D48',
+    /** TOKENS `color.negativo.fondo` */
+    colorNegativoFondo: '#FFF1F2',
     /** TOKENS `radio.superficie` — 16px */
     radioSuperficie: '16px',
     /** TOKENS `radio.control` — 12px */
@@ -34,17 +44,30 @@ export const DS_SCREEN_TOKENS = {
      */
     elevacionSuperficie: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
     /**
-     * Elevación de modal (TOKENS `elevacion.modal`).
-     * Equivale a Tailwind `shadow-2xl`.
-     */
+ * Elevación de modal (TOKENS `elevacion.modal`).
+ * Equivale a Tailwind `shadow-2xl`.
+ */
     elevacionModal: '0 25px 50px -12px rgb(0 0 0 / 0.25)',
     /**
-     * Tope de alto de modal (TOKENS `estructura.alto-modal` ≈ 94% visible − safe-area).
+     * Cabecera fija de Modal — referencia Albaranes detalle:
+     * `px-4 py-3` + acciones `min-h-12` ⇒ 12 + 48 + 12 = 72px.
+     * TOKENS `estructura.cabecera-modal`.
+     */
+    modalHeaderHeight: '72px',
+    /**
+     * Tope de alto de Modal — referencia Albaranes detalle:
+     * `min(68dvh, calc(100dvh − safe-areas − 2.5rem))`.
+     * TOKENS `estructura.alto-modal` (contrato Modal; supersede el 94svh genérico en esta superficie).
      */
     modalMaxHeight:
-        'min(94svh, calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 1rem))',
-    /** Overlay de modal (backdrop). */
-    modalOverlay: 'rgb(0 0 0 / 0.4)',
+        'min(68dvh, calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 2.5rem))',
+    /** Backdrop nivel base (ADR-0008). */
+    modalOverlayBase: 'rgba(0, 0, 0, 0.32)',
+    modalOverlayBaseFilter: 'blur(8px) saturate(65%)',
+    /** Backdrop capas superiores: solo oscurecimiento. */
+    modalOverlayElevated: 'rgba(0, 0, 0, 0.28)',
+    /** @deprecated Usar modalOverlayBase. Conservado por lecturas antiguas. */
+    modalOverlay: 'rgba(0, 0, 0, 0.32)',
     /** Capas semánticas (ADR-0007). */
     zModalBase: '200',
     zModalDerived: '210',
@@ -58,6 +81,11 @@ export const DS_CSS_VARS = {
     colorBorde: '--color-borde',
     colorTextoFuerte: '--color-texto-fuerte',
     colorMarca: '--color-marca',
+    colorMarcaIntenso: '--color-marca-intenso',
+    colorSuperficieInactiva: '--color-superficie-inactiva',
+    colorTextoInvertido: '--color-texto-invertido',
+    colorNegativo: '--color-negativo',
+    colorNegativoFondo: '--color-negativo-fondo',
     radioSuperficie: '--radio-superficie',
     radioControl: '--radio-control',
     espacio1: '--espacio-1',
@@ -67,7 +95,11 @@ export const DS_CSS_VARS = {
     tactilMinimo: '--tactil-minimo',
     elevacionSuperficie: '--elevacion-superficie',
     elevacionModal: '--elevacion-modal',
+    modalHeaderHeight: '--modal-header-height',
     modalMaxHeight: '--modal-max-height',
+    modalOverlayBase: '--modal-overlay-base',
+    modalOverlayBaseFilter: '--modal-overlay-base-filter',
+    modalOverlayElevated: '--modal-overlay-elevated',
     modalOverlay: '--modal-overlay',
     zModalBase: '--z-modal-base',
     zModalDerived: '--z-modal-derived',

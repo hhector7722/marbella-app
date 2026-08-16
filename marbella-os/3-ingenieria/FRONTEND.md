@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-07-29
+revisado: 2026-08-16
 caducidad: 6 meses
 supersede: .cursor/rules/BAR-LA-MARBELLA-AI-OPERATING-PROTOCOL.mdc (reglas de estilo y de seguridad de layout)
 ---
@@ -69,6 +69,7 @@ Reglas:
 
 ## 5. Composición
 
+- **Antes de crear una pieza de interfaz, se busca** en [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md). Si existe, se reutiliza. Si la necesidad exige una pieza o variante de sistema nueva, se para y se pregunta.
 - **Nunca se define un componente dentro de otro.** Provoca desmontaje y remontaje en cada renderizado, y es la causa habitual de que un campo pierda el foco al escribir.
 - **Interruptores booleanos, los mínimos.** Cinco parámetros booleanos son treinta y dos estados que nadie ha probado. Se resuelve con variantes explícitas o componiendo hijos.
 - **Se compone con hijos antes que con funciones de renderizado.**

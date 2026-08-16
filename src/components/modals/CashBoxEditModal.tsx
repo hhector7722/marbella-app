@@ -7,6 +7,7 @@ import { createClient } from "@/utils/supabase/client";
 import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 
 interface CashBoxEditModalProps {
     box: { id: string; name: string; image_url?: string };
@@ -83,13 +84,26 @@ export function CashBoxEditModal({ box, onClose, onSuccess }: CashBoxEditModalPr
         <Modal
             open
             onClose={onClose}
+            variant="compact"
+            layer="base"
+            instance="cash-box-edit"
             title="Editar Caja"
             subtitle={box.name}
-            headerVariant="petroleum"
+            headerTone="petroleum"
             usageId="cash-box-edit"
             usageLabel="Editar caja"
             className="rounded-[2rem]"
-            zIndexClass="z-[220]"
+            footer={
+                <Button
+                    type="button"
+                    variant="secondary"
+                    layout="fill"
+                    instance="cash-box-edit-close"
+                    onClick={onClose}
+                >
+                    Cerrar
+                </Button>
+            }
         >
             <div className="p-6 space-y-6">
                 <div className="flex flex-col items-center gap-4">
@@ -131,15 +145,6 @@ export function CashBoxEditModal({ box, onClose, onSuccess }: CashBoxEditModalPr
                         Sube una foto clara de la caja para que los empleados puedan identificarla rápidamente en el selector.
                     </p>
                 </div>
-            </div>
-
-            <div className="p-4 bg-zinc-50 border-t border-zinc-100">
-                <button
-                    onClick={onClose}
-                    className="w-full h-12 bg-zinc-200 text-zinc-600 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-zinc-300 transition-all active:scale-95"
-                >
-                    Cerrar
-                </button>
             </div>
         </Modal>
     );

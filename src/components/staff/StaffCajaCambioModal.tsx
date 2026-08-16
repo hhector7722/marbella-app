@@ -9,8 +9,7 @@ import { cn } from '@/lib/utils';
 import { CURRENCY_IMAGES } from '@/lib/constants';
 import { BILLS, COINS } from '@/components/CashClosingModal';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
-import { useScrollLock } from '@/hooks/useScrollLock';
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { Modal } from '@/components/ui/modal';
 
 const STEP1_BILLS_ROW1 = [100, 50, 20] as const;
 const STEP1_BILLS_ROW2 = [10, 5] as const;
@@ -45,8 +44,6 @@ export interface StaffCajaCambioModalProps {
 }
 
 export function StaffCajaCambioModal({ isOpen, changeBox, onClose, onSuccess }: StaffCajaCambioModalProps) {
-    useModalUsageTracking({ open: isOpen, usageId: 'staff-caja-cambio', usageLabel: 'Caja cambio staff' });
-    useScrollLock(isOpen);
     const supabase = createClient();
     const [step, setStep] = useState<'importe' | 'retirado'>('importe');
     const [step1Counts, setStep1Counts] = useState<Record<number, number>>({});
@@ -221,27 +218,20 @@ export function StaffCajaCambioModal({ isOpen, changeBox, onClose, onSuccess }: 
     );
 
     return (
-        <div
-            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200"
-            onClick={onClose}
-            role="dialog"
-            aria-modal
-            aria-labelledby="staff-caja-cambio-title"
+        <Modal
+            open={isOpen}
+            onClose={onClose}
+            variant="amplify"
+            layer="base"
+            instance="staff-cash-change"
+            usageId="staff-caja-cambio"
+            usageLabel="Caja cambio staff"
+            headerTone="petroleum"
+            headerTitleAlign="left"
+            title="Cambio"
         >
             <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
             <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
-
-            <div
-                className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl animate-in zoom-in-95 duration-200"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="relative shrink-0 bg-[#36606F] shadow-lg">
-                    <div className="flex items-center justify-center px-4 py-3 text-white">
-                        <p id="staff-caja-cambio-title" className="text-center text-xs font-black uppercase tracking-widest text-white/90">
-                            Cambio
-                        </p>
-                    </div>
-                </div>
 
                 {step === 'importe' && (
                     <>
@@ -447,7 +437,6 @@ export function StaffCajaCambioModal({ isOpen, changeBox, onClose, onSuccess }: 
                         </div>
                     </>
                 )}
-            </div>
-        </div>
+        </Modal>
     );
 }

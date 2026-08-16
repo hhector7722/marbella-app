@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "8c4052286d8238bc",
+  "_huella": "9d30b96cd114dd2c",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -12,7 +12,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 100,
-      "vence": "2028-07-30",
+      "vence": "2028-08-16",
       "depende_de": []
     },
     {
@@ -113,6 +113,20 @@
       ]
     },
     {
+      "ruta": "marbella-os/4-decisiones/ADR-0008-modal-backdrop-capas.md",
+      "documento": "ADR-0008",
+      "clase": "inmutable",
+      "estado": "vigente",
+      "capa": "decisiones",
+      "normativo": true,
+      "citable": true,
+      "precedencia": 80,
+      "vence": null,
+      "depende_de": [
+        "ADR-0007"
+      ]
+    },
+    {
       "ruta": "marbella-os/1-producto/PRINCIPIOS.md",
       "documento": "PRINCIPIOS",
       "clase": "constitucional",
@@ -145,7 +159,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 60,
-      "vence": "2027-07-29",
+      "vence": "2027-08-16",
       "depende_de": []
     },
     {
@@ -255,7 +269,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-01-29",
+      "vence": "2027-02-16",
       "depende_de": []
     },
     {
@@ -267,7 +281,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-01-29",
+      "vence": "2027-02-16",
       "depende_de": []
     },
     {
@@ -375,7 +389,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-01-29",
+      "vence": "2027-02-16",
       "depende_de": []
     },
     {
@@ -459,7 +473,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-08-05",
+      "vence": "2027-08-16",
       "depende_de": [
         "CANON"
       ]
@@ -521,7 +535,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2026-10-29",
+      "vence": "2026-11-16",
       "depende_de": []
     },
     {
@@ -533,7 +547,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2026-08-29",
+      "vence": "2026-09-16",
       "depende_de": []
     },
     {
@@ -605,7 +619,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-01-29",
+      "vence": "2027-02-16",
       "depende_de": []
     },
     {

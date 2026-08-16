@@ -6,7 +6,7 @@ capa: raiz
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-07-29
+revisado: 2026-08-16
 caducidad: 6 meses
 supersede: —
 ---
@@ -199,6 +199,9 @@ Vocabulario congelado por [ADR-0001](4-decisiones/ADR-0001-hours-engine-producto
 | **Recorrido** | Secuencia de acciones que una persona real completa para lograr un objetivo, normalmente cruzando varias capacidades. |
 | **Superficie** | Medio por el que el producto se manifiesta: aplicación instalada, navegador, documento impreso, pantalla de cocina. |
 | **Token de diseño** | Valor visual con nombre semántico, definido en `2-diseno/TOKENS.md`. El único origen legítimo de un color, un radio, una sombra o un espaciado. |
+| **Modal** | Superficie de trabajo o de confirmación sobre la pantalla actual. Una sola pieza de sistema: `src/components/ui/modal.tsx`. Contrato en `2-diseno/SISTEMA-DE-COMPONENTES.md`; leyes en `2-diseno/EXPERIENCIA.md` §8; variantes en `2-diseno/PATRONES.md` P2. |
+| **Superficie derivada** | Overlay auxiliar de la misma tarea que el Modal base. Como máximo una a la vez. Capa `derived`. Lo decide [ADR-0007](4-decisiones/ADR-0007-modal-superficie-derivada.md). |
+| **Capa semántica de overlay** | Papel de apilamiento del Modal: `base`, `sheet`, `derived` o `system`. El consumidor elige el nombre, no un z-index. [ADR-0007](4-decisiones/ADR-0007-modal-superficie-derivada.md). |
 | **Copiloto** | Asistente conversacional del producto, con permisos propios por rol. |
 | **Uso** | Telemetría interna de actividad de las personas del equipo dentro del producto. |
 | **Regla de valor vacío** | En vistas de lectura, un valor igual a cero se muestra en blanco, no como «0». Norma de producto, definida en `2-diseno/CONTENIDO-Y-TONO.md`. Nombre anterior: *Zero-Display*. |

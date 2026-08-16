@@ -3,6 +3,11 @@ import { describe, it, beforeEach } from 'node:test';
 
 import { CONSUMPTION_BOTTOM_SHEET_COMPONENT_ID } from './consumption-bottom-sheet.ts';
 import {
+    MODAL_BACKDROP_BASE,
+    MODAL_BACKDROP_ELEVATED,
+    resolveModalBackdropKind,
+} from './modal-backdrop.ts';
+import {
     MODAL_COMPONENT_ID,
     MODAL_VARIANTS,
     resolveModalVariant,
@@ -16,6 +21,7 @@ import {
     registerModalSurface,
     resetModalSurfaceStackForTests,
 } from './modal-layers.ts';
+import { DS_SCREEN_TOKENS } from './tokens.ts';
 
 describe('Modal identidad y variantes', () => {
     it('id de componente estable', () => {
@@ -33,17 +39,26 @@ describe('Modal identidad y variantes', () => {
         ]);
     });
 
-    it('cada variante resuelve max-width y política de altura', () => {
+    it('cada variante resuelve max-width y política de altura (ref. Albaranes work=5xl)', () => {
         assert.equal(resolveModalVariant('compact').maxWidthClass, 'max-w-sm');
         assert.equal(resolveModalVariant('compact').preferTall, false);
         assert.equal(resolveModalVariant('standard').maxWidthClass, 'max-w-md');
         assert.equal(resolveModalVariant('standard').preferTall, false);
-        assert.equal(resolveModalVariant('work').maxWidthClass, 'max-w-4xl');
+        assert.equal(resolveModalVariant('work').maxWidthClass, 'max-w-5xl');
         assert.equal(resolveModalVariant('work').preferTall, true);
-        assert.equal(resolveModalVariant('day').maxWidthClass, 'max-w-4xl');
+        assert.equal(resolveModalVariant('day').maxWidthClass, 'max-w-5xl');
         assert.equal(resolveModalVariant('day').preferTall, true);
         assert.equal(resolveModalVariant('amplify').maxWidthClass, 'max-w-2xl');
         assert.equal(resolveModalVariant('amplify').preferTall, false);
+    });
+
+    it('tokens dimensionales alineados a Albaranes', () => {
+        assert.equal(DS_SCREEN_TOKENS.modalHeaderHeight, '72px');
+        assert.match(DS_SCREEN_TOKENS.modalMaxHeight, /68dvh/);
+        assert.match(DS_SCREEN_TOKENS.modalMaxHeight, /2\.5rem/);
+        assert.equal(DS_SCREEN_TOKENS.modalOverlayBase, 'rgba(0, 0, 0, 0.32)');
+        assert.equal(DS_SCREEN_TOKENS.modalOverlayBaseFilter, 'blur(8px) saturate(65%)');
+        assert.equal(DS_SCREEN_TOKENS.modalOverlayElevated, 'rgba(0, 0, 0, 0.28)');
     });
 
     it('capas semánticas y clases z están definidas', () => {
@@ -52,6 +67,24 @@ describe('Modal identidad y variantes', () => {
         assert.equal(MODAL_LAYER_Z_CLASS.derived, 'z-[var(--z-modal-derived)]');
         assert.equal(MODAL_LAYER_Z_CLASS.system, 'z-[var(--z-modal-system)]');
         assert.equal(MODAL_LAYER_Z_CLASS.sheet, 'z-[var(--z-modal-sheet)]');
+    });
+});
+
+describe('Modal backdrop por capa (ADR-0008)', () => {
+    it('base y sheet usan blur(8px) saturate(65%) + rgba 0.32', () => {
+        assert.equal(MODAL_BACKDROP_BASE.blurPx, 8);
+        assert.equal(MODAL_BACKDROP_BASE.saturatePercent, 65);
+        assert.equal(MODAL_BACKDROP_BASE.background, 'rgba(0, 0, 0, 0.32)');
+        assert.equal(MODAL_BACKDROP_BASE.filter, 'blur(8px) saturate(65%)');
+        assert.equal(resolveModalBackdropKind('base'), 'base');
+        assert.equal(resolveModalBackdropKind('sheet'), 'base');
+    });
+
+    it('derived y system solo oscurecen (sin filtros acumulados)', () => {
+        assert.equal(MODAL_BACKDROP_ELEVATED.filter, 'none');
+        assert.equal(MODAL_BACKDROP_ELEVATED.background, 'rgba(0, 0, 0, 0.28)');
+        assert.equal(resolveModalBackdropKind('derived'), 'elevated');
+        assert.equal(resolveModalBackdropKind('system'), 'elevated');
     });
 });
 
@@ -117,6 +150,29 @@ describe('Modal capas y nesting (ADR-0007)', () => {
 
         if (a.ok) a.unregister();
         if (b.ok) b.unregister();
+    });
+
+    it('permite system como sub-submodal sobre base+derived', () => {
+        const base = registerModalSurface({
+            id: 'base-1',
+            layer: 'base',
+            onEscape: () => {},
+        });
+        const derived = registerModalSurface({
+            id: 'derived-1',
+            layer: 'derived',
+            onEscape: () => {},
+        });
+        const system = registerModalSurface({
+            id: 'sys-1',
+            layer: 'system',
+            onEscape: () => {},
+        });
+        assert.equal(base.ok && derived.ok && system.ok, true);
+        assert.equal(getModalSurfaceStackSnapshot().length, 3);
+        if (base.ok) base.unregister();
+        if (derived.ok) derived.unregister();
+        if (system.ok) system.unregister();
     });
 
     it('Escape cierra solo la cima de la pila', () => {

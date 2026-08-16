@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { createPortal } from 'react-dom';
+import { useState, useEffect, useRef } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from 'next/navigation';
 import {
@@ -11,8 +10,6 @@ import {
     Minus,
     Search,
     Filter,
-    X,
-    Calendar,
     ChevronLeft,
     ChevronRight,
     Check,
@@ -31,7 +28,7 @@ import {
 } from 'lucide-react';
 
 import { toast } from 'sonner';
-import { format, addDays, startOfMonth, endOfMonth, isSameMonth, subMonths, addMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, isSameMonth, subMonths, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -42,9 +39,7 @@ import CashClosingModal from '@/components/CashClosingModal';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
-import { useTrackModalApply } from '@/hooks/useTrackModalApply';
-import { formatMonthYear, formatYmdShort, movementDetailUsageLabel, periodRangeSummary } from '@/lib/usage/modal-apply';
+import { Modal } from '@/components/ui/modal';
 import * as XLSX from 'xlsx';
 
 interface Movement {
@@ -59,10 +54,6 @@ interface Movement {
 }
 
 export default function MovementsPage() {
-    const trackMovementsMonthPicker = useTrackModalApply('movements-month-picker', 'Selector de mes tesorería');
-    const trackMovementsDateSingle = useTrackModalApply('movements-date-single', 'Fecha única tesorería');
-    const trackMovementsDateRange = useTrackModalApply('movements-date-range', 'Rango fechas tesorería');
-
     const supabase = createClient();
     const router = useRouter();
     const tableRef = useRef<HTMLTableElement | null>(null);
@@ -122,7 +113,6 @@ export default function MovementsPage() {
         const d = endOfMonth(new Date());
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     });
-    const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
     const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all');
     const [dateSortDir, setDateSortDir] = useState<'asc' | 'desc'>('desc');
 
@@ -149,9 +139,6 @@ export default function MovementsPage() {
     };
 
     // Estados de UI
-    const [showCalendar, setShowCalendar] = useState<'single' | 'range' | null>(null);
-    const [showMonthPicker, setShowMonthPicker] = useState(false);
-    const [calendarBaseDate, setCalendarBaseDate] = useState(new Date());
     const [loading, setLoading] = useState(true);
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
     const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
@@ -182,37 +169,6 @@ export default function MovementsPage() {
         loading: true
     });
     const [selectedMovement, setSelectedMovement] = useState<Movement | null>(null);
-
-    const movementDetailTrackingLabel = useMemo(() => {
-        if (!selectedMovement) return 'Detalle movimiento';
-        return movementDetailUsageLabel(selectedMovement);
-    }, [selectedMovement]);
-
-    useModalUsageTracking({
-        open: showCalendar !== null,
-        usageId: showCalendar === 'single' ? 'movements-date-single' : 'movements-date-range',
-        usageLabel: showCalendar === 'single' ? 'Fecha única' : 'Rango de fechas',
-    });
-    useModalUsageTracking({
-        open: showMonthPicker,
-        usageId: 'movements-month-picker',
-        usageLabel: 'Selector de mes',
-    });
-    useModalUsageTracking({
-        open: cashModalMode !== 'none',
-        usageId: `movements-treasury-${cashModalMode}`,
-        usageLabel:
-            cashModalMode === 'in' ? 'Entrada de caja'
-            : cashModalMode === 'out' ? 'Salida de caja'
-            : cashModalMode === 'audit' ? 'Arqueo de caja'
-            : cashModalMode === 'inventory' ? 'Inventario de caja'
-            : 'Tesorería',
-    });
-    useModalUsageTracking({
-        open: selectedMovement !== null,
-        usageId: 'movements-detail',
-        usageLabel: movementDetailTrackingLabel,
-    });
 
     // SALDO ACTUAL (KPI) = running_balance más reciente del libro (caja operativa).
     // DIFERENCIA (UI) = efectivo físico contado − saldo libro (ignora ADJUSTMENT/SWAP).
@@ -765,45 +721,6 @@ export default function MovementsPage() {
         }
     };
 
-    const generateCalendarDays = () => {
-        const year = calendarBaseDate.getFullYear();
-        const month = calendarBaseDate.getMonth();
-        const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
-        const days: (number | null)[] = [];
-        const startDay = (firstDay.getDay() + 6) % 7;
-        for (let i = 0; i < startDay; i++) days.push(null);
-        for (let d = 1; d <= lastDay.getDate(); d++) days.push(d);
-        return days;
-    };
-
-    const handleDateSelect = (day: number) => {
-        const dateStr = `${calendarBaseDate.getFullYear()}-${String(calendarBaseDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        if (showCalendar === 'single') {
-            setSelectedDate(dateStr);
-            setFilterMode('single');
-            setShowCalendar(null);
-            trackMovementsDateSingle(formatYmdShort(dateStr), { selectedDate: dateStr });
-        } else if (showCalendar === 'range') {
-            if (!rangeStart || (rangeStart && rangeEnd)) {
-                setRangeStart(dateStr);
-                setRangeEnd(null);
-            } else {
-                if (new Date(dateStr) < new Date(rangeStart)) {
-                    setRangeStart(dateStr);
-                } else {
-                    setRangeEnd(dateStr);
-                    setFilterMode('range');
-                    setShowCalendar(null);
-                    trackMovementsDateRange(periodRangeSummary(rangeStart, dateStr), {
-                        rangeStart,
-                        rangeEnd: dateStr,
-                    });
-                }
-            }
-        }
-    };
-
     return (
         <div className="min-h-screen p-4 md:p-8 pb-24 text-zinc-900">
             <div className="max-w-4xl mx-auto space-y-6">
@@ -1146,91 +1063,6 @@ export default function MovementsPage() {
             </div>
 
             {/* MODALES EXTERNOS */}
-            {showCalendar && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setShowCalendar(null)}>
-                    <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="p-6 border-b border-zinc-50 flex items-center justify-between">
-                            <h3 className="font-black text-zinc-900 uppercase text-[10px] tracking-widest">{showCalendar === 'single' ? 'Fecha Única' : 'Rango de Fechas'}</h3>
-                            <button onClick={() => setShowCalendar(null)} className="p-3 hover:bg-zinc-100 rounded-2xl transition-colors"><X size={18} className="text-zinc-400" /></button>
-                        </div>
-                        <div className="p-6">
-                            <div className="flex items-center justify-between mb-6 px-2">
-                                <button onClick={() => setCalendarBaseDate(subMonths(calendarBaseDate, 1))} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"><ChevronLeft size={20} className="text-zinc-400" /></button>
-                                <span className="font-black text-zinc-900 text-xs uppercase tracking-tight">{format(calendarBaseDate, 'MMMM yyyy', { locale: es })}</span>
-                                <button onClick={() => setCalendarBaseDate(addDays(endOfMonth(calendarBaseDate), 1))} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"><ChevronRight size={20} className="text-zinc-400" /></button>
-                            </div>
-                            <div className="grid grid-cols-7 gap-1">
-                                {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
-                                    <div key={d} className="text-center text-[9px] font-black text-zinc-300 py-2">{d}</div>
-                                ))}
-                                {generateCalendarDays().map((day, i) => {
-                                    if (!day) return <div key={i} />;
-                                    const dStr = `${calendarBaseDate.getFullYear()}-${String(calendarBaseDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                                    const isSelected = showCalendar === 'single' ? selectedDate === dStr : (rangeStart === dStr || rangeEnd === dStr);
-                                    const isInRange = showCalendar === 'range' && rangeStart && rangeEnd && new Date(dStr) > new Date(rangeStart) && new Date(dStr) < new Date(rangeEnd);
-                                    return (
-                                        <button
-                                            key={i}
-                                            onClick={() => handleDateSelect(day)}
-                                            className={cn(
-                                                "aspect-square flex items-center justify-center rounded-2xl text-[11px] font-black transition-all",
-                                                isSelected ? "bg-zinc-900 text-white shadow-xl scale-110" : isInRange ? "bg-blue-50 text-[#5B8FB9]" : "hover:bg-zinc-50 text-zinc-600"
-                                            )}
-                                        >
-                                            {day}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {showMonthPicker && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setShowMonthPicker(false)}>
-                    <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="p-6 border-b border-zinc-50 flex items-center justify-between">
-                            <h3 className="font-black text-zinc-900 uppercase text-[10px] tracking-widest">Seleccionar Mes</h3>
-                            <button onClick={() => setShowMonthPicker(false)} className="p-3 hover:bg-zinc-100 rounded-2xl transition-colors"><X size={18} className="text-zinc-400" /></button>
-                        </div>
-                        <div className="p-6">
-                            <div className="flex items-center justify-between mb-8 px-2">
-                                <button onClick={() => setPickerYear(pickerYear - 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"><ChevronLeft size={20} className="text-zinc-400" /></button>
-                                <span className="font-black text-xl text-zinc-900 tracking-tighter">{pickerYear}</span>
-                                <button onClick={() => setPickerYear(pickerYear + 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"><ChevronRight size={20} className="text-zinc-400" /></button>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2">
-                                {Array.from({ length: 12 }).map((_, i) => {
-                                    const date = new Date(pickerYear, i, 1);
-                                    const isSelected = filterMode === 'range' && rangeStart === format(startOfMonth(date), 'yyyy-MM-dd') && rangeEnd === format(endOfMonth(date), 'yyyy-MM-dd');
-                                    return (
-                                        <button
-                                            key={i}
-                                            onClick={() => {
-                                                const s = startOfMonth(date);
-                                                const e = endOfMonth(date);
-                                                setRangeStart(format(s, 'yyyy-MM-dd'));
-                                                setRangeEnd(format(e, 'yyyy-MM-dd'));
-                                                setFilterMode('range');
-                                                setShowMonthPicker(false);
-                                                trackMovementsMonthPicker(formatMonthYear(pickerYear, i));
-                                            }}
-                                            className={cn(
-                                                "py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2",
-                                                isSelected ? "bg-zinc-900 border-zinc-900 text-white shadow-lg scale-105" : "bg-zinc-50 border-transparent text-zinc-400 hover:border-zinc-200 hover:text-zinc-900"
-                                            )}
-                                        >
-                                            {format(date, 'MMM', { locale: es })}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             <TimeFilterModal
                 isOpen={isTimeFilterOpen}
                 onClose={() => setIsTimeFilterOpen(false)}
@@ -1272,38 +1104,60 @@ export default function MovementsPage() {
                 }}
             />
 
-            {cashModalMode !== 'none' && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[120] p-4 animate-in fade-in duration-300" onClick={() => setCashModalMode('none')}>
-                    <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300" onClick={(e) => e.stopPropagation()}>
-                        {cashModalMode === 'inventory' ? (
-                            <BoxInventoryView boxName={boxData?.name || 'Caja'} inventory={boxInventory} onBack={() => setCashModalMode('none')} />
-                        ) : (
-                            <CashDenominationForm
-                                key={cashModalMode + (boxData?.id || '')}
-                                type={cashModalMode === 'audit' ? 'audit' : (cashModalMode === 'in' ? 'in' : 'out')}
-                                boxName={boxData?.name || 'Caja'}
-                                boxId={boxData?.id}
-                                onSubmit={handleCashTransaction}
-                                onCancel={() => setCashModalMode('none')}
-                                initialCounts={cashModalMode === 'audit' ? boxInventoryMap : {}}
-                                availableStock={boxInventoryMap}
-                            />
-                        )}
-                    </div>
-                </div>
-            )}
+            <Modal
+                open={cashModalMode !== 'none'}
+                onClose={() => setCashModalMode('none')}
+                variant="amplify"
+                layer="base"
+                instance="treasury-cash-operation"
+                usageId={`movements-treasury-${cashModalMode}`}
+                usageLabel={
+                    cashModalMode === 'in' ? 'Entrada de caja'
+                    : cashModalMode === 'out' ? 'Salida de caja'
+                    : cashModalMode === 'audit' ? 'Arqueo de caja'
+                    : cashModalMode === 'inventory' ? 'Inventario de caja'
+                    : 'Tesorería'
+                }
+                headerTone="petroleum"
+                hideHeader
+                title={
+                    cashModalMode === 'in' ? 'Entrada de caja'
+                    : cashModalMode === 'out' ? 'Salida de caja'
+                    : cashModalMode === 'audit' ? 'Arqueo de caja'
+                    : cashModalMode === 'inventory' ? 'Inventario de caja'
+                    : 'Tesorería'
+                }
+                ariaLabel={
+                    cashModalMode === 'in' ? 'Entrada de caja'
+                    : cashModalMode === 'out' ? 'Salida de caja'
+                    : cashModalMode === 'audit' ? 'Arqueo de caja'
+                    : cashModalMode === 'inventory' ? 'Inventario de caja'
+                    : 'Tesorería'
+                }
+            >
+                {cashModalMode === 'inventory' ? (
+                    <BoxInventoryView boxName={boxData?.name || 'Caja'} inventory={boxInventory} onBack={() => setCashModalMode('none')} />
+                ) : cashModalMode !== 'none' ? (
+                    <CashDenominationForm
+                        key={cashModalMode + (boxData?.id || '')}
+                        type={cashModalMode === 'audit' ? 'audit' : (cashModalMode === 'in' ? 'in' : 'out')}
+                        boxName={boxData?.name || 'Caja'}
+                        boxId={boxData?.id}
+                        onSubmit={handleCashTransaction}
+                        onCancel={() => setCashModalMode('none')}
+                        initialCounts={cashModalMode === 'audit' ? boxInventoryMap : {}}
+                        availableStock={boxInventoryMap}
+                    />
+                ) : null}
+            </Modal>
 
-            {/* Portal a document.body: evita stacking context / overflow del layout; z-index en el propio modal (> AIGlobalWrapper) */}
-            {selectedMovement &&
-                typeof document !== 'undefined' &&
-                createPortal(
-                    <MovementDetailModal
-                        movement={selectedMovement}
-                        onClose={() => setSelectedMovement(null)}
-                        onAfterMutation={refreshMovementsAfterMutation}
-                    />,
-                    document.body
-                )}
+            {selectedMovement ? (
+                <MovementDetailModal
+                    movement={selectedMovement}
+                    onClose={() => setSelectedMovement(null)}
+                    onAfterMutation={refreshMovementsAfterMutation}
+                />
+            ) : null}
 
             <CashClosingModal
                 isOpen={isClosingModalOpen}

@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
-import { X, ArrowDown, ArrowUp, RefreshCw, Calculator, Calendar, Clock, FileText, Trash2, Edit2, AlertTriangle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Calculator, Calendar, Clock, FileText, Trash2, Edit2, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { format } from 'date-fns';
@@ -11,10 +11,8 @@ import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 import { createClient } from "@/utils/supabase/client";
 import { toast } from 'sonner';
 import { CashDenominationForm } from './CashDenominationForm';
-import { useScrollLock } from '@/hooks/useScrollLock';
-
-/** z-index por encima de AIGlobalWrapper (z-[9999]) — overlay siempre visible */
-const OVERLAY_Z = 'z-[10050]';
+import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 
 interface MovementDetailModalProps {
     movement: any;
@@ -23,15 +21,12 @@ interface MovementDetailModalProps {
 }
 
 export function MovementDetailModal({ movement, onClose, onAfterMutation }: MovementDetailModalProps) {
-    useScrollLock(!!movement);
     const supabase = createClient();
     const [isEditing, setIsEditing] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [calculatorOpen, setCalculatorOpen] = useState(false);
-    const openedAtRef = useRef<number>(Date.now());
 
     useEffect(() => {
-        openedAtRef.current = Date.now();
         setIsEditing(false);
         setIsDeleting(false);
         setCalculatorOpen(false);
@@ -43,12 +38,6 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
     const movementDate = new Date(movement.created_at);
     const hasValidMovementDate = !Number.isNaN(movementDate.getTime());
     const amountNum = Number(movement.amount ?? 0);
-
-    const handleBackdropClick = (e: MouseEvent<HTMLDivElement>) => {
-        if (e.target !== e.currentTarget) return;
-        if (Date.now() - openedAtRef.current < 250) return;
-        onClose();
-    };
 
     const isIncome = originalType === 'IN' || originalType === 'CLOSE_ENTRY' || movement.type === 'income';
     const isAdjustment = originalType === 'ADJUSTMENT' || movement.type === 'adjustment';
@@ -93,52 +82,54 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
         }
     };
 
-    const backdropClass = cn(
-        'fixed inset-0 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200',
-        OVERLAY_Z
-    );
+    const detailTitle = isSwap ? 'Intercambio de Caja' : isAdjustment ? 'Arqueo de Caja' : isIncome ? 'Entrada de Efectivo' : 'Salida de Efectivo';
 
     if (isEditing) {
         if (!canEdit) {
             return (
-                <div
-                    className={backdropClass}
-                    onClick={handleBackdropClick}
-                    role="presentation"
+                <Modal
+                    open
+                    onClose={onClose}
+                    variant="amplify"
+                    layer="base"
+                    instance="treasury-movement-edit"
+                    usageId="treasury-movement-edit"
+                    usageLabel="Edición no disponible"
+                    headerTone="petroleum"
+                    headerTitleAlign="left"
+                    title="Edición no disponible"
+                    subtitle="Los intercambios (SWAP) requieren editor in/out específico."
+                    footer={
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            layout="fill"
+                            instance="treasury-movement-edit-back"
+                            onClick={() => setIsEditing(false)}
+                        >
+                            Volver
+                        </Button>
+                    }
                 >
-                    <div
-                        className="bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 h-[60vh] flex flex-col"
-                        onClick={e => e.stopPropagation()}
-                        role="dialog"
-                        aria-modal="true"
-                    >
-                        <div className={cn("p-6 text-white relative shrink-0 bg-zinc-900")}>
-                            <h3 className="text-sm font-black uppercase tracking-widest">Edición no disponible</h3>
-                            <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest mt-1">
-                                Los intercambios (SWAP) requieren editor in/out específico.
-                            </p>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-6 flex items-center justify-center">
-                            <button
-                                onClick={() => setIsEditing(false)}
-                                className="h-12 bg-blue-600 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-blue-700 transition-all active:scale-95 w-full sm:w-auto px-6"
-                            >
-                                Volver
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                    <div className="p-6" />
+                </Modal>
             );
         }
 
         return (
-            <div className={backdropClass} onClick={handleBackdropClick} role="presentation">
-                <div
-                    className="bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 h-[85vh] flex flex-col"
-                    onClick={e => e.stopPropagation()}
-                    role="dialog"
-                    aria-modal="true"
-                >
+            <Modal
+                open
+                onClose={() => setIsEditing(false)}
+                variant="amplify"
+                layer="base"
+                instance="treasury-movement-edit"
+                usageId="treasury-movement-edit"
+                usageLabel="Editar movimiento"
+                headerTone="petroleum"
+                hideHeader
+                title="Editar movimiento"
+                ariaLabel="Editar movimiento"
+            >
                     <CashDenominationForm
                         type={isAdjustment ? 'audit' : (isIncome ? 'in' : 'out')}
                         boxName="Editando Movimiento"
@@ -151,8 +142,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                         isEditing={true}
                         availableStock={{}}
                     />
-                </div>
-            </div>
+            </Modal>
         );
     }
 
@@ -199,46 +189,81 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
     };
 
     return (
-        <div
-            className={backdropClass}
-            onClick={handleBackdropClick}
-            role="presentation"
-        >
-            <div
-                className="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]"
-                onClick={e => e.stopPropagation()}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="movement-detail-title"
-            >
-                <div className={cn(
-                    "p-6 text-white relative shrink-0",
-                    isIncome ? "bg-emerald-600" : isAdjustment ? "bg-orange-500" : "bg-rose-600"
-                )}>
-                    <div className="flex items-center justify-between mb-4">
+        <Modal
+            open
+            onClose={onClose}
+            variant="standard"
+            layer="base"
+            instance="treasury-movement-detail"
+            usageId="treasury-movement-detail"
+            usageLabel={detailTitle}
+            headerTone="petroleum"
+            headerTitleAlign="left"
+            title={detailTitle}
+            subtitle="Detalle de movimiento"
+            footer={
+                isDeleting ? (
+                    <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-rose-100 bg-rose-50 p-3">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                                {isIncome ? <ArrowDown size={20} /> : isAdjustment ? <RefreshCw size={20} /> : <ArrowUp size={20} />}
-                            </div>
+                            <AlertTriangle className="text-rose-500" size={20} />
                             <div>
-                                <h3 id="movement-detail-title" className="text-sm font-black uppercase tracking-widest leading-none">
-                                    {isSwap ? 'Intercambio de Caja' : isAdjustment ? 'Arqueo de Caja' : isIncome ? 'Entrada de Efectivo' : 'Salida de Efectivo'}
-                                </h3>
-                                <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest mt-1">Detalle de movimiento</p>
+                                <p className="text-[10px] font-black text-rose-600 uppercase tracking-wider">¿Eliminar movimiento?</p>
+                                <p className="text-[9px] text-rose-400 font-bold">Esta acción es irreversible</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                            <button
+                        <div className="flex gap-2">
+                            <Button
                                 type="button"
-                                onClick={onClose}
-                                className="w-10 h-10 flex items-center justify-center bg-white/20 rounded-full hover:bg-white/30 transition-all active:scale-95 min-h-[48px] min-w-[48px]"
-                                aria-label="Cerrar"
+                                variant="secondary"
+                                layout="hug"
+                                instance="treasury-movement-delete-cancel"
+                                onClick={() => setIsDeleting(false)}
                             >
-                                <X size={20} strokeWidth={3} />
-                            </button>
+                                Cancelar
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="destructive"
+                                layout="hug"
+                                instance="treasury-movement-delete-confirm"
+                                onClick={handleDelete}
+                            >
+                                Confirmar
+                            </Button>
                         </div>
                     </div>
-
+                ) : (
+                    <div className="grid w-full grid-cols-2 gap-3">
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            layout="fill"
+                            instance="treasury-movement-delete"
+                            icon={<Trash2 strokeWidth={2.5} />}
+                            onClick={() => setIsDeleting(true)}
+                        >
+                            Eliminar
+                        </Button>
+                        {canEdit && (
+                            <Button
+                                type="button"
+                                variant="tertiary"
+                                layout="fill"
+                                instance="treasury-movement-edit"
+                                icon={<Edit2 strokeWidth={2.5} />}
+                                onClick={() => setIsEditing(true)}
+                            >
+                                Editar
+                            </Button>
+                        )}
+                    </div>
+                )
+            }
+        >
+                <div className={cn(
+                    "px-6 py-4 text-white",
+                    isIncome ? "bg-emerald-600" : isAdjustment ? "bg-orange-500" : "bg-rose-600"
+                )}>
                     <div className="flex flex-col items-center justify-center py-2">
                         <span className="text-4xl font-black italic tracking-tight">
                             {isSwap ? '' : isAdjustment ? '' : (isIncome ? '+' : '-')}{Math.abs(amountNum) > 0.005 ? `${Math.abs(amountNum).toFixed(2)}€` : " "}
@@ -251,7 +276,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+                <div className="p-6 space-y-8">
                     <div className="grid grid-cols-2 gap-2">
                         <div className="flex items-center gap-3 bg-blue-500 p-3 rounded-2xl border border-white/10 shadow-sm transition-all">
                             <Calendar size={16} className="text-white/60" />
@@ -301,61 +326,8 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                         </div>
                     )}
                 </div>
-
-                <div className="p-6 pt-0 shrink-0 grid grid-cols-2 gap-3">
-                    {isDeleting ? (
-                        <div className="col-span-2 bg-rose-50 p-4 rounded-2xl border border-rose-100 flex items-center justify-between animate-in fade-in zoom-in-95 duration-200">
-                            <div className="flex items-center gap-3">
-                                <AlertTriangle className="text-rose-500" size={20} />
-                                <div>
-                                    <p className="text-[10px] font-black text-rose-600 uppercase tracking-wider">¿Eliminar movimiento?</p>
-                                    <p className="text-[9px] text-rose-400 font-bold">Esta acción es irreversible</p>
-                                </div>
-                            </div>
-                            <div className="flex gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsDeleting(false)}
-                                    className="px-3 py-2 bg-white text-zinc-500 text-[9px] font-black uppercase rounded-lg hover:bg-zinc-50 transition-colors"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleDelete}
-                                    className="px-3 py-2 bg-rose-500 text-white text-[9px] font-black uppercase rounded-lg hover:bg-rose-600 transition-colors shadow-lg shadow-rose-200"
-                                >
-                                    Confirmar
-                                </button>
-                            </div>
-                        </div>
-                    ) : (
-                        <>
-                            <button
-                                type="button"
-                                onClick={() => setIsDeleting(true)}
-                                className="h-12 border border-zinc-200 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 text-zinc-400 font-black uppercase tracking-widest text-[9px] rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2"
-                            >
-                                <Trash2 size={16} strokeWidth={2.5} />
-                                Eliminar
-                            </button>
-
-                            {canEdit && (
-                                <button
-                                    type="button"
-                                    onClick={() => setIsEditing(true)}
-                                    className="h-12 border border-zinc-200 hover:bg-zinc-50 hover:border-zinc-300 hover:text-zinc-600 text-zinc-400 font-black uppercase tracking-widest text-[9px] rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2"
-                                >
-                                    <Edit2 size={16} strokeWidth={2.5} />
-                                    Editar
-                                </button>
-                            )}
-                        </>
-                    )}
-                </div>
                 <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
                 <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
-            </div>
-        </div>
+        </Modal>
     );
 }

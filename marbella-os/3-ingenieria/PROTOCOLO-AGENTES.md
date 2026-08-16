@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-05
+revisado: 2026-08-16
 caducidad: 12 meses
 depende_de: CANON
 supersede: —
@@ -81,7 +81,7 @@ Verificar compatibilidad con normas vigentes, decisiones previas (ADR), la visi�
 
 **Puntos de decisión:**
 *   Compatible con todo: Continuar a la fase 5.
-*   **Bloqueo blando (escala al usuario):** Contradice una ADR vigente. No se puede proceder sin confirmación explícita.
+*   **Bloqueo blando (escala al usuario):** Contradice una ADR vigente. No se puede proceder sin confirmación explícita. También: la tarea de interfaz exige una pieza o una variante de sistema que **no está** en [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md). No se inventa.
 *   **Bloqueo duro (rechazo automático):** Contradice `CANON`. No procede bajo ningún concepto.
 *   **Advertencia:** Trabaja en zona sin documentación.
 *   **Señalización:** Detecta discrepancia código/documentación.

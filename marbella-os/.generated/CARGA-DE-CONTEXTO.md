@@ -1,5 +1,5 @@
-<!-- Generado desde 51 documentos de marbella-os/.
-     Huella del origen: f659d82b09403928
+<!-- Generado desde 52 documentos de marbella-os/.
+     Huella del origen: f333546dfe240dd1
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -13,7 +13,8 @@ corpus, gana el corpus.
 |---|---|
 | Cualquier cosa, para situarte | `marbella-os/3-ingenieria/ARQUITECTURA.md` |
 | Cualquier cosa, para saber cómo está | `marbella-os/5-estado/ESTADO.md`, `marbella-os/5-estado/DEUDA.md` |
-| Una pantalla o un componente | `marbella-os/2-diseno/EXPERIENCIA.md`, `marbella-os/2-diseno/TOKENS.md`, `marbella-os/2-diseno/PATRONES.md`, `marbella-os/2-diseno/SISTEMA-DE-COMPONENTES.md` |
+| Una pantalla o un componente | `marbella-os/2-diseno/EXPERIENCIA.md`, `marbella-os/2-diseno/LENGUAJE-VISUAL.md`, `marbella-os/2-diseno/TOKENS.md`, `marbella-os/2-diseno/PATRONES.md`, `marbella-os/2-diseno/SISTEMA-DE-COMPONENTES.md` |
+| Un overlay, modal o capa superpuesta | `marbella-os/2-diseno/EXPERIENCIA.md#8-modales`, `marbella-os/2-diseno/PATRONES.md#p2--modal`, `marbella-os/2-diseno/SISTEMA-DE-COMPONENTES.md#modal`, `marbella-os/4-decisiones/ADR-0007-modal-superficie-derivada.md`, `marbella-os/4-decisiones/ADR-0008-modal-backdrop-capas.md` |
 | Código de interfaz | `marbella-os/3-ingenieria/FRONTEND.md` |
 | Textos, etiquetas, formatos numéricos | `marbella-os/2-diseno/CONTENIDO-Y-TONO.md` |
 | Un documento impreso | `marbella-os/2-diseno/DOCUMENTOS-IMPRESOS.md` |
@@ -44,6 +45,7 @@ es `CANON §5`.
 | 80 | `marbella-os/4-decisiones/ADR-0005-protocolo-operativo-de-agentes.md` |
 | 80 | `marbella-os/4-decisiones/ADR-0006-pipeline-nominas-y-dashboard.md` |
 | 80 | `marbella-os/4-decisiones/ADR-0007-modal-superficie-derivada.md` |
+| 80 | `marbella-os/4-decisiones/ADR-0008-modal-backdrop-capas.md` |
 | 60 | `marbella-os/1-producto/PRINCIPIOS.md` |
 | 60 | `marbella-os/1-producto/VISION.md` |
 | 60 | `marbella-os/2-diseno/EXPERIENCIA.md` |

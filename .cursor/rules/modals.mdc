@@ -1,49 +1,37 @@
 ---
-description: Comportamiento obligatorio de modales (centrado, backdrop, scroll lock, tracking)
-globs: components/**/*modal*.tsx,components/ui/modal.tsx,**/*Modal*.tsx
+description: Overlay y Modal — puntero al contrato oficial (no legisla valores)
+globs:
+  - "**/*modal*.tsx"
+  - "**/*Modal*.tsx"
+  - "**/*overlay*.tsx"
+  - "**/*Overlay*.tsx"
+  - "**/*dialog*.tsx"
+  - "**/*Dialog*.tsx"
+  - "src/components/ui/**/*.tsx"
 alwaysApply: false
 ---
 
-# Modales — reglas obligatorias
+# Modales — adaptador
 
-Todo modal **debe** usar `Modal` de `@/components/ui/modal` o `useModalUsageTracking` si la UI no puede envolverse.
+Este fichero **no es fuente de verdad**. Si discrepa de Marbella OS, gana Marbella OS.
 
-## Comportamiento visual
+Antes de crear o modificar un overlay, un diálogo o un modal, lee:
 
-| Requisito | Implementación |
-|-----------|----------------|
-| Centro en pantalla | `Modal` → `fixed inset-0 flex items-center justify-center` |
-| Ancho < pantalla | `max-w-sm` por defecto; `className="max-w-lg"` etc. |
-| Altura < pantalla | `max-h-[calc(100dvh-2rem)]` en el panel |
-| Fondo difuminado | Backdrop `bg-black/40 backdrop-blur-sm` |
-| Clic fuera cierra | Backdrop button con `onClick={onClose}` |
+1. `marbella-os/2-diseno/EXPERIENCIA.md` §8 — leyes de interacción.
+2. `marbella-os/2-diseno/PATRONES.md` P2 — variantes cerradas.
+3. `marbella-os/2-diseno/SISTEMA-DE-COMPONENTES.md` — contrato Modal y §4.
+4. `marbella-os/4-decisiones/ADR-0007-modal-superficie-derivada.md` — nesting, capas, Escape, scroll lock.
+5. `marbella-os/4-decisiones/ADR-0008-modal-backdrop-capas.md` — backdrop y jerarquía visual.
 
-## Tracking de uso (obligatorio)
+## Obligatorio
 
-```tsx
-<Modal
-  open={open}
-  onClose={onClose}
-  title="Cierre de caja"
-  usageId="cash-closing"
-  usageLabel="Cierre de caja"
->
-  ...
-</Modal>
-```
+- Usar `Modal` de `@/components/ui/modal`.
+- La única hoja inferior autorizada es `ConsumptionBottomSheet`.
+- Identidad: prop `instance` (id de negocio estable).
+- Capa: `base` para la tarea; `derived` para un auxiliar sobre un base ya abierto (máximo uno); `system` para confirmaciones.
 
-Modales custom:
+## Prohibido
 
-```tsx
-useModalUsageTracking({
-  open: isOpen,
-  usageId: 'cash-closing',
-  usageLabel: 'Cierre de caja',
-});
-```
-
-## Prohibiciones
-
-- ❌ `items-end` bottom sheet salvo requisito UX documentado
-- ❌ Overlays ad hoc sin scroll-lock ni tracking
-- ❌ Duplicar portal/scroll-lock fuera de `Modal`
+- Overlay, portal, backdrop, z-index o scroll-lock propios.
+- Variante que no esté en el catálogo de P2.
+- Inventar comportamiento que el contrato no cubre: parar y preguntar.

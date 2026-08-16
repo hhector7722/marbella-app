@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 60
 responsable: propiedad del producto
-revisado: 2026-07-29
+revisado: 2026-08-16
 caducidad: 12 meses
 supersede: .cursor/rules/BAR-LA-MARBELLA-AI-OPERATING-PROTOCOL.mdc (reglas táctiles y de seguridad de layout), .cursor/rules/modals.mdc (como origen de norma)
 ---
@@ -113,10 +113,13 @@ El modal es el patrón de interacción más usado del producto y por eso tiene l
 
 - Un modal tiene un título que dice de qué es y una salida siempre visible.
 - **El modal respeta el área segura del dispositivo.** Nunca queda cortado por la muesca, la barra de inicio o el teclado, ni en navegador ni en aplicación instalada.
-- El contenido del modal se desplaza; su cabecera y su pie no.
+- El contenido del modal se desplaza; su cabecera y su pie no. La cabecera tiene **altura fija** (`estructura.cabecera-modal`); el contenido de cabecera se adapta sin hacer crecer la barra.
 - Mientras hay un modal abierto, las barras fijas de la aplicación se atenúan y dejan de responder. No puede haber dos capas compitiendo por el mismo toque.
-- **No se anidan modales de forma arbitraria.** Como máximo se permite **una superficie derivada** sobre el modal principal de la misma tarea ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)). Un tercer overlay de negocio está prohibido; no se resuelve con z-index manual.
-- Cerrar un modal con datos introducidos sin guardar pide confirmación.
+- **No se anidan modales de forma arbitraria.** Como máximo se permite **una superficie derivada** sobre el modal principal de la misma tarea ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)). Un tercer overlay de negocio vía segunda `derived` está prohibido; confirmaciones de sistema usan `layer="system"`. No se resuelve con z-index manual.
+- El backdrop pertenece a la capa Modal: base con blur/saturate acotados; capas superiores solo oscurecen ([ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md)). Prohibido acumular blur.
+- Ningún modal introduce scroll horizontal. El Body puede desplazarse en vertical.
+- **En el viewport estrecho (~375 px) el modal permanece centrado.** No se convierte en hoja inferior. La única hoja inferior autorizada es la excepción de consumo en [SISTEMA-DE-COMPONENTES](SISTEMA-DE-COMPONENTES.md#modal).
+- Cerrar un modal con datos introducidos sin guardar pide confirmación. El consumidor lo resuelve con una superficie `layer="system"`, no con un segundo modal de tarea.
 
 ---
 

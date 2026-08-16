@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import {
     CONSUMPTION_BOTTOM_SHEET_COMPONENT_ID,
     MODAL_LAYER_Z_CLASS,
+    modalBackdropDataAttr,
     registerModalSurface,
 } from '@/lib/design-system';
 
@@ -67,6 +68,8 @@ export function ConsumptionBottomSheet({
 
     if (!open) return null;
 
+    const backdropKind = modalBackdropDataAttr('sheet');
+
     return createPortal(
         <div
             data-component={CONSUMPTION_BOTTOM_SHEET_COMPONENT_ID}
@@ -74,18 +77,23 @@ export function ConsumptionBottomSheet({
             data-instance={instance}
             data-layer="sheet"
             className={cn(
-                'fixed inset-0 flex items-end justify-center sm:items-center sm:p-ds-4',
-                'pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]',
+                'fixed inset-0 box-border flex items-end justify-center sm:items-center',
                 'animate-in fade-in duration-200',
                 MODAL_LAYER_Z_CLASS.sheet
             )}
+            style={{
+                paddingTop: 'max(0px, env(safe-area-inset-top, 0px))',
+                paddingBottom: 'max(0px, env(safe-area-inset-bottom, 0px))',
+                paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
+                paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
+            }}
         >
             <button
                 type="button"
                 data-element="overlay"
+                data-modal-backdrop={backdropKind}
                 aria-label="Cerrar"
-                className="absolute inset-0 touch-none overscroll-none backdrop-blur-sm"
-                style={{ backgroundColor: 'var(--modal-overlay)' }}
+                className="absolute inset-0 touch-none overscroll-none border-0 p-0"
                 onClick={closeOnBackdrop ? onClose : undefined}
             />
             <div
@@ -96,7 +104,7 @@ export function ConsumptionBottomSheet({
                 tabIndex={-1}
                 data-element="container"
                 className={cn(
-                    'relative z-10 flex w-full max-w-lg flex-col overflow-hidden bg-ds-superficie shadow-ds-modal outline-none pointer-events-auto',
+                    'relative z-10 flex w-full max-w-lg flex-col overflow-hidden overflow-x-hidden bg-ds-superficie shadow-ds-modal outline-none pointer-events-auto',
                     'max-h-ds-modal rounded-t-ds-superficie sm:rounded-ds-superficie',
                     'animate-in slide-in-from-bottom duration-200 sm:zoom-in-95',
                     className
@@ -104,11 +112,11 @@ export function ConsumptionBottomSheet({
             >
                 <div
                     data-element="header"
-                    className="flex min-h-ds-tactil shrink-0 items-center gap-ds-2 border-b border-ds-borde px-ds-4 py-ds-3"
+                    className="flex h-ds-modal-header max-h-ds-modal-header min-h-ds-modal-header shrink-0 items-center gap-ds-2 overflow-hidden overflow-x-hidden border-b border-ds-borde px-ds-4"
                 >
                     <h2
                         id={titleId}
-                        className="min-w-0 flex-1 truncate text-sm font-black uppercase tracking-wide text-ds-texto-fuerte"
+                        className="min-w-0 flex-1 overflow-hidden break-words font-black uppercase tracking-wide leading-tight text-ds-texto-fuerte text-[clamp(0.625rem,2.6vw,0.875rem)]"
                     >
                         {title}
                     </h2>
@@ -117,22 +125,25 @@ export function ConsumptionBottomSheet({
                             type="button"
                             aria-label="Cerrar"
                             onClick={onClose}
-                            className="flex min-h-ds-tactil min-w-ds-tactil shrink-0 items-center justify-center rounded-ds-control text-zinc-500 hover:bg-zinc-100 active:scale-95"
+                            className="flex h-[var(--modal-header-height)] min-w-ds-tactil shrink-0 items-center justify-center border-0 bg-transparent text-zinc-500 shadow-none ring-0 outline-none hover:opacity-80"
                         >
-                            <X className="h-5 w-5" strokeWidth={2.5} />
+                            <X
+                                className="h-[clamp(1rem,3.2vw,1.25rem)] w-[clamp(1rem,3.2vw,1.25rem)]"
+                                strokeWidth={2.5}
+                            />
                         </button>
                     ) : null}
                 </div>
                 <div
                     data-element="body"
-                    className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+                    className="min-h-0 min-w-0 max-w-full flex-1 overflow-x-hidden overflow-y-auto overscroll-contain"
                 >
                     {children}
                 </div>
                 {footer ? (
                     <div
                         data-element="footer"
-                        className="flex shrink-0 items-center gap-ds-2 border-t border-ds-borde px-ds-4 py-ds-3"
+                        className="flex max-w-full shrink-0 items-center gap-ds-2 overflow-x-hidden border-t border-ds-borde px-ds-4 py-ds-3"
                     >
                         {footer}
                     </div>

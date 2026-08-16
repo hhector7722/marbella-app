@@ -59,6 +59,9 @@ nueva; el documento citado manda.
   → `MODELO-DE-DATOS.md`.
 - **Nunca concedas permisos a `anon`** sin decisión explícita → `SEGURIDAD.md`.
 - **Nunca supongas reglas de horas extra por convenio genérico** → `ADR-0001`.
+- **Antes de crear UI, se busca** la pieza en `SISTEMA-DE-COMPONENTES.md`. Si existe, se reutiliza. → `SISTEMA-DE-COMPONENTES.md` §4.
+- **Prohibido un sistema paralelo** de overlay, portal, backdrop, z-index, Escape o scroll-lock cuando existe pieza de sistema. → `SISTEMA-DE-COMPONENTES.md` §2 Modal, `ADR-0007`.
+- **Si el inventario no cubre la necesidad, se para y se pregunta.** No se inventa pieza ni variante de sistema. → `PROTOCOLO-AGENTES.md` Fase ④, `SISTEMA-DE-COMPONENTES.md` §4.8.
 
 ## Validación
 

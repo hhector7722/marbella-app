@@ -11,14 +11,13 @@ import MasterShortcutGrid from '@/components/dashboards/MasterShortcutGrid';
 import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal, type BoxOption } from '@/components/CashChangeModal';
 import { CashDenominationForm } from '@/components/CashDenominationForm';
+import { Modal } from '@/components/ui/modal';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { updateProfile } from '@/app/actions/profile';
 import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
 import { useMasterTreasuryLive } from '@/hooks/useMasterTreasuryLive';
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { pickLatestOvertimeWeekSnapshot, type OvertimeWeekSnapshot } from '@/lib/master-overtime-snapshot';
 import { filterVisiblePlantillaEmployees } from '@/lib/staff/plantilla-employees';
-import { cn } from '@/lib/utils';
 
 type MasterDashboardViewProps = {
     initialData?: {
@@ -46,12 +45,6 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
     const [auditBox, setAuditBox] = useState<any>(null);
     const [boxInventoryMap, setBoxInventoryMap] = useState<Record<number, number>>({});
-
-    useModalUsageTracking({
-        open: auditBox !== null,
-        usageId: 'master-cash-audit',
-        usageLabel: 'Arqueo de caja',
-    });
 
     const [closingSalesSummary, setClosingSalesSummary] = useState(
         initialData?.liveTickets || { total: 0, count: 0 }
@@ -420,21 +413,31 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                 />
             )}
 
-            {auditBox && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4 animate-in fade-in duration-200" onClick={() => setAuditBox(null)}>
-                    <div className={cn('bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]', 'max-w-2xl')} onClick={(e) => e.stopPropagation()}>
-                        <CashDenominationForm
-                            key={`audit-${auditBox.id}`}
-                            type="audit"
-                            boxName={auditBox.name || 'Caja cambio'}
-                            initialCounts={boxInventoryMap}
-                            availableStock={boxInventoryMap}
-                            onCancel={() => setAuditBox(null)}
-                            onSubmit={handleAuditSubmit}
-                        />
-                    </div>
-                </div>
-            )}
+            <Modal
+                open={Boolean(auditBox)}
+                onClose={() => setAuditBox(null)}
+                variant="amplify"
+                layer="base"
+                instance="cash-audit"
+                usageId="master-cash-audit"
+                usageLabel="Arqueo de caja"
+                headerTone="petroleum"
+                hideHeader
+                title="Arqueo de caja"
+                ariaLabel="Arqueo de caja"
+            >
+                {auditBox ? (
+                    <CashDenominationForm
+                        key={`audit-${auditBox.id}`}
+                        type="audit"
+                        boxName={auditBox.name || 'Caja cambio'}
+                        initialCounts={boxInventoryMap}
+                        availableStock={boxInventoryMap}
+                        onCancel={() => setAuditBox(null)}
+                        onSubmit={handleAuditSubmit}
+                    />
+                ) : null}
+            </Modal>
         </div>
     );
 }

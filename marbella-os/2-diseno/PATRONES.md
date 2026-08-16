@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-07-29
+revisado: 2026-08-16
 caducidad: 6 meses
 supersede: docs/PLAN_ASISTENCIA_UNIFICADA.md
 ---
@@ -46,16 +46,17 @@ El patrón más usado del producto. Sus leyes están en [EXPERIENCIA §8](EXPERI
 **Variantes** (API tipada del contrato):
 - **`compact`** — confirmaciones y formularios cortos (`max-w-sm`). Default histórico.
 - **`standard`** — formularios estándar (`max-w-md`).
-- **`work`** — trabajo real en panel ancho (`max-w-4xl`, alto útil preferente).
-- **`day`** — trabajo sobre una fecha concreta (`max-w-4xl`; ver P4).
+- **`work`** — trabajo real en panel ancho (`max-w-5xl`, alto útil preferente). Valor alineado a [ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md).
+- **`day`** — trabajo sobre una fecha concreta (`max-w-5xl`; ver P4).
 - **`amplify`** — imagen o dato ampliado (`max-w-2xl`).
 
 **Reglas**:
 - El pie de acciones no se desplaza y no se encoge nunca (slot `footer` del componente).
-- La cabecera dice de qué es el modal, no qué debe hacer la persona.
-- Un modal no abre otro modal de tarea. Solo se admite **una superficie derivada** auxiliar ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)).
+- La cabecera dice de qué es el modal, no qué debe hacer la persona. Altura fija; iconos sin marco/fondo por defecto.
+- Un modal no abre otro modal de tarea. Solo se admite **una superficie derivada** auxiliar ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)); el backdrop no acumula blur ([ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md)).
 - Al abrirse, las barras fijas de la aplicación se atenúan y dejan de responder al toque.
-- Contrato de implementación: [`2026-08-15-modal-design-system-contract.md`](../6-investigacion/spikes/2026-08-15-modal-design-system-contract.md).
+- Sin scroll horizontal. Centrado respecto al viewport visible.
+- El componente que materializa este patrón es el [Modal de sistema](SISTEMA-DE-COMPONENTES.md#modal). Las leyes de interacción, incluido el viewport estrecho, están en [EXPERIENCIA §8](EXPERIENCIA.md#8-modales).
 
 ---
 

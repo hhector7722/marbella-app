@@ -11,6 +11,11 @@
   --color-borde: #f4f4f5;
   --color-texto-fuerte: #27272a;
   --color-marca: #36606f;
+  --color-marca-intenso: #2f5d6a;
+  --color-superficie-inactiva: #f4f4f5;
+  --color-texto-invertido: #ffffff;
+  --color-negativo: #e11d48;
+  --color-negativo-fondo: #fff1f2;
   --radio-superficie: 16px;
   --radio-control: 12px;
   --espacio-1: 4px;
@@ -20,15 +25,205 @@
   --tactil-minimo: 48px;
   --elevacion-superficie: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --elevacion-modal: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  /* Referencia Albaranes detalle: py-3 + min-h-12 ⇒ 72px */
+  --modal-header-height: 72px;
+  /* Referencia Albaranes detalle: max-h 68dvh con safe-area */
   --modal-max-height: min(
-    94svh,
-    calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 1rem)
+    68dvh,
+    calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 2.5rem)
   );
-  --modal-overlay: rgb(0 0 0 / 0.4);
+  /* ADR-0008 — backdrop base vs elevado */
+  --modal-overlay-base: rgba(0, 0, 0, 0.32);
+  --modal-overlay-base-filter: blur(8px) saturate(65%);
+  --modal-overlay-elevated: rgba(0, 0, 0, 0.28);
+  --modal-overlay: var(--modal-overlay-base);
   --z-modal-base: 200;
   --z-modal-derived: 210;
   --z-modal-system: 220;
   --z-modal-sheet: 205;
+}
+
+/* Backdrop del contrato Modal: filtros solo en nivel base/sheet. */
+[data-modal-backdrop='base'] {
+  background: var(--modal-overlay-base);
+  -webkit-backdrop-filter: var(--modal-overlay-base-filter);
+  backdrop-filter: var(--modal-overlay-base-filter);
+}
+
+[data-modal-backdrop='elevated'] {
+  background: var(--modal-overlay-elevated);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/*
+ * Cero scroll horizontal en superficies del contrato Modal / BottomSheet.
+ * El Body puede hacer scroll vertical; nunca horizontal.
+ */
+[data-component='Modal'] [data-element='container'],
+[data-component='Modal'] [data-element='header'],
+[data-component='Modal'] [data-element='footer'],
+[data-component='ConsumptionBottomSheet'] [data-element='container'],
+[data-component='ConsumptionBottomSheet'] [data-element='header'],
+[data-component='ConsumptionBottomSheet'] [data-element='footer'] {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+[data-component='Modal'] [data-element='body'],
+[data-component='ConsumptionBottomSheet'] [data-element='body'] {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+[data-component='Modal'] [data-element='body'] table,
+[data-component='ConsumptionBottomSheet'] [data-element='body'] table {
+  max-width: 100%;
+}
+
+/*
+ * Contrato Button. La especificidad del atributo impide que utilidades
+ * Tailwind de altura, color, radio o tipo escapen del contrato.
+ */
+[data-component='Button'] {
+  box-sizing: border-box;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espacio-2);
+  height: var(--tactil-minimo);
+  min-height: var(--tactil-minimo);
+  max-height: var(--tactil-minimo);
+  padding-inline: var(--espacio-4);
+  border-width: 1px;
+  border-style: solid;
+  border-radius: var(--radio-control);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  transition:
+    transform 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    opacity 150ms ease;
+}
+
+[data-component='Button'][data-layout='hug'] {
+  width: auto;
+}
+
+[data-component='Button'][data-layout='fill'] {
+  width: 100%;
+}
+
+[data-component='Button'][data-icon-only='true'] {
+  width: var(--tactil-minimo);
+  min-width: var(--tactil-minimo);
+  padding-inline: 0;
+}
+
+[data-component='Button'][data-variant='primary'] {
+  background-color: var(--color-marca);
+  border-color: var(--color-marca);
+  color: var(--color-texto-invertido);
+}
+
+[data-component='Button'][data-variant='primary']:hover:not(:disabled) {
+  background-color: var(--color-marca-intenso);
+  border-color: var(--color-marca-intenso);
+}
+
+[data-component='Button'][data-variant='secondary'] {
+  background-color: var(--color-superficie-inactiva);
+  border-color: var(--color-superficie-inactiva);
+  color: var(--color-texto-fuerte);
+}
+
+[data-component='Button'][data-variant='secondary']:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-superficie-inactiva) 72%, var(--color-texto-fuerte));
+  border-color: color-mix(in srgb, var(--color-superficie-inactiva) 72%, var(--color-texto-fuerte));
+}
+
+[data-component='Button'][data-variant='tertiary'] {
+  background-color: transparent;
+  border-color: color-mix(in srgb, var(--color-marca) 20%, transparent);
+  color: var(--color-marca);
+}
+
+[data-component='Button'][data-variant='tertiary']:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-marca) 10%, transparent);
+}
+
+[data-component='Button'][data-variant='destructive'] {
+  background-color: var(--color-negativo);
+  border-color: var(--color-negativo);
+  color: var(--color-texto-invertido);
+}
+
+[data-component='Button'][data-variant='destructive']:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-negativo) 82%, var(--color-texto-fuerte));
+  border-color: color-mix(in srgb, var(--color-negativo) 82%, var(--color-texto-fuerte));
+}
+
+[data-component='Button']:focus {
+  outline: none;
+}
+
+[data-component='Button']:focus-visible {
+  outline: 2px solid var(--color-marca);
+  outline-offset: 2px;
+}
+
+[data-component='Button']:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+[data-component='Button']:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+[data-component='Button'] [data-element='icon'],
+[data-component='Button'] [data-element='spinner'] {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+[data-component='Button'] [data-element='icon'] svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+[data-component='Button'] [data-element='spinner'] {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 9999px;
+  animation: ds-button-spin 0.6s linear infinite;
+}
+
+[data-component='Button'] [data-element='label'] {
+  display: inline-block;
+  min-width: 0;
+}
+
+@keyframes ds-button-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Lente visual del sandbox: afecta a la expresión, nunca a datos o lógica. */

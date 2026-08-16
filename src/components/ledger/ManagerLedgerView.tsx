@@ -8,7 +8,6 @@ import {
     Plus,
     Pencil,
     Trash2,
-    X,
     ChevronLeft,
     ChevronRight,
     PiggyBank,
@@ -22,7 +21,8 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { namedEntitySummary } from '@/lib/usage/modal-apply';
 
@@ -81,17 +81,6 @@ export default function ManagerLedgerView() {
     const [editDate, setEditDate] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
-
-    useModalUsageTracking({
-        open: modalOpen || editModalOpen,
-        usageId: editModalOpen ? 'ledger-edit' : 'ledger-create',
-        usageLabel: editModalOpen ? 'Editar apunte libro' : 'Nuevo apunte libro',
-    });
-    useModalUsageTracking({
-        open: deleteModalOpen,
-        usageId: 'ledger-delete',
-        usageLabel: 'Eliminar apunte libro',
-    });
 
     const trackLedgerCreate = useTrackModalApply('ledger-create', 'Nuevo apunte libro');
     const trackLedgerEdit = useTrackModalApply('ledger-edit', 'Editar apunte libro');
@@ -547,17 +536,18 @@ export default function ManagerLedgerView() {
             />
 
             {/* Modal Nuevo/Editar */}
-            {(modalOpen || editModalOpen) && (
-                <div className="fixed inset-0 z-[150] flex items-center justify-center p-4" onClick={() => { setModalOpen(false); setEditModalOpen(false); }}>
-                    <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md animate-in fade-in duration-200" />
-                    <div className="relative bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] p-6 pt-8 text-white relative shrink-0 text-center">
-                            <button onClick={() => { setModalOpen(false); setEditModalOpen(false); }} className="absolute right-4 top-4 p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all text-white active:scale-95">
-                                <X size={16} strokeWidth={3} />
-                            </button>
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-1 block">Transcripción</span>
-                            <h3 className="text-2xl font-black uppercase tracking-tighter">{editModalOpen ? 'Editar Apunte' : 'Nuevo Apunte'}</h3>
-                        </div>
+            <Modal
+                open={modalOpen || editModalOpen}
+                onClose={() => { setModalOpen(false); setEditModalOpen(false); }}
+                variant="compact"
+                layer="base"
+                instance="ledger-entry-form"
+                usageId={editModalOpen ? 'ledger-edit' : 'ledger-create'}
+                usageLabel={editModalOpen ? 'Editar apunte libro' : 'Nuevo apunte libro'}
+                headerTone="petroleum"
+                title={editModalOpen ? 'Editar Apunte' : 'Nuevo Apunte'}
+                subtitle="Transcripción"
+            >
                         <form onSubmit={editModalOpen ? handleEdit : handleCreate} className="p-6">
                             <div className="grid grid-cols-2 gap-2 mb-4 bg-zinc-100 p-1.5 rounded-2xl">
                                 <button type="button" onClick={() => setType('entrada')} className={`py-2 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${type === 'entrada' ? 'bg-emerald-500 text-white shadow-md' : 'text-zinc-400 hover:text-zinc-600'}`}>Entrada</button>
@@ -592,31 +582,56 @@ export default function ManagerLedgerView() {
                                 </button>
                             </div>
                         </form>
-                    </div>
-                </div>
-            )}
+            </Modal>
 
             {/* Modal Borrado */}
-            {deleteModalOpen && selectedLog && (
-                <div className="fixed inset-0 z-[150] flex items-center justify-center p-4" onClick={() => setDeleteModalOpen(false)}>
-                    <div className="absolute inset-0 bg-red-900/40 backdrop-blur-md animate-in fade-in duration-200" />
-                    <div className="relative bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col p-6 text-center" onClick={e => e.stopPropagation()}>
+            <Modal
+                open={Boolean(deleteModalOpen && selectedLog)}
+                onClose={() => setDeleteModalOpen(false)}
+                variant="compact"
+                layer="system"
+                instance="ledger-entry-delete"
+                usageId="ledger-delete"
+                usageLabel="Eliminar apunte libro"
+                headerTone="petroleum"
+                title="Eliminar Movimiento"
+                footer={
+                    <div className="flex w-full gap-3">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            layout="fill"
+                            instance="ledger-entry-delete-cancel"
+                            className="flex-1"
+                            onClick={() => setDeleteModalOpen(false)}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            layout="fill"
+                            instance="ledger-entry-delete-confirm"
+                            className="flex-1"
+                            onClick={handleDelete}
+                            disabled={isDeleting}
+                            loading={isDeleting}
+                            loadingLabel="Borrando..."
+                        >
+                            Eliminar
+                        </Button>
+                    </div>
+                }
+            >
+                        <div className="p-6 text-center">
                         <div className="mx-auto w-16 h-16 bg-red-50 text-rose-500 rounded-full flex items-center justify-center mb-4 border border-red-100 shadow-inner">
                             <Trash2 size={24} strokeWidth={2.5} />
                         </div>
-                        <h3 className="text-xl font-black uppercase tracking-tighter text-zinc-900 mb-2">Eliminar Movimiento</h3>
-                        <p className="text-sm text-zinc-500 font-bold mb-6">
-                            Estás a punto de borrar este apunte de <strong>{Number(selectedLog.amount).toFixed(2)}€</strong> ({selectedLog.concept}). Esta acción no se puede deshacer.
+                        <p className="text-sm text-zinc-500 font-bold">
+                            Estás a punto de borrar este apunte de <strong>{selectedLog ? `${Number(selectedLog.amount).toFixed(2)}€` : ''}</strong> ({selectedLog?.concept}). Esta acción no se puede deshacer.
                         </p>
-                        <div className="flex gap-3">
-                            <button onClick={() => setDeleteModalOpen(false)} className="flex-1 h-12 rounded-xl bg-zinc-100 text-zinc-500 font-black uppercase tracking-widest text-[10px] active:scale-95 transition-all">Cancelar</button>
-                            <button onClick={handleDelete} disabled={isDeleting} className="flex-1 h-12 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-black uppercase tracking-widest text-[10px] active:scale-95 transition-all shadow-lg shadow-rose-200 disabled:opacity-50">
-                                {isDeleting ? 'Borrando...' : 'Eliminar'}
-                            </button>
                         </div>
-                    </div>
-                </div>
-            )}
+            </Modal>
         </div>
     );
 }

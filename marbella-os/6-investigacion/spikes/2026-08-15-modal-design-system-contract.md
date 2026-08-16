@@ -13,247 +13,226 @@ supersede: —
 
 # Contrato oficial de Modal — Design System Marbella
 
-> Informe de implementación del **contrato** (no de la migración de consumidores).
-> Decisiones aprobadas tras [auditoría](./2026-08-15-modal-design-system-audit.md).
+> Contrato **global** (no preferencias por pantalla).
+> Auditoría: [2026-08-15-modal-design-system-audit.md](./2026-08-15-modal-design-system-audit.md).
 > Nesting: [ADR-0007](../../4-decisiones/ADR-0007-modal-superficie-derivada.md).
-> Norma viva actualizada: EXPERIENCIA §8, PATRONES P2, SISTEMA-DE-COMPONENTES (Modal), TOKENS.
+> Backdrop / capas visuales: [ADR-0008](../../4-decisiones/ADR-0008-modal-backdrop-capas.md).
 
-**Fuera de alcance de esta fase:** migración Albaranes / Perfil / Staff / Admin; Studio; SCREEN; Supabase.
+**Fuera de alcance aún:** migración de consumidores (Albaranes, Perfil, …); Studio.
 
 ---
 
 # 1. Contrato Modal
 
-Un único patrón oficial para overlays de **tarea**:
-
 ```text
-TOKENS → Modal (ui/modal.tsx) → variants → instances → Studio (futuro)
+TOKENS → Modal → variants → instances → Studio (futuro)
 ```
 
-Anatomía obligatoria:
+Anatomía:
 
 ```text
 Modal
-├── Overlay (backdrop)
-├── Header   (altura mínima táctil, shrink-0)
-├── Body     (flex-1, scroll interno)
-└── Footer   (opcional, shrink-0, fijo respecto al Body)
+├── Overlay (backdrop de la CAPA)
+├── Header   (altura FIJA)
+├── Body     (scroll vertical; NUNCA horizontal)
+└── Footer   (fijo; NUNCA horizontal)
 ```
 
-Código: `src/components/ui/modal.tsx` + `src/lib/design-system/modal-*.ts`.
+Todo modal nuevo o migrado **hereda** ancho, max-height, centrado, header, footer, backdrop, capas, scroll, safe-area e identidad. El consumidor no reconstruye estas reglas.
 
 ---
 
 # 2. API
 
 ```ts
-type ModalProps = {
-  open: boolean;
-  onClose: () => void;
-  title: ReactNode;
-  children: ReactNode;           // Body
-  variant?: ModalVariant;        // default: 'compact'
-  layer?: ModalLayer;            // default: 'base'
-  instance?: string;             // identidad estable (= usageId)
-  footer?: ReactNode;            // slot fijo
-  headerTone?: 'white' | 'petroleum';
-  closeOnBackdrop?: boolean;     // default true
-  // …compat legacy: usageId, zIndexClass, stackElevated, hideHeader*, etc.
-};
+<Modal
+  open onClose
+  title children
+  variant?              // compact | standard | work | day | amplify
+  layer?                // base | derived | system | sheet
+  instance?             // usageId estable
+  footer?
+  headerTone?           // white | petroleum
+  headerActionChrome?   // plain (default) | soft (explícito)
+  closeOnBackdrop?
+/>
 ```
 
-Filosofía: el consumidor elige **variante + contenido**; el componente gobierna estructura, overlay, Escape, scroll lock, capas e identidad.
-
-**Nuevos usos deben pasar `instance` estable.** `usageId` se conserva por compatibilidad.
+Prohibido en consumidores: backdrops `fixed inset-0` propios, blur/saturate/opacity/z-index ad hoc para stacking.
 
 ---
 
 # 3. Tokens
 
-Reutilizados / adoptados (sin inventar catálogo paralelo):
-
-| Token / concepto | Origen | CSS / Tailwind |
+| Concepto | Valor (ref. Albaranes) | CSS |
 |---|---|---|
-| `color.superficie` / borde / texto / marca | TOKENS | `--color-*`, `bg-ds-*` |
-| `radio.superficie` / `radio.control` | TOKENS | `rounded-ds-*` |
-| `espacio.2/3/4` | TOKENS | `p-ds-*`, `gap-ds-*` |
-| `tactil.minimo` | TOKENS | `min-h/w-ds-tactil` |
-| `elevacion.modal` | TOKENS | `--elevacion-modal`, `shadow-ds-modal` |
-| `estructura.alto-modal` | TOKENS | `--modal-max-height`, `max-h-ds-modal` |
-| Overlay | valor histórico `bg-black/40` | `--modal-overlay` |
-| Capas | ADR-0007 | `--z-modal-base|derived|sheet|system` |
-
-No se tokenizaron anchos por variante: se reutilizan utilidades Tailwind ya usadas en producto (`max-w-sm|md|2xl|4xl`).
+| `estructura.cabecera-modal` | **72px** | `--modal-header-height` |
+| `estructura.alto-modal` (Modal) | **min(68dvh, 100dvh − safe − 2.5rem)** | `--modal-max-height` |
+| Backdrop base bg | `rgba(0,0,0,0.32)` | `--modal-overlay-base` |
+| Backdrop base filter | `blur(8px) saturate(65%)` | `--modal-overlay-base-filter` |
+| Backdrop elevado | `rgba(0,0,0,0.28)` sin filtros | `--modal-overlay-elevated` |
+| Ancho work/day | `max-w-5xl` | variante |
 
 ---
 
-# 4. Variantes
+# 4. Variantes (anchos normalizados)
 
-| Variante | max-width | preferTall | Uso |
-|---|---|---|---|
-| `compact` | `max-w-sm` | no | Confirmaciones / formularios cortos (default histórico) |
-| `standard` | `max-w-md` | no | Formularios estándar |
-| `work` | `max-w-4xl` | sí | Trabajo real en panel ancho |
-| `day` | `max-w-4xl` | sí | Modal de día (P4) |
-| `amplify` | `max-w-2xl` | no | Ampliación de imagen/dato |
+Referencia Albaranes medida en código:
 
-No existen SMALL/MEDIUM/LARGE/XL.
+| Superficie Albaranes | Ancho real | Variante contrato |
+|---|---|---|
+| Detalle (host) | `max-w-5xl` | **`work`** (estándar trabajo) |
+| Evidence | `max-w-5xl` | `work` |
+| Line mapping | `sm:max-w-4xl` | tarea ancha intermedia → al migrar: `work` o documentar excepción |
+| Line edit / filtros | `max-w-lg` / `sm:max-w-lg` | `standard` |
+| Confirmaciones cortas | `max-w-sm` | `compact` |
+
+| Variante | max-width | preferTall |
+|---|---|---|
+| `compact` | `max-w-sm` | no |
+| `standard` | `max-w-md` | no |
+| `work` | **`max-w-5xl`** | sí |
+| `day` | **`max-w-5xl`** | sí |
+| `amplify` | `max-w-2xl` | no |
+
+Prohibido: `width: 713px`, `91vw`, etc. fuera de estas variantes.
 
 ---
 
-# 5. Header
+# 5. Header (altura fija)
 
-- `shrink-0`, `min-h-ds-tactil` (48px).
-- Título truncado; acciones trailing; cierre ≥ 48×48.
-- Tonos: `white` | `petroleum` (marca).
-- No es un canvas libre: `hideHeader` es escape legacy, no patrón nuevo.
+- Altura **fija** `--modal-header-height` (72px). No crece.
+- Contenido se **adapta** (clamp de tipografía e iconos). Prioridad: altura fija + contenido visible.
+- No usar `truncate` como estrategia primaria para “encajar”.
+- Botones/iconos: **sin marco/borde/fondo** por defecto (`headerActionChrome="plain"`). `soft` solo si se pide.
 
 ---
 
 # 6. Body
 
-- `flex-1 min-h-0`; scroll con `overflow-y-auto` + `overscroll-contain` cuando `scrollContent` (default true).
-- Contenido largo no empuja el modal fuera del viewport: tope `max-h-ds-modal`.
+- `flex-1`, scroll **vertical** si hace falta.
+- `overflow-x: hidden` obligatorio.
+- Tablas: `max-width: 100%`; adaptación por wrapping/reorganización — **nunca** `overflow-x-auto` silencioso. Si un caso lo hace imposible: documentar y detener.
 
 ---
 
 # 7. Footer
 
-- Slot `footer` opcional.
-- `shrink-0`, borde superior, padding `px-ds-4 py-ds-3`.
-- No hace scroll con el Body.
-- Acciones primarias/secundarias las compone el consumidor **dentro** del slot; no hay footer ad hoc fuera del contrato.
+- `shrink-0`, fijo respecto al Body.
+- Sin scroll horizontal.
 
 ---
 
 # 8. Alturas
 
-- Contenedor: `max-h-ds-modal` (= `estructura.alto-modal` + safe-area).
-- `work` / `day`: `preferTall` → `min-h` acotado por el mismo tope.
-- Header/Footer fijos; Body flexible.
+- Modal ≤ `--modal-max-height`.
+- Puede ser más bajo si el contenido no lo exige.
+- Header fijo; Body flexible; Footer fijo.
 
 ---
 
-# 9. Responsive
+# 9. Responsive / 375px / centrado
 
-- Centrado con `p-ds-4` + `pt/pb` con `max(1rem, env(safe-area-inset-*))`.
-- En 375px el ancho es `w-full` limitado por la variante.
-- Bottom sheet: anclado abajo en móvil, centrado desde `sm`.
+- Centrado vertical y horizontal respecto al **viewport visible** (`fixed inset-0` + `flex items-center justify-center` + padding safe-area simétrico).
+- Sin `top` fijo ni transformaciones dependientes del contenido para centrar.
+- Safe-area respetada; modal no supera el viewport.
 
 ---
 
-# 10. Overlay
+# 10. Overlay / Backdrop (ADR-0008)
 
-- Un backdrop único: `--modal-overlay` + blur ligero.
-- Cierre al pulsar fuera: `closeOnBackdrop` (default true).
-- Scroll del documento: `lockScrollGlobal` (contador; atenúa chrome vía `data-modal-open`).
-- Escape: pila semántica (ADR-0007).
-- Focus inicial al panel del dialog.
+**Base / sheet:**
+
+```css
+backdrop-filter: blur(8px) saturate(65%);
+background: rgba(0, 0, 0, 0.32);
+```
+
+**Derived / system:** solo `rgba(0,0,0,0.28)` — **sin** blur, saturate ni grayscale.
+
+No aumentar blur. No escala de grises. Desaturación parcial.
 
 ---
 
 # 11. Portal
 
-- Un solo `createPortal(..., document.body)` en Modal y en `ConsumptionBottomSheet`.
-- Prohibido inventar portales paralelos en nuevos consumidores del contrato.
+Único: `createPortal(..., document.body)` en Modal y ConsumptionBottomSheet.
 
 ---
 
 # 12. Capas
 
 ```text
-aplicación
-  → base (200)
-  → sheet (205)          ← excepción consumo
-  → derived (210)        ← máx. 1
-  → system (220)
+aplicación → base(200) → sheet(205) → derived(210) → system(220)
 ```
 
-Consumidor elige `layer`, no un número.
+Backdrop ligado a `layer` vía `data-modal-backdrop`.
 
 ---
 
 # 13. Superficie derivada
 
-Ver [ADR-0007](../../4-decisiones/ADR-0007-modal-superficie-derivada.md).
-
-```tsx
-<Modal instance="albaran-detail" variant="work" layer="base" … />
-<Modal instance="albaran-line-edit" variant="standard" layer="derived" … />
-```
-
-Segunda `derived` → no se renderiza (`derived-already-open`).
-`derived` sin `base` → rechazo (`derived-without-base`).
+ADR-0007: máx. una `derived` sobre `base`.
+Sub-submodal de sistema: `layer="system"` (no segunda `derived`).
 
 ---
 
 # 14. BottomSheet
 
-Excepción explícita: `src/components/ui/ConsumptionBottomSheet.tsx`.
-
-- Misma infra: portal, capas (`sheet`), Escape, scroll lock, Footer fijo, identidad.
-- No es Modal centrado; no es vía libre para overlays nuevos.
-- Una familia; sin variantes ad hoc adicionales en esta fase.
+Excepción `ConsumptionBottomSheet`: misma infra de backdrop base, header fijo, overflow-x, identidad. No vía libre de overlays.
 
 ---
 
 # 15. Identidad
 
-```html
-data-component="Modal"
-data-variant="work"
-data-instance="albaran-detail"
-data-layer="base"
-data-element="header|body|footer|overlay|container"
+`data-component`, `data-variant`, `data-instance`, `data-layer`, `data-element`, `data-modal-backdrop`.
+
+---
+
+# 16. Studio futuro
+
+Solo lectura de identidad; sin nuevas capas de persistencia en esta fase.
+
+---
+
+# 17. Migración futura Albaranes
+
+Pendiente de aprobación explícita. Debe adoptar tokens/variantes/layers y eliminar portal/backdrop locales.
+
+---
+
+# 18. Criterios de aceptación (ampliación visual)
+
+| # | Criterio | Infra |
+|---|---|---|
+| 1 | Header altura fija 72px | sí |
+| 2 | Contenido header adaptativo (clamp) | sí |
+| 3 | Iconos/botones plain por defecto | sí |
+| 4 | Ancho normalizado (work=5xl) | sí |
+| 5 | Max-height Albaranes 68dvh | sí |
+| 6 | Centrado viewport + safe-area | sí |
+| 7–8 | Sin scroll horizontal Modal/tablas (CSS) | sí (enforzado en shell; tablas consumidor pendientes de migración) |
+| 9–12 | Backdrop base exacto; elevated sin blur | sí |
+| 13 | Jerarquía base→derived→system | sí |
+| 14 | 375px contemplado en contrato | código |
+| 15 | Sin backdrop ad hoc | norma; consumidores legacy aún no migrados |
+
+---
+
+## Valores medidos Albaranes (código)
+
+```text
+HEADER_CURRENT        = 72px   (py-3 + min-h-12 en detalle)
+MODAL_WIDTH_CURRENT   = max-w-5xl (host/evidence); también 4xl y lg en derivados
+MODAL_MAX_HEIGHT_CURRENT = min(68dvh, calc(100dvh - safe-areas - 2.5rem))
 ```
 
-`data-instance` = usageId estable. Nunca título visible, índice DOM ni ruta+texto.
-
-Studio: **solo preparado**; no se añaden capas VARIANT/INSTANCE de persistencia.
-
 ---
 
-# 16. Integración futura con Studio
-
-El Studio podrá leer `data-component` / `data-variant` / `data-instance` como en `DashboardShortcut`. Esta fase no modifica el playground ni la persistencia de Estética.
-
----
-
-# 17. Migración futura de Albaranes
-
-Primera migración **después** de aprobar este contrato:
-
-1. Host detalle → `Modal` `variant="work"` `layer="base"` `instance="…"`.
-2. LineEdit / LineMapping / Evidence → `layer="derived"` sin `z-[10100]`.
-3. Eliminar portales/backdrops locales del host.
-4. Mover acciones al slot `footer` donde aplique.
-5. No migrar Perfil en la misma fase.
-
----
-
-# 18. Criterios de aceptación
-
-| # | Criterio | Estado |
-|---|---|---|
-| 1 | Un solo Modal oficial evolucionado (no paralelo) | código |
-| 2 | Variantes compact/standard/work/day/amplify | código + tests |
-| 3 | Header / Body / Footer en anatomía | código |
-| 4 | Body scroll + Footer fijo | código |
-| 5 | max-height vía token | código |
-| 6 | Safe-area en contenedor | código |
-| 7 | Escape / backdrop / scroll lock unificados | código + tests pila |
-| 8 | Identidad data-* | código |
-| 9 | derived máx. 1 + requiere base | código + tests + ADR |
-| 10 | BottomSheet excepción | código |
-| 11 | Sin migrar Albaranes/Perfil/Studio | cumplido |
-| 12 | Validación visual en navegador | **NO hecha en esta entrega** |
-
----
-
-## Validación ejecutada (ver informe de entrega)
+## Validación
 
 Distinguir siempre:
 
-- **VALIDADO POR EJECUCIÓN REAL** — tsc, build, tests, git diff --check
-- **VALIDADO POR CÓDIGO** — anatomía, tokens, capas
-- **NO VALIDADO VISUALMENTE** — no se abrió navegador real en esta fase
+- **VALIDADO POR EJECUCIÓN REAL**
+- **VALIDADO POR CÓDIGO**
+- **NO VALIDADO VISUALMENTE**

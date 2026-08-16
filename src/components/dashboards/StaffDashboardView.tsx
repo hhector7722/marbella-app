@@ -33,6 +33,7 @@ import { getWeekDetailDto } from '@/app/actions/history-read';
 import WorkTimer from '@/components/ui/WorkTimer';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
+import { Modal } from '@/components/ui/modal';
 import { ConsumptionModal } from '@/app/staff/ConsumptionModal';
 import { STAFF_MANUAL_ASSETS, STAFF_MANUAL_MENU, STAFF_TPV_MANUAL_ITEMS, STAFF_TPV_MANUAL_VIDEOS, type StaffManualMenuId } from '@/lib/staff-manuals';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
@@ -1505,39 +1506,30 @@ export default function StaffDashboardView() {
             />
 
             {/* MODAL: Opciones de Caja */}
-            {
-                isCashOptionsModalOpen && (
-                    <div
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4 animate-in fade-in duration-200"
-                        onClick={() => setIsCashOptionsModalOpen(false)}
+            <Modal
+                open={isCashOptionsModalOpen}
+                onClose={() => setIsCashOptionsModalOpen(false)}
+                variant="compact"
+                layer="base"
+                instance="staff-cash-options"
+                usageId="staff-cash-options"
+                usageLabel="Opciones de caja"
+                headerTone="petroleum"
+                title="Caja"
+                headerTrailing={(userRole === 'supervisor' || userRole === 'manager') ? (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setIsCashOptionsModalOpen(false);
+                            setIsCashChangeModalOpen(true);
+                        }}
+                        className="flex h-full min-w-ds-tactil items-center justify-center border-0 bg-transparent p-0 text-white opacity-80 shadow-none outline-none transition-opacity hover:opacity-100"
+                        aria-label="Cambio entre cajas"
                     >
-                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                            <div className="relative shrink-0 bg-[#36606F] px-6 py-4 text-white">
-                                <h3 className="text-center text-lg font-black uppercase tracking-wider leading-none">Caja</h3>
-                                {(userRole === 'supervisor' || userRole === 'manager') && (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setIsCashOptionsModalOpen(false);
-                                            setIsCashChangeModalOpen(true);
-                                        }}
-                                        className={cn(
-                                            'absolute right-14 top-1/2 flex min-h-[48px] min-w-[48px] -translate-y-1/2 items-center justify-center',
-                                            'border-0 bg-transparent p-0 shadow-none text-white opacity-80 transition-all hover:opacity-100 active:scale-90',
-                                        )}
-                                        aria-label="Cambio entre cajas"
-                                    >
-                                        <Image src="/icons/change.png" alt="" width={28} height={28} className="h-7 w-7 object-contain" aria-hidden />
-                                    </button>
-                                )}
-                                <button
-                                    type="button"
-                                    onClick={() => setIsCashOptionsModalOpen(false)}
-                                    className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg bg-rose-600 p-0 text-white transition-all hover:bg-rose-700 active:scale-90"
-                                >
-                                    <X size={16} strokeWidth={2.5} />
-                                </button>
-                            </div>
+                        <Image src="/icons/change.png" alt="" width={28} height={28} className="h-7 w-7 object-contain" aria-hidden />
+                    </button>
+                ) : undefined}
+            >
                             <QuickCalculatorModal isOpen={cashOptionsCalculatorOpen} onClose={() => setCashOptionsCalculatorOpen(false)} />
                             <FloatingCalculatorFab isOpen={cashOptionsCalculatorOpen} onToggle={() => setCashOptionsCalculatorOpen(true)} />
                             <div className="px-6 py-5 flex flex-col gap-5 bg-white">
@@ -1601,10 +1593,7 @@ export default function StaffDashboardView() {
                                     <span className="font-black uppercase tracking-wide text-gray-800">Propinas</span>
                                 </button>
                             </div>
-                        </div>
-                    </div>
-                )
-            }
+            </Modal>
 
             {showPurchaseMultiSourceModal && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-in fade-in duration-200" onClick={() => setShowPurchaseMultiSourceModal(false)}>

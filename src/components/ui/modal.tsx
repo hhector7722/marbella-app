@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import {
     MODAL_COMPONENT_ID,
     MODAL_LAYER_Z_CLASS,
+    modalBackdropDataAttr,
     registerModalSurface,
     resolveModalVariant,
     type ModalLayer,
@@ -20,6 +21,8 @@ import {
 export type { ModalLayer, ModalVariant };
 
 type ModalHeaderTone = 'white' | 'petroleum';
+/** `plain` = sin marco/fondo (default contrato). `soft` = tratamiento explícito. */
+type ModalHeaderActionChrome = 'plain' | 'soft';
 
 export type ModalProps = {
     open: boolean;
@@ -32,7 +35,7 @@ export type ModalProps = {
      */
     variant?: ModalVariant;
     /**
-     * Capa semántica (ADR-0007).
+     * Capa semántica (ADR-0007 / ADR-0008).
      * `derived` = máximo una sobre un `base`. Default `base`.
      */
     layer?: ModalLayer;
@@ -50,6 +53,11 @@ export type ModalProps = {
     /** @deprecated Preferir `headerTone`. */
     headerVariant?: ModalHeaderTone;
     headerTone?: ModalHeaderTone;
+    /**
+     * Tratamiento visual de botones de cabecera.
+     * Default `plain` (sin borde/fondo). `soft` solo si se pide explícitamente.
+     */
+    headerActionChrome?: ModalHeaderActionChrome;
     hideHeaderDivider?: boolean;
     hideTitle?: boolean;
     hideHeader?: boolean;
@@ -79,11 +87,29 @@ export type ModalProps = {
     closeOnBackdrop?: boolean;
 };
 
+function headerActionClassName(
+    petroleum: boolean,
+    chrome: ModalHeaderActionChrome,
+    opts?: { plainForce?: boolean }
+) {
+    const plain = opts?.plainForce || chrome === 'plain';
+    return cn(
+        'flex h-[var(--modal-header-height)] max-h-full min-h-0 min-w-ds-tactil shrink-0 items-center justify-center border-0 shadow-none ring-0 outline-none transition-opacity active:opacity-70',
+        plain
+            ? 'bg-transparent'
+            : petroleum
+              ? 'rounded-ds-control bg-white/10 text-white hover:bg-white/20'
+              : 'rounded-ds-control bg-zinc-100 text-zinc-500 hover:bg-zinc-200',
+        plain && (petroleum ? 'text-white/90 hover:opacity-100' : 'text-zinc-500 hover:opacity-80')
+    );
+}
+
 function ModalPanelShell({
     title,
     titleId,
     subtitle,
     headerTone,
+    headerActionChrome,
     onClose,
     onBack,
     onBackPlain = false,
@@ -105,6 +131,7 @@ function ModalPanelShell({
     titleId: string;
     subtitle?: ReactNode;
     headerTone: ModalHeaderTone;
+    headerActionChrome: ModalHeaderActionChrome;
     onClose: () => void;
     onBack?: () => void;
     onBackPlain?: boolean;
@@ -124,12 +151,13 @@ function ModalPanelShell({
 }) {
     const petroleum = headerTone === 'petroleum';
     const titleLeft = headerTitleAlign === 'left';
+    const actionChrome = onBackPlain ? 'plain' : headerActionChrome;
 
     return (
         <div
             data-element="container"
             className={cn(
-                'flex w-full flex-col overflow-hidden rounded-ds-superficie bg-ds-superficie shadow-ds-modal outline-none',
+                'flex w-full max-w-full flex-col overflow-hidden overflow-x-hidden rounded-ds-superficie bg-ds-superficie shadow-ds-modal outline-none',
                 'max-h-ds-modal',
                 preferTall && 'min-h-[min(20rem,var(--modal-max-height))]',
                 className
@@ -143,9 +171,9 @@ function ModalPanelShell({
                 <div
                     data-element="header"
                     className={cn(
-                        'relative flex min-h-ds-tactil shrink-0 items-center gap-ds-2',
-                        petroleum ? 'bg-ds-marca text-white shadow-ds-superficie' : 'bg-ds-superficie text-ds-texto-fuerte',
-                        headerCompact ? 'px-ds-2 py-ds-2' : 'px-ds-4 py-ds-3',
+                        'relative flex h-ds-modal-header max-h-ds-modal-header min-h-ds-modal-header shrink-0 items-center gap-ds-2 overflow-hidden overflow-x-hidden',
+                        petroleum ? 'bg-ds-marca text-white' : 'bg-ds-superficie text-ds-texto-fuerte',
+                        headerCompact ? 'px-ds-2' : 'px-ds-4',
                         !hideHeaderDivider && !petroleum && 'border-b border-ds-borde'
                     )}
                 >
@@ -154,33 +182,34 @@ function ModalPanelShell({
                             type="button"
                             aria-label="Volver"
                             onClick={onBack}
-                            className={cn(
-                                'flex min-h-ds-tactil min-w-ds-tactil shrink-0 items-center justify-center transition-colors active:opacity-70',
-                                onBackPlain
-                                    ? 'border-0 bg-transparent shadow-none'
-                                    : 'rounded-ds-control',
-                                onBackPlain
-                                    ? petroleum
-                                        ? 'text-white'
-                                        : 'text-zinc-700'
-                                    : petroleum
-                                      ? 'bg-white/10 text-white hover:bg-white/20'
-                                      : 'text-zinc-500 hover:bg-zinc-100'
-                            )}
+                            className={headerActionClassName(petroleum, actionChrome, {
+                                plainForce: onBackPlain,
+                            })}
                         >
-                            <ChevronLeft className="h-5 w-5" strokeWidth={onBackPlain ? 2.25 : undefined} />
+                            <ChevronLeft
+                                className="h-[clamp(1rem,3.2vw,1.25rem)] w-[clamp(1rem,3.2vw,1.25rem)]"
+                                strokeWidth={onBackPlain ? 2.25 : undefined}
+                            />
                         </button>
                     ) : (
-                        <span className={cn('shrink-0', hideTitle || titleLeft ? 'w-0' : 'min-w-ds-tactil')} aria-hidden />
+                        <span
+                            className={cn('shrink-0', hideTitle || titleLeft ? 'w-0' : 'min-w-ds-tactil')}
+                            aria-hidden
+                        />
                     )}
 
                     {!hideTitle ? (
-                        <div className={cn('min-w-0 flex-1', titleLeft ? 'text-left' : '')}>
+                        <div
+                            className={cn(
+                                'flex min-h-0 min-w-0 flex-1 flex-col justify-center overflow-hidden',
+                                titleLeft ? 'text-left' : ''
+                            )}
+                        >
                             <h2
                                 id={titleId}
                                 className={cn(
-                                    'truncate font-black uppercase tracking-wide',
-                                    headerCompact ? 'text-xs' : petroleum ? 'text-lg' : 'text-sm',
+                                    'max-h-full overflow-hidden font-black uppercase tracking-wide leading-tight break-words',
+                                    'text-[clamp(0.625rem,2.6vw,0.875rem)]',
                                     petroleum ? 'text-white' : 'text-ds-texto-fuerte'
                                 )}
                             >
@@ -189,7 +218,8 @@ function ModalPanelShell({
                             {subtitle ? (
                                 <div
                                     className={cn(
-                                        'mt-1 text-[10px] font-black uppercase tracking-[0.2em]',
+                                        'mt-0.5 overflow-hidden font-black uppercase tracking-[0.15em] leading-tight break-words',
+                                        'text-[clamp(0.5rem,2vw,0.625rem)]',
                                         petroleum ? 'text-white/70' : 'text-zinc-500'
                                     )}
                                 >
@@ -201,21 +231,19 @@ function ModalPanelShell({
                         <div id={titleId} className="min-w-0 flex-1" />
                     )}
 
-                    <div className="ml-auto flex shrink-0 items-center gap-ds-2">
+                    <div className="ml-auto flex h-full shrink-0 items-center gap-0.5 overflow-hidden">
                         {headerTrailing}
                         {!hideCloseButton ? (
                             <button
                                 type="button"
                                 aria-label="Cerrar modal"
                                 onClick={onClose}
-                                className={cn(
-                                    'flex min-h-ds-tactil min-w-ds-tactil shrink-0 items-center justify-center rounded-ds-control transition-all active:scale-95',
-                                    petroleum
-                                        ? 'bg-white/10 text-white hover:bg-white/20'
-                                        : 'text-zinc-500 hover:bg-zinc-100'
-                                )}
+                                className={headerActionClassName(petroleum, headerActionChrome)}
                             >
-                                <X className="h-5 w-5" strokeWidth={2.5} />
+                                <X
+                                    className="h-[clamp(1rem,3.2vw,1.25rem)] w-[clamp(1rem,3.2vw,1.25rem)]"
+                                    strokeWidth={2.5}
+                                />
                             </button>
                         ) : null}
                     </div>
@@ -225,8 +253,8 @@ function ModalPanelShell({
             <div
                 data-element="body"
                 className={cn(
-                    'relative flex min-h-0 flex-1 flex-col',
-                    scrollContent ? 'overflow-y-auto overscroll-contain' : 'overflow-hidden'
+                    'relative flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-hidden',
+                    scrollContent ? 'overflow-y-auto overscroll-contain' : 'overflow-y-hidden'
                 )}
             >
                 {children}
@@ -240,7 +268,7 @@ function ModalPanelShell({
             {footer ? (
                 <div
                     data-element="footer"
-                    className="flex shrink-0 items-center gap-ds-2 border-t border-ds-borde bg-ds-superficie px-ds-4 py-ds-3"
+                    className="flex max-w-full shrink-0 items-center gap-ds-2 overflow-x-hidden border-t border-ds-borde bg-ds-superficie px-ds-4 py-ds-3"
                 >
                     {footer}
                 </div>
@@ -269,6 +297,7 @@ export function Modal({
     subtitle,
     headerVariant,
     headerTone: headerToneProp,
+    headerActionChrome = 'plain',
     hideHeaderDivider = false,
     hideTitle = false,
     hideHeader = false,
@@ -394,6 +423,7 @@ export function Modal({
     if (!open || derivedBlocked) return null;
 
     const zClass = zIndexClass ?? MODAL_LAYER_Z_CLASS[layer];
+    const backdropKind = modalBackdropDataAttr(layer);
 
     return createPortal(
         <div
@@ -402,25 +432,31 @@ export function Modal({
             data-instance={resolvedUsageId}
             data-layer={layer}
             className={cn(
-                'fixed inset-0 flex items-center justify-center p-ds-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] animate-in fade-in duration-200',
+                'fixed inset-0 box-border flex items-center justify-center animate-in fade-in duration-200',
                 zClass,
                 containerClassName
             )}
+            style={{
+                paddingTop: 'max(1rem, env(safe-area-inset-top, 0px))',
+                paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))',
+                paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
+                paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
+            }}
         >
             <button
                 type="button"
                 data-element="overlay"
+                data-modal-backdrop={backdropKind}
                 aria-label="Cerrar"
                 className={cn(
-                    'absolute inset-0 touch-none overscroll-none backdrop-blur-sm',
+                    'absolute inset-0 touch-none overscroll-none border-0 p-0',
                     backdropClassName
                 )}
-                style={{ backgroundColor: 'var(--modal-overlay)' }}
                 onClick={closeOnBackdrop ? onClose : undefined}
             />
             <div
                 className={cn(
-                    'relative z-10 flex w-full flex-col items-center pointer-events-none',
+                    'relative z-10 flex w-full max-w-full flex-col items-center pointer-events-none',
                     layout.maxWidthClass,
                     wrapperClassName
                 )}
@@ -438,13 +474,14 @@ export function Modal({
                               : undefined
                     }
                     tabIndex={-1}
-                    className={cn('pointer-events-auto w-full outline-none', panelHostClassName)}
+                    className={cn('pointer-events-auto w-full max-w-full outline-none', panelHostClassName)}
                 >
                     <ModalPanelShell
                         title={title}
                         titleId={titleId}
                         subtitle={subtitle}
                         headerTone={headerTone}
+                        headerActionChrome={headerActionChrome}
                         onClose={onClose}
                         onBack={onBack}
                         onBackPlain={onBackPlain}

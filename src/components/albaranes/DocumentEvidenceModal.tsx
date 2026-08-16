@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { AlertCircle, Loader2, X, Check } from 'lucide-react'
+import { AlertCircle, Loader2, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   confirmInvoiceLineProvenanceAction,
@@ -157,35 +157,17 @@ export function DocumentEvidenceModal({
     <Modal
       open={open}
       onClose={onClose}
-      hideHeader={true}
-      wrapperClassName="max-w-5xl"
-      panelHostClassName="p-0"
-      className="max-h-[90vh]"
-      zIndexClass="z-[10100]"
+      variant="work"
+      layer="derived"
+      instance="albaran-document-evidence"
+      usageId="albaran-document-evidence"
+      usageLabel="Auditoría de evidencia"
+      headerTone="petroleum"
+      headerTitleAlign="left"
       title="Auditoría de evidencia"
+      subtitle={formatEvidenceSubtitle(supplierName, invoiceNumber)}
     >
-      <div className="flex flex-col h-full w-full min-w-0">
-        {/* Cabecera compacta */}
-        <div className="bg-[#36606F] px-3 py-2 flex items-start justify-between gap-2 text-white shrink-0">
-          <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-white/90 leading-snug">
-              Auditoría de evidencia
-            </p>
-            <p className="text-[10px] font-normal text-white/65 mt-0.5 leading-snug break-words [overflow-wrap:anywhere]">
-              {formatEvidenceSubtitle(supplierName, invoiceNumber)}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="min-h-12 min-w-12 inline-flex items-center justify-center rounded-lg hover:bg-white/10 transition active:scale-[0.99] shrink-0"
-            aria-label="Cerrar"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="px-3 py-3 overflow-auto flex-1 bg-zinc-50/50 min-w-0">
+      <div className="px-3 py-3 bg-zinc-50/50 min-w-0 max-w-full flex flex-col gap-2">
           {loading ? (
             <div className="flex flex-col items-center justify-center min-h-[200px] text-zinc-500 gap-2">
               <Loader2 className="h-6 w-6 animate-spin text-[#36606F]" />
@@ -535,7 +517,6 @@ export function DocumentEvidenceModal({
 
             </div>
           ) : null}
-        </div>
       </div>
     </Modal>
   )

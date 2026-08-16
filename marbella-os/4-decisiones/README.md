@@ -45,6 +45,7 @@ Las alternativas descartadas son la parte más valiosa y la que más se omite. S
 | [0005](./ADR-0005-protocolo-operativo-de-agentes.md) | Protocolo operativo y ciclo de vida de tareas | Vigente |
 | [0006](./ADR-0006-pipeline-nominas-y-dashboard.md) | Pipeline de Nóminas y Dashboard Labor | Vigente |
 | [0007](./ADR-0007-modal-superficie-derivada.md) | Nesting de Modal: máximo una superficie derivada | Vigente |
+| [0008](./ADR-0008-modal-backdrop-capas.md) | Backdrop y jerarquía visual de capas Modal | Vigente |
 
 ## Decisiones tomadas sin registrar
 

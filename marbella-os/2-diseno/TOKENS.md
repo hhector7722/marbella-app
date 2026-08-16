@@ -35,7 +35,7 @@ Los valores recogidos aquí **son los que el producto usa hoy**, no una propuest
 | Token | Valor | Papel | Estado |
 |---|---|---|---|
 | `color.marca` | `#36606F` | Identidad del producto en pantalla. Acción principal, cabeceras, elementos activos | adoptado (piloto Modal vía `--color-marca`; resto del producto aún literal) |
-| `color.marca.intenso` | `#2F5D6A` | Estado pulsado y variantes de mayor contraste de la marca | declarado |
+| `color.marca.intenso` | `#2F5D6A` | Estado pulsado y variantes de mayor contraste de la marca | adoptado (piloto Button vía `--color-marca-intenso`) |
 | `color.marca.profundo` | `#2A4A56` | Fondos de marca de máxima intensidad | declarado |
 | `color.marca.suave` | `#407080` | Marca sobre fondo oscuro, bordes de elementos de marca | declarado |
 | `color.marca.impresa` | `#1F5FAF` | Identidad en documentos impresos. **No es el mismo azul** que en pantalla | adoptado |
@@ -61,7 +61,7 @@ Es el único token con implementación centralizada real: existe como utilidad �
 |---|---|---|---|
 | `color.superficie` | `#FFFFFF` | Superficie de trabajo. Tarjetas, modales, paneles | adoptado (piloto `DashboardShortcut` vía `--color-superficie`) |
 | `color.superficie.hundida` | `#FAFAFA` | Fondo de zonas agrupadas dentro de una superficie | declarado |
-| `color.superficie.inactiva` | `#F4F4F5` | Elementos deshabilitados, cabeceras de tabla | declarado |
+| `color.superficie.inactiva` | `#F4F4F5` | Elementos deshabilitados, cabeceras de tabla | adoptado (piloto Button vía `--color-superficie-inactiva`) |
 
 ## 4. Texto
 
@@ -72,7 +72,7 @@ Es el único token con implementación centralizada real: existe como utilidad �
 | `color.texto.medio` | `#52525B` | Texto de apoyo, descripciones | declarado |
 | `color.texto.suave` | `#71717A` | Etiquetas, metadatos | declarado |
 | `color.texto.tenue` | `#A1A1AA` | Texto de mínima jerarquía, marcas de posición | declarado |
-| `color.texto.invertido` | `#FFFFFF` | Texto sobre superficie de marca o envolvente | declarado |
+| `color.texto.invertido` | `#FFFFFF` | Texto sobre superficie de marca o envolvente | adoptado (piloto Button vía `--color-texto-invertido`) |
 
 ## 5. Bordes y separadores
 
@@ -90,8 +90,8 @@ Es el único token con implementación centralizada real: existe como utilidad �
 |---|---|---|---|
 | `color.positivo` | `#059669` | Cuadrado, cobrado, a favor, completado | declarado |
 | `color.positivo.fondo` | `#ECFDF5` | Fondo de aviso positivo | declarado |
-| `color.negativo` | `#E11D48` | Descuadre, deuda, pérdida, error de negocio | declarado |
-| `color.negativo.fondo` | `#FFF1F2` | Fondo de aviso negativo | declarado |
+| `color.negativo` | `#E11D48` | Descuadre, deuda, pérdida, error de negocio | adoptado (piloto Button vía `--color-negativo`) |
+| `color.negativo.fondo` | `#FFF1F2` | Fondo de aviso negativo | adoptado (variable `--color-negativo-fondo`; Button v1 usa el pleno, no el fondo) |
 | `color.aviso` | `#B45309` | Advertencia que requiere atención pero no bloquea | declarado |
 | `color.aviso.fondo` | `#FFF6E5` | Fondo de advertencia | declarado |
 | `color.informativo` | `#1F5FAF` | Información neutra, contexto | declarado |
@@ -168,7 +168,8 @@ Norma en [EXPERIENCIA §1](EXPERIENCIA.md#1-táctil).
 | `estructura.barra-inferior` | 80 px + área segura inferior | Alto reservado por la navegación inferior | adoptado |
 | `estructura.fin-de-lista` | 96 px + área segura | Hueco al final de listas táctiles | adoptado |
 | `estructura.fin-de-lista.tarjetas` | 240 px + área segura | Hueco al final de listas con barra de cantidad | adoptado |
-| `estructura.alto-modal` | 94% del alto visible real | Alto máximo de un modal a pantalla completa | adoptado (contrato Modal vía `--modal-max-height`) |
+| `estructura.alto-modal` | `min(68dvh, 100dvh − safe − 2.5rem)` en contrato Modal (ref. Albaranes); otros shells pueden conservar 94% documentado históricamente | Alto máximo de un modal de tarea | adoptado (`--modal-max-height`) |
+| `estructura.cabecera-modal` | 72 px | Alto fijo de cabecera de Modal (ref. Albaranes: `py-3` + `min-h-12`) | adoptado (`--modal-header-height`) |
 | `estructura.ancho-lectura` | 1400 px | Ancho máximo de contenido en escritorio | declarado |
 
 Se usa la medida de alto visible real del dispositivo, no la teórica: es la causa histórica de modales cortados en la aplicación instalada.

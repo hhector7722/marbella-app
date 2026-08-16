@@ -14,6 +14,11 @@ const config: Config = {
                 "ds-borde": "var(--color-borde)",
                 "ds-texto-fuerte": "var(--color-texto-fuerte)",
                 "ds-marca": "var(--color-marca)",
+                "ds-marca-intenso": "var(--color-marca-intenso)",
+                "ds-superficie-inactiva": "var(--color-superficie-inactiva)",
+                "ds-texto-invertido": "var(--color-texto-invertido)",
+                "ds-negativo": "var(--color-negativo)",
+                "ds-negativo-fondo": "var(--color-negativo-fondo)",
             },
             borderRadius: {
                 "ds-control": "var(--radio-control)",
@@ -27,12 +32,17 @@ const config: Config = {
             },
             minHeight: {
                 "ds-tactil": "var(--tactil-minimo)",
+                "ds-modal-header": "var(--modal-header-height)",
             },
             minWidth: {
                 "ds-tactil": "var(--tactil-minimo)",
             },
+            height: {
+                "ds-modal-header": "var(--modal-header-height)",
+            },
             maxHeight: {
                 "ds-modal": "var(--modal-max-height)",
+                "ds-modal-header": "var(--modal-header-height)",
             },
             boxShadow: {
                 "ds-superficie": "var(--elevacion-superficie)",

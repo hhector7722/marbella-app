@@ -1,12 +1,9 @@
 'use client'
 
-import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { PurchaseInvoiceLine } from '@/app/dashboard/albaranes/actions'
 import { Modal } from '@/components/ui/modal'
-
-/** Por encima del detalle de albarán (z-[10050]); una sola superficie derivada a la vez. */
-const ALBARAN_DERIVED_MODAL_Z = 'z-[10100]'
+import { Button } from '@/components/ui/button'
 
 export type LineEditDraft = {
   original_name: string
@@ -36,50 +33,43 @@ export function LineEditModal({
   onDraftChange,
   onSaveLine,
 }: LineEditModalProps) {
-  if (!open || !line || !draft) return null
-
-  const displayName = line.ingredient_name?.trim() || line.original_name?.trim() || 'Sin nombre'
+  const displayName = line?.ingredient_name?.trim() || line?.original_name?.trim() || 'Sin nombre'
   const linkedName =
-    line.ingredient_name && line.original_name && line.ingredient_name !== line.original_name
+    line?.ingredient_name && line?.original_name && line.ingredient_name !== line.original_name
       ? line.original_name
       : null
 
+  const subtitle = linkedName ? `${displayName} · En albarán: ${linkedName}` : displayName
+
   return (
     <Modal
-      open={open}
+      open={open && !!line && !!draft}
       onClose={onClose}
-      hideHeader={true}
-      wrapperClassName="sm:max-w-lg"
-      panelHostClassName="p-0"
-      className="max-h-[92vh] sm:max-h-[88vh] bg-zinc-50"
-      zIndexClass={ALBARAN_DERIVED_MODAL_Z}
+      variant="standard"
+      layer="derived"
+      instance="albaran-line-edit"
       usageId="albaran-line-edit"
       usageLabel="Editar línea albarán"
+      headerTone="petroleum"
+      headerTitleAlign="left"
       title="Editar línea"
+      subtitle={subtitle}
+      className="bg-zinc-50"
+      footer={
+        <Button
+          type="button"
+          variant="tertiary"
+          layout="fill"
+          instance="albaran-line-edit-close"
+          onClick={onClose}
+          disabled={saving}
+        >
+          Cerrar
+        </Button>
+      }
     >
-      <div className="flex flex-col h-full w-full">
-        <div className="bg-[#36606F] px-3 py-2 flex items-start justify-between gap-2 text-white shrink-0">
-          <div className="min-w-0 flex-1">
-            <p id="line-edit-title" className="text-[11px] font-semibold uppercase tracking-wide text-white/90">
-              Editar línea
-            </p>
-            <p className="text-xs font-medium truncate mt-0.5">{displayName}</p>
-            {linkedName ? (
-              <p className="text-[10px] font-normal text-white/65 truncate mt-0.5">En albarán: {linkedName}</p>
-            ) : null}
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={saving}
-            className="min-h-12 min-w-12 shrink-0 inline-flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-[0.99] transition"
-            aria-label="Cerrar"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 flex flex-col gap-2">
+      {draft ? (
+        <div className="px-3 py-3 flex flex-col gap-2 min-w-0 max-w-full">
           <section className="rounded-lg border border-zinc-200 bg-white p-2 space-y-2">
             <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">Datos del albarán</p>
             <label className="block space-y-0.5 px-1">
@@ -143,18 +133,7 @@ export function LineEditModal({
             ) : null}
           </section>
         </div>
-
-        <div className="shrink-0 border-t border-zinc-200 bg-white px-3 py-2">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={saving}
-            className="w-full min-h-12 rounded-lg border border-zinc-200 bg-white text-xs font-semibold uppercase tracking-wide text-zinc-700 hover:bg-zinc-50"
-          >
-            Cerrar
-          </button>
-        </div>
-      </div>
+      ) : null}
     </Modal>
   )
 }

@@ -36,8 +36,17 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
 
+## 2026-08-16
+
+- **Nace el contrato oficial de Button.** Variantes cerradas `primary` / `secondary` / `tertiary` / `destructive`, layout `hug`/`fill`, táctil 48 px y radio de control. El aspecto lo bloquea CSS por identidad; `ActionButton` se retira. Piloto: footers de Modal en Albaranes y Caja/Tesorería. No se migran dashboards, Navbar ni chrome de Modal.
+- **Oleada 2 de Modal: Caja/Tesorería adopta el contrato oficial.** Cierre, cambio, arqueo, operaciones de caja, detalle de movimiento, libro mayor y edición de caja usan `Modal` con variante/capa/instancia; no se ensancha `max-w-2xl` a `work`. `QuickCalculatorModal` y `DenominationZoomModal` siguen legacy porque el nesting se queda en `base → derived`. No se tocan overlays de Staff/Admin ajenos a caja.
+- **La gobernanza del Design System se engancha a la cadena de agentes que ya existía.** `AGENTS.md` y las reglas Cursor apuntan al inventario; la carga de contexto distingue pantalla y overlay; `modals.mdc` deja de legislar valores. Se paga la deuda de reglas de agente que legislaban sin citar el corpus. Modal, Studio y consumidores no cambian de producto.
+- **Se alinea el catálogo vivo de Modal con ADR-0008.** PATRONES P2 declara `work`/`day` = `max-w-5xl`. El spike de contrato deja de citarse como fuente; sigue en investigación.
+
 ## 2026-08-15
 
+- **Migración de Albaranes al contrato oficial de Modal.** Detalle, Evidence, LineEdit, LineMapping, proveedor, wizard, filtro y visor de imagen usan `Modal` con variantes/capas/instancias oficiales; se eliminan portales y z-index ad hoc del flujo. El carousel multi-hoja conserva `overflow-x` gestual documentado como tensión residual (no es scroll de tabla).
+- **Ampliación visual del contrato Modal.** Cabecera fija 72px, anchos `work`/`day` = `max-w-5xl`, max-height 68dvh (ref. Albaranes), centrado viewport, cero scroll horizontal en shell, backdrop base `blur(8px) saturate(65%)` + `rgba(0,0,0,0.32)` y capas elevadas solo oscurecen ([ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md)). Sin migrar consumidores.
 - **Contrato oficial de Modal del Design System.** Se evoluciona `ui/modal.tsx` con variantes tipadas (`compact`/`standard`/`work`/`day`/`amplify`), slot Footer fijo, capas semánticas, identidad `data-*` y excepción `ConsumptionBottomSheet`. Nesting limitado a una superficie derivada ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)). Consumidores (Albaranes, etc.) aún no migrados.
 - **Nace el piloto de Design System de pantalla.** Tokens mínimos adoptados en CSS/Tailwind y primer componente oficial `DashboardShortcut`, usado por la rejilla Master. Staff/Admin aún no migrados. Studio sin capas nuevas; el componente emite identidad estable (`data-component` / `data-variant` / `data-instance`) para lectura futura.
 

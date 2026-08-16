@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { createPortal } from 'react-dom'
 import {
   AlertCircle,
   Camera,
@@ -39,6 +38,7 @@ import {
 } from '@/lib/albaranes-line-status'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { Modal } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
 import { IngredientWizard, type IngredientWizardInvoiceContext } from '@/components/ingredients/IngredientWizard'
 import type {
   PurchaseInvoiceDetail,
@@ -123,7 +123,6 @@ export default function AlbaranesHistoricoClient({
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saveWarning, setSaveWarning] = useState<string | null>(null)
   const [draftLines, setDraftLines] = useState<Record<string, { original_name: string; quantity: string; unit_price: string; total_price: string }>>({})
-  const [modalContainer, setModalContainer] = useState<HTMLElement | null>(null)
   const detailReqRef = useRef(0)
   const [supplierPickerOpen, setSupplierPickerOpen] = useState(false)
   const [supplierQuery, setSupplierQuery] = useState('')
@@ -208,9 +207,6 @@ export default function AlbaranesHistoricoClient({
     invoiceImageViewerOpenRef.current = invoiceImageViewerOpen
   }, [invoiceImageViewerOpen])
 
-  useEffect(() => {
-    setModalContainer(typeof document !== 'undefined' ? document.body : null)
-  }, [])
 
   useEffect(() => {
     const isIOS =
@@ -280,22 +276,6 @@ export default function AlbaranesHistoricoClient({
     })
   }, [invoiceImageViewerOpen, invoiceImageSheetOptions.length, detail?.id])
 
-  useEffect(() => {
-    if (!selectedId) return
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return
-      if (invoiceImageViewerOpenRef.current) {
-        e.preventDefault()
-        setInvoiceImageViewerOpen(false)
-        return
-      }
-      closeModal()
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => {
-      window.removeEventListener('keydown', onKeyDown)
-    }
-  }, [selectedId])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -652,6 +632,9 @@ export default function AlbaranesHistoricoClient({
     const lineId = evidenceContextLineIdRef.current
     setLineForEditModal(null)
     setLineForMappingModal(null)
+    setSupplierPickerOpen(false)
+    setInvoiceImageViewerOpen(false)
+    setWizardOpen(false)
     if (!lineId) return
     setEvidenceVersion((v) => v + 1)
     setLineForEvidenceModal(lineId)
@@ -789,6 +772,8 @@ export default function AlbaranesHistoricoClient({
   function openLineMappingModal(line: PurchaseInvoiceLine) {
     setLineForEditModal(null)
     setLineForEvidenceModal(null)
+    setSupplierPickerOpen(false)
+    setInvoiceImageViewerOpen(false)
     setWizardOpen(false)
     setLineForMappingModal(line)
   }
@@ -816,6 +801,8 @@ export default function AlbaranesHistoricoClient({
     setLineForEvidenceModal(null)
     setLineForEditModal(null)
     setLineForMappingModal(null)
+    setSupplierPickerOpen(false)
+    setInvoiceImageViewerOpen(false)
     setWizardOpen(true)
   }
 
@@ -1374,59 +1361,42 @@ export default function AlbaranesHistoricoClient({
           </div>
       </div>
 
-      {selectedId && modalContainer
-        ? createPortal(
-            <div
-              className="fixed inset-0 z-[10050] box-border flex items-center justify-center bg-black/60 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm animate-in fade-in duration-150"
-              onClick={(e) => {
-                if (e.target === e.currentTarget) closeModal()
-              }}
-            >
-              <div
-                className="flex min-h-0 w-full max-w-5xl flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl max-h-[min(68dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2.5rem))]"
+      <Modal
+        open={Boolean(selectedId)}
+        onClose={closeModal}
+        variant="work"
+        layer="base"
+        instance="albaran-detail"
+        usageId="albaran-detail"
+        usageLabel="Detalle albarán"
+        headerTone="petroleum"
+        headerTitleAlign="left"
+        title={
+          detail ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setLineForEditModal(null)
+                  setLineForMappingModal(null)
+                  setLineForEvidenceModal(null)
+                  setInvoiceImageViewerOpen(false)
+                  setWizardOpen(false)
+                  setSupplierPickerOpen(true)
+                  setSupplierQuery('')
+                  setSupplierResults([])
+                  setSupplierError(null)
+                }}
+                className="text-left w-full min-w-0 font-black uppercase tracking-wider text-white hover:opacity-80 transition-opacity text-[clamp(0.625rem,2.6vw,0.875rem)] leading-tight break-words"
+                title="Cambiar proveedor"
               >
-                <input
-                  ref={appendSheetInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture={appendSheetCapture}
-                  className="hidden"
-                  onChange={handleAppendSheetFileChange}
-                />
-                <input
-                  ref={replaceImageInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture={appendSheetCapture}
-                  className="hidden"
-                  onChange={handleReplaceImageFileChange}
-                />
-                {/* 1. CABECERA */}
-                <div className="flex shrink-0 items-center justify-between bg-[#36606F] px-4 py-3 relative">
-                  <div className="min-w-0 flex-1 pr-[9.5rem]">
-                    {detail ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSupplierPickerOpen(true)
-                          setSupplierQuery('')
-                          setSupplierResults([])
-                          setSupplierError(null)
-                        }}
-                        className="text-left w-full min-w-0 text-sm font-black uppercase tracking-wider text-white truncate hover:opacity-80 transition-opacity"
-                        title="Cambiar proveedor"
-                      >
-                        {detail.supplier_name ?? 'Añadir proveedor'}
-                      </button>
-                    ) : (
-                      <p className="text-sm font-black uppercase tracking-wider text-white truncate min-w-0">
-                        Proveedor pendiente
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Acciones flotantes en la cabecera: iconos sin fondo circular */}
-                  <div className="absolute top-1/2 -translate-y-1/2 right-2 flex items-center gap-0.5">
+                {detail.supplier_name ?? 'Añadir proveedor'}
+              </button>
+            ) : (
+              'Proveedor pendiente'
+            )
+        }
+        headerTrailing={
+          <>
                     {detail?.id && detail?.supplier_id ? (
                       <button
                         type="button"
@@ -1435,14 +1405,14 @@ export default function AlbaranesHistoricoClient({
                         aria-label="Auto-mapear aprendidos"
                         title="Auto-mapear líneas pendientes con texto ya aprendido para este proveedor"
                         className={cn(
-                          'flex min-h-12 min-w-12 items-center justify-center text-white/90 transition-opacity hover:opacity-100 opacity-90 active:scale-[0.99]',
+                          'flex h-full min-w-ds-tactil items-center justify-center border-0 bg-transparent text-white/90 shadow-none outline-none transition-opacity hover:opacity-100 opacity-90 active:scale-[0.99]',
                           autoMapLoading && 'opacity-60 pointer-events-none'
                         )}
                       >
                         {autoMapLoading ? (
-                          <Loader2 className="h-5 w-5 animate-spin" />
+                          <Loader2 className="h-[clamp(1rem,3.2vw,1.25rem)] w-[clamp(1rem,3.2vw,1.25rem)] animate-spin" />
                         ) : (
-                          <Sparkles className="h-5 w-5" />
+                          <Sparkles className="h-[clamp(1rem,3.2vw,1.25rem)] w-[clamp(1rem,3.2vw,1.25rem)]" />
                         )}
                       </button>
                     ) : null}
@@ -1454,29 +1424,39 @@ export default function AlbaranesHistoricoClient({
                         aria-label="Eliminar albarán"
                         title="Eliminar albarán y revertir su stock"
                         className={cn(
-                          'flex min-h-12 min-w-12 items-center justify-center text-white/90 transition-opacity hover:text-rose-200 hover:opacity-100 opacity-90 active:scale-[0.99]',
+                          'flex h-full min-w-ds-tactil items-center justify-center border-0 bg-transparent text-white/90 shadow-none outline-none transition-opacity hover:text-rose-200 hover:opacity-100 opacity-90 active:scale-[0.99]',
                           deletingInvoice && 'opacity-60 pointer-events-none'
                         )}
                       >
                         {deletingInvoice ? (
-                          <Loader2 className="h-5 w-5 animate-spin" />
+                          <Loader2 className="h-[clamp(1rem,3.2vw,1.25rem)] w-[clamp(1rem,3.2vw,1.25rem)] animate-spin" />
                         ) : (
-                          <Trash2 className="h-5 w-5" />
+                          <Trash2 className="h-[clamp(1rem,3.2vw,1.25rem)] w-[clamp(1rem,3.2vw,1.25rem)]" />
                         )}
                       </button>
                     ) : null}
-                    <button
-                      type="button"
-                      onClick={closeModal}
-                      className="flex min-h-12 min-w-12 items-center justify-center text-white/90 transition-opacity hover:opacity-100 opacity-90 active:scale-[0.99]"
-                      aria-label="Cerrar"
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
-                  </div>
-                </div>
+                  </>
+        }
+        className="bg-[#fafafa]"
+      >
+        <input
+          ref={appendSheetInputRef}
+          type="file"
+          accept="image/*"
+          capture={appendSheetCapture}
+          className="hidden"
+          onChange={handleAppendSheetFileChange}
+        />
+        <input
+          ref={replaceImageInputRef}
+          type="file"
+          accept="image/*"
+          capture={appendSheetCapture}
+          className="hidden"
+          onChange={handleReplaceImageFileChange}
+        />
+        <div className="p-2.5 sm:p-3 space-y-2.5 min-w-0 max-w-full">
 
-                <div className="min-h-0 flex-1 overflow-y-auto bg-[#fafafa] p-2.5 sm:p-3 space-y-2.5">
                   {/* Status & Errors */}
                   {deleteError ? (
                     <div className="bg-red-50 border border-red-200 rounded-lg px-2.5 py-2 text-xs font-medium text-red-700">
@@ -1606,6 +1586,11 @@ export default function AlbaranesHistoricoClient({
                           <button
                             type="button"
                             onClick={() => {
+                              setLineForEditModal(null)
+                              setLineForMappingModal(null)
+                              setLineForEvidenceModal(null)
+                              setSupplierPickerOpen(false)
+                              setWizardOpen(false)
                               setInvoiceCarouselIndex(0)
                               invoiceCarouselIndexRef.current = 0
                               setInvoiceImageViewerOpen(true)
@@ -1676,6 +1661,9 @@ export default function AlbaranesHistoricoClient({
                                 onClick={() => {
                                   setLineForEditModal(null)
                                   setLineForMappingModal(null)
+                                  setSupplierPickerOpen(false)
+                                  setInvoiceImageViewerOpen(false)
+                                  setWizardOpen(false)
                                   evidenceContextLineIdRef.current = l.id
                                   setLineForEvidenceModal(l.id)
                                 }}
@@ -1749,8 +1737,11 @@ export default function AlbaranesHistoricoClient({
                       )}
                     </div>
                   ) : null}
-                </div>
+        </div>
+      </Modal>
 
+      {selectedId ? (
+        <>
                 <LineEditModal
                   open={!!lineForEditModal}
                   line={lineForEditModal}
@@ -1837,6 +1828,9 @@ export default function AlbaranesHistoricoClient({
                     evidenceContextLineIdRef.current = l.id
                     setLineForEvidenceModal(null)
                     setLineForMappingModal(null)
+                    setSupplierPickerOpen(false)
+                    setInvoiceImageViewerOpen(false)
+                    setWizardOpen(false)
                     setLineForEditModal(l)
                   }}
                   onExcludeFromMapping={() => {
@@ -1858,34 +1852,18 @@ export default function AlbaranesHistoricoClient({
                 <Modal
                   open={supplierPickerOpen}
                   onClose={() => { if (!supplierSaving) setSupplierPickerOpen(false) }}
-                  hideHeader={true}
-                  wrapperClassName="max-w-lg"
-                  className="max-h-[80vh]"
-                  panelHostClassName="p-0"
-                  zIndexClass="z-[10100]"
-                  title="Seleccionar proveedor"
+                  variant="standard"
+                  layer="derived"
+                  instance="albaranes-supplier-picker"
+                  usageId="albaranes-supplier-picker"
+                  usageLabel="Proveedor albarán"
+                  headerTone="petroleum"
+                  headerTitleAlign="left"
+                  title="Asignar proveedor"
+                  subtitle="Busca y selecciona el proveedor correcto"
+                  disableUsageTracking
                 >
-                  <div className="flex flex-col h-full w-full">
-                    <div className="bg-[#36606F] px-5 py-4 flex items-center justify-between gap-3 text-white shrink-0">
-                        <div className="min-w-0">
-                          <p className="text-sm font-black uppercase tracking-wider truncate">Asignar proveedor</p>
-                          <p className="text-[11px] font-bold text-white/70 truncate mt-1">Busca y selecciona el proveedor correcto</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setSupplierPickerOpen(false)}
-                          disabled={supplierSaving}
-                          className={cn(
-                            'min-h-[48px] min-w-[48px] inline-flex items-center justify-center rounded-xl bg-white/10 hover:bg-rose-500/70 transition active:scale-[0.99]',
-                            supplierSaving && 'opacity-60 pointer-events-none'
-                          )}
-                          aria-label="Cerrar"
-                        >
-                          <X className="h-5 w-5" />
-                        </button>
-                      </div>
-
-                      <div className="p-4 flex flex-col gap-3 overflow-auto flex-1 min-h-0">
+                      <div className="p-4 flex flex-col gap-3 min-w-0 max-w-full">
                         {supplierError ? (
                           <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm font-bold text-red-700">{supplierError}</div>
                         ) : null}
@@ -1938,7 +1916,6 @@ export default function AlbaranesHistoricoClient({
                           )}
                         </div>
                       </div>
-                  </div>
                 </Modal>
 
                 <Modal
@@ -1947,14 +1924,19 @@ export default function AlbaranesHistoricoClient({
                     const lineId = wizardTargetLineId
                     void returnToMappingAfterWizard(lineId)
                   }}
-                  hideHeader={true}
-                  wrapperClassName="max-w-lg"
-                  className="max-h-[86vh] p-2"
-                  panelHostClassName="p-0"
-                  zIndexClass="z-[10100]"
-                  title="Wizard de ingrediente"
+                  variant="standard"
+                  layer="derived"
+                  instance="albaran-ingredient-wizard"
+                  usageId="albaran-ingredient-wizard"
+                  usageLabel="Wizard de ingrediente"
+                  title="Ingrediente"
+                  headerTone="petroleum"
+                  headerTitleAlign="left"
+                  hideHeader
+                  ariaLabel="Wizard de ingrediente"
+                  className="p-2"
+                  disableUsageTracking
                 >
-                  <div className="h-full w-full">
                       <IngredientWizard
                         key={wizardIngredientId ?? 'create'}
                         ingredientId={wizardIngredientId}
@@ -1971,35 +1953,36 @@ export default function AlbaranesHistoricoClient({
                           void returnToMappingAfterWizard(lineId)
                         }}
                       />
-                  </div>
                 </Modal>
-              </div>
-            </div>,
-            modalContainer
-          )
-        : null}
+        </>
+      ) : null}
 
-      {invoiceImageViewerOpen && modalContainer && invoiceImageSheetOptions.length >= 1
-        ? createPortal(
-            <div
-              className="fixed inset-0 z-[10100] flex flex-col bg-zinc-950/95 backdrop-blur-md animate-in fade-in duration-150"
-              role="dialog"
-              aria-modal="true"
-              aria-label="Visor de hojas del albarán"
-              onClick={(e) => {
-                if (e.target === e.currentTarget) setInvoiceImageViewerOpen(false)
-              }}
-            >
-              <div className="shrink-0 bg-[#36606F] pt-[max(6px,env(safe-area-inset-top))] pb-3 text-white md:pb-3.5">
-                <p className="min-w-0 truncate px-4 text-center text-[11px] font-black uppercase tracking-wide text-white md:px-6 md:text-xs">
-                  {invoiceImageSheetOptions[invoiceCarouselIndex]?.label ?? 'Hoja'}
-                </p>
-              </div>
-
-              <div
-                className="flex min-h-0 flex-1 flex-col gap-1 p-2 md:p-4"
-                onClick={(e) => e.stopPropagation()}
-              >
+      <Modal
+        open={invoiceImageViewerOpen && invoiceImageSheetOptions.length >= 1}
+        onClose={() => setInvoiceImageViewerOpen(false)}
+        variant="work"
+        layer="derived"
+        instance="albaran-invoice-image"
+        usageId="albaran-invoice-image"
+        usageLabel="Visor de hojas del albarán"
+        headerTone="petroleum"
+        title={invoiceImageSheetOptions[invoiceCarouselIndex]?.label ?? 'Hoja'}
+        className="bg-zinc-950 text-white"
+        footer={
+          <Button
+            type="button"
+            variant="secondary"
+            layout="fill"
+            instance="albaran-invoice-image-close"
+            icon={<X strokeWidth={2.5} />}
+            onClick={() => setInvoiceImageViewerOpen(false)}
+            aria-label="Cerrar visor de imagen"
+          >
+            Cerrar
+          </Button>
+        }
+      >
+        <div className="flex min-h-0 flex-1 flex-col gap-1 p-2 md:p-4 min-w-0 max-w-full bg-zinc-950">
                 <div className="relative min-h-0 shrink-0 overflow-visible">
                   {invoiceImageSheetOptions.length > 1 ? (
                     <>
@@ -2093,119 +2076,102 @@ export default function AlbaranesHistoricoClient({
                     ? 'Desliza para cambiar de hoja · Pellizca con dos dedos para zoom'
                     : 'Pellizca con dos dedos para zoom'}
                 </p>
-              </div>
+        </div>
+      </Modal>
 
-              <div className="shrink-0 border-t border-white/10 bg-zinc-950 px-3 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 md:px-5">
-                <div className="mx-auto flex max-w-lg justify-center">
-                  <button
-                    type="button"
-                    onClick={() => setInvoiceImageViewerOpen(false)}
-                    className="inline-flex min-h-12 w-full max-w-xs items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-black uppercase tracking-wide text-[#36606F] shadow-md transition hover:bg-zinc-100 active:scale-[0.99] sm:w-auto"
-                    aria-label="Cerrar visor de imagen"
-                  >
-                    <X className="h-5 w-5 shrink-0" strokeWidth={2.5} />
-                    Cerrar
-                  </button>
-                </div>
-              </div>
-            </div>,
-            modalContainer
-          )
-        : null}
-
-      {filterOpen ? (
-        <div
-          className="fixed inset-0 z-[10010] bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center animate-in fade-in duration-150"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setFilterOpen(false)
-          }}
-        >
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
-            <div className="bg-[#36606F] px-5 py-4 flex items-center justify-between gap-3 text-white">
-              <p className="text-sm font-black uppercase tracking-wider">Filtrar</p>
-              <button
-                type="button"
-                onClick={() => setFilterOpen(false)}
-                className="min-h-[48px] min-w-[48px] inline-flex items-center justify-center rounded-xl hover:opacity-80 transition"
-                aria-label="Cerrar"
-              >
-                <X className="h-5 w-5" />
-              </button>
+      <Modal
+        open={filterOpen}
+        onClose={() => setFilterOpen(false)}
+        variant="standard"
+        layer="base"
+        instance="albaranes-filter"
+        usageId="albaranes-filter"
+        usageLabel="Filtro albaranes"
+        headerTone="petroleum"
+        headerTitleAlign="left"
+        title="Filtrar"
+        disableUsageTracking
+        footer={
+          <div className="flex w-full gap-2">
+            <Button
+              type="button"
+              variant="tertiary"
+              layout="fill"
+              instance="albaranes-filter-clear"
+              className="flex-1"
+              onClick={() => {
+                setFilterFrom('')
+                setFilterTo('')
+                setFilterSupplierId('')
+              }}
+            >
+              Limpiar
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              layout="fill"
+              instance="albaranes-filter-apply"
+              className="flex-1"
+              onClick={() => {
+                const supplierName = filterSuppliers.find(
+                  (s) => String(s.id) === filterSupplierId
+                )?.name
+                trackAlbaranesFilter(
+                  albaranesFilterSummary({
+                    from: filterFrom,
+                    to: filterTo,
+                    supplierId: filterSupplierId,
+                    supplierName,
+                  })
+                )
+                setFilterOpen(false)
+              }}
+            >
+              Aplicar
+            </Button>
+          </div>
+        }
+      >
+        <div className="p-4 space-y-3 min-w-0 max-w-full">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Desde</p>
+              <input
+                type="date"
+                value={filterFrom}
+                onChange={(e) => setFilterFrom(e.target.value)}
+                className="mt-1 w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold"
+              />
             </div>
-            <div className="p-4 space-y-3">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Desde</p>
-                  <input
-                    type="date"
-                    value={filterFrom}
-                    onChange={(e) => setFilterFrom(e.target.value)}
-                    className="mt-1 w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold"
-                  />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Hasta</p>
-                  <input
-                    type="date"
-                    value={filterTo}
-                    onChange={(e) => setFilterTo(e.target.value)}
-                    className="mt-1 w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold"
-                  />
-                </div>
-              </div>
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Proveedor</p>
-                <select
-                  value={filterSupplierId}
-                  onChange={(e) => setFilterSupplierId(e.target.value)}
-                  className="mt-1 w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold"
-                >
-                  <option value="">Todos</option>
-                  {filterSuppliers.map((s) => (
-                    <option key={s.id} value={String(s.id)}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-                {filterSuppliersLoading ? <p className="mt-2 text-xs font-bold text-zinc-500">Cargando proveedores…</p> : null}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFilterFrom('')
-                    setFilterTo('')
-                    setFilterSupplierId('')
-                  }}
-                  className="min-h-[48px] flex-1 rounded-xl border border-zinc-200 bg-white text-xs font-black uppercase tracking-wider text-zinc-700"
-                >
-                  Limpiar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const supplierName = filterSuppliers.find(
-                      (s) => String(s.id) === filterSupplierId
-                    )?.name
-                    trackAlbaranesFilter(
-                      albaranesFilterSummary({
-                        from: filterFrom,
-                        to: filterTo,
-                        supplierId: filterSupplierId,
-                        supplierName,
-                      })
-                    )
-                    setFilterOpen(false)
-                  }}
-                  className="min-h-[48px] flex-1 rounded-xl bg-[#36606F] text-white text-xs font-black uppercase tracking-wider"
-                >
-                  Aplicar
-                </button>
-              </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Hasta</p>
+              <input
+                type="date"
+                value={filterTo}
+                onChange={(e) => setFilterTo(e.target.value)}
+                className="mt-1 w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold"
+              />
             </div>
           </div>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Proveedor</p>
+            <select
+              value={filterSupplierId}
+              onChange={(e) => setFilterSupplierId(e.target.value)}
+              className="mt-1 w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold"
+            >
+              <option value="">Todos</option>
+              {filterSuppliers.map((s) => (
+                <option key={s.id} value={String(s.id)}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+            {filterSuppliersLoading ? <p className="mt-2 text-xs font-bold text-zinc-500">Cargando proveedores…</p> : null}
+          </div>
         </div>
-      ) : null}
+      </Modal>
     </div>
     </DashboardDetailLayout>
   )

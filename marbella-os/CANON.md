@@ -6,7 +6,7 @@ capa: raiz
 normativo: true
 precedencia: 100
 responsable: propiedad del producto
-revisado: 2026-07-30
+revisado: 2026-08-16
 caducidad: 24 meses
 supersede: context/LLM_PROMPT.md §0 (jerarquía de fuentes), context/README.md (convenciones de carpeta)
 ---
@@ -303,7 +303,7 @@ Decidido en [ADR-0002](4-decisiones/ADR-0002-metadatos-operables-y-validador.md)
 Dos señales de esta misma sección avisan sin bloquear, porque su respuesta correcta no la puede elegir una máquina:
 
 - **Un documento que lleva más de noventa días en `propuesto`.** La sección 8 admite ese estado como paso, no como destino. Aprobarlo o retirarlo son decisiones legítimas; dejarlo ahí no lo es.
-- **Una regla de agente que no cita ningún documento del corpus.** O aplica una norma que está escrita aquí y debe enlazarla, o la norma solo vive dentro de la configuración de una herramienta, que es el caso que esta sección describe. Las dos que hay hoy están registradas en [DEUDA](5-estado/DEUDA.md).
+- **Una regla de agente que no cita ningún documento del corpus.** O aplica una norma que está escrita aquí y debe enlazarla, o la norma solo vive dentro de la configuración de una herramienta, que es el caso que esta sección describe. Cuando aparece, se registra en [DEUDA](5-estado/DEUDA.md).
 
 ### Dónde se comprueba
 

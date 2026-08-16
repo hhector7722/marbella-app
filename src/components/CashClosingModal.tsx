@@ -17,8 +17,8 @@ import {
     weatherIdFromLabel,
     type ClosingWeatherId,
 } from '@/lib/cash-closing-weather';
-import { useScrollLock } from '@/hooks/useScrollLock';
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 import {
     ClosingStepRow,
     ClosingSummaryRow,
@@ -80,8 +80,6 @@ interface CashClosingModalProps {
 }
 
 export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTotalSales = 0, initialTicketsCount = 0 }: CashClosingModalProps) {
-    useModalUsageTracking({ open: isOpen, usageId: 'cash-closing', usageLabel: 'Cierre de caja' });
-    useScrollLock(isOpen);
     const supabase = createClient();
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState<ClosingStep>('tpv_data');
@@ -343,6 +341,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
         const hasSeen = localStorage.getItem(`cierre_warn_seen_tpv_v2_${userId}`);
         
         if (isTargetUser && !hasSeen) {
+            setCalculatorOpen(false);
             setInstructionModal({
                 isOpen: true,
                 type: 'tpv',
@@ -364,6 +363,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
         const hasSeen = localStorage.getItem(`cierre_warn_seen_dataphone_v2_${userId}`);
         
         if (isTargetUser && !hasSeen) {
+            setCalculatorOpen(false);
             setInstructionModal({
                 isOpen: true,
                 type: 'tarjeta',
@@ -562,77 +562,84 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
 
     const lastCoin = COINS[COINS.length - 1];
 
-    if (!isOpen) return null;
-
-    const blockDashboardSwipe = (e: React.TouchEvent) => {
-        e.stopPropagation();
-    };
+    const instructionOpen = Boolean(isOpen && instructionModal?.isOpen);
+    const instructionTitle = instructionModal?.type === 'tpv'
+        ? 'Cómo fotografiar el TPV'
+        : 'Cómo fotografiar el datáfono';
 
     return (
-        <div
-            className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
-            onTouchStart={blockDashboardSwipe}
-            onTouchMove={blockDashboardSwipe}
-            onTouchEnd={blockDashboardSwipe}
-        >
-            <div
-                className={cn(
-                    "bg-white w-full max-w-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 rounded-2xl",
-                    "max-h-[calc(100dvh-2rem)]",
-                    "shadow-2xl shadow-black/20 border border-white/10"
-                )}
-                onClick={e => e.stopPropagation()}
-                onTouchStart={blockDashboardSwipe}
-                onTouchMove={blockDashboardSwipe}
-                onTouchEnd={blockDashboardSwipe}
-            >
-
-                {/* Header: fecha sin tarjeta/marco, flota sobre cabecera */}
-                <div className="bg-[#36606F] px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between text-white relative shrink-0">
-                    <div className="flex flex-col">
-                        <button
-                            type="button"
-                            className="relative flex items-center gap-2 cursor-pointer text-left outline-none border-0 bg-transparent p-0 hover:opacity-90 transition-opacity min-h-[48px] min-w-[48px]"
-                            onClick={() => {
-                                const el = datePickerRef.current;
-                                if (!el) return;
-                                // Try native picker (Chrome), fallback to focus/click for others.
-                                const picker = el as HTMLInputElement & { showPicker?: () => void };
-                                if (typeof picker.showPicker === 'function') picker.showPicker();
-                                else { el.focus(); el.click(); }
-                            }}
-                        >
-                            <Calendar size={16} className="text-white/80" aria-hidden />
-                            <span className="text-[12px] sm:text-sm font-black uppercase tracking-wide text-white">
-                                {format(parseDateTimeLocal(selectedDateTime), "eeee d 'de' MMMM, HH:mm", { locale: es })}
-                            </span>
-                            <input
-                                ref={datePickerRef}
-                                type="datetime-local"
-                                value={selectedDateTime}
-                                onChange={(e) => setSelectedDateTime(e.target.value)}
-                                className={cn(
-                                    // Overlay invisible but clickable/editable to ensure consistent behavior across browsers.
-                                    "absolute inset-0 opacity-0 cursor-pointer",
-                                    "min-h-[48px] min-w-[48px]"
-                                )}
-                            />
-                        </button>
-                        <div className="flex items-center gap-3 mt-1">
-                            <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'tpv_data' ? 'text-white' : 'text-white/40')}>1. Datos</div>
-                            <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'count' ? 'text-white' : 'text-white/40')}>2. Arqueo</div>
-                            <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors", step === 'summary' ? 'text-white' : 'text-white/40')}>3. Resumen</div>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                        {(step === 'tpv_data' || step === 'count') && (
-                            <span className="w-10 h-10 min-h-[48px] min-w-[48px]" aria-hidden />
-                        )}
-                        <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-rose-500 rounded-xl hover:bg-rose-600 transition-all text-white active:scale-90 shadow-md shadow-rose-900/20 min-h-[48px] min-w-[48px]">
-                            <X size={20} strokeWidth={3} />
-                        </button>
-                    </div>
+        <>
+        <Modal
+            open={isOpen}
+            onClose={onClose}
+            variant="amplify"
+            layer="base"
+            instance="cash-closing"
+            usageId="cash-closing"
+            usageLabel="Cierre de caja"
+            headerTone="petroleum"
+            headerTitleAlign="left"
+            closeOnBackdrop={false}
+            title={
+                <button
+                    type="button"
+                    className="relative flex min-h-ds-tactil min-w-ds-tactil items-center gap-2 border-0 bg-transparent p-0 text-left outline-none hover:opacity-90"
+                    onClick={() => {
+                        const el = datePickerRef.current;
+                        if (!el) return;
+                        const picker = el as HTMLInputElement & { showPicker?: () => void };
+                        if (typeof picker.showPicker === 'function') picker.showPicker();
+                        else { el.focus(); el.click(); }
+                    }}
+                >
+                    <Calendar size={16} className="shrink-0 text-white/80" aria-hidden />
+                    <span>
+                        {format(parseDateTimeLocal(selectedDateTime), "eeee d 'de' MMMM, HH:mm", { locale: es })}
+                    </span>
+                    <input
+                        ref={datePickerRef}
+                        type="datetime-local"
+                        value={selectedDateTime}
+                        onChange={(e) => setSelectedDateTime(e.target.value)}
+                        className="absolute inset-0 min-h-ds-tactil min-w-ds-tactil cursor-pointer opacity-0"
+                    />
+                </button>
+            }
+            subtitle={
+                <div className="flex items-center gap-3">
+                    <span className={step === 'tpv_data' ? 'text-white' : 'text-white/40'}>1. Datos</span>
+                    <span className={step === 'count' ? 'text-white' : 'text-white/40'}>2. Arqueo</span>
+                    <span className={step === 'summary' ? 'text-white' : 'text-white/40'}>3. Resumen</span>
                 </div>
+            }
+            footer={step !== 'count' ? (
+                <>
+                    {step === 'summary' && (
+                        <Button
+                            type="button"
+                            variant="tertiary"
+                            layout="hug"
+                            instance="cash-closing-back"
+                            onClick={() => setStep('count')}
+                        >
+                            Atrás
+                        </Button>
+                    )}
+                    <Button
+                        type="button"
+                        variant="primary"
+                        layout="fill"
+                        instance="cash-closing-advance"
+                        className="flex-1"
+                        onClick={handleAdvanceStep}
+                        disabled={loading || (step === 'summary' && !photosReady)}
+                        loading={loading}
+                    >
+                        {step === 'summary' ? 'Confirmar Cierre' : 'Siguiente'}
+                    </Button>
+                </>
+            ) : undefined}
+        >
                 <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
                 {(step === 'tpv_data' || step === 'count') && (
                     <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
@@ -782,99 +789,72 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                         </div>
                     )}
                 </div>
-
-                {/* Footer: paso 2 integra botones en la fila del 1c */}
-                {step !== 'count' && (
-                    <div className="p-3 sm:p-4 bg-gray-50 border-t flex gap-3 sm:gap-4 shrink-0">
-                        {step === 'summary' && (
-                            <button
-                                type="button"
-                                onClick={() => setStep('count')}
-                                className="px-4 sm:px-6 min-h-[48px] font-black text-gray-400 uppercase tracking-widest text-xs hover:text-gray-600 transition-colors rounded-xl hover:bg-white/60 active:bg-white/80"
-                            >
-                                Atrás
-                            </button>
-                        )}
-                        <button
-                            type="button"
-                            onClick={handleAdvanceStep}
-                            disabled={loading || (step === 'summary' && !photosReady)}
-                            className={cn(
-                                "flex-1 min-h-[48px] h-14 rounded-2xl flex items-center justify-center gap-3 text-white font-black uppercase tracking-widest transition-all active:scale-[0.98]",
-                                step === 'summary' || step === 'tpv_data'
-                                    ? 'bg-emerald-500'
-                                    : 'bg-[#5B8FB9]'
-                            )}
-                        >
-                            {loading ? <LoadingSpinner size="sm" className="text-white" /> : (
-                                step === 'summary' ? 'Confirmar Cierre' : 'Siguiente'
-                            )}
-                        </button>
-                    </div>
-                )}
-            </div>
-
-            {instructionModal && instructionModal.isOpen && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white w-full max-w-xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 rounded-2xl shadow-2xl border border-zinc-100">
-                        {/* Content */}
-                        <div className="p-5 sm:p-6 flex-1 overflow-y-auto">
-                            <div className="grid grid-cols-2 gap-4">
-                                {/* Left: NO */}
-                                <div className="flex flex-col items-center">
-                                    <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center">
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img
-                                            src={instructionModal.type === 'tpv' ? '/images/tpv-no.jpeg' : '/images/tarjeta-no.jpeg'}
-                                            alt="Ejemplo incorrecto"
-                                            className="object-contain w-full h-full"
-                                        />
-                                    </div>
-                                    <div className="mt-3 flex items-start gap-1.5 text-rose-600">
-                                        <div className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-rose-500 text-white shrink-0 mt-0.5">
-                                            <X size={12} strokeWidth={4} />
-                                        </div>
-                                        <span className="text-[11px] sm:text-xs font-bold leading-snug">
-                                            Ejemplo de como NO debe ser.
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Right: SI */}
-                                <div className="flex flex-col items-center">
-                                    <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center">
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img
-                                            src={instructionModal.type === 'tpv' ? '/images/tpv-si.jpeg' : '/images/tarjeta-si.jpeg'}
-                                            alt="Ejemplo correcto"
-                                            className="object-contain w-full h-full"
-                                        />
-                                    </div>
-                                    <div className="mt-3 flex items-start gap-1.5 text-emerald-600">
-                                        <div className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500 text-white shrink-0 mt-0.5">
-                                            <Check size={12} strokeWidth={4} />
-                                        </div>
-                                        <span className="text-[11px] sm:text-xs font-bold leading-snug">
-                                            Ejemplo de como SI debe ser.
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
+        </Modal>
+        <Modal
+            open={instructionOpen}
+            onClose={() => setInstructionModal(null)}
+            variant="amplify"
+            layer="derived"
+            instance="cash-closing-photo-instruction"
+            usageId="cash-closing-photo-instruction"
+            usageLabel={instructionTitle}
+            headerTone="petroleum"
+            headerTitleAlign="left"
+            closeOnBackdrop={false}
+            title={instructionTitle}
+            footer={
+                <Button
+                    type="button"
+                    variant="primary"
+                    layout="fill"
+                    instance="cash-closing-photo-instruction-continue"
+                    onClick={() => instructionModal?.onContinue()}
+                >
+                    continuar
+                </Button>
+            }
+        >
+            <div className="p-5 sm:p-6">
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col items-center">
+                        <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                                src={instructionModal?.type === 'tpv' ? '/images/tpv-no.jpeg' : '/images/tarjeta-no.jpeg'}
+                                alt="Ejemplo incorrecto"
+                                className="object-contain w-full h-full"
+                            />
                         </div>
-
-                        {/* Footer */}
-                        <div className="p-4 bg-zinc-50 border-t border-zinc-100 flex justify-end shrink-0">
-                            <button
-                                type="button"
-                                onClick={instructionModal.onContinue}
-                                className="w-full min-h-[48px] bg-[#36606F] hover:bg-[#2d4f5c] text-white font-black uppercase tracking-widest text-xs rounded-xl transition-colors active:scale-[0.99]"
-                            >
-                                continuar
-                            </button>
+                        <div className="mt-3 flex items-start gap-1.5 text-rose-600">
+                            <div className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-rose-500 text-white shrink-0 mt-0.5">
+                                <X size={12} strokeWidth={4} />
+                            </div>
+                            <span className="text-[11px] sm:text-xs font-bold leading-snug">
+                                Ejemplo de como NO debe ser.
+                            </span>
+                        </div>
+                    </div>
+                    <div className="flex flex-col items-center">
+                        <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                                src={instructionModal?.type === 'tpv' ? '/images/tpv-si.jpeg' : '/images/tarjeta-si.jpeg'}
+                                alt="Ejemplo correcto"
+                                className="object-contain w-full h-full"
+                            />
+                        </div>
+                        <div className="mt-3 flex items-start gap-1.5 text-emerald-600">
+                            <div className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500 text-white shrink-0 mt-0.5">
+                                <Check size={12} strokeWidth={4} />
+                            </div>
+                            <span className="text-[11px] sm:text-xs font-bold leading-snug">
+                                Ejemplo de como SI debe ser.
+                            </span>
                         </div>
                     </div>
                 </div>
-            )}
-        </div >
+            </div>
+        </Modal>
+        </>
     );
 }

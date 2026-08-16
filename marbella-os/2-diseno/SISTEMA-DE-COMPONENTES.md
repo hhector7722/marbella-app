@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-07-29
+revisado: 2026-08-16
 caducidad: 6 meses
 supersede: —
 ---
@@ -27,26 +27,37 @@ Las tres capas del inventario tienen contratos de rigor distinto:
 
 ## 1. Componentes base
 
-Los que sostienen toda pantalla. **Hoy la mayoría no existe como componente**: cada pantalla los reconstruye con utilidades de estilo, y esa es la causa raíz de la deriva visual del producto. Se declaran aquí porque el contrato debe existir antes que la pieza.
+Los que sostienen toda pantalla. **Button ya existe** (piloto de footers). Campo, tarjeta, insignia y vacío siguen reconstruyéndose pantalla a pantalla, y esa sigue siendo una causa de deriva visual.
 
 ### Botón
 
 **Propósito**: ejecutar una acción.
 
-**Anatomía**: contenedor con alto táctil mínimo, etiqueta de texto, icono opcional a la izquierda.
+**Anatomía**: un único `<button>`. Icono opcional a la izquierda. Etiqueta de texto. Icon-only (48×48) sin etiqueta, con `aria-label` obligatorio.
 
-**Variantes**: principal (una por pantalla), secundaria, terciaria sin fondo, destructiva.
+```text
+Button
+ ├── icon?
+ └── label?
+```
 
-**Estados**: reposo, pulsado, en curso, deshabilitado, con error.
+**Variantes** (cerradas; nombres de código): `primary`, `secondary`, `tertiary`, `destructive`. No existe `success`, `positive`, `emerald`, `ghost`, `danger` ni quinta variante. Layout `hug` / `fill` no son variantes semánticas.
+
+**Estados**: reposo, hover (sin scale-up), pulsado (`scale(0.95)`), foco visible (anillo de marca), en curso (equivale a deshabilitado + spinner a la izquierda), deshabilitado (opacity 50). El estado visual de error no se implementa en v1: el error vive en el campo o el aviso.
+
+**Identidad**: `data-component="Button"`, `data-variant`, `data-instance` (id de negocio). El aspecto lo bloquea CSS por atributo; `className` solo admite composición externa (`flex-1`, `shrink-0`, `self-*`, posicionamiento).
 
 **Reglas**:
 - En curso, deshabilita su propia pulsación. Nunca dos efectos por dos toques.
 - La variante destructiva no comparte aspecto con la principal ni se coloca junto a ella.
 - Un botón sin etiqueta necesita nombre accesible.
+- El icono no va a la derecha.
+- No se usa para navegar. Navegar es un enlace, aunque parezca un botón.
+- El chrome close/back de Modal y Navbar no es este componente. Tampoco `DashboardShortcut`.
 
-**Cuándo no usarlo**: para navegar. Navegar es un enlace, aunque parezca un botón.
+**Código**: `src/components/ui/button.tsx`, `src/lib/design-system/button-contract.ts`.
 
-**Estado**: sin componente. Existe una pieza de acción para casos específicos, pero no un botón de sistema.
+**Estado**: existe. Piloto: footers de Modal en Albaranes y Caja/Tesorería. El resto de la aplicación sigue con recetas locales. `ActionButton` se retiró.
 
 ### Campo de entrada
 
@@ -124,21 +135,24 @@ Piezas transversales con comportamiento propio y contrato estricto. **Estas sí 
 
 **Anatomía**: capa de oscurecimiento, panel con cabecera fija, cuerpo desplazable, pie fijo de acciones (`footer`).
 
-**Variantes**: `compact`, `standard`, `work`, `day`, `amplify`. Ver [PATRONES P2](PATRONES.md#p2--modal) y el [contrato](../6-investigacion/spikes/2026-08-15-modal-design-system-contract.md).
+**Variantes**: `compact`, `standard`, `work`, `day`, `amplify`. Catálogo y anchos en [PATRONES P2](PATRONES.md#p2--modal).
 
 **Reglas**:
 - Respeta el área segura del dispositivo y usa el alto visible real, nunca el teórico.
 - Atenúa y desactiva las barras fijas de la aplicación mientras está abierto.
-- Cabecera y pie no se desplazan; el pie no se encoge.
-- **Nesting:** máximo una superficie derivada sobre el modal base ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)). Prohibida la tercera capa de negocio y el z-index ad hoc.
-- Cerrar con cambios sin guardar pide confirmación.
-- **Declara identidad estable** (`data-component="Modal"`, `data-variant`, `data-instance`, `data-layer`) para telemetría y lectura futura del Studio.
+- Cabecera fija (`estructura.cabecera-modal` = 72px) y pie no se desplazan; el pie no se encoge. Botones de cabecera sin marco/fondo por defecto.
+- **Nesting:** máximo una superficie derivada sobre el modal base ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)). Backdrop por capa sin blur acumulado ([ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md)).
+- Cero scroll horizontal en Modal, Header, Body, Footer y tablas internas.
+- Cerrar con cambios sin guardar pide confirmación. El consumidor usa `layer="system"`, no un segundo modal de tarea.
+- **Declara identidad estable** (`data-component="Modal"`, `data-variant`, `data-instance`, `data-layer`). `data-instance` es el id de negocio; la prop `instance` lo emite. `usageId` es un alias de implementación para telemetría, no una vía para overlays propios.
+- **Portal, Escape, bloqueo de desplazamiento y backdrop los posee este componente.** El consumidor no monta otro `createPortal` de overlay, no pinta `fixed inset-0` de modal, no elige z-index numérico y no inventa un fondo.
+- Si el contrato no cubre el comportamiento pedido, se para y se pregunta. No se abre un overlay paralelo.
 
 **Excepción**: `ConsumptionBottomSheet` — hoja inferior de consumo; comparte portal/capas/Escape/scroll; no es Modal centrado ni vía libre de overlays nuevos.
 
 **Código**: `src/components/ui/modal.tsx`, `src/components/ui/ConsumptionBottomSheet.tsx`, `src/lib/design-system/modal-*.ts`.
 
-**Estado**: contrato oficial implementado; consumidores legacy pendientes de migración (piloto previsto: Albaranes).
+**Estado**: contrato oficial + ampliación visual/capas implementados en infra; consumidores legacy pendientes de migración (piloto previsto: Albaranes). El contrato puede evolucionar; el cambio pasa por este documento, las ADR si la decisión es estructural, y después el código.
 
 ### Estructura de pantalla de detalle
 
@@ -275,15 +289,17 @@ Su contrato lo fija la [especificación de su capacidad](../1-producto/capacidad
 5. **Nada de proliferación de interruptores.** Un componente con cinco parámetros booleanos son treinta y dos estados que nadie ha probado. Se resuelve componiendo o creando una variante explícita.
 6. **Toda pieza pulsable cumple el mínimo táctil** y toda zona de acción es indeformable.
 7. **Un componente que se usa en una sola pantalla no es del sistema.** Vive junto a su pantalla hasta que aparezca el segundo uso.
+8. **Si el inventario no cubre la necesidad, se para.** Inventar una pieza de sistema, una variante nueva o un overlay paralelo exige confirmación explícita. Una composición local de una sola pantalla sigue siendo local (punto 7) y no se declara de sistema.
 
 ---
 
 ## 5. Estado real del sistema
 
-Hay que decirlo con claridad: **Marbella aún no tiene un sistema de componentes completo**. Tiene piezas transversales, una estructura de pantalla de adopción parcial, el piloto `DashboardShortcut`, el **contrato oficial de Modal** (consumidores aún por migrar), y el resto resuelto pantalla a pantalla con utilidades de estilo.
+Hay que decirlo con claridad: **Marbella aún no tiene un sistema de componentes completo**. Tiene piezas transversales, una estructura de pantalla de adopción parcial, el piloto `DashboardShortcut`, el **contrato oficial de Modal** (Albaranes y Caja/Tesorería) y el **contrato oficial de Button** (piloto: footers de esos mismos modales). El resto se resuelve pantalla a pantalla. En Caja/Tesorería, `QuickCalculatorModal` y `DenominationZoomModal` permanecen legacy a propósito: el contrato no admite un tercer nivel sobre `base → derived`.
 
 Consecuencias observables:
-- No existe botón, campo, tarjeta, insignia ni estado vacío de sistema.
+- Existen Button y Modal de sistema, con adopción parcial. Siguen sin componente de sistema el campo, la tarjeta, la insignia y el estado vacío.
+- El mismo bloque visual está reescrito decenas de veces con variaciones no intencionadas (incluidos atajos Staff/Admin aún no unificados, y botones fuera del piloto).
 - El mismo bloque visual está reescrito decenas de veces con variaciones no intencionadas (incluidos atajos Staff/Admin aún no unificados).
 - La navegación inferior está implementada dos veces.
 - Las piezas de dominio, muy numerosas, se apoyan directamente en utilidades y no en base.

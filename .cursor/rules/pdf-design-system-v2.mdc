@@ -4,9 +4,9 @@ globs: src/lib/pdf/**/*.{ts,tsx},src/lib/staff/timesheet-pdf*.ts,src/lib/reserva
 alwaysApply: false
 ---
 
-# Marbella PDF Design System v2.0
+# Marbella PDF Design System v2.0 — adaptador
 
-## Fuente de verdad
+Este fichero **no es fuente de verdad**. Norma y tokens: `marbella-os/2-diseno/DOCUMENTOS-IMPRESOS.md` y `marbella-os/2-diseno/TOKENS.md` (`color.marca.impresa`).
 
 Manual: [`docs/design-system/Marbella-PDF-Design-System-v2.0.pdf`](docs/design-system/Marbella-PDF-Design-System-v2.0.pdf)  
 Kit: [`src/lib/pdf/design-system-v2/`](src/lib/pdf/design-system-v2/)
@@ -23,9 +23,5 @@ Kit: [`src/lib/pdf/design-system-v2/`](src/lib/pdf/design-system-v2/)
 ## Reglas
 
 1. Usar `createDsDocument` + helpers del kit.
-2. No mezclar `#36606F` / petroleum en documentos migrados o nuevos.
+2. No mezclar el azul de pantalla (`color.marca`) en documentos migrados o nuevos. La marca impresa es `color.marca.impresa`.
 3. Pedido a proveedor: **permanece en estilo legacy** (decisión 2026-07-28). No sustituir por DS v2.
-
-## Tokens
-
-Azul `#1F5FAF` (≤10% superficie) · A4 `pt` · márgenes 36/32 · retícula 8pt · tipografía Inter→Helvetica

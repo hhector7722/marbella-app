@@ -20,6 +20,7 @@ import Link from 'next/link';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { updateProfile } from '@/app/actions/profile';
 import { CashBoxEditModal } from '@/components/modals/CashBoxEditModal';
+import { Modal } from '@/components/ui/modal';
 import { getISOWeek, format, addDays, subDays, startOfWeek, parseISO, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isSameDay, isToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -948,8 +949,34 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             {cashModalMode !== 'none' && (
                 <>
                     {(cashModalMode === 'in' || cashModalMode === 'out' || cashModalMode === 'audit' || cashModalMode === 'inventory') && (
-                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4 animate-in fade-in duration-200" onClick={() => setCashModalMode('none')}>
-                            <div className={cn("bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", "max-w-2xl")} onClick={(e) => e.stopPropagation()}>
+                        <Modal
+                            open
+                            onClose={() => setCashModalMode('none')}
+                            variant="amplify"
+                            layer="base"
+                            instance="cash-box-operation"
+                            usageId={`admin-cash-${cashModalMode}`}
+                            usageLabel={
+                                cashModalMode === 'in' ? 'Entrada de caja'
+                                : cashModalMode === 'out' ? 'Salida de caja'
+                                : cashModalMode === 'audit' ? 'Arqueo de caja'
+                                : 'Inventario de caja'
+                            }
+                            headerTone="petroleum"
+                            hideHeader
+                            title={
+                                cashModalMode === 'in' ? 'Entrada de caja'
+                                : cashModalMode === 'out' ? 'Salida de caja'
+                                : cashModalMode === 'audit' ? 'Arqueo de caja'
+                                : 'Inventario de caja'
+                            }
+                            ariaLabel={
+                                cashModalMode === 'in' ? 'Entrada de caja'
+                                : cashModalMode === 'out' ? 'Salida de caja'
+                                : cashModalMode === 'audit' ? 'Arqueo de caja'
+                                : 'Inventario de caja'
+                            }
+                        >
                                 {(cashModalMode === 'in' || cashModalMode === 'out' || cashModalMode === 'audit') && (
                                     <CashDenominationForm
                                         key={cashModalMode + (selectedBox?.id || '')}
@@ -969,8 +996,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         onBack={() => setCashModalMode('none')}
                                     />
                                 )}
-                            </div>
-                        </div>
+                        </Modal>
                     )}
                     {cashModalMode === 'swap' && (
                         <CashChangeModal
