@@ -66,7 +66,8 @@ Medidos en `AlbaranesHistoricoClient` / derivados **sin inventar**:
 
 | Magnitud | Valor real | Token / contrato |
 |---|---|---|
-| Header (detalle) | `py-3` + `min-h-12` ⇒ **72px** | `--modal-header-height` |
+| Header (detalle) | **36px** (norma global vigente) | `--modal-header-height` / `estructura.cabecera-modal` |
+| Radio del panel | **16px** (`radio.superficie`) | `--radio-superficie`; sin override por `className` |
 | Ancho estándar trabajo | `max-w-5xl` (1024px) | variante `work` / `day` |
 | Anchos funcionales adicionales | `max-w-4xl` (mapping), `max-w-lg` (edit/filtros) | `amplify` no aplica; usar `standard`/`compact` o `work` según tarea |
 | Max-height (detalle) | `min(68dvh, calc(100dvh − safe − 2.5rem))` | `--modal-max-height` |

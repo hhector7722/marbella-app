@@ -30,6 +30,7 @@ export {
     type ModalVariant,
     type ModalVariantLayout,
 } from './modal-variants';
+export { pickModalPanelClassName } from './modal-panel-class';
 export {
     MODAL_LAYERS,
     MODAL_LAYER_Z_CLASS,

@@ -1386,7 +1386,7 @@ export default function AlbaranesHistoricoClient({
                   setSupplierResults([])
                   setSupplierError(null)
                 }}
-                className="text-left w-full min-w-0 font-black uppercase tracking-wider text-white hover:opacity-80 transition-opacity text-[clamp(0.625rem,2.6vw,0.875rem)] leading-tight break-words"
+                className="text-left w-full min-w-0 font-black uppercase tracking-wider text-white hover:opacity-80 transition-opacity text-[clamp(0.5625rem,2.4vw,0.75rem)] leading-none break-words"
                 title="Cambiar proveedor"
               >
                 {detail.supplier_name ?? 'Añadir proveedor'}
@@ -1972,7 +1972,6 @@ export default function AlbaranesHistoricoClient({
           <Button
             type="button"
             variant="secondary"
-            layout="fill"
             instance="albaran-invoice-image-close"
             icon={<X strokeWidth={2.5} />}
             onClick={() => setInvoiceImageViewerOpen(false)}
@@ -2092,13 +2091,11 @@ export default function AlbaranesHistoricoClient({
         title="Filtrar"
         disableUsageTracking
         footer={
-          <div className="flex w-full gap-2">
+          <div className="flex w-full justify-end gap-2">
             <Button
               type="button"
               variant="tertiary"
-              layout="fill"
               instance="albaranes-filter-clear"
-              className="flex-1"
               onClick={() => {
                 setFilterFrom('')
                 setFilterTo('')
@@ -2110,9 +2107,7 @@ export default function AlbaranesHistoricoClient({
             <Button
               type="button"
               variant="primary"
-              layout="fill"
               instance="albaranes-filter-apply"
-              className="flex-1"
               onClick={() => {
                 const supplierName = filterSuppliers.find(
                   (s) => String(s.id) === filterSupplierId

@@ -116,7 +116,7 @@ export function ConsumptionBottomSheet({
                 >
                     <h2
                         id={titleId}
-                        className="min-w-0 flex-1 overflow-hidden break-words font-black uppercase tracking-wide leading-tight text-ds-texto-fuerte text-[clamp(0.625rem,2.6vw,0.875rem)]"
+                        className="min-w-0 flex-1 overflow-hidden break-words font-black uppercase tracking-wide leading-none text-ds-texto-fuerte text-[clamp(0.5625rem,2.4vw,0.75rem)]"
                     >
                         {title}
                     </h2>
@@ -125,10 +125,10 @@ export function ConsumptionBottomSheet({
                             type="button"
                             aria-label="Cerrar"
                             onClick={onClose}
-                            className="flex h-[var(--modal-header-height)] min-w-ds-tactil shrink-0 items-center justify-center border-0 bg-transparent text-zinc-500 shadow-none ring-0 outline-none hover:opacity-80"
+                            className="flex h-full w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-500 shadow-none ring-0 outline-none hover:opacity-80"
                         >
                             <X
-                                className="h-[clamp(1rem,3.2vw,1.25rem)] w-[clamp(1rem,3.2vw,1.25rem)]"
+                                className="h-[clamp(0.875rem,2.8vw,1rem)] w-[clamp(0.875rem,2.8vw,1rem)]"
                                 strokeWidth={2.5}
                             />
                         </button>

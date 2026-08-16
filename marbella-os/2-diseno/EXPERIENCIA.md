@@ -113,7 +113,7 @@ El modal es el patrón de interacción más usado del producto y por eso tiene l
 
 - Un modal tiene un título que dice de qué es y una salida siempre visible.
 - **El modal respeta el área segura del dispositivo.** Nunca queda cortado por la muesca, la barra de inicio o el teclado, ni en navegador ni en aplicación instalada.
-- El contenido del modal se desplaza; su cabecera y su pie no. La cabecera tiene **altura fija** (`estructura.cabecera-modal`); el contenido de cabecera se adapta sin hacer crecer la barra.
+- El contenido del modal se desplaza; su cabecera y su pie no. La cabecera tiene **altura fija** (`estructura.cabecera-modal`); el contenido de cabecera se adapta sin hacer crecer la barra. Entre cabecera y primer contenido del Body hay **12 px** contractuales (`espacio.3`); no los decide el consumidor.
 - Mientras hay un modal abierto, las barras fijas de la aplicación se atenúan y dejan de responder. No puede haber dos capas compitiendo por el mismo toque.
 - **No se anidan modales de forma arbitraria.** Como máximo se permite **una superficie derivada** sobre el modal principal de la misma tarea ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)). Un tercer overlay de negocio vía segunda `derived` está prohibido; confirmaciones de sistema usan `layer="system"`. No se resuelve con z-index manual.
 - El backdrop pertenece a la capa Modal: base con blur/saturate acotados; capas superiores solo oscurecen ([ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md)). Prohibido acumular blur.

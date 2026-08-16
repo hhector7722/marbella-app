@@ -92,6 +92,8 @@ describe('Button identidad y variantes', () => {
     it('tokens dimensionales y de color del contrato', () => {
         assert.equal(BUTTON_CONTRACT.height, DS_SCREEN_TOKENS.tactilMinimo);
         assert.equal(BUTTON_CONTRACT.radius, DS_SCREEN_TOKENS.radioControl);
+        assert.equal(BUTTON_CONTRACT.paddingInline, DS_SCREEN_TOKENS.espacio3);
+        assert.equal(BUTTON_CONTRACT.defaultLayout, 'hug');
         assert.equal(BUTTON_CONTRACT.fontSize, '12px');
         assert.equal(BUTTON_CONTRACT.fontWeight, '800');
         assert.equal(BUTTON_CONTRACT.iconSlot, 'start');
@@ -164,11 +166,12 @@ describe('Button className no escapa del contrato visual', () => {
         assert.equal(kept.includes('px-8'), false);
     });
 
-    it('el CSS del contrato fija 48px, radio 12px, focus-visible y estados', () => {
+    it('el CSS del contrato fija 48px, padding compacto, radio 12px, focus-visible y estados', () => {
         const css = readFileSync(GLOBALS_CSS, 'utf8');
         assert.match(css, /\[data-component='Button'\]/);
         assert.match(css, /height:\s*var\(--tactil-minimo\)/);
         assert.match(css, /min-height:\s*var\(--tactil-minimo\)/);
+        assert.match(css, /padding-inline:\s*var\(--espacio-3\)/);
         assert.match(css, /border-radius:\s*var\(--radio-control\)/);
         assert.match(css, /font-size:\s*12px/);
         assert.match(css, /font-weight:\s*800/);
@@ -186,6 +189,11 @@ describe('Button className no escapa del contrato visual', () => {
         assert.match(css, /\[data-icon-only='true'\]/);
         assert.equal(css.includes('[data-variant=\'emerald\']'), false);
         assert.equal(css.includes('[data-variant=\'ghost\']'), false);
+    });
+
+    it('default de layout es hug en el componente', () => {
+        const source = readFileSync(BUTTON_SOURCE, 'utf8');
+        assert.match(source, /layout\s*=\s*['"]hug['"]/);
     });
 
     it('el componente emite identidad y no reenvía style', () => {
@@ -263,6 +271,28 @@ describe('Piloto Button en footers oficiales', () => {
                 searchFrom = idx + 7;
             }
             assert.ok(found > 0, `${rel} no tiene footer=`);
+        }
+    });
+
+    it('fill retenido solo en CTAs de jerarquía explícita (Caja)', () => {
+        const cashChange = readFileSync(
+            join(REPO_ROOT, 'src/components/CashChangeModal.tsx'),
+            'utf8'
+        );
+        const cashClosing = readFileSync(
+            join(REPO_ROOT, 'src/components/CashClosingModal.tsx'),
+            'utf8'
+        );
+        assert.equal((cashChange.match(/layout="fill"/g) || []).length, 2);
+        assert.equal((cashClosing.match(/layout="fill"/g) || []).length, 1);
+        for (const rel of PILOT_FOOTER_HOSTS) {
+            if (rel.includes('CashChange') || rel.includes('CashClosing')) continue;
+            const source = readFileSync(join(REPO_ROOT, rel), 'utf8');
+            assert.equal(
+                source.includes('layout="fill"'),
+                false,
+                `${rel} no debe forzar fill por defecto`
+            );
         }
     });
 });

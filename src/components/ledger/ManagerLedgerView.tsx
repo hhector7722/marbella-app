@@ -596,13 +596,11 @@ export default function ManagerLedgerView() {
                 headerTone="petroleum"
                 title="Eliminar Movimiento"
                 footer={
-                    <div className="flex w-full gap-3">
+                    <div className="flex w-full justify-end gap-3">
                         <Button
                             type="button"
                             variant="secondary"
-                            layout="fill"
                             instance="ledger-entry-delete-cancel"
-                            className="flex-1"
                             onClick={() => setDeleteModalOpen(false)}
                         >
                             Cancelar
@@ -610,9 +608,7 @@ export default function ManagerLedgerView() {
                         <Button
                             type="button"
                             variant="destructive"
-                            layout="fill"
                             instance="ledger-entry-delete-confirm"
-                            className="flex-1"
                             onClick={handleDelete}
                             disabled={isDeleting}
                             loading={isDeleting}

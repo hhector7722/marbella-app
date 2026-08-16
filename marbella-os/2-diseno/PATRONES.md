@@ -51,8 +51,8 @@ El patrón más usado del producto. Sus leyes están en [EXPERIENCIA §8](EXPERI
 - **`amplify`** — imagen o dato ampliado (`max-w-2xl`).
 
 **Reglas**:
-- El pie de acciones no se desplaza y no se encoge nunca (slot `footer` del componente).
-- La cabecera dice de qué es el modal, no qué debe hacer la persona. Altura fija; iconos sin marco/fondo por defecto.
+- La cabecera dice de qué es el modal, no qué debe hacer la persona. Altura fija (`estructura.cabecera-modal`); iconos sin marco/fondo por defecto. Radio único del panel (`radio.superficie`). Separación Header → Body fija (`espacio.3`).
+- El pie de acciones no se desplaza y no se encoge nunca (slot `footer` del componente). No fuerza botones a ancho completo.
 - Un modal no abre otro modal de tarea. Solo se admite **una superficie derivada** auxiliar ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)); el backdrop no acumula blur ([ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md)).
 - Al abrirse, las barras fijas de la aplicación se atenúan y dejan de responder al toque.
 - Sin scroll horizontal. Centrado respecto al viewport visible.

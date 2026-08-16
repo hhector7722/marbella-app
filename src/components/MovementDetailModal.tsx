@@ -103,7 +103,6 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                         <Button
                             type="button"
                             variant="secondary"
-                            layout="fill"
                             instance="treasury-movement-edit-back"
                             onClick={() => setIsEditing(false)}
                         >
@@ -233,11 +232,10 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                         </div>
                     </div>
                 ) : (
-                    <div className="grid w-full grid-cols-2 gap-3">
+                    <div className="flex w-full justify-end gap-3">
                         <Button
                             type="button"
                             variant="destructive"
-                            layout="fill"
                             instance="treasury-movement-delete"
                             icon={<Trash2 strokeWidth={2.5} />}
                             onClick={() => setIsDeleting(true)}
@@ -248,7 +246,6 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                             <Button
                                 type="button"
                                 variant="tertiary"
-                                layout="fill"
                                 instance="treasury-movement-edit"
                                 icon={<Edit2 strokeWidth={2.5} />}
                                 onClick={() => setIsEditing(true)}

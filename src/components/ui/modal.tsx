@@ -12,6 +12,7 @@ import {
     MODAL_COMPONENT_ID,
     MODAL_LAYER_Z_CLASS,
     modalBackdropDataAttr,
+    pickModalPanelClassName,
     registerModalSurface,
     resolveModalVariant,
     type ModalLayer,
@@ -94,7 +95,8 @@ function headerActionClassName(
 ) {
     const plain = opts?.plainForce || chrome === 'plain';
     return cn(
-        'flex h-[var(--modal-header-height)] max-h-full min-h-0 min-w-ds-tactil shrink-0 items-center justify-center border-0 shadow-none ring-0 outline-none transition-opacity active:opacity-70',
+        /* Chrome independiente de Button: cuadrado = alto de cabecera (36px). */
+        'flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 shadow-none ring-0 outline-none transition-opacity active:opacity-70',
         plain
             ? 'bg-transparent'
             : petroleum
@@ -160,7 +162,7 @@ function ModalPanelShell({
                 'flex w-full max-w-full flex-col overflow-hidden overflow-x-hidden rounded-ds-superficie bg-ds-superficie shadow-ds-modal outline-none',
                 'max-h-ds-modal',
                 preferTall && 'min-h-[min(20rem,var(--modal-max-height))]',
-                className
+                pickModalPanelClassName(className)
             )}
         >
             {hideHeader ? (
@@ -187,13 +189,16 @@ function ModalPanelShell({
                             })}
                         >
                             <ChevronLeft
-                                className="h-[clamp(1rem,3.2vw,1.25rem)] w-[clamp(1rem,3.2vw,1.25rem)]"
+                                className="h-[clamp(0.875rem,2.8vw,1rem)] w-[clamp(0.875rem,2.8vw,1rem)]"
                                 strokeWidth={onBackPlain ? 2.25 : undefined}
                             />
                         </button>
                     ) : (
                         <span
-                            className={cn('shrink-0', hideTitle || titleLeft ? 'w-0' : 'min-w-ds-tactil')}
+                            className={cn(
+                                'shrink-0',
+                                hideTitle || titleLeft ? 'w-0' : 'w-[var(--modal-header-height)]'
+                            )}
                             aria-hidden
                         />
                     )}
@@ -208,8 +213,8 @@ function ModalPanelShell({
                             <h2
                                 id={titleId}
                                 className={cn(
-                                    'max-h-full overflow-hidden font-black uppercase tracking-wide leading-tight break-words',
-                                    'text-[clamp(0.625rem,2.6vw,0.875rem)]',
+                                    'max-h-full overflow-hidden font-black uppercase tracking-wide leading-none break-words',
+                                    'text-[clamp(0.5625rem,2.4vw,0.75rem)]',
                                     petroleum ? 'text-white' : 'text-ds-texto-fuerte'
                                 )}
                             >
@@ -218,8 +223,8 @@ function ModalPanelShell({
                             {subtitle ? (
                                 <div
                                     className={cn(
-                                        'mt-0.5 overflow-hidden font-black uppercase tracking-[0.15em] leading-tight break-words',
-                                        'text-[clamp(0.5rem,2vw,0.625rem)]',
+                                        'mt-px overflow-hidden font-black uppercase tracking-[0.12em] leading-none break-words',
+                                        'text-[clamp(0.4375rem,1.8vw,0.5625rem)]',
                                         petroleum ? 'text-white/70' : 'text-zinc-500'
                                     )}
                                 >
@@ -241,7 +246,7 @@ function ModalPanelShell({
                                 className={headerActionClassName(petroleum, headerActionChrome)}
                             >
                                 <X
-                                    className="h-[clamp(1rem,3.2vw,1.25rem)] w-[clamp(1rem,3.2vw,1.25rem)]"
+                                    className="h-[clamp(0.875rem,2.8vw,1rem)] w-[clamp(0.875rem,2.8vw,1rem)]"
                                     strokeWidth={2.5}
                                 />
                             </button>

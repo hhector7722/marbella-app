@@ -84,11 +84,16 @@ export function resolveButtonAccessibleName(args: {
 }
 
 export const BUTTON_CONTRACT = {
+    /** Alto mínimo = `tactil.minimo`. El ancho por defecto es hug. */
     height: '48px',
     radius: '12px',
+    /** Padding horizontal compacto (`espacio.3`); no estirar el fondo. */
+    paddingInline: '12px',
     fontSize: '12px',
     fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: '0.1em',
     iconSlot: 'start',
+    /** Default de layout: hug. `fill` solo si el consumidor lo declara. */
+    defaultLayout: 'hug',
 } as const;

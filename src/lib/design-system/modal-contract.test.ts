@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, it, beforeEach } from 'node:test';
 
 import { CONSUMPTION_BOTTOM_SHEET_COMPONENT_ID } from './consumption-bottom-sheet.ts';
@@ -22,6 +24,7 @@ import {
     resetModalSurfaceStackForTests,
 } from './modal-layers.ts';
 import { DS_SCREEN_TOKENS } from './tokens.ts';
+import { pickModalPanelClassName } from './modal-panel-class.ts';
 
 describe('Modal identidad y variantes', () => {
     it('id de componente estable', () => {
@@ -53,7 +56,10 @@ describe('Modal identidad y variantes', () => {
     });
 
     it('tokens dimensionales alineados a Albaranes', () => {
-        assert.equal(DS_SCREEN_TOKENS.modalHeaderHeight, '72px');
+        assert.equal(DS_SCREEN_TOKENS.modalHeaderHeight, '36px');
+        assert.equal(DS_SCREEN_TOKENS.modalBodyStartGap, DS_SCREEN_TOKENS.espacio3);
+        assert.equal(DS_SCREEN_TOKENS.modalBodyStartGap, '12px');
+        assert.equal(DS_SCREEN_TOKENS.radioSuperficie, '16px');
         assert.match(DS_SCREEN_TOKENS.modalMaxHeight, /68dvh/);
         assert.match(DS_SCREEN_TOKENS.modalMaxHeight, /2\.5rem/);
         assert.equal(DS_SCREEN_TOKENS.modalOverlayBase, 'rgba(0, 0, 0, 0.32)');
@@ -67,6 +73,23 @@ describe('Modal identidad y variantes', () => {
         assert.equal(MODAL_LAYER_Z_CLASS.derived, 'z-[var(--z-modal-derived)]');
         assert.equal(MODAL_LAYER_Z_CLASS.system, 'z-[var(--z-modal-system)]');
         assert.equal(MODAL_LAYER_Z_CLASS.sheet, 'z-[var(--z-modal-sheet)]');
+    });
+
+    it('className del panel no puede sobrescribir el radio', () => {
+        const kept = pickModalPanelClassName(
+            'max-w-lg rounded-3xl rounded-[2rem] sm:rounded-2xl relative min-h-0'
+        );
+        assert.equal(kept, 'max-w-lg relative min-h-0');
+        assert.equal(kept.includes('rounded'), false);
+    });
+    it('CSS bloquea radio del panel, cabecera 36px y gap Header→Body 12px', () => {
+        const css = readFileSync(join(process.cwd(), 'src/app/globals.css'), 'utf8');
+        assert.match(css, /--modal-header-height:\s*36px/);
+        assert.match(css, /--modal-body-start-gap:\s*var\(--espacio-3\)/);
+        assert.match(css, /\[data-component='Modal'\] \[data-element='container'\]/);
+        assert.match(css, /border-radius:\s*var\(--radio-superficie\)/);
+        assert.match(css, /\[data-component='Modal'\] \[data-element='body'\]/);
+        assert.match(css, /padding-top:\s*var\(--modal-body-start-gap\)/);
     });
 });
 

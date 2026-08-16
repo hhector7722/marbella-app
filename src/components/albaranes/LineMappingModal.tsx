@@ -522,13 +522,11 @@ export function LineMappingModal({
       className="bg-zinc-50"
       disableUsageTracking
       footer={
-        <div className="flex w-full flex-col gap-1.5 sm:flex-row">
+        <div className="flex w-full flex-col gap-1.5 sm:flex-row sm:justify-end">
           <Button
             type="button"
             variant="tertiary"
-            layout="fill"
             instance="albaran-line-mapping-cancel"
-            className="flex-1"
             onClick={onClose}
             disabled={saving || busy}
           >
@@ -537,9 +535,7 @@ export function LineMappingModal({
           <Button
             type="button"
             variant="primary"
-            layout="fill"
             instance="albaran-line-mapping-save"
-            className="flex-1"
             onClick={() => void handleSave()}
             disabled={!canSave || loading || busy}
             loading={saving}

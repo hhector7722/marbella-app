@@ -628,6 +628,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                     <Button
                         type="button"
                         variant="primary"
+                        // fill explícito: CTA de avance absorbe el resto del pie junto a «Atrás» hug
                         layout="fill"
                         instance="cash-closing-advance"
                         className="flex-1"
@@ -806,7 +807,6 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                 <Button
                     type="button"
                     variant="primary"
-                    layout="fill"
                     instance="cash-closing-photo-instruction-continue"
                     onClick={() => instructionModal?.onContinue()}
                 >

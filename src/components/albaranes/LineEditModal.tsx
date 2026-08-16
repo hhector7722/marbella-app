@@ -59,7 +59,6 @@ export function LineEditModal({
         <Button
           type="button"
           variant="tertiary"
-          layout="fill"
           instance="albaran-line-edit-close"
           onClick={onClose}
           disabled={saving}

@@ -493,6 +493,7 @@ export const CashChangeModal = ({
                             <Button
                                 type="button"
                                 variant="primary"
+                                // fill explícito: acción primaria de canje ocupa 2/3 frente a salir
                                 layout="fill"
                                 instance="cash-change-single-save"
                                 className="flex-[2]"
@@ -504,6 +505,7 @@ export const CashChangeModal = ({
                             <Button
                                 type="button"
                                 variant="secondary"
+                                // fill explícito: pareja proporcional con la acción primaria (1/3)
                                 layout="fill"
                                 instance="cash-change-single-exit"
                                 className="flex-1"
@@ -618,7 +620,6 @@ export const CashChangeModal = ({
                     <Button
                         type="button"
                         variant="primary"
-                        layout="fill"
                         instance="cash-change-select-next"
                         onClick={() => canContinue && setStep('step1')}
                         disabled={!canContinue}

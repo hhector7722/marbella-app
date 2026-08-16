@@ -25,8 +25,10 @@
   --tactil-minimo: 48px;
   --elevacion-superficie: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --elevacion-modal: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-  /* Referencia Albaranes detalle: py-3 + min-h-12 ⇒ 72px */
-  --modal-header-height: 72px;
+  /* TOKENS estructura.cabecera-modal — altura fija global */
+  --modal-header-height: 36px;
+  /* Separación Header → Body (ref. detalle Albaranes) = espacio.3 */
+  --modal-body-start-gap: var(--espacio-3);
   /* Referencia Albaranes detalle: max-h 68dvh con safe-area */
   --modal-max-height: min(
     68dvh,
@@ -76,9 +78,26 @@
   max-width: 100%;
 }
 
+/*
+ * Separación contractual Header → Body.
+ * Solo padding-top (`espacio.3` / 12px). No inset completo.
+ * Vive en el shell: el consumidor no puede eliminarla con pt-0 en hijos.
+ */
+[data-component='Modal'] [data-element='body'] {
+  padding-top: var(--modal-body-start-gap);
+}
+
 [data-component='Modal'] [data-element='body'] table,
 [data-component='ConsumptionBottomSheet'] [data-element='body'] table {
   max-width: 100%;
+}
+
+/*
+ * Radio único del panel Modal (`radio.superficie`).
+ * Ningún className de consumidor puede sobrescribirlo.
+ */
+[data-component='Modal'] [data-element='container'] {
+  border-radius: var(--radio-superficie);
 }
 
 /*
@@ -95,7 +114,7 @@
   height: var(--tactil-minimo);
   min-height: var(--tactil-minimo);
   max-height: var(--tactil-minimo);
-  padding-inline: var(--espacio-4);
+  padding-inline: var(--espacio-3);
   border-width: 1px;
   border-style: solid;
   border-radius: var(--radio-control);

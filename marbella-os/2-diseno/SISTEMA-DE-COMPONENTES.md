@@ -41,7 +41,7 @@ Button
  └── label?
 ```
 
-**Variantes** (cerradas; nombres de código): `primary`, `secondary`, `tertiary`, `destructive`. No existe `success`, `positive`, `emerald`, `ghost`, `danger` ni quinta variante. Layout `hug` / `fill` no son variantes semánticas.
+**Variantes** (cerradas; nombres de código): `primary`, `secondary`, `tertiary`, `destructive`. No existe `success`, `positive`, `emerald`, `ghost`, `danger` ni quinta variante. Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`** (ancho = contenido + padding). `fill` / ancho completo solo cuando el consumidor lo declara. La altura mínima sigue siendo `tactil.minimo` (48 px). Padding horizontal compacto: `espacio.3`.
 
 **Estados**: reposo, hover (sin scale-up), pulsado (`scale(0.95)`), foco visible (anillo de marca), en curso (equivale a deshabilitado + spinner a la izquierda), deshabilitado (opacity 50). El estado visual de error no se implementa en v1: el error vive en el campo o el aviso.
 
@@ -54,10 +54,11 @@ Button
 - El icono no va a la derecha.
 - No se usa para navegar. Navegar es un enlace, aunque parezca un botón.
 - El chrome close/back de Modal y Navbar no es este componente. Tampoco `DashboardShortcut`.
+- El Footer de Modal no convierte los botones en `fill`; el consumidor decide.
 
 **Código**: `src/components/ui/button.tsx`, `src/lib/design-system/button-contract.ts`.
 
-**Estado**: existe. Piloto: footers de Modal en Albaranes y Caja/Tesorería. El resto de la aplicación sigue con recetas locales. `ActionButton` se retiró.
+**Estado**: existe. Piloto: footers de Modal en Albaranes y Caja/Tesorería. `fill` retenido solo donde hay jerarquía explícita de pie (avance de cierre de caja; canje single-box). El resto de la aplicación sigue con recetas locales. `ActionButton` se retiró.
 
 ### Campo de entrada
 
@@ -140,7 +141,9 @@ Piezas transversales con comportamiento propio y contrato estricto. **Estas sí 
 **Reglas**:
 - Respeta el área segura del dispositivo y usa el alto visible real, nunca el teórico.
 - Atenúa y desactiva las barras fijas de la aplicación mientras está abierto.
-- Cabecera fija (`estructura.cabecera-modal` = 72px) y pie no se desplazan; el pie no se encoge. Botones de cabecera sin marco/fondo por defecto.
+- Cabecera fija (`estructura.cabecera-modal` = 36px) y pie no se desplazan; el pie no se encoge. El contenido de cabecera (título, iconos, acciones) se adapta tipográficamente; no se trunca el título por la altura. Botones de cabecera (chrome) independientes de Button, cuadrados al alto de la cabecera.
+- **Separación Header → Body:** exactamente 12 px (`espacio.3` / `estructura.modal-cuerpo-inicio`) como `padding-top` del Body. No es padding completo del Body. El consumidor no decide ni elimina esa distancia (`pt-0` en hijos no la anula).
+- Radio único del panel: `radio.superficie` (16 px). El consumidor no puede sobrescribirlo con `className`.
 - **Nesting:** máximo una superficie derivada sobre el modal base ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)). Backdrop por capa sin blur acumulado ([ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md)).
 - Cero scroll horizontal en Modal, Header, Body, Footer y tablas internas.
 - Cerrar con cambios sin guardar pide confirmación. El consumidor usa `layer="system"`, no un segundo modal de tarea.

@@ -92,12 +92,10 @@ export function CashBoxEditModal({ box, onClose, onSuccess }: CashBoxEditModalPr
             headerTone="petroleum"
             usageId="cash-box-edit"
             usageLabel="Editar caja"
-            className="rounded-[2rem]"
             footer={
                 <Button
                     type="button"
                     variant="secondary"
-                    layout="fill"
                     instance="cash-box-edit-close"
                     onClick={onClose}
                 >
