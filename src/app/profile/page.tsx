@@ -7,6 +7,8 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { Avatar } from '@/components/ui/Avatar';
+import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 import { CreditCard, ChevronLeft } from 'lucide-react';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
 import NominasModal from '@/components/NominasModal';
@@ -710,23 +712,38 @@ function ProfileContent() {
                 </StaffSelectionModal>
             ) : null}
 
-            {/* Confirmación cerrar sesión */}
-            {logoutConfirm && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[110] flex items-center justify-center p-4" onClick={() => setLogoutConfirm(false)}>
-                    <div className="bg-white w-full max-w-sm rounded-3xl shadow-xl p-6 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <h3 className="text-lg font-black text-zinc-800 uppercase tracking-wider mb-2">Cerrar sesión</h3>
-                        <p className="text-zinc-500 text-sm mb-6">¿Seguro que quieres cerrar sesión?</p>
-                        <div className="flex gap-3">
-                            <button onClick={() => setLogoutConfirm(false)} className="flex-1 min-h-[48px] rounded-2xl border border-zinc-200 font-black text-zinc-700 text-sm uppercase tracking-widest hover:bg-zinc-50">
-                                Cancelar
-                            </button>
-                            <button onClick={handleLogout} className="flex-1 min-h-[48px] rounded-2xl bg-rose-500 text-white font-black text-sm uppercase tracking-widest hover:bg-rose-600">
-                                Cerrar sesión
-                            </button>
-                        </div>
+            <Modal
+                open={logoutConfirm}
+                onClose={() => setLogoutConfirm(false)}
+                title="Cerrar sesión"
+                variant="compact"
+                layer="system"
+                instance="profile-logout-confirm"
+                usageId="profile-logout-confirm"
+                usageLabel="Confirmar cerrar sesión"
+                footer={
+                    <div className="flex w-full flex-wrap items-center justify-end gap-2">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            instance="profile-logout-cancel"
+                            onClick={() => setLogoutConfirm(false)}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            instance="profile-logout-confirm-action"
+                            onClick={handleLogout}
+                        >
+                            Cerrar sesión
+                        </Button>
                     </div>
-                </div>
-            )}
+                }
+            >
+                <p className="px-6 pb-4 text-sm text-zinc-500">¿Seguro que quieres cerrar sesión?</p>
+            </Modal>
         </div>
     );
 }

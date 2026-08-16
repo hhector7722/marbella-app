@@ -37,8 +37,10 @@ export default function ContactoModal({ isOpen, onClose, phone }: ContactoModalP
             open={isOpen}
             onClose={onClose}
             title="Contacto"
-            headerVariant="petroleum"
-            className="rounded-3xl"
+            variant="compact"
+            layer="base"
+            instance="profile-contact"
+            headerTone="petroleum"
             usageId="profile-contact"
             usageLabel="Contacto perfil"
         >

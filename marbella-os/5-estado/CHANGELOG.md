@@ -38,6 +38,7 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-16
 
+- **Oleada 3 de Modal/Button: Perfil y documentos RRHH.** Los modales de datos personales, bancarios, contacto, menú documentos, nóminas, contrato, comunicados y PDF de empresa adoptan variante/capa/instancia y pierden overrides de radio y ancho. Cambio de contraseña y confirmación de logout pasan al `Modal` oficial con Button en footer. Condiciones laborales adoptan Button en Cancelar/Guardar/Eliminar. Fuera de oleada: `AvatarCropModal` y `StaffSelectionModal`. Se eliminan tres huérfanos sin consumidores.
 - **Modal: separación contractual Header → Body.** El Body del Modal lleva `padding-top` de 12 px (`espacio.3`, ref. detalle Albaranes). No es inset completo; el consumidor no puede eliminarlo. Los wrappers con `p-4`/`p-3` quedan con aire acumulado hasta una limpieza posterior.
 - **Modal: cabecera 36px y radio bloqueado.** `estructura.cabecera-modal` pasa de 72 a 36 px (norma global). El radio del panel queda fijado a `radio.superficie` (16 px); `className` no puede sobrescribirlo. Chrome de cabecera se adapta al alto sin crecer la barra. Backdrop/capas/nesting sin cambio de decisión.
 - **Button: hug por defecto, táctil 48.** El ancho por defecto es hug-content con padding `espacio.3`; la altura mínima sigue en `tactil.minimo` (48 px). Se retiran `layout="fill"` de footers piloto salvo jerarquía explícita en canje single-box y avance de cierre de caja. Sin variantes nuevas.

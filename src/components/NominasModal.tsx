@@ -206,8 +206,10 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
             open={isOpen}
             onClose={onClose}
             title={targetUserId ? 'Nóminas' : 'Mis nóminas'}
-            headerVariant="petroleum"
-            className="max-w-lg rounded-3xl"
+            variant="standard"
+            layer="base"
+            instance="nominas"
+            headerTone="petroleum"
             usageId="nominas"
             usageLabel="Nóminas"
             headerTrailing={uploadTrailing}

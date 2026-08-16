@@ -1,20 +1,18 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { Modal } from '@/components/ui/modal';
+import { Modal, type ModalLayer } from '@/components/ui/modal';
 import { cn } from '@/lib/utils';
-
-/** Modal staff: siempre centrado y más estrecho que la página. */
-export const STAFF_TIP_MODAL_PANEL_CLASS =
-  'flex w-full max-h-[min(88vh,28rem)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl';
 
 type StaffTipModalShellProps = {
   open?: boolean;
   title: string;
   onClose: () => void;
   children: ReactNode;
-  zClass?: string;
   bodyClassName?: string;
+  /** Capa semántica. Default `base`. Usar `derived` solo encima de un Modal base (ADR-0007). */
+  layer?: ModalLayer;
+  instance: string;
   usageId: string;
   usageLabel: string;
 };
@@ -24,8 +22,9 @@ export function StaffTipModalShell({
   title,
   onClose,
   children,
-  zClass = 'z-[120]',
   bodyClassName,
+  layer = 'base',
+  instance,
   usageId,
   usageLabel,
 }: StaffTipModalShellProps) {
@@ -34,11 +33,11 @@ export function StaffTipModalShell({
       open={open}
       onClose={onClose}
       title={title}
-      headerVariant="petroleum"
+      variant="compact"
+      layer={layer}
+      instance={instance}
+      headerTone="petroleum"
       headerCompact
-      className={STAFF_TIP_MODAL_PANEL_CLASS}
-      wrapperClassName="w-[calc(100%-2rem)] max-w-[min(20rem,calc(100vw-2rem))]"
-      zIndexClass={zClass}
       usageId={usageId}
       usageLabel={usageLabel}
     >

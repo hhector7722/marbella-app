@@ -1,22 +1,27 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import type { ModalLayer } from '@/components/ui/modal';
 import { StaffTipModalShell } from '@/components/tips/StaffTipModalShell';
 
 export function StaffTipBreakdownModal({
   title,
   onClose,
   children,
+  layer = 'base',
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  /** `base` si abre desde la página; `derived` si abre encima de otro Modal. */
+  layer?: ModalLayer;
 }) {
   return (
     <StaffTipModalShell
       title={title}
       onClose={onClose}
-      zClass="z-[130]"
+      layer={layer}
+      instance="staff-tip-breakdown"
       usageId="staff-tip-breakdown"
       usageLabel="Desglose propina"
     >

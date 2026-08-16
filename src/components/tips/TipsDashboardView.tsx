@@ -13,11 +13,12 @@ import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { TipOverrideModal, type TipOverrideDraft } from '@/components/tips/TipOverrideModal';
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { TipConfirmDistributionModal } from '@/components/tips/TipConfirmDistributionModal';
 import { TipDistributionHistorySection } from '@/components/tips/TipDistributionHistorySection';
 import { SanctionedTipMoney } from '@/components/tips/SanctionedTipMoney';
 import { TipExpandBadge, TipSinRegHeaderBadge } from '@/components/tips/TipColumnToggleBadge';
+import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 import {
   formatLocalIsoDateLabel,
   formatTipInt,
@@ -188,12 +189,6 @@ export default function TipsDashboardView({
   const [showHoursDetail, setShowHoursDetail] = useState(false);
   const [showSinRegCol, setShowSinRegCol] = useState(false);
   const [showPropDetail, setShowPropDetail] = useState(false);
-
-  useModalUsageTracking({
-    open: cashModal?.open ?? false,
-    usageId: `tips-cash-${cashModal?.poolType ?? 'pool'}`,
-    usageLabel: cashModal?.poolType === 'weekday' ? 'Propina entre semana' : 'Propina fin de semana',
-  });
 
   const tableColCount =
     5 + (showHoursDetail ? 2 : 0) + (showSinRegCol ? 1 : 0) + (showPropDetail ? 4 : 0);
@@ -499,20 +494,17 @@ export default function TipsDashboardView({
             </div>
 
             {canConfirmDistribution && (
-              <button
+              <Button
                 type="button"
-                onClick={() => setConfirmModalOpen(true)}
+                variant="primary"
+                layout="fill"
+                instance="tips-confirm-distribution-open"
+                icon={<CheckCircle2 size={18} strokeWidth={2.5} />}
                 disabled={loading || !preview || staffWithWorkedHours.length === 0}
-                className={cn(
-                  'w-full min-h-[48px] rounded-xl md:rounded-2xl font-black text-[11px] md:text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-[0.98]',
-                  loading || !preview || staffWithWorkedHours.length === 0
-                    ? 'bg-zinc-100 text-zinc-300 cursor-not-allowed'
-                    : 'bg-[#36606F] text-white hover:bg-[#2d505c] shadow-md'
-                )}
+                onClick={() => setConfirmModalOpen(true)}
               >
-                <CheckCircle2 size={18} strokeWidth={2.5} />
                 Confirmar reparto
-              </button>
+              </Button>
             )}
 
             <div className="bg-white rounded-xl md:rounded-3xl shadow-sm overflow-hidden">
@@ -878,33 +870,38 @@ export default function TipsDashboardView({
         <div className="scroll-end-touch" aria-hidden />
       </div>
 
-      {cashModal?.open && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[220] p-2 sm:p-4 animate-in fade-in duration-200"
-          onClick={() => setCashModal(null)}
+      {cashModal?.open ? (
+        <Modal
+          open
+          onClose={() => setCashModal(null)}
+          title={cashModal.poolType === 'weekday' ? 'Propina entre semana' : 'Propina fin de semana'}
+          variant="amplify"
+          layer="base"
+          instance={cashModal.poolType === 'weekday' ? 'tips-cash-weekday' : 'tips-cash-weekend'}
+          headerTone="petroleum"
+          usageId={`tips-cash-${cashModal.poolType}`}
+          usageLabel={
+            cashModal.poolType === 'weekday' ? 'Bote propina entre semana' : 'Bote propina fin de semana'
+          }
+          hideHeader
         >
-          <div
-            className="bg-white w-full max-w-2xl rounded-xl md:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <CashDenominationForm
-              key={`tip-cash-${cashModal.poolType}-${startDate}-${endDate}`}
-              type="in"
-              boxName={cashModal.poolType === 'weekday' ? 'Propina entre semana' : 'Propina fin de semana'}
-              onCancel={() => setCashModal(null)}
-              onSubmit={(total, breakdown, notes) => handleSaveCash(cashModal.poolType, total, breakdown, notes)}
-              initialCounts={breakdownToInitialCounts(
-                cashModal.poolType === 'weekday'
-                  ? preview?.pools?.weekday?.cashBreakdown
-                  : preview?.pools?.weekend?.cashBreakdown
-              )}
-              availableStock={{}}
-              submitLabel="Guardar bote"
-              variant="tipPool"
-            />
-          </div>
-        </div>
-      )}
+          <CashDenominationForm
+            key={`tip-cash-${cashModal.poolType}-${startDate}-${endDate}`}
+            type="in"
+            boxName={cashModal.poolType === 'weekday' ? 'Propina entre semana' : 'Propina fin de semana'}
+            onCancel={() => setCashModal(null)}
+            onSubmit={(total, breakdown, notes) => handleSaveCash(cashModal.poolType, total, breakdown, notes)}
+            initialCounts={breakdownToInitialCounts(
+              cashModal.poolType === 'weekday'
+                ? preview?.pools?.weekday?.cashBreakdown
+                : preview?.pools?.weekend?.cashBreakdown
+            )}
+            availableStock={{}}
+            submitLabel="Guardar bote"
+            variant="tipPool"
+          />
+        </Modal>
+      ) : null}
 
       {overrideModal?.open && (
         <TipOverrideModal

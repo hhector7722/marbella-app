@@ -41,9 +41,9 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 
 **Prioridad: alta.** No existe botón, campo, tarjeta, insignia ni estado vacío de sistema. Cada pantalla los reconstruye.
 
-**Pago parcial (2026-08-16):** existe `DashboardShortcut` (Master), el **contrato oficial de Modal** (Albaranes y Caja/Tesorería) y el **contrato oficial de Button** (piloto: footers de esos modales). Se retiró `ActionButton`. Siguen pendientes: resto de overlays de la allowlist (incluidos Staff/Admin que no son de caja), atajos Staff/Admin, botones fuera del piloto, y el resto de base (campo, tarjeta, vacío…).
+**Pago parcial (2026-08-16):** existe `DashboardShortcut` (Master), el **contrato oficial de Modal** (Albaranes, Caja/Tesorería y Perfil/documentos RRHH) y el **contrato oficial de Button** (footers de esos flujos y comandos de condiciones laborales). Se retiró `ActionButton`. Siguen pendientes: resto de overlays de la allowlist (incluidos Staff/Admin ajenos a los dominios migrados), atajos Staff/Admin, botones fuera de esos flujos, y el resto de base (campo, tarjeta, vacío…). `AvatarCropModal` y `StaffSelectionModal` quedan fuera de la oleada Perfil a propósito.
 
-**Coste residual**: deriva visual continua fuera de los pilotos; overlays legacy con z-index ad hoc hasta migrar. En Caja/Tesorería quedan deliberadamente legacy `QuickCalculatorModal` y `DenominationZoomModal` por el techo `base → derived` ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)).
+**Coste residual**: deriva visual continua fuera de los pilotos; overlays legacy con z-index ad hoc hasta migrar. En Caja/Tesorería quedan deliberadamente legacy `QuickCalculatorModal` y `DenominationZoomModal` por el techo `base → derived` ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)). En Perfil queda fuera `AvatarCropModal` (fullscreen de herramienta).
 
 **Disparador de pago**: continuar tras D1 parcial. Contrato en [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 

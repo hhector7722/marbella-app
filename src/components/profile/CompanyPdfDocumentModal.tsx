@@ -2,6 +2,7 @@
 
 import { ExternalLink, FileText } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 
 export type CompanyPdfDocumentKind = 'convenio' | 'conducta';
 
@@ -28,15 +29,18 @@ export default function CompanyPdfDocumentModal({ isOpen, onClose, documentKind 
     if (!documentKind) return null;
 
     const doc = DOCUMENTS[documentKind];
+    const instance = `company-pdf-${documentKind}`;
 
     return (
         <Modal
             open={isOpen}
             onClose={onClose}
             title={doc.title}
-            headerVariant="petroleum"
-            className="rounded-3xl"
-            usageId={`company-pdf-${documentKind}`}
+            variant="compact"
+            layer="base"
+            instance={instance}
+            headerTone="petroleum"
+            usageId={instance}
             usageLabel={doc.usageLabel}
         >
             <div className="flex flex-col items-center gap-6 p-8 py-6">
@@ -47,14 +51,16 @@ export default function CompanyPdfDocumentModal({ isOpen, onClose, documentKind 
                     <p className="mb-1 text-base font-black text-gray-800">{doc.title}</p>
                     <p className="text-xs font-medium text-gray-400">Documento PDF</p>
                 </div>
-                <button
+                <Button
                     type="button"
+                    variant="primary"
+                    layout="fill"
+                    instance={`${instance}-open`}
+                    icon={<ExternalLink size={20} />}
                     onClick={() => window.open(doc.path, '_blank', 'noopener,noreferrer')}
-                    className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-[#5B8FB9] font-bold text-white shadow-lg shadow-blue-200 transition-all hover:bg-[#4a7a9e] active:scale-95"
                 >
-                    <ExternalLink size={20} />
-                    <span>Abrir documento</span>
-                </button>
+                    Abrir documento
+                </Button>
                 <a
                     href={doc.path}
                     download

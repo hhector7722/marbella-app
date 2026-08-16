@@ -152,8 +152,10 @@ export default function DatosPersonalesModal({
             open={isOpen}
             onClose={onClose}
             title="Datos personales"
-            headerVariant="petroleum"
-            className="rounded-3xl"
+            variant="compact"
+            layer="base"
+            instance="profile-personal"
+            headerTone="petroleum"
             usageId="profile-personal"
             usageLabel="Datos personales"
         >

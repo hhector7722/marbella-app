@@ -21,6 +21,7 @@ import {
   staffEntryPropinaSinPen,
   tipAdjustmentValueClass,
 } from '@/lib/staff-tip-entry-display';
+import type { ModalLayer } from '@/components/ui/modal';
 import { SanctionedTipMoney } from '@/components/tips/SanctionedTipMoney';
 import { StaffTipDetailHintIcon } from '@/components/tips/StaffTipDetailHintIcon';
 import { StaffTipBreakdownModal } from '@/components/tips/StaffTipBreakdownModal';
@@ -96,7 +97,14 @@ function MetricCell({
   return <div className="flex min-w-0 w-full flex-col items-center px-0 py-1">{body}</div>;
 }
 
-export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry }) {
+export function StaffTipRepartoPanel({
+  entry,
+  breakdownLayer = 'base',
+}: {
+  entry: StaffTipHistoryEntry;
+  /** Layer del desglose: `base` en página; `derived` encima del detalle (ADR-0007). */
+  breakdownLayer?: ModalLayer;
+}) {
   const [detail, setDetail] = useState<DetailKind>(null);
 
   const periodLabel = `${formatLocalIsoDateLabel(entry.periodStart, 'd MMM')} – ${formatLocalIsoDateLabel(entry.periodEnd, 'd MMM yyyy')}`;
@@ -171,7 +179,11 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
       </div>
 
       {detail === 'hours' ? (
-        <StaffTipBreakdownModal title="Horas trabajadas" onClose={() => setDetail(null)}>
+        <StaffTipBreakdownModal
+          title="Horas trabajadas"
+          onClose={() => setDetail(null)}
+          layer={breakdownLayer}
+        >
           <StaffTipModalColumnGrid
             columns={[
               { label: 'Lun – Vie', value: fmtHours(entry.weekdayHours) },
@@ -182,7 +194,7 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
       ) : null}
 
       {detail === 'propina' ? (
-        <StaffTipBreakdownModal title="Propina" onClose={() => setDetail(null)}>
+        <StaffTipBreakdownModal title="Propina" onClose={() => setDetail(null)} layer={breakdownLayer}>
           <StaffTipModalColumnGrid
             columns={[
               {
@@ -201,7 +213,11 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
       ) : null}
 
       {detail === 'penalizacion' ? (
-        <StaffTipBreakdownModal title={adjustmentLabel} onClose={() => setDetail(null)}>
+        <StaffTipBreakdownModal
+          title={adjustmentLabel}
+          onClose={() => setDetail(null)}
+          layer={breakdownLayer}
+        >
           <StaffTipModalColumnGrid
             columns={[
               {
@@ -224,7 +240,11 @@ export function StaffTipRepartoPanel({ entry }: { entry: StaffTipHistoryEntry })
       ) : null}
 
       {detail === 'propinaFinal' ? (
-        <StaffTipBreakdownModal title="Propina final" onClose={() => setDetail(null)}>
+        <StaffTipBreakdownModal
+          title="Propina final"
+          onClose={() => setDetail(null)}
+          layer={breakdownLayer}
+        >
           <div className="flex items-start gap-0.5">
             <div className="flex min-w-0 flex-1 flex-col items-center px-0.5 py-1">
               <div className="flex h-10 w-full shrink-0 items-center justify-center">

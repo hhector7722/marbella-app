@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ArrowLeft, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import {
   deleteLaborTerm,
   getEmployeeLaborConditions,
@@ -630,48 +631,48 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
 
               <div className="mt-6 flex shrink-0 flex-col gap-2">
                 <div className="flex shrink-0 gap-2">
-                  <button
-                    type="button"
-                    disabled={saving || deleting}
-                    onClick={closeEditor}
-                    className={cn(
-                      'flex min-h-12 flex-1 items-center justify-center rounded-xl border border-zinc-200',
-                      'text-[10px] font-black uppercase tracking-widest text-zinc-700',
-                      'active:scale-[0.98]',
-                    )}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="button"
-                    disabled={saving || deleting}
-                    onClick={() => void handleSave()}
-                    className={cn(
-                      'flex min-h-12 flex-1 items-center justify-center rounded-xl',
-                      'bg-emerald-600 text-[10px] font-black uppercase tracking-widest text-white',
-                      'active:scale-[0.98]',
-                      (saving || deleting) && 'opacity-60',
-                    )}
-                  >
-                    {saving ? 'Guardando…' : 'Guardar'}
-                  </button>
+                  <div className="min-w-0 flex-1">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      layout="fill"
+                      instance="labor-conditions-cancel"
+                      disabled={saving || deleting}
+                      onClick={closeEditor}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <Button
+                      type="button"
+                      variant="primary"
+                      layout="fill"
+                      instance="labor-conditions-save"
+                      disabled={saving || deleting}
+                      loading={saving}
+                      loadingLabel="Guardando…"
+                      onClick={() => void handleSave()}
+                    >
+                      Guardar
+                    </Button>
+                  </div>
                 </div>
 
                 {editMode === 'rewrite' && terms.length > 1 ? (
-                  <button
+                  <Button
                     type="button"
+                    variant="destructive"
+                    layout="fill"
+                    instance="labor-conditions-delete-term"
+                    icon={<Trash2 className="size-4 shrink-0" strokeWidth={2.25} />}
                     disabled={saving || deleting}
+                    loading={deleting}
+                    loadingLabel="Eliminando…"
                     onClick={() => void handleDelete()}
-                    className={cn(
-                      'flex min-h-12 w-full shrink-0 items-center justify-center gap-2 rounded-xl',
-                      'border border-red-200 bg-red-50 text-[10px] font-black uppercase tracking-widest text-red-700',
-                      'active:scale-[0.98]',
-                      (saving || deleting) && 'opacity-60',
-                    )}
                   >
-                    <Trash2 className="size-4 shrink-0" strokeWidth={2.25} />
-                    {deleting ? 'Eliminando…' : 'Eliminar este tramo'}
-                  </button>
+                    Eliminar este tramo
+                  </Button>
                 ) : null}
               </div>
             </div>

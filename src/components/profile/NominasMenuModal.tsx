@@ -27,8 +27,10 @@ export default function NominasMenuModal({ isOpen, onClose, onSelect }: NominasM
             open={isOpen}
             onClose={onClose}
             title="Documentos"
-            headerVariant="petroleum"
-            className="rounded-3xl"
+            variant="compact"
+            layer="base"
+            instance="documentos-menu"
+            headerTone="petroleum"
             usageId="documentos-menu"
             usageLabel="Menú documentos"
         >

@@ -17,10 +17,12 @@ export function StaffTipDistributionDetailModal({
     <StaffTipModalShell
       title="Reparto"
       onClose={onClose}
+      layer="base"
+      instance="staff-tip-distribution-detail"
       usageId="staff-tip-distribution-detail"
       usageLabel="Detalle reparto propinas"
     >
-      <StaffTipRepartoPanel entry={entry} />
+      <StaffTipRepartoPanel entry={entry} breakdownLayer="derived" />
     </StaffTipModalShell>
   );
 }
