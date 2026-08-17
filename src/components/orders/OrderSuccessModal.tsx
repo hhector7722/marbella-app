@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { Download, Share2, Send } from 'lucide-react';
-import { cn } from "@/lib/utils";
 import { toast } from 'sonner';
 import { pdfFirstPageToPngBlob } from '@/utils/orders/pdf-to-image';
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 
 interface OrderSuccessModalProps {
     isOpen: boolean;
@@ -24,8 +24,6 @@ export function OrderSuccessModal({
     pdfUrl,
     generatedBlob,
     supplierPhone,
-    isUploading,
-    isGenerating = false,
     onClose,
     onDownload
 }: OrderSuccessModalProps) {
@@ -34,16 +32,6 @@ export function OrderSuccessModal({
     const [cachedPngBlob, setCachedPngBlob] = useState<Blob | null>(null);
     const [showConfirmEnviar, setShowConfirmEnviar] = useState(false);
 
-    useModalUsageTracking({
-        open: isOpen,
-        usageId: 'order-success',
-        usageLabel: 'Pedido guardado',
-    });
-    useModalUsageTracking({
-        open: showConfirmEnviar,
-        usageId: 'order-success-confirm-send',
-        usageLabel: 'Confirmar envío pedido',
-    });
     const trackConfirmSend = useTrackModalApply('order-success-confirm-send', 'Confirmar envío pedido');
 
     useEffect(() => {
@@ -74,8 +62,6 @@ export function OrderSuccessModal({
     useEffect(() => {
         if (!isOpen) setShowConfirmEnviar(false);
     }, [isOpen]);
-
-    if (!isOpen) return null;
 
     const mensaje = 'Adjunto pedido.\n\nRecordad enviar el albarán a marbellaremote@gmail.com.\n\nGracias.';
 
@@ -176,20 +162,33 @@ export function OrderSuccessModal({
     };
 
     const iframeSrc = pdfUrl || previewUrl;
+    const actionsDisabled = isCapturing || !generatedBlob;
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[80] p-4 lg:p-8 animate-in fade-in duration-300">
-            <div className="bg-white rounded-[2.5rem] w-full max-w-[320px] overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-300 flex flex-col pointer-events-auto max-h-[92vh]">
-
-                {/* Header */}
-                <div className="bg-[#36606F] py-5 px-6 flex flex-col items-center justify-center text-center relative shrink-0">
-                    <h2 className="text-xl font-black text-white uppercase tracking-wider leading-tight">Pedido Guardado</h2>
-                </div>
-
-                {/* Body */}
-                <div className="p-5 flex flex-col gap-4 overflow-y-auto min-h-[300px] justify-center text-zinc-900">
-
-                    {/* Visor nativo (Zero-Dependency): iframe con PDF o blob */}
+        <>
+            <Modal
+                open={isOpen}
+                onClose={onClose}
+                title="Pedido Guardado"
+                variant="compact"
+                layer="base"
+                instance="order-success"
+                headerTone="petroleum"
+                usageId="order-success"
+                usageLabel="Pedido guardado"
+                footer={
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        instance="order-success-back"
+                        layout="fill"
+                        onClick={onClose}
+                    >
+                        Atrás
+                    </Button>
+                }
+            >
+                <div className="flex flex-col gap-4">
                     <div className="w-full bg-zinc-50 rounded-xl border border-zinc-200 overflow-hidden relative">
                         {iframeSrc ? (
                             <iframe
@@ -204,79 +203,82 @@ export function OrderSuccessModal({
                         )}
                     </div>
 
-                    {/* Actions Row */}
-                    <div className="grid grid-cols-3 gap-2 mt-1 shrink-0">
-                        <button
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            instance="order-success-download"
+                            layout="hug"
+                            icon={<Download size={18} />}
+                            disabled={actionsDisabled}
                             onClick={onDownload}
-                            disabled={isCapturing || !generatedBlob}
-                            className={cn(
-                                "flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl transition-all active:scale-95 disabled:opacity-50",
-                                "bg-white border border-zinc-100 hover:bg-zinc-50 shadow-sm min-h-[48px]"
-                            )}
                         >
-                            <Download size={18} className="text-[#36606F]" />
-                            <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Descargar</span>
-                        </button>
-
-                        <button
-                            onClick={handleShare}
-                            disabled={isCapturing || !generatedBlob}
-                            className={cn(
-                                "flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl transition-all active:scale-95 disabled:opacity-50",
-                                "bg-white border border-zinc-100 hover:bg-zinc-50 shadow-sm min-h-[48px]"
-                            )}
+                            Descargar
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            instance="order-success-share"
+                            layout="hug"
+                            icon={<Share2 size={18} />}
+                            disabled={actionsDisabled}
+                            onClick={() => void handleShare()}
                         >
-                            <Share2 size={18} className="text-[#36606F]" />
-                            <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Enviar</span>
-                        </button>
-
-                        <button
-                            onClick={handleProveedor}
-                            disabled={isCapturing || !generatedBlob || !supplierPhone}
-                            className={cn(
-                                "flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl transition-all active:scale-95 disabled:opacity-50",
-                                "bg-[#7C4DBC] hover:bg-[#6A3DAA] shadow-sm min-h-[48px]"
-                            )}
+                            Enviar
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="primary"
+                            instance="order-success-supplier"
+                            layout="hug"
+                            icon={<Send size={18} />}
+                            disabled={actionsDisabled || !supplierPhone}
+                            onClick={() => void handleProveedor()}
                         >
-                            <Send size={18} className="text-white" />
-                            <span className="text-[8px] font-black text-white uppercase tracking-widest">Proveedor</span>
-                        </button>
-                    </div>
-
-                    {/* Main Action */}
-                    <button
-                        onClick={onClose}
-                        className="w-full h-11 bg-rose-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-sm hover:bg-rose-700 active:scale-95 transition-all flex items-center justify-center shrink-0 min-h-[48px]"
-                    >
-                        Atrás
-                    </button>
-                </div>
-            </div>
-
-            {/* Modal de confirmación: ¿Enviar pedido al proveedor? */}
-            {showConfirmEnviar && (
-                <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-[90] rounded-[2.5rem] animate-in fade-in duration-200">
-                    <div className="bg-white rounded-2xl p-6 mx-4 max-w-[280px] shadow-xl">
-                        <p className="text-center text-sm font-medium text-zinc-700 mb-4">
-                            ¿Estás seguro de que deseas enviar el pedido al proveedor?
-                        </p>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => setShowConfirmEnviar(false)}
-                                className="flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-wider bg-zinc-100 hover:bg-zinc-200 text-zinc-700 transition-all"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                onClick={handleConfirmEnviar}
-                                className="flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-wider bg-emerald-500 hover:bg-emerald-600 text-white transition-all min-h-[48px]"
-                            >
-                                Sí, enviar
-                            </button>
-                        </div>
+                            Proveedor
+                        </Button>
                     </div>
                 </div>
-            )}
-        </div>
+            </Modal>
+
+            <Modal
+                open={isOpen && showConfirmEnviar}
+                onClose={() => setShowConfirmEnviar(false)}
+                title="Enviar pedido"
+                variant="compact"
+                layer="derived"
+                instance="order-success-confirm-send"
+                usageId="order-success-confirm-send"
+                usageLabel="Confirmar envío pedido"
+                footer={
+                    <div className="flex w-full gap-2">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            instance="order-success-confirm-cancel"
+                            layout="fill"
+                            className="flex-1"
+                            onClick={() => setShowConfirmEnviar(false)}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="primary"
+                            instance="order-success-confirm-submit"
+                            layout="fill"
+                            className="flex-1"
+                            onClick={handleConfirmEnviar}
+                        >
+                            Sí, enviar
+                        </Button>
+                    </div>
+                }
+            >
+                <p className="text-sm font-medium text-zinc-700">
+                    ¿Estás seguro de que deseas enviar el pedido al proveedor?
+                </p>
+            </Modal>
+        </>
     );
 }

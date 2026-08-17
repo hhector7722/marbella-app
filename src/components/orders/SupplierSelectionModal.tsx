@@ -100,15 +100,15 @@ export function SupplierSelectionModal({ isOpen, onClose }: Props) {
                     <Package size={12} /> Selecciona proveedor
                 </span>
             }
-            headerVariant="petroleum"
+            variant="standard"
+            layer="base"
+            instance="supplier-selection"
+            headerTone="petroleum"
             usageId="supplier-selection"
             usageLabel="Selección de proveedor"
-            wrapperClassName="max-w-lg"
-            className="max-h-[85vh]"
             scrollContent={false}
-            zIndexClass="z-[200]"
         >
-            <div className="p-4 bg-white flex-1 overflow-hidden flex flex-col">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white p-2.5 sm:p-3">
                 <div className="relative mb-4 shrink-0">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
@@ -120,7 +120,7 @@ export function SupplierSelectionModal({ isOpen, onClose }: Props) {
                     />
                 </div>
 
-                <div className="overflow-y-auto no-scrollbar grid grid-cols-3 sm:grid-cols-4 gap-5 p-2">
+                <div className="overflow-y-auto no-scrollbar grid grid-cols-3 sm:grid-cols-4 gap-5">
                     {loading ? (
                         <div className="col-span-full py-10 flex justify-center">
                             <span className="text-sm font-bold text-gray-400 animate-pulse">Cargando proveedores...</span>

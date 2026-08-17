@@ -17,7 +17,6 @@ export const OFFICIAL_OVERLAY_HOSTS = [
  * Quitar una ruta de aquí solo cuando el fichero deje de disparar la huella.
  */
 export const LEGACY_PARALLEL_OVERLAY_ALLOWLIST = [
-    'src/app/dashboard/consumo-personal/page.tsx',
     'src/app/dashboard/eventos/EventosAdminClient.tsx',
     'src/app/dashboard/history/page.tsx',
     'src/app/dashboard/insights/InsightsClient.tsx',
@@ -37,12 +36,10 @@ export const LEGACY_PARALLEL_OVERLAY_ALLOWLIST = [
     'src/app/recipes/[id]/page.tsx',
     'src/app/recipes/page.tsx',
     'src/app/reporte/page.tsx',
-    'src/app/staff/ConsumptionModal.tsx',
     'src/app/staff/actividades/gestion/page.tsx',
     'src/app/staff/history/WeekCard.tsx',
     'src/app/staff/history/page.tsx',
     'src/app/staff/reservas/ReservasClient.tsx',
-    'src/app/suppliers/page.tsx',
     'src/components/CreateIngredientModal.tsx',
     'src/components/CreateRecipeModal.tsx',
     'src/components/PushNotificationsPrompt.tsx',
@@ -50,7 +47,6 @@ export const LEGACY_PARALLEL_OVERLAY_ALLOWLIST = [
     'src/components/carta/MenuCategoryEditModal.tsx',
     'src/components/carta/MenuItemEditModal.tsx',
     'src/components/chat/ChatMarbella.tsx',
-    'src/components/consumo-personal/ConsumptionRecipeOrderModal.tsx',
     'src/components/dashboards/AdminDashboardView.tsx',
     'src/components/dashboards/DashboardVentasSection.tsx',
     'src/components/dashboards/StaffDashboardView.tsx',
@@ -59,8 +55,6 @@ export const LEGACY_PARALLEL_OVERLAY_ALLOWLIST = [
     'src/components/kds/NotesModal.tsx',
     'src/components/modals/AttendanceDetailModal.tsx',
     'src/components/modals/StaffScheduleModal.tsx',
-    'src/components/orders/OrderProductCard.tsx',
-    'src/components/orders/OrderSuccessModal.tsx',
     'src/components/pavilion/PavilionActivityPdfModal.tsx',
     'src/components/pavilion/PavilionDayModal.tsx',
     'src/components/reservas/DayAgendaModal.tsx',

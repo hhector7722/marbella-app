@@ -18,9 +18,11 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Loader2, RotateCcw, Save, X } from 'lucide-react';
+import { GripVertical, Loader2, RotateCcw, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { ConsumptionBottomSheet } from '@/components/ui/ConsumptionBottomSheet';
+import { Button } from '@/components/ui/button';
 import {
   getConsumptionRecipesForOrderEditor,
   saveConsumptionRecipeDisplayOrder,
@@ -196,92 +198,80 @@ export function ConsumptionRecipeOrderModal({
     onClose();
   };
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-[200] flex items-end justify-center bg-gray-900/80 p-4 backdrop-blur-sm sm:items-center">
-      <div className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-        <div className="flex shrink-0 items-center justify-between bg-[#36606F] px-5 py-4 text-white">
-          <div>
-            <h2 className="text-lg font-bold">Orden de productos</h2>
-            <p className="text-xs text-white/80">
-              Este orden lo ve todo el staff al fichar salida
-            </p>
-          </div>
-          <button
+    <ConsumptionBottomSheet
+      open={open}
+      onClose={onClose}
+      title="Orden de productos"
+      instance="consumption-order"
+      hideCloseButton={saving}
+      footer={
+        <div className="flex w-full flex-col gap-2">
+          <Button
             type="button"
-            onClick={onClose}
-            disabled={saving}
-            className="min-h-12 min-w-12 shrink-0 rounded-full bg-black/15 p-2 hover:bg-black/25"
-            aria-label="Cerrar"
-          >
-            <X className="mx-auto h-6 w-6" />
-          </button>
-        </div>
-
-        <div className="flex shrink-0 gap-2 border-b border-zinc-100 px-4 pt-3">
-          {(['drinks', 'food'] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setStep(tab)}
-              className={cn(
-                'min-h-12 flex-1 rounded-t-xl text-sm font-bold transition-colors',
-                step === tab
-                  ? 'bg-emerald-50 text-emerald-800'
-                  : 'text-zinc-500 hover:bg-zinc-50',
-              )}
-            >
-              {tab === 'drinks' ? 'Bebidas' : 'Comida'}
-            </button>
-          ))}
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
-          {loading ? (
-            <div className="flex justify-center py-16">
-              <Loader2 className="h-10 w-10 animate-spin text-zinc-300" />
-            </div>
-          ) : (
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={activeIds} strategy={verticalListSortingStrategy}>
-                <div className="flex flex-col gap-2">
-                  {activeRecipes.map((recipe, index) => (
-                    <SortableRecipeRow key={recipe.id} recipe={recipe} index={index} />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
-          )}
-        </div>
-
-        <div className="shrink-0 space-y-2 border-t border-zinc-100 bg-white p-4">
-          <button
-            type="button"
+            variant="secondary"
+            instance="consumption-order-reset"
+            layout="fill"
+            icon={<RotateCcw className="h-4 w-4" />}
+            disabled={loading || saving}
             onClick={handleResetStepToDefault}
-            disabled={loading || saving}
-            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-zinc-200 text-sm font-bold text-zinc-700 hover:bg-zinc-50"
           >
-            <RotateCcw className="h-4 w-4" />
             Restaurar {step === 'drinks' ? 'bebidas' : 'comida'} (acceso rápido)
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            onClick={() => void handleSave()}
+            variant="primary"
+            instance="consumption-order-save"
+            layout="fill"
+            icon={<Save className="h-4 w-4" />}
             disabled={loading || saving}
-            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-70"
+            loading={saving}
+            loadingLabel="Guardando"
+            onClick={() => void handleSave()}
           >
-            {saving ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <>
-                <Save className="h-4 w-4" />
-                Guardar orden
-              </>
-            )}
-          </button>
+            Guardar orden
+          </Button>
         </div>
+      }
+    >
+      <p className="px-4 pt-1 text-xs font-semibold text-zinc-500">
+        Este orden lo ve todo el staff al fichar salida
+      </p>
+      <div className="flex shrink-0 gap-2 border-b border-zinc-100 px-4 pt-3">
+        {(['drinks', 'food'] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setStep(tab)}
+            className={cn(
+              'min-h-12 flex-1 rounded-t-xl text-sm font-bold transition-colors',
+              step === tab
+                ? 'bg-emerald-50 text-emerald-800'
+                : 'text-zinc-500 hover:bg-zinc-50',
+            )}
+          >
+            {tab === 'drinks' ? 'Bebidas' : 'Comida'}
+          </button>
+        ))}
       </div>
-    </div>
+
+      <div className="min-h-0 flex-1 p-4">
+        {loading ? (
+          <div className="flex justify-center py-16">
+            <Loader2 className="h-10 w-10 animate-spin text-zinc-300" />
+          </div>
+        ) : (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={activeIds} strategy={verticalListSortingStrategy}>
+              <div className="flex flex-col gap-2">
+                {activeRecipes.map((recipe, index) => (
+                  <SortableRecipeRow key={recipe.id} recipe={recipe} index={index} />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        )}
+      </div>
+    </ConsumptionBottomSheet>
   );
 }

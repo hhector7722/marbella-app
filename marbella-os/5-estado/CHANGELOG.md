@@ -36,6 +36,12 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
 
+## 2026-08-17
+
+- **Oleada 6 de Modal/Button: Consumo personal.** El fichaje de consumo y el orden de productos adoptan `ConsumptionBottomSheet`; el detalle de día usa `Modal` `standard`/`base`. La ración Entero/Medio queda inline en el sheet. CTAs de pie y error usan `Button`. `StaffSelectionModal` y `TimeFilterModal` siguen residuales compartidos.
+- **Oleada 5 de Modal/Button: Pedidos / Proveedores.** Resumen, selector de proveedor, zoom de producto, éxito de pedido (con confirmación de envío derivada) y ficha/alta/edición de proveedor adoptan `Modal` con variante/capa/instancia. CTAs de tramitar, continuar, éxito y CRUD de proveedor usan `Button`. `QuickCalculatorModal` sigue residual compartido. El popup de categoría y el `window.confirm` de Pedido Nuevo no se tocan.
+- **Oleada 4 de Modal/Button: Propinas.** Shell de bote, ajuste/sanción, confirmación de reparto y modales staff adoptan `Modal` con variante/capa/instancia; CTAs de confirmación y footers usan `Button`. `QuickCalculatorModal` y `DenominationZoomModal` siguen residuales compartidos (como en Caja). `TimeFilterModal`, `StaffSelectionModal` y `CashDenominationForm` no se tocan.
+
 ## 2026-08-16
 
 - **Oleada 3 de Modal/Button: Perfil y documentos RRHH.** Los modales de datos personales, bancarios, contacto, menú documentos, nóminas, contrato, comunicados y PDF de empresa adoptan variante/capa/instancia y pierden overrides de radio y ancho. Cambio de contraseña y confirmación de logout pasan al `Modal` oficial con Button en footer. Condiciones laborales adoptan Button en Cancelar/Guardar/Eliminar. Fuera de oleada: `AvatarCropModal` y `StaffSelectionModal`. Se eliminan tres huérfanos sin consumidores.

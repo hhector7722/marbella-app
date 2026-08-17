@@ -59,6 +59,25 @@
 }
 
 /*
+ * Capas z del contrato (ADR-0007). Tokens --z-modal-*.
+ * Las clases Tailwind se construyen en src/lib (fuera del content JIT),
+ * así que la capa se materializa aquí por data-layer, igual que el backdrop.
+ */
+[data-component='Modal'][data-layer='base'] {
+  z-index: var(--z-modal-base);
+}
+[data-component='Modal'][data-layer='derived'] {
+  z-index: var(--z-modal-derived);
+}
+[data-component='Modal'][data-layer='system'] {
+  z-index: var(--z-modal-system);
+}
+[data-component='Modal'][data-layer='sheet'],
+[data-component='ConsumptionBottomSheet'][data-layer='sheet'] {
+  z-index: var(--z-modal-sheet);
+}
+
+/*
  * Cero scroll horizontal en superficies del contrato Modal / BottomSheet.
  * El Body puede hacer scroll vertical; nunca horizontal.
  */

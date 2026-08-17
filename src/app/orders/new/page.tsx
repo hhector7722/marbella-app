@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Search, ChevronDown, Check, ArrowRight, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Button } from '@/components/ui/button';
 import { createClient } from "@/utils/supabase/client";
 import { OrderProductCard } from "@/components/orders/OrderProductCard";
 import { toast, Toaster } from 'sonner';
@@ -317,21 +318,27 @@ export default function NewOrderPage() {
 
                         {selectedItems.length > 0 && selectedSupplier ? (
                             <div className="flex items-center gap-2">
-                                <button
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    instance="order-new-reset"
+                                    layout="fill"
+                                    className="flex-1"
+                                    icon={<Plus className="h-3.5 w-3.5" strokeWidth={4} />}
                                     onClick={handleNewOrder}
-                                    className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-black shadow-sm transition-all hover:bg-zinc-50 active:scale-95 animate-in zoom-in duration-200"
                                 >
-                                    <span>Pedido Nuevo</span>
-                                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-500 shadow-sm">
-                                        <Plus className="h-3.5 w-3.5 stroke-[4px] text-white" />
-                                    </div>
-                                </button>
-                                <button
+                                    Pedido Nuevo
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="primary"
+                                    instance="order-new-tramitar"
+                                    layout="fill"
+                                    className="flex-1"
                                     onClick={() => setIsSummaryOpen(true)}
-                                    className="flex min-h-12 flex-1 items-center justify-center rounded-xl bg-emerald-500 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-sm transition-all hover:bg-emerald-600 active:scale-95 animate-in zoom-in duration-200"
                                 >
-                                    Tramitar ({selectedItems.length})
-                                </button>
+                                    {`Tramitar (${selectedItems.length})`}
+                                </Button>
                             </div>
                         ) : null}
                     </div>

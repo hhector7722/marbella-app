@@ -90,6 +90,10 @@ describe('Modal identidad y variantes', () => {
         assert.match(css, /border-radius:\s*var\(--radio-superficie\)/);
         assert.match(css, /\[data-component='Modal'\] \[data-element='body'\]/);
         assert.match(css, /padding-top:\s*var\(--modal-body-start-gap\)/);
+        assert.match(css, /\[data-component='Modal'\]\[data-layer='base'\]/);
+        assert.match(css, /z-index:\s*var\(--z-modal-base\)/);
+        assert.match(css, /z-index:\s*var\(--z-modal-derived\)/);
+        assert.match(css, /z-index:\s*var\(--z-modal-system\)/);
     });
 });
 

@@ -91,7 +91,7 @@ const TIP_TABLE_DATA_CELL = cn(
   TIP_TABLE_BODY_TEXT
 );
 const TIP_TABLE_NAME_TH =
-  'sticky left-0 z-10 max-w-none whitespace-nowrap bg-[#36606F] px-2.5 text-left align-middle';
+  'sticky left-0 z-[1] max-w-none whitespace-nowrap bg-[#36606F] px-2.5 text-left align-middle';
 const TIP_TABLE_NAME_TD = cn(
   'sticky left-0 z-[1] max-w-none whitespace-nowrap bg-white px-2.5 py-2 cursor-pointer align-middle',
   TIP_TABLE_BODY_TEXT,
@@ -514,7 +514,7 @@ export default function TipsDashboardView({
                   Calculando…
                 </div>
               )}
-              <div className="overflow-x-auto touch-pan-y overscroll-y-auto">
+              <div className="isolate overflow-x-auto touch-pan-y overscroll-y-auto">
                 <table className="w-full table-fixed border-collapse">
                   <thead>
                     <tr className="align-middle bg-[#36606F] text-white">
@@ -884,6 +884,10 @@ export default function TipsDashboardView({
             cashModal.poolType === 'weekday' ? 'Bote propina entre semana' : 'Bote propina fin de semana'
           }
           hideHeader
+          scrollContent={false}
+          ariaLabel={
+            cashModal.poolType === 'weekday' ? 'Propina entre semana' : 'Propina fin de semana'
+          }
         >
           <CashDenominationForm
             key={`tip-cash-${cashModal.poolType}-${startDate}-${endDate}`}

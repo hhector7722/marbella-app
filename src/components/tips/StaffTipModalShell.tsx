@@ -41,7 +41,7 @@ export function StaffTipModalShell({
       usageId={usageId}
       usageLabel={usageLabel}
     >
-      <div className={cn('p-3', bodyClassName)}>{children}</div>
+      <div className={cn('p-2.5 sm:p-3', bodyClassName)}>{children}</div>
     </Modal>
   );
 }

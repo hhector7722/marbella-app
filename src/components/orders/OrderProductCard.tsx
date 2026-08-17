@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Minus, Plus, Trash2, Package } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
 import { cn } from "@/lib/utils";
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Modal } from '@/components/ui/modal';
 
 interface Ingredient {
     id: string;
@@ -47,12 +47,6 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
 
     // This ref tells us if the user is currently interacting and hasn't saved yet
     const isDirtyRef = useRef(false);
-
-    useModalUsageTracking({
-        open: showModal,
-        usageId: 'order-product-edit',
-        usageLabel: 'Editar producto pedido',
-    });
 
     // 1. Sync from Props
     useEffect(() => {
@@ -310,16 +304,23 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
         <div className="relative group overflow-hidden h-full">
             {renderCard(false)}
 
-            {showModal && (
-                <div
-                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 p-4"
-                    onClick={() => setShowModal(false)}
-                >
-                    <div onClick={(e) => e.stopPropagation()} className="animate-in zoom-in-95 duration-200">
-                        {renderCard(true)}
-                    </div>
+            <Modal
+                open={showModal}
+                onClose={() => setShowModal(false)}
+                title="Editar producto pedido"
+                ariaLabel="Editar producto pedido"
+                variant="compact"
+                layer="base"
+                instance="order-product-edit"
+                usageId="order-product-edit"
+                usageLabel="Editar producto pedido"
+                hideHeader
+                scrollContent={false}
+            >
+                <div className="flex justify-center">
+                    {renderCard(true)}
                 </div>
-            )}
+            </Modal>
         </div>
     );
 }

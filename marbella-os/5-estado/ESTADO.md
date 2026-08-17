@@ -6,7 +6,7 @@ capa: estado
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-16
+revisado: 2026-08-17
 caducidad: 1 mes
 supersede: PROJECT_STATUS.md §ESTADO GENERAL
 ---
@@ -21,7 +21,7 @@ Techo duro: 200 líneas. Si no cabe, es que se está usando como changelog.
 
 ## Resumen en tres frases
 
-El producto está en producción y sostiene la operación diaria del negocio. El dominio de horas acaba de completar la reconstrucción de su motor de cálculo y es la zona en movimiento. La deuda dominante sigue siendo estructural: hay contrato oficial de Modal (Albaranes, Caja/Tesorería y Perfil/documentos RRHH) y de Button (footers de esos flujos más comandos de condiciones laborales), y piloto de atajo Master, pero no hay sistema de componentes completo y la mitad del código vive innecesariamente en el navegador.
+El producto está en producción y sostiene la operación diaria del negocio. El dominio de horas acaba de completar la reconstrucción de su motor de cálculo y es la zona en movimiento. La deuda dominante sigue siendo estructural: hay contrato oficial de Modal (Albaranes, Caja/Tesorería, Perfil/documentos RRHH, Propinas, Pedidos/Proveedores y Consumo personal) y de Button (footers y CTAs de esos flujos), y piloto de atajo Master, pero no hay sistema de componentes completo y la mitad del código vive innecesariamente en el navegador.
 
 ---
 

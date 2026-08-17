@@ -8,9 +8,10 @@ import { toast, Toaster } from 'sonner';
 import Image from 'next/image';
 import { getSupplierLogo } from '@/lib/supplier-logos';
 import { INITIAL_SUPPLIER_SEED, sortSuppliersByName } from '@/lib/supplier-seed';
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { namedEntitySummary } from '@/lib/usage/modal-apply';
+import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 
 interface Supplier {
     id: string; // bigint en BD; string en UI para soportar rows "initial-*"
@@ -248,22 +249,6 @@ export default function SuppliersPage() {
     const [editEmailDomainsText, setEditEmailDomainsText] = useState<string>('');
     const [isSavingEdit, setIsSavingEdit] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
-
-    useModalUsageTracking({
-        open: !!detailSupplier,
-        usageId: 'supplier-detail',
-        usageLabel: 'Detalle proveedor',
-    });
-    useModalUsageTracking({
-        open: !!editSupplier,
-        usageId: 'supplier-edit',
-        usageLabel: 'Editar proveedor',
-    });
-    useModalUsageTracking({
-        open: showCreateModal,
-        usageId: 'supplier-create',
-        usageLabel: 'Crear proveedor',
-    });
 
     const trackSupplierCategory = useTrackModalApply('suppliers-category-filter', 'Filtro categoría proveedores');
     const trackSupplierDetail = useTrackModalApply('supplier-detail', 'Detalle proveedor');
@@ -567,12 +552,15 @@ export default function SuppliersPage() {
                             </button>
                         </div>
                     )}
-                    <button
+                    <Button
+                        type="button"
+                        variant="primary"
+                        instance="supplier-create-open"
+                        layout="hug"
+                        icon={<Plus />}
+                        aria-label="Nuevo proveedor"
                         onClick={() => setShowCreateModal(true)}
-                        className="bg-emerald-600 text-white w-9 h-9 md:w-12 md:h-12 rounded-xl md:rounded-2xl shadow-lg hover:bg-emerald-700 transition-all flex items-center justify-center hover:scale-105 active:scale-95 shrink-0"
-                    >
-                        <Plus className="w-5 h-5 md:w-6 md:h-6" />
-                    </button>
+                    />
                 </div>
             </div>
             </div>
@@ -628,62 +616,63 @@ export default function SuppliersPage() {
             )}
             </div>
 
-            {/* MODAL DETALLE / CONTACTO PROVEEDOR */}
-            {detailSupplier && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[220] p-4" onClick={() => setDetailSupplier(null)}>
-                    <div className="bg-white rounded-2xl p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200 text-center" onClick={e => e.stopPropagation()}>
-                        <div className="flex justify-end -mt-4 -mr-4 mb-2">
-                            <button onClick={() => setDetailSupplier(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                                <X className="text-gray-400" size={20} />
-                            </button>
-                        </div>
-
-                        <div className="w-32 h-32 mx-auto rounded-3xl flex items-center justify-center mb-3 overflow-hidden">
+            <Modal
+                open={!!detailSupplier}
+                onClose={() => setDetailSupplier(null)}
+                title={detailSupplier?.name ?? 'Proveedor'}
+                subtitle={detailSupplier?.category || ' '}
+                variant="standard"
+                layer="base"
+                instance="supplier-detail"
+                headerTone="petroleum"
+                usageId="supplier-detail"
+                usageLabel="Detalle proveedor"
+            >
+                {detailSupplier ? (
+                    <div className="flex flex-col items-center text-center">
+                        <div className="mb-3 flex h-32 w-32 items-center justify-center overflow-hidden rounded-3xl">
                             {getSupplierLogo(detailSupplier.image_url, detailSupplier.name) ? (
-                                <img src={getSupplierLogo(detailSupplier.image_url, detailSupplier.name) || ''} alt="" className="w-full h-full object-contain" />
+                                <img src={getSupplierLogo(detailSupplier.image_url, detailSupplier.name) || ''} alt="" className="h-full w-full object-contain" />
                             ) : (
-                                <Truck className="w-12 h-12 text-gray-200" />
+                                <Truck className="h-12 w-12 text-gray-200" />
                             )}
                         </div>
 
-                        <h2 className="text-xl font-black text-gray-800 uppercase tracking-wider mb-0.5">
-                            {detailSupplier.name}
-                        </h2>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mb-6">
-                            {detailSupplier.category || ' '}
-                        </p>
-
-                        {userRole === 'manager' && (
-                            <div className="grid grid-cols-2 gap-3 mb-6 mt-4">
-                                <button
+                        {userRole === 'manager' ? (
+                            <div className="mt-4 mb-6 grid w-full grid-cols-2 gap-3">
+                                <Button
                                     type="button"
+                                    variant="primary"
+                                    instance="supplier-detail-edit"
+                                    layout="fill"
+                                    icon={<Pencil size={16} />}
                                     disabled={!canEditOrDelete}
                                     onClick={() => openEditModalFromDetail(detailSupplier)}
-                                    className="min-h-[48px] rounded-2xl bg-[#36606F] text-white font-black uppercase tracking-wider text-xs shadow-sm hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
-                                    title={!canEditOrDelete ? 'Solo se pueden editar proveedores existentes en BD (no plantillas).' : undefined}
                                 >
-                                    <Pencil size={16} />
                                     Editar
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     type="button"
+                                    variant="destructive"
+                                    instance="supplier-detail-delete"
+                                    layout="fill"
+                                    icon={<Trash2 size={16} />}
                                     disabled={!canEditOrDelete || isDeleting}
+                                    loading={isDeleting}
+                                    loadingLabel="Eliminando…"
                                     onClick={() => void handleDeleteSupplier(detailSupplier)}
-                                    className="min-h-[48px] rounded-2xl bg-rose-600 text-white font-black uppercase tracking-wider text-xs shadow-sm hover:bg-rose-700 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
-                                    title={!canEditOrDelete ? 'Solo se pueden eliminar proveedores existentes en BD (no plantillas).' : undefined}
                                 >
-                                    <Trash2 size={16} />
-                                    {isDeleting ? 'Eliminando…' : 'Eliminar'}
-                                </button>
+                                    Eliminar
+                                </Button>
                             </div>
-                        )}
+                        ) : null}
 
-                        <div className="flex items-center justify-center gap-6 mt-2">
-                            {detailSupplier.phone && (
+                        <div className="mt-2 flex items-center justify-center gap-6">
+                            {detailSupplier.phone ? (
                                 <>
                                     <a
                                         href={`tel:${detailSupplier.phone.replace(/\D/g, '').startsWith('34') ? '+' + detailSupplier.phone.replace(/\D/g, '') : '+34' + detailSupplier.phone.replace(/\D/g, '')}`}
-                                        className="h-12 w-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white grid place-items-center transition-colors active:scale-95 shadow-sm"
+                                        className="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-600 text-white shadow-sm transition-colors hover:bg-emerald-700 active:scale-95"
                                         title="Llamar"
                                     >
                                         <Phone size={22} />
@@ -698,234 +687,223 @@ export default function SuppliersPage() {
                                         <Image src="/icons/whatsapp.png" alt="WhatsApp" width={36} height={36} className="object-contain" />
                                     </a>
                                 </>
-                            )}
+                            ) : null}
                         </div>
                     </div>
-                </div>
-            )}
+                ) : null}
+            </Modal>
 
-            {/* MODAL EDICIÓN PROVEEDOR */}
-            {editSupplier && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[230] p-4" onClick={closeEditModal}>
-                    <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-                        <div className="flex justify-between items-center mb-5">
-                            <div className="flex flex-col">
-                                <h2 className="text-lg font-black text-zinc-900 uppercase tracking-wider leading-none">
-                                    {isDbSupplierId(editSupplier.id) ? 'Editar proveedor' : 'Crear en BD'}
-                                </h2>
-                                {!isDbSupplierId(editSupplier.id) && (
-                                    <p className="text-[10px] text-zinc-400 font-black uppercase tracking-[0.2em] mt-1">
-                                        Este proveedor era plantilla. Al guardar se creará en Supabase.
-                                    </p>
-                                )}
-                            </div>
-                            <button
-                                type="button"
-                                onClick={closeEditModal}
-                                className="w-10 h-10 flex items-center justify-center rounded-2xl hover:bg-zinc-100 transition-colors shrink-0"
-                            >
-                                <X className="text-zinc-400" size={18} />
-                            </button>
+            <Modal
+                open={!!editSupplier}
+                onClose={closeEditModal}
+                title={editSupplier && isDbSupplierId(editSupplier.id) ? 'Editar proveedor' : 'Crear en BD'}
+                subtitle={
+                    editSupplier && !isDbSupplierId(editSupplier.id)
+                        ? 'Este proveedor era plantilla. Al guardar se creará en Supabase.'
+                        : undefined
+                }
+                variant="standard"
+                layer="derived"
+                instance="supplier-edit"
+                usageId="supplier-edit"
+                usageLabel="Editar proveedor"
+                footer={
+                    <Button
+                        type="button"
+                        variant="primary"
+                        instance="supplier-edit-save"
+                        layout="fill"
+                        icon={<Save size={16} />}
+                        disabled={isSavingEdit}
+                        loading={isSavingEdit}
+                        loadingLabel="Guardando…"
+                        onClick={() => void handleSaveEdit()}
+                    >
+                        Guardar cambios
+                    </Button>
+                }
+            >
+                {editSupplier ? (
+                    <div className="space-y-4">
+                        <div>
+                            <label className="mb-1.5 ml-1 block text-[9px] font-black uppercase tracking-widest text-gray-400">Nombre</label>
+                            <input
+                                value={editSupplier.name ?? ''}
+                                onChange={(e) => setEditSupplier({ ...editSupplier, name: e.target.value })}
+                                className="min-h-[48px] w-full rounded-2xl border border-zinc-200 px-3 font-bold outline-none focus:border-[#36606F] focus:ring-2 focus:ring-[#36606F]/20"
+                                placeholder="Ej. Suministros Marbella"
+                            />
                         </div>
 
-                        <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Nombre</label>
+                                <label className="mb-1.5 ml-1 block text-[9px] font-black uppercase tracking-widest text-gray-400">Categoría</label>
+                                <select
+                                    value={editSupplier.category ?? 'Alimentos'}
+                                    onChange={(e) => setEditSupplier({ ...editSupplier, category: e.target.value })}
+                                    className="min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-white px-3 font-bold outline-none focus:border-[#36606F] focus:ring-2 focus:ring-[#36606F]/20"
+                                >
+                                    {CATEGORIES.map((cat) => (
+                                        <option key={cat} value={cat}>
+                                            {cat}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="mb-1.5 ml-1 block text-[9px] font-black uppercase tracking-widest text-gray-400">Teléfono</label>
                                 <input
-                                    value={editSupplier.name ?? ''}
-                                    onChange={(e) => setEditSupplier({ ...editSupplier, name: e.target.value })}
-                                    className="w-full min-h-[48px] px-3 rounded-2xl border border-zinc-200 font-bold outline-none focus:border-[#36606F] focus:ring-2 focus:ring-[#36606F]/20"
-                                    placeholder="Ej. Suministros Marbella"
+                                    value={editSupplier.phone ?? ''}
+                                    onChange={(e) => setEditSupplier({ ...editSupplier, phone: e.target.value })}
+                                    className="min-h-[48px] w-full rounded-2xl border border-zinc-200 px-3 font-bold outline-none focus:border-[#36606F] focus:ring-2 focus:ring-[#36606F]/20"
+                                    placeholder="600 000 000"
                                 />
                             </div>
+                        </div>
 
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Categoría</label>
-                                    <select
-                                        value={editSupplier.category ?? 'Alimentos'}
-                                        onChange={(e) => setEditSupplier({ ...editSupplier, category: e.target.value })}
-                                        className="w-full min-h-[48px] px-3 rounded-2xl border border-zinc-200 bg-white font-bold outline-none focus:border-[#36606F] focus:ring-2 focus:ring-[#36606F]/20"
-                                    >
-                                        {CATEGORIES.map((cat) => (
-                                            <option key={cat} value={cat}>
-                                                {cat}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Teléfono</label>
-                                    <input
-                                        value={editSupplier.phone ?? ''}
-                                        onChange={(e) => setEditSupplier({ ...editSupplier, phone: e.target.value })}
-                                        className="w-full min-h-[48px] px-3 rounded-2xl border border-zinc-200 font-bold outline-none focus:border-[#36606F] focus:ring-2 focus:ring-[#36606F]/20"
-                                        placeholder="600 000 000"
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Logo</label>
-                                {(() => {
-                                    const displaySrc = previewImageUrl
-                                        ?? (removeImage
-                                            ? null
-                                            : getSupplierLogo(editSupplier.image_url, editSupplier.name));
-                                    const hasAnyImage = Boolean(displaySrc);
-                                    return (
-                                        <div className="rounded-2xl border border-zinc-100 bg-zinc-50 overflow-hidden">
-                                            <div className="h-32 w-full flex items-center justify-center bg-white">
-                                                {hasAnyImage && displaySrc ? (
-                                                    <img
-                                                        src={displaySrc}
-                                                        alt=""
-                                                        className="max-h-full max-w-full object-contain"
-                                                    />
-                                                ) : (
-                                                    <div className="flex flex-col items-center gap-1 text-zinc-300">
-                                                        <ImageIcon size={32} />
-                                                        <span className="text-[10px] font-black uppercase tracking-widest">Sin logo</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="flex gap-2 border-t border-zinc-100 bg-zinc-50 p-2">
-                                                <input
-                                                    type="file"
-                                                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                                                    className="hidden"
-                                                    id="supplier-logo-upload"
-                                                    onChange={handleImageFileChange}
-                                                    disabled={isSavingEdit || isUploadingImage}
+                        <div>
+                            <label className="mb-1.5 ml-1 block text-[9px] font-black uppercase tracking-widest text-gray-400">Logo</label>
+                            {(() => {
+                                const displaySrc = previewImageUrl
+                                    ?? (removeImage
+                                        ? null
+                                        : getSupplierLogo(editSupplier.image_url, editSupplier.name));
+                                const hasAnyImage = Boolean(displaySrc);
+                                return (
+                                    <div className="overflow-hidden rounded-2xl border border-zinc-100 bg-zinc-50">
+                                        <div className="flex h-32 w-full items-center justify-center bg-white">
+                                            {hasAnyImage && displaySrc ? (
+                                                <img
+                                                    src={displaySrc}
+                                                    alt=""
+                                                    className="max-h-full max-w-full object-contain"
                                                 />
-                                                <label
-                                                    htmlFor="supplier-logo-upload"
-                                                    className={`inline-flex min-h-[48px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 text-[11px] font-black uppercase tracking-widest text-zinc-800 transition-colors hover:bg-zinc-100 active:bg-zinc-50 ${(isSavingEdit || isUploadingImage) ? 'pointer-events-none opacity-60' : ''}`}
-                                                >
-                                                    <Upload size={16} strokeWidth={2.5} />
-                                                    {selectedImageFile ? 'Cambiar' : 'Subir'}
-                                                </label>
-                                                <button
-                                                    type="button"
-                                                    onClick={handleRemoveImageClick}
-                                                    disabled={!hasAnyImage || isSavingEdit || isUploadingImage}
-                                                    className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl border border-rose-100 bg-white px-3 text-[11px] font-black uppercase tracking-widest text-rose-600 transition-colors hover:bg-rose-50 active:bg-rose-100 disabled:opacity-50 disabled:pointer-events-none"
-                                                >
-                                                    <Trash2 size={16} strokeWidth={2.5} />
-                                                    Eliminar
-                                                </button>
-                                            </div>
-                                            <p className="px-3 pb-2 pt-1 text-[10px] font-semibold text-zinc-400">
-                                                PNG, JPG, WebP o SVG · máx. 5 MB
-                                            </p>
+                                            ) : (
+                                                <div className="flex flex-col items-center gap-1 text-zinc-300">
+                                                    <ImageIcon size={32} />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest">Sin logo</span>
+                                                </div>
+                                            )}
                                         </div>
-                                    );
-                                })()}
-                            </div>
+                                        <div className="flex gap-2 border-t border-zinc-100 bg-zinc-50 p-2">
+                                            <input
+                                                type="file"
+                                                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                                                className="hidden"
+                                                id="supplier-logo-upload"
+                                                onChange={handleImageFileChange}
+                                                disabled={isSavingEdit || isUploadingImage}
+                                            />
+                                            <label
+                                                htmlFor="supplier-logo-upload"
+                                                className={`inline-flex min-h-[48px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 text-[11px] font-black uppercase tracking-widest text-zinc-800 transition-colors hover:bg-zinc-100 active:bg-zinc-50 ${(isSavingEdit || isUploadingImage) ? 'pointer-events-none opacity-60' : ''}`}
+                                            >
+                                                <Upload size={16} strokeWidth={2.5} />
+                                                {selectedImageFile ? 'Cambiar' : 'Subir'}
+                                            </label>
+                                            <Button
+                                                type="button"
+                                                variant="destructive"
+                                                instance="supplier-edit-remove-image"
+                                                layout="fill"
+                                                className="flex-1"
+                                                icon={<Trash2 size={16} strokeWidth={2.5} />}
+                                                disabled={!hasAnyImage || isSavingEdit || isUploadingImage}
+                                                onClick={handleRemoveImageClick}
+                                            >
+                                                Eliminar
+                                            </Button>
+                                        </div>
+                                        <p className="px-3 pb-2 pt-1 text-[10px] font-semibold text-zinc-400">
+                                            PNG, JPG, WebP o SVG · máx. 5 MB
+                                        </p>
+                                    </div>
+                                );
+                            })()}
+                        </div>
 
-                            <div>
-                                <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Dominios email (separados por coma)</label>
-                                <input
-                                    value={editEmailDomainsText}
-                                    onChange={(e) => setEditEmailDomainsText(e.target.value)}
-                                    className="w-full min-h-[48px] px-3 rounded-2xl border border-zinc-200 font-bold outline-none focus:border-[#36606F] focus:ring-2 focus:ring-[#36606F]/20"
-                                    placeholder="proveedor.com, proveedor.es"
-                                />
-                            </div>
+                        <div>
+                            <label className="mb-1.5 ml-1 block text-[9px] font-black uppercase tracking-widest text-gray-400">Dominios email (separados por coma)</label>
+                            <input
+                                value={editEmailDomainsText}
+                                onChange={(e) => setEditEmailDomainsText(e.target.value)}
+                                className="min-h-[48px] w-full rounded-2xl border border-zinc-200 px-3 font-bold outline-none focus:border-[#36606F] focus:ring-2 focus:ring-[#36606F]/20"
+                                placeholder="proveedor.com, proveedor.es"
+                            />
+                        </div>
 
-                            <div>
-                                <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Notas</label>
-                                <textarea
-                                    value={editNotes}
-                                    onChange={(e) => setEditNotes(e.target.value)}
-                                    className="w-full min-h-[96px] px-3 py-3 rounded-2xl border border-zinc-200 font-bold outline-none focus:border-[#36606F] focus:ring-2 focus:ring-[#36606F]/20 resize-none"
-                                    placeholder="Observaciones internas…"
-                                />
-                            </div>
+                        <div>
+                            <label className="mb-1.5 ml-1 block text-[9px] font-black uppercase tracking-widest text-gray-400">Notas</label>
+                            <textarea
+                                value={editNotes}
+                                onChange={(e) => setEditNotes(e.target.value)}
+                                className="min-h-[96px] w-full resize-none rounded-2xl border border-zinc-200 px-3 py-3 font-bold outline-none focus:border-[#36606F] focus:ring-2 focus:ring-[#36606F]/20"
+                                placeholder="Observaciones internas…"
+                            />
+                        </div>
+                    </div>
+                ) : null}
+            </Modal>
 
-                            <button
-                                type="button"
-                                disabled={isSavingEdit}
-                                onClick={() => void handleSaveEdit()}
-                                className="w-full min-h-[48px] rounded-2xl bg-emerald-600 text-white font-black uppercase tracking-wider text-xs shadow-sm hover:bg-emerald-700 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:pointer-events-none"
+            <Modal
+                open={showCreateModal}
+                onClose={() => setShowCreateModal(false)}
+                title="Nuevo Proveedor"
+                variant="standard"
+                layer="base"
+                instance="supplier-create"
+                usageId="supplier-create"
+                usageLabel="Crear proveedor"
+                footer={
+                    <Button
+                        type="button"
+                        variant="primary"
+                        instance="supplier-create-submit"
+                        layout="fill"
+                        disabled={isCreating}
+                        loading={isCreating}
+                        loadingLabel="Guardando..."
+                        onClick={() => void handleCreateSupplier()}
+                    >
+                        Crear Proveedor
+                    </Button>
+                }
+            >
+                <div className="space-y-4">
+                    <div>
+                        <label className="mb-1.5 ml-1 block text-[9px] font-black uppercase tracking-widest text-gray-400">Nombre Empresa</label>
+                        <input
+                            autoFocus
+                            value={newSupplier.name ?? ''}
+                            onChange={e => setNewSupplier({ ...newSupplier, name: e.target.value })}
+                            className="w-full rounded-xl border p-3 font-bold outline-none focus:border-[#5E35B1]"
+                            placeholder="Ej. Suministros Marbella"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="mb-1.5 ml-1 block text-[9px] font-black uppercase tracking-widest text-gray-400">Categoría</label>
+                            <select
+                                value={newSupplier.category ?? 'Alimentos'}
+                                onChange={e => setNewSupplier({ ...newSupplier, category: e.target.value })}
+                                className="w-full rounded-xl border bg-white p-3 font-bold outline-none focus:border-[#5E35B1]"
                             >
-                                {isSavingEdit ? (
-                                    <>
-                                        <LoadingSpinner size="sm" className="text-white" />
-                                        <span>Guardando…</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Save size={16} />
-                                        Guardar cambios
-                                    </>
-                                )}
-                            </button>
+                                {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="mb-1.5 ml-1 block text-[9px] font-black uppercase tracking-widest text-gray-400">Teléfono</label>
+                            <input
+                                value={newSupplier.phone ?? ''}
+                                onChange={e => setNewSupplier({ ...newSupplier, phone: e.target.value })}
+                                className="w-full rounded-xl border p-3 font-bold outline-none focus:border-[#5E35B1]"
+                                placeholder="600 000 000"
+                            />
                         </div>
                     </div>
                 </div>
-            )}
-
-            {/* MODAL CREACIÓN PROVEEDOR - ESTILO INGREDIENTES */}
-            {showCreateModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[220] p-4" onClick={() => setShowCreateModal(false)}>
-                    <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-2xl font-bold text-[#3F51B5]">Nuevo Proveedor</h2>
-                            <button onClick={() => setShowCreateModal(false)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors"><X className="text-gray-400" /></button>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Nombre Empresa</label>
-                                <input
-                                    autoFocus
-                                    value={newSupplier.name ?? ''}
-                                    onChange={e => setNewSupplier({ ...newSupplier, name: e.target.value })}
-                                    className="w-full p-3 border rounded-xl font-bold outline-none focus:border-[#5E35B1]"
-                                    placeholder="Ej. Suministros Marbella"
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Categoría</label>
-                                    <select
-                                        value={newSupplier.category ?? 'Alimentos'}
-                                        onChange={e => setNewSupplier({ ...newSupplier, category: e.target.value })}
-                                        className="w-full p-3 border rounded-xl bg-white font-bold outline-none focus:border-[#5E35B1]"
-                                    >
-                                        {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Teléfono</label>
-                                    <input
-                                        value={newSupplier.phone ?? ''}
-                                        onChange={e => setNewSupplier({ ...newSupplier, phone: e.target.value })}
-                                        className="w-full p-3 border rounded-xl font-bold outline-none focus:border-[#5E35B1]"
-                                        placeholder="600 000 000"
-                                    />
-                                </div>
-                            </div>
-
-                            <button
-                                type="button"
-                                disabled={isCreating}
-                                onClick={() => void handleCreateSupplier()}
-                                className="w-full min-h-[48px] py-4 bg-[#5E35B1] text-white rounded-xl font-bold mt-2 shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:pointer-events-none"
-                            >
-                                {isCreating ? (
-                                    <>
-                                        <LoadingSpinner size="sm" className="text-white" />
-                                        <span>Guardando...</span>
-                                    </>
-                                ) : 'Crear Proveedor'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            </Modal>
         </div>
     );
 }

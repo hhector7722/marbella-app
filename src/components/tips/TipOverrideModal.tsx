@@ -141,8 +141,8 @@ export function TipOverrideModal({
           </div>
         }
       >
-        <div className="space-y-2 bg-gray-50 p-2.5 md:space-y-3 md:p-4">
-          <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm md:rounded-2xl md:p-5">
+        <div className="space-y-2 bg-gray-50 p-2.5 sm:p-3 md:space-y-3">
+          <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm md:rounded-2xl">
             <label className="group flex cursor-pointer items-center gap-3">
               <div className="relative flex h-6 w-6 items-center justify-center rounded-lg border-2 border-zinc-300 bg-zinc-50 transition-all group-hover:border-rose-400 md:h-8 md:w-8">
                 <input

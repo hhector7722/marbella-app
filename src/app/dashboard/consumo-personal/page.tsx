@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { createClient } from '@/utils/supabase/client';
 import { ChevronLeft, ChevronRight, ListOrdered, User, X } from 'lucide-react';
 import { ConsumptionRecipeOrderModal } from '@/components/consumo-personal/ConsumptionRecipeOrderModal';
@@ -26,11 +25,12 @@ import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
+import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 import {
     filterVisiblePlantillaEmployees,
     PLANTILLA_EMPLOYEE_SELECT,
 } from '@/lib/staff/plantilla-employees';
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
 
@@ -156,12 +156,6 @@ export default function ConsumoPersonalDashboardPage() {
   const [dayDetail, setDayDetail] = useState<DayDetailPayload | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [orderModalOpen, setOrderModalOpen] = useState(false);
-
-  useModalUsageTracking({
-    open: detailOpen,
-    usageId: 'consumo-day-detail',
-    usageLabel: 'Detalle consumo del día',
-  });
 
   const [authState, setAuthState] = useState<
     | { status: 'checking' }
@@ -588,190 +582,175 @@ export default function ConsumoPersonalDashboardPage() {
           </div>
         </div>
 
-      {detailOpen &&
-        typeof document !== 'undefined' &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[10050] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) closeDetail();
-            }}
-            role="presentation"
-          >
-            <div
-              className="bg-white rounded-[2rem] w-full max-w-md max-h-[85vh] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
-              onClick={(e) => e.stopPropagation()}
+      <Modal
+        open={detailOpen}
+        onClose={closeDetail}
+        title={
+          <span className="flex min-w-0 items-center justify-center gap-1">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (selectedDayStr) {
+                  const d = parseLocalSafe(selectedDayStr);
+                  d.setDate(d.getDate() - 1);
+                  openDayDetail(d);
+                }
+              }}
+              className="flex h-[var(--modal-header-height)] w-[var(--modal-header-height)] shrink-0 items-center justify-center"
+              aria-label="Día anterior"
             >
-              <div className="bg-[#36606F] px-4 py-2 text-white shrink-0 flex items-center justify-between gap-1">
-                <div className="flex-1" />
-                <div className="flex items-center justify-center gap-1 sm:gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (selectedDayStr) {
-                        const d = parseLocalSafe(selectedDayStr);
-                        d.setDate(d.getDate() - 1);
-                        openDayDetail(d);
-                      }
-                    }}
-                    className="p-1 sm:p-2 hover:bg-white/10 rounded-full transition-colors flex items-center justify-center"
-                    aria-label="Día anterior"
-                  >
-                    <ChevronLeft size={20} />
-                  </button>
-                  <h3 className="text-base sm:text-lg font-black uppercase tracking-tight text-center">
-                    {selectedDayStr
-                      ? format(parseLocalSafe(selectedDayStr), 'EEEE d MMM', { locale: es })
-                      : ''}
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (selectedDayStr) {
-                        const d = parseLocalSafe(selectedDayStr);
-                        d.setDate(d.getDate() + 1);
-                        openDayDetail(d);
-                      }
-                    }}
-                    className="p-1 sm:p-2 hover:bg-white/10 rounded-full transition-colors flex items-center justify-center"
-                    aria-label="Día siguiente"
-                  >
-                    <ChevronRight size={20} />
-                  </button>
-                </div>
-                <div className="flex-1 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={closeDetail}
-                    className="p-2 hover:bg-white/10 rounded-xl transition-colors flex items-center justify-center -mr-2"
-                    aria-label="Cerrar"
-                  >
-                    <X size={20} />
-                  </button>
+              <ChevronLeft size={20} />
+            </button>
+            <span className="truncate">
+              {selectedDayStr
+                ? format(parseLocalSafe(selectedDayStr), 'EEEE d MMM', { locale: es })
+                : ''}
+            </span>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (selectedDayStr) {
+                  const d = parseLocalSafe(selectedDayStr);
+                  d.setDate(d.getDate() + 1);
+                  openDayDetail(d);
+                }
+              }}
+              className="flex h-[var(--modal-header-height)] w-[var(--modal-header-height)] shrink-0 items-center justify-center"
+              aria-label="Día siguiente"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </span>
+        }
+        variant="standard"
+        layer="base"
+        instance="consumo-day-detail"
+        headerTone="petroleum"
+        usageId="consumo-day-detail"
+        usageLabel="Detalle consumo del día"
+        footer={
+          detailError ? (
+            <div className="flex w-full flex-wrap items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                instance="consumo-day-detail-close"
+                onClick={closeDetail}
+              >
+                Cerrar
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                instance="consumo-day-detail-retry"
+                onClick={() => {
+                  if (!selectedDayStr) return;
+                  openDayDetail(parseLocalSafe(selectedDayStr));
+                }}
+              >
+                Reintentar
+              </Button>
+            </div>
+          ) : undefined
+        }
+      >
+        {detailLoading ? (
+          <div className="flex justify-center py-12">
+            <LoadingSpinner className="text-[#36606F]" />
+          </div>
+        ) : detailError ? (
+          <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
+            <p className="text-sm font-black text-zinc-800">No se pudo cargar el desglose</p>
+            <p className="max-w-[22rem] text-xs font-bold text-zinc-500">
+              {detailError}
+            </p>
+          </div>
+        ) : dayDetail ? (
+          <>
+            <div className="mb-4 rounded-[1.25rem] bg-[#36606F] p-3 shadow-md">
+              <p className="mb-2 text-center text-[9px] font-black uppercase tracking-[0.2em] text-white/90">
+                Resumen del día
+              </p>
+              <div className="grid grid-cols-1 gap-1 sm:gap-2">
+                <div className="flex flex-col items-center justify-center rounded-xl bg-white p-2 text-center">
+                  <span className="mb-0.5 block text-[7px] font-black uppercase tracking-wider text-zinc-500">
+                    Importe total
+                  </span>
+                  <span className="text-[12px] font-black leading-none tabular-nums text-emerald-700">
+                    {formatEuroRead(dayDetail.totalAmount)}
+                  </span>
                 </div>
               </div>
+            </div>
 
-              <div className="flex-1 overflow-y-auto custom-scrollbar p-4 flex flex-col min-h-0">
-                {detailLoading ? (
-                  <div className="flex justify-center py-12">
-                    <LoadingSpinner className="text-[#36606F]" />
-                  </div>
-                ) : detailError ? (
-                  <div className="flex flex-col items-center justify-center text-center gap-3 py-10">
-                    <p className="text-sm font-black text-zinc-800">No se pudo cargar el desglose</p>
-                    <p className="text-xs font-bold text-zinc-500 max-w-[22rem]">
-                      {detailError}
-                    </p>
-                    <div className="flex items-center gap-2 pt-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!selectedDayStr) return;
-                          openDayDetail(parseLocalSafe(selectedDayStr));
-                        }}
-                        className="min-h-[48px] px-4 rounded-xl bg-[#36606F] text-white font-black uppercase tracking-wider shadow-sm hover:opacity-95 active:scale-[0.99]"
-                      >
-                        Reintentar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={closeDetail}
-                        className="min-h-[48px] px-4 rounded-xl bg-zinc-100 text-zinc-800 font-black uppercase tracking-wider hover:bg-zinc-200 active:scale-[0.99]"
-                      >
-                        Cerrar
-                      </button>
-                    </div>
-                  </div>
-                ) : dayDetail ? (
-                  <>
-                    <div className="mb-4 rounded-[1.25rem] bg-[#36606F] p-3 shadow-md">
-                      <p className="mb-2 text-center text-[9px] font-black uppercase tracking-[0.2em] text-white/90">
-                        Resumen del día
-                      </p>
-                      <div className="grid grid-cols-1 gap-1 sm:gap-2">
-                        <div className="bg-white rounded-xl p-2 flex flex-col items-center justify-center text-center">
-                          <span className="block text-[7px] font-black uppercase tracking-wider text-zinc-500 mb-0.5">
-                            Importe total
-                          </span>
-                          <span className="text-[12px] font-black tabular-nums text-emerald-700 leading-none">
-                            {formatEuroRead(dayDetail.totalAmount)}
-                          </span>
-                        </div>
+            {dayDetail.workers.length === 0 ? (
+              <p className="py-8 text-center text-sm font-bold text-zinc-400">
+                {workerFilterId ? 'Sin consumo para este trabajador este día' : 'Sin consumo este día'}
+              </p>
+            ) : (
+              <div className="flex flex-col gap-3 pb-2">
+                {dayDetail.workers.map((w) => (
+                  <div key={w.id} className="overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm">
+                    <div className="flex items-center justify-between gap-2 bg-zinc-50 px-3 py-2">
+                      <div className="min-w-0 flex-1 truncate text-[13px] font-black text-zinc-800">
+                        {firstNameOnly(w.name)}
+                      </div>
+                      <div className="shrink-0 text-[12px] font-black tabular-nums text-emerald-700">
+                        {formatEuroRead(w.total)}
                       </div>
                     </div>
-
-                    {dayDetail.workers.length === 0 ? (
-                      <p className="text-center text-zinc-400 font-bold text-sm py-8">
-                        {workerFilterId ? 'Sin consumo para este trabajador este día' : 'Sin consumo este día'}
-                      </p>
-                    ) : (
-                      <div className="flex flex-col gap-3 pb-2">
-                        {dayDetail.workers.map((w) => (
-                          <div key={w.id} className="rounded-2xl border border-zinc-100 bg-white shadow-sm overflow-hidden">
-                            <div className="px-3 py-2 bg-zinc-50 flex items-center justify-between gap-2">
-                              <div className="truncate text-[13px] font-black text-zinc-800 flex-1">
-                                {firstNameOnly(w.name)}
-                              </div>
-                              <div className="shrink-0 text-[12px] font-black tabular-nums text-emerald-700">
-                                {formatEuroRead(w.total)}
-                              </div>
-                            </div>
-                            <div className="px-3 py-2">
-                              <div className="flex flex-col gap-1">
-                                {w.items.map((it, idx) => (
-                                  <div
-                                    key={`${it.name}-${idx}`}
-                                    className="flex items-center justify-between gap-2 py-1 border-b border-zinc-100 last:border-0"
-                                  >
-                                    <p className="min-w-0 flex-1 truncate text-[12px] font-bold text-zinc-700">
-                                      {it.quantity > 1 ? `${consumptionProductDisplayName(it.name)} ×${it.quantity}` : consumptionProductDisplayName(it.name)}
-                                    </p>
-                                    <span className="shrink-0 text-[12px] font-normal tabular-nums text-zinc-700">
-                                      {formatEuroRead(it.amount)}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                              {w.errors.length > 0 ? (
-                                <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-2.5">
-                                  <p className="mb-2 text-[10px] font-black uppercase tracking-wider text-amber-800">
-                                    Errores al registrar (sin stock)
-                                  </p>
-                                  <div className="flex flex-col gap-2">
-                                    {w.errors.map((err, idx) => (
-                                      <div key={`${err.name}-err-${idx}`} className="text-left">
-                                        <p className="text-[12px] font-bold text-amber-950">
-                                          {err.quantity > 1
-                                            ? `${consumptionProductDisplayName(err.name)} ×${err.quantity}${err.is_half ? ' (Mitad)' : ''}`
-                                            : `${consumptionProductDisplayName(err.name)}${err.is_half ? ' (Mitad)' : ''}`}
-                                          {err.is_drink ? ' · bebida' : ' · comida'}
-                                        </p>
-                                        <p className="mt-0.5 text-[11px] font-medium leading-snug text-amber-900/90">
-                                          {err.error_message}
-                                        </p>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              ) : null}
-                            </div>
+                    <div className="px-3 py-2">
+                      <div className="flex flex-col gap-1">
+                        {w.items.map((it, idx) => (
+                          <div
+                            key={`${it.name}-${idx}`}
+                            className="flex items-center justify-between gap-2 border-b border-zinc-100 py-1 last:border-0"
+                          >
+                            <p className="min-w-0 flex-1 truncate text-[12px] font-bold text-zinc-700">
+                              {it.quantity > 1 ? `${consumptionProductDisplayName(it.name)} ×${it.quantity}` : consumptionProductDisplayName(it.name)}
+                            </p>
+                            <span className="shrink-0 text-[12px] font-normal tabular-nums text-zinc-700">
+                              {formatEuroRead(it.amount)}
+                            </span>
                           </div>
                         ))}
                       </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center justify-center text-center gap-2 py-10">
-                    <p className="text-sm font-black text-zinc-700">Sin datos para mostrar</p>
+                      {w.errors.length > 0 ? (
+                        <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-2.5">
+                          <p className="mb-2 text-[10px] font-black uppercase tracking-wider text-amber-800">
+                            Errores al registrar (sin stock)
+                          </p>
+                          <div className="flex flex-col gap-2">
+                            {w.errors.map((err, idx) => (
+                              <div key={`${err.name}-err-${idx}`} className="text-left">
+                                <p className="text-[12px] font-bold text-amber-950">
+                                  {err.quantity > 1
+                                    ? `${consumptionProductDisplayName(err.name)} ×${err.quantity}${err.is_half ? ' (Mitad)' : ''}`
+                                    : `${consumptionProductDisplayName(err.name)}${err.is_half ? ' (Mitad)' : ''}`}
+                                  {err.is_drink ? ' · bebida' : ' · comida'}
+                                </p>
+                                <p className="mt-0.5 text-[11px] font-medium leading-snug text-amber-900/90">
+                                  {err.error_message}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
-                )}
+                ))}
               </div>
-            </div>
-          </div>,
-          document.body,
+            )}
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
+            <p className="text-sm font-black text-zinc-700">Sin datos para mostrar</p>
+          </div>
         )}
+      </Modal>
 
       <ConsumptionRecipeOrderModal
         open={orderModalOpen}
