@@ -5,31 +5,28 @@ import { createClient } from "@/utils/supabase/client";
 import { useRouter } from 'next/navigation';
 import {
     History, Users, TrendingUp, ChevronDown, Wallet, CloudSun, Calendar, Search, Receipt,
-    ArrowRight, ArrowUpRight, ArrowDownLeft, Clock, UserCircle, X, FileText,
-    CheckCircle, AlertCircle, Circle, CheckCircle2, Plus, Minus, RefreshCw, Save,
+    ArrowRight, ArrowUpRight, ArrowDownLeft, Clock, UserCircle, FileText,
+    CheckCircle, AlertCircle, Circle, CheckCircle2, Plus, Minus, RefreshCw,
     Package, Utensils, ChefHat, Truck, ClipboardList, ShoppingCart, ArrowLeft, ArrowRightLeft,
     PlusCircle, ArrowDown, ArrowUp, Plus as PlusIcon, Minus as MinusIcon, Check,
     Coins, Landmark, AlertTriangle, ChevronLeft, ChevronRight, Image as ImageIcon
 } from 'lucide-react';
 
-import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal, type BoxOption } from '@/components/CashChangeModal';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
 import { AdminProductModal } from '@/components/modals/AdminProductModal';
 import Link from 'next/link';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { updateProfile } from '@/app/actions/profile';
-import { CashBoxEditModal } from '@/components/modals/CashBoxEditModal';
 import { Modal } from '@/components/ui/modal';
+import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
 import { getISOWeek, format, addDays, subDays, startOfWeek, parseISO, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isSameDay, isToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn, calculateRoundedHours } from '@/lib/utils';
-import Image from 'next/image';
 import { getOvertimeData, togglePaidStatus, togglePreferStockStatus } from '@/app/actions/overtime';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import DashboardVentasSection from '@/components/dashboards/DashboardVentasSection';
-import { recalculateAllBalances } from '@/app/actions/recalculate';
 import WorkerWeeklyHistoryModal from '@/components/WorkerWeeklyHistoryModal';
 import { getDashboardData } from '@/app/actions/get-dashboard-data';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
@@ -38,7 +35,7 @@ import { BoxInventoryView } from '@/components/BoxInventoryView';
 import { PurchaseMultiSourceForm, type PaymentSourceOption, type PurchaseMultiSourcePayload } from '@/components/PurchaseMultiSourceForm';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
-import { formatYmdShort, namedEntitySummary } from '@/lib/usage/modal-apply';
+import { namedEntitySummary } from '@/lib/usage/modal-apply';
 
 // Sub-components
 const StaffOvertimeRow = memo(({
@@ -171,7 +168,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     };
     const [treasuryLoading, setTreasuryLoading] = useState(!initialData);
     const [dailyStats, setDailyStats] = useState<any>(initialData?.dailyStats || null);
-    const [closingSalesSummary, setClosingSalesSummary] = useState(initialData?.liveTickets || { total: 0, count: 0 });
     const [isMovementsExpanded, setIsMovementsExpanded] = useState(false);
     const [boxes, setBoxes] = useState<any[]>(initialData?.boxes || []);
     const [boxMovements, setBoxMovements] = useState<any[]>(initialData?.boxMovements || []);
@@ -187,19 +183,11 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const [allEmployeesIncludingInactive, setAllEmployeesIncludingInactive] = useState<any[] | null>(null);
     const [showAllEmployeesInPlantilla, setShowAllEmployeesInPlantilla] = useState(false);
     const [cashModalMode, setCashModalMode] = useState<CashModalMode>('none');
-    const [isRecalculating, setIsRecalculating] = useState(false);
     const [selectedBox, setSelectedBox] = useState<any>(null);
     const [boxInventory, setBoxInventory] = useState<any[]>([]);
     const [boxInventoryMap, setBoxInventoryMap] = useState<Record<number, number>>({});
     const [showPurchaseMultiSourceModal, setShowPurchaseMultiSourceModal] = useState(false);
     const [purchaseInventoriesByBoxId, setPurchaseInventoriesByBoxId] = useState<Record<string, Record<number, number>>>({});
-    const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
-    const [isNewWorkerModalOpen, setIsNewWorkerModalOpen] = useState(false);
-    const [newWorkerSaving, setNewWorkerSaving] = useState(false);
-    const [newWorkerData, setNewWorkerData] = useState({
-        first_name: '', last_name: '', email: '', role: 'staff',
-        contracted_hours_weekly: 40, overtime_cost_per_hour: 0, prefer_stock_hours: false
-    });
     const [selectedHistory, setSelectedHistory] = useState<{ workerId: string, weekId: string } | null>(null);
     const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
     const [isDesktop, setIsDesktop] = useState(false);
@@ -209,7 +197,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const [overtimeLoading, setOvertimeLoading] = useState(true);
     const [overtimeRefreshKey, setOvertimeRefreshKey] = useState(0);
     const [weekDetailModal, setWeekDetailModal] = useState<{ week: any } | null>(null);
-    const [editingBox, setEditingBox] = useState<any>(null);
 
     useModalUsageTracking({
         open: cashModalMode !== 'none' && cashModalMode !== 'swap',
@@ -222,24 +209,8 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             : cashModalMode === 'menu' ? 'Menú tesorería'
             : 'Tesorería',
     });
-    useModalUsageTracking({
-        open: showPurchaseMultiSourceModal,
-        usageId: 'admin-purchase-multi-source',
-        usageLabel: 'Compra multiorigen',
-    });
-    useModalUsageTracking({
-        open: isNewWorkerModalOpen,
-        usageId: 'admin-new-worker',
-        usageLabel: 'Nuevo trabajador',
-    });
-    useModalUsageTracking({
-        open: weekDetailModal !== null,
-        usageId: 'admin-overtime-week-detail',
-        usageLabel: 'Detalle semana horas extras',
-    });
 
     const trackAdminTreasury = useTrackModalApply('admin-treasury-menu', 'Menú tesorería');
-    const trackAdminNewWorker = useTrackModalApply('admin-new-worker', 'Nuevo trabajador');
     const trackAdminPurchaseMulti = useTrackModalApply('admin-purchase-multi-source', 'Compra multiorigen');
     const trackAdminOvertimeWeek = useTrackModalApply('admin-overtime-week-detail', 'Detalle semana horas extras');
     const trackAdminOvertimeWorker = useTrackModalApply('admin-overtime-worker-history', 'Historial trabajador horas extras');
@@ -304,37 +275,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         }
 
         toast.success(visible ? 'Trabajador visible en plantilla' : 'Trabajador oculto en plantilla');
-    };
-
-    const handleCreateWorker = async () => {
-        if (!newWorkerData.first_name.trim()) { toast.error('El nombre es obligatorio'); return; }
-        setNewWorkerSaving(true);
-        try {
-            const { data, error } = await supabase.rpc('create_worker_profile', {
-                p_first_name: newWorkerData.first_name.trim(),
-                p_last_name: newWorkerData.last_name.trim() || null,
-                p_email: newWorkerData.email.trim() || null,
-                p_role: newWorkerData.role,
-                p_contracted_hours_weekly: newWorkerData.contracted_hours_weekly,
-                p_overtime_cost_per_hour: newWorkerData.overtime_cost_per_hour,
-                p_joining_date: format(new Date(), 'yyyy-MM-dd'),
-                p_prefer_stock_hours: newWorkerData.prefer_stock_hours,
-            });
-            if (error) throw error;
-            toast.success(`${newWorkerData.first_name} añadido correctamente`);
-            trackAdminNewWorker(namedEntitySummary(newWorkerData.first_name.trim()));
-            setIsNewWorkerModalOpen(false);
-            setNewWorkerData({
-                first_name: '', last_name: '', email: '', role: 'staff',
-                contracted_hours_weekly: 40, overtime_cost_per_hour: 0, prefer_stock_hours: false
-            });
-            fetchData();
-        } catch (error: any) {
-            console.error(error);
-            toast.error(error.message || 'Error al crear trabajador');
-        } finally {
-            setNewWorkerSaving(false);
-        }
     };
 
     /** Hora 0–23 según TPV (hora_cierre); alineado con get_hourly_sales. */
@@ -417,7 +357,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             const data = await getDashboardData();
             if (data) {
                 setDailyStats(data.dailyStats);
-                setClosingSalesSummary(data.liveTickets || { total: 0, count: 0 });
                 setBoxes(data.boxes);
                 setBoxMovements(data.boxMovements);
                 setTheoreticalBalance(data.theoreticalBalance || 0);
@@ -532,15 +471,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             toast.error('Error al registrar la compra');
         }
     };
-
-    const handleRecalculate = async () => {
-        if (!confirm("¿Seguro que quieres recalcular todos los balances?")) return;
-        setIsRecalculating(true);
-        try {
-            const res = await recalculateAllBalances();
-            if (res.success) { toast.success(res.message); fetchData(); }
-        } catch (e: any) { toast.error(e.message); } finally { setIsRecalculating(false); }
-    }
 
     const openTreasuryModal = async (box: any, mode: CashModalMode) => {
         setSelectedBox(box);
@@ -852,32 +782,23 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     };
 
     const quickActionCards = [
-        { title: 'Asistencia', img: '/icons/calendar.png', link: '/staff/history' },
-        { title: 'M obra', img: '/icons/overtime.png', link: '/dashboard/labor' },
-        { title: 'Plantilla', img: '/icons/admin.png', link: '/staff/dashboard' },
-        { title: 'Stock', img: '/icons/suppliers.png', link: '/ingredients' },
+        { title: 'Asistencia', img: '/icons/calendar.png', link: '/staff/history', instance: 'admin-asistencia' },
+        { title: 'M obra', img: '/icons/overtime.png', link: '/dashboard/labor', instance: 'admin-m-obra' },
+        { title: 'Plantilla', img: '/icons/admin.png', link: '/staff/dashboard', instance: 'admin-plantilla' },
+        { title: 'Stock', img: '/icons/suppliers.png', link: '/ingredients', instance: 'admin-stock' },
     ] as const;
 
     const renderQuickActionSquare = (card: (typeof quickActionCards)[number]) => (
-        <button
-            type="button"
+        <DashboardShortcut
+            instance={card.instance}
+            label={card.title}
+            img={card.img}
             onClick={() => {
                 if (card.title === 'Plantilla') setIsStaffModalOpen(true);
                 else if (card.title === 'Stock') setIsProductModalOpen(true);
                 else if (card.link) router.push(card.link);
             }}
-            className={cn(
-                "bg-white rounded-2xl p-1 md:p-1 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all group",
-                "w-full aspect-square min-w-0 min-h-0 touch-manipulation"
-            )}
-        >
-            <div className="w-10 h-10 md:w-10 md:h-10 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden shrink-0 aspect-square rounded-xl md:rounded-xl">
-                <Image src={card.img} alt={card.title} width={48} height={48} priority={true} className="w-full h-full object-contain" />
-            </div>
-            <span className="text-[9px] md:text-[8px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5 shrink-0">
-                {card.title}
-            </span>
-        </button>
+        />
     );
 
     const dashboardCambiosYAccesosMobile = (
@@ -1010,16 +931,25 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             )}
 
             {showPurchaseMultiSourceModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-in fade-in duration-200" onClick={() => setShowPurchaseMultiSourceModal(false)}>
-                    <div className={cn("bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", "max-w-2xl")} onClick={(e) => e.stopPropagation()}>
-                        <PurchaseMultiSourceForm
-                            paymentSources={buildPaymentSources()}
-                            inventoriesByBoxId={purchaseInventoriesByBoxId}
-                            onSubmit={handlePurchaseMultiSourceSubmit}
-                            onCancel={() => { setShowPurchaseMultiSourceModal(false); setPurchaseInventoriesByBoxId({}); }}
-                        />
-                    </div>
-                </div>
+                <Modal
+                    open
+                    onClose={() => { setShowPurchaseMultiSourceModal(false); setPurchaseInventoriesByBoxId({}); }}
+                    variant="amplify"
+                    layer="base"
+                    instance="admin-purchase-multi-source"
+                    usageId="admin-purchase-multi-source"
+                    usageLabel="Compra multiorigen"
+                    title="Compra"
+                    ariaLabel="Compra"
+                    hideHeader
+                >
+                    <PurchaseMultiSourceForm
+                        paymentSources={buildPaymentSources()}
+                        inventoriesByBoxId={purchaseInventoriesByBoxId}
+                        onSubmit={handlePurchaseMultiSourceSubmit}
+                        onCancel={() => { setShowPurchaseMultiSourceModal(false); setPurchaseInventoriesByBoxId({}); }}
+                    />
+                </Modal>
             )}
 
             <StaffSelectionModal
@@ -1049,77 +979,12 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 }}
             />
 
-            {isNewWorkerModalOpen && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4 animate-in fade-in duration-200" onClick={() => setIsNewWorkerModalOpen(false)}>
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white">
-                            <div>
-                                <h3 className="text-base font-black uppercase tracking-wider leading-none">Nuevo Trabajador</h3>
-                                <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Datos del empleado</p>
-                            </div>
-                            <button onClick={() => setIsNewWorkerModalOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all active:scale-90"><X size={20} strokeWidth={3} /></button>
-                        </div>
-                        <div className="p-5 space-y-4">
-                            <div>
-                                <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Nombre *</label>
-                                <input type="text" value={newWorkerData.first_name} onChange={e => setNewWorkerData({ ...newWorkerData, first_name: e.target.value })} placeholder="Nombre del trabajador" className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all placeholder:text-zinc-300" autoFocus />
-                            </div>
-                            <div>
-                                <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Apellidos</label>
-                                <input type="text" value={newWorkerData.last_name} onChange={e => setNewWorkerData({ ...newWorkerData, last_name: e.target.value })} placeholder="Opcional" className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all placeholder:text-zinc-300" />
-                            </div>
-                            <div>
-                                <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Email</label>
-                                <input type="email" value={newWorkerData.email} onChange={e => setNewWorkerData({ ...newWorkerData, email: e.target.value })} placeholder="ejemplo@correo.com" className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all placeholder:text-zinc-300" />
-                            </div>
-                            <div>
-                                <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Rol</label>
-                                <select value={newWorkerData.role} onChange={e => setNewWorkerData({ ...newWorkerData, role: e.target.value })} className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all">
-                                    <option value="staff">Staff</option>
-                                    <option value="supervisor">Supervisor</option>
-                                    <option value="manager">Manager</option>
-                                </select>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Horas/Sem</label>
-                                    <input type="number" value={newWorkerData.contracted_hours_weekly || ''} onChange={e => setNewWorkerData({ ...newWorkerData, contracted_hours_weekly: Number(e.target.value) })} className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all" />
-                                </div>
-                                <div>
-                                    <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">€/h Extra</label>
-                                    <input type="number" step="0.01" value={newWorkerData.overtime_cost_per_hour || ''} onChange={e => setNewWorkerData({ ...newWorkerData, overtime_cost_per_hour: Number(e.target.value) })} className="w-full h-12 px-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-all" />
-                                </div>
-                            </div>
-                            <button onClick={() => setNewWorkerData({ ...newWorkerData, prefer_stock_hours: !newWorkerData.prefer_stock_hours })} className={cn("w-full p-4 rounded-2xl flex items-center justify-between border-2 transition-all active:scale-[0.98]", newWorkerData.prefer_stock_hours ? "bg-purple-50 border-purple-200 text-purple-700" : "bg-white border-zinc-100 text-zinc-400")}>
-                                <div className="flex flex-col items-start gap-0.5 text-left">
-                                    <span className="text-[10px] font-black uppercase tracking-widest leading-none">Preferencia de Pago</span>
-                                    <span className={cn("text-sm font-black transition-colors", newWorkerData.prefer_stock_hours ? "text-purple-700" : "text-zinc-700")}>
-                                        {newWorkerData.prefer_stock_hours ? 'Bolsa de Horas' : 'Pago Mensual'}
-                                    </span>
-                                </div>
-                                <div className={cn("w-10 h-6 rounded-full relative transition-all duration-300", newWorkerData.prefer_stock_hours ? "bg-purple-500" : "bg-zinc-200")}>
-                                    <div className={cn("absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300", newWorkerData.prefer_stock_hours ? "left-5" : "left-1")} />
-                                </div>
-                            </button>
-                        </div>
-                        <div className="p-4 border-t border-zinc-100 flex gap-3">
-                            <button onClick={() => setIsNewWorkerModalOpen(false)} className="flex-1 h-12 bg-zinc-100 text-zinc-600 font-bold rounded-xl active:scale-95 transition-all text-sm">Cancelar</button>
-                            <button onClick={handleCreateWorker} disabled={newWorkerSaving || !newWorkerData.first_name.trim()} className="flex-1 h-12 bg-[#5B8FB9] text-white font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-blue-200 text-sm disabled:opacity-50">
-                                {newWorkerSaving ? <LoadingSpinner size="sm" className="text-white" /> : <><Save size={18} /> Guardar</>}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             <AdminProductModal
                 isOpen={isProductModalOpen}
                 onClose={() => setIsProductModalOpen(false)}
                 onOpenSupplierModal={() => { setIsProductModalOpen(false); setTimeout(() => setIsSupplierModalOpen(true), 150); }}
             />
 
-            <CashClosingModal isOpen={isClosingModalOpen} onClose={() => setIsClosingModalOpen(false)} onSuccess={fetchData} initialTotalSales={closingSalesSummary.total} initialTicketsCount={closingSalesSummary.count} />
-            {/* Modal semana: trabajadores + importe + checkbox; clic en nombre abre WorkerWeeklyHistoryModal; flechas navegan semanas */}
             {weekDetailModal && (() => {
                 const weekStaff = (weekDetailModal.week.staff ?? []).filter((s: any) => {
                     const cost = (s.totalCost ?? s.amount ?? 0);
@@ -1137,57 +1002,58 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 const prevWeek = currentIdx > 0 ? sortedWeeks[currentIdx - 1] : null;
                 const nextWeek = currentIdx >= 0 && currentIdx < sortedWeeks.length - 1 ? sortedWeeks[currentIdx + 1] : null;
                 return (
-                <div
-                    className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
-                    onClick={() => setWeekDetailModal(null)}
+                <Modal
+                    open
+                    onClose={() => {
+                        setWeekDetailModal(null);
+                        setSelectedHistory(null);
+                    }}
+                    variant="standard"
+                    layer="base"
+                    instance="admin-overtime-week-detail"
+                    usageId="admin-overtime-week-detail"
+                    usageLabel="Detalle semana horas extras"
+                    headerTone="petroleum"
+                    title={`Semana ${weekNum}`}
+                    subtitle={periodStr}
                 >
-                    <div
-                        className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
-                        onClick={e => e.stopPropagation()}
-                    >
-                        <div className="bg-[#36606F] px-4 py-3 flex items-center justify-between gap-3 shrink-0 relative">
+                    <div className="px-4 pb-4 space-y-3">
+                        <div className="flex items-center justify-between gap-2">
                             <div className="flex flex-col items-start gap-1 shrink-0">
-                                <span className="text-base font-black text-white leading-none">
+                                <span className="text-base font-black text-zinc-900 leading-none">
                                     {weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}
                                 </span>
-                                {paidTotal > 0.05 && (
+                                {paidTotal > 0.05 ? (
                                     <span
                                         className="bg-emerald-500 text-white text-[10px] font-black px-2 py-1 rounded-md shadow-md leading-none"
                                         title="Total pagado"
                                     >
                                         {paidTotal.toFixed(0)}€ pagado
                                     </span>
-                                )}
+                                ) : null}
                             </div>
-                            <div className="flex-1 flex items-center justify-center min-w-0">
-                                <div className="inline-flex items-center gap-1.5 sm:gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={(e) => { e.stopPropagation(); if (prevWeek) setWeekDetailModal({ week: prevWeek }); }}
-                                        disabled={!prevWeek}
-                                        className="p-1.5 sm:p-2 rounded-lg hover:bg-white/10 transition-colors text-white shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none"
-                                        aria-label="Semana anterior"
-                                    >
-                                        <ChevronLeft className="w-5 h-5" />
-                                    </button>
-                                    <div className="flex flex-col gap-0.5 text-center min-w-0">
-                                        <h3 className="text-sm font-black uppercase tracking-wider text-white whitespace-nowrap">Semana {weekNum}</h3>
-                                        <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider whitespace-nowrap">{periodStr}</span>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={(e) => { e.stopPropagation(); if (nextWeek) setWeekDetailModal({ week: nextWeek }); }}
-                                        disabled={!nextWeek}
-                                        className="p-1.5 sm:p-2 rounded-lg hover:bg-white/10 transition-colors text-white shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none"
-                                        aria-label="Semana siguiente"
-                                    >
-                                        <ChevronRight className="w-5 h-5" />
-                                    </button>
-                                </div>
+                            <div className="inline-flex items-center gap-1.5">
+                                <button
+                                    type="button"
+                                    onClick={() => { if (prevWeek) setWeekDetailModal({ week: prevWeek }); }}
+                                    disabled={!prevWeek}
+                                    className="p-1.5 rounded-lg hover:bg-zinc-100 transition-colors text-zinc-700 shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none"
+                                    aria-label="Semana anterior"
+                                >
+                                    <ChevronLeft className="w-5 h-5" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => { if (nextWeek) setWeekDetailModal({ week: nextWeek }); }}
+                                    disabled={!nextWeek}
+                                    className="p-1.5 rounded-lg hover:bg-zinc-100 transition-colors text-zinc-700 shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none"
+                                    aria-label="Semana siguiente"
+                                >
+                                    <ChevronRight className="w-5 h-5" />
+                                </button>
                             </div>
-                            <button type="button" onClick={() => setWeekDetailModal(null)} className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center" aria-label="Cerrar"><X className="w-5 h-5" /></button>
                         </div>
-                        <div className="p-4 overflow-y-auto flex-1 space-y-2">
+                        <div className="space-y-2">
                             {weekStaff.map((s: any) => (
                                 <StaffOvertimeRow
                                     key={s.id}
@@ -1210,20 +1076,17 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                             )}
                         </div>
                     </div>
-                </div>
+                </Modal>
                 );
             })()}
-            <WorkerWeeklyHistoryModal isOpen={!!selectedHistory} onClose={() => setSelectedHistory(null)} workerId={selectedHistory?.workerId || ''} weekStart={selectedHistory?.weekId || ''} />
+            <WorkerWeeklyHistoryModal
+                isOpen={!!selectedHistory}
+                onClose={() => setSelectedHistory(null)}
+                workerId={selectedHistory?.workerId || ''}
+                weekStart={selectedHistory?.weekId || ''}
+                layer="derived"
+            />
             <SupplierSelectionModal isOpen={isSupplierModalOpen} onClose={() => setIsSupplierModalOpen(false)} />
-
-
-            {editingBox && (
-                <CashBoxEditModal
-                    box={editingBox}
-                    onClose={() => setEditingBox(null)}
-                    onSuccess={() => { fetchData(); setEditingBox(null); }}
-                />
-            )}
         </div>
     );
 }

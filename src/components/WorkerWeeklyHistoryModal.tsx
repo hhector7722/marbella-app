@@ -1,13 +1,12 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { format, getISOWeek, parseISO, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast } from 'sonner';
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { Modal } from '@/components/ui/modal';
+import type { ModalLayer } from '@/lib/design-system';
 import { overtimeWorkerHistoryUsageLabel } from '@/lib/usage/modal-apply';
 import {
   getEmployeeHistoryWeek,
@@ -20,6 +19,11 @@ interface WorkerWeeklyHistoryModalProps {
   onClose: () => void;
   workerId: string;
   weekStart: string; // ISO Date string (yyyy-MM-dd) of the Monday
+  /**
+   * Capa semántica. Default `base` (página overtime, flujo independiente).
+   * En Admin dashboard se abre como `derived` sobre el detalle de semana.
+   */
+  layer?: ModalLayer;
 }
 
 /**
@@ -32,6 +36,7 @@ export default function WorkerWeeklyHistoryModal({
   onClose,
   workerId,
   weekStart,
+  layer = 'base',
 }: WorkerWeeklyHistoryModalProps) {
   const [loading, setLoading] = useState(true);
   const [week, setWeek] = useState<HistoryWeekDto | null>(null);
@@ -48,12 +53,6 @@ export default function WorkerWeeklyHistoryModal({
     })();
     return overtimeWorkerHistoryUsageLabel(workerName || 'Trabajador', weekStart, weekNumber);
   }, [isOpen, weekStart, workerName]);
-
-  useModalUsageTracking({
-    open: isOpen,
-    usageId: 'overtime-worker-history',
-    usageLabel: trackingLabel,
-  });
 
   useEffect(() => {
     if (isOpen && workerId && weekStart) {
@@ -87,58 +86,42 @@ export default function WorkerWeeklyHistoryModal({
     }
   }
 
-  if (!isOpen) return null;
-
-  const mondayISO = weekStart.split('T')[0]!;
+  const mondayISO = (weekStart || '1970-01-01').split('T')[0]!;
   const mondayDate = parseISO(mondayISO);
   const sundayDate = addDays(mondayDate, 6);
   const weekNumber = week?.weekNumber ?? getISOWeek(mondayDate);
 
-  return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
-        <div className="px-5 py-4 border-b border-zinc-100 flex items-center justify-between shrink-0 bg-white z-10">
-          <div>
-            <h3 className="text-lg font-black text-zinc-900 tracking-tight">
-              {workerName || '…'}
-            </h3>
-            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
-              {`Semana ${weekNumber} · ${format(mondayDate, 'd MMM', { locale: es })} – ${format(sundayDate, 'd MMM', { locale: es })}`}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 rounded-full hover:bg-zinc-100 text-zinc-400 transition-colors min-h-12 min-w-12 flex items-center justify-center"
-            aria-label="Cerrar"
-          >
-            <X className="w-5 h-5" />
-          </button>
+  return (
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      variant="standard"
+      layer={layer}
+      instance="admin-overtime-worker-history"
+      usageId="overtime-worker-history"
+      usageLabel={trackingLabel}
+      title={workerName || '…'}
+      subtitle={`Semana ${weekNumber} · ${format(mondayDate, 'd MMM', { locale: es })} – ${format(sundayDate, 'd MMM', { locale: es })}`}
+    >
+      {loading ? (
+        <div className="py-20 flex justify-center">
+          <LoadingSpinner size="lg" className="text-zinc-900" />
         </div>
-
-        <div className="flex-1 overflow-y-auto">
-          {loading ? (
-            <div className="py-20 flex justify-center">
-              <LoadingSpinner size="lg" className="text-zinc-900" />
-            </div>
-          ) : week ? (
-            <div className="p-4 bg-zinc-50/50">
-              <WeekCard
-                week={week as any}
-                idx={0}
-                filterMonth={filterMonth}
-                filterYear={filterYear}
-                onDayClick={() => {}}
-                readOnly
-                showWeekOverrides={false}
-              />
-            </div>
-          ) : (
-            <p className="text-center text-sm text-zinc-500 py-10">Sin datos</p>
-          )}
+      ) : week ? (
+        <div className="p-4 bg-zinc-50/50">
+          <WeekCard
+            week={week as any}
+            idx={0}
+            filterMonth={filterMonth}
+            filterYear={filterYear}
+            onDayClick={() => {}}
+            readOnly
+            showWeekOverrides={false}
+          />
         </div>
-      </div>
-    </div>,
-    document.body,
+      ) : (
+        <p className="text-center text-sm text-zinc-500 py-10">Sin datos</p>
+      )}
+    </Modal>
   );
 }

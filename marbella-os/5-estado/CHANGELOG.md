@@ -36,6 +36,10 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
 
+## 2026-08-18
+
+- **Oleada Staff/Admin (parcial) de Design System.** Los 8 atajos cuadrados adoptan `DashboardShortcut`. La confirmación de fichaje, la compra multiorigen Staff/Admin, el selector de fecha de ventas y el detalle de semana de horas extras adoptan `Modal`. El historial de trabajador se apila como `derived` sobre ese detalle. Quedan fuera la cadena Info/Manuales (bloqueo ADR-0007), `StaffScheduleModal`, `AttendanceDetailModal`, la tarjeta Horarios y el vídeo de fichaje.
+
 ## 2026-08-17
 
 - **Modal: inset único de cabecera y subtítulo en la misma fila.** El título empieza siempre a 16 px (`espacio.4`, ref. Albaranes). Se retira el hueco simétrico de 36 px a la izquierda. Título y subtítulo van en una sola fila; el subtítulo deja la negrita pesada. La cabecera no crece de 36 px.

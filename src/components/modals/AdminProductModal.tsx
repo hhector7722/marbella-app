@@ -54,7 +54,6 @@ export function AdminProductModal({ isOpen, onClose, onOpenSupplierModal }: Admi
             wrapperClassName="max-w-md"
             className="max-h-[85vh]"
             scrollContent={false}
-            zIndexClass="z-[200]"
         >
             <div className="relative p-4 grid grid-cols-2 gap-3 bg-gray-50/30 overflow-y-auto">
                 {ADMIN_MENU_ITEMS.map((item, i) => {

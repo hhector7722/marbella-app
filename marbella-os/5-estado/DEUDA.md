@@ -6,7 +6,7 @@ capa: estado
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-16
+revisado: 2026-08-18
 caducidad: 3 meses
 supersede: —
 ---
@@ -41,9 +41,11 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 
 **Prioridad: alta.** No existe botón, campo, tarjeta, insignia ni estado vacío de sistema. Cada pantalla los reconstruye.
 
-**Pago parcial (2026-08-16):** existe `DashboardShortcut` (Master), el **contrato oficial de Modal** (Albaranes, Caja/Tesorería, Perfil/documentos RRHH, Propinas, Pedidos/Proveedores y Consumo personal) y el **contrato oficial de Button** (footers y CTAs de esos flujos, más comandos de condiciones laborales). Se retiró `ActionButton`. Siguen pendientes: resto de overlays de la allowlist (incluidos Staff/Admin ajenos a los dominios migrados), atajos Staff/Admin, botones fuera de esos flujos, y el resto de base (campo, tarjeta, vacío…). `AvatarCropModal` y `StaffSelectionModal` quedan fuera de oleadas previas a propósito. En Caja, Propinas y Pedidos quedan residuales compartidos `QuickCalculatorModal` / `DenominationZoomModal` (Pedidos solo usa la calculadora).
+**Pago parcial (2026-08-16):** existe `DashboardShortcut` (Master), el **contrato oficial de Modal** (Albaranes, Caja/Tesorería, Perfil/documentos RRHH, Propinas, Pedidos/Proveedores y Consumo personal) y el **contrato oficial de Button** (footers y CTAs de esos flujos, más comandos de condiciones laborales). Se retiró `ActionButton`. Siguen pendientes: resto de overlays de la allowlist, botones fuera de esos flujos, y el resto de base (campo, tarjeta, vacío…). `AvatarCropModal` y `StaffSelectionModal` quedan fuera de oleadas previas a propósito. En Caja, Propinas y Pedidos quedan residuales compartidos `QuickCalculatorModal` / `DenominationZoomModal` (Pedidos solo usa la calculadora).
 
-**Coste residual**: deriva visual continua fuera de los pilotos; overlays legacy con z-index ad hoc hasta migrar. En Caja/Tesorería quedan deliberadamente legacy `QuickCalculatorModal` y `DenominationZoomModal` por el techo `base → derived` ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)). En Perfil queda fuera `AvatarCropModal` (fullscreen de herramienta). En Propinas, la calculadora anidada en ajuste de propina y en el form de bote sigue el mismo residual. En Pedidos, la calculadora del resumen, el popup de categoría de proveedores y el `window.confirm` de Pedido Nuevo quedan fuera a propósito. El zoom de `OrderProductCard` usa `hideHeader` porque la tarjeta trae su propio cromo. En Consumo personal, `StaffSelectionModal` y `TimeFilterModal` quedan residuales compartidos; la ración Entero/Medio es inline en `ConsumptionBottomSheet`.
+**Pago parcial (2026-08-18):** Staff/Admin adoptan `DashboardShortcut` en los 8 atajos cuadrados. Pasan a `Modal` la confirmación de fichaje, los wrappers de compra multiorigen, el selector de fecha de ventas y el detalle de semana OT (`base` → historial `derived`). Quedan bloqueados por [ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md) la cadena Info → Manuales → TPV/Horno → Media. Fuera de oleada: tarjeta Horarios, `StaffScheduleModal`, `AttendanceDetailModal`, vídeo de fichaje, tooltip de ventas y `QuickCalculatorModal`.
+
+**Coste residual**: deriva visual continua fuera de los pilotos; overlays legacy con z-index ad hoc hasta migrar. En Caja/Tesorería quedan deliberadamente legacy `QuickCalculatorModal` y `DenominationZoomModal` por el techo `base → derived` ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)). En Perfil queda fuera `AvatarCropModal` (fullscreen de herramienta). En Propinas, la calculadora anidada en ajuste de propina y en el form de bote sigue el mismo residual. En Pedidos, la calculadora del resumen, el popup de categoría de proveedores y el `window.confirm` de Pedido Nuevo quedan fuera a propósito. El zoom de `OrderProductCard` usa `hideHeader` porque la tarjeta trae su propio cromo. En Consumo personal, `StaffSelectionModal` y `TimeFilterModal` quedan residuales compartidos; la ración Entero/Medio es inline en `ConsumptionBottomSheet`. En Staff/Admin, la cadena Info/Manuales no cabe en una sola `derived`; `StaffScheduleModal` y `AttendanceDetailModal` siguen en allowlist.
 
 **Disparador de pago**: continuar tras D1 parcial. Contrato en [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 

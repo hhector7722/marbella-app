@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { ChevronDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { addDays, addMonths, format, isToday, subDays, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -14,7 +14,8 @@ import { BUSINESS_HOURS } from '@/lib/constants';
 import PremiumCountUp from '@/components/ui/PremiumCountUp';
 import LiveClock from '@/components/ui/LiveClock';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
 
@@ -45,12 +46,6 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
     const initialLoadDoneRef = useRef(false);
     const hourlyFetchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [isSalesDateModalOpen, setIsSalesDateModalOpen] = useState(false);
-
-    useModalUsageTracking({
-        open: isSalesDateModalOpen,
-        usageId: 'dashboard-ventas-date',
-        usageLabel: 'Selector de fecha ventas',
-    });
     const trackVentasDate = useTrackModalApply('dashboard-ventas-date', 'Selector de fecha ventas');
     const [salesCalendarBaseDate, setSalesCalendarBaseDate] = useState(() => new Date());
     const [selectedChartHour, setSelectedChartHour] = useState<number | null>(null);
@@ -558,15 +553,34 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                 </div>
             </div>
 
-            {isSalesDateModalOpen && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setIsSalesDateModalOpen(false)}>
-                    <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
-                        <div className="p-4 border-b border-zinc-50 flex items-center justify-between">
-                            <h3 className="font-black text-zinc-900 uppercase text-[10px] tracking-widest">Seleccionar fecha</h3>
-                            <button onClick={() => setIsSalesDateModalOpen(false)} className="p-3 hover:bg-zinc-100 rounded-2xl transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center">
-                                <X size={18} className="text-zinc-400" />
-                            </button>
-                        </div>
+            <Modal
+                open={isSalesDateModalOpen}
+                onClose={() => setIsSalesDateModalOpen(false)}
+                variant="compact"
+                layer="base"
+                instance="dashboard-ventas-date"
+                usageId="dashboard-ventas-date"
+                usageLabel="Selector de fecha ventas"
+                title="Seleccionar fecha"
+                footer={
+                    !isToday(parseSalesViewDate()) ? (
+                        <Button
+                            type="button"
+                            variant="primary"
+                            layout="fill"
+                            instance="dashboard-ventas-date-today"
+                            onClick={() => {
+                                const todayStr = format(new Date(), 'yyyy-MM-dd');
+                                trackVentasDate(formatYmdShort(todayStr), { selectedDate: todayStr });
+                                setSalesViewDate(todayStr);
+                                setIsSalesDateModalOpen(false);
+                            }}
+                        >
+                            Ver hoy
+                        </Button>
+                    ) : undefined
+                }
+            >
                         <div className="px-4 pb-2 flex items-center gap-2">
                             <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider shrink-0">Seleccionar hora</span>
                             <select
@@ -603,13 +617,13 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                 ))}
                             </select>
                         </div>
-                        <div className="p-6 pt-0">
+                        <div className="px-4 pb-4">
                             <div className="flex items-center justify-between mb-6 px-2">
-                                <button onClick={() => setSalesCalendarBaseDate(subMonths(salesCalendarBaseDate, 1))} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center">
+                                <button type="button" onClick={() => setSalesCalendarBaseDate(subMonths(salesCalendarBaseDate, 1))} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center">
                                     <ChevronLeft size={20} className="text-zinc-400" />
                                 </button>
                                 <span className="font-black text-zinc-900 text-xs uppercase tracking-tight">{format(salesCalendarBaseDate, 'MMMM yyyy', { locale: es })}</span>
-                                <button onClick={() => setSalesCalendarBaseDate(addMonths(salesCalendarBaseDate, 1))} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center">
+                                <button type="button" onClick={() => setSalesCalendarBaseDate(addMonths(salesCalendarBaseDate, 1))} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center">
                                     <ChevronRight size={20} className="text-zinc-400" />
                                 </button>
                             </div>
@@ -637,6 +651,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                         return (
                                             <button
                                                 key={i}
+                                                type="button"
                                                 onClick={() => {
                                                     if (!isFuture) {
                                                         trackVentasDate(formatYmdShort(dStr), { selectedDate: dStr });
@@ -656,23 +671,8 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                     });
                                 })()}
                             </div>
-                            {!isToday(parseSalesViewDate()) && (
-                                <button
-                                    onClick={() => {
-                                        const todayStr = format(new Date(), 'yyyy-MM-dd');
-                                        trackVentasDate(formatYmdShort(todayStr), { selectedDate: todayStr });
-                                        setSalesViewDate(todayStr);
-                                        setIsSalesDateModalOpen(false);
-                                    }}
-                                    className="mt-6 w-full py-3 rounded-2xl bg-[#5B8FB9] text-white font-black text-xs uppercase tracking-widest hover:bg-[#4a7a9e] active:scale-[0.98] transition-all"
-                                >
-                                    Ver hoy
-                                </button>
-                            )}
                         </div>
-                    </div>
-                </div>
-            )}
+            </Modal>
         </>
     );
 }

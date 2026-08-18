@@ -34,6 +34,8 @@ import WorkTimer from '@/components/ui/WorkTimer';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
+import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
 import { ConsumptionModal } from '@/app/staff/ConsumptionModal';
 import { STAFF_MANUAL_ASSETS, STAFF_MANUAL_MENU, STAFF_TPV_MANUAL_ITEMS, STAFF_TPV_MANUAL_VIDEOS, type StaffManualMenuId } from '@/lib/staff-manuals';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
@@ -212,11 +214,6 @@ export default function StaffDashboardView() {
     const [purchaseInventoriesByBoxId, setPurchaseInventoriesByBoxId] = useState<Record<string, Record<number, number>>>({});
 
     useModalUsageTracking({
-        open: showModal,
-        usageId: 'staff-clock-confirm',
-        usageLabel: modalAction === 'in' ? 'Confirmar entrada' : 'Confirmar salida',
-    });
-    useModalUsageTracking({
         open: Boolean(activeMenu),
         usageId: `staff-info-menu-${infoSubMenu ?? activeMenu ?? 'root'}`,
         usageLabel:
@@ -249,11 +246,6 @@ export default function StaffDashboardView() {
         open: isCashOptionsModalOpen,
         usageId: 'staff-cash-options',
         usageLabel: 'Opciones de caja',
-    });
-    useModalUsageTracking({
-        open: showPurchaseMultiSourceModal,
-        usageId: 'staff-purchase-multi-source',
-        usageLabel: 'Compra multiorigen',
     });
     useModalUsageTracking({
         open: cashModalMode !== 'none',
@@ -709,30 +701,6 @@ export default function StaffDashboardView() {
         }
     };
 
-    const IOSIconBoxed = ({ icon: Icon, img, color, label, onClick }: { icon?: any, img?: string, color: string, label: string | React.ReactNode, onClick?: () => void }) => (
-        <button
-            onClick={onClick}
-            className="bg-white rounded-2xl p-2 md:p-3 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-1.5 md:gap-2 active:scale-95 transition-all group aspect-square w-full h-full min-h-0"
-        >
-            <div className="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden shrink-0">
-                {img ? (
-                    <Image
-                        src={img}
-                        alt={typeof label === 'string' ? label : 'Icon'}
-                        width={48}
-                        height={48}
-                        className="w-full h-full object-contain"
-                    />
-                ) : (
-                    <div className={cn("w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center text-white shadow-sm", color)}>
-                        <Icon size={28} fill="currentColor" strokeWidth={2.5} className="w-6 h-6 md:w-8 md:h-8" />
-                    </div>
-                )}
-            </div>
-            <span className="text-[9px] md:text-[11px] font-black text-gray-800 uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5 shrink-0">{label}</span>
-        </button>
-    );
-
     const closeMenus = () => { setActiveMenu(null); setInfoSubMenu(null); setIsProductModalOpen(false); };
     const closeManualsModal = () => {
         setIsManualsModalOpen(false);
@@ -1066,10 +1034,10 @@ export default function StaffDashboardView() {
 
                         {/* Iconos Flotantes - Now in a grid beside horarios */}
                         <div className="grid grid-cols-2 gap-3 md:gap-4">
-                            <IOSIconBoxed img="/icons/change.png" color="bg-white" label="Caja" onClick={() => setIsCashOptionsModalOpen(true)} />
-                            <IOSIconBoxed img="/icons/recipes.png" color="bg-white" label="Recetas" onClick={() => router.push('/recipes?view=staff')} />
-                            <IOSIconBoxed img="/icons/information.png" color="bg-white" label="Info" onClick={() => setActiveMenu('info')} />
-                            <IOSIconBoxed img="/icons/suppliers.png" color="bg-white" label="Stock" onClick={() => setIsProductModalOpen(true)} />
+                            <DashboardShortcut instance="staff-caja" label="Caja" img="/icons/change.png" onClick={() => setIsCashOptionsModalOpen(true)} />
+                            <DashboardShortcut instance="staff-recetas" label="Recetas" img="/icons/recipes.png" onClick={() => router.push('/recipes?view=staff')} />
+                            <DashboardShortcut instance="staff-info" label="Info" img="/icons/information.png" onClick={() => setActiveMenu('info')} />
+                            <DashboardShortcut instance="staff-stock" label="Stock" img="/icons/suppliers.png" onClick={() => setIsProductModalOpen(true)} />
                         </div>
                     </div>
                 </div>
@@ -1084,17 +1052,38 @@ export default function StaffDashboardView() {
                     }}
                 />
             )}
-            {showModal && (
-                <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowModal(false)}>
-                    <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl text-center" onClick={(e) => e.stopPropagation()}>
-                        <h3 className="text-xl font-black text-zinc-800 mb-6">{modalAction === 'in' ? 'Iniciar Turno' : 'Finalizar Turno'}</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <button type="button" onClick={() => setShowModal(false)} className="h-14 px-4 bg-zinc-100 text-zinc-600 font-bold rounded-xl active:scale-95 transition-all duration-150">Cancelar</button>
-                            <button type="button" onClick={() => void handleClockAction()} className={cn("h-14 px-4 text-white font-bold rounded-xl active:scale-95 transition-all duration-150 shadow-lg", modalAction === 'in' ? "bg-emerald-500 shadow-emerald-200" : "bg-rose-500 shadow-rose-200")}>Confirmar</button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <Modal
+                open={showModal}
+                onClose={() => setShowModal(false)}
+                variant="compact"
+                layer="system"
+                instance="staff-clock-confirm"
+                usageId="staff-clock-confirm"
+                usageLabel="Confirmar fichaje"
+                title={modalAction === 'in' ? 'Iniciar Turno' : 'Finalizar Turno'}
+                footer={
+                    <>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            instance="staff-clock-confirm-cancel"
+                            onClick={() => setShowModal(false)}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            type="button"
+                            variant={modalAction === 'out' ? 'destructive' : 'primary'}
+                            instance={modalAction === 'out' ? 'staff-clock-confirm-out' : 'staff-clock-confirm-in'}
+                            onClick={() => void handleClockAction()}
+                        >
+                            Confirmar
+                        </Button>
+                    </>
+                }
+            >
+                <></>
+            </Modal>
 
             {showGiffOverlay && (
                 <div
@@ -1595,18 +1584,25 @@ export default function StaffDashboardView() {
                             </div>
             </Modal>
 
-            {showPurchaseMultiSourceModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-in fade-in duration-200" onClick={() => setShowPurchaseMultiSourceModal(false)}>
-                    <div className={cn("bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", "max-w-2xl")} onClick={(e) => e.stopPropagation()}>
-                        <PurchaseMultiSourceForm
-                            paymentSources={buildPaymentSources()}
-                            inventoriesByBoxId={purchaseInventoriesByBoxId}
-                            onSubmit={handlePurchaseMultiSourceSubmit}
-                            onCancel={() => { setShowPurchaseMultiSourceModal(false); setPurchaseInventoriesByBoxId({}); }}
-                        />
-                    </div>
-                </div>
-            )}
+            <Modal
+                open={showPurchaseMultiSourceModal}
+                onClose={() => { setShowPurchaseMultiSourceModal(false); setPurchaseInventoriesByBoxId({}); }}
+                variant="amplify"
+                layer="base"
+                instance="staff-purchase-multi-source"
+                usageId="staff-purchase-multi-source"
+                usageLabel="Compra multiorigen"
+                title="Compra"
+                ariaLabel="Compra"
+                hideHeader
+            >
+                <PurchaseMultiSourceForm
+                    paymentSources={buildPaymentSources()}
+                    inventoriesByBoxId={purchaseInventoriesByBoxId}
+                    onSubmit={handlePurchaseMultiSourceSubmit}
+                    onCancel={() => { setShowPurchaseMultiSourceModal(false); setPurchaseInventoriesByBoxId({}); }}
+                />
+            </Modal>
 
             {/* Legacy single-box compra modal (mantener por si se abre Salida desde otra ruta) */}
             {
@@ -1651,21 +1647,6 @@ export default function StaffDashboardView() {
                 userRole={userRole}
                 onClose={() => setIsDayDetailModalOpen(false)}
                 onSuccess={() => initialize()}
-            />
-
-            <StaffProductModal
-                isOpen={isProductModalOpen}
-                onClose={() => setIsProductModalOpen(false)}
-                onOpenSupplierModal={() => setIsSupplierModalOpen(true)}
-            />
-
-            <StaffScheduleModal
-                isOpen={isScheduleModalOpen}
-                onClose={closeScheduleModal}
-                shifts={monthShifts}
-                userRole={userRole}
-                userId={userId}
-                initialFocusDate={scheduleFocusDate}
             />
             {isCashChangeModalOpen && (
                 <CashChangeModal
