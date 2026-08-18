@@ -84,9 +84,19 @@ export function resolveButtonAccessibleName(args: {
 }
 
 export const BUTTON_CONTRACT = {
-    /** Alto mínimo = `tactil.minimo`. El ancho por defecto es hug. */
+    /** Alto mínimo táctil = `tactil.minimo`. El ancho por defecto es hug. */
     height: '48px',
-    radius: '12px',
+    /** Radio = `radio.superficie` (16px). El mismo que Modal. No píldora. */
+    radius: '16px',
+    /**
+     * Alto del fondo compacto (`::before`), no del host.
+     * 12px de tipo + `espacio.3` arriba y abajo = 36px.
+     * Debe ser estrictamente mayor que 2 × `radio.superficie` (32px)
+     * para que 16px produzca esquinas, no cápsula.
+     */
+    visualHeight: '36px',
+    /** Padding-block del fondo compacto (`espacio.3`). */
+    visualPaddingBlock: '12px',
     /** Padding horizontal compacto (`espacio.2`); el fondo visual se ajusta al contenido. */
     paddingInline: '8px',
     fontSize: '12px',

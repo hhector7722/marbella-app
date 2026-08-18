@@ -5,8 +5,8 @@ import { createClient } from '@/utils/supabase/client';
 import { Camera } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 import { uploadNormalizedRecipePhoto } from '@/app/dashboard/carta/photo-actions';
 
 export type RecipeNamePhotoSaved = { name: string; photo_url: string | null };
@@ -119,102 +119,97 @@ export function RecipeNamePhotoEditModal({
         }
     };
 
-    if (!open) return null;
-
     return (
         <Modal
             open={open}
             onClose={onClose}
-            title="Nombre e imagen"
-            headerVariant="petroleum"
-            className="max-w-md"
+            variant="standard"
+            layer="base"
+            instance="recipe-name-photo"
             usageId="recipe-name-photo"
             usageLabel="Editar receta"
-        >
-            <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
-                    <label className="block">
-                        <span className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-zinc-400">Nombre</span>
-                        <input
-                            type="text"
-                            value={nameDraft}
-                            onChange={(e) => setNameDraft(e.target.value)}
-                            className={cn(
-                                'min-h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 py-3 text-sm font-semibold text-zinc-800',
-                                'outline-none focus:border-[#36606F] focus:ring-2 focus:ring-[#36606F]/20',
-                            )}
-                            autoComplete="off"
-                            placeholder="Nombre de la receta"
-                        />
-                    </label>
-
-                    <div className="flex flex-col gap-2">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Imagen</span>
-                        <div
-                            className={cn(
-                                'flex h-40 w-full items-center justify-center overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50',
-                                'shadow-inner',
-                            )}
-                        >
-                            {displayPhotoSrc ? (
-                                // eslint-disable-next-line @next/next/no-img-element -- URL externa Supabase / blob
-                                <img src={displayPhotoSrc} alt="" className="max-h-full max-w-full object-contain" />
-                            ) : (
-                                <Camera className="h-10 w-10 text-zinc-200" aria-hidden />
-                            )}
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={saving}
-                            className={cn(
-                                'min-h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-center text-xs font-bold text-[#36606F]',
-                                'transition hover:bg-zinc-50 active:scale-[0.99] disabled:opacity-50',
-                            )}
-                        >
-                            {baselinePhotoUrl || selectedFile ? 'Cambiar imagen' : 'Añadir imagen'}
-                        </button>
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/jpeg,image/png,image/webp"
-                            className="hidden"
-                            onChange={handlePickFile}
-                        />
-                        <p className="text-[10px] font-semibold leading-snug text-zinc-500">
-                            Se recorta blanco de bordes y se guarda entero en 4:5. Vuelve a subir si ves recortes viejos.
-                        </p>
-                    </div>
-                </div>
-
-                <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-zinc-100 p-4 sm:flex-row sm:justify-end">
-                    <button
+            title="Nombre e imagen"
+            headerTone="petroleum"
+            scrollContent
+            footer={
+                <>
+                    <Button
                         type="button"
+                        variant="secondary"
+                        instance="recipe-name-photo-cancel"
                         onClick={onClose}
                         disabled={saving}
-                        className="min-h-12 w-full rounded-xl border border-zinc-200 px-4 py-3 text-xs font-black uppercase tracking-widest text-zinc-600 transition hover:bg-zinc-50 sm:w-auto sm:min-w-[120px]"
                     >
                         Cancelar
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         type="button"
+                        variant="primary"
+                        instance="recipe-name-photo-save"
                         onClick={() => void handleSave()}
                         disabled={saving}
+                        loading={saving}
+                        loadingLabel="Guardando…"
+                    >
+                        Guardar
+                    </Button>
+                </>
+            }
+        >
+            <div className="flex flex-col gap-4 p-4">
+                <label className="block">
+                    <span className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-zinc-400">Nombre</span>
+                    <input
+                        type="text"
+                        value={nameDraft}
+                        onChange={(e) => setNameDraft(e.target.value)}
                         className={cn(
-                            'min-h-12 w-full rounded-xl bg-emerald-600 px-4 py-3 text-xs font-black uppercase tracking-widest text-white',
-                            'shadow-sm transition hover:bg-emerald-700 active:scale-[0.99] disabled:opacity-60',
-                            'sm:w-auto sm:min-w-[120px]',
+                            'min-h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 py-3 text-sm font-semibold text-zinc-800',
+                            'outline-none focus:border-[#36606F] focus:ring-2 focus:ring-[#36606F]/20',
+                        )}
+                        autoComplete="off"
+                        placeholder="Nombre de la receta"
+                    />
+                </label>
+
+                <div className="flex flex-col gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Imagen</span>
+                    <div
+                        className={cn(
+                            'flex h-40 w-full items-center justify-center overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50',
+                            'shadow-inner',
                         )}
                     >
-                        {saving ? (
-                            <span className="inline-flex items-center justify-center gap-2">
-                                <LoadingSpinner size="sm" className="text-white" />
-                                Guardando…
-                            </span>
+                        {displayPhotoSrc ? (
+                            // eslint-disable-next-line @next/next/no-img-element -- URL externa Supabase / blob
+                            <img src={displayPhotoSrc} alt="" className="max-h-full max-w-full object-contain" />
                         ) : (
-                            'Guardar'
+                            <Camera className="h-10 w-10 text-zinc-200" aria-hidden />
                         )}
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={saving}
+                        className={cn(
+                            'min-h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-center text-xs font-bold text-[#36606F]',
+                            'transition hover:bg-zinc-50 active:scale-[0.99] disabled:opacity-50',
+                        )}
+                    >
+                        {baselinePhotoUrl || selectedFile ? 'Cambiar imagen' : 'Añadir imagen'}
                     </button>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={handlePickFile}
+                    />
+                    <p className="text-[10px] font-semibold leading-snug text-zinc-500">
+                        Se recorta blanco de bordes y se guarda entero en 4:5. Vuelve a subir si ves recortes viejos.
+                    </p>
                 </div>
+            </div>
         </Modal>
     );
 }

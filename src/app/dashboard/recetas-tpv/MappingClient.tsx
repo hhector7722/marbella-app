@@ -6,7 +6,7 @@ import { useMemo, useRef, useState, useTransition, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Check, Filter, Loader2, Plus, Search, Trash2, ChevronDown, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
+import { Modal } from '@/components/ui/modal'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
 import { namedEntitySummary } from '@/lib/usage/modal-apply'
 import type { AlbaranLearnedName, MappingRow, Recipe, RecipeIngredientMatchRow, TpvArticle } from './page'
@@ -547,12 +547,6 @@ function IngredientEscandalloModal({
   const [linkIngredientId, setLinkIngredientId] = useState('')
   const [linkUnit, setLinkUnit] = useState('kg')
 
-  useModalUsageTracking({
-    open,
-    usageId: 'recetas-tpv-ingredient-modal',
-    usageLabel: 'Ingredientes y albarán',
-  })
-
   useEffect(() => {
     if (!open) return
     const init: Record<string, { supplierId: string; text: string; factor: string }> = {}
@@ -562,15 +556,6 @@ function IngredientEscandalloModal({
     }
     setAddByIng(init)
   }, [open, matchRows, suppliersMini])
-
-  useEffect(() => {
-    if (!open) return
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
 
   useEffect(() => {
     if (!open) return
@@ -659,44 +644,26 @@ function IngredientEscandalloModal({
     )
   }
 
-  if (!open) return null
+  const subtitle =
+    articuloNombre && recipeName
+      ? `${articuloNombre} · ${recipeName}`
+      : articuloNombre || recipeName
 
   return (
-    <div
-      className="fixed inset-0 z-[100] overflow-y-auto bg-black/40 p-3"
-      role="presentation"
-      onClick={onClose}
+    <Modal
+      open={open}
+      onClose={onClose}
+      variant="standard"
+      layer="base"
+      instance="recetas-tpv-ingredient-modal"
+      usageId="recetas-tpv-ingredient-modal"
+      usageLabel="Ingredientes y albarán"
+      title="Ingredientes y albarán"
+      subtitle={subtitle}
+      headerTone="petroleum"
+      scrollContent
     >
-      <div className="flex min-h-dvh items-center justify-center py-4">
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="ing-modal-title"
-          className="max-h-[88vh] w-full max-w-lg overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xl"
-          onClick={(e) => e.stopPropagation()}
-        >
-        <div className="flex shrink-0 items-start justify-between gap-2 border-b border-zinc-100 bg-[#36606F] px-3 py-2 text-white">
-          <div className="min-w-0">
-            <h2 id="ing-modal-title" className="text-xs font-bold leading-tight">
-              Ingredientes y albarán
-            </h2>
-            <p className="mt-0.5 text-[10px] leading-snug text-white/85">
-              <span className="font-semibold">{articuloNombre}</span>
-              <span className="text-white/60"> · </span>
-              <span className="line-clamp-2">{recipeName}</span>
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-9 min-h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white hover:bg-white/10"
-            aria-label="Cerrar"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="max-h-[calc(88vh-4rem)] overflow-y-auto px-2 py-2">
+        <div className="px-2 py-2">
           {matchRows.length === 0 ? (
             <div className="space-y-2">
               <p className="text-[11px] leading-snug text-zinc-600">
@@ -820,9 +787,7 @@ function IngredientEscandalloModal({
             </>
           )}
         </div>
-        </div>
-      </div>
-    </div>
+    </Modal>
   )
 }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Calculator, Calendar, Clock, FileText, Trash2, Edit2, AlertTriangle } from 'lucide-react';
+import { Calculator, Calendar, Clock, FileText, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { format } from 'date-fns';
@@ -237,7 +237,6 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                             type="button"
                             variant="destructive"
                             instance="treasury-movement-delete"
-                            icon={<Trash2 strokeWidth={2.5} />}
                             onClick={() => setIsDeleting(true)}
                         >
                             Eliminar
@@ -247,7 +246,6 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                                 type="button"
                                 variant="tertiary"
                                 instance="treasury-movement-edit"
-                                icon={<Edit2 strokeWidth={2.5} />}
                                 onClick={() => setIsEditing(true)}
                             >
                                 Editar

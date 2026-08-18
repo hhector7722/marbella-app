@@ -122,7 +122,7 @@ Escala de cuatro píxeles. **No existen valores intermedios.**
 |---|---|---|
 | `espacio.1` | 4 px | Separación entre elementos pegados |
 | `espacio.2` | 8 px | Separación interna mínima. **También** padding horizontal compacto de Button |
-| `espacio.3` | 12 px | Relleno de controles compactos. **También** separación contractual Header → Body del Modal (ref. detalle Albaranes; solo `padding-top` del Body vía `--modal-body-start-gap`) |
+| `espacio.3` | 12 px | Relleno de controles compactos. **También** separación contractual Header → Body del Modal (ref. detalle Albaranes; solo `padding-top` del Body vía `--modal-body-start-gap`) y padding-block del fondo visual compacto de Button |
 | `espacio.4` | 16 px | Relleno estándar de tarjeta, separación entre bloques. **También** inset horizontal único de cabecera Modal |
 | `espacio.6` | 24 px | Separación entre secciones |
 | `espacio.8` | 32 px | Separación mayor y márgenes de página |
@@ -134,8 +134,8 @@ Estado: `espacio.1`–`espacio.4` adoptados en Design System (`--espacio-*`, cla
 
 | Token | Valor | Papel | Estado |
 |---|---|---|---|
-| `radio.control` | 12 px | Botones, campos, tarjetas de contenido. **Radio dominante del producto** | adoptado (piloto `DashboardShortcut` vía `--radio-control`) |
-| `radio.superficie` | 16 px | Modales, paneles, superficies contenedoras | adoptado (piloto `DashboardShortcut` vía `--radio-superficie`) |
+| `radio.control` | 12 px | Campos, tarjetas de contenido. **Radio dominante de bloques de contenido** | adoptado (piloto `DashboardShortcut` vía `--radio-control`) |
+| `radio.superficie` | 16 px | Modales, paneles, superficies contenedoras, Button de sistema | adoptado (piloto `DashboardShortcut` vía `--radio-superficie`; contrato Button vía `--radio-superficie`) |
 | `radio.amplio` | 24 px | Superficies destacadas de cliente | declarado |
 | `radio.circular` | pleno | Avatares, indicadores, botones circulares de acción | declarado |
 

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import { Search, Plus, X, ChevronDown, Phone, Truck, Pencil, Trash2, Save, Upload, ImageIcon } from 'lucide-react';
+import { Search, Plus, X, ChevronDown, Phone, Truck, Pencil, Trash2, Upload, ImageIcon } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import Image from 'next/image';
@@ -713,7 +713,6 @@ export default function SuppliersPage() {
                         variant="primary"
                         instance="supplier-edit-save"
                         layout="fill"
-                        icon={<Save size={16} />}
                         disabled={isSavingEdit}
                         loading={isSavingEdit}
                         loadingLabel="Guardando…"

@@ -3,7 +3,7 @@
 import { useState, useEffect, useLayoutEffect, useMemo } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { cn } from '@/lib/utils';
-import { Trash2, Camera, X, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
+import { Camera, X, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast } from 'sonner';
 import { PricingChoiceButton, PricingStepHeader } from '@/components/ingredients/PricingAssistantControls';
@@ -13,7 +13,8 @@ import { RECIPE_UNIT_OPTIONS, resolveIngredientRecipeUnit } from '@/lib/recipe-c
 import { buildSupplierNameSet, getOrphanedSupplierName } from '@/lib/orphaned-supplier';
 import { resolveSupplierPickerItems } from '@/lib/supplier-seed';
 import { OrphanedSupplierAlert } from '@/components/ingredients/OrphanedSupplierAlert';
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 
 export interface Ingredient {
     id: string;
@@ -140,7 +141,6 @@ export type IngredientEditModalProps = {
 };
 
 export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIngredients }: IngredientEditModalProps) {
-    useModalUsageTracking({ open: !!ingredient, usageId: 'ingredient-edit', usageLabel: 'Editar ingrediente' });
     const supabase = createClient();
     const [activeIngredient, setActiveIngredient] = useState<Ingredient | null>(null);
     const [editForm, setEditForm] = useState<Partial<Ingredient>>({});
@@ -427,22 +427,48 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
     const packBaseUnit = resolvedPackPurchaseUnit(editForm);
 
     return (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={onClose}>
-            <div
-                className="flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="flex shrink-0 items-center justify-between bg-[#36606F] px-6 py-4">
-                    <h2 className="text-lg font-black uppercase tracking-widest text-white">Editar</h2>
-                    <button
+        <Modal
+            open
+            onClose={onClose}
+            variant="standard"
+            layer="base"
+            instance="ingredient-edit"
+            usageId="ingredient-edit"
+            usageLabel="Editar ingrediente"
+            title="Editar"
+            headerTone="petroleum"
+            scrollContent
+            className="max-h-[90vh]"
+            footer={
+                <>
+                    <Button
                         type="button"
-                        onClick={onClose}
-                        className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                        variant="destructive"
+                        instance="ingredient-edit-delete"
+                        onClick={async () => {
+                            if (!confirm('¿Eliminar este ingrediente?')) return;
+                            await supabase.from('ingredients').delete().eq('id', targetIngredient.id);
+                            toast.success('Eliminado');
+                            onSaved();
+                            onClose();
+                        }}
                     >
-                        <X className="h-5 w-5" />
-                    </button>
-                </div>
-                <div className="flex-1 space-y-4 overflow-y-auto bg-[#fafafa] p-6">
+                        Eliminar
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="primary"
+                        instance="ingredient-edit-save"
+                        onClick={handleSaveEdit}
+                        disabled={saving}
+                        loading={saving}
+                    >
+                        Guardar
+                    </Button>
+                </>
+            }
+        >
+            <div className="space-y-4 bg-[#fafafa] p-6">
                     <div className="space-y-4">
                         <div className="flex items-center justify-center gap-8">
                             {showNavArrows ? (
@@ -1163,32 +1189,8 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                 </button>
                             </div>
                         )}
-                        <div className="flex gap-2">
-                            <button
-                                type="button"
-                                onClick={async () => {
-                                    if (!confirm('¿Eliminar este ingrediente?')) return;
-                                    await supabase.from('ingredients').delete().eq('id', targetIngredient.id);
-                                    toast.success('Eliminado');
-                                    onSaved();
-                                    onClose();
-                                }}
-                                className="rounded-2xl bg-gray-100 px-4 text-gray-400 transition-colors hover:bg-rose-50 hover:text-rose-500"
-                            >
-                                <Trash2 size={20} />
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleSaveEdit}
-                                disabled={saving}
-                                className="flex-1 rounded-2xl bg-[#5E35B1] py-3 font-bold text-white"
-                            >
-                                Guardar
-                            </button>
-                        </div>
                     </div>
-                </div>
             </div>
-        </div>
+        </Modal>
     );
 }

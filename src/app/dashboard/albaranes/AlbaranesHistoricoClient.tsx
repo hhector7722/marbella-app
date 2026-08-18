@@ -1973,7 +1973,6 @@ export default function AlbaranesHistoricoClient({
             type="button"
             variant="secondary"
             instance="albaran-invoice-image-close"
-            icon={<X strokeWidth={2.5} />}
             onClick={() => setInvoiceImageViewerOpen(false)}
             aria-label="Cerrar visor de imagen"
           >

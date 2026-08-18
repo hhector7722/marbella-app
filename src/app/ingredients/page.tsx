@@ -12,7 +12,7 @@ import { IngredientEditModal, type Ingredient } from '@/components/ingredients/I
 import { resolveDeclaredPurchaseUnitWithPackContent } from '@/lib/ingredient-pack-pricing';
 import { RECIPE_UNIT_OPTIONS, resolveIngredientRecipeUnit } from '@/lib/recipe-cost';
 import { resolveSupplierPickerItems } from '@/lib/supplier-seed';
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { Modal } from '@/components/ui/modal';
 
 // Unidades canónicas (sin duplicados tipo lt/l o u/ud)
 const STANDARD_UNITS = ['kg', 'g', 'l', 'ml', 'ud', 'cl'];
@@ -98,11 +98,6 @@ export default function IngredientsPage() {
     const [isCreating, setIsCreating] = useState(false);
     const [allSuppliers, setAllSuppliers] = useState<{ id: string; name: string }[]>([]);
 
-    useModalUsageTracking({
-        open: showCreateModal,
-        usageId: 'ingredient-create-inline',
-        usageLabel: 'Crear ingrediente',
-    });
     const [createMode, setCreateMode] = useState<'wizard' | 'expert'>('wizard');
     const [createSettingsOpen, setCreateSettingsOpen] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
@@ -361,69 +356,69 @@ export default function IngredientsPage() {
                 />
             )}
 
-            {showCreateModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setShowCreateModal(false)}>
-                    <div className="bg-white rounded-[20px] max-w-md w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] px-4 md:px-6 py-4 shrink-0 flex justify-between items-center gap-3 relative">
-                            <h2 className="text-lg font-black text-white uppercase tracking-widest">Nuevo</h2>
-                            <div className="flex items-center gap-1 shrink-0">
-                                <div className="relative">
+            <Modal
+                open={showCreateModal}
+                onClose={() => setShowCreateModal(false)}
+                variant="amplify"
+                layer="base"
+                instance="ingredient-create"
+                usageId="ingredient-create"
+                usageLabel="Crear ingrediente"
+                title="Nuevo"
+                headerTone="petroleum"
+                scrollContent
+                className="max-h-[90vh]"
+                headerTrailing={
+                    <div className="relative shrink-0">
+                        <button
+                            type="button"
+                            aria-label="Ajustes"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setCreateSettingsOpen((v) => !v);
+                            }}
+                            className="min-h-12 min-w-12 inline-flex items-center justify-center text-white hover:opacity-80 rounded-full bg-transparent border-0 shadow-none p-0"
+                        >
+                            <Settings className="w-6 h-6" strokeWidth={1.75} />
+                        </button>
+                        {createSettingsOpen && (
+                            <>
+                                <div className="fixed inset-0 z-[70]" onClick={() => setCreateSettingsOpen(false)} />
+                                <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl bg-white shadow-xl border border-zinc-100 p-3 z-[80] text-left">
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400 px-1">Modo de creación</div>
                                     <button
                                         type="button"
-                                        aria-label="Ajustes"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setCreateSettingsOpen((v) => !v);
+                                        onClick={() => {
+                                            setCreateMode('wizard');
+                                            setCreateSettingsOpen(false);
                                         }}
-                                        className="min-h-12 min-w-12 inline-flex items-center justify-center text-white hover:opacity-80 rounded-full bg-transparent border-0 shadow-none p-0"
+                                        className={cn(
+                                            'mt-2 w-full text-left min-h-12 rounded-xl px-3 text-sm font-black',
+                                            createMode === 'wizard' ? 'bg-[#36606F]/10 text-[#36606F]' : 'hover:bg-zinc-50 text-zinc-800'
+                                        )}
                                     >
-                                        <Settings className="w-6 h-6" strokeWidth={1.75} />
+                                        Asistente
                                     </button>
-                                    {createSettingsOpen && (
-                                        <>
-                                            <div className="fixed inset-0 z-[70]" onClick={() => setCreateSettingsOpen(false)} />
-                                            <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl bg-white shadow-xl border border-zinc-100 p-3 z-[80] text-left">
-                                                <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400 px-1">Modo de creación</div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setCreateMode('wizard');
-                                                        setCreateSettingsOpen(false);
-                                                    }}
-                                                    className={cn(
-                                                        'mt-2 w-full text-left min-h-12 rounded-xl px-3 text-sm font-black',
-                                                        createMode === 'wizard' ? 'bg-[#36606F]/10 text-[#36606F]' : 'hover:bg-zinc-50 text-zinc-800'
-                                                    )}
-                                                >
-                                                    Asistente
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setCreateMode('expert');
-                                                        setCreateSettingsOpen(false);
-                                                    }}
-                                                    className={cn(
-                                                        'mt-1 w-full text-left min-h-12 rounded-xl px-3 text-sm font-black',
-                                                        createMode === 'expert' ? 'bg-[#36606F]/10 text-[#36606F]' : 'hover:bg-zinc-50 text-zinc-800'
-                                                    )}
-                                                >
-                                                    Modo experto
-                                                </button>
-                                            </div>
-                                        </>
-                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setCreateMode('expert');
+                                            setCreateSettingsOpen(false);
+                                        }}
+                                        className={cn(
+                                            'mt-1 w-full text-left min-h-12 rounded-xl px-3 text-sm font-black',
+                                            createMode === 'expert' ? 'bg-[#36606F]/10 text-[#36606F]' : 'hover:bg-zinc-50 text-zinc-800'
+                                        )}
+                                    >
+                                        Modo experto
+                                    </button>
                                 </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowCreateModal(false)}
-                                    className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors shrink-0"
-                                >
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-6 bg-[#fafafa] space-y-4">
+                            </>
+                        )}
+                    </div>
+                }
+            >
+                <div className="space-y-4 bg-[#fafafa] p-6">
                             {createMode === 'wizard' && (
                                 <IngredientWizard
                                     onClose={() => {
@@ -717,10 +712,8 @@ export default function IngredientsPage() {
                             <button onClick={handleCreate} className="w-full py-3 bg-[#5E35B1] text-white rounded-2xl font-bold">Crear</button>
                             </div>
                             )}
-                        </div>
-                    </div>
                 </div>
-            )}
+            </Modal>
         </div>
     );
 }

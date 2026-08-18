@@ -22,7 +22,7 @@ import { RecipeNamePhotoEditModal } from '@/components/recipes/RecipeNamePhotoEd
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard';
 import { IngredientEditModal, type Ingredient } from '@/components/ingredients/IngredientEditModal';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { Modal } from '@/components/ui/modal';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { namedEntitySummary } from '@/lib/usage/modal-apply';
 import * as XLSX from 'xlsx';
@@ -99,22 +99,6 @@ function RecipeDetailContent() {
     const [recipeIngredientEditTarget, setRecipeIngredientEditTarget] = useState<Ingredient | null>(null);
     const [menuCategoryRows, setMenuCategoryRows] = useState<MenuCategoryRow[]>([]);
     const [mcoEsByCategoryId, setMcoEsByCategoryId] = useState<Map<string, string | null>>(() => new Map());
-
-    useModalUsageTracking({
-        open: showIngredientModal,
-        usageId: 'recipe-add-ingredient',
-        usageLabel: 'Añadir ingrediente receta',
-    });
-    useModalUsageTracking({
-        open: isModalOpen,
-        usageId: 'recipe-ingredient-wizard',
-        usageLabel: 'Asistente ingrediente receta',
-    });
-    useModalUsageTracking({
-        open: showCategoryModal,
-        usageId: 'recipe-category',
-        usageLabel: 'Categoría receta',
-    });
 
     const trackRecipeCategory = useTrackModalApply('recipe-category', 'Categoría receta');
     const trackRecipeAddIngredient = useTrackModalApply('recipe-add-ingredient', 'Añadir ingrediente receta');
@@ -1619,93 +1603,111 @@ function RecipeDetailContent() {
             </div>
 
             {/* MODALES */}
-            {showIngredientModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={closeAddIngredientModal}>
-                    <div className="bg-white rounded-xl shadow-2xl p-4 max-w-sm w-full max-h-[60vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                        <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm">Añadir ingrediente</h3><button type="button" onClick={closeAddIngredientModal}><X size={16} /></button></div>
-                        <div className="flex items-center gap-2 mb-2">
-                            <span className="text-xs font-bold text-gray-500 shrink-0">Forzar unidad:</span>
-                            <select
-                                value={addIngredientUnit}
-                                onChange={e => {
-                                    setForceAddIngredientUnit(true);
-                                    setAddIngredientUnit(e.target.value);
-                                }}
-                                className="flex-1 p-2 border rounded text-xs font-medium focus:border-[#36606F] outline-none min-h-12"
-                            >
-                                {RECIPE_UNIT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                            </select>
-                        </div>
-                        <p className="text-[10px] text-gray-400 mb-2 leading-snug">Por defecto se usa la unidad configurada en cada ingrediente. Puedes cambiarla después en la tabla.</p>
-                        <input type="text" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full p-2 border rounded text-xs mb-2" autoFocus />
-                        <div className="flex-1 overflow-y-auto space-y-1">
-                            {filteredIngredients.map(ing => {
-                                const purchaseUnit = ing.purchase_unit || 'ud';
-                                const effective = `${Number(ing.current_price || 0).toFixed(4)}€/${purchaseUnit}`;
-                                const packInfo =
-                                    ing.supplier_pricing_mode === 'per_pack'
-                                        ? `${Number(ing.pack_price || 0).toFixed(2)}€/pack`
-                                        : null;
-
-                                const configuredUnit = resolveIngredientRecipeUnit(ing.recipe_unit, purchaseUnit);
-                                const unitToAdd = forceAddIngredientUnit ? addIngredientUnit : configuredUnit;
-
-                                return (
-                                    <button
-                                        key={ing.id}
-                                        type="button"
-                                        onClick={() => handleAddIngredient(ing.id, unitToAdd, ing.name)}
-                                        className="w-full text-left p-2 hover:bg-gray-50 flex justify-between items-center gap-2 rounded text-xs min-h-12"
-                                    >
-                                        <span className="font-bold min-w-0 truncate">{ing.name}</span>
-                                        <span className="shrink-0 font-mono text-[10px] text-gray-400">{configuredUnit}</span>
-                                        <span className="text-right">
-                                            <span className="font-bold text-gray-700">{effective}</span>
-                                            {packInfo && <span className="block text-[10px] text-gray-400">{packInfo}</span>}
-                                        </span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
-            )}
-            {isModalOpen && (
-                <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setIsModalOpen(false)}>
-                    <div className="w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-                        <IngredientWizard
-                            onClose={() => {
-                                setIsModalOpen(false);
-                                void fetchAvailableIngredients();
-                                void fetchRecipe();
+            <Modal
+                open={showIngredientModal}
+                onClose={closeAddIngredientModal}
+                variant="compact"
+                layer="base"
+                instance="recipe-add-ingredient"
+                usageId="recipe-add-ingredient"
+                usageLabel="Añadir ingrediente receta"
+                title="Añadir ingrediente"
+            >
+                <div className="flex flex-col">
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-bold text-gray-500 shrink-0">Forzar unidad:</span>
+                        <select
+                            value={addIngredientUnit}
+                            onChange={e => {
+                                setForceAddIngredientUnit(true);
+                                setAddIngredientUnit(e.target.value);
                             }}
-                            onSaved={(ingredientId, meta) => {
-                                trackRecipeIngredientWizard(namedEntitySummary(meta?.name ?? ingredientId));
-                            }}
-                        />
+                            className="flex-1 p-2 border rounded text-xs font-medium focus:border-[#36606F] outline-none min-h-12"
+                        >
+                            {RECIPE_UNIT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        </select>
                     </div>
-                </div>
-            )}
-            {showCategoryModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCategoryModal(false)}>
-                    <div className="bg-white rounded-xl p-4 max-w-xs w-full shadow-2xl" onClick={e => e.stopPropagation()}>
-                        <div className="grid max-h-[min(60vh,24rem)] grid-cols-2 gap-2 overflow-y-auto">
-                            {sortedMenuCategoryRows.map((row) => (
+                    <p className="text-[10px] text-gray-400 mb-2 leading-snug">Por defecto se usa la unidad configurada en cada ingrediente. Puedes cambiarla después en la tabla.</p>
+                    <input type="text" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full p-2 border rounded text-xs mb-2" autoFocus />
+                    <div className="max-h-[min(50vh,20rem)] overflow-y-auto space-y-1">
+                        {filteredIngredients.map(ing => {
+                            const purchaseUnit = ing.purchase_unit || 'ud';
+                            const effective = `${Number(ing.current_price || 0).toFixed(4)}€/${purchaseUnit}`;
+                            const packInfo =
+                                ing.supplier_pricing_mode === 'per_pack'
+                                    ? `${Number(ing.pack_price || 0).toFixed(2)}€/pack`
+                                    : null;
+
+                            const configuredUnit = resolveIngredientRecipeUnit(ing.recipe_unit, purchaseUnit);
+                            const unitToAdd = forceAddIngredientUnit ? addIngredientUnit : configuredUnit;
+
+                            return (
                                 <button
-                                    key={row.id}
+                                    key={ing.id}
                                     type="button"
-                                    onClick={() => void handleCategoryUpdate(row)}
-                                    className={`rounded-lg py-2 text-xs font-bold ${
-                                        recipe.menu_category_id === row.id ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
-                                    }`}
+                                    onClick={() => handleAddIngredient(ing.id, unitToAdd, ing.name)}
+                                    className="w-full text-left p-2 hover:bg-gray-50 flex justify-between items-center gap-2 rounded text-xs min-h-12"
                                 >
-                                    {labelMenuCategoryForRecipesEs(row, sortedMenuCategoryRows, mcoEsByCategoryId)}
+                                    <span className="font-bold min-w-0 truncate">{ing.name}</span>
+                                    <span className="shrink-0 font-mono text-[10px] text-gray-400">{configuredUnit}</span>
+                                    <span className="text-right">
+                                        <span className="font-bold text-gray-700">{effective}</span>
+                                        {packInfo && <span className="block text-[10px] text-gray-400">{packInfo}</span>}
+                                    </span>
                                 </button>
-                            ))}
-                        </div>
+                            );
+                        })}
                     </div>
                 </div>
-            )}
+            </Modal>
+            <Modal
+                open={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                variant="amplify"
+                layer="base"
+                instance="recipe-ingredient-wizard"
+                usageId="recipe-ingredient-wizard"
+                usageLabel="Asistente ingrediente receta"
+                title="Nuevo ingrediente"
+                hideHeader
+                scrollContent
+            >
+                <IngredientWizard
+                    onClose={() => {
+                        setIsModalOpen(false);
+                        void fetchAvailableIngredients();
+                        void fetchRecipe();
+                    }}
+                    onSaved={(ingredientId, meta) => {
+                        trackRecipeIngredientWizard(namedEntitySummary(meta?.name ?? ingredientId));
+                    }}
+                />
+            </Modal>
+            <Modal
+                open={showCategoryModal}
+                onClose={() => setShowCategoryModal(false)}
+                variant="compact"
+                layer="base"
+                instance="recipe-category"
+                usageId="recipe-category"
+                usageLabel="Categoría receta"
+                title="Categoría"
+            >
+                <div className="grid max-h-[min(60vh,24rem)] grid-cols-2 gap-2 overflow-y-auto">
+                    {sortedMenuCategoryRows.map((row) => (
+                        <button
+                            key={row.id}
+                            type="button"
+                            onClick={() => void handleCategoryUpdate(row)}
+                            className={`rounded-lg py-2 text-xs font-bold ${
+                                recipe.menu_category_id === row.id ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
+                            }`}
+                        >
+                            {labelMenuCategoryForRecipesEs(row, sortedMenuCategoryRows, mcoEsByCategoryId)}
+                        </button>
+                    ))}
+                </div>
+            </Modal>
 
             {recipeIngredientEditTarget && (
                 <IngredientEditModal

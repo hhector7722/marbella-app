@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Save, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
@@ -130,7 +130,6 @@ export function TipOverrideModal({
               type="button"
               variant="primary"
               instance="tip-override-save"
-              icon={<Save size={16} strokeWidth={3} />}
               disabled={!canSave || saving}
               loading={saving}
               loadingLabel="Guardando…"

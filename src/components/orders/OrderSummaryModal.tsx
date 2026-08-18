@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowRight } from 'lucide-react';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
@@ -53,7 +52,6 @@ export function OrderSummaryModal({ isOpen, onClose, items, onConfirm, isProcess
                             variant="primary"
                             instance="order-summary-continue"
                             layout={smUp ? 'hug' : 'fill'}
-                            icon={<ArrowRight size={18} />}
                             disabled={isProcessing}
                             loading={isProcessing}
                             loadingLabel="Procesando..."

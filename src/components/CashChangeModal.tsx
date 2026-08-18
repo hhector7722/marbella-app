@@ -509,7 +509,6 @@ export const CashChangeModal = ({
                                 layout="fill"
                                 instance="cash-change-single-exit"
                                 className="flex-1"
-                                icon={<X strokeWidth={3} />}
                                 onClick={onClose}
                             >
                                 SALIR

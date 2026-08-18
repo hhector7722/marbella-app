@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Lock, Eye, EyeOff, Save, CheckCircle2 } from 'lucide-react';
+import { Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -163,7 +163,6 @@ export default function ChangePasswordModal({
                         form="change-password-form"
                         variant="primary"
                         instance="change-password-submit"
-                        icon={<Save size={20} strokeWidth={3} />}
                         disabled={submitDisabled}
                         loading={loading}
                         loadingLabel={isRecoveryMode ? 'Guardando…' : 'Actualizando…'}

@@ -36,6 +36,12 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
 
+## 2026-08-19
+
+- **Button: fondo compacto 36 px, no cápsula.** El área táctil sigue en 48 px. El fondo visual compacto pasa a 36 px (12 px de tipo + `espacio.3` arriba y abajo), por encima del doble de `radio.superficie`, para que 16 px produzca esquinas y no píldora. Icon-only sigue en 48×48.
+- **Button: radio de superficie, no píldora.** El contrato usa `radio.superficie` (16 px), el mismo que Modal. Los footers de Modal migrados quedan en texto, sin `icon`. La prop `icon` y el icon-only siguen fuera de ese pie.
+- **Oleada Ingredientes/Recetas (Fase B parcial): mapeo TPV.** El escandallo de `MappingClient` adopta `Modal` `standard`/`base`. Quedan fuera Staff detail de la lista de recetas, `ImageLightbox`, `window.confirm` y los popovers de receta/departamento.
+
 ## 2026-08-18
 
 - **Oleada Staff/Admin (parcial) de Design System.** Los 8 atajos cuadrados adoptan `DashboardShortcut`. La confirmación de fichaje, la compra multiorigen Staff/Admin, el selector de fecha de ventas y el detalle de semana de horas extras adoptan `Modal`. El historial de trabajador se apila como `derived` sobre ese detalle. Quedan fuera la cadena Info/Manuales (bloqueo ADR-0007), `StaffScheduleModal`, `AttendanceDetailModal`, la tarjeta Horarios y el vídeo de fichaje.

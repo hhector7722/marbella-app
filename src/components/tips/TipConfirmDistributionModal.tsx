@@ -1,6 +1,5 @@
 'use client';
 
-import { Check } from 'lucide-react';
 import { formatLocalIsoDateLabel } from '@/lib/tip-distribution-display';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
@@ -75,7 +74,6 @@ export function TipConfirmDistributionModal({
             type="button"
             variant="primary"
             instance="tip-confirm-distribution-submit"
-            icon={<Check size={18} strokeWidth={3} />}
             disabled={confirming || staffWithPayout.length === 0}
             loading={confirming}
             loadingLabel="Confirmando…"
