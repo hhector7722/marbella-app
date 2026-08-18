@@ -41,7 +41,7 @@ Button
  └── label?
 ```
 
-**Variantes** (cerradas; nombres de código): `primary`, `secondary`, `tertiary`, `destructive`. No existe `success`, `positive`, `emerald`, `ghost`, `danger` ni quinta variante. Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`** (ancho = contenido + padding). `fill` / ancho completo solo cuando el consumidor lo declara. La altura mínima sigue siendo `tactil.minimo` (48 px). Padding horizontal compacto: `espacio.3`.
+**Variantes** (cerradas; nombres de código): `primary`, `secondary`, `tertiary`, `destructive`. No existe `success`, `positive`, `emerald`, `ghost`, `danger` ni quinta variante. Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`** (ancho = contenido + padding). `fill` / ancho completo solo cuando el consumidor lo declara. La altura mínima táctil sigue siendo `tactil.minimo` (48 px). El fondo visual se ajusta al contenido (alto visual = 12 px de tipo + `espacio.2` arriba y abajo). Padding horizontal compacto: `espacio.2`. Icon-only conserva superficie visual 48×48.
 
 **Estados**: reposo, hover (sin scale-up), pulsado (`scale(0.95)`), foco visible (anillo de marca), en curso (equivale a deshabilitado + spinner a la izquierda), deshabilitado (opacity 50). El estado visual de error no se implementa en v1: el error vive en el campo o el aviso.
 
@@ -142,6 +142,8 @@ Piezas transversales con comportamiento propio y contrato estricto. **Estas sí 
 - Respeta el área segura del dispositivo y usa el alto visible real, nunca el teórico.
 - Atenúa y desactiva las barras fijas de la aplicación mientras está abierto.
 - Cabecera fija (`estructura.cabecera-modal` = 36px) y pie no se desplazan; el pie no se encoge. El contenido de cabecera (título, iconos, acciones) se adapta tipográficamente; no se trunca el título por la altura. Botones de cabecera (chrome) independientes de Button, cuadrados al alto de la cabecera.
+- **Inset horizontal único de cabecera:** `espacio.4` (16 px, ref. Albaranes). Título, subtítulo y texto de cabecera empiezan en el mismo punto. El chrome de la derecha no reserva un hueco simétrico a la izquierda. `headerCompact` y `headerTitleAlign` no cambian ese inicio.
+- **Título y subtítulo van en la misma fila.** El título lleva la jerarquía principal (`font-black`). El subtítulo es menor y de peso medio, nunca negrita pesada. Si el texto no cabe, se recorta en esa fila; la cabecera no crece por encima de 36 px.
 - **Separación Header → Body:** exactamente 12 px (`espacio.3` / `estructura.modal-cuerpo-inicio`) como `padding-top` del Body. No es padding completo del Body. El consumidor no decide ni elimina esa distancia (`pt-0` en hijos no la anula).
 - Radio único del panel: `radio.superficie` (16 px). El consumidor no puede sobrescribirlo con `className`.
 - **Nesting:** máximo una superficie derivada sobre el modal base ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)). Backdrop por capa sin blur acumulado ([ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md)).

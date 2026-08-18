@@ -27,6 +27,8 @@
   --elevacion-modal: 0 25px 50px -12px rgb(0 0 0 / 0.25);
   /* TOKENS estructura.cabecera-modal — altura fija global */
   --modal-header-height: 36px;
+  /* Inset horizontal único de cabecera Modal (ref. Albaranes) = espacio.4 */
+  --modal-header-inset: var(--espacio-4);
   /* Separación Header → Body (ref. detalle Albaranes) = espacio.3 */
   --modal-body-start-gap: var(--espacio-3);
   /* Referencia Albaranes detalle: max-h 68dvh con safe-area */
@@ -106,6 +108,24 @@
   padding-top: var(--modal-body-start-gap);
 }
 
+/*
+ * Inset horizontal único de cabecera. El consumidor no lo decide
+ * (`px-*` / `headerCompact` no desplazan el inicio del título).
+ */
+[data-component='Modal'] [data-element='header'] {
+  padding-inline: var(--modal-header-inset);
+}
+
+[data-component='Modal'] [data-element='heading'] {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 0%;
+  overflow: hidden;
+}
+
 [data-component='Modal'] [data-element='body'] table,
 [data-component='ConsumptionBottomSheet'] [data-element='body'] table {
   max-width: 100%;
@@ -126,17 +146,22 @@
 [data-component='Button'] {
   box-sizing: border-box;
   display: inline-flex;
+  position: relative;
+  isolation: isolate;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  gap: var(--espacio-2);
+  gap: var(--espacio-1);
   height: var(--tactil-minimo);
   min-height: var(--tactil-minimo);
   max-height: var(--tactil-minimo);
-  padding-inline: var(--espacio-3);
-  border-width: 1px;
+  padding-inline: var(--espacio-2);
+  padding-block: 0;
+  border-width: 0;
   border-style: solid;
+  border-color: transparent;
   border-radius: var(--radio-control);
+  background-color: transparent;
   font-size: 12px;
   font-weight: 800;
   line-height: 1;
@@ -149,14 +174,29 @@
   user-select: none;
   transition:
     transform 150ms ease,
-    background-color 150ms ease,
-    border-color 150ms ease,
     color 150ms ease,
     opacity 150ms ease;
 }
 
+[data-component='Button']::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  inset-inline: 0;
+  top: 50%;
+  height: calc(12px + var(--espacio-2) * 2);
+  transform: translateY(-50%);
+  box-sizing: border-box;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: var(--radio-control);
+}
+
 [data-component='Button'][data-layout='hug'] {
-  width: auto;
+  width: fit-content;
+  min-width: min-content;
+  max-width: 100%;
 }
 
 [data-component='Button'][data-layout='fill'] {
@@ -169,45 +209,64 @@
   padding-inline: 0;
 }
 
+[data-component='Button'][data-icon-only='true']::before {
+  inset: 0;
+  top: 0;
+  height: auto;
+  transform: none;
+}
+
 [data-component='Button'][data-variant='primary'] {
-  background-color: var(--color-marca);
-  border-color: var(--color-marca);
   color: var(--color-texto-invertido);
 }
 
-[data-component='Button'][data-variant='primary']:hover:not(:disabled) {
+[data-component='Button'][data-variant='primary']::before {
+  background-color: var(--color-marca);
+  border-color: var(--color-marca);
+}
+
+[data-component='Button'][data-variant='primary']:hover:not(:disabled)::before {
   background-color: var(--color-marca-intenso);
   border-color: var(--color-marca-intenso);
 }
 
 [data-component='Button'][data-variant='secondary'] {
-  background-color: var(--color-superficie-inactiva);
-  border-color: var(--color-superficie-inactiva);
   color: var(--color-texto-fuerte);
 }
 
-[data-component='Button'][data-variant='secondary']:hover:not(:disabled) {
+[data-component='Button'][data-variant='secondary']::before {
+  background-color: var(--color-superficie-inactiva);
+  border-color: var(--color-superficie-inactiva);
+}
+
+[data-component='Button'][data-variant='secondary']:hover:not(:disabled)::before {
   background-color: color-mix(in srgb, var(--color-superficie-inactiva) 72%, var(--color-texto-fuerte));
   border-color: color-mix(in srgb, var(--color-superficie-inactiva) 72%, var(--color-texto-fuerte));
 }
 
 [data-component='Button'][data-variant='tertiary'] {
-  background-color: transparent;
-  border-color: color-mix(in srgb, var(--color-marca) 20%, transparent);
   color: var(--color-marca);
 }
 
-[data-component='Button'][data-variant='tertiary']:hover:not(:disabled) {
+[data-component='Button'][data-variant='tertiary']::before {
+  background-color: transparent;
+  border-color: color-mix(in srgb, var(--color-marca) 20%, transparent);
+}
+
+[data-component='Button'][data-variant='tertiary']:hover:not(:disabled)::before {
   background-color: color-mix(in srgb, var(--color-marca) 10%, transparent);
 }
 
 [data-component='Button'][data-variant='destructive'] {
-  background-color: var(--color-negativo);
-  border-color: var(--color-negativo);
   color: var(--color-texto-invertido);
 }
 
-[data-component='Button'][data-variant='destructive']:hover:not(:disabled) {
+[data-component='Button'][data-variant='destructive']::before {
+  background-color: var(--color-negativo);
+  border-color: var(--color-negativo);
+}
+
+[data-component='Button'][data-variant='destructive']:hover:not(:disabled)::before {
   background-color: color-mix(in srgb, var(--color-negativo) 82%, var(--color-texto-fuerte));
   border-color: color-mix(in srgb, var(--color-negativo) 82%, var(--color-texto-fuerte));
 }

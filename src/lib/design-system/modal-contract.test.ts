@@ -57,6 +57,8 @@ describe('Modal identidad y variantes', () => {
 
     it('tokens dimensionales alineados a Albaranes', () => {
         assert.equal(DS_SCREEN_TOKENS.modalHeaderHeight, '36px');
+        assert.equal(DS_SCREEN_TOKENS.modalHeaderInset, DS_SCREEN_TOKENS.espacio4);
+        assert.equal(DS_SCREEN_TOKENS.modalHeaderInset, '16px');
         assert.equal(DS_SCREEN_TOKENS.modalBodyStartGap, DS_SCREEN_TOKENS.espacio3);
         assert.equal(DS_SCREEN_TOKENS.modalBodyStartGap, '12px');
         assert.equal(DS_SCREEN_TOKENS.radioSuperficie, '16px');
@@ -84,7 +86,16 @@ describe('Modal identidad y variantes', () => {
     });
     it('CSS bloquea radio del panel, cabecera 36px y gap Header→Body 12px', () => {
         const css = readFileSync(join(process.cwd(), 'src/app/globals.css'), 'utf8');
+        const modalSource = readFileSync(
+            join(process.cwd(), 'src/components/ui/modal.tsx'),
+            'utf8'
+        );
         assert.match(css, /--modal-header-height:\s*36px/);
+        assert.match(css, /--modal-header-inset:\s*var\(--espacio-4\)/);
+        assert.match(css, /\[data-component='Modal'\] \[data-element='header'\]/);
+        assert.match(css, /padding-inline:\s*var\(--modal-header-inset\)/);
+        assert.match(css, /\[data-element='heading'\]/);
+        assert.match(css, /flex-direction:\s*row/);
         assert.match(css, /--modal-body-start-gap:\s*var\(--espacio-3\)/);
         assert.match(css, /\[data-component='Modal'\] \[data-element='container'\]/);
         assert.match(css, /border-radius:\s*var\(--radio-superficie\)/);
@@ -94,6 +105,9 @@ describe('Modal identidad y variantes', () => {
         assert.match(css, /z-index:\s*var\(--z-modal-base\)/);
         assert.match(css, /z-index:\s*var\(--z-modal-derived\)/);
         assert.match(css, /z-index:\s*var\(--z-modal-system\)/);
+        assert.match(modalSource, /data-element="heading"/);
+        assert.equal(modalSource.includes('hideTitle || titleLeft'), false);
+        assert.equal(modalSource.includes('flex-col justify-center'), false);
     });
 });
 

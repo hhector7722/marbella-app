@@ -87,8 +87,8 @@ export const BUTTON_CONTRACT = {
     /** Alto mínimo = `tactil.minimo`. El ancho por defecto es hug. */
     height: '48px',
     radius: '12px',
-    /** Padding horizontal compacto (`espacio.3`); no estirar el fondo. */
-    paddingInline: '12px',
+    /** Padding horizontal compacto (`espacio.2`); el fondo visual se ajusta al contenido. */
+    paddingInline: '8px',
     fontSize: '12px',
     fontWeight: '800',
     textTransform: 'uppercase',

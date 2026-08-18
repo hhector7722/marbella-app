@@ -4,10 +4,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ChevronLeft, Check, Loader2, Trash2, Plus, RefreshCw, Merge } from 'lucide-react';
+import { ChevronLeft, Check, Trash2, Plus, RefreshCw, Merge } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Button } from '@/components/ui/button';
 import {
   prepareReviewAction,
   fetchVenuesAction,
@@ -265,14 +266,15 @@ export default function PavilionRevisionPage() {
               </h1>
             </div>
             {loadedFromDb && filePath && (
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                instance="pavilion-revision-reprocess"
+                icon={<RefreshCw size={14} />}
                 onClick={() => void loadData(true)}
-                className="flex items-center gap-2 rounded-xl bg-zinc-200 px-3 py-2 text-xs font-bold text-zinc-700 transition-colors hover:bg-zinc-300 lg:min-h-12 lg:px-4 lg:text-sm"
               >
-                <RefreshCw size={14} />
                 Re-procesar con OCR
-              </button>
+              </Button>
             )}
           </div>
 
@@ -302,13 +304,14 @@ export default function PavilionRevisionPage() {
                 </p>
               </div>
               <div className="flex gap-3">
-                <button
+                <Button
                   type="button"
+                  variant="primary"
+                  instance="pavilion-revision-retry"
                   onClick={handleRetry}
-                  className="min-h-12 rounded-xl bg-[#36606F] px-6 font-black text-white hover:bg-[#2A4C58]"
                 >
                   Reintentar
-                </button>
+                </Button>
                 <button
                   type="button"
                   onClick={handleCancel}
@@ -326,14 +329,15 @@ export default function PavilionRevisionPage() {
               <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3 lg:px-6">
                 <div />
                 {selectedIndices.size > 1 && (
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary"
+                    instance="pavilion-revision-merge"
+                    icon={<Merge size={14} />}
                     onClick={handleMerge}
-                    className="flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-100 lg:min-h-12 lg:px-4 lg:text-sm"
                   >
-                    <Merge size={14} />
                     Unificar seleccionadas ({selectedIndices.size})
-                  </button>
+                  </Button>
                 )}
               </div>
 
@@ -505,35 +509,40 @@ export default function PavilionRevisionPage() {
               </div>
               
               <div className="p-4 lg:px-6">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  instance="pavilion-revision-add"
+                  icon={<Plus size={16} />}
                   onClick={addRow}
-                  className="flex items-center gap-2 rounded-xl border border-dashed border-zinc-300 px-4 py-2 text-sm font-bold text-zinc-500 hover:border-zinc-400 hover:text-zinc-700 lg:min-h-12"
                 >
-                  <Plus size={16} />
                   Añadir actividad
-                </button>
+                </Button>
               </div>
 
               {/* ---- Footer actions ---- */}
               <div className="flex items-center justify-end gap-3 border-t border-zinc-100 px-4 py-4 lg:px-6 lg:py-5">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  instance="pavilion-revision-cancel"
                   onClick={handleCancel}
                   disabled={state === 'importing'}
-                  className="min-h-12 rounded-xl border border-zinc-200 bg-white px-5 font-black text-zinc-900 transition-colors hover:bg-zinc-50 disabled:opacity-50"
                 >
                   Cancel·lar
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="primary"
+                  instance="pavilion-revision-save"
+                  icon={state === 'importing' ? undefined : <Check size={18} />}
+                  loading={state === 'importing'}
+                  loadingLabel="Guardar horario"
                   onClick={() => void handleAccept()}
                   disabled={state === 'importing'}
-                  className="flex min-h-12 items-center gap-2 rounded-xl bg-emerald-600 px-5 font-black text-white hover:bg-emerald-700 disabled:opacity-50 lg:px-8"
                 >
-                  {state === 'importing' ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
                   Guardar horario
-                </button>
+                </Button>
               </div>
             </>
           )}

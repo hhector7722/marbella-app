@@ -54,6 +54,11 @@ export const DS_SCREEN_TOKENS = {
      */
     modalHeaderHeight: '36px',
     /**
+     * Inset horizontal único de cabecera Modal (ref. Albaranes).
+     * Valor = TOKENS `espacio.4`.
+     */
+    modalHeaderInset: '16px',
+    /**
      * Separación contractual Header → Body (ref. detalle Albaranes).
      * Valor = TOKENS `espacio.3`. Solo padding-top del Body; no inset completo.
      */
@@ -100,6 +105,8 @@ export const DS_CSS_VARS = {
     elevacionSuperficie: '--elevacion-superficie',
     elevacionModal: '--elevacion-modal',
     modalHeaderHeight: '--modal-header-height',
+    /** Alias estructural: apunta a `--espacio-4` (16px). */
+    modalHeaderInset: '--modal-header-inset',
     /** Alias estructural: apunta a `--espacio-3` (12px). */
     modalBodyStartGap: '--modal-body-start-gap',
     modalMaxHeight: '--modal-max-height',

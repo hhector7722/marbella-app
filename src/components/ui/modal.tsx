@@ -68,6 +68,10 @@ export type ModalProps = {
     onBack?: () => void;
     onBackPlain?: boolean;
     loading?: boolean;
+    /**
+     * Conservado por compatibilidad. El inicio horizontal del título
+     * lo fija el inset contractual de cabecera, no este flag.
+     */
     headerTitleAlign?: 'left' | 'default';
     headerCompact?: boolean;
     scrollContent?: boolean;
@@ -119,7 +123,7 @@ function ModalPanelShell({
     hideTitle = false,
     hideHeader = false,
     headerTrailing,
-    headerTitleAlign = 'default',
+    headerTitleAlign: _headerTitleAlign = 'default',
     headerCompact = false,
     scrollContent = true,
     preferTall = false,
@@ -152,7 +156,6 @@ function ModalPanelShell({
     hideCloseButton?: boolean;
 }) {
     const petroleum = headerTone === 'petroleum';
-    const titleLeft = headerTitleAlign === 'left';
     const actionChrome = onBackPlain ? 'plain' : headerActionChrome;
 
     return (
@@ -173,9 +176,9 @@ function ModalPanelShell({
                 <div
                     data-element="header"
                     className={cn(
-                        'relative flex h-ds-modal-header max-h-ds-modal-header min-h-ds-modal-header shrink-0 items-center gap-ds-2 overflow-hidden overflow-x-hidden',
+                        'relative flex h-ds-modal-header max-h-ds-modal-header min-h-ds-modal-header shrink-0 items-center overflow-hidden overflow-x-hidden',
                         petroleum ? 'bg-ds-marca text-white' : 'bg-ds-superficie text-ds-texto-fuerte',
-                        headerCompact ? 'px-ds-2' : 'px-ds-4',
+                        headerCompact ? 'gap-ds-1' : 'gap-ds-2',
                         !hideHeaderDivider && !petroleum && 'border-b border-ds-borde'
                     )}
                 >
@@ -193,28 +196,19 @@ function ModalPanelShell({
                                 strokeWidth={onBackPlain ? 2.25 : undefined}
                             />
                         </button>
-                    ) : (
-                        <span
-                            className={cn(
-                                'shrink-0',
-                                hideTitle || titleLeft ? 'w-0' : 'w-[var(--modal-header-height)]'
-                            )}
-                            aria-hidden
-                        />
-                    )}
+                    ) : null}
 
                     {!hideTitle ? (
                         <div
-                            className={cn(
-                                'flex min-h-0 min-w-0 flex-1 flex-col justify-center overflow-hidden',
-                                titleLeft ? 'text-left' : ''
-                            )}
+                            data-element="heading"
+                            className="flex min-h-0 min-w-0 flex-1 items-center gap-ds-2 overflow-hidden"
                         >
                             <h2
                                 id={titleId}
                                 className={cn(
-                                    'max-h-full overflow-hidden font-black uppercase tracking-wide leading-none break-words',
+                                    'min-w-0 overflow-hidden font-black uppercase tracking-wide leading-none truncate',
                                     'text-[clamp(0.5625rem,2.4vw,0.75rem)]',
+                                    subtitle ? 'shrink' : 'flex-1',
                                     petroleum ? 'text-white' : 'text-ds-texto-fuerte'
                                 )}
                             >
@@ -222,8 +216,9 @@ function ModalPanelShell({
                             </h2>
                             {subtitle ? (
                                 <div
+                                    data-element="subtitle"
                                     className={cn(
-                                        'mt-px overflow-hidden font-black uppercase tracking-[0.12em] leading-none break-words',
+                                        'min-w-0 flex-1 overflow-hidden truncate font-medium uppercase tracking-wide leading-none',
                                         'text-[clamp(0.4375rem,1.8vw,0.5625rem)]',
                                         petroleum ? 'text-white/70' : 'text-zinc-500'
                                     )}

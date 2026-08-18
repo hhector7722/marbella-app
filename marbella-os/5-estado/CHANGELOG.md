@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-17
 
+- **Modal: inset único de cabecera y subtítulo en la misma fila.** El título empieza siempre a 16 px (`espacio.4`, ref. Albaranes). Se retira el hueco simétrico de 36 px a la izquierda. Título y subtítulo van en una sola fila; el subtítulo deja la negrita pesada. La cabecera no crece de 36 px.
+- **Button: fondo visual ajustado al contenido.** El área táctil sigue en 48 px. El relleno horizontal pasa a `espacio.2`. `hug` usa `fit-content`. Icon-only conserva 48×48 visual. Sin variante nueva.
 - **Oleada 6 de Modal/Button: Consumo personal.** El fichaje de consumo y el orden de productos adoptan `ConsumptionBottomSheet`; el detalle de día usa `Modal` `standard`/`base`. La ración Entero/Medio queda inline en el sheet. CTAs de pie y error usan `Button`. `StaffSelectionModal` y `TimeFilterModal` siguen residuales compartidos.
 - **Oleada 5 de Modal/Button: Pedidos / Proveedores.** Resumen, selector de proveedor, zoom de producto, éxito de pedido (con confirmación de envío derivada) y ficha/alta/edición de proveedor adoptan `Modal` con variante/capa/instancia. CTAs de tramitar, continuar, éxito y CRUD de proveedor usan `Button`. `QuickCalculatorModal` sigue residual compartido. El popup de categoría y el `window.confirm` de Pedido Nuevo no se tocan.
 - **Oleada 4 de Modal/Button: Propinas.** Shell de bote, ajuste/sanción, confirmación de reparto y modales staff adoptan `Modal` con variante/capa/instancia; CTAs de confirmación y footers usan `Button`. `QuickCalculatorModal` y `DenominationZoomModal` siguen residuales compartidos (como en Caja). `TimeFilterModal`, `StaffSelectionModal` y `CashDenominationForm` no se tocan.

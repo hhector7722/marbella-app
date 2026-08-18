@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 import { getGestionActivitiesAction, updateActivityAction, mergeActivitiesAction } from './actions';
 
 interface GestionActivity {
@@ -163,20 +165,24 @@ export default function GestionActividadesPage() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           {selected.size >= 2 && (
-            <button
+            <Button
+              type="button"
+              variant="primary"
+              instance="pavilion-activity-merge-toolbar"
               onClick={openMergeModal}
-              className="px-3 py-2 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 text-xs font-bold transition-colors border border-amber-200"
             >
               ⚡ Unificar seleccionadas ({selected.size})
-            </button>
+            </Button>
           )}
           {selected.size > 0 && (
-            <button
+            <Button
+              type="button"
+              variant="tertiary"
+              instance="pavilion-activity-merge-clear"
               onClick={() => setSelected(new Set())}
-              className="px-3 py-2 rounded-lg text-slate-500 hover:text-slate-700 text-xs font-semibold transition-colors"
             >
               Cancelar selección
-            </button>
+            </Button>
           )}
           {selected.size === 0 && (
             <p className="text-xs text-slate-400 hidden sm:block">Marca varias actividades para unificarlas</p>
@@ -255,168 +261,181 @@ export default function GestionActividadesPage() {
         </table>
       </div>
 
-      {/* Merge Modal */}
-      {merging && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col">
-            <div className="p-4 md:p-5 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-slate-800">Unificar Actividades</h2>
-              <p className="text-xs text-slate-500 mt-1">Elige el nombre que quieres conservar. El resto quedarán eliminadas y sus registros históricos pasarán al nombre elegido.</p>
-            </div>
-            <div className="p-4 md:p-5 space-y-2">
-              {[...selected].map(id => {
-                const act = activities.find(a => a.id === id);
-                if (!act) return null;
-                return (
-                  <label
-                    key={id}
-                    className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer border-2 transition-all ${survivorId === id ? 'border-[#36606F] bg-[#36606F]/5' : 'border-gray-200 hover:border-gray-300'}`}
-                  >
-                    <input
-                      type="radio"
-                      name="survivor"
-                      value={id}
-                      checked={survivorId === id}
-                      onChange={() => setSurvivorId(id)}
-                      className="accent-[#36606F]"
-                    />
-                    <div className="flex items-center gap-2">
-                      {act.color
-                        ? <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: act.color }} />
-                        : <span className="w-3 h-3 rounded-full shrink-0 border border-dashed border-gray-300" />
-                      }
-                      <span className="text-sm font-semibold text-slate-700">{act.name}</span>
-                    </div>
-                    {survivorId === id && (
-                      <span className="ml-auto text-[10px] font-bold text-[#36606F] uppercase">Conservar</span>
-                    )}
-                  </label>
-                );
-              })}
-              {mergeError && (
-                <div className="p-3 rounded-xl bg-red-50 text-red-600 text-xs font-semibold">{mergeError}</div>
-              )}
-            </div>
-            <div className="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3">
-              <button
-                onClick={() => { setMerging(false); setMergeError(''); }}
-                className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-gray-200 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleMerge}
-                className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-md transition-colors"
-              >
-                Unificar
-              </button>
-            </div>
+      <Modal
+        open={merging}
+        onClose={() => { setMerging(false); setMergeError(''); }}
+        title="Unificar Actividades"
+        variant="compact"
+        layer="base"
+        instance="pavilion-activity-merge"
+        headerTone="petroleum"
+        usageId="pavilion-activity-merge"
+        usageLabel="Unificar actividades"
+        footer={
+          <div className="flex w-full flex-wrap items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="tertiary"
+              instance="pavilion-activity-merge-cancel"
+              onClick={() => { setMerging(false); setMergeError(''); }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              instance="pavilion-activity-merge-confirm"
+              onClick={() => void handleMerge()}
+            >
+              Unificar
+            </Button>
           </div>
-        </div>
-      )}
-
-      {/* Edit Modal */}
-      {editAct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col">
-            <div className="p-4 md:p-5 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-slate-800">Editar Actividad</h2>
-            </div>
-            <div className="p-4 md:p-5 space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Nombre</label>
+        }
+      >
+        <div className="space-y-2 p-2.5 sm:p-3">
+          <p className="text-xs text-slate-500">Elige el nombre que quieres conservar. El resto quedarán eliminadas y sus registros históricos pasarán al nombre elegido.</p>
+          {[...selected].map(id => {
+            const act = activities.find(a => a.id === id);
+            if (!act) return null;
+            return (
+              <label
+                key={id}
+                className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer border-2 transition-all ${survivorId === id ? 'border-[#36606F] bg-[#36606F]/5' : 'border-gray-200 hover:border-gray-300'}`}
+              >
                 <input
-                  type="text"
-                  value={editName}
-                  onChange={e => setEditName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-[#36606F] focus:ring-1 focus:ring-[#36606F] text-sm text-slate-700"
+                  type="radio"
+                  name="survivor"
+                  value={id}
+                  checked={survivorId === id}
+                  onChange={() => setSurvivorId(id)}
+                  className="accent-[#36606F]"
                 />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Color</label>
+                <div className="flex items-center gap-2">
+                  {act.color
+                    ? <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: act.color }} />
+                    : <span className="w-3 h-3 rounded-full shrink-0 border border-dashed border-gray-300" />
+                  }
+                  <span className="text-sm font-semibold text-slate-700">{act.name}</span>
+                </div>
+                {survivorId === id && (
+                  <span className="ml-auto text-[10px] font-bold text-[#36606F] uppercase">Conservar</span>
+                )}
+              </label>
+            );
+          })}
+          {mergeError && (
+            <div className="p-3 rounded-xl bg-red-50 text-red-600 text-xs font-semibold">{mergeError}</div>
+          )}
+        </div>
+      </Modal>
 
-                {/* Row 1 – family base swatches */}
-                <div className="flex flex-wrap gap-1.5">
+      <Modal
+        open={Boolean(editAct)}
+        onClose={() => setEditAct(null)}
+        title="Editar Actividad"
+        variant="standard"
+        layer="base"
+        instance="pavilion-activity-edit"
+        headerTone="petroleum"
+        usageId="pavilion-activity-edit"
+        usageLabel="Editar actividad"
+        footer={
+          <div className="flex w-full flex-wrap items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="tertiary"
+              instance="pavilion-activity-edit-cancel"
+              onClick={() => setEditAct(null)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              instance="pavilion-activity-edit-save"
+              onClick={() => void handleSaveEdit()}
+            >
+              Guardar
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4 p-2.5 sm:p-3">
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Nombre</label>
+            <input
+              type="text"
+              value={editName}
+              onChange={e => setEditName(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-[#36606F] focus:ring-1 focus:ring-[#36606F] text-sm text-slate-700"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Color</label>
+
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => { setEditColor(null); setSelectedFamily(null); }}
+                className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-[8px] font-bold bg-gray-100 transition-all hover:scale-110 ${editColor === null ? 'border-slate-700 scale-110 shadow' : 'border-gray-300 text-gray-400'}`}
+                title="Sin color (automático)"
+              >
+                —
+              </button>
+              {COLOR_FAMILIES.map(fam => {
+                const isFamilySelected = selectedFamily === fam.label;
+                const isAnyShadeUsed = fam.shades.some(s => activities.some(a => a.id !== editAct?.id && a.color?.toLowerCase() === s.toLowerCase()));
+                return (
                   <button
                     type="button"
-                    onClick={() => { setEditColor(null); setSelectedFamily(null); }}
-                    className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-[8px] font-bold bg-gray-100 transition-all hover:scale-110 ${editColor === null ? 'border-slate-700 scale-110 shadow' : 'border-gray-300 text-gray-400'}`}
-                    title="Sin color (automático)"
+                    key={fam.label}
+                    onClick={() => setSelectedFamily(isFamilySelected ? null : fam.label)}
+                    className={`w-7 h-7 rounded-full border-2 transition-all hover:scale-110 ${isFamilySelected ? 'border-slate-800 scale-110 shadow-md ring-2 ring-offset-1 ring-slate-400' : 'border-transparent'}`}
+                    style={{ backgroundColor: fam.base }}
+                    title={fam.label}
                   >
-                    —
+                    {isAnyShadeUsed && (
+                      <span className="block w-2 h-2 rounded-full bg-white/70 mx-auto" />
+                    )}
                   </button>
-                  {COLOR_FAMILIES.map(fam => {
-                    const isFamilySelected = selectedFamily === fam.label;
-                    const isAnyShadeUsed = fam.shades.some(s => activities.some(a => a.id !== editAct.id && a.color?.toLowerCase() === s.toLowerCase()));
+                );
+              })}
+            </div>
+
+            {selectedFamily && (() => {
+              const fam = COLOR_FAMILIES.find(f => f.label === selectedFamily)!;
+              return (
+                <div className="flex flex-wrap gap-1.5 pt-1 pl-1 border-l-2" style={{ borderColor: fam.base }}>
+                  {fam.shades.map(shade => {
+                    const isSelected = editColor?.toLowerCase() === shade.toLowerCase();
+                    const isUsed = activities.some(a => a.id !== editAct?.id && a.color?.toLowerCase() === shade.toLowerCase());
                     return (
                       <button
                         type="button"
-                        key={fam.label}
-                        onClick={() => setSelectedFamily(isFamilySelected ? null : fam.label)}
-                        className={`w-7 h-7 rounded-full border-2 transition-all hover:scale-110 ${isFamilySelected ? 'border-slate-800 scale-110 shadow-md ring-2 ring-offset-1 ring-slate-400' : 'border-transparent'}`}
-                        style={{ backgroundColor: fam.base }}
-                        title={fam.label}
-                      >
-                        {isAnyShadeUsed && (
-                          <span className="block w-2 h-2 rounded-full bg-white/70 mx-auto" />
-                        )}
-                      </button>
+                        key={shade}
+                        onClick={() => { if (!isUsed) { setEditColor(shade); } }}
+                        className={`w-7 h-7 rounded-full border-2 transition-all ${isSelected ? 'border-slate-800 scale-110 shadow-md' : 'border-transparent hover:scale-110'} ${isUsed ? 'opacity-25 cursor-not-allowed' : ''}`}
+                        style={{ backgroundColor: shade }}
+                        title={isUsed ? 'Ya en uso' : shade}
+                      />
                     );
                   })}
                 </div>
+              );
+            })()}
 
-                {/* Row 2 – shades of selected family */}
-                {selectedFamily && (() => {
-                  const fam = COLOR_FAMILIES.find(f => f.label === selectedFamily)!;
-                  return (
-                    <div className="flex flex-wrap gap-1.5 pt-1 pl-1 border-l-2" style={{ borderColor: fam.base }}>
-                      {fam.shades.map(shade => {
-                        const isSelected = editColor?.toLowerCase() === shade.toLowerCase();
-                        const isUsed = activities.some(a => a.id !== editAct.id && a.color?.toLowerCase() === shade.toLowerCase());
-                        return (
-                          <button
-                            type="button"
-                            key={shade}
-                            onClick={() => { if (!isUsed) { setEditColor(shade); } }}
-                            className={`w-7 h-7 rounded-full border-2 transition-all ${isSelected ? 'border-slate-800 scale-110 shadow-md' : 'border-transparent hover:scale-110'} ${isUsed ? 'opacity-25 cursor-not-allowed' : ''}`}
-                            style={{ backgroundColor: shade }}
-                            title={isUsed ? 'Ya en uso' : shade}
-                          />
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
-
-                {/* Current color preview */}
-                {editColor && (
-                  <div className="flex items-center gap-2 pt-1">
-                    <span className="w-4 h-4 rounded-full shrink-0 border border-gray-200" style={{ backgroundColor: editColor }} />
-                    <span className="text-xs text-slate-500 font-mono">{editColor}</span>
-                  </div>
-                )}
+            {editColor && (
+              <div className="flex items-center gap-2 pt-1">
+                <span className="w-4 h-4 rounded-full shrink-0 border border-gray-200" style={{ backgroundColor: editColor }} />
+                <span className="text-xs text-slate-500 font-mono">{editColor}</span>
               </div>
-              {editError && (
-                <div className="p-3 rounded-xl bg-red-50 text-red-600 text-xs font-semibold">{editError}</div>
-              )}
-            </div>
-            <div className="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3">
-              <button
-                onClick={() => setEditAct(null)}
-                className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-gray-200 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSaveEdit}
-                className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-[#36606F] hover:bg-[#2A4B57] shadow-md transition-colors"
-              >
-                Guardar
-              </button>
-            </div>
+            )}
           </div>
+          {editError && (
+            <div className="p-3 rounded-xl bg-red-50 text-red-600 text-xs font-semibold">{editError}</div>
+          )}
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

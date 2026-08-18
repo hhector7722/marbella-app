@@ -92,7 +92,7 @@ describe('Button identidad y variantes', () => {
     it('tokens dimensionales y de color del contrato', () => {
         assert.equal(BUTTON_CONTRACT.height, DS_SCREEN_TOKENS.tactilMinimo);
         assert.equal(BUTTON_CONTRACT.radius, DS_SCREEN_TOKENS.radioControl);
-        assert.equal(BUTTON_CONTRACT.paddingInline, DS_SCREEN_TOKENS.espacio3);
+        assert.equal(BUTTON_CONTRACT.paddingInline, DS_SCREEN_TOKENS.espacio2);
         assert.equal(BUTTON_CONTRACT.defaultLayout, 'hug');
         assert.equal(BUTTON_CONTRACT.fontSize, '12px');
         assert.equal(BUTTON_CONTRACT.fontWeight, '800');
@@ -101,6 +101,7 @@ describe('Button identidad y variantes', () => {
         assert.equal(DS_SCREEN_TOKENS.colorMarcaIntenso, '#2F5D6A');
         assert.equal(DS_SCREEN_TOKENS.colorNegativo, '#E11D48');
         assert.equal(DS_SCREEN_TOKENS.colorNegativoFondo, '#FFF1F2');
+        assert.equal(DS_SCREEN_TOKENS.espacio2, '8px');
         assert.equal(DS_SCREEN_TOKENS.espacio3, '12px');
         assert.equal(DS_SCREEN_TOKENS.espacio4, '16px');
     });
@@ -171,12 +172,18 @@ describe('Button className no escapa del contrato visual', () => {
         assert.match(css, /\[data-component='Button'\]/);
         assert.match(css, /height:\s*var\(--tactil-minimo\)/);
         assert.match(css, /min-height:\s*var\(--tactil-minimo\)/);
-        assert.match(css, /padding-inline:\s*var\(--espacio-3\)/);
+        assert.match(css, /padding-inline:\s*var\(--espacio-2\)/);
+        assert.match(css, /\[data-component='Button'\]::before/);
+        assert.match(css, /height:\s*calc\(12px \+ var\(--espacio-2\) \* 2\)/);
+        assert.match(css, /\[data-layout='hug'\]/);
+        assert.match(css, /width:\s*fit-content/);
+        assert.match(css, /\[data-layout='fill'\]/);
+        assert.match(css, /width:\s*100%/);
         assert.match(css, /border-radius:\s*var\(--radio-control\)/);
         assert.match(css, /font-size:\s*12px/);
         assert.match(css, /font-weight:\s*800/);
         assert.match(css, /text-transform:\s*uppercase/);
-        assert.match(css, /\[data-variant='primary'\]:hover:not\(:disabled\)/);
+        assert.match(css, /\[data-variant='primary'\]:hover:not\(:disabled\)::before/);
         assert.match(css, /--color-marca-intenso/);
         assert.match(css, /\[data-component='Button'\]:focus-visible/);
         assert.match(css, /outline:\s*2px solid var\(--color-marca\)/);
@@ -184,8 +191,6 @@ describe('Button className no escapa del contrato visual', () => {
         assert.match(css, /opacity:\s*0\.5/);
         assert.match(css, /cursor:\s*not-allowed/);
         assert.match(css, /transform:\s*scale\(0\.95\)/);
-        assert.match(css, /\[data-layout='fill'\]/);
-        assert.match(css, /\[data-layout='hug'\]/);
         assert.match(css, /\[data-icon-only='true'\]/);
         assert.equal(css.includes('[data-variant=\'emerald\']'), false);
         assert.equal(css.includes('[data-variant=\'ghost\']'), false);
