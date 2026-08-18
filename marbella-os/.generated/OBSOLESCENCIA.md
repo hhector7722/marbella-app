@@ -1,5 +1,5 @@
 <!-- Generado desde 41 documentos de marbella-os/.
-     Huella del origen: 543b1c69ff87ea12
+     Huella del origen: 2d00494563a958bd
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -28,7 +28,6 @@ siendo verdad y dejar constancia de la revisión en el cambio que la hace.
 | 2027-01-29 | `marbella-os/1-producto/capacidades/README.md` | 2026-07-29 | 6 meses | propiedad del producto |
 | 2027-01-29 | `marbella-os/1-producto/RECORRIDOS.md` | 2026-07-29 | 6 meses | propiedad del producto |
 | 2027-01-29 | `marbella-os/2-diseno/CONTENIDO-Y-TONO.md` | 2026-07-29 | 6 meses | propiedad del producto |
-| 2027-01-29 | `marbella-os/2-diseno/TOKENS.md` | 2026-07-29 | 6 meses | propiedad del producto |
 | 2027-01-29 | `marbella-os/3-ingenieria/ARQUITECTURA.md` | 2026-07-29 | 6 meses | propiedad del producto |
 | 2027-01-29 | `marbella-os/3-ingenieria/CALIDAD.md` | 2026-07-29 | 6 meses | propiedad del producto |
 | 2027-01-29 | `marbella-os/3-ingenieria/dominio/COSTE-LABORAL.md` | 2026-07-29 | 6 meses | propiedad del producto |
@@ -40,9 +39,10 @@ siendo verdad y dejar constancia de la revisión en el cambio que la hace.
 | 2027-01-29 | `marbella-os/3-ingenieria/operacion/README.md` | 2026-07-29 | 6 meses | propiedad del producto |
 | 2027-01-29 | `marbella-os/3-ingenieria/operacion/RUNBOOK-BDP-VENTAS.md` | 2026-07-29 | 6 meses | propiedad del producto |
 | 2027-02-16 | `marbella-os/2-diseno/PATRONES.md` | 2026-08-16 | 6 meses | propiedad del producto |
-| 2027-02-16 | `marbella-os/2-diseno/SISTEMA-DE-COMPONENTES.md` | 2026-08-16 | 6 meses | propiedad del producto |
 | 2027-02-16 | `marbella-os/3-ingenieria/FRONTEND.md` | 2026-08-16 | 6 meses | propiedad del producto |
 | 2027-02-16 | `marbella-os/GLOSARIO.md` | 2026-08-16 | 6 meses | propiedad del producto |
+| 2027-02-19 | `marbella-os/2-diseno/SISTEMA-DE-COMPONENTES.md` | 2026-08-19 | 6 meses | propiedad del producto |
+| 2027-02-19 | `marbella-os/2-diseno/TOKENS.md` | 2026-08-19 | 6 meses | propiedad del producto |
 | 2027-07-29 | `marbella-os/1-producto/PRINCIPIOS.md` | 2026-07-29 | 12 meses | propiedad del producto |
 | 2027-07-29 | `marbella-os/1-producto/VISION.md` | 2026-07-29 | 12 meses | propiedad del producto |
 | 2027-07-29 | `marbella-os/2-diseno/DOCUMENTOS-IMPRESOS.md` | 2026-07-29 | 12 meses | propiedad del producto |

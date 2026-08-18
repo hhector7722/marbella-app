@@ -38,6 +38,7 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-19
 
+- **Button: fondo compacto 28 px y radio propio.** El área táctil sigue en 48 px, transparente. El fondo visual compacto pasa a 28 px (12 px de tipo + `espacio.2` arriba y abajo). El radio contractual es 8 px (`espacio.2`), menor que la mitad del alto visual, para no producir píldora. `radio.superficie` (16 px) permanece en Modal. Icon-only sigue en 48×48.
 - **Button: fondo compacto 36 px, no cápsula.** El área táctil sigue en 48 px. El fondo visual compacto pasa a 36 px (12 px de tipo + `espacio.3` arriba y abajo), por encima del doble de `radio.superficie`, para que 16 px produzca esquinas y no píldora. Icon-only sigue en 48×48.
 - **Button: radio de superficie, no píldora.** El contrato usa `radio.superficie` (16 px), el mismo que Modal. Los footers de Modal migrados quedan en texto, sin `icon`. La prop `icon` y el icon-only siguen fuera de ese pie.
 - **Oleada Ingredientes/Recetas (Fase B parcial): mapeo TPV.** El escandallo de `MappingClient` adopta `Modal` `standard`/`base`. Quedan fuera Staff detail de la lista de recetas, `ImageLightbox`, `window.confirm` y los popovers de receta/departamento.

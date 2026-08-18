@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-16
+revisado: 2026-08-19
 caducidad: 6 meses
 supersede: —
 ---
@@ -41,7 +41,7 @@ Button
  └── label?
 ```
 
-**Variantes** (cerradas; nombres de código): `primary`, `secondary`, `tertiary`, `destructive`. No existe `success`, `positive`, `emerald`, `ghost`, `danger` ni quinta variante. Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`** (ancho = contenido + padding). `fill` / ancho completo solo cuando el consumidor lo declara. El host táctil mide `tactil.minimo` (48 px). El fondo visual compacto es independiente: 12 px de tipo + `espacio.3` arriba y abajo = 36 px, estrictamente mayor que el doble de `radio.superficie` (32 px) para que 16 px produzca esquinas, no cápsula. Padding horizontal compacto: `espacio.2`. Radio: `radio.superficie` (16 px), el mismo que Modal; no píldora. Icon-only conserva superficie visual 48×48. La prop `icon` existe; el Footer de Modal no la usa.
+**Variantes** (cerradas; nombres de código): `primary`, `secondary`, `tertiary`, `destructive`. No existe `success`, `positive`, `emerald`, `ghost`, `danger` ni quinta variante. Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`** (ancho = contenido + padding horizontal). `fill` / ancho completo solo cuando el consumidor lo declara. El host táctil mide `tactil.minimo` (48 px): área de toque transparente; no obliga al fondo visual. El fondo visual compacto es independiente: 12 px de tipo + `espacio.2` arriba y abajo = 28 px. Padding horizontal compacto: `espacio.2`. Radio contractual del Button: 8 px (`espacio.2`), estrictamente menor que la mitad del alto visual (14 px) para dejar tramo recto, no píldora. No usa `radio.superficie` (16 px), que permanece en Modal. Icon-only conserva superficie visual 48×48. La prop `icon` existe; el Footer de Modal no la usa.
 
 **Estados**: reposo, hover (sin scale-up), pulsado (`scale(0.95)`), foco visible (anillo de marca), en curso (equivale a deshabilitado + spinner a la izquierda), deshabilitado (opacity 50). El estado visual de error no se implementa en v1: el error vive en el campo o el aviso.
 
@@ -56,7 +56,7 @@ Button
 - El chrome close/back de Modal y Navbar no es este componente. Tampoco `DashboardShortcut`.
 - El Footer de Modal no convierte los botones en `fill`; el consumidor decide.
 - El Footer de Modal usa Button solo con texto, sin `icon`. Icon-only sigue permitido fuera de ese pie.
-- El radio es `radio.superficie` (16 px). No píldora. El consumidor no puede sobrescribirlo.
+- El radio contractual es 8 px (`espacio.2`). No píldora: el radio es menor que la mitad del alto visual. Distinto de `radio.superficie` del Modal. El consumidor no puede sobrescribirlo.
 
 **Código**: `src/components/ui/button.tsx`, `src/lib/design-system/button-contract.ts`.
 

@@ -142,7 +142,8 @@
 /*
  * Contrato Button. La especificidad del atributo impide que utilidades
  * Tailwind de altura, color, radio o tipo escapen del contrato.
- * Radio = `radio.superficie` (16px), el mismo que Modal. No píldora.
+ * Hit-area 48px transparente. Fondo visual compacto ~28px.
+ * Radio contractual = espacio.2 (8px). Distinto de radio.superficie del Modal.
  */
 [data-component='Button'] {
   box-sizing: border-box;
@@ -161,7 +162,7 @@
   border-width: 0;
   border-style: solid;
   border-color: transparent;
-  border-radius: var(--radio-superficie);
+  border-radius: var(--espacio-2);
   background-color: transparent;
   font-size: 12px;
   font-weight: 800;
@@ -186,13 +187,13 @@
   pointer-events: none;
   inset-inline: 0;
   top: 50%;
-  /* 12px tipo + espacio.3×2 = 36px. > 2× radio.superficie (32px): esquinas, no cápsula. */
-  height: calc(12px + var(--espacio-3) * 2);
+  /* 12px tipo + espacio.2×2 = 28px. Radio 8px < 14px: esquinas, no cápsula. */
+  height: calc(12px + var(--espacio-2) * 2);
   transform: translateY(-50%);
   box-sizing: border-box;
   border-width: 1px;
   border-style: solid;
-  border-radius: var(--radio-superficie);
+  border-radius: var(--espacio-2);
 }
 
 [data-component='Button'][data-layout='hug'] {

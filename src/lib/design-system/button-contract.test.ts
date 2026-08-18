@@ -92,12 +92,16 @@ describe('Button identidad y variantes', () => {
     it('tokens dimensionales y de color del contrato', () => {
         assert.equal(BUTTON_CONTRACT.height, DS_SCREEN_TOKENS.tactilMinimo);
         assert.equal(BUTTON_CONTRACT.height, '48px');
-        assert.equal(BUTTON_CONTRACT.radius, DS_SCREEN_TOKENS.radioSuperficie);
-        assert.equal(BUTTON_CONTRACT.radius, '16px');
+        assert.equal(BUTTON_CONTRACT.radius, DS_SCREEN_TOKENS.espacio2);
+        assert.equal(BUTTON_CONTRACT.radius, '8px');
+        assert.notEqual(BUTTON_CONTRACT.radius, DS_SCREEN_TOKENS.radioSuperficie);
+        assert.notEqual(BUTTON_CONTRACT.radius, DS_SCREEN_TOKENS.radioControl);
         assert.equal(DS_SCREEN_TOKENS.radioSuperficie, '16px');
+        assert.equal(DS_SCREEN_TOKENS.radioControl, '12px');
         assert.equal(BUTTON_CONTRACT.paddingInline, DS_SCREEN_TOKENS.espacio2);
-        assert.equal(BUTTON_CONTRACT.visualPaddingBlock, DS_SCREEN_TOKENS.espacio3);
-        assert.equal(BUTTON_CONTRACT.visualHeight, '36px');
+        assert.equal(BUTTON_CONTRACT.visualPaddingBlock, DS_SCREEN_TOKENS.espacio2);
+        assert.equal(BUTTON_CONTRACT.visualHeight, '28px');
+        assert.notEqual(BUTTON_CONTRACT.visualHeight, '36px');
         assert.equal(BUTTON_CONTRACT.defaultLayout, 'hug');
         assert.equal(BUTTON_CONTRACT.fontSize, '12px');
         assert.equal(BUTTON_CONTRACT.fontWeight, '800');
@@ -111,9 +115,12 @@ describe('Button identidad y variantes', () => {
         assert.equal(DS_SCREEN_TOKENS.espacio4, '16px');
         const visualPx = Number.parseInt(BUTTON_CONTRACT.visualHeight, 10);
         const radiusPx = Number.parseInt(BUTTON_CONTRACT.radius, 10);
-        assert.ok(visualPx > radiusPx * 2, 'el fondo compacto debe superar 2× radio.superficie');
-        assert.ok(visualPx > 32);
-        assert.notEqual(BUTTON_CONTRACT.visualHeight, '28px');
+        assert.ok(
+            radiusPx < visualPx / 2,
+            'radio compacto < mitad del alto visual: no píldora'
+        );
+        assert.ok(radiusPx < 14);
+        assert.equal(visualPx, 28);
     });
 });
 
@@ -177,7 +184,7 @@ describe('Button className no escapa del contrato visual', () => {
         assert.equal(kept.includes('px-8'), false);
     });
 
-    it('el CSS del contrato fija 48px, padding compacto, radio.superficie 16px, focus-visible y estados', () => {
+    it('el CSS del contrato fija hit-area 48px, fondo ~28px, radio compacto 8px, hug/fill y estados', () => {
         const css = readFileSync(GLOBALS_CSS, 'utf8');
         assert.match(css, /\[data-component='Button'\]/);
         assert.match(css, /height:\s*var\(--tactil-minimo\)/);
@@ -188,10 +195,10 @@ describe('Button className no escapa del contrato visual', () => {
             /\[data-component='Button'\]::before \{([^}]+)\}/
         );
         assert.ok(compactBefore, 'debe existir la receta ::before compacta');
-        assert.match(compactBefore[1], /height:\s*calc\(12px \+ var\(--espacio-3\) \* 2\)/);
-        assert.equal(compactBefore[1].includes('28px'), false);
+        assert.match(compactBefore[1], /height:\s*calc\(12px \+ var\(--espacio-2\) \* 2\)/);
+        assert.equal(compactBefore[1].includes('36px'), false);
         assert.equal(
-            /height:\s*calc\(12px \+ var\(--espacio-2\) \* 2\)/.test(compactBefore[1]),
+            /height:\s*calc\(12px \+ var\(--espacio-3\) \* 2\)/.test(compactBefore[1]),
             false
         );
         assert.match(
@@ -204,11 +211,23 @@ describe('Button className no escapa del contrato visual', () => {
         assert.match(css, /width:\s*100%/);
         assert.match(
             css,
-            /\[data-component='Button'\] \{[\s\S]*?border-radius:\s*var\(--radio-superficie\)/
+            /\[data-component='Button'\] \{[\s\S]*?background-color:\s*transparent/
         );
         assert.match(
             css,
-            /\[data-component='Button'\]::before \{[\s\S]*?border-radius:\s*var\(--radio-superficie\)/
+            /\[data-component='Button'\] \{[\s\S]*?border-radius:\s*var\(--espacio-2\)/
+        );
+        assert.match(
+            css,
+            /\[data-component='Button'\]::before \{[\s\S]*?border-radius:\s*var\(--espacio-2\)/
+        );
+        assert.equal(
+            /\[data-component='Button'\][^{]*\{[^}]*border-radius:\s*var\(--radio-superficie\)/.test(css),
+            false
+        );
+        assert.equal(
+            /\[data-component='Button'\]::before \{[\s\S]*?border-radius:\s*var\(--radio-superficie\)/.test(css),
+            false
         );
         assert.equal(
             /\[data-component='Button'\][^{]*\{[^}]*border-radius:\s*var\(--radio-control\)/.test(css),
