@@ -7,8 +7,8 @@ import { useAIStore } from '@/store/aiStore';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { cn } from '@/lib/utils';
+import { Modal } from '@/components/ui/modal';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 
 // Helper para extraer texto del Vercel AI SDK
@@ -33,55 +33,34 @@ export default function ChatMarbella() {
   const closeChat = useAIStore((s) => s.closeChat);
   const [showVoiceCall, setShowVoiceCall] = useState(false);
 
-  useModalUsageTracking({
-    open: isOpen,
-    usageId: 'chat-marbella',
-    usageLabel: 'Chat Marbella',
-  });
-  useModalUsageTracking({
-    open: isOpen && showVoiceCall,
-    usageId: 'chat-voice-call',
-    usageLabel: 'Llamada voz chat',
-  });
-
-  if (!isOpen) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 pb-safe"
-      onClick={closeChat}
+    <Modal
+      open={isOpen}
+      onClose={closeChat}
+      title="Chat Marbella"
+      variant="standard"
+      layer="base"
+      instance="chat-marbella"
+      headerTone="petroleum"
+      hideTitle
+      scrollContent={false}
+      headerTrailing={
+        <div className="relative w-8 h-8 shrink-0">
+          <Image src="/icons/logo-white.png" alt="Logo" fill className="object-contain" priority />
+        </div>
+      }
+      className="h-[80vh]"
     >
-      <div
-        className="w-full max-w-lg bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col h-[80vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="bg-[#3F5E7A] px-4 py-3 flex items-center justify-between shrink-0 text-white">
-          <div className="relative w-8 h-8 shrink-0">
-            <Image src="/icons/logo-white.png" alt="Logo" fill className="object-contain" priority />
+      <div className="relative flex-1 flex flex-col min-h-0">
+        <TextChatView onCallOpen={() => setShowVoiceCall(true)} />
+
+        {showVoiceCall && (
+          <div className="absolute inset-0 z-20 flex flex-col animate-in fade-in duration-200">
+            <VoiceCallView onClose={() => setShowVoiceCall(false)} />
           </div>
-          <button
-            type="button"
-            onClick={closeChat}
-            className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-white/10 transition-colors"
-            aria-label="Cerrar chat"
-          >
-            <X className="w-4 h-4" strokeWidth={2.5} />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="relative flex-1 flex flex-col min-h-0">
-          <TextChatView onCallOpen={() => setShowVoiceCall(true)} />
-
-          {showVoiceCall && (
-            <div className="absolute inset-0 z-20 flex flex-col animate-in fade-in duration-200">
-              <VoiceCallView onClose={() => setShowVoiceCall(false)} />
-            </div>
-          )}
-        </div>
+        )}
       </div>
-    </div>
+    </Modal>
   );
 }
 

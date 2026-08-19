@@ -3,7 +3,8 @@
 import { useCallback, useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { CheckCircle2, Copy, Loader2, X } from 'lucide-react'
+import { CheckCircle2, Copy, Loader2 } from 'lucide-react'
+import { Modal } from '@/components/ui/modal'
 import {
   EventEncargoCartFooter,
   type EventEncargoCartLine,
@@ -527,88 +528,76 @@ export default function EventEncargoCartaClient({
         footer={footer}
       />
 
-      {saveModalOpen ? (
-        <div
-          className="fixed inset-0 z-[200] flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
-          role="dialog"
-          aria-label="Enviar pedido"
-          onClick={() => !isPending && setSaveModalOpen(false)}
-        >
-          <div
-            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <p className="text-[11px] font-black uppercase tracking-widest text-[#36606F]">Nombre</p>
-              <button
-                type="button"
-                className="flex min-h-12 min-w-[48px] shrink-0 items-center justify-center text-zinc-500"
-                aria-label="Cerrar"
-                onClick={() => !isPending && setSaveModalOpen(false)}
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <input
-              value={responsibleName}
-              onChange={(e) => setResponsibleName(e.target.value)}
-              className="mt-3 min-h-12 w-full rounded-xl border border-zinc-200 px-3 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/25"
-              placeholder="Tu nombre"
-              autoComplete="name"
-            />
-            {limitWarnings.length > 0 ? (
-              <ul className="mt-3 space-y-1">
-                {limitWarnings.map((w) => (
-                  <li key={w} className="text-xs font-bold leading-snug text-red-600">
-                    {w}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-            <button
-              type="button"
-              className={cn(btnBase, 'mt-5 w-full bg-emerald-600 text-white hover:bg-emerald-700')}
-              disabled={isPending || responsibleName.trim().length < 2}
-              onClick={() => {
-                const name = responsibleName.trim()
-                const warnings = validateEventOrderLimits(
-                  qtyById,
-                  clientMenuItems,
-                  categoryLimits,
-                  enabledIdsForClient
-                )
-                setLimitWarnings(warnings)
-                startTransition(async () => {
-                  if (warnings.length > 0) {
-                    toast.error('Revisa los límites del pedido antes de enviar.')
-                    return
-                  }
-                  const items = qtyByIdToSubmitItems(qtyById)
-                  if (items.length === 0) {
-                    toast.error('Añade al menos un producto.')
-                    return
-                  }
-                  const res = await submitEventOrderAction({
-                    slug: event.slug,
-                    responsible_name: name,
-                    items,
-                  })
-                  if (!res.success) {
-                    toast.error(res.message)
-                    return
-                  }
-                  setSaveModalOpen(false)
-                  setOrderDone(true)
-                  trackEncargoOrderSave(`${namedEntitySummary(name)} · ${items.length} productos`)
-                  toast.success('Pedido enviado correctamente')
+      <Modal
+        open={saveModalOpen}
+        onClose={() => !isPending && setSaveModalOpen(false)}
+        title="Enviar pedido"
+        instance="event-encargo-save"
+        variant="compact"
+        layer="base"
+        footer={
+          <button
+            type="button"
+            className={cn(btnBase, 'w-full bg-emerald-600 text-white hover:bg-emerald-700')}
+            disabled={isPending || responsibleName.trim().length < 2}
+            onClick={() => {
+              const name = responsibleName.trim()
+              const warnings = validateEventOrderLimits(
+                qtyById,
+                clientMenuItems,
+                categoryLimits,
+                enabledIdsForClient
+              )
+              setLimitWarnings(warnings)
+              startTransition(async () => {
+                if (warnings.length > 0) {
+                  toast.error('Revisa los límites del pedido antes de enviar.')
+                  return
+                }
+                const items = qtyByIdToSubmitItems(qtyById)
+                if (items.length === 0) {
+                  toast.error('Añade al menos un producto.')
+                  return
+                }
+                const res = await submitEventOrderAction({
+                  slug: event.slug,
+                  responsible_name: name,
+                  items,
                 })
-              }}
-            >
-              {isPending ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : 'Enviar'}
-            </button>
-          </div>
+                if (!res.success) {
+                  toast.error(res.message)
+                  return
+                }
+                setSaveModalOpen(false)
+                setOrderDone(true)
+                trackEncargoOrderSave(`${namedEntitySummary(name)} · ${items.length} productos`)
+                toast.success('Pedido enviado correctamente')
+              })
+            }}
+          >
+            {isPending ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : 'Enviar'}
+          </button>
+        }
+      >
+        <div className="p-5">
+          <input
+            value={responsibleName}
+            onChange={(e) => setResponsibleName(e.target.value)}
+            className="min-h-12 w-full rounded-xl border border-zinc-200 px-3 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/25"
+            placeholder="Tu nombre"
+            autoComplete="name"
+          />
+          {limitWarnings.length > 0 ? (
+            <ul className="mt-3 space-y-1">
+              {limitWarnings.map((w) => (
+                <li key={w} className="text-xs font-bold leading-snug text-red-600">
+                  {w}
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </div>
-      ) : null}
+      </Modal>
     </>
   )
 }

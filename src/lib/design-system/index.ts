@@ -6,6 +6,7 @@ export {
     BUTTON_LAYOUTS,
     BUTTON_VARIANTS,
     hasVisibleButtonLabel,
+    isButtonAnatomyValid,
     isButtonLayout,
     isButtonVariant,
     pickButtonLayoutClassName,

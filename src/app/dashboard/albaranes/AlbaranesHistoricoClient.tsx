@@ -1855,6 +1855,7 @@ export default function AlbaranesHistoricoClient({
                   variant="standard"
                   layer="derived"
                   instance="albaranes-supplier-picker"
+                  parentInstance="albaran-detail"
                   usageId="albaranes-supplier-picker"
                   usageLabel="Proveedor albarán"
                   headerTone="petroleum"
@@ -1932,7 +1933,6 @@ export default function AlbaranesHistoricoClient({
                   title="Ingrediente"
                   headerTone="petroleum"
                   headerTitleAlign="left"
-                  hideHeader
                   ariaLabel="Wizard de ingrediente"
                   className="p-2"
                   disableUsageTracking
@@ -1963,6 +1963,7 @@ export default function AlbaranesHistoricoClient({
         variant="work"
         layer="derived"
         instance="albaran-invoice-image"
+        parentInstance="albaran-detail"
         usageId="albaran-invoice-image"
         usageLabel="Visor de hojas del albarán"
         headerTone="petroleum"

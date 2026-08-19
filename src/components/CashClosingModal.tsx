@@ -797,6 +797,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
             variant="amplify"
             layer="derived"
             instance="cash-closing-photo-instruction"
+            parentInstance="cash-closing"
             usageId="cash-closing-photo-instruction"
             usageLabel={instructionTitle}
             headerTone="petroleum"

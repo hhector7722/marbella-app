@@ -52,7 +52,6 @@ export function AdminProductModal({ isOpen, onClose, onOpenSupplierModal }: Admi
             usageId="admin-product"
             usageLabel="Menú stock (admin)"
             wrapperClassName="max-w-md"
-            className="max-h-[85vh]"
             scrollContent={false}
         >
             <div className="relative p-4 grid grid-cols-2 gap-3 bg-gray-50/30 overflow-y-auto">

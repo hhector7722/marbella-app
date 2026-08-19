@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { createPortal } from 'react-dom'
 import {
   addMonths,
   eachDayOfInterval,
@@ -41,6 +40,7 @@ import {
 } from '@/components/reservas/PedidoClientEditModals'
 
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { Modal } from '@/components/ui/modal'
 import { cn } from '@/lib/utils'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
@@ -313,48 +313,32 @@ function ReservationDetailModal({
   }, [reservation.id])
 
   return (
-    <div
-      className="fixed inset-0 z-[10050] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose()
-      }}
-      role="presentation"
+    <Modal
+      open
+      onClose={onClose}
+      variant="standard"
+      layer="base"
+      instance="reservas-reservation-detail"
+      title={formatReservationDateLabel(reservation.reservation_date)}
+      subtitle="Reserva"
+      headerTone="petroleum"
+      headerTrailing={
+        <button
+          type="button"
+          onClick={onPlusPedido}
+          disabled={plusPedidoBusy || isBusy}
+          className="shrink-0 min-h-12 px-2 text-[10px] font-black uppercase tracking-widest flex items-center gap-1 hover:opacity-75 disabled:opacity-50 transition-colors"
+        >
+          {plusPedidoBusy ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Plus className="h-4 w-4" strokeWidth={2.5} />
+          )}
+          Pedido
+        </button>
+      }
     >
-      <div
-        className="bg-white rounded-[2rem] w-full max-w-md max-h-[85vh] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="bg-[#36606F] px-4 py-3 text-white shrink-0 flex items-center justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-black uppercase tracking-widest text-white/80">Reserva</p>
-            <h3 className="text-base font-black capitalize truncate">
-              {formatReservationDateLabel(reservation.reservation_date)}
-            </h3>
-          </div>
-          <button
-            type="button"
-            onClick={onPlusPedido}
-            disabled={plusPedidoBusy || isBusy}
-            className="shrink-0 min-h-12 px-2 text-[10px] font-black uppercase tracking-widest flex items-center gap-1 text-white hover:text-white/75 disabled:opacity-50 transition-colors"
-          >
-            {plusPedidoBusy ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Plus className="h-4 w-4" strokeWidth={2.5} />
-            )}
-            Pedido
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="min-h-12 min-w-12 flex items-center justify-center rounded-xl hover:bg-white/10 active:scale-95 transition"
-            aria-label="Cerrar"
-          >
-            <X size={20} strokeWidth={2.5} />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto min-h-0">
+      <div className="flex-1 overflow-y-auto min-h-0">
           <div className="px-4 pt-4 pb-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -501,8 +485,7 @@ function ReservationDetailModal({
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   )
 }
 
@@ -1288,157 +1271,136 @@ export default function ReservasClient() {
           </div>
       </div>
 
-      {typeof document !== 'undefined' &&
-        listModalDay &&
-        createPortal(
-          <DayAgendaModal
-            dayYmd={listModalDay}
-            reservations={listModalReservations}
-            encargos={listModalEncargos}
-            plusPedidoBusy={isPendingEncargo}
-            onClose={() => setListModalDay(null)}
-            onSelectReservation={(r) => {
-              const full = listModalReservations.find((x) => x.id === r.id)
-              if (!full) return
-              trackReservasDetail(reservationApplySummary(full), { reservationId: full.id })
-              setSelectedReservation(full)
-            }}
-            onViewEncargoOrder={openViewEncargo}
-            onPlusPedido={() => {
-              trackReservasPlusPedido(formatYmdShort(listModalDay), { day: listModalDay })
-              setCreateEncargoDay(listModalDay)
-            }}
-          />,
-          document.body
-        )}
+      {listModalDay && (
+        <DayAgendaModal
+          dayYmd={listModalDay}
+          reservations={listModalReservations}
+          encargos={listModalEncargos}
+          plusPedidoBusy={isPendingEncargo}
+          onClose={() => setListModalDay(null)}
+          onSelectReservation={(r) => {
+            const full = listModalReservations.find((x) => x.id === r.id)
+            if (!full) return
+            trackReservasDetail(reservationApplySummary(full), { reservationId: full.id })
+            setSelectedReservation(full)
+          }}
+          onViewEncargoOrder={openViewEncargo}
+          onPlusPedido={() => {
+            trackReservasPlusPedido(formatYmdShort(listModalDay), { day: listModalDay })
+            setCreateEncargoDay(listModalDay)
+          }}
+        />
+      )}
 
-      {typeof document !== 'undefined' &&
-        createEncargoDay &&
-        createPortal(
-          <CreateEncargoQuickModal
-            dayYmd={createEncargoDay}
-            availableReservations={createEncargoAvailableReservations}
-            busy={isPendingEncargo}
-            onClose={() => setCreateEncargoDay(null)}
-            onSubmit={(data) => {
-              const phone =
-                data.reservation_id
-                  ? (byDate[createEncargoDay] ?? []).find((r) => r.id === data.reservation_id)
-                      ?.customer_phone?.trim() || null
-                  : null
-              setCreateEncargoDay(null)
-              setPendingPedidoDraft({
-                dayYmd: createEncargoDay,
-                contact_name: data.contact_name,
-                event_time: data.event_time,
-                guest_count: data.guest_count,
-                reservation_id: data.reservation_id,
-                customer_phone: phone,
-              })
-            }}
-          />,
-          document.body
-        )}
+      {createEncargoDay && (
+        <CreateEncargoQuickModal
+          dayYmd={createEncargoDay}
+          availableReservations={createEncargoAvailableReservations}
+          busy={isPendingEncargo}
+          onClose={() => setCreateEncargoDay(null)}
+          onSubmit={(data) => {
+            const phone =
+              data.reservation_id
+                ? (byDate[createEncargoDay] ?? []).find((r) => r.id === data.reservation_id)
+                    ?.customer_phone?.trim() || null
+                : null
+            setCreateEncargoDay(null)
+            setPendingPedidoDraft({
+              dayYmd: createEncargoDay,
+              contact_name: data.contact_name,
+              event_time: data.event_time,
+              guest_count: data.guest_count,
+              reservation_id: data.reservation_id,
+              customer_phone: phone,
+            })
+          }}
+        />
+      )}
 
-      {typeof document !== 'undefined' &&
-        pendingPedidoDraft &&
-        createPortal(
-          <PedidoEditorChoiceModal
-            busy={isPendingEncargo}
-            onClose={() => setPendingPedidoDraft(null)}
-            onChooseStaff={() =>
-              submitCreateEncargo(pendingPedidoDraft.dayYmd, {
-                ...pendingPedidoDraft,
-                client_edit: false,
-              })
-            }
-            onChooseClient={() =>
-              submitCreateEncargo(pendingPedidoDraft.dayYmd, {
-                ...pendingPedidoDraft,
-                customer_phone: resolvePhoneForDraft(pendingPedidoDraft),
-                client_edit: true,
-              })
-            }
-          />,
-          document.body
-        )}
+      {pendingPedidoDraft && (
+        <PedidoEditorChoiceModal
+          busy={isPendingEncargo}
+          onClose={() => setPendingPedidoDraft(null)}
+          onChooseStaff={() =>
+            submitCreateEncargo(pendingPedidoDraft.dayYmd, {
+              ...pendingPedidoDraft,
+              client_edit: false,
+            })
+          }
+          onChooseClient={() =>
+            submitCreateEncargo(pendingPedidoDraft.dayYmd, {
+              ...pendingPedidoDraft,
+              customer_phone: resolvePhoneForDraft(pendingPedidoDraft),
+              client_edit: true,
+            })
+          }
+        />
+      )}
 
-      {typeof document !== 'undefined' &&
-        clientShare &&
-        createPortal(
-          <ClientPedidoShareModal
-            customerName={clientShare.customerName}
-            customerPhone={clientShare.customerPhone}
-            clientEditToken={clientShare.clientEditToken}
-            eventDate={clientShare.eventDate}
-            eventTime={clientShare.eventTime}
-            guestCount={clientShare.guestCount}
-            onClose={() => setClientShare(null)}
-          />,
-          document.body
-        )}
+      {clientShare && (
+        <ClientPedidoShareModal
+          customerName={clientShare.customerName}
+          customerPhone={clientShare.customerPhone}
+          clientEditToken={clientShare.clientEditToken}
+          eventDate={clientShare.eventDate}
+          eventTime={clientShare.eventTime}
+          guestCount={clientShare.guestCount}
+          onClose={() => setClientShare(null)}
+        />
+      )}
 
-      {typeof document !== 'undefined' &&
-        selectedReservation &&
-        createPortal(
-          <ReservationDetailModal
-            reservation={selectedReservation}
-            linkedEncargos={encargosForReservation(selectedReservation.id, allEncargos)}
-            actionBusy={actionBusy[selectedReservation.id] ?? null}
-            plusPedidoBusy={isPendingEncargo}
-            onClose={() => setSelectedReservation(null)}
-            onAction={(action) => void mutateReservation(selectedReservation, action)}
-            onPlusPedido={() => startEncargoFromReservation(selectedReservation)}
-            onOpenEncargo={openViewEncargo}
-          />,
-          document.body
-        )}
+      {selectedReservation && (
+        <ReservationDetailModal
+          reservation={selectedReservation}
+          linkedEncargos={encargosForReservation(selectedReservation.id, allEncargos)}
+          actionBusy={actionBusy[selectedReservation.id] ?? null}
+          plusPedidoBusy={isPendingEncargo}
+          onClose={() => setSelectedReservation(null)}
+          onAction={(action) => void mutateReservation(selectedReservation, action)}
+          onPlusPedido={() => startEncargoFromReservation(selectedReservation)}
+          onOpenEncargo={openViewEncargo}
+        />
+      )}
 
-      {typeof document !== 'undefined' &&
-        viewEncargo &&
-        createPortal(
-          <EncargoOrderViewModal
-            encargoName={viewEncargo.name}
-            encargoDate={viewEncargo.event_date}
-            encargoTime={timeShortHm(viewEncargo.event_time)}
-            contactPhone={viewEncargoContactPhone}
-            guestCount={viewEncargo.guest_count ?? null}
-            items={viewEncargoItems}
-            clientEditEnabled={Boolean(viewEncargo.client_edit_enabled)}
-            clientEditToken={viewEncargo.client_edit_token ?? null}
-            clientOrderSubmittedAt={viewEncargo.client_order_submitted_at ?? null}
-            eventId={viewEncargo.id}
-            onClose={() => setViewEncargoId(null)}
-            onEdit={() => openEditEncargo(viewEncargo.id)}
-            onClientLinkReady={(token) => {
-              void fetchMonthData()
-              setClientShare({
-                customerName: viewEncargo.name,
-                customerPhone: viewEncargoContactPhone,
-                clientEditToken: token,
-                eventDate: viewEncargo.event_date,
-                eventTime: timeShortHm(viewEncargo.event_time),
-                guestCount: viewEncargo.guest_count ?? null,
-              })
-            }}
-          />,
-          document.body
-        )}
+      {viewEncargo && (
+        <EncargoOrderViewModal
+          encargoName={viewEncargo.name}
+          encargoDate={viewEncargo.event_date}
+          encargoTime={timeShortHm(viewEncargo.event_time)}
+          contactPhone={viewEncargoContactPhone}
+          guestCount={viewEncargo.guest_count ?? null}
+          items={viewEncargoItems}
+          clientEditEnabled={Boolean(viewEncargo.client_edit_enabled)}
+          clientEditToken={viewEncargo.client_edit_token ?? null}
+          clientOrderSubmittedAt={viewEncargo.client_order_submitted_at ?? null}
+          eventId={viewEncargo.id}
+          onClose={() => setViewEncargoId(null)}
+          onEdit={() => openEditEncargo(viewEncargo.id)}
+          onClientLinkReady={(token) => {
+            void fetchMonthData()
+            setClientShare({
+              customerName: viewEncargo.name,
+              customerPhone: viewEncargoContactPhone,
+              clientEditToken: token,
+              eventDate: viewEncargo.event_date,
+              eventTime: timeShortHm(viewEncargo.event_time),
+              guestCount: viewEncargo.guest_count ?? null,
+            })
+          }}
+        />
+      )}
 
-      {typeof document !== 'undefined' &&
-        editEncargo &&
-        createPortal(
-          <EncargoProductEditor
-            eventId={editEncargo.id}
-            eventName={editEncargo.name}
-            orderId={editEncargoOrder?.id ?? null}
-            initialItems={editEncargoInitialItems}
-            onClose={() => setEditEncargoId(null)}
-            onSaved={refreshAfterEncargoChange}
-            onDeleted={refreshAfterEncargoChange}
-          />,
-          document.body
-        )}
+      {editEncargo && (
+        <EncargoProductEditor
+          eventId={editEncargo.id}
+          eventName={editEncargo.name}
+          orderId={editEncargoOrder?.id ?? null}
+          initialItems={editEncargoInitialItems}
+          onClose={() => setEditEncargoId(null)}
+          onSaved={refreshAfterEncargoChange}
+          onDeleted={refreshAfterEncargoChange}
+        />
+      )}
     </div>
   )
 }

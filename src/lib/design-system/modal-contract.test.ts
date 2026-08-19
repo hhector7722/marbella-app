@@ -52,17 +52,25 @@ describe('Modal identidad y variantes', () => {
         ]);
     });
 
-    it('cada variante resuelve max-width y política de altura (ref. Albaranes work=5xl)', () => {
+    it('cada variante resuelve max-width y política de altura', () => {
         assert.equal(resolveModalVariant('compact').maxWidthClass, 'max-w-sm');
         assert.equal(resolveModalVariant('compact').preferTall, false);
         assert.equal(resolveModalVariant('standard').maxWidthClass, 'max-w-md');
         assert.equal(resolveModalVariant('standard').preferTall, false);
-        assert.equal(resolveModalVariant('work').maxWidthClass, 'max-w-5xl');
+        assert.equal(resolveModalVariant('work').maxWidthClass, 'max-w-6xl');
         assert.equal(resolveModalVariant('work').preferTall, true);
-        assert.equal(resolveModalVariant('day').maxWidthClass, 'max-w-5xl');
+        assert.equal(resolveModalVariant('day').maxWidthClass, 'max-w-6xl');
         assert.equal(resolveModalVariant('day').preferTall, true);
         assert.equal(resolveModalVariant('amplify').maxWidthClass, 'max-w-2xl');
         assert.equal(resolveModalVariant('amplify').preferTall, false);
+    });
+
+    it('work/day = max-width 1152px', () => {
+        // Tailwind: max-w-6xl = 72rem = 1152px
+        assert.equal(resolveModalVariant('work').maxWidthClass, 'max-w-6xl');
+        assert.equal(resolveModalVariant('day').maxWidthClass, 'max-w-6xl');
+        const remToPx = (rem: number) => rem * 16;
+        assert.equal(remToPx(72), 1152);
     });
 
     it('tokens dimensionales alineados a Albaranes', () => {

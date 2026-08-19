@@ -6,7 +6,7 @@ capa: estado
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-18
+revisado: 2026-08-19
 caducidad: 3 meses
 supersede: —
 ---
@@ -50,6 +50,10 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 **Pago parcial (2026-08-19):** el escandallo de mapeo TPV (`IngredientEscandalloModal`) adopta `Modal` `standard`/`base`. Quedan fuera Staff detail de `/recipes`, `ImageLightbox`, el `window.confirm` de quitar ingrediente y los popovers de receta/departamento.
 
 **Pago parcial (2026-08-19, Horarios/Labor/Historial):** detalle de día de `/dashboard/labor`, detalle de semana de `/dashboard/overtime` (historial `derived`), selector de mes de `/staff/history`, `DaySummaryModal` + crear fichaje `derived`, y footers de los dos modales de exportación. Quedan fuera `StaffScheduleModal`, `ScheduleDayEditor`, `AttendanceDetailModal` y el overlay de `WeekCard`. `QuickCalculatorModal` permanece residual. Sin cambio de contrato.
+
+**Pago parcial (2026-08-19):** el contrato Button declara anatomía binaria (texto XOR icono). Los usos existentes de icono+texto quedan en allowlist de las pruebas; no se migran en este cambio.
+
+**Pago (2026-08-19):** oleada de consumidores Button. Se retiró `icon` de todos los Button con texto visible (consumo, pedidos, propinas, condiciones laborales, proveedores, revisión de actividades). Las pruebas exigen cero combinaciones icono+texto. Icon-only con `aria-label` sigue permitido fuera del footer de Modal.
 
 **Coste residual**: deriva visual continua fuera de los pilotos; overlays legacy con z-index ad hoc hasta migrar. En Caja/Tesorería quedan deliberadamente legacy `QuickCalculatorModal` y `DenominationZoomModal` por el techo `base → derived` ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)). En Perfil queda fuera `AvatarCropModal` (fullscreen de herramienta). En Propinas, la calculadora anidada en ajuste de propina y en el form de bote sigue el mismo residual. En Pedidos, la calculadora del resumen, el popup de categoría de proveedores y el `window.confirm` de Pedido Nuevo quedan fuera a propósito. El zoom de `OrderProductCard` usa `hideHeader` porque la tarjeta trae su propio cromo. En Consumo personal, `StaffSelectionModal` y `TimeFilterModal` quedan residuales compartidos; la ración Entero/Medio es inline en `ConsumptionBottomSheet`. En Staff/Admin, la cadena Info/Manuales no cabe en una sola `derived`; `StaffScheduleModal`, `ScheduleDayEditor` y `AttendanceDetailModal` siguen en allowlist. En overtime, `QuickCalculatorModal` permanece residual. El dismiss del menú de exportación de `/staff/history` no es Modal; el fichero sigue en allowlist porque la huella de archivo aún dispara.
 

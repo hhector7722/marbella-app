@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useState, useTransition } from 'react'
-import { X, Loader2, Search, Upload, Camera } from 'lucide-react'
+import { Loader2, Search, Upload, Camera } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { createClient } from '@/utils/supabase/client'
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
+import { Modal } from '@/components/ui/modal'
 import {
   setMenuCategoryCover,
   upsertMenuCategoryOverride,
@@ -57,12 +57,6 @@ export function MenuCategoryEditModal({
   const [coverPhotoScale, setCoverPhotoScale] = useState<CartaPhotoScale>('m')
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [uploadPreviewUrl, setUploadPreviewUrl] = useState<string | null>(null)
-
-  useModalUsageTracking({
-    open: open && category != null,
-    usageId: 'carta-category-edit',
-    usageLabel: 'Editar categoría carta',
-  })
 
   const isParent = category?.parent_id == null
 
@@ -119,35 +113,21 @@ export function MenuCategoryEditModal({
 
   const previewCoverSrc = uploadPreviewUrl ?? coverPhotoUrl?.trim() ?? null
 
-  if (!open || !category) return null
+  if (!category) return null
 
   return (
-    <div
-      className="fixed inset-0 z-[350] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-      onClick={isPending ? undefined : onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Editar categoría"
+    <Modal
+      open={open}
+      onClose={isPending ? () => {} : onClose}
+      title="Editar categoría"
+      variant="standard"
+      layer="base"
+      instance="carta-category-edit"
+      headerTone="petroleum"
+      loading={isPending}
+      closeOnBackdrop={!isPending}
     >
-      <div
-        className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="relative flex min-h-[56px] items-center justify-center bg-[#36606F] px-12 py-3 text-white">
-          <h2 className="line-clamp-2 text-center text-sm font-black uppercase tracking-wider">
-            Editar categoría
-          </h2>
-          <button
-            type="button"
-            className="absolute right-2 top-1/2 flex min-h-[48px] min-w-[48px] -translate-y-1/2 items-center justify-center rounded-xl text-white transition-colors hover:bg-white/15 active:bg-white/10"
-            onClick={isPending ? undefined : onClose}
-            aria-label="Cerrar"
-          >
-            <X className="h-6 w-6" strokeWidth={2.5} />
-          </button>
-        </header>
-
-        <div className="max-h-[75vh] overflow-y-auto p-4">
+        <div className="p-4">
           <div className="space-y-3">
             <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-3">
               <p className="text-[11px] font-black uppercase tracking-widest text-[#36606F]">Actual</p>
@@ -425,7 +405,6 @@ export function MenuCategoryEditModal({
             )}
           </div>
         </div>
-      </div>
-    </div>
+    </Modal>
   )
 }

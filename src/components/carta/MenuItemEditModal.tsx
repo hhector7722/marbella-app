@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useState, useTransition } from 'react'
-import { Camera, Trash2, Upload, X, Loader2 } from 'lucide-react'
+import { Camera, Trash2, Upload, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { createClient } from '@/utils/supabase/client'
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
+import { Modal } from '@/components/ui/modal'
 import { upsertMenuOverride, type PlatoMarbellaSlotValue } from '@/app/dashboard/carta/actions'
 import { uploadNormalizedCartaItemPhoto } from '@/app/dashboard/carta/photo-actions'
 import { PLATO_MARBELLA_CHILD_SLUG } from '@/lib/carta-plato-marbella'
@@ -72,12 +72,6 @@ export function MenuItemEditModal({
   const [labelMedioCa, setLabelMedioCa] = useState('')
   const [labelMedioEn, setLabelMedioEn] = useState('')
   const [tpvPrecioBase, setTpvPrecioBase] = useState<string | null>(null)
-
-  useModalUsageTracking({
-    open: open && articuloId != null,
-    usageId: 'carta-item-edit',
-    usageLabel: 'Editar producto carta',
-  })
 
   const platoMarbellaCategoryId = useMemo(
     () => categories.find((c) => c.slug === PLATO_MARBELLA_CHILD_SLUG)?.id ?? null,
@@ -234,7 +228,7 @@ export function MenuItemEditModal({
 
   const isDualRacionCategory = isCartaDualRacionParentCategory(previewParentName)
 
-  if (!open || articuloId == null) return null
+  if (articuloId == null) return null
 
   const displayPhotoSrc =
     previewBlobUrl ?? (removeOverridePhoto ? recipePhotoUrl : overridePhotoUrl ?? recipePhotoUrl)
@@ -249,30 +243,18 @@ export function MenuItemEditModal({
   const hasPhoto = Boolean(displayPhotoSrc?.trim())
 
   return (
-    <div
-      className="fixed inset-0 z-[360] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-      onClick={isPending ? undefined : onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Editar producto"
+    <Modal
+      open={open}
+      onClose={isPending ? () => {} : onClose}
+      title="Editar producto"
+      variant="standard"
+      layer="base"
+      instance="carta-item-edit"
+      headerTone="petroleum"
+      loading={isPending}
+      closeOnBackdrop={!isPending}
     >
-      <div
-        className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="relative flex min-h-[56px] items-center justify-center bg-[#36606F] px-12 py-3 text-white">
-          <h2 className="line-clamp-2 text-center text-sm font-black uppercase tracking-wider">Editar producto</h2>
-          <button
-            type="button"
-            className="absolute right-2 top-1/2 flex min-h-[48px] min-w-[48px] -translate-y-1/2 items-center justify-center rounded-xl text-white transition-colors hover:bg-white/15 active:bg-white/10"
-            onClick={isPending ? undefined : onClose}
-            aria-label="Cerrar"
-          >
-            <X className="h-6 w-6" strokeWidth={2.5} />
-          </button>
-        </header>
-
-        <div className="max-h-[75vh] overflow-y-auto p-4">
+        <div className="p-4">
           <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-3">
             <p className="text-[11px] font-black uppercase tracking-widest text-[#36606F]">TPV</p>
             <p className="mt-1 text-sm font-bold text-zinc-900">{tpvName}</p>
@@ -715,8 +697,7 @@ export function MenuItemEditModal({
             </>
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   )
 }
 

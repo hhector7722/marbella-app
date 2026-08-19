@@ -18,7 +18,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Loader2, RotateCcw, Save } from 'lucide-react';
+import { GripVertical, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ConsumptionBottomSheet } from '@/components/ui/ConsumptionBottomSheet';
@@ -212,7 +212,6 @@ export function ConsumptionRecipeOrderModal({
             variant="secondary"
             instance="consumption-order-reset"
             layout="fill"
-            icon={<RotateCcw className="h-4 w-4" />}
             disabled={loading || saving}
             onClick={handleResetStepToDefault}
           >
@@ -223,7 +222,6 @@ export function ConsumptionRecipeOrderModal({
             variant="primary"
             instance="consumption-order-save"
             layout="fill"
-            icon={<Save className="h-4 w-4" />}
             disabled={loading || saving}
             loading={saving}
             loadingLabel="Guardando"

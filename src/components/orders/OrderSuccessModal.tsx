@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Download, Share2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { pdfFirstPageToPngBlob } from '@/utils/orders/pdf-to-image';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
@@ -209,7 +208,6 @@ export function OrderSuccessModal({
                             variant="secondary"
                             instance="order-success-download"
                             layout="hug"
-                            icon={<Download size={18} />}
                             disabled={actionsDisabled}
                             onClick={onDownload}
                         >
@@ -220,7 +218,6 @@ export function OrderSuccessModal({
                             variant="secondary"
                             instance="order-success-share"
                             layout="hug"
-                            icon={<Share2 size={18} />}
                             disabled={actionsDisabled}
                             onClick={() => void handleShare()}
                         >
@@ -231,7 +228,6 @@ export function OrderSuccessModal({
                             variant="primary"
                             instance="order-success-supplier"
                             layout="hug"
-                            icon={<Send size={18} />}
                             disabled={actionsDisabled || !supplierPhone}
                             onClick={() => void handleProveedor()}
                         >
@@ -246,7 +242,7 @@ export function OrderSuccessModal({
                 onClose={() => setShowConfirmEnviar(false)}
                 title="Enviar pedido"
                 variant="compact"
-                layer="derived"
+                layer="system"
                 instance="order-success-confirm-send"
                 usageId="order-success-confirm-send"
                 usageLabel="Confirmar envío pedido"

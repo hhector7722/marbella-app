@@ -7,6 +7,7 @@ import { cn, calculateRoundedHours } from '@/lib/utils';
 import { toast } from 'sonner';
 import { SpecialDayLabel } from '@/components/staff/SpecialDayLabel';
 import LaborConditionsView from '@/components/profile/LaborConditionsView';
+import { Modal } from '@/components/ui/modal';
 
 const DAY_HEADERS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 
@@ -513,27 +514,17 @@ export function WeekCard({
                 </div>
             )}
 
-            {contractModalOpen && userId && (
-                <div
-                    className="fixed inset-0 z-[220] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
-                    onClick={() => setContractModalOpen(false)}
+            {userId && (
+                <Modal
+                    open={contractModalOpen}
+                    onClose={() => setContractModalOpen(false)}
+                    variant="amplify"
+                    layer="base"
+                    instance="staff-condiciones-laborales"
+                    title="Condiciones Laborales y Contrato"
+                    wrapperClassName="max-w-3xl"
                 >
-                    <div
-                        className="w-full max-w-3xl max-h-[90vh] bg-white rounded-3xl shadow-2xl overflow-y-auto p-4 relative"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="flex justify-between items-center mb-2 px-2 pt-1 border-b pb-2">
-                            <span className="text-xs font-black text-zinc-700 uppercase tracking-wider">
-                                Condiciones Laborales y Contrato
-                            </span>
-                            <button
-                                type="button"
-                                onClick={() => setContractModalOpen(false)}
-                                className="w-7 h-7 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400 hover:text-zinc-600 text-xs font-bold"
-                            >
-                                <X size={14} />
-                            </button>
-                        </div>
+                    <div className="p-4">
                         <LaborConditionsView
                             employeeId={userId}
                             onSaveSuccess={async () => {
@@ -547,7 +538,7 @@ export function WeekCard({
                             onClose={() => setContractModalOpen(false)}
                         />
                     </div>
-                </div>
+                </Modal>
             )}
         </div>
     );

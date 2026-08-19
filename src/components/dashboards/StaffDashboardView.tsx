@@ -1127,356 +1127,244 @@ export default function StaffDashboardView() {
                 </div>
             )}
 
-            {
-                activeMenu && (
-                    <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in" onClick={closeMenus}>
-                        <div className={`bg-white w-full ${infoSubMenu === 'contactos' ? 'max-w-md' : (activeMenu === 'pedidos' ? 'max-w-sm' : 'max-w-sm')} rounded-2xl shadow-2xl relative transition-all max-h-[85vh] flex flex-col overflow-hidden`} onClick={(e) => e.stopPropagation()}>
-                            {/* Header Petrol - Estilo Modal Marbella */}
-                            <div className="bg-[#36606F] px-6 py-4 flex items-center justify-between text-white shrink-0 relative">
-                                <div className="flex items-center gap-3">
-                                    {infoSubMenu && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setInfoSubMenu(null)}
-                                            aria-label="Volver"
-                                            className="flex h-12 w-12 shrink-0 items-center justify-center text-white transition-all hover:opacity-80 active:scale-90 -ml-2"
-                                        >
-                                            <ArrowLeft size={20} strokeWidth={3} />
-                                        </button>
-                                    )}
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest">
-                                        {infoSubMenu === 'contactos'
-                                            ? 'Contactos'
-                                            : infoSubMenu === 'web'
-                                                ? 'Página web'
-                                                : 'Información'}
-                                    </h3>
+            <Modal
+                open={!!activeMenu}
+                onClose={closeMenus}
+                variant={infoSubMenu === 'contactos' ? 'standard' : 'compact'}
+                layer="base"
+                instance="staff-info"
+                title={
+                    infoSubMenu === 'contactos'
+                        ? 'Contactos'
+                        : infoSubMenu === 'web'
+                            ? 'Página web'
+                            : 'Información'
+                }
+                headerTone="petroleum"
+                onBack={infoSubMenu ? () => setInfoSubMenu(null) : undefined}
+            >
+                <div className="p-8 space-y-2">
+                    {!infoSubMenu && (
+                        <div className="space-y-1">
+                            <button onClick={() => { trackStaffInfoMenu('Contactos de Interés'); setInfoSubMenu('contactos'); }} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
+                                <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
+                                    <Image src="/icons/whatsapp.png" alt="Contactos" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
                                 </div>
-                                <button onClick={closeMenus} className="w-8 h-8 flex items-center justify-center bg-rose-500 rounded-xl hover:bg-rose-600 transition-all text-white active:scale-90 shadow-md shadow-rose-900/20">
-                                    <X size={18} strokeWidth={3} />
-                                </button>
-                            </div>
-
-                            <div className="p-8 space-y-2 overflow-y-auto">
-                                {!infoSubMenu && (
-                                    <div className="space-y-1">
-                                        <button onClick={() => { trackStaffInfoMenu('Contactos de Interés'); setInfoSubMenu('contactos'); }} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
-                                            <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                                <Image src="/icons/whatsapp.png" alt="Contactos" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
-                                            </div>
-                                            <span className="font-bold text-sm tracking-tight text-left">Contactos de Interés</span>
-                                        </button>
-
-                                        <a
-                                            href="https://marbella-web.vercel.app"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl"
-                                        >
-                                            <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                                <Image
-                                                    src="/icons/web.png"
-                                                    alt="Página web"
-                                                    width={36}
-                                                    height={36}
-                                                    className="rounded-xl object-contain transition-transform group-hover:scale-110"
-                                                />
-                                            </div>
-                                            <span className="font-bold text-sm tracking-tight text-left">Página web</span>
-                                        </a>
-
-                                        <Link
-                                            href="/staff/reservas"
-                                            onClick={() => { trackStaffInfoMenu('Reservas y encargos'); closeMenus(); }}
-                                            className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl"
-                                        >
-                                            <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                                <Image src="/icons/reservas.png" alt="Reservas y encargos" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
-                                            </div>
-                                            <span className="font-bold text-sm tracking-tight text-left">Reservas y encargos</span>
-                                        </Link>
-
-                                        <Link
-                                            href="/staff/carta"
-                                            onClick={closeMenus}
-                                            className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl"
-                                        >
-                                            <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                                <Image src="/icons/menu.png" alt="Carta" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
-                                            </div>
-                                            <span className="font-bold text-sm tracking-tight text-left">Carta</span>
-                                        </Link>
-
-                                        <button
-                                            onClick={() => {
-                                                trackStaffInfoMenu('Manuales');
-                                                setInfoSubMenu(null);
-                                                setActiveMenu(null);
-                                                setIsManualsModalOpen(true);
-                                            }}
-                                            className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl"
-                                        >
-                                            <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                                <Image src="/icons/guide.png" alt="Manuales" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
-                                            </div>
-                                            <span className="font-bold text-sm tracking-tight text-left">Manuales</span>
-                                        </button>
-                                    </div>
-                                )}
-                                {infoSubMenu === 'contactos' && (
-                                    <div className="max-h-[60vh] overflow-y-auto pr-1 divide-y divide-gray-100">
-                                        {CONTACTS_DATA.map((c, idx) => (
-                                            <div key={idx} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-                                                <div className="min-w-0">
-                                                    <p className="text-xs font-bold text-gray-800 truncate">{c.name}</p>
-                                                </div>
-                                                <div className="flex gap-4 items-center">
-                                                    <a href={`tel:${cleanPhone(c.phone)}`} className="text-emerald-500 hover:text-emerald-600 transition-colors p-1 active:scale-95"><Phone size={22} /></a>
-                                                    <a href={`https://wa.me/${cleanPhone(c.phone).replace('+', '')}`} target="_blank" rel="noopener noreferrer" className="transition-all hover:scale-110 active:scale-95">
-                                                        <Image src="/icons/whatsapp.png" alt="WhatsApp" width={28} height={28} className="object-contain" />
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
-
-            {isManualsModalOpen && (
-                <div
-                    className="fixed inset-0 bg-black/60 z-[115] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in"
-                    onClick={closeManualsModal}
-                >
-                    <div
-                        className="bg-white w-full max-w-sm rounded-2xl shadow-2xl relative transition-all max-h-[85vh] flex flex-col overflow-hidden"
-                        onClick={(e) => e.stopPropagation()}
-                        role="dialog"
-                        aria-label="Manuales"
-                    >
-                        <div className="bg-[#36606F] px-6 py-4 flex items-center justify-between text-white shrink-0 relative">
-                            <div className="flex min-w-0 flex-1 items-center gap-3">
-                                <button
-                                    type="button"
-                                    onClick={backToInfoFromManuals}
-                                    className="flex h-10 w-10 shrink-0 items-center justify-center text-white/90 hover:text-white transition-colors active:scale-90 min-h-[48px] min-w-[48px]"
-                                    aria-label="Volver a información"
-                                >
-                                    <ArrowLeft size={20} strokeWidth={3} />
-                                </button>
-                                <h3 className="min-w-0 truncate text-[10px] font-black uppercase tracking-widest">Manuales</h3>
-                            </div>
-                            <button
-                                onClick={closeManualsModal}
-                                className="w-10 h-10 flex items-center justify-center bg-rose-500 rounded-xl hover:bg-rose-600 transition-all text-white active:scale-90 shadow-md shadow-rose-900/20 min-h-[48px] min-w-[48px]"
-                                aria-label="Cerrar manuales"
-                            >
-                                <X size={18} strokeWidth={3} />
+                                <span className="font-bold text-sm tracking-tight text-left">Contactos de Interés</span>
                             </button>
-                        </div>
 
-                        <div className="p-8 space-y-1 overflow-y-auto">
-                            {STAFF_MANUAL_MENU.map((item) => (
-                                <button
-                                    key={item.id}
-                                    onClick={() => handleStaffManualItem(item.id)}
-                                    className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl"
-                                    type="button"
-                                >
-                                    <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                        <Image
-                                            src={item.icon}
-                                            alt={item.label}
-                                            width={36}
-                                            height={36}
-                                            className="object-contain transition-transform group-hover:scale-110"
-                                        />
-                                    </div>
-                                    <span className="font-bold text-sm tracking-tight text-left">{item.label}</span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {isManualsModalOpen && isTpvManualModalOpen && (
-                <div
-                    className="fixed inset-0 bg-black/60 z-[120] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in"
-                    onClick={closeTpvManualModal}
-                >
-                    <div
-                        className="bg-white w-full max-w-sm rounded-2xl shadow-2xl relative transition-all max-h-[85vh] flex flex-col overflow-hidden"
-                        onClick={(e) => e.stopPropagation()}
-                        role="dialog"
-                        aria-label="Manual TPV"
-                    >
-                        <div className="bg-[#36606F] px-6 py-4 flex items-center justify-between text-white shrink-0 relative gap-3">
-                            <div className="flex min-w-0 flex-1 items-center gap-3">
-                                <button
-                                    type="button"
-                                    onClick={closeTpvManualModal}
-                                    className="flex h-10 w-10 shrink-0 items-center justify-center text-white/90 hover:text-white transition-colors active:scale-90 min-h-[48px] min-w-[48px]"
-                                    aria-label="Volver a manuales"
-                                >
-                                    <ArrowLeft size={20} strokeWidth={3} />
-                                </button>
-                                <h3 className="min-w-0 truncate text-[10px] font-black uppercase tracking-widest">TPV</h3>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={closeTpvManualModal}
-                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-500 text-white transition-all hover:bg-rose-600 active:scale-90 min-h-[48px] min-w-[48px]"
-                                aria-label="Cerrar submenú TPV"
+                            <a
+                                href="https://marbella-web.vercel.app"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl"
                             >
-                                <X size={18} strokeWidth={3} />
-                            </button>
-                        </div>
-                        <div className="max-h-[60vh] space-y-1 overflow-y-auto p-6">
-                            {STAFF_TPV_MANUAL_ITEMS.map((label) => (
-                                <button
-                                    key={label}
-                                    type="button"
-                                    onClick={() => {
-                                        const v = STAFF_TPV_MANUAL_VIDEOS[label];
-                                        if (!v) {
-                                            toast.info('Destino pendiente de configurar', { description: label });
-                                            return;
-                                        }
-                                        setIsTpvManualModalOpen(false);
-                                        setIsHornoManualModalOpen(false);
-                                        setManualMediaViewer({ type: 'video', src: v.src, title: v.title });
-                                    }}
-                                    className="flex min-h-[56px] w-full items-center rounded-2xl border border-zinc-100 bg-white px-4 py-3 text-left text-sm font-bold text-gray-700 shadow-sm transition-all hover:border-blue-200 hover:text-blue-600 active:scale-[0.99]"
-                                >
-                                    {label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {isManualsModalOpen && isHornoManualModalOpen && (
-                <div
-                    className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in"
-                    onClick={closeHornoManualModal}
-                >
-                    <div
-                        className="flex max-h-[85vh] w-full max-w-sm flex-col overflow-hidden rounded-2xl bg-white shadow-2xl transition-all"
-                        onClick={(e) => e.stopPropagation()}
-                        role="dialog"
-                        aria-label="Manual horno"
-                    >
-                        <div className="relative flex shrink-0 items-center justify-between gap-3 bg-[#36606F] px-6 py-4 text-white">
-                            <div className="flex min-w-0 flex-1 items-center gap-3">
-                                <button
-                                    type="button"
-                                    onClick={closeHornoManualModal}
-                                    className="flex h-10 w-10 shrink-0 items-center justify-center text-white/90 hover:text-white transition-colors active:scale-90 min-h-[48px] min-w-[48px]"
-                                    aria-label="Volver a manuales"
-                                >
-                                    <ArrowLeft size={20} strokeWidth={3} />
-                                </button>
-                                <h3 className="min-w-0 truncate text-[10px] font-black uppercase tracking-widest">Horno</h3>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={closeHornoManualModal}
-                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-500 text-white transition-all hover:bg-rose-600 active:scale-90 min-h-[48px] min-w-[48px]"
-                                aria-label="Cerrar submenú horno"
-                            >
-                                <X size={18} strokeWidth={3} />
-                            </button>
-                        </div>
-                        <div className="space-y-3 p-6">
-                            <button
-                                type="button"
-                                onClick={() => openStaffPdf(STAFF_MANUAL_ASSETS.hornoLimpiezaPdf)}
-                                className="flex min-h-[56px] w-full items-center rounded-2xl border border-zinc-100 bg-white px-4 py-3 text-left text-sm font-bold text-gray-700 shadow-sm transition-all hover:border-blue-200 hover:text-blue-600 active:scale-[0.99]"
-                            >
-                                Limpieza Horno
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setIsHornoManualModalOpen(false);
-                                    setIsTpvManualModalOpen(false);
-                                    setManualMediaViewer({
-                                        type: 'video',
-                                        src: STAFF_MANUAL_ASSETS.hornoFuncionamientoVideo,
-                                        title: 'Funcionamiento Horno',
-                                    });
-                                }}
-                                className="flex min-h-[56px] w-full items-center rounded-2xl border border-zinc-100 bg-white px-4 py-3 text-left text-sm font-bold text-gray-700 shadow-sm transition-all hover:border-blue-200 hover:text-blue-600 active:scale-[0.99]"
-                            >
-                                Funcionamiento Horno
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {manualMediaViewer && (
-                <div
-                    className="fixed inset-0 z-[125] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in"
-                    onClick={() => setManualMediaViewer(null)}
-                    role="dialog"
-                    aria-label={manualMediaViewer.title}
-                >
-                    <div
-                        className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-100 bg-[#36606F] px-4 py-3 text-white">
-                            <div className="flex min-w-0 flex-1 items-center gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setManualMediaViewer(null)}
-                                    className="flex h-10 w-10 shrink-0 items-center justify-center text-white/90 hover:text-white transition-colors active:scale-90 min-h-[48px] min-w-[48px]"
-                                    aria-label="Volver a manuales"
-                                >
-                                    <ArrowLeft size={20} strokeWidth={3} />
-                                </button>
-                                <h3 className="min-w-0 truncate text-sm font-black uppercase tracking-wide">{manualMediaViewer.title}</h3>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => setManualMediaViewer(null)}
-                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-500 text-white transition-colors hover:bg-rose-600 min-h-[48px] min-w-[48px]"
-                                aria-label="Cerrar visor"
-                            >
-                                <X size={18} strokeWidth={3} />
-                            </button>
-                        </div>
-                        <div className="min-h-0 flex-1 overflow-y-auto bg-zinc-50 p-4">
-                            {manualMediaViewer.type === 'video' ? (
-                                <video
-                                    src={manualMediaViewer.src}
-                                    controls
-                                    playsInline
-                                    className="mx-auto w-full max-h-[75vh] rounded-xl bg-black"
-                                >
-                                    Tu navegador no reproduce vídeo embebido.
-                                </video>
-                            ) : (
-                                <div className="flex justify-center">
+                                <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
                                     <Image
-                                        src={manualMediaViewer.src}
-                                        alt={manualMediaViewer.title}
-                                        width={1200}
-                                        height={1600}
-                                        className="h-auto max-h-[75vh] w-auto max-w-full object-contain"
+                                        src="/icons/web.png"
+                                        alt="Página web"
+                                        width={36}
+                                        height={36}
+                                        className="rounded-xl object-contain transition-transform group-hover:scale-110"
                                     />
                                 </div>
-                            )}
+                                <span className="font-bold text-sm tracking-tight text-left">Página web</span>
+                            </a>
+
+                            <Link
+                                href="/staff/reservas"
+                                onClick={() => { trackStaffInfoMenu('Reservas y encargos'); closeMenus(); }}
+                                className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl"
+                            >
+                                <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
+                                    <Image src="/icons/reservas.png" alt="Reservas y encargos" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
+                                </div>
+                                <span className="font-bold text-sm tracking-tight text-left">Reservas y encargos</span>
+                            </Link>
+
+                            <Link
+                                href="/staff/carta"
+                                onClick={closeMenus}
+                                className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl"
+                            >
+                                <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
+                                    <Image src="/icons/menu.png" alt="Carta" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
+                                </div>
+                                <span className="font-bold text-sm tracking-tight text-left">Carta</span>
+                            </Link>
+
+                            <button
+                                onClick={() => {
+                                    trackStaffInfoMenu('Manuales');
+                                    setInfoSubMenu(null);
+                                    setActiveMenu(null);
+                                    setIsManualsModalOpen(true);
+                                }}
+                                className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl"
+                            >
+                                <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
+                                    <Image src="/icons/guide.png" alt="Manuales" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
+                                </div>
+                                <span className="font-bold text-sm tracking-tight text-left">Manuales</span>
+                            </button>
                         </div>
-                    </div>
+                    )}
+                    {infoSubMenu === 'contactos' && (
+                        <div className="max-h-[60vh] overflow-y-auto pr-1 divide-y divide-gray-100">
+                            {CONTACTS_DATA.map((c, idx) => (
+                                <div key={idx} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-bold text-gray-800 truncate">{c.name}</p>
+                                    </div>
+                                    <div className="flex gap-4 items-center">
+                                        <a href={`tel:${cleanPhone(c.phone)}`} className="text-emerald-500 hover:text-emerald-600 transition-colors p-1 active:scale-95"><Phone size={22} /></a>
+                                        <a href={`https://wa.me/${cleanPhone(c.phone).replace('+', '')}`} target="_blank" rel="noopener noreferrer" className="transition-all hover:scale-110 active:scale-95">
+                                            <Image src="/icons/whatsapp.png" alt="WhatsApp" width={28} height={28} className="object-contain" />
+                                        </a>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
-            )}
+            </Modal>
+
+            <Modal
+                open={isManualsModalOpen}
+                onClose={closeManualsModal}
+                variant="compact"
+                layer="base"
+                instance="staff-manuales"
+                title="Manuales"
+                headerTone="petroleum"
+                onBack={backToInfoFromManuals}
+            >
+                <div className="p-8 space-y-1">
+                    {STAFF_MANUAL_MENU.map((item) => (
+                        <button
+                            key={item.id}
+                            onClick={() => handleStaffManualItem(item.id)}
+                            className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl"
+                            type="button"
+                        >
+                            <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
+                                <Image
+                                    src={item.icon}
+                                    alt={item.label}
+                                    width={36}
+                                    height={36}
+                                    className="object-contain transition-transform group-hover:scale-110"
+                                />
+                            </div>
+                            <span className="font-bold text-sm tracking-tight text-left">{item.label}</span>
+                        </button>
+                    ))}
+                </div>
+            </Modal>
+
+            <Modal
+                open={isManualsModalOpen && isTpvManualModalOpen}
+                onClose={closeTpvManualModal}
+                variant="compact"
+                layer="derived"
+                instance="staff-manual-tpv"
+                parentInstance="staff-manuales"
+                title="TPV"
+                headerTone="petroleum"
+            >
+                <div className="max-h-[60vh] space-y-1 overflow-y-auto p-6">
+                    {STAFF_TPV_MANUAL_ITEMS.map((label) => (
+                        <button
+                            key={label}
+                            type="button"
+                            onClick={() => {
+                                const v = STAFF_TPV_MANUAL_VIDEOS[label];
+                                if (!v) {
+                                    toast.info('Destino pendiente de configurar', { description: label });
+                                    return;
+                                }
+                                setIsTpvManualModalOpen(false);
+                                setIsHornoManualModalOpen(false);
+                                setManualMediaViewer({ type: 'video', src: v.src, title: v.title });
+                            }}
+                            className="flex min-h-[56px] w-full items-center rounded-2xl border border-zinc-100 bg-white px-4 py-3 text-left text-sm font-bold text-gray-700 shadow-sm transition-all hover:border-blue-200 hover:text-blue-600 active:scale-[0.99]"
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+            </Modal>
+
+            <Modal
+                open={isManualsModalOpen && isHornoManualModalOpen}
+                onClose={closeHornoManualModal}
+                variant="compact"
+                layer="derived"
+                instance="staff-manual-horno"
+                parentInstance="staff-manuales"
+                title="Horno"
+                headerTone="petroleum"
+            >
+                <div className="space-y-3 p-6">
+                    <button
+                        type="button"
+                        onClick={() => openStaffPdf(STAFF_MANUAL_ASSETS.hornoLimpiezaPdf)}
+                        className="flex min-h-[56px] w-full items-center rounded-2xl border border-zinc-100 bg-white px-4 py-3 text-left text-sm font-bold text-gray-700 shadow-sm transition-all hover:border-blue-200 hover:text-blue-600 active:scale-[0.99]"
+                    >
+                        Limpieza Horno
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setIsHornoManualModalOpen(false);
+                            setIsTpvManualModalOpen(false);
+                            setManualMediaViewer({
+                                type: 'video',
+                                src: STAFF_MANUAL_ASSETS.hornoFuncionamientoVideo,
+                                title: 'Funcionamiento Horno',
+                            });
+                        }}
+                        className="flex min-h-[56px] w-full items-center rounded-2xl border border-zinc-100 bg-white px-4 py-3 text-left text-sm font-bold text-gray-700 shadow-sm transition-all hover:border-blue-200 hover:text-blue-600 active:scale-[0.99]"
+                    >
+                        Funcionamiento Horno
+                    </button>
+                </div>
+            </Modal>
+
+            <Modal
+                open={!!manualMediaViewer}
+                onClose={() => setManualMediaViewer(null)}
+                variant="amplify"
+                layer="derived"
+                instance="staff-manual-media"
+                parentInstance="staff-manuales"
+                title={manualMediaViewer?.title ?? ''}
+                headerTone="petroleum"
+                wrapperClassName="max-w-3xl"
+            >
+                <div className="min-h-0 flex-1 overflow-y-auto bg-zinc-50 p-4">
+                    {manualMediaViewer?.type === 'video' ? (
+                        <video
+                            src={manualMediaViewer.src}
+                            controls
+                            playsInline
+                            className="mx-auto w-full max-h-[75vh] rounded-xl bg-black"
+                        >
+                            Tu navegador no reproduce vídeo embebido.
+                        </video>
+                    ) : manualMediaViewer ? (
+                        <div className="flex justify-center">
+                            <Image
+                                src={manualMediaViewer.src}
+                                alt={manualMediaViewer.title}
+                                width={1200}
+                                height={1600}
+                                className="h-auto max-h-[75vh] w-auto max-w-full object-contain"
+                            />
+                        </div>
+                    ) : null}
+                </div>
+            </Modal>
 
             <StaffProductModal
                 isOpen={isProductModalOpen}

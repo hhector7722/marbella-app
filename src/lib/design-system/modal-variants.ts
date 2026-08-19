@@ -29,9 +29,9 @@ export function resolveModalVariant(variant: ModalVariant): ModalVariantLayout {
         case 'standard':
             return { maxWidthClass: 'max-w-md', preferTall: false };
         case 'work':
-            return { maxWidthClass: 'max-w-5xl', preferTall: true };
+            return { maxWidthClass: 'max-w-6xl', preferTall: true };
         case 'day':
-            return { maxWidthClass: 'max-w-5xl', preferTall: true };
+            return { maxWidthClass: 'max-w-6xl', preferTall: true };
         case 'amplify':
             return { maxWidthClass: 'max-w-2xl', preferTall: false };
         default: {

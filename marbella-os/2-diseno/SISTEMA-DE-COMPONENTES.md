@@ -33,12 +33,12 @@ Los que sostienen toda pantalla. **Button ya existe** (piloto de footers). Campo
 
 **Propósito**: ejecutar una acción.
 
-**Anatomía**: un único `<button>`. Icono opcional a la izquierda. Etiqueta de texto. Icon-only (48×48) sin etiqueta, con `aria-label` obligatorio.
+**Anatomía**: un único `<button>`. Texto XOR icono. Un Button con texto visible no lleva icono. Un Button icon-only no lleva texto. No existe la combinación icono + texto. Icon-only (48×48) sin etiqueta, con `aria-label` obligatorio. La prop `icon` existe para el caso icon-only.
 
 ```text
 Button
- ├── icon?
- └── label?
+ ├── label     (texto; sin icono)
+ └── icon      (icon-only; sin texto; aria-label)
 ```
 
 **Variantes** (cerradas; nombres de código): `primary`, `secondary`, `tertiary`, `destructive`. No existe `success`, `positive`, `emerald`, `ghost`, `danger`, `confirmar` ni quinta variante. El fill lo fija el contrato, no el consumidor:
@@ -50,7 +50,7 @@ Button
 | `tertiary` | `color.marca` | Menor jerarquía. El petróleo no pinta `primary` |
 | `destructive` | `color.negativo` | Eliminar, destruir, acción irreversible |
 
-Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`** (ancho = contenido + padding horizontal). `fill` / ancho completo solo cuando el consumidor lo declara. El host táctil mide `tactil.minimo` (48 px): área de toque transparente; no obliga al fondo visual. El fondo visual compacto es independiente: 12 px de tipo + `espacio.2` arriba y abajo = 28 px. Padding horizontal compacto: `espacio.2`. Radio contractual del Button: 8 px (`espacio.2`), estrictamente menor que la mitad del alto visual (14 px) para dejar tramo recto, no píldora. No usa `radio.superficie` (16 px), que permanece en Modal. Icon-only conserva superficie visual 48×48. La prop `icon` existe; el Footer de Modal no la usa.
+Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`** (ancho = contenido + padding horizontal). `fill` / ancho completo solo cuando el consumidor lo declara. El host táctil mide `tactil.minimo` (48 px): área de toque transparente; no obliga al fondo visual. El fondo visual compacto es independiente: 12 px de tipo + `espacio.2` arriba y abajo = 28 px. Padding horizontal compacto: `espacio.2`. Radio contractual del Button: 8 px (`espacio.2`), estrictamente menor que la mitad del alto visual (14 px) para dejar tramo recto, no píldora. No usa `radio.superficie` (16 px), que permanece en Modal. Icon-only conserva superficie visual 48×48. El Footer de Modal usa Button de texto, sin iconos, hug.
 
 **Estados**: reposo, hover (sin scale-up), pulsado (`scale(0.95)`), foco visible (anillo de marca), en curso (equivale a deshabilitado + spinner a la izquierda), deshabilitado (opacity 50). El estado visual de error no se implementa en v1: el error vive en el campo o el aviso.
 
@@ -59,12 +59,13 @@ Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`
 **Reglas**:
 - En curso, deshabilita su propia pulsación. Nunca dos efectos por dos toques.
 - La variante destructiva no comparte aspecto con la principal ni se coloca junto a ella.
+- Un Button con texto visible no lleva icono. Un Button icon-only no lleva texto. No existe la combinación icono + texto.
 - Un botón sin etiqueta necesita nombre accesible.
 - El icono no va a la derecha.
 - No se usa para navegar. Navegar es un enlace, aunque parezca un botón.
-- El chrome close/back de Modal y Navbar no es este componente. Tampoco `DashboardShortcut`.
+- El chrome close/back de Modal y Navbar no es este componente. Chrome ≠ Button. `TimeFilterButton`, `DashboardShortcut` y `TabBar` no son Button.
 - El Footer de Modal no convierte los botones en `fill`; el consumidor decide.
-- El Footer de Modal usa Button solo con texto, sin `icon`. Icon-only sigue permitido fuera de ese pie.
+- El Footer de Modal usa Button con texto, sin iconos, hug. Icon-only sigue permitido fuera de ese pie.
 - El radio contractual es 8 px (`espacio.2`). No píldora: el radio es menor que la mitad del alto visual. Distinto de `radio.superficie` del Modal. El consumidor no puede sobrescribirlo.
 - `primary` pinta con `color.positivo`. El petróleo no es el fill de Guardar / Confirmar / Crear. No se inventa variante `confirmar` ni color local en el consumidor.
 

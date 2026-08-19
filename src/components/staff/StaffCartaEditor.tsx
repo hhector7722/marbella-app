@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { toast } from 'sonner'
-import { Check, Loader2, Pencil, Search, X, Eye, EyeOff, ImageIcon } from 'lucide-react'
+import { Check, Loader2, Pencil, Search, Eye, EyeOff, ImageIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
+import { Modal } from '@/components/ui/modal'
 import {
   upsertMenuOverride,
   setMenuSectionCoverArticulo,
@@ -53,12 +53,6 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
   const [items, setItems] = useState<MenuItemRow[]>([])
   const [overrides, setOverrides] = useState<OverrideRow[]>([])
   const [categories, setCategories] = useState<Category[]>([])
-
-  useModalUsageTracking({
-    open,
-    usageId: 'staff-carta-editor',
-    usageLabel: 'Editor carta',
-  })
 
   const overrideByArticulo = useMemo(() => {
     const m = new Map<number, OverrideRow>()
@@ -308,34 +302,30 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
         <Pencil className="h-5 w-5" strokeWidth={2.5} />
       </button>
 
-      {open ? (
-        <div
-          className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm p-3 md:p-6"
-          onClick={() => setOpen(false)}
-          role="dialog"
-          aria-label="Editar carta"
-        >
-          <div
-            className="mx-auto flex h-[min(92vh,900px)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between gap-3 bg-[#36606F] px-4 py-3 text-white">
-              <div className="min-w-0">
-                <div className="text-xs font-black uppercase tracking-widest">Edición de carta</div>
-                <div className="text-[10px] font-semibold text-white/70">
-                  Artículos (activar, categoría, nombres ES/CA/EN) · portadas abajo
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl bg-white/10 hover:bg-white/20"
-                aria-label="Cerrar"
-              >
-                <X className="h-5 w-5" strokeWidth={2.5} />
-              </button>
-            </div>
-
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Edición de carta"
+        subtitle="Artículos (activar, categoría, nombres ES/CA/EN) · portadas abajo"
+        variant="work"
+        layer="base"
+        instance="staff-carta-editor"
+        headerTone="petroleum"
+        scrollContent={false}
+        wrapperClassName="max-w-4xl"
+        footer={
+          <div className="flex w-full justify-end">
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="inline-flex min-h-[48px] items-center justify-center rounded-xl bg-[#36606F] px-4 font-black uppercase tracking-wider text-[11px] text-white active:scale-[0.98]"
+            >
+              <Check className="mr-2 h-5 w-5" />
+              Listo
+            </button>
+          </div>
+        }
+      >
             <div className="shrink-0 space-y-3 border-b border-zinc-100 p-4">
               <div className="relative w-full">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
@@ -526,19 +516,7 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
               </details>
             </div>
 
-            <div className="shrink-0 border-t border-zinc-100 bg-white p-3 text-right">
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="inline-flex min-h-[48px] items-center justify-center rounded-xl bg-[#36606F] px-4 font-black uppercase tracking-wider text-[11px] text-white active:scale-[0.98]"
-              >
-                <Check className="mr-2 h-5 w-5" />
-                Listo
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      </Modal>
     </>
   )
 }

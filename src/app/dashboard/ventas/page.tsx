@@ -3,7 +3,8 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { createClient } from "@/utils/supabase/client";
-import { X, ChevronLeft, ChevronRight, ChartLine, Filter } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChartLine, Filter } from 'lucide-react';
+import { Modal } from '@/components/ui/modal';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { format, startOfMonth, endOfMonth, isSameDay, addDays, subDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths } from 'date-fns';
@@ -14,7 +15,6 @@ import { toast } from 'sonner';
 import { BUSINESS_HOURS } from '@/lib/constants';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatMonthYear, formatYmdShort, periodRangeSummary } from '@/lib/usage/modal-apply';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
@@ -112,16 +112,6 @@ export default function VentasPage() {
     const [showCalendar, setShowCalendar] = useState<'single' | 'range' | null>(null);
     const [showMonthPicker, setShowMonthPicker] = useState(false);
 
-    useModalUsageTracking({
-        open: showCalendar !== null,
-        usageId: showCalendar === 'single' ? 'ventas-date-single' : 'ventas-date-range',
-        usageLabel: showCalendar === 'single' ? 'Fecha única' : 'Rango de fechas',
-    });
-    useModalUsageTracking({
-        open: showMonthPicker,
-        usageId: 'ventas-month-picker',
-        usageLabel: 'Selector de mes',
-    });
     const [calendarBaseDate, setCalendarBaseDate] = useState(new Date());
     const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
     const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
@@ -1041,102 +1031,122 @@ export default function VentasPage() {
             </div>
 
             {/* MODALES REUTILIZADOS DE HISTORY PAGE */}
-            {showCalendar && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setShowCalendar(null)}>
-                    <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="p-6 border-b border-zinc-50 flex items-center justify-between">
-                            <h3 className="font-black text-zinc-900 uppercase text-[10px] tracking-widest">{showCalendar === 'single' ? 'Fecha Única' : 'Rango de Fechas'}</h3>
-                            <button onClick={() => setShowCalendar(null)} className="p-3 hover:bg-zinc-100 rounded-2xl transition-colors"><X size={18} className="text-zinc-400" /></button>
-                        </div>
+            <Modal
+                open={showCalendar !== null}
+                onClose={() => setShowCalendar(null)}
+                title={showCalendar === 'single' ? 'Fecha Única' : 'Rango de Fechas'}
+                variant="compact"
+                layer="base"
+                instance={showCalendar === 'single' ? 'ventas-date-single' : 'ventas-date-range'}
+            >
+                <div className="p-6">
+                    <div className="flex items-center justify-between mb-6 px-2">
+                        <button
+                            type="button"
+                            onClick={() => setCalendarBaseDate(subMonths(calendarBaseDate, 1))}
+                            aria-label="Mes anterior"
+                            className="min-h-12 min-w-12 inline-flex items-center justify-center hover:bg-zinc-50 rounded-2xl transition-colors"
+                        >
+                            <ChevronLeft size={20} className="text-zinc-400" />
+                        </button>
+                        <span className="font-black text-zinc-900 text-xs uppercase tracking-tight">{format(calendarBaseDate, 'MMMM yyyy', { locale: es })}</span>
+                        <button
+                            type="button"
+                            onClick={() => setCalendarBaseDate(addDays(endOfMonth(calendarBaseDate), 1))}
+                            aria-label="Mes siguiente"
+                            className="min-h-12 min-w-12 inline-flex items-center justify-center hover:bg-zinc-50 rounded-2xl transition-colors"
+                        >
+                            <ChevronRight size={20} className="text-zinc-400" />
+                        </button>
+                    </div>
 
-                        <div className="p-6">
-                            <div className="flex items-center justify-between mb-6 px-2">
-                                <button onClick={() => setCalendarBaseDate(subMonths(calendarBaseDate, 1))} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"><ChevronLeft size={20} className="text-zinc-400" /></button>
-                                <span className="font-black text-zinc-900 text-xs uppercase tracking-tight">{format(calendarBaseDate, 'MMMM yyyy', { locale: es })}</span>
-                                <button onClick={() => setCalendarBaseDate(addDays(endOfMonth(calendarBaseDate), 1))} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"><ChevronRight size={20} className="text-zinc-400" /></button>
-                            </div>
+                    <div className="grid grid-cols-7 gap-1">
+                        {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
+                            <div key={d} className="text-center text-[9px] font-black text-zinc-300 py-2">{d}</div>
+                        ))}
+                        {generateCalendarDays().map((day, i) => {
+                            if (!day) return <div key={i} />;
+                            const dStr = `${calendarBaseDate.getFullYear()}-${String(calendarBaseDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                            const isSelected = showCalendar === 'single' ? selectedDate === dStr : (rangeStart === dStr || rangeEnd === dStr);
+                            const isInRange = showCalendar === 'range' && rangeStart && rangeEnd && new Date(dStr) > new Date(rangeStart) && new Date(dStr) < new Date(rangeEnd);
 
-                            <div className="grid grid-cols-7 gap-1">
-                                {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
-                                    <div key={d} className="text-center text-[9px] font-black text-zinc-300 py-2">{d}</div>
-                                ))}
-                                {generateCalendarDays().map((day, i) => {
-                                    if (!day) return <div key={i} />;
-                                    const dStr = `${calendarBaseDate.getFullYear()}-${String(calendarBaseDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                                    const isSelected = showCalendar === 'single' ? selectedDate === dStr : (rangeStart === dStr || rangeEnd === dStr);
-                                    const isInRange = showCalendar === 'range' && rangeStart && rangeEnd && new Date(dStr) > new Date(rangeStart) && new Date(dStr) < new Date(rangeEnd);
-
-                                    return (
-                                        <button
-                                            key={i}
-                                            onClick={() => handleDateSelect(day)}
-                                            className={cn(
-                                                "aspect-square flex items-center justify-center rounded-2xl text-[11px] font-black transition-all",
-                                                isSelected ? "bg-zinc-900 text-white shadow-xl scale-110" : isInRange ? "bg-blue-50 text-[#5B8FB9]" : "hover:bg-zinc-50 text-zinc-600"
-                                            )}
-                                        >
-                                            {day}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
+                            return (
+                                <button
+                                    key={i}
+                                    onClick={() => handleDateSelect(day)}
+                                    className={cn(
+                                        "aspect-square flex items-center justify-center rounded-2xl text-[11px] font-black transition-all min-h-[44px]",
+                                        isSelected ? "bg-zinc-900 text-white shadow-xl scale-110" : isInRange ? "bg-blue-50 text-[#5B8FB9]" : "hover:bg-zinc-50 text-zinc-600"
+                                    )}
+                                >
+                                    {day}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
-            )}
+            </Modal>
 
-            {showMonthPicker && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setShowMonthPicker(false)}>
-                    <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="p-6 border-b border-zinc-50 flex items-center justify-between">
-                            <h3 className="font-black text-zinc-900 uppercase text-[10px] tracking-widest">Seleccionar Mes</h3>
-                            <button onClick={() => setShowMonthPicker(false)} className="p-3 hover:bg-zinc-100 rounded-2xl transition-colors"><X size={18} className="text-zinc-400" /></button>
-                        </div>
+            <Modal
+                open={showMonthPicker}
+                onClose={() => setShowMonthPicker(false)}
+                title="Seleccionar Mes"
+                variant="compact"
+                layer="base"
+                instance="ventas-month-picker"
+            >
+                <div className="p-6">
+                    <div className="flex items-center justify-between mb-8 px-2">
+                        <button
+                            type="button"
+                            onClick={() => setPickerYear(pickerYear - 1)}
+                            aria-label="Año anterior"
+                            className="min-h-12 min-w-12 inline-flex items-center justify-center hover:bg-zinc-50 rounded-2xl transition-colors"
+                        >
+                            <ChevronLeft size={20} className="text-zinc-400" />
+                        </button>
+                        <span className="font-black text-xl text-zinc-900 tracking-tighter">{pickerYear}</span>
+                        <button
+                            type="button"
+                            onClick={() => setPickerYear(pickerYear + 1)}
+                            aria-label="Año siguiente"
+                            className="min-h-12 min-w-12 inline-flex items-center justify-center hover:bg-zinc-50 rounded-2xl transition-colors"
+                        >
+                            <ChevronRight size={20} className="text-zinc-400" />
+                        </button>
+                    </div>
 
-                        <div className="p-6">
-                            <div className="flex items-center justify-between mb-8 px-2">
-                                <button onClick={() => setPickerYear(pickerYear - 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors">
-                                    <ChevronLeft size={20} className="text-zinc-400" />
+                    <div className="grid grid-cols-3 gap-2">
+                        {Array.from({ length: 12 }).map((_, i) => {
+                            const date = new Date(pickerYear, i, 1);
+                            const isSelected = filterMode === 'range' && rangeStart === format(startOfMonth(date), 'yyyy-MM-dd') && rangeEnd === format(endOfMonth(date), 'yyyy-MM-dd');
+
+                            return (
+                                <button
+                                    key={i}
+                                    onClick={() => {
+                                        const s = startOfMonth(date);
+                                        const e = endOfMonth(date);
+                                        setRangeStart(format(s, 'yyyy-MM-dd'));
+                                        setRangeEnd(format(e, 'yyyy-MM-dd'));
+                                        setFilterMode('range');
+                                        setShowMonthPicker(false);
+                                        trackVentasMonthPicker(formatMonthYear(pickerYear, i));
+                                    }}
+                                    className={cn(
+                                        "min-h-12 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2",
+                                        isSelected
+                                            ? "bg-zinc-900 border-zinc-900 text-white shadow-lg scale-105"
+                                            : "bg-zinc-50 border-transparent text-zinc-400 hover:border-zinc-200 hover:text-zinc-900"
+                                    )}
+                                >
+                                    {format(date, 'MMM', { locale: es })}
                                 </button>
-                                <span className="font-black text-xl text-zinc-900 tracking-tighter">{pickerYear}</span>
-                                <button onClick={() => setPickerYear(pickerYear + 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors">
-                                    <ChevronRight size={20} className="text-zinc-400" />
-                                </button>
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-2">
-                                {Array.from({ length: 12 }).map((_, i) => {
-                                    const date = new Date(pickerYear, i, 1);
-                                    const isSelected = filterMode === 'range' && rangeStart === format(startOfMonth(date), 'yyyy-MM-dd') && rangeEnd === format(endOfMonth(date), 'yyyy-MM-dd');
-
-                                    return (
-                                        <button
-                                            key={i}
-                                            onClick={() => {
-                                                const s = startOfMonth(date);
-                                                const e = endOfMonth(date);
-                                                setRangeStart(format(s, 'yyyy-MM-dd'));
-                                                setRangeEnd(format(e, 'yyyy-MM-dd'));
-                                                setFilterMode('range');
-                                                setShowMonthPicker(false);
-                                                trackVentasMonthPicker(formatMonthYear(pickerYear, i));
-                                            }}
-                                            className={cn(
-                                                "py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2",
-                                                isSelected
-                                                    ? "bg-zinc-900 border-zinc-900 text-white shadow-lg scale-105"
-                                                    : "bg-zinc-50 border-transparent text-zinc-400 hover:border-zinc-200 hover:text-zinc-900"
-                                            )}
-                                        >
-                                            {format(date, 'MMM', { locale: es })}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
+                            );
+                        })}
                     </div>
                 </div>
-            )}
+            </Modal>
 
             <TimeFilterModal
                 isOpen={isTimeFilterOpen}

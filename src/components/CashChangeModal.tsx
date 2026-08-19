@@ -779,7 +779,6 @@ export const CashChangeModal = ({
                 variant="standard"
                 layer="derived"
                 instance="cash-change-history-detail"
-                parentInstance="cash-change-history"
                 usageId="cash-change-history-detail"
                 usageLabel="Desglose del intercambio"
                 headerTone="petroleum"

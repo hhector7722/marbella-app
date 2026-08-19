@@ -8,9 +8,9 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react'
-import { createPortal } from 'react-dom'
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
+import { Modal } from '@/components/ui/modal'
 import Link from 'next/link'
+
 import { useRouter } from 'next/navigation'
 import { ChevronDown, RefreshCw, X } from 'lucide-react'
 import {
@@ -182,68 +182,25 @@ function FinancialDetailModal({
   children: ReactNode
   footnote?: string
 }) {
-  const [mounted, setMounted] = useState(false)
-
-  useModalUsageTracking({
-    open,
-    usageId: `insights-financial-${title.toLowerCase().replace(/\s+/g, '-')}`,
-    usageLabel: title,
-  })
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
-
-  if (!open || !mounted || typeof document === 'undefined') return null
-
-  return createPortal(
-    <div
-      className="fixed inset-0 z-[10070] flex items-center justify-center bg-black/40 p-4 transition-opacity duration-150"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="financial-detail-title"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose()
-      }}
-    >
-      <div
-        className="w-full max-w-sm bg-white shadow-xl flex flex-col max-h-[85vh] overflow-hidden rounded-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className={cn(SECTION_HEADER_CLASS, 'gap-2')}>
-          <h3
-            id="financial-detail-title"
-            className="text-[10px] lg:text-sm font-black uppercase tracking-wider text-white leading-tight shrink-0 pr-1"
-          >
-            {title}
-          </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="min-h-7 min-w-7 shrink-0 inline-flex items-center justify-center rounded-lg text-white/90 hover:bg-white/15 active:scale-95"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">{children}</div>
-        {footnote ? (
-          <p className="px-6 pb-4 text-[10px] leading-snug text-zinc-500 font-medium shrink-0">
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={title}
+      variant="compact"
+      layer="base"
+      instance={`insights-financial-${title.toLowerCase().replace(/\s+/g, '-')}`}
+      headerTone="petroleum"
+      footer={
+        footnote ? (
+          <p className="text-[10px] leading-snug text-zinc-500 font-medium">
             {footnote}
           </p>
-        ) : null}
-      </div>
-    </div>,
-    document.body
+        ) : undefined
+      }
+    >
+      <div className="px-6 py-4">{children}</div>
+    </Modal>
   )
 }
 

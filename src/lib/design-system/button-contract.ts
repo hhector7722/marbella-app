@@ -2,6 +2,9 @@
  * Contrato oficial de Button.
  * Variantes, layout, identidad y receta. El aspecto lo bloquea CSS
  * (`[data-component='Button']`); este módulo no acepta props visuales.
+ *
+ * Anatomía binaria: texto XOR icono.
+ * `hasLabel` + `hasIcon` es inválido. La prop `icon` existe para icon-only.
  */
 
 export const BUTTON_COMPONENT_ID = 'Button' as const;
@@ -64,7 +67,24 @@ export function hasVisibleButtonLabel(children: unknown): boolean {
 
 export type ButtonNameResolution =
     | { ok: true; iconOnly: boolean }
-    | { ok: false; reason: 'icon-only-requires-aria-label' | 'empty-requires-name' };
+    | {
+          ok: false;
+          reason:
+              | 'label-and-icon-forbidden'
+              | 'icon-only-requires-aria-label'
+              | 'empty-requires-name';
+      };
+
+/**
+ * Anatomía binaria: exactamente uno de `hasLabel` o `hasIcon`.
+ * Texto solo → válido. Icon-only → válido. Ambos o ninguno → inválido.
+ */
+export function isButtonAnatomyValid(args: {
+    hasLabel: boolean;
+    hasIcon: boolean;
+}): boolean {
+    return args.hasLabel !== args.hasIcon;
+}
 
 export function resolveButtonAccessibleName(args: {
     hasLabel: boolean;
@@ -72,6 +92,9 @@ export function resolveButtonAccessibleName(args: {
     ariaLabel?: string | undefined;
 }): ButtonNameResolution {
     const named = typeof args.ariaLabel === 'string' && args.ariaLabel.trim().length > 0;
+    if (args.hasLabel && args.hasIcon) {
+        return { ok: false, reason: 'label-and-icon-forbidden' };
+    }
     if (args.hasLabel) {
         return { ok: true, iconOnly: false };
     }

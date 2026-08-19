@@ -314,7 +314,6 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                 instance="order-product-edit"
                 usageId="order-product-edit"
                 usageLabel="Editar producto pedido"
-                hideHeader
                 scrollContent={false}
             >
                 <div className="flex justify-center">

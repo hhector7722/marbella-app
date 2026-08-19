@@ -25,7 +25,7 @@ import {
   printEncargoHtml,
 } from '@/lib/reservas/print-encargo-document'
 import { cn } from '@/lib/utils'
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
+import { Modal } from '@/components/ui/modal'
 
 function formatEncargoPrintDate(ymd: string) {
   const parts = ymd.slice(0, 10).split('-').map(Number)
@@ -75,11 +75,6 @@ export function EncargoOrderViewModal({
   const alreadySubmitted = isClientOrderSubmitted(localSubmittedAt)
   const linkOpen = localEnabled && !alreadySubmitted
 
-  useModalUsageTracking({
-    open: true,
-    usageId: 'encargo-order-view',
-    usageLabel: 'Ver pedido encargo',
-  })
 
   const getClientUrl = useCallback(() => {
     const token = localToken
@@ -197,56 +192,46 @@ export function EncargoOrderViewModal({
   }, [getClientUrl, contactPhone, encargoName, encargoDate, encargoTime, guestCount])
 
   return (
-    <div
-      className="fixed inset-0 z-[10060] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md animate-in fade-in duration-200"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !reopenConfirmOpen) onClose()
-      }}
-      role="presentation"
-    >
-      <div
-        className={cn(
-          'bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden',
-          'w-[min(26rem,calc(100vw-3rem))]',
-          'max-h-[min(34rem,calc(100dvh-4rem))]',
-          'animate-in zoom-in-95 duration-200'
-        )}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="bg-[#36606F] px-4 py-3 text-white shrink-0 flex items-center gap-1">
-          <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-black uppercase tracking-widest text-white/80">Pedido</p>
-            <h3 className="text-base font-black truncate">
-              {encargoTime} · {encargoName}
-            </h3>
-          </div>
-          <button
-            type="button"
-            onClick={() => void handlePrint()}
-            disabled={items.length === 0 || printBusy}
-            className="shrink-0 min-h-12 min-w-12 flex items-center justify-center rounded-xl hover:bg-white/10 disabled:opacity-40"
-            aria-label="Imprimir comanda"
-          >
-            {printBusy ? (
-              <Loader2 size={18} strokeWidth={2.5} className="animate-spin" />
-            ) : (
-              <Printer size={18} strokeWidth={2.5} />
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={onEdit}
-            className="shrink-0 min-h-12 min-w-12 flex items-center justify-center rounded-xl hover:bg-white/10"
-            aria-label="Editar encargo"
-          >
-            <Pencil size={18} strokeWidth={2.5} />
-          </button>
-          <button
-            type="button"
-            onClick={() => void handlePrintInvoice()}
-            disabled={items.length === 0 || invoiceBusy}
-            className="shrink-0 min-h-12 min-w-12 flex items-center justify-center rounded-xl hover:bg-white/10 disabled:opacity-40"
-            aria-label="Imprimir factura"
+    <>
+      <Modal
+        open
+        onClose={() => { if (!reopenConfirmOpen) onClose() }}
+        variant="compact"
+        layer="base"
+        instance="encargo-order-view"
+        title={`${encargoTime} · ${encargoName}`}
+        subtitle="Pedido"
+        headerTone="petroleum"
+        closeOnBackdrop={!reopenConfirmOpen}
+        headerTrailing={
+          <>
+            <button
+              type="button"
+              onClick={() => void handlePrint()}
+              disabled={items.length === 0 || printBusy}
+              className="shrink-0 min-h-12 min-w-12 flex items-center justify-center hover:bg-white/10 disabled:opacity-40"
+              aria-label="Imprimir comanda"
+            >
+              {printBusy ? (
+                <Loader2 size={18} strokeWidth={2.5} className="animate-spin" />
+              ) : (
+                <Printer size={18} strokeWidth={2.5} />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={onEdit}
+              className="shrink-0 min-h-12 min-w-12 flex items-center justify-center hover:bg-white/10"
+              aria-label="Editar encargo"
+            >
+              <Pencil size={18} strokeWidth={2.5} />
+            </button>
+            <button
+              type="button"
+              onClick={() => void handlePrintInvoice()}
+              disabled={items.length === 0 || invoiceBusy}
+              className="shrink-0 min-h-12 min-w-12 flex items-center justify-center hover:bg-white/10 disabled:opacity-40"
+              aria-label="Imprimir factura"
           >
             {invoiceBusy ? (
               <Loader2 size={18} strokeWidth={2.5} className="animate-spin" />
@@ -254,8 +239,9 @@ export function EncargoOrderViewModal({
               <Receipt size={18} strokeWidth={2.5} />
             )}
           </button>
-        </div>
-
+          </>
+        }
+      >
         <div ref={tableRef} className="flex-1 overflow-y-auto min-h-0 px-4 py-3">
           {items.length === 0 ? (
             <p className="py-10 text-center text-xs font-semibold text-zinc-500">
@@ -354,66 +340,53 @@ export function EncargoOrderViewModal({
             </button>
           )}
         </div>
-      </div>
+      </Modal>
 
-      {reopenConfirmOpen ? (
-        <div
-          className="fixed inset-0 z-[10080] flex items-center justify-center p-4 bg-black/50"
-          onClick={(e) => {
-            if (e.target === e.currentTarget && !isPending) setReopenConfirmOpen(false)
-          }}
-          role="presentation"
-        >
-          <div
-            className="w-full max-w-sm rounded-2xl bg-white shadow-2xl border border-zinc-100 overflow-hidden animate-in zoom-in-95 duration-150"
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-labelledby="reopen-client-order-title"
-            aria-modal="true"
-          >
-            <div className="px-4 pt-4 pb-2">
-              <h4
-                id="reopen-client-order-title"
-                className="text-base font-black text-zinc-900"
-              >
-                Reabrir pedido al cliente
-              </h4>
-              <div className="mt-3 space-y-2 text-[13px] font-semibold leading-snug text-zinc-600">
-                <p>El cliente ya ha enviado un pedido.</p>
-                <p>Al reabrir el pedido:</p>
-                <ul className="list-disc pl-5 space-y-1.5">
-                  <li>volverá a poder acceder a la carta mediante el mismo enlace</li>
-                  <li>podrá preparar un nuevo pedido</li>
-                  <li>
-                    cuando vuelva a pulsar &quot;Enviar pedido&quot;, el pedido actual será
-                    sustituido completamente por el nuevo
-                  </li>
-                </ul>
-                <p className="pt-1 text-zinc-800">Esta acción no puede deshacerse.</p>
-              </div>
-            </div>
-            <div className="shrink-0 grid grid-cols-2 gap-2 p-4 pt-3">
-              <button
-                type="button"
-                disabled={isPending}
-                onClick={() => setReopenConfirmOpen(false)}
-                className="min-h-12 rounded-xl border border-zinc-200 bg-white text-[12px] font-black uppercase tracking-wider text-zinc-700 disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                disabled={isPending}
-                onClick={handleConfirmReopen}
-                className="min-h-12 rounded-xl bg-amber-600 text-[12px] font-black uppercase tracking-wider text-white disabled:opacity-50 inline-flex items-center justify-center gap-2"
-              >
-                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                Reabrir pedido
-              </button>
-            </div>
+      <Modal
+        open={reopenConfirmOpen}
+        onClose={() => { if (!isPending) setReopenConfirmOpen(false) }}
+        variant="compact"
+        layer="derived"
+        instance="encargo-reopen-confirm"
+        parentInstance="encargo-order-view"
+        title="Reabrir pedido al cliente"
+        closeOnBackdrop={!isPending}
+      >
+        <div className="px-4 pt-4 pb-2">
+          <div className="mt-3 space-y-2 text-[13px] font-semibold leading-snug text-zinc-600">
+            <p>El cliente ya ha enviado un pedido.</p>
+            <p>Al reabrir el pedido:</p>
+            <ul className="list-disc pl-5 space-y-1.5">
+              <li>volverá a poder acceder a la carta mediante el mismo enlace</li>
+              <li>podrá preparar un nuevo pedido</li>
+              <li>
+                cuando vuelva a pulsar &quot;Enviar pedido&quot;, el pedido actual será
+                sustituido completamente por el nuevo
+              </li>
+            </ul>
+            <p className="pt-1 text-zinc-800">Esta acción no puede deshacerse.</p>
           </div>
         </div>
-      ) : null}
-    </div>
+        <div className="shrink-0 grid grid-cols-2 gap-2 p-4 pt-3">
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={() => setReopenConfirmOpen(false)}
+            className="min-h-12 rounded-xl border border-zinc-200 bg-white text-[12px] font-black uppercase tracking-wider text-zinc-700 disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={handleConfirmReopen}
+            className="min-h-12 rounded-xl bg-amber-600 text-[12px] font-black uppercase tracking-wider text-white disabled:opacity-50 inline-flex items-center justify-center gap-2"
+          >
+            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Reabrir pedido
+          </button>
+        </div>
+      </Modal>
+    </>
   )
 }

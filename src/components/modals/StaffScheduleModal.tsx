@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, X, ArrowLeft } from 'lucide-react';
+import { Modal } from '@/components/ui/modal';
 import { format, addMonths, subMonths, isSameMonth, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { createClient } from '@/utils/supabase/client';
@@ -81,7 +82,7 @@ export const StaffScheduleModal = ({
     const pathname = usePathname();
     const [navigatingToActividades, setNavigatingToActividades] = useState(false);
 
-    useScrollLock(isOpen || navigatingToActividades);
+    useScrollLock(navigatingToActividades);
     useModalUsageTracking({
         open: isOpen,
         usageId: 'staff-schedule',
@@ -299,8 +300,6 @@ export const StaffScheduleModal = ({
 
     if (!isOpen && !navigatingToActividades) return null;
 
-    if (!isOpen) return navigationOverlay;
-
     const calendarDays = generateCalendarDays();
     const futureShifts = shifts
         .filter(s => s.date >= new Date(new Date().setHours(0, 0, 0, 0)) && isSameMonth(s.date, currentDate))
@@ -327,17 +326,15 @@ export const StaffScheduleModal = ({
     return (
         <>
             {navigationOverlay}
-            <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-3 backdrop-blur-sm animate-in fade-in day-modal-overlay" onClick={handleClose}>
-            <div
-                className={cn(
-                    'bg-white w-full rounded-3xl shadow-2xl relative flex flex-col overflow-hidden max-h-[92vh] day-modal-panel',
-                    editModeForDate
-                        ? 'max-w-4xl'
-                        : selectedDate
-                            ? 'max-w-4xl'
-                            : 'max-w-lg day-modal-panel--narrow',
-                )}
-                onClick={e => e.stopPropagation()}
+            <Modal
+                open={isOpen}
+                onClose={handleClose}
+                title="Horario"
+                instance="staff-schedule"
+                variant="work"
+                layer="base"
+                hideHeader
+                scrollContent={false}
             >
 
                 {/* ── MODO EDICIÓN: editor embebido (reutiliza su cabecera, sin cabecera extra) ── */}
@@ -704,8 +701,7 @@ export const StaffScheduleModal = ({
                 )}
                 </>
                 )}
-            </div>
-        </div>
+            </Modal>
         </>
     );
 };

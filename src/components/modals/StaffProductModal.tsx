@@ -46,7 +46,6 @@ export function StaffProductModal({ isOpen, onClose, onOpenSupplierModal }: Staf
             headerVariant="petroleum"
             usageId="staff-product"
             usageLabel="Menú stock (staff)"
-            className="max-h-[85vh]"
             scrollContent={false}
         >
             <div className="relative p-4 grid grid-cols-2 gap-3 bg-gray-50/30 overflow-y-auto">

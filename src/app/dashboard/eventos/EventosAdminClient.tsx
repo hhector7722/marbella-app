@@ -5,7 +5,8 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
-import { ClipboardList, Copy, Loader2, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { ClipboardList, Copy, Loader2, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Modal } from '@/components/ui/modal'
 import { createEventAction, deleteEventAction } from './actions'
 
 export type AdminEventRow = {
@@ -173,116 +174,98 @@ export default function EventosAdminClient({
         )}
       </div>
 
-      {createOpen ? (
-        <div
-          className="fixed inset-0 z-[200] flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
-          role="dialog"
-          aria-label="Nuevo encargo"
-          onClick={closeCreateModal}
-        >
-          <div
-            className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl"
-            onClick={(ev) => ev.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-widest text-[#36606F]">Nuevo encargo</p>
-                <p className="mt-1 text-xs text-zinc-600">Contacto, fecha, hora y número de personas</p>
-              </div>
-              <button
-                type="button"
-                className="flex min-h-12 min-w-[48px] shrink-0 items-center justify-center rounded-xl text-zinc-500 hover:bg-zinc-100"
-                aria-label="Cerrar"
-                onClick={closeCreateModal}
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="mt-4 space-y-3">
-              <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-zinc-700">
-                  Contacto del encargo
-                </label>
-                <input
-                  value={contactName}
-                  onChange={(ev) => setContactName(ev.target.value)}
-                  className="mt-2 min-h-12 w-full rounded-xl border border-zinc-200 px-3 text-sm font-semibold text-zinc-900 outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/25"
-                  placeholder="Nombre del responsable"
-                  autoComplete="name"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-[11px] font-black uppercase tracking-wider text-zinc-700">Fecha</label>
-                  <input
-                    type="date"
-                    value={eventDate}
-                    onChange={(ev) => setEventDate(ev.target.value)}
-                    className="mt-2 min-h-12 w-full rounded-xl border border-zinc-200 px-3 text-sm font-semibold text-zinc-900 outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/25"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-black uppercase tracking-wider text-zinc-700">Hora</label>
-                  <input
-                    type="time"
-                    value={eventTime}
-                    onChange={(ev) => setEventTime(ev.target.value)}
-                    className="mt-2 min-h-12 w-full rounded-xl border border-zinc-200 px-3 text-sm font-semibold text-zinc-900 outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/25"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-zinc-700">
-                  Cantidad de personas
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  max={9999}
-                  value={guestCount}
-                  onChange={(ev) => setGuestCount(ev.target.value)}
-                  className="mt-2 min-h-12 w-full rounded-xl border border-zinc-200 px-3 text-sm font-semibold text-zinc-900 outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/25"
-                />
-              </div>
-            </div>
-
-            <div className="mt-5 flex gap-2">
-              <button
-                type="button"
-                className={cn(btnBase, 'flex-1 bg-zinc-100 text-zinc-800 hover:bg-zinc-200')}
-                disabled={isPending}
-                onClick={closeCreateModal}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                className={cn(btnBase, 'flex-1 bg-emerald-600 text-white hover:bg-emerald-700')}
-                disabled={!canSubmitCreate}
-                onClick={() => {
-                  startTransition(async () => {
-                    const res = await createEventAction({
-                      contact_name: contactName,
-                      event_date: eventDate,
-                      event_time: eventTime,
-                      guest_count: Number(guestCount),
-                    })
-                    if (!res.success) {
-                      toast.error(res.message)
-                      return
-                    }
-                    toast.success('Encargo creado')
-                    closeCreateModal()
+      <Modal
+        open={createOpen}
+        onClose={closeCreateModal}
+        title="Nuevo encargo"
+        subtitle="Contacto, fecha, hora y número de personas"
+        instance="eventos-create"
+        variant="standard"
+        layer="base"
+        footer={
+          <div className="flex w-full gap-2">
+            <button
+              type="button"
+              className={cn(btnBase, 'flex-1 bg-zinc-100 text-zinc-800 hover:bg-zinc-200')}
+              disabled={isPending}
+              onClick={closeCreateModal}
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              className={cn(btnBase, 'flex-1 bg-emerald-600 text-white hover:bg-emerald-700')}
+              disabled={!canSubmitCreate}
+              onClick={() => {
+                startTransition(async () => {
+                  const res = await createEventAction({
+                    contact_name: contactName,
+                    event_date: eventDate,
+                    event_time: eventTime,
+                    guest_count: Number(guestCount),
                   })
-                }}
-              >
-                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Crear'}
-              </button>
+                  if (!res.success) {
+                    toast.error(res.message)
+                    return
+                  }
+                  toast.success('Encargo creado')
+                  closeCreateModal()
+                })
+              }}
+            >
+              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Crear'}
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-3 p-5">
+          <div>
+            <label className="block text-xs font-black uppercase tracking-wider text-zinc-700">
+              Contacto del encargo
+            </label>
+            <input
+              value={contactName}
+              onChange={(ev) => setContactName(ev.target.value)}
+              className="mt-2 min-h-12 w-full rounded-xl border border-zinc-200 px-3 text-sm font-semibold text-zinc-900 outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/25"
+              placeholder="Nombre del responsable"
+              autoComplete="name"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-[11px] font-black uppercase tracking-wider text-zinc-700">Fecha</label>
+              <input
+                type="date"
+                value={eventDate}
+                onChange={(ev) => setEventDate(ev.target.value)}
+                className="mt-2 min-h-12 w-full rounded-xl border border-zinc-200 px-3 text-sm font-semibold text-zinc-900 outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/25"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-black uppercase tracking-wider text-zinc-700">Hora</label>
+              <input
+                type="time"
+                value={eventTime}
+                onChange={(ev) => setEventTime(ev.target.value)}
+                className="mt-2 min-h-12 w-full rounded-xl border border-zinc-200 px-3 text-sm font-semibold text-zinc-900 outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/25"
+              />
             </div>
           </div>
+          <div>
+            <label className="block text-xs font-black uppercase tracking-wider text-zinc-700">
+              Cantidad de personas
+            </label>
+            <input
+              type="number"
+              min={1}
+              max={9999}
+              value={guestCount}
+              onChange={(ev) => setGuestCount(ev.target.value)}
+              className="mt-2 min-h-12 w-full rounded-xl border border-zinc-200 px-3 text-sm font-semibold text-zinc-900 outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/25"
+            />
+          </div>
         </div>
-      ) : null}
+      </Modal>
     </div>
   )
 }

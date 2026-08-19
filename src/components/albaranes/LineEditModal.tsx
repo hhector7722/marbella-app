@@ -48,6 +48,7 @@ export function LineEditModal({
       variant="standard"
       layer="derived"
       instance="albaran-line-edit"
+      parentInstance="albaran-detail"
       usageId="albaran-line-edit"
       usageLabel="Editar línea albarán"
       headerTone="petroleum"

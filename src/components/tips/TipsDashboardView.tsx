@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { CheckCircle2, Clock, Plus, RefreshCw } from 'lucide-react';
+import { Clock, Plus, RefreshCw } from 'lucide-react';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
@@ -505,9 +505,8 @@ export default function TipsDashboardView({
               <Button
                 type="button"
                 variant="primary"
-                layout="fill"
+                layout="hug"
                 instance="tips-confirm-distribution-open"
-                icon={<CheckCircle2 size={18} strokeWidth={2.5} />}
                 disabled={loading || !preview || staffWithWorkedHours.length === 0}
                 onClick={() => setConfirmModalOpen(true)}
               >

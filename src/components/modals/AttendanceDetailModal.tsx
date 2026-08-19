@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Save, Coins, Landmark, Calendar, Plus, Trash2 } from 'lucide-react';
+import { Modal } from '@/components/ui/modal';
 import { format, startOfWeek, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { fromZonedTime } from 'date-fns-tz';
@@ -199,8 +200,6 @@ function EditWeekModal({ isOpen, onClose, date, userId, onSuccess }: EditWeekMod
         }
     };
 
-    if (!isOpen) return null;
-
     const weekStartDate = weekStart ? (() => {
         const [y, m, d] = weekStart.split('-').map(Number);
         return new Date(y, m - 1, d);
@@ -211,16 +210,38 @@ function EditWeekModal({ isOpen, onClose, date, userId, onSuccess }: EditWeekMod
         : '';
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[160] p-4 animate-in fade-in duration-200" onClick={onClose}>
-            <div className="w-full max-w-[320px] bg-white rounded-[24px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                <div className="bg-[#36606F] h-[44px] flex items-center justify-center px-4 relative shrink-0">
-                    <h3 className="text-white text-[9px] font-black uppercase tracking-[0.15em]">
-                        Editar semana
-                    </h3>
-                    <button onClick={onClose} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors p-1">
-                        <X size={16} />
-                    </button>
-                </div>
+        <>
+        <Modal
+            open={isOpen}
+            onClose={onClose}
+            title="Editar semana"
+            instance="attendance-edit-week"
+            variant="compact"
+            layer="derived"
+            parentInstance="attendance-detail"
+            headerTone="petroleum"
+            footer={
+                !loading ? (
+                    <div className="flex gap-2 w-full">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 h-12 rounded-xl bg-zinc-100 text-zinc-600 font-black text-[9px] uppercase tracking-widest active:scale-95"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="flex-1 h-12 rounded-xl bg-emerald-500 text-white font-black text-[9px] uppercase tracking-widest active:scale-95 flex items-center justify-center gap-1 disabled:opacity-50"
+                        >
+                            {saving ? <LoadingSpinner size="sm" /> : 'Guardar'}
+                        </button>
+                    </div>
+                ) : undefined
+            }
+        >
                 <div className="px-4 py-4 space-y-4">
                     {weekLabel && (
                         <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{weekLabel}</p>
@@ -277,72 +298,41 @@ function EditWeekModal({ isOpen, onClose, date, userId, onSuccess }: EditWeekMod
                                     </button>
                                 </div>
                             </div>
-                            <div className="flex gap-2 pt-2 shrink-0">
-                                <button
-                                    type="button"
-                                    onClick={onClose}
-                                    className="flex-1 h-12 rounded-xl bg-zinc-100 text-zinc-600 font-black text-[9px] uppercase tracking-widest active:scale-95"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleSave}
-                                    disabled={saving}
-                                    className="flex-1 h-12 rounded-xl bg-emerald-500 text-white font-black text-[9px] uppercase tracking-widest active:scale-95 flex items-center justify-center gap-1 disabled:opacity-50"
-                                >
-                                    {saving ? <LoadingSpinner size="sm" /> : <Save size={14} />}
-                                    Guardar
-                                </button>
-                            </div>
                         </>
                     )}
                 </div>
-            </div>
+        </Modal>
 
-            {contractModalOpen && userId && (
-                <div
-                    className="fixed inset-0 z-[220] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
-                    onClick={() => setContractModalOpen(false)}
-                >
-                    <div
-                        className="w-full max-w-3xl max-h-[90vh] bg-white rounded-3xl shadow-2xl overflow-y-auto p-4 relative"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="flex justify-between items-center mb-2 px-2 pt-1 border-b pb-2">
-                            <span className="text-xs font-black text-zinc-700 uppercase tracking-wider">
-                                Condiciones Laborales y Contrato
-                            </span>
-                            <button
-                                type="button"
-                                onClick={() => setContractModalOpen(false)}
-                                className="w-7 h-7 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400 hover:text-zinc-600 text-xs font-bold"
-                            >
-                                <X size={14} />
-                            </button>
-                        </div>
-                        <LaborConditionsView
-                            employeeId={userId}
-                            onSaveSuccess={async () => {
-                                setContractModalOpen(false);
-                                onSuccess();
-                                const supabase = createClient();
-                                const { data: snap } = await supabase
-                                    .from('weekly_snapshots')
-                                    .select('contracted_hours_snapshot')
-                                    .eq('user_id', userId)
-                                    .eq('week_start', weekStart)
-                                    .maybeSingle();
-                                if (snap && typeof snap.contracted_hours_snapshot === 'number') {
-                                    setContractedHours(snap.contracted_hours_snapshot);
-                                }
-                            }}
-                            onClose={() => setContractModalOpen(false)}
-                        />
-                    </div>
-                </div>
-            )}
-        </div>
+        {userId && (
+            <Modal
+                open={contractModalOpen}
+                onClose={() => setContractModalOpen(false)}
+                title="Condiciones Laborales y Contrato"
+                instance="attendance-contract"
+                variant="standard"
+                layer="system"
+            >
+                <LaborConditionsView
+                    employeeId={userId}
+                    onSaveSuccess={async () => {
+                        setContractModalOpen(false);
+                        onSuccess();
+                        const supabase = createClient();
+                        const { data: snap } = await supabase
+                            .from('weekly_snapshots')
+                            .select('contracted_hours_snapshot')
+                            .eq('user_id', userId)
+                            .eq('week_start', weekStart)
+                            .maybeSingle();
+                        if (snap && typeof snap.contracted_hours_snapshot === 'number') {
+                            setContractedHours(snap.contracted_hours_snapshot);
+                        }
+                    }}
+                    onClose={() => setContractModalOpen(false)}
+                />
+            </Modal>
+        )}
+        </>
     );
 }
 
@@ -646,14 +636,17 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
         }
     };
 
-    if (!isOpen) return null;
-
     return (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[150] p-4 animate-in fade-in duration-200" onClick={onClose}>
-            <div
-                className="w-full max-w-[320px] bg-white rounded-[24px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 max-h-[calc(100dvh-2rem)]"
-                onClick={(e) => e.stopPropagation()}
-            >
+        <Modal
+            open={isOpen}
+            onClose={onClose}
+            title={date ? format(date, "EEEE d 'de' MMMM", { locale: es }).replace(/^\w/, (c) => c.toUpperCase()) : ''}
+            instance="attendance-detail"
+            variant="compact"
+            layer="base"
+            hideHeader
+            scrollContent={false}
+        >
                 <div className="bg-gradient-to-b from-red-500 to-red-600 h-[44px] flex items-center justify-center px-4 relative shrink-0">
                     <h3 className="text-white text-[9px] font-black uppercase tracking-[0.15em] drop-shadow-sm">
                         {date ? format(date, "EEEE d 'de' MMMM", { locale: es }).replace(/^\w/, (c) => c.toUpperCase()) : ''}
@@ -664,12 +657,12 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                 type="button"
                                 onClick={() => setShowCreateFichaje(true)}
                                 className="min-h-[40px] min-w-[40px] flex items-center justify-center text-white/80 hover:text-white rounded-lg transition-colors"
-                                title="Nuevo fichaje"
+                                aria-label="Nuevo fichaje"
                             >
                                 <Plus size={18} strokeWidth={2.5} />
                             </button>
                         )}
-                        <button onClick={onClose} className="text-white/50 hover:text-white transition-colors p-1">
+                        <button onClick={onClose} className="text-white/50 hover:text-white transition-colors p-1" aria-label="Cerrar">
                             <X size={16} />
                         </button>
                     </div>
@@ -961,27 +954,24 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                     <>
                                         <button
                                             onClick={onClose}
-                                            className="flex-1 min-h-[48px] rounded-xl bg-white border border-rose-100 text-rose-500 font-black text-[8px] uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-1"
+                                            className="flex-1 min-h-[48px] rounded-xl bg-white border border-rose-100 text-rose-500 font-black text-[8px] uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center"
                                         >
-                                            <X size={11} strokeWidth={3} />
-                                            <span>SALIR</span>
+                                            Salir
                                         </button>
                                         <button
                                             onClick={handleSave}
                                             disabled={isSaving}
-                                            className="flex-[1.5] min-h-[48px] rounded-xl bg-emerald-500 text-white font-black text-[8px] uppercase tracking-widest active:scale-95 transition-all shadow-md flex items-center justify-center gap-1 disabled:opacity-50"
+                                            className="flex-[1.5] min-h-[48px] rounded-xl bg-emerald-500 text-white font-black text-[8px] uppercase tracking-widest active:scale-95 transition-all shadow-md flex items-center justify-center disabled:opacity-50"
                                         >
-                                            {isSaving ? <LoadingSpinner size="sm" /> : <Save size={11} strokeWidth={3} />}
-                                            <span>OK</span>
+                                            {isSaving ? <LoadingSpinner size="sm" /> : 'Guardar'}
                                         </button>
                                     </>
                                 ) : (
                                     <button
                                         onClick={onClose}
-                                        className="w-full min-h-[48px] rounded-xl bg-rose-500 text-white font-black text-[9px] uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-1.5"
+                                        className="w-full min-h-[48px] rounded-xl bg-rose-500 text-white font-black text-[9px] uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center"
                                     >
-                                        <X size={14} strokeWidth={3} />
-                                        <span>Cerrar</span>
+                                        Cerrar
                                     </button>
                                 )}
                             </div>
@@ -999,7 +989,6 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                         setEditWeekModalOpen(false);
                     }}
                 />
-            </div>
-        </div>
+        </Modal>
     );
 }

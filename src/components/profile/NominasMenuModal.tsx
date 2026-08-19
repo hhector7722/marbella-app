@@ -39,7 +39,10 @@ export default function NominasMenuModal({ isOpen, onClose, onSelect }: NominasM
                     <button
                         key={key}
                         type="button"
-                        onClick={() => { trackNominasMenu(label); onSelect(key); onClose(); }}
+                        onClick={() => {
+                            trackNominasMenu(label);
+                            onSelect(key);
+                        }}
                         className="min-h-[56px] flex items-center justify-center gap-3 p-3 transition-all active:scale-[0.98] hover:opacity-80"
                     >
                         <img src={iconPath} alt="" className="w-10 h-10 object-contain shrink-0" />

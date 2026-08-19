@@ -160,6 +160,7 @@ export function DocumentEvidenceModal({
       variant="work"
       layer="derived"
       instance="albaran-document-evidence"
+      parentInstance="albaran-detail"
       usageId="albaran-document-evidence"
       usageLabel="Auditoría de evidencia"
       headerTone="petroleum"

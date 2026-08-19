@@ -16,6 +16,7 @@ import {
     Check,
     ArrowLeft
 } from 'lucide-react';
+import { Modal } from '@/components/ui/modal';
 import { format, addDays, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -1274,28 +1275,33 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
             })()}
 
             {/* MODALES */}
-            {showCalendarModal && (
-                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" onClick={() => setShowCalendarModal(false)}>
-                    <div className="bg-white rounded-[24px] w-full max-w-sm overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] p-5 flex items-center justify-between border-b border-white/10">
-                            <div className="flex items-center gap-3">
-                                <button onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))} className="text-white hover:bg-white/10 p-2 rounded-xl transition-all"><ChevronLeft size={20} /></button>
-                                <span className="text-white font-black uppercase tracking-widest text-sm min-w-[120px] text-center capitalize">{calendarDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</span>
-                                <button onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))} className="text-white hover:bg-white/10 p-2 rounded-xl transition-all"><ChevronRight size={20} /></button>
-                            </div>
-                            <button onClick={() => setShowCalendarModal(false)} className="bg-white/10 hover:bg-rose-500 text-white p-2 rounded-xl transition-all"><X size={20} /></button>
-                        </div>
-                        <div className="p-5">
-                            <div className="grid grid-cols-7 gap-1">
-                                {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => <div key={d} className="text-center text-xs font-bold text-gray-400 py-1">{d}</div>)}
-                                {generateCalendarDays().map((day, i) => (
-                                    <button key={i} onClick={() => day && handleSelectCalendarDate(day)} disabled={!day} className={`aspect-square flex items-center justify-center rounded-2xl text-sm font-bold transition-all ${!day ? 'invisible' : 'hover:bg-blue-50 text-gray-700'} ${day === new Date().getDate() && calendarDate.getMonth() === new Date().getMonth() ? 'bg-[#36606F] text-white shadow-md' : ''}`}>{day}</button>
-                                ))}
-                            </div>
-                        </div>
+            <Modal
+                open={showCalendarModal}
+                onClose={() => setShowCalendarModal(false)}
+                title="Calendario"
+                instance="schedule-calendar"
+                variant="compact"
+                layer={embedded ? 'derived' : 'base'}
+                {...(embedded ? { parentInstance: 'staff-schedule' } : {})}
+                headerTone="petroleum"
+                headerTrailing={
+                    <div className="flex items-center gap-1">
+                        <button onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))} className="text-white hover:bg-white/10 p-2 rounded-xl transition-all"><ChevronLeft size={20} /></button>
+                        <span className="text-white font-black uppercase tracking-widest text-sm min-w-[120px] text-center capitalize">{calendarDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</span>
+                        <button onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))} className="text-white hover:bg-white/10 p-2 rounded-xl transition-all"><ChevronRight size={20} /></button>
+                    </div>
+                }
+                hideTitle
+            >
+                <div className="p-5">
+                    <div className="grid grid-cols-7 gap-1">
+                        {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => <div key={d} className="text-center text-xs font-bold text-gray-400 py-1">{d}</div>)}
+                        {generateCalendarDays().map((day, i) => (
+                            <button key={i} onClick={() => day && handleSelectCalendarDate(day)} disabled={!day} className={`aspect-square flex items-center justify-center rounded-2xl text-sm font-bold transition-all ${!day ? 'invisible' : 'hover:bg-blue-50 text-gray-700'} ${day === new Date().getDate() && calendarDate.getMonth() === new Date().getMonth() ? 'bg-[#36606F] text-white shadow-md' : ''}`}>{day}</button>
+                        ))}
                     </div>
                 </div>
-            )}
+            </Modal>
 
             <StaffSelectionModal
                 isOpen={showAddEmployeeModal}
@@ -1306,96 +1312,96 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 onSelect={(emp) => handleAddEmployee(emp.id)}
             />
 
-            {/* MODAL COMPARTIR */}
-            {showShareModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in" onClick={() => setShowShareModal(false)}>
-                    <div className="bg-white rounded-[24px] w-full max-w-sm flex flex-col overflow-hidden shadow-2xl animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] p-4 flex items-center justify-center text-white relative">
-                            <h3 className="text-sm font-black uppercase tracking-widest">Compartir</h3>
-                        </div>
-                        <div className="p-6 flex flex-col gap-5">
-                            <div className="flex flex-col gap-1 text-center">
-                                <span className="text-[10px] font-black tracking-widest text-zinc-400 uppercase mb-1">Estado del Horario</span>
-                                <div className="text-xs uppercase font-black px-4 py-1.5 bg-gray-100 rounded-xl inline-flex self-center">
-                                    <span className={`${isDayPublished ? (isDaySent ? 'text-emerald-500' : 'text-[#36606F]') : 'text-orange-400'}`}>
-                                        {isDayPublished ? (isDaySent ? 'Publicado y Enviado' : 'Publicado') : 'Sin publicar'}
-                                    </span>
-                                </div>
-                            </div>
-                            <div className="flex flex-col gap-3 mt-2">
-                                <button
-                                    onClick={async () => {
-                                        setShowShareModal(false);
-                                        trackScheduleShare(!isDayPublished ? 'Guardar borrador' : 'Sobreescribir publicado');
-                                        await handleSave(false, true);
-                                    }}
-                                    className="w-full bg-[#36606F] hover:bg-[#2a4d59] text-white py-3.5 rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95 uppercase flex items-center justify-center gap-2"
-                                >
-                                    <CheckCircle2 size={18} /> {!isDayPublished ? 'Guardar' : 'Sobreescribir'}
-                                </button>
-
-                                <button
-                                    onClick={async () => {
-                                        setShowShareModal(false);
-                                        trackScheduleShare(!isDaySent ? 'Enviar notificaciones' : 'Reenviar notificaciones');
-                                        const saved = await handleSave(true, true);
-                                        if (saved || isDayPublished) {
-                                            // Solo usuarios con turno ese día (activo y con hora inicio/fin)
-                                            const userShifts = shifts
-                                                .filter(s => s.active && s.start && s.end)
-                                                .map(s => ({ userId: s.employeeId, start: s.start, end: s.end }));
-                                            if (userShifts.length === 0) {
-                                                toast.info('No hay nadie con horario ese día para notificar');
-                                                return;
-                                            }
-                                            const dateFormatted = format(new Date(date), "EEEE dd/MM", { locale: es });
-                                            const loadToast = toast.loading('Enviando...');
-                                            try {
-                                                const res = await sendScheduleNotifications(dateFormatted, userShifts, date);
-                                                toast.dismiss(loadToast);
-                                                if (res?.error || res?.success === false) {
-                                                    toast.error(res?.error || 'Error al enviar notificaciones');
-                                                    return;
-                                                }
-                                                const sent = Number(res?.sentCount ?? 0);
-                                                const target = Number(res?.targetCount ?? userShifts.length);
-                                                const missing = Array.isArray(res?.missingSubscriptionUserIds) ? res.missingSubscriptionUserIds.length : Math.max(0, target - sent);
-                                                if (sent <= 0) {
-                                                    toast.warning(
-                                                        res?.message ||
-                                                            'Aviso en campana. Activa push para recibir también fuera de la app.'
-                                                    );
-                                                    setIsDaySent(true);
-                                                    return;
-                                                }
-                                                if (sent < target) {
-                                                    toast.warning(`Enviadas ${sent}/${target}. Faltan ${missing} sin push activado.`);
-                                                } else {
-                                                    toast.success('Notificaciones enviadas');
-                                                }
-                                                setIsDaySent(true);
-                                            } catch (e) {
-                                                toast.dismiss(loadToast);
-                                                toast.error('Error al enviar');
-                                            }
-                                        }
-                                    }}
-                                    className={`w-full text-white py-3.5 rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95 uppercase flex items-center justify-center gap-2 bg-[#0FA968] hover:bg-emerald-600`}
-                                >
-                                    <Send size={18} /> {!isDaySent ? 'Enviar' : 'Reenviar'}
-                                </button>
-
-                                <button
-                                    onClick={() => setShowShareModal(false)}
-                                    className="w-full bg-red-500 hover:bg-red-600 text-white py-3.5 rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95 uppercase mt-1"
-                                >
-                                    Cancelar
-                                </button>
-                            </div>
+            <Modal
+                open={showShareModal}
+                onClose={() => setShowShareModal(false)}
+                title="Compartir"
+                instance="schedule-share"
+                variant="compact"
+                layer={embedded ? 'derived' : 'base'}
+                {...(embedded ? { parentInstance: 'staff-schedule' } : {})}
+                headerTone="petroleum"
+            >
+                <div className="p-6 flex flex-col gap-5">
+                    <div className="flex flex-col gap-1 text-center">
+                        <span className="text-[10px] font-black tracking-widest text-zinc-400 uppercase mb-1">Estado del Horario</span>
+                        <div className="text-xs uppercase font-black px-4 py-1.5 bg-gray-100 rounded-xl inline-flex self-center">
+                            <span className={`${isDayPublished ? (isDaySent ? 'text-emerald-500' : 'text-[#36606F]') : 'text-orange-400'}`}>
+                                {isDayPublished ? (isDaySent ? 'Publicado y Enviado' : 'Publicado') : 'Sin publicar'}
+                            </span>
                         </div>
                     </div>
+                    <div className="flex flex-col gap-3 mt-2">
+                        <button
+                            onClick={async () => {
+                                setShowShareModal(false);
+                                trackScheduleShare(!isDayPublished ? 'Guardar borrador' : 'Sobreescribir publicado');
+                                await handleSave(false, true);
+                            }}
+                            className="w-full min-h-12 bg-[#36606F] hover:bg-[#2a4d59] text-white py-3.5 rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95 uppercase flex items-center justify-center gap-2"
+                        >
+                            <CheckCircle2 size={18} /> {!isDayPublished ? 'Guardar' : 'Sobreescribir'}
+                        </button>
+
+                        <button
+                            onClick={async () => {
+                                setShowShareModal(false);
+                                trackScheduleShare(!isDaySent ? 'Enviar notificaciones' : 'Reenviar notificaciones');
+                                const saved = await handleSave(true, true);
+                                if (saved || isDayPublished) {
+                                    const userShifts = shifts
+                                        .filter(s => s.active && s.start && s.end)
+                                        .map(s => ({ userId: s.employeeId, start: s.start, end: s.end }));
+                                    if (userShifts.length === 0) {
+                                        toast.info('No hay nadie con horario ese día para notificar');
+                                        return;
+                                    }
+                                    const dateFormatted = format(new Date(date), "EEEE dd/MM", { locale: es });
+                                    const loadToast = toast.loading('Enviando...');
+                                    try {
+                                        const res = await sendScheduleNotifications(dateFormatted, userShifts, date);
+                                        toast.dismiss(loadToast);
+                                        if (res?.error || res?.success === false) {
+                                            toast.error(res?.error || 'Error al enviar notificaciones');
+                                            return;
+                                        }
+                                        const sent = Number(res?.sentCount ?? 0);
+                                        const target = Number(res?.targetCount ?? userShifts.length);
+                                        const missing = Array.isArray(res?.missingSubscriptionUserIds) ? res.missingSubscriptionUserIds.length : Math.max(0, target - sent);
+                                        if (sent <= 0) {
+                                            toast.warning(
+                                                res?.message ||
+                                                    'Aviso en campana. Activa push para recibir también fuera de la app.'
+                                            );
+                                            setIsDaySent(true);
+                                            return;
+                                        }
+                                        if (sent < target) {
+                                            toast.warning(`Enviadas ${sent}/${target}. Faltan ${missing} sin push activado.`);
+                                        } else {
+                                            toast.success('Notificaciones enviadas');
+                                        }
+                                        setIsDaySent(true);
+                                    } catch (e) {
+                                        toast.dismiss(loadToast);
+                                        toast.error('Error al enviar');
+                                    }
+                                }
+                            }}
+                            className="w-full min-h-12 text-white py-3.5 rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95 uppercase flex items-center justify-center gap-2 bg-[#0FA968] hover:bg-emerald-600"
+                        >
+                            <Send size={18} /> {!isDaySent ? 'Enviar' : 'Reenviar'}
+                        </button>
+
+                        <button
+                            onClick={() => setShowShareModal(false)}
+                            className="w-full min-h-12 bg-red-500 hover:bg-red-600 text-white py-3.5 rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95 uppercase mt-1"
+                        >
+                            Cancelar
+                        </button>
+                    </div>
                 </div>
-            )}
+            </Modal>
         </div>
     );
 }

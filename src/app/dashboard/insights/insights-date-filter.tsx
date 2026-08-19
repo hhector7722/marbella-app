@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Modal } from '@/components/ui/modal'
 import {
   MONTH_NAMES_ES,
   buildMonthDays,
@@ -17,9 +18,8 @@ import {
   type InsightsFilterMode,
   type InsightsMonth,
 } from './insights-date-utils'
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
-import { formatMonthYearParts, formatYmdShort, periodRangeSummary } from '@/lib/usage/modal-apply'
+import { formatYmdShort, periodRangeSummary } from '@/lib/usage/modal-apply'
 
 export type { InsightsFilterMode, InsightsMonth }
 
@@ -38,6 +38,14 @@ function useClickOutside(
   }, [ref, handler, enabled])
 }
 
+const PICKER_TITLE: Record<string, string> = {
+  'insights-date-week': 'Seleccionar semana',
+  'insights-date-month': 'Seleccionar mes',
+  'insights-date-day': 'Seleccionar día',
+  'insights-date-period': 'Seleccionar periodo',
+  'insights-date-picker': 'Selector de fecha',
+}
+
 function PickerShell({
   open,
   onClose,
@@ -53,25 +61,20 @@ function PickerShell({
   usageId?: string
   usageLabel?: string
 }) {
-  useModalUsageTracking({ open, usageId, usageLabel })
-
-  if (!open) return null
   return (
-    <div
-      className="fixed inset-0 z-[10060] flex items-center justify-center bg-black/40 p-4"
-      role="presentation"
-      onClick={onClose}
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={PICKER_TITLE[usageId] ?? usageLabel}
+      variant="compact"
+      layer="base"
+      instance={usageId}
+      hideTitle
     >
-      <div
-        className={cn(
-          'z-[10061] w-full max-w-sm max-h-[85vh] overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-4 shadow-xl',
-          className
-        )}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className={cn('p-4', className)}>
         {children}
       </div>
-    </div>
+    </Modal>
   )
 }
 

@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { KdsCommandRail, kdsRailCardOverlapClass, kdsRailRowWrapperClass } from '@/components/kds/KdsCommandRail';
 import { combinedLineNotesForDisplay } from '@/components/kds/combined-line-notes';
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { Modal } from '@/components/ui/modal';
 
 /** Máximo de comandas por fila (pantalla ancha). */
 const KDS_MAX_COLS = 4;
@@ -331,11 +331,6 @@ export default function KDSView() {
     const [isSummaryOpen, setIsSummaryOpen] = useState(false);
     const kdsSound = useKdsNotificationSound({ cooldownMs: 900 });
 
-    useModalUsageTracking({
-        open: isSummaryOpen,
-        usageId: 'kds-summary',
-        usageLabel: 'Resumen KDS',
-    });
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -619,61 +614,42 @@ export default function KDSView() {
                 </div>
             </footer>
 
-            {/* Modal Resumen completo */}
-            {isSummaryOpen && (
-                <div
-                    className="fixed inset-0 z-[99998] bg-black/60 backdrop-blur-[1px] flex items-center justify-center p-2 sm:p-3"
-                    onClick={(e) => {
-                        if (e.target === e.currentTarget) setIsSummaryOpen(false);
-                    }}
-                >
-                    <div className="w-full max-w-4xl max-h-[86vh] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
-                        <div className="px-4 sm:px-5 py-3 bg-[#36606F] text-white flex items-start justify-between gap-3 shrink-0">
-                            <div className="min-w-0">
-                                <div className="text-lg sm:text-xl font-black uppercase tracking-[0.12em] truncate">
-                                    Resumen
-                                </div>
-                                <div className="text-sm sm:text-base font-bold text-white/70 tracking-wide truncate">
-                                    {showCompleted ? 'Finalizadas' : 'Pendientes'}
-                                </div>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => setIsSummaryOpen(false)}
-                                className="shrink-0 w-12 h-12 rounded-xl bg-white/10 hover:bg-white/15 flex items-center justify-center"
-                                aria-label="Cerrar"
+            <Modal
+                open={isSummaryOpen}
+                onClose={() => setIsSummaryOpen(false)}
+                title="Resumen"
+                subtitle={showCompleted ? 'Finalizadas' : 'Pendientes'}
+                variant="work"
+                layer="base"
+                instance="kds-summary"
+                headerTone="petroleum"
+                wrapperClassName="max-w-4xl"
+            >
+                <div className="p-3 sm:p-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {aggregatedItems.map((item) => (
+                            <div
+                                key={item.key}
+                                className="flex items-center gap-2 bg-white px-4 py-3 rounded-xl border border-slate-200 shadow-sm"
                             >
-                                <X size={22} />
-                            </button>
-                        </div>
-
-                        <div className="p-3 sm:p-4 overflow-y-auto flex-1">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                {aggregatedItems.map((item) => (
-                                    <div
-                                        key={item.key}
-                                        className="flex items-center gap-2 bg-white px-4 py-3 rounded-xl border border-slate-200 shadow-sm"
-                                    >
-                                        <div className="min-w-0 flex-1">
-                                            <div className="text-lg sm:text-xl font-black text-slate-900 truncate tracking-[0.06em]">
-                                                {item.nombre}
-                                            </div>
-                                            {item.notas && (
-                                                <div className="text-sm sm:text-base font-bold tracking-wide text-slate-600 italic truncate">
-                                                    {item.notas}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <span className="shrink-0 bg-[#407080] text-white text-lg sm:text-xl font-black px-2.5 py-1 rounded-lg border border-[#36606F] tracking-wide tabular-nums">
-                                            {item.cantidad}
-                                        </span>
+                                <div className="min-w-0 flex-1">
+                                    <div className="text-lg sm:text-xl font-black text-slate-900 truncate tracking-[0.06em]">
+                                        {item.nombre}
                                     </div>
-                                ))}
+                                    {item.notas && (
+                                        <div className="text-sm sm:text-base font-bold tracking-wide text-slate-600 italic truncate">
+                                            {item.notas}
+                                        </div>
+                                    )}
+                                </div>
+                                <span className="shrink-0 bg-[#407080] text-white text-lg sm:text-xl font-black px-2.5 py-1 rounded-lg border border-[#36606F] tracking-wide tabular-nums">
+                                    {item.cantidad}
+                                </span>
                             </div>
-                        </div>
+                        ))}
                     </div>
                 </div>
-            )}
+            </Modal>
 
             <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }

@@ -76,7 +76,6 @@ export function EventEncargoCartFooter({
   const requestSave = () => {
     if (saveBlocked) return
     if (requireConfirm) {
-      setCartOpen(false)
       setConfirmOpen(true)
       return
     }
@@ -135,6 +134,7 @@ export function EventEncargoCartFooter({
         open={cartOpen}
         onClose={() => setCartOpen(false)}
         title="Tu pedido"
+        instance="event-encargo-cart"
         usageId="event-encargo-cart"
         usageLabel="Ver pedido encargo"
         className="max-w-sm"

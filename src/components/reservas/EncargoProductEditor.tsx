@@ -27,6 +27,7 @@ import {
   formatEncargoProductNote,
 } from '@/lib/encargo-staff-helpers'
 import { cn } from '@/lib/utils'
+import { Modal } from '@/components/ui/modal'
 import { createClient } from '@/utils/supabase/client'
 
 export type EncargoEditorMenuProduct = {
@@ -402,33 +403,28 @@ function EncargoCartModal({
   onUpdateLine: (lineKey: string, patch: Partial<StaffEncargoLineItem>) => void
   onRemoveLine: (lineKey: string) => void
 }) {
-  const content = (
-    <div
-      className="fixed inset-0 z-[10080] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose()
-      }}
-      role="presentation"
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      variant="compact"
+      layer="derived"
+      instance="encargo-cart"
+      parentInstance="encargo-product-editor"
+      title={lineCount > 0 ? `${lineCount} líneas · ${unitCount} uds` : 'Vacío'}
+      subtitle="Pedido actual"
+      headerTone="petroleum"
+      footer={
+        <button
+          type="button"
+          onClick={onClose}
+          className="min-h-10 w-full rounded-lg bg-[#36606F] text-[10px] font-black uppercase text-white"
+        >
+          Continuar
+        </button>
+      }
     >
-      <div className={CART_MODAL_CLASS} onClick={(e) => e.stopPropagation()}>
-        <div className="bg-[#36606F] px-3 py-2 text-white shrink-0 flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-[9px] font-black uppercase tracking-widest text-white/80">Pedido actual</p>
-            <h3 className="text-sm font-black truncate">
-              {lineCount > 0 ? `${lineCount} líneas · ${unitCount} uds` : 'Vacío'}
-            </h3>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="min-h-10 min-w-10 flex items-center justify-center rounded-lg hover:bg-white/10 shrink-0"
-            aria-label="Cerrar"
-          >
-            <X size={18} strokeWidth={2.5} />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto min-h-0 px-2 py-1.5">
+      <div className="flex-1 overflow-y-auto min-h-0 px-2 py-1.5">
           {lines.length === 0 ? (
             <p className="py-8 text-center text-xs font-semibold text-zinc-500">Sin productos aún.</p>
           ) : (
@@ -482,22 +478,8 @@ function EncargoCartModal({
             </div>
           )}
         </div>
-
-        <div className="shrink-0 border-t border-zinc-100 px-3 py-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="min-h-10 w-full rounded-lg bg-[#36606F] text-[10px] font-black uppercase text-white"
-          >
-            Continuar
-          </button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   )
-
-  if (typeof document === 'undefined') return null
-  return createPortal(content, document.body)
 }
 
 export function EncargoProductEditor({
@@ -912,45 +894,35 @@ export function EncargoProductEditor({
     return null
   })()
 
+  const editorHeaderTrailing = (
+    <>
+      <button
+        type="button"
+        onClick={() => setCartModalOpen(true)}
+        className="relative shrink-0 min-h-12 min-w-12 flex items-center justify-center active:opacity-70"
+        aria-label={unitCount > 0 ? `Pedido actual, ${unitCount} unidades` : 'Pedido actual'}
+      >
+        <ShoppingBag size={20} strokeWidth={2.25} />
+        {unitCount > 0 ? (
+          <span className="absolute top-1.5 right-1.5 min-h-[16px] min-w-[16px] px-0.5 rounded-full bg-rose-500 text-[9px] font-black text-white flex items-center justify-center leading-none">
+            {unitCount > 99 ? '99+' : unitCount}
+          </span>
+        ) : null}
+      </button>
+      <button
+        type="button"
+        onClick={handleDeleteRequest}
+        disabled={isPending}
+        className="shrink-0 min-h-12 min-w-12 flex items-center justify-center active:opacity-70 disabled:opacity-40"
+        aria-label="Eliminar encargo"
+      >
+        <Trash2 size={20} strokeWidth={2.25} />
+      </button>
+    </>
+  )
+
   const body = (
     <>
-      <div className="bg-[#36606F] px-4 py-2.5 text-white shrink-0 flex items-center gap-0.5">
-        <div className="min-w-0 flex-1">
-          <p className="text-[9px] font-black uppercase tracking-widest text-white/80">Editar encargo</p>
-          <h3 className="text-sm font-black truncate">{eventName}</h3>
-        </div>
-        <button
-          type="button"
-          onClick={() => setCartModalOpen(true)}
-          className="relative shrink-0 min-h-12 min-w-12 flex items-center justify-center text-white active:opacity-70"
-          aria-label={unitCount > 0 ? `Pedido actual, ${unitCount} unidades` : 'Pedido actual'}
-        >
-          <ShoppingBag size={20} strokeWidth={2.25} />
-          {unitCount > 0 ? (
-            <span className="absolute top-1.5 right-1.5 min-h-[16px] min-w-[16px] px-0.5 rounded-full bg-rose-500 text-[9px] font-black text-white flex items-center justify-center leading-none">
-              {unitCount > 99 ? '99+' : unitCount}
-            </span>
-          ) : null}
-        </button>
-        <button
-          type="button"
-          onClick={handleDeleteRequest}
-          disabled={isPending}
-          className="shrink-0 min-h-12 min-w-12 flex items-center justify-center text-white active:opacity-70 disabled:opacity-40"
-          aria-label="Eliminar encargo"
-        >
-          <Trash2 size={20} strokeWidth={2.25} />
-        </button>
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={isPending}
-          className="shrink-0 min-h-12 min-w-12 flex items-center justify-center text-white active:opacity-70 disabled:opacity-40"
-          aria-label="Cerrar"
-        >
-          <X size={20} strokeWidth={2.5} />
-        </button>
-      </div>
 
       <div className="flex-1 min-h-0 flex flex-col bg-white overflow-hidden">
         <div className="shrink-0 px-3 py-2 border-b border-zinc-100 bg-white">
@@ -1029,16 +1001,21 @@ export function EncargoProductEditor({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-[10070] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !isPending) onClose()
-      }}
-      role="presentation"
+    <Modal
+      open
+      onClose={() => { if (!isPending) onClose() }}
+      variant="standard"
+      layer="base"
+      instance="encargo-product-editor"
+      title={eventName}
+      subtitle="Editor de pedido"
+      headerTone="petroleum"
+      headerTrailing={editorHeaderTrailing}
+      ariaLabel={`Editor de pedido: ${eventName}`}
+      closeOnBackdrop={!isPending}
+      className={EDITOR_MODAL_CLASS}
     >
-      <div className={EDITOR_MODAL_CLASS} onClick={(e) => e.stopPropagation()}>
-        {body}
-      </div>
-    </div>
+      {body}
+    </Modal>
   )
 }

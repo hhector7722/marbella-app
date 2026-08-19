@@ -46,8 +46,8 @@ El patrón más usado del producto. Sus leyes están en [EXPERIENCIA §8](EXPERI
 **Variantes** (API tipada del contrato):
 - **`compact`** — confirmaciones y formularios cortos (`max-w-sm`). Default histórico.
 - **`standard`** — formularios estándar (`max-w-md`).
-- **`work`** — trabajo real en panel ancho (`max-w-5xl`, alto útil preferente). Valor alineado a [ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md).
-- **`day`** — trabajo sobre una fecha concreta (`max-w-5xl`; ver P4).
+- **`work`** — trabajo real en panel ancho (`max-w-6xl` / 1152px, alto útil preferente). Valor alineado a [ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md).
+- **`day`** — trabajo sobre una fecha concreta (`max-w-6xl` / 1152px; ver P4).
 - **`amplify`** — imagen o dato ampliado (`max-w-2xl`).
 
 **Reglas**:

@@ -11,6 +11,7 @@ import {
     BUTTON_LAYOUTS,
     BUTTON_VARIANTS,
     hasVisibleButtonLabel,
+    isButtonAnatomyValid,
     isButtonLayout,
     isButtonVariant,
     pickButtonLayoutClassName,
@@ -136,7 +137,21 @@ describe('Button accesibilidad e icon-only', () => {
         assert.equal(BUTTON_CONTRACT.iconSlot, 'start');
     });
 
+    it('texto solo es válido', () => {
+        assert.equal(isButtonAnatomyValid({ hasLabel: true, hasIcon: false }), true);
+        const named = resolveButtonAccessibleName({
+            hasLabel: true,
+            hasIcon: false,
+        });
+        assert.equal(named.ok, true);
+        if (named.ok) assert.equal(named.iconOnly, false);
+        assert.equal(hasVisibleButtonLabel('Guardar'), true);
+        assert.equal(hasVisibleButtonLabel('   '), false);
+        assert.equal(hasVisibleButtonLabel(null), false);
+    });
+
     it('icon-only exige aria-label', () => {
+        assert.equal(isButtonAnatomyValid({ hasLabel: false, hasIcon: true }), true);
         const missing = resolveButtonAccessibleName({
             hasLabel: false,
             hasIcon: true,
@@ -153,19 +168,18 @@ describe('Button accesibilidad e icon-only', () => {
         if (ok.ok) assert.equal(ok.iconOnly, true);
     });
 
-    it('con etiqueta no es icon-only', () => {
-        const named = resolveButtonAccessibleName({
+    it('texto + icono es inválido', () => {
+        assert.equal(isButtonAnatomyValid({ hasLabel: true, hasIcon: true }), false);
+        const both = resolveButtonAccessibleName({
             hasLabel: true,
             hasIcon: true,
         });
-        assert.equal(named.ok, true);
-        if (named.ok) assert.equal(named.iconOnly, false);
-        assert.equal(hasVisibleButtonLabel('Guardar'), true);
-        assert.equal(hasVisibleButtonLabel('   '), false);
-        assert.equal(hasVisibleButtonLabel(null), false);
+        assert.equal(both.ok, false);
+        if (!both.ok) assert.equal(both.reason, 'label-and-icon-forbidden');
     });
 
     it('vacío sin nombre es error', () => {
+        assert.equal(isButtonAnatomyValid({ hasLabel: false, hasIcon: false }), false);
         const empty = resolveButtonAccessibleName({
             hasLabel: false,
             hasIcon: false,
@@ -442,5 +456,70 @@ describe('Piloto Button en footers oficiales', () => {
                 `${rel} no debe forzar fill por defecto`
             );
         }
+    });
+});
+
+function isSelfClosingJsxTag(tag: string): boolean {
+    let quote: string | null = null;
+    let brace = 0;
+    for (let i = 0; i < tag.length; i++) {
+        const c = tag[i];
+        if (quote) {
+            if (c === quote && tag[i - 1] !== '\\') quote = null;
+            continue;
+        }
+        if (c === '"' || c === "'" || c === '`') {
+            quote = c;
+            continue;
+        }
+        if (c === '{') brace += 1;
+        else if (c === '}') brace -= 1;
+        else if (c === '>' && brace === 0) {
+            let j = i - 1;
+            while (j >= 0 && /\s/.test(tag[j])) j -= 1;
+            return tag[j] === '/';
+        }
+    }
+    return false;
+}
+
+function buttonHasIconAndChildren(source: string, start: number): boolean {
+    const tag = extractJsxOpenTag(source, start);
+    if (!/\bicon\s*=/.test(tag)) return false;
+    if (isSelfClosingJsxTag(tag)) return false;
+    const innerStart = start + tag.length;
+    const close = source.indexOf('</Button>', innerStart);
+    if (close < 0) return false;
+    return source.slice(innerStart, close).trim().length > 0;
+}
+
+describe('Button anatomía: no icono + texto', () => {
+    it('el contrato declara hasLabel+hasIcon como error explícito', () => {
+        const source = readFileSync(join(SRC_ROOT, 'lib/design-system/button-contract.ts'), 'utf8');
+        assert.match(source, /label-and-icon-forbidden/);
+        assert.match(source, /if \(args\.hasLabel && args\.hasIcon\)/);
+        assert.match(source, /return \{ ok: false, reason: 'label-and-icon-forbidden' \}/);
+    });
+
+    it('ningún Button combina icon y texto', () => {
+        const offenders: string[] = [];
+        for (const full of listSourceFiles(SRC_ROOT)) {
+            if (full.endsWith('.test.ts') || full.endsWith('.test.tsx')) continue;
+            const rel = toPosix(relative(REPO_ROOT, full));
+            if (rel === 'src/components/ui/button.tsx') continue;
+            const source = readFileSync(full, 'utf8');
+            if (!source.includes('<Button')) continue;
+            let searchFrom = 0;
+            while (true) {
+                const idx = source.indexOf('<Button', searchFrom);
+                if (idx < 0) break;
+                if (buttonHasIconAndChildren(source, idx)) {
+                    const tag = extractJsxOpenTag(source, idx);
+                    offenders.push(`${rel}: ${tag.replace(/\s+/g, ' ').slice(0, 160)}`);
+                }
+                searchFrom = idx + 7;
+            }
+        }
+        assert.deepEqual(offenders, []);
     });
 });

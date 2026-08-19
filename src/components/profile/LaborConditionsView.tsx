@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { ArrowLeft, Trash2 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -665,7 +665,6 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
                     variant="destructive"
                     layout="fill"
                     instance="labor-conditions-delete-term"
-                    icon={<Trash2 className="size-4 shrink-0" strokeWidth={2.25} />}
                     disabled={saving || deleting}
                     loading={deleting}
                     loadingLabel="Eliminando…"

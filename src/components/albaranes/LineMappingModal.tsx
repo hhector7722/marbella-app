@@ -513,6 +513,7 @@ export function LineMappingModal({
       variant="work"
       layer="derived"
       instance="albaran-line-mapping"
+      parentInstance="albaran-detail"
       usageId="albaran-line-mapping"
       usageLabel="Mapear línea albarán"
       headerTone="petroleum"

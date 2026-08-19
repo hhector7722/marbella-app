@@ -1669,7 +1669,7 @@ function RecipeDetailContent() {
                 usageId="recipe-ingredient-wizard"
                 usageLabel="Asistente ingrediente receta"
                 title="Nuevo ingrediente"
-                hideHeader
+                hideHeader // Wizard dibuja su propia navegación interna (PricingStepHeader + cierre propio)
                 scrollContent
             >
                 <IngredientWizard

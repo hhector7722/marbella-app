@@ -38,6 +38,9 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-19
 
+- **Button: cero icono+texto en consumidores.** Los Button con etiqueta visible ya no llevan `icon`. El contrato no cambia. Icon-only con `aria-label` sigue fuera del footer de Modal.
+- **Modal `work`/`day` pasa a `max-w-6xl` (1152px).** El catálogo P2 ensancha esas dos variantes; compact, standard y amplify no cambian. Sin migrar consumidores ni tocar backdrop, capas o chrome.
+- **Button: anatomía texto XOR icono.** Un Button con texto visible no lleva icono; un Button icon-only no lleva texto. No existe la combinación. Sin variante nueva ni cambio de API. Los usos actuales de icono+texto no se migran; el contrato y las pruebas los tratan como inválidos.
 - **Navegación padre→hijo en Modal.** Historial explícito (`instance` + `parentInstance`), separado de layers y de la pila de Escape. Raíz: X/Escape/backdrop cierran la cadena. Hijo: ← y X/Escape/backdrop hacen pop. Cadenas conectadas: DaySummary→crear fichaje, detalle de semana→historial trabajador, detalle de propina→desglose, ficha de proveedor→edición. Sin ADR nueva: no cambia el tope de nesting de [ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md).
 - **Button primary = verde de confirmación.** La variante `primary` pinta con `color.positivo` (`#059669`), no con petróleo. `secondary` / `tertiary` / `destructive` no cambian de papel. Sin variante `confirmar` nueva. Los Button ya migrados heredan el contrato.
 - **Corrección óptica cabecera Modal.** Título y subtítulo de la misma fila se centran por el trazo (cap), no por el em. Sin cambio de alto 36 px, inset, variantes ni layers.

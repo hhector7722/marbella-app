@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { X } from "lucide-react";
 import { KdsMesaNumber } from "@/components/kds/KdsMesaNumber";
 import { cn } from "@/lib/utils";
-import { useModalUsageTracking } from "@/hooks/useModalUsageTracking";
+import { Modal } from "@/components/ui/modal";
 
 function norm(s: string) {
   return s.trim().toLowerCase().replace(/\s+/g, " ");
@@ -41,22 +39,11 @@ export function NotesModal(props: {
 }) {
   const { isOpen, title, subtitle, initialNotes, quickNotes, onClose, onSave } = props;
 
-  useModalUsageTracking({
-    open: isOpen,
-    usageId: 'kds-notes',
-    usageLabel: 'Notas KDS',
-  });
-
   const [selectedQuick, setSelectedQuick] = useState<Set<string>>(new Set());
   const [freeText, setFreeText] = useState("");
   const [isWriting, setIsWriting] = useState(false);
   const [saving, setSaving] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -107,91 +94,30 @@ export function NotesModal(props: {
     });
   };
 
-  if (!isOpen || !mounted) return null;
-
-  const modal = (
-    <div
-      className="fixed inset-0 z-[2147483647] bg-black/60 backdrop-blur-[1px] flex items-center justify-center p-1 sm:p-2"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      role="dialog"
-      aria-modal="true"
-    >
-      <div className="w-[98vw] max-w-6xl h-[92vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col bg-[#1b1c20] border border-black/30">
-        {/* Cabecera: mismo color que el footer (fila resumen fija) */}
-        <div className="px-3 sm:px-4 py-2 bg-[#12141a] text-white flex items-center justify-between gap-3 shrink-0">
-          <div className="min-w-0 flex items-center gap-3">
-            <KdsMesaNumber value={mesaValue} isCompleted={false} />
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Botón escribir: tarjeta estilo resumen, fuente algo menor */}
-            <button
-              type="button"
-              onClick={() => setIsWriting((v) => !v)}
-              className="min-h-[48px] px-3 rounded-xl border border-zinc-200/90 bg-white text-zinc-900 shadow-sm transition active:scale-[0.99] hover:bg-zinc-50"
-              title="Escribir"
-            >
-              <span className="text-[12px] sm:text-[13px] font-black uppercase tracking-[0.14em]">
-                Escribir
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="shrink-0 w-12 h-12 rounded-xl bg-white/10 hover:bg-white/15 flex items-center justify-center"
-              aria-label="Cerrar"
-            >
-              <X size={22} />
-            </button>
-          </div>
-        </div>
-
-        {/* Cuerpo */}
-        <div className="p-3 sm:p-4 space-y-3 overflow-y-auto flex-1">
-          {/* Caja de texto libre + teclado nativo */}
-          {isWriting && (
-            <div className="rounded-2xl border border-black/25 bg-white p-3 sm:p-4 shadow-sm">
-              <textarea
-                ref={textareaRef}
-                value={freeText}
-                onChange={(e) => setFreeText(e.target.value)}
-                placeholder="Escribe notas…"
-                className="w-full min-h-[200px] sm:min-h-[260px] rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-lg sm:text-xl font-semibold tracking-wide text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#407080]/25"
-                inputMode="text"
-                autoCorrect="off"
-                autoCapitalize="sentences"
-                spellCheck={false}
-              />
-            </div>
-          )}
-
-          {/* Notas rápidas: tarjetas blancas (mismo tipo/tamaño que resumen) */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2">
-            {quickNotes.map((q) => {
-              const isOn = selectedQuick.has(q);
-              return (
-                <button
-                  key={q}
-                  type="button"
-                  onClick={() => toggleQuick(q)}
-                  className={cn(
-                    "min-h-[56px] sm:min-h-[64px] rounded-xl border border-zinc-200/90 bg-white px-3 py-2 text-center shadow-sm transition active:scale-[0.99] hover:bg-zinc-50",
-                    "font-black uppercase tracking-[0.04em] text-zinc-900 text-2xl sm:text-3xl",
-                    isOn && "ring-2 ring-[#D56170]/70 border-[#D56170]"
-                  )}
-                >
-                  {q}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Acciones */}
-        <div className="p-3 sm:p-4 border-t border-black/25 bg-[#12141a] flex items-center justify-between gap-2 shrink-0">
+  return (
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      title={<KdsMesaNumber value={mesaValue} isCompleted={false} />}
+      variant="work"
+      layer="base"
+      instance="kds-notes"
+      headerTone="petroleum"
+      hideHeaderDivider
+      headerTrailing={
+        <button
+          type="button"
+          onClick={() => setIsWriting((v) => !v)}
+          className="min-h-[48px] px-3 rounded-xl border border-zinc-200/90 bg-white text-zinc-900 shadow-sm transition active:scale-[0.99] hover:bg-zinc-50"
+          title="Escribir"
+        >
+          <span className="text-[12px] sm:text-[13px] font-black uppercase tracking-[0.14em]">
+            Escribir
+          </span>
+        </button>
+      }
+      footer={
+        <div className="flex w-full items-center justify-between gap-2">
           <button
             type="button"
             onClick={onClose}
@@ -219,10 +145,47 @@ export function NotesModal(props: {
             Guardar
           </button>
         </div>
-      </div>
-    </div>
-  );
+      }
+      className="bg-[#1b1c20] border border-black/30"
+    >
+      <div className="p-3 sm:p-4 space-y-3">
+        {isWriting && (
+          <div className="rounded-2xl border border-black/25 bg-white p-3 sm:p-4 shadow-sm">
+            <textarea
+              ref={textareaRef}
+              value={freeText}
+              onChange={(e) => setFreeText(e.target.value)}
+              placeholder="Escribe notas…"
+              className="w-full min-h-[200px] sm:min-h-[260px] rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-lg sm:text-xl font-semibold tracking-wide text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#407080]/25"
+              inputMode="text"
+              autoCorrect="off"
+              autoCapitalize="sentences"
+              spellCheck={false}
+            />
+          </div>
+        )}
 
-  return createPortal(modal, document.body);
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2">
+          {quickNotes.map((q) => {
+            const isOn = selectedQuick.has(q);
+            return (
+              <button
+                key={q}
+                type="button"
+                onClick={() => toggleQuick(q)}
+                className={cn(
+                  "min-h-[56px] sm:min-h-[64px] rounded-xl border border-zinc-200/90 bg-white px-3 py-2 text-center shadow-sm transition active:scale-[0.99] hover:bg-zinc-50",
+                  "font-black uppercase tracking-[0.04em] text-zinc-900 text-2xl sm:text-3xl",
+                  isOn && "ring-2 ring-[#D56170]/70 border-[#D56170]"
+                )}
+              >
+                {q}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </Modal>
+  );
 }
 

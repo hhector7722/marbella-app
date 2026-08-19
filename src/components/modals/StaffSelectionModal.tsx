@@ -157,7 +157,6 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
             wrapperClassName={variant === 'profile-list' ? 'max-w-xl' : 'max-w-md'}
             className="rounded-[2rem]"
             scrollContent={false}
-            zIndexClass="z-[150]"
             headerTrailing={headerTrailing}
             hideCloseButton={hideHeaderClose}
             onBack={onBack}

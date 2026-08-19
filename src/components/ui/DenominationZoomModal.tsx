@@ -55,10 +55,12 @@ export function DenominationZoomModal({
             open={isOpen}
             onClose={onClose}
             title={denomLabel}
+            variant="compact"
+            layer="derived"
+            instance="denomination-zoom"
             headerVariant="petroleum"
             className={cn('w-full max-w-[280px]', className)}
             wrapperClassName="max-w-[280px]"
-            zIndexClass="z-[400]"
             usageId="denomination-zoom"
             usageLabel="Zoom denominación"
         >

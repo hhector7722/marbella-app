@@ -19,7 +19,7 @@ import { CartaActiveToggleButton } from '@/components/carta/CartaActiveToggleBut
 import { subsWithVisibleProducts } from '@/lib/event-encargo-config'
 import { type EventEncargoEditControl, type EventOrderCartaControl } from '@/lib/event-order-carta'
 import { cn } from '@/lib/utils'
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
+import { Modal } from '@/components/ui/modal'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
 import { namedEntitySummary } from '@/lib/usage/modal-apply'
 import { ChevronLeft, GripVertical, Loader2, Pencil, X } from 'lucide-react'
@@ -352,12 +352,6 @@ export function MenuAccordion({
 
     const [openKey, setOpenKey] = useState<string | null>(null)
     const [modalEditActive, setModalEditActive] = useState(false)
-
-    useModalUsageTracking({
-        open: openKey !== null,
-        usageId: 'menu-accordion-section',
-        usageLabel: 'Sección carta',
-    })
 
     const trackMenuSection = useTrackModalApply('menu-accordion-section', 'Sección carta')
     const trackSubcategoryPick = useTrackModalApply('carta-subcategory-picker', 'Elegir subcategoría')
@@ -1058,32 +1052,19 @@ export function MenuAccordion({
                 {gridBlock}
             </div>
 
-            {openGroup ? (
-                <div
-                    className={cn(
-                        'fixed inset-0 z-[250] flex items-center justify-center animate-in fade-in duration-200',
-                        openPlatoMarbella
-                            ? 'p-2 sm:p-2.5'
-                            : 'p-4 pb-safe pt-4'
-                    )}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby={
-                        openShowSubPicker
-                            ? 'carta-sub-picker-modal-title'
-                            : openShowSubTabs
-                              ? undefined
-                              : 'staff-carta-section-modal-title'
-                    }
-                    aria-label={openShowSubTabs ? openGroup.title : undefined}
-                >
-                    <button
-                        type="button"
-                        className="absolute inset-0 bg-zinc-900/30 backdrop-blur-[2px] transition-opacity"
-                        aria-label="Cerrar"
-                        onClick={() => setOpenKey(null)}
-                    />
-                    {openShowSubPicker ? (
+            <Modal
+                open={openGroup != null}
+                onClose={() => setOpenKey(null)}
+                title={openGroup?.title ?? ''}
+                variant="amplify"
+                layer="base"
+                instance="menu-accordion-section"
+                hideHeader
+                scrollContent={false}
+                containerClassName={openPlatoMarbella ? 'p-2 sm:p-2.5' : undefined}
+                ariaLabel={openGroup?.title ?? 'Sección carta'}
+            >
+                    {openGroup == null ? null : openShowSubPicker ? (
                         <CartaSubcategoryPickerModalShell
                             title={openGroup.title}
                             onClose={() => setOpenKey(null)}
@@ -1845,8 +1826,7 @@ export function MenuAccordion({
                         {/* Nota de horario movida al modal de "Platos". */}
                     </div>
                     )}
-                </div>
-            ) : null}
+            </Modal>
 
             <CartaImageLightbox
                 src={platoLightbox?.src ?? null}

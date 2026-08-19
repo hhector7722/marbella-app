@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Search, ChevronDown, Check, ArrowRight, Plus } from 'lucide-react';
+import { Search, ChevronDown, Check, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
@@ -324,7 +324,6 @@ export default function NewOrderPage() {
                                     instance="order-new-reset"
                                     layout="fill"
                                     className="flex-1"
-                                    icon={<Plus className="h-3.5 w-3.5" strokeWidth={4} />}
                                     onClick={handleNewOrder}
                                 >
                                     Pedido Nuevo

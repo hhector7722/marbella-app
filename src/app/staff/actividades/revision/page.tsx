@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ChevronLeft, Check, Trash2, Plus, RefreshCw, Merge } from 'lucide-react';
+import { ChevronLeft, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -270,7 +270,6 @@ export default function PavilionRevisionPage() {
                 type="button"
                 variant="secondary"
                 instance="pavilion-revision-reprocess"
-                icon={<RefreshCw size={14} />}
                 onClick={() => void loadData(true)}
               >
                 Re-procesar con OCR
@@ -333,7 +332,6 @@ export default function PavilionRevisionPage() {
                     type="button"
                     variant="secondary"
                     instance="pavilion-revision-merge"
-                    icon={<Merge size={14} />}
                     onClick={handleMerge}
                   >
                     Unificar seleccionadas ({selectedIndices.size})
@@ -513,7 +511,6 @@ export default function PavilionRevisionPage() {
                   type="button"
                   variant="secondary"
                   instance="pavilion-revision-add"
-                  icon={<Plus size={16} />}
                   onClick={addRow}
                 >
                   Añadir actividad
@@ -535,7 +532,6 @@ export default function PavilionRevisionPage() {
                   type="button"
                   variant="primary"
                   instance="pavilion-revision-save"
-                  icon={state === 'importing' ? undefined : <Check size={18} />}
                   loading={state === 'importing'}
                   loadingLabel="Guardar horario"
                   onClick={() => void handleAccept()}

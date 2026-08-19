@@ -26,7 +26,7 @@ export function CartaImageLightbox({
       headerTitleAlign="left"
       className="max-h-[min(94vh,960px)] w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl"
       wrapperClassName="max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl"
-      zIndexClass="z-[300]"
+      layer="derived"
       backdropClassName="bg-black/80"
       usageId="carta-image-lightbox"
       usageLabel="Imagen carta"

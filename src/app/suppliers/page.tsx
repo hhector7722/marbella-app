@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import { Search, Plus, X, ChevronDown, Phone, Truck, Trash2, Upload, ImageIcon } from 'lucide-react';
+import { Search, Plus, X, ChevronDown, Phone, Truck, Upload, ImageIcon } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import Image from 'next/image';
@@ -803,9 +803,8 @@ export default function SuppliersPage() {
                                                 type="button"
                                                 variant="destructive"
                                                 instance="supplier-edit-remove-image"
-                                                layout="fill"
+                                                layout="hug"
                                                 className="flex-1"
-                                                icon={<Trash2 size={16} strokeWidth={2.5} />}
                                                 disabled={!hasAnyImage || isSavingEdit || isUploadingImage}
                                                 onClick={handleRemoveImageClick}
                                             >

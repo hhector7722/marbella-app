@@ -1,12 +1,11 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
-import { Bell, X } from 'lucide-react'
+import { Bell } from 'lucide-react'
 import { toast } from 'sonner'
 import { getPushSubscriptionStatus, saveSubscription } from '@/app/actions/notifications'
 import { cn } from '@/lib/utils'
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
+import { Modal } from '@/components/ui/modal'
 import {
   PUSH_PROMPT_COPY,
   PUSH_PROMPT_FORCE_PREVIEW,
@@ -36,12 +35,6 @@ export function PushNotificationsPrompt() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const forcedPreview = isForcedPreviewUser(userEmail)
-
-  useModalUsageTracking({
-    open,
-    usageId: 'push-notifications-prompt',
-    usageLabel: 'Activar notificaciones',
-  })
 
   useEffect(() => {
     setMounted(true)
@@ -144,87 +137,60 @@ export function PushNotificationsPrompt() {
     }
   }, [forcedPreview])
 
-  if (!mounted || !open) return null
+  if (!mounted) return null
 
-  return createPortal(
-    <div
-      className="fixed inset-0 min-h-[100dvh] bg-black/60 backdrop-blur-sm z-[250] flex items-center justify-center p-4 animate-in fade-in duration-200"
-      onClick={handleDismiss}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="push-prompt-title"
+  return (
+    <Modal
+      open={open}
+      onClose={handleDismiss}
+      title={PUSH_PROMPT_COPY.title}
+      variant="compact"
+      layer="system"
+      instance="push-notifications-prompt"
+      headerTone="petroleum"
+      headerTrailing={
+        <Bell size={22} strokeWidth={2.5} className="shrink-0 text-white" aria-hidden />
+      }
     >
-      <div
-        className={cn(
-          'bg-white w-full max-w-md rounded-3xl shadow-xl border border-zinc-100 overflow-hidden',
-          'animate-in zoom-in-95 duration-200',
-        )}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="shrink-0 flex items-center gap-2 px-4 py-4 border-b border-zinc-100 bg-[#36606F] text-white">
-          <Bell
-            size={22}
-            strokeWidth={2.5}
-            className="shrink-0"
-            aria-hidden
-          />
-          <h2
-            id="push-prompt-title"
-            className="flex-1 min-w-0 text-[10px] min-[360px]:text-[11px] min-[400px]:text-xs font-black uppercase tracking-wide whitespace-nowrap leading-tight"
+      <div className="p-6 space-y-5">
+        <p className="text-sm text-zinc-600 leading-relaxed">{PUSH_PROMPT_COPY.lead}</p>
+
+        {permissionDenied ? (
+          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 leading-relaxed">
+            {PUSH_PROMPT_COPY.deniedHint}
+          </p>
+        ) : null}
+
+        <div className="shrink-0 flex flex-col gap-3 pt-1">
+          <button
+            type="button"
+            onClick={() => void handleActivate()}
+            disabled={loading}
+            className={cn(
+              'w-full min-h-[48px] rounded-xl font-black uppercase tracking-wider text-sm',
+              'bg-[#36606F] text-white shadow-sm active:scale-[0.98] transition-transform',
+              'disabled:opacity-60 disabled:pointer-events-none',
+            )}
           >
-            {PUSH_PROMPT_COPY.title}
-          </h2>
+            {loading ? (
+              <span className="inline-flex items-center justify-center gap-2">
+                <LoadingSpinner className="w-4 h-4 border-white/30 border-t-white" />
+                Activando…
+              </span>
+            ) : (
+              PUSH_PROMPT_COPY.activateLabel
+            )}
+          </button>
           <button
             type="button"
             onClick={handleDismiss}
-            className="shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-white/80 hover:bg-white/20 transition-colors active:scale-95"
-            aria-label="Cerrar"
+            disabled={loading}
+            className="w-full min-h-[48px] rounded-xl font-bold text-sm text-zinc-500 hover:bg-zinc-50 active:scale-[0.98] transition-transform"
           >
-            <X size={22} strokeWidth={2.5} />
+            {PUSH_PROMPT_COPY.dismissLabel}
           </button>
         </div>
-
-        <div className="p-6 space-y-5">
-          <p className="text-sm text-zinc-600 leading-relaxed">{PUSH_PROMPT_COPY.lead}</p>
-
-          {permissionDenied ? (
-            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 leading-relaxed">
-              {PUSH_PROMPT_COPY.deniedHint}
-            </p>
-          ) : null}
-
-          <div className="shrink-0 flex flex-col gap-3 pt-1">
-            <button
-              type="button"
-              onClick={() => void handleActivate()}
-              disabled={loading}
-              className={cn(
-                'w-full min-h-[48px] rounded-xl font-black uppercase tracking-wider text-sm',
-                'bg-[#36606F] text-white shadow-sm active:scale-[0.98] transition-transform',
-                'disabled:opacity-60 disabled:pointer-events-none',
-              )}
-            >
-              {loading ? (
-                <span className="inline-flex items-center justify-center gap-2">
-                  <LoadingSpinner className="w-4 h-4 border-white/30 border-t-white" />
-                  Activando…
-                </span>
-              ) : (
-                PUSH_PROMPT_COPY.activateLabel
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={handleDismiss}
-              disabled={loading}
-              className="w-full min-h-[48px] rounded-xl font-bold text-sm text-zinc-500 hover:bg-zinc-50 active:scale-[0.98] transition-transform"
-            >
-              {PUSH_PROMPT_COPY.dismissLabel}
-            </button>
-          </div>
-        </div>
       </div>
-    </div>,
-    document.body,
+    </Modal>
   )
 }

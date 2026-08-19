@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { ImageLightbox, type ImageLightboxSlide } from '@/components/ui/ImageLightbox';
+import { Modal } from '@/components/ui/modal';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { format, startOfMonth, endOfMonth, isSameDay, addDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths, isToday, isBefore, startOfDay, subWeeks, differenceInDays } from 'date-fns';
@@ -34,10 +35,8 @@ import CashClosingModal, { BILLS, COINS } from '@/components/CashClosingModal';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import {
-    closingDetailUsageLabel,
     formatMonthYear,
     formatYmdShort,
     periodRangeSummary,
@@ -428,35 +427,30 @@ const CashBreakdownModal = ({
 }) => {
     const [calculatorOpen, setCalculatorOpen] = useState(false);
 
-    useModalUsageTracking({
-        open: isOpen,
-        usageId: 'history-cash-breakdown',
-        usageLabel: 'Arqueo de efectivo',
-    });
-
-    if (!isOpen) return null;
-
     const displayBreakdown = isEditing ? {
         ...BILLS.reduce((acc, b) => ({ ...acc, [b.toString()]: 0 }), {}),
         ...COINS.reduce((acc, c) => ({ ...acc, [c.toString()]: 0 }), {}),
         ...breakdown
     } : breakdown;
 
+    const titleDate = (() => {
+        const d = new Date(date);
+        return isNaN(d.getTime()) ? "Fecha Inválida" : format(d, 'eeee d MMM', { locale: es });
+    })();
+
     return (
-        <div className="fixed inset-0 z-[140] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200" onClick={onClose}>
-            <div className="bg-white rounded-[3rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                <div className="bg-[#36606F] p-8 text-white text-center relative">
-                    <div className="absolute top-6 right-6 flex items-center gap-1">
-                        <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition-all min-h-[48px] min-w-[48px] flex items-center justify-center"><X size={20} /></button>
-                    </div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-1 block">Arqueo de Efectivo</span>
-                    <h3 className="text-xl font-black uppercase tracking-tighter">
-                        {(() => {
-                            const d = new Date(date);
-                            return isNaN(d.getTime()) ? "Fecha Inválida" : format(d, 'eeee d MMM', { locale: es });
-                        })()}
-                    </h3>
-                </div>
+        <Modal
+            open={isOpen}
+            onClose={onClose}
+            variant="compact"
+            layer="derived"
+            instance="history-cash-breakdown"
+            parentInstance="history-closing-detail"
+            title={titleDate}
+            subtitle="Arqueo de Efectivo"
+            headerTone="petroleum"
+            scrollContent={false}
+        >
                 <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
                 <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
                 <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
@@ -545,8 +539,7 @@ const CashBreakdownModal = ({
                         </button>
                     </div>
                 )}
-            </div>
-        </div>
+        </Modal>
     );
 };
 
@@ -928,38 +921,12 @@ export default function HistoryPage() {
         }
     };
 
-    const closingDetailTrackingLabel = useMemo(() => {
-        if (!selectedClosing) return 'Detalle de cierre';
-        return closingDetailUsageLabel(selectedClosing);
-    }, [selectedClosing]);
-
     const openClosingDetail = (closing: { id: string; closed_at?: string; closing_date?: string }) => {
         setSelectedClosing(closing);
     };
     const [showCashDetails, setShowCashDetails] = useState(false);
     const [showClosingModal, setShowClosingModal] = useState(false);
     const [viewMode, setViewMode] = useState<'calendar' | 'table'>('calendar');
-
-    useModalUsageTracking({
-        open: selectedClosing !== null,
-        usageId: 'history-closing-detail',
-        usageLabel: closingDetailTrackingLabel,
-    });
-    useModalUsageTracking({
-        open: showCalendar !== null,
-        usageId: showCalendar === 'single' ? 'history-date-single' : 'history-date-range',
-        usageLabel: showCalendar === 'single' ? 'Fecha única' : 'Rango de fechas',
-    });
-    useModalUsageTracking({
-        open: showMonthPicker,
-        usageId: 'history-month-picker',
-        usageLabel: 'Selector de mes',
-    });
-    useModalUsageTracking({
-        open: exportMonthPickerOpen,
-        usageId: 'history-export-month-picker',
-        usageLabel: 'Selector de meses para exportar',
-    });
 
     const calendarDays = useMemo(() => {
         const base = filterMode === 'range' && rangeStart ? parseLocalSafe(rangeStart) : parseLocalSafe(selectedDate);
@@ -1999,13 +1966,23 @@ export default function HistoryPage() {
             )}
 
             {selectedClosing && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => {
-                    setSelectedClosing(null);
-                    setLightboxIndex(null);
-                    setClosingCalculatorOpen(false);
-                    setIsEditing(false);
-                }}>
-                    <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md" />
+                <Modal
+                    open={true}
+                    onClose={() => {
+                        setSelectedClosing(null);
+                        setLightboxIndex(null);
+                        setClosingCalculatorOpen(false);
+                        setIsEditing(false);
+                    }}
+                    variant="standard"
+                    layer="base"
+                    instance="history-closing-detail"
+                    title="Detalle de cierre"
+                    headerTone="petroleum"
+                    hideHeader
+                    hideCloseButton
+                    scrollContent={false}
+                >
                     <div className="relative flex flex-col items-center gap-4 w-full max-w-md animate-in zoom-in-95 duration-200">
                         <div
                             ref={modalCardRef}
@@ -2014,7 +1991,6 @@ export default function HistoryPage() {
                                 transform: `translateX(${swipeDragX}px)`,
                                 transition: swipePhase === 'animating' ? 'transform 300ms cubic-bezier(0.25, 0.1, 0.25, 1.0)' : 'none',
                                 willChange: 'transform',
-                                zIndex: 2,
                             }}
                             onTouchStart={handleTouchStart}
                             onTouchMove={handleTouchMove}
@@ -2489,7 +2465,7 @@ export default function HistoryPage() {
                         );
                     })()}
                 </div>
-            </div>
+                </Modal>
             )}
 
             {selectedClosing && (
@@ -2527,18 +2503,34 @@ export default function HistoryPage() {
             />
 
             {showCalendar && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setShowCalendar(null)}>
-                    <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="p-6 border-b border-zinc-50 flex items-center justify-between">
-                            <h3 className="font-black text-zinc-900 uppercase text-[10px] tracking-widest">{showCalendar === 'single' ? 'Fecha Única' : 'Rango de Fechas'}</h3>
-                            <button onClick={() => setShowCalendar(null)} className="p-3 hover:bg-zinc-100 rounded-2xl transition-colors"><X size={18} className="text-zinc-400" /></button>
-                        </div>
-
+                <Modal
+                    open={true}
+                    onClose={() => setShowCalendar(null)}
+                    variant="compact"
+                    layer="derived"
+                    instance="history-calendar"
+                    parentInstance="history-closing-detail"
+                    title={showCalendar === 'single' ? 'Fecha Única' : 'Rango de Fechas'}
+                    headerTone="petroleum"
+                >
+                    <div className="bg-white w-full max-w-sm overflow-hidden">
                         <div className="p-6">
                             <div className="flex items-center justify-between mb-6 px-2">
-                                <button onClick={() => setCalendarBaseDate(subMonths(calendarBaseDate, 1))} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"><ChevronLeft size={20} className="text-zinc-400" /></button>
+                                <button
+                                    onClick={() => setCalendarBaseDate(subMonths(calendarBaseDate, 1))}
+                                    className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"
+                                    aria-label="Mes anterior"
+                                >
+                                    <ChevronLeft size={20} className="text-zinc-400" />
+                                </button>
                                 <span className="font-black text-zinc-900 text-xs uppercase tracking-tight">{format(calendarBaseDate, 'MMMM yyyy', { locale: es })}</span>
-                                <button onClick={() => setCalendarBaseDate(addDays(endOfMonth(calendarBaseDate), 1))} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"><ChevronRight size={20} className="text-zinc-400" /></button>
+                                <button
+                                    onClick={() => setCalendarBaseDate(addDays(endOfMonth(calendarBaseDate), 1))}
+                                    className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"
+                                    aria-label="Mes siguiente"
+                                >
+                                    <ChevronRight size={20} className="text-zinc-400" />
+                                </button>
                             </div>
 
                             <div className="grid grid-cols-7 gap-1">
@@ -2567,24 +2559,36 @@ export default function HistoryPage() {
                             </div>
                         </div>
                     </div>
-                </div>
+                </Modal>
             )}
 
             {showMonthPicker && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setShowMonthPicker(false)}>
-                    <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="p-6 border-b border-zinc-50 flex items-center justify-between">
-                            <h3 className="font-black text-zinc-900 uppercase text-[10px] tracking-widest">Seleccionar Mes</h3>
-                            <button onClick={() => setShowMonthPicker(false)} className="p-3 hover:bg-zinc-100 rounded-2xl transition-colors"><X size={18} className="text-zinc-400" /></button>
-                        </div>
-
+                <Modal
+                    open={true}
+                    onClose={() => setShowMonthPicker(false)}
+                    variant="compact"
+                    layer="derived"
+                    instance="history-month-picker"
+                    parentInstance="history-closing-detail"
+                    title="Seleccionar Mes"
+                    headerTone="petroleum"
+                >
+                    <div className="bg-white w-full max-w-sm overflow-hidden">
                         <div className="p-6">
                             <div className="flex items-center justify-between mb-8 px-2">
-                                <button onClick={() => setPickerYear(pickerYear - 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors">
+                                <button
+                                    onClick={() => setPickerYear(pickerYear - 1)}
+                                    className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"
+                                    aria-label="Año anterior"
+                                >
                                     <ChevronLeft size={20} className="text-zinc-400" />
                                 </button>
                                 <span className="font-black text-xl text-zinc-900 tracking-tighter">{pickerYear}</span>
-                                <button onClick={() => setPickerYear(pickerYear + 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors">
+                                <button
+                                    onClick={() => setPickerYear(pickerYear + 1)}
+                                    className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"
+                                    aria-label="Año siguiente"
+                                >
                                     <ChevronRight size={20} className="text-zinc-400" />
                                 </button>
                             </div>
@@ -2620,50 +2624,36 @@ export default function HistoryPage() {
                             </div>
                         </div>
                     </div>
-                </div>
+                </Modal>
             )}
 
             {exportMonthPickerOpen && exportPendingFormat ? (
-                <div
-                    className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm"
-                    onClick={() => {
+                <Modal
+                    open={true}
+                    onClose={() => {
                         if (shareBusy) return;
                         setExportMonthPickerOpen(false);
                         setExportPendingFormat(null);
                     }}
+                    variant="compact"
+                    layer="derived"
+                    instance="history-export-month-picker"
+                    parentInstance="history-closing-detail"
+                    title="Meses a exportar"
+                    subtitle={`${exportPendingFormat === 'excel' ? 'Excel' : 'Imprimir / PDF'} — puedes elegir uno o varios`}
+                    headerTone="petroleum"
                 >
                     <div
-                        className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200"
+                        className="bg-white w-full max-w-sm overflow-hidden"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="p-6 border-b border-zinc-50 flex items-center justify-between gap-3">
-                            <div>
-                                <h3 className="font-black text-zinc-900 uppercase text-[10px] tracking-widest">
-                                    Meses a exportar
-                                </h3>
-                                <p className="mt-1 text-[10px] font-semibold text-zinc-400">
-                                    {exportPendingFormat === 'excel' ? 'Excel' : 'Imprimir / PDF'} — puedes elegir uno o varios
-                                </p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    if (shareBusy) return;
-                                    setExportMonthPickerOpen(false);
-                                    setExportPendingFormat(null);
-                                }}
-                                className="p-3 hover:bg-zinc-100 rounded-2xl transition-colors shrink-0"
-                            >
-                                <X size={18} className="text-zinc-400" />
-                            </button>
-                        </div>
-
                         <div className="p-6">
                             <div className="flex items-center justify-between mb-6 px-2">
                                 <button
                                     type="button"
                                     onClick={() => setExportPickerYear((y) => y - 1)}
                                     className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors min-h-12 min-w-12 flex items-center justify-center"
+                                    aria-label="Año anterior"
                                 >
                                     <ChevronLeft size={20} className="text-zinc-400" />
                                 </button>
@@ -2672,6 +2662,7 @@ export default function HistoryPage() {
                                     type="button"
                                     onClick={() => setExportPickerYear((y) => y + 1)}
                                     className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors min-h-12 min-w-12 flex items-center justify-center"
+                                    aria-label="Año siguiente"
                                 >
                                     <ChevronRight size={20} className="text-zinc-400" />
                                 </button>
@@ -2743,7 +2734,7 @@ export default function HistoryPage() {
                             </button>
                         </div>
                     </div>
-                </div>
+                </Modal>
             ) : null}
 
             <ImageLightbox
@@ -2795,33 +2786,29 @@ export default function HistoryPage() {
                 }}
             />
             {showPeriodPerformanceModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => setShowPeriodPerformanceModal(false)}>
-                    <div className="absolute inset-0 bg-[#36606F]/60 backdrop-blur-md" />
-                    <div className="relative bg-white rounded-[3rem] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
-                        <div className="bg-[#36606F] px-4 py-3 text-white relative shrink-0 text-center">
-                            <h2 className="text-xs sm:text-sm md:text-base font-black uppercase tracking-tighter mx-auto max-w-[80%] flex items-center justify-center min-h-[32px]">
-                                {(() => {
-                                    if (filterMode === 'single') {
-                                        return format(parseLocalSafe(selectedDate), "d 'de' MMMM", { locale: es });
-                                    }
-                                    const start = parseLocalSafe(rangeStart);
-                                    const end = parseLocalSafe(rangeEnd);
-                                    const startMonth = format(start, 'MMMM', { locale: es });
-                                    const endDay = format(end, 'd');
-                                    const endMonth = format(end, 'MMMM', { locale: es });
-                                    return `1 ${startMonth} a ${endDay} ${endMonth}`;
-                                })()}
-                            </h2>
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                                <button
-                                    onClick={() => setShowPeriodPerformanceModal(false)}
-                                    className="p-1 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all shadow-sm active:scale-95 min-h-[32px] min-w-[32px] flex items-center justify-center"
-                                >
-                                    <X size={18} strokeWidth={2.5} />
-                                </button>
-                            </div>
-                        </div>
-
+                <Modal
+                    open={true}
+                    onClose={() => setShowPeriodPerformanceModal(false)}
+                    variant="standard"
+                    layer="derived"
+                    instance="history-period-performance"
+                    parentInstance="history-closing-detail"
+                    title="Rendimiento"
+                    subtitle={(() => {
+                        if (filterMode === 'single') {
+                            return format(parseLocalSafe(selectedDate), "d 'de' MMMM", { locale: es });
+                        }
+                        const start = parseLocalSafe(rangeStart);
+                        const end = parseLocalSafe(rangeEnd);
+                        const startMonth = format(start, 'MMMM', { locale: es });
+                        const endDay = format(end, 'd');
+                        const endMonth = format(end, 'MMMM', { locale: es });
+                        return `1 ${startMonth} a ${endDay} ${endMonth}`;
+                    })()}
+                    headerTone="petroleum"
+                    scrollContent={false}
+                >
+                    <div className="relative bg-white w-full max-w-md overflow-hidden flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
                         <div className="p-8 space-y-6 overflow-y-auto flex-1 custom-scrollbar text-zinc-900">
                             {(() => {
                                 return (
@@ -2888,7 +2875,7 @@ export default function HistoryPage() {
                             })()}
                         </div>
                     </div>
-                </div>
+                </Modal>
             )}
         </div>
     );

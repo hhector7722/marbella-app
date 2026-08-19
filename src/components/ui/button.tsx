@@ -36,7 +36,10 @@ export type ButtonProps = {
 /**
  * Botón de sistema. Un único `<button>`.
  *
- * Anatomía: icon? (izquierda) + label?
+ * Anatomía: texto XOR icono. Un Button con texto visible no lleva `icon`.
+ * Un Button icon-only no lleva texto y exige `aria-label`.
+ * El contrato prohíbe la combinación; el render no lanza: si un
+ * consumidor legado pasa ambos, se siguen mostrando (deuda).
  * Identidad: data-component / data-variant / data-instance
  */
 export function Button({
@@ -63,7 +66,11 @@ export function Button({
         ariaLabel,
     });
 
-    if (!naming.ok && process.env.NODE_ENV !== 'production') {
+    if (
+        !naming.ok &&
+        naming.reason !== 'label-and-icon-forbidden' &&
+        process.env.NODE_ENV !== 'production'
+    ) {
         const hint =
             naming.reason === 'icon-only-requires-aria-label'
                 ? 'Button icon-only exige aria-label.'

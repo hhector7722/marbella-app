@@ -338,7 +338,7 @@ export function ConsumptionModal({
               type="button"
               variant="primary"
               instance="staff-consumption-racion-full"
-              layout="fill"
+              layout="hug"
               disabled={isSubmitting}
               onClick={() => {
                 handleAdd(racionPicker, false);
@@ -351,7 +351,7 @@ export function ConsumptionModal({
               type="button"
               variant="secondary"
               instance="staff-consumption-racion-half"
-              layout="fill"
+              layout="hug"
               disabled={isSubmitting}
               onClick={() => {
                 handleAdd(racionPicker, true);
@@ -365,7 +365,7 @@ export function ConsumptionModal({
             type="button"
             variant="secondary"
             instance="staff-consumption-racion-cancel"
-            layout="fill"
+            layout="hug"
             onClick={() => setRacionPicker(null)}
           >
             Cancelar

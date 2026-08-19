@@ -8,9 +8,9 @@ import { appendScannerPageToInvoiceAction, processScannerImage } from './actions
 import { cn } from '@/lib/utils'
 import { getSupplierLogo } from '@/lib/supplier-logos'
 import { createClient } from '@/utils/supabase/client'
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
 import { namedEntitySummary } from '@/lib/usage/modal-apply'
+import { Modal } from '@/components/ui/modal'
 
 interface Supplier {
   id: number
@@ -55,11 +55,6 @@ export function ScannerClient({
   const carouselRef = useRef<HTMLDivElement>(null)
   const prevBatchLenRef = useRef(0)
 
-  useModalUsageTracking({
-    open: showSupplierModal,
-    usageId: 'scanner-supplier',
-    usageLabel: 'Proveedor escáner',
-  })
   const trackScannerSupplier = useTrackModalApply('scanner-supplier', 'Proveedor escáner')
   /** Android: cámara directa (desde la UI nativa se puede ir a galería). iOS: selector nativo del SO. */
   const [fileInputCapture, setFileInputCapture] = useState<'environment' | undefined>('environment')
@@ -495,82 +490,66 @@ export function ScannerClient({
         ) : null}
       </div>
 
-      {showSupplierModal && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200"
-          onClick={() => closeModal()}
-        >
-          <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="bg-[#36606F] px-6 py-4 flex justify-between items-center text-white shrink-0 shadow-md">
-              <div className="flex flex-col min-w-0">
-                <h3 className="text-lg font-black uppercase tracking-wider leading-none">Proveedor</h3>
-                <p className="text-white/70 text-[10px] font-black uppercase tracking-[0.2em] mt-1.5 flex items-center gap-1">
-                  <Truck size={12} />
-                  Selecciona proveedor para el albarán
-                </p>
-              </div>
-              <button
-                onClick={() => closeModal()}
-                className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90 shrink-0"
-              >
-                <X size={20} strokeWidth={3} />
-              </button>
-            </div>
+      <Modal
+        open={showSupplierModal}
+        onClose={closeModal}
+        title="Proveedor"
+        subtitle="Selecciona proveedor para el albarán"
+        variant="standard"
+        layer="base"
+        instance="scanner-supplier"
+        headerTone="petroleum"
+        loading={loadingSuppliers}
+      >
+        <div className="p-4 flex-1 overflow-hidden flex flex-col">
+          <div className="relative mb-4 shrink-0">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Buscar proveedor..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-12 pl-10 pr-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-[#36606F] focus:border-[#36606F] outline-none transition-all placeholder:text-zinc-300"
+            />
+          </div>
 
-            <div className="p-4 bg-white flex-1 overflow-hidden flex flex-col">
-              <div className="relative mb-4 shrink-0">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Buscar proveedor..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-12 pl-10 pr-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-[#36606F] focus:border-[#36606F] outline-none transition-all placeholder:text-zinc-300"
-                />
+          <div className="overflow-y-auto grid grid-cols-3 sm:grid-cols-4 gap-5 p-2">
+            {loadingSuppliers ? (
+              <div className="col-span-full py-10 flex justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-[#36606F]" />
               </div>
-
-              <div className="overflow-y-auto grid grid-cols-3 sm:grid-cols-4 gap-5 p-2">
-                {loadingSuppliers ? (
-                  <div className="col-span-full py-10 flex justify-center">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#36606F]" />
-                  </div>
-                ) : filteredSuppliers.length === 0 ? (
-                  <div className="col-span-full py-10 text-center">
-                    <span className="text-sm font-bold text-gray-400">No se encontraron proveedores</span>
-                  </div>
-                ) : (
-                  filteredSuppliers.map((s) => {
-                    const logo = getSupplierLogo(s.image_url, s.name)
-                    return (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => handleSelectSupplier(s.id)}
-                        className="p-2 flex flex-col items-center justify-center gap-1.5 aspect-square transition-all active:scale-95 hover:bg-zinc-50 rounded-xl"
-                      >
-                        <div className="w-11 h-11 flex items-center justify-center overflow-hidden shrink-0">
-                          {logo ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={logo} alt={s.name} className="w-full h-full object-contain" />
-                          ) : (
-                            <Truck className="w-6 h-6 text-gray-300" />
-                          )}
-                        </div>
-                        <span className="text-[9px] font-black uppercase text-gray-800 tracking-wider text-center line-clamp-2 leading-tight px-0.5">
-                          {s.name}
-                        </span>
-                      </button>
-                    )
-                  })
-                )}
+            ) : filteredSuppliers.length === 0 ? (
+              <div className="col-span-full py-10 text-center">
+                <span className="text-sm font-bold text-gray-400">No se encontraron proveedores</span>
               </div>
-            </div>
+            ) : (
+              filteredSuppliers.map((s) => {
+                const logo = getSupplierLogo(s.image_url, s.name)
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => handleSelectSupplier(s.id)}
+                    className="p-2 flex flex-col items-center justify-center gap-1.5 aspect-square transition-all active:scale-95 hover:bg-zinc-50 rounded-xl"
+                  >
+                    <div className="w-11 h-11 flex items-center justify-center overflow-hidden shrink-0">
+                      {logo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={logo} alt={s.name} className="w-full h-full object-contain" />
+                      ) : (
+                        <Truck className="w-6 h-6 text-gray-300" />
+                      )}
+                    </div>
+                    <span className="text-[9px] font-black uppercase text-gray-800 tracking-wider text-center line-clamp-2 leading-tight px-0.5">
+                      {s.name}
+                    </span>
+                  </button>
+                )
+              })
+            )}
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   )
 }
