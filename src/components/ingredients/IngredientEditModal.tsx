@@ -438,7 +438,6 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
             title="Editar"
             headerTone="petroleum"
             scrollContent
-            className="max-h-[90vh]"
             footer={
                 <>
                     <Button
@@ -468,7 +467,7 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                 </>
             }
         >
-            <div className="space-y-4 bg-[#fafafa] p-6">
+            <div className="space-y-4 bg-[#fafafa] p-4">
                     <div className="space-y-4">
                         <div className="flex items-center justify-center gap-8">
                             {showNavArrows ? (

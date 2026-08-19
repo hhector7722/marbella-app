@@ -1594,9 +1594,10 @@ export default function StaffDashboardView() {
                 usageLabel="Compra multiorigen"
                 title="Compra"
                 ariaLabel="Compra"
-                hideHeader
+                headerTone="petroleum"
             >
                 <PurchaseMultiSourceForm
+                    embedded
                     paymentSources={buildPaymentSources()}
                     inventoriesByBoxId={purchaseInventoriesByBoxId}
                     onSubmit={handlePurchaseMultiSourceSubmit}
@@ -1604,26 +1605,31 @@ export default function StaffDashboardView() {
                 />
             </Modal>
 
-            {/* Legacy single-box compra modal (mantener por si se abre Salida desde otra ruta) */}
-            {
-                cashModalMode === 'out' && !showPurchaseMultiSourceModal && (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4 animate-in fade-in duration-200" onClick={() => setCashModalMode('none')}>
-                        <div className={cn("bg-white w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", "max-w-2xl")} onClick={(e) => e.stopPropagation()}>
-                            <CashDenominationForm
-                                key={'out' + (selectedBox?.id || '')}
-                                type={'out'}
-                                boxName={selectedBox?.name || 'Caja Inicial'}
-                                boxId={selectedBox?.id}
-                                initialCounts={{}}
-                                availableStock={boxInventoryMap}
-                                onCancel={() => setCashModalMode('none')}
-                                onSubmit={handleCashTransaction}
-                                forcePurchaseMode={true}
-                            />
-                        </div>
-                    </div>
-                )
-            }
+            <Modal
+                open={cashModalMode === 'out' && !showPurchaseMultiSourceModal}
+                onClose={() => setCashModalMode('none')}
+                variant="amplify"
+                layer="base"
+                instance="staff-treasury-out"
+                usageId="staff-treasury-out"
+                usageLabel="Salida de caja"
+                title="Compra"
+                subtitle={selectedBox?.name || 'Caja'}
+                headerTone="petroleum"
+            >
+                <CashDenominationForm
+                    key={'out' + (selectedBox?.id || '')}
+                    variant="embedded"
+                    type={'out'}
+                    boxName={selectedBox?.name || 'Caja Inicial'}
+                    boxId={selectedBox?.id}
+                    initialCounts={{}}
+                    availableStock={boxInventoryMap}
+                    onCancel={() => setCashModalMode('none')}
+                    onSubmit={handleCashTransaction}
+                    forcePurchaseMode={true}
+                />
+            </Modal>
 
             {/* (deduplicado) */}
 

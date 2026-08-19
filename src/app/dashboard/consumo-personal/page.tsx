@@ -393,6 +393,20 @@ export default function ConsumoPersonalDashboardPage() {
     setDetailError(null);
   };
 
+  const detailDayLabel = selectedDayStr
+    ? format(parseLocalSafe(selectedDayStr), 'EEEE d MMM', { locale: es })
+    : '';
+
+  const navigateDetailDay = (delta: -1 | 1) => {
+    if (!selectedDayStr) return;
+    const d = parseLocalSafe(selectedDayStr);
+    d.setDate(d.getDate() + delta);
+    void openDayDetail(d);
+  };
+
+  const consumoHeaderChromeBtn =
+    'relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-[""]';
+
   const todayStr = format(new Date(), 'yyyy-MM-dd');
 
   return (
@@ -585,51 +599,33 @@ export default function ConsumoPersonalDashboardPage() {
       <Modal
         open={detailOpen}
         onClose={closeDetail}
-        title={
-          <span className="flex min-w-0 items-center justify-center gap-1">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (selectedDayStr) {
-                  const d = parseLocalSafe(selectedDayStr);
-                  d.setDate(d.getDate() - 1);
-                  openDayDetail(d);
-                }
-              }}
-              className="flex h-[var(--modal-header-height)] w-[var(--modal-header-height)] shrink-0 items-center justify-center"
-              aria-label="Día anterior"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <span className="truncate">
-              {selectedDayStr
-                ? format(parseLocalSafe(selectedDayStr), 'EEEE d MMM', { locale: es })
-                : ''}
-            </span>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (selectedDayStr) {
-                  const d = parseLocalSafe(selectedDayStr);
-                  d.setDate(d.getDate() + 1);
-                  openDayDetail(d);
-                }
-              }}
-              className="flex h-[var(--modal-header-height)] w-[var(--modal-header-height)] shrink-0 items-center justify-center"
-              aria-label="Día siguiente"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </span>
-        }
+        title={detailDayLabel}
         variant="standard"
         layer="base"
         instance="consumo-day-detail"
         headerTone="petroleum"
         usageId="consumo-day-detail"
         usageLabel="Detalle consumo del día"
+        headerTrailing={
+          <>
+            <button
+              type="button"
+              onClick={() => navigateDetailDay(-1)}
+              className={consumoHeaderChromeBtn}
+              aria-label="Día anterior"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <button
+              type="button"
+              onClick={() => navigateDetailDay(1)}
+              className={consumoHeaderChromeBtn}
+              aria-label="Día siguiente"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </>
+        }
         footer={
           detailError ? (
             <div className="flex w-full flex-wrap items-center justify-end gap-2">

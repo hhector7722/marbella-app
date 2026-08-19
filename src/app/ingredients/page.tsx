@@ -367,7 +367,6 @@ export default function IngredientsPage() {
                 title="Nuevo"
                 headerTone="petroleum"
                 scrollContent
-                className="max-h-[90vh]"
                 headerTrailing={
                     <div className="relative shrink-0">
                         <button
@@ -377,9 +376,9 @@ export default function IngredientsPage() {
                                 e.stopPropagation();
                                 setCreateSettingsOpen((v) => !v);
                             }}
-                            className="min-h-12 min-w-12 inline-flex items-center justify-center text-white hover:opacity-80 rounded-full bg-transparent border-0 shadow-none p-0"
+                            className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none transition-opacity hover:opacity-100 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                         >
-                            <Settings className="w-6 h-6" strokeWidth={1.75} />
+                            <Settings className="h-[clamp(0.875rem,2.8vw,1rem)] w-[clamp(0.875rem,2.8vw,1rem)]" strokeWidth={1.75} />
                         </button>
                         {createSettingsOpen && (
                             <>
@@ -418,7 +417,7 @@ export default function IngredientsPage() {
                     </div>
                 }
             >
-                <div className="space-y-4 bg-[#fafafa] p-6">
+                <div className="space-y-4 bg-[#fafafa] p-4">
                             {createMode === 'wizard' && (
                                 <IngredientWizard
                                     onClose={() => {

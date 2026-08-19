@@ -25,8 +25,8 @@ interface CashDenominationFormProps {
     submitLabel?: string;
     isEditing?: boolean; // New prop
     forcePurchaseMode?: boolean; // New prop
-    /** Modal botes propinas: solo el contenido funcional; el host aporta chrome Modal. */
-    variant?: 'default' | 'tipPool';
+    /** Modal botes propinas / host con chrome Modal: solo contenido funcional. */
+    variant?: 'default' | 'tipPool' | 'embedded';
 }
 
 export const TIP_POOL_CASH_FORM_ID = 'tips-cash-denomination-form';
@@ -90,6 +90,8 @@ export const CashDenominationForm = ({
     const calculateTotal = (c: Record<number, number>) => DENOMINATIONS.reduce((acc, val) => acc + (val * (c[val] || 0)), 0);
     const isAudit = type === 'audit';
     const isTipPool = variant === 'tipPool';
+    const isEmbedded = variant === 'embedded';
+    const suppressChromeHeader = isTipPool || isEmbedded;
 
     const showOutAutofill =
         type === 'out' && !isAudit && variant === 'default' && !isEditing;
@@ -238,9 +240,9 @@ export const CashDenominationForm = ({
     const tree = (
         <div className={cn(
             'relative flex flex-col bg-white',
-            isTipPool ? 'min-h-0' : 'h-full overflow-hidden rounded-2xl',
+            isTipPool || isEmbedded ? 'min-h-0' : 'h-full overflow-hidden rounded-2xl',
         )}>
-            {!isTipPool ? (
+            {!suppressChromeHeader ? (
             <div className="bg-[#36606F] px-6 py-2.5 flex items-center gap-3 text-white shrink-0">
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                     {!isSimplifiedHeader && (

@@ -884,12 +884,16 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                 : 'Inventario de caja'
                             }
                             headerTone="petroleum"
-                            hideHeader
                             title={
                                 cashModalMode === 'in' ? 'Entrada de caja'
                                 : cashModalMode === 'out' ? 'Salida de caja'
                                 : cashModalMode === 'audit' ? 'Arqueo de caja'
-                                : 'Inventario de caja'
+                                : 'Inventario de efectivo'
+                            }
+                            subtitle={
+                                cashModalMode === 'inventory'
+                                    ? (selectedBox?.name || 'Caja')
+                                    : (selectedBox?.name || undefined)
                             }
                             ariaLabel={
                                 cashModalMode === 'in' ? 'Entrada de caja'
@@ -901,6 +905,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                 {(cashModalMode === 'in' || cashModalMode === 'out' || cashModalMode === 'audit') && (
                                     <CashDenominationForm
                                         key={cashModalMode + (selectedBox?.id || '')}
+                                        variant="embedded"
                                         type={cashModalMode as 'in' | 'out' | 'audit'}
                                         boxName={selectedBox?.name || 'Caja'}
                                         boxId={selectedBox?.id}
@@ -914,7 +919,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     <BoxInventoryView
                                         boxName={selectedBox?.name || 'Caja'}
                                         inventory={boxInventory}
-                                        onBack={() => setCashModalMode('none')}
                                     />
                                 )}
                         </Modal>
@@ -941,9 +945,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     usageLabel="Compra multiorigen"
                     title="Compra"
                     ariaLabel="Compra"
-                    hideHeader
+                    headerTone="petroleum"
                 >
                     <PurchaseMultiSourceForm
+                        embedded
                         paymentSources={buildPaymentSources()}
                         inventoriesByBoxId={purchaseInventoriesByBoxId}
                         onSubmit={handlePurchaseMultiSourceSubmit}

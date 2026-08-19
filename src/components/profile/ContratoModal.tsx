@@ -181,7 +181,7 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
             <label
                 htmlFor="contrato-upload"
                 className={cn(
-                    'min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl cursor-pointer transition-colors bg-white/20 hover:bg-white/30',
+                    'relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 cursor-pointer items-center justify-center rounded-ds-control border-0 bg-white/20 text-white shadow-none outline-none transition-colors hover:bg-white/30 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-[""]',
                     uploading && 'opacity-60 cursor-wait'
                 )}
                 aria-label="Subir contrato"
@@ -204,7 +204,7 @@ export default function ContratoModal({ isOpen, onClose, userId, isManager = fal
             usageLabel="Contrato perfil"
             headerTrailing={uploadTrailing}
         >
-            <div className="flex-1 overflow-y-auto max-h-[60vh] p-4">
+            <div className="flex-1 overflow-y-auto p-4">
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-12">
                         <LoadingSpinner size="lg" className="text-[#36606F]" />

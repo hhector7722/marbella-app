@@ -114,7 +114,7 @@ export function SimulationPlantillaExportModal({
                 </Button>
             }
         >
-            <div className="flex flex-col max-h-[75dvh]">
+            <div className="flex min-h-0 flex-1 flex-col">
                 <div className="shrink-0 px-4 pt-3 pb-2 border-b border-zinc-100">
                     <p className="text-[11px] leading-relaxed text-zinc-600">
                         Se generará un PDF por empleado seleccionado. La simulación reparte turnos entre ellos,

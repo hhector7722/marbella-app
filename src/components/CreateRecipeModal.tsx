@@ -45,7 +45,6 @@ export default function CreateModal({
             title="Nueva Receta"
             headerTone="petroleum"
             scrollContent
-            className="max-h-[90vh]"
             footer={
                 <>
                     <Button
@@ -71,7 +70,7 @@ export default function CreateModal({
                 </>
             }
         >
-            <div className="space-y-6 p-6">
+            <div className="space-y-6 p-4">
                 <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2">
                         <label className="text-xs font-bold text-gray-500 uppercase">Nombre Receta</label>

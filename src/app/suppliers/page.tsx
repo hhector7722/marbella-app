@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import { Search, Plus, X, ChevronDown, Phone, Truck, Pencil, Trash2, Upload, ImageIcon } from 'lucide-react';
+import { Search, Plus, X, ChevronDown, Phone, Truck, Trash2, Upload, ImageIcon } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import Image from 'next/image';
@@ -644,8 +644,7 @@ export default function SuppliersPage() {
                                     type="button"
                                     variant="primary"
                                     instance="supplier-detail-edit"
-                                    layout="fill"
-                                    icon={<Pencil size={16} />}
+                                    layout="hug"
                                     disabled={!canEditOrDelete}
                                     onClick={() => openEditModalFromDetail(detailSupplier)}
                                 >
@@ -655,8 +654,7 @@ export default function SuppliersPage() {
                                     type="button"
                                     variant="destructive"
                                     instance="supplier-detail-delete"
-                                    layout="fill"
-                                    icon={<Trash2 size={16} />}
+                                    layout="hug"
                                     disabled={!canEditOrDelete || isDeleting}
                                     loading={isDeleting}
                                     loadingLabel="Eliminando…"

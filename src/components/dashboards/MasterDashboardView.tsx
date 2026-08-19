@@ -422,13 +422,14 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                 usageId="master-cash-audit"
                 usageLabel="Arqueo de caja"
                 headerTone="petroleum"
-                hideHeader
                 title="Arqueo de caja"
+                subtitle={auditBox?.name || 'Caja cambio'}
                 ariaLabel="Arqueo de caja"
             >
                 {auditBox ? (
                     <CashDenominationForm
                         key={`audit-${auditBox.id}`}
+                        variant="embedded"
                         type="audit"
                         boxName={auditBox.name || 'Caja cambio'}
                         initialCounts={boxInventoryMap}

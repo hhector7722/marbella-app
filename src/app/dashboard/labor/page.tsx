@@ -725,7 +725,7 @@ export default function LaborHistoryPage() {
                 usageLabel="Detalle día laboral"
                 title={selectedDayStr ? format(parseLocalSafe(selectedDayStr), 'EEEE · d MMMM yyyy', { locale: es }) : 'Coste laboral'}
             >
-                <div className="px-6 pb-6">
+                <div className="p-4 pb-4">
                     {detailLoading ? (
                         <div className="flex justify-center py-20">
                             <LoadingSpinner size="lg" className="text-zinc-900" />

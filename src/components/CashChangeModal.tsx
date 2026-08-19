@@ -609,7 +609,7 @@ export const CashChangeModal = ({
                             setZoomDenom(null);
                             setShowExchangeHistoryModal(true);
                         }}
-                        className="flex h-full min-w-ds-tactil items-center justify-center border-0 bg-transparent text-white opacity-90 shadow-none outline-none transition-opacity hover:opacity-100"
+                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white opacity-90 shadow-none outline-none transition-opacity hover:opacity-100 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                         aria-label="Histórico de intercambios"
                     >
                         <Eye size={22} strokeWidth={2.5} className="stroke-current fill-none" />
@@ -703,18 +703,18 @@ export const CashChangeModal = ({
             </Modal>
 
             <Modal
-                open={showExchangeHistoryModal}
+                open={showExchangeHistoryModal && !selectedExchangeDetail}
                 onClose={() => { setShowExchangeHistoryModal(false); setSelectedExchangeDetail(null); }}
                 variant="standard"
                 layer="derived"
                 instance="cash-change-history"
+                parentInstance="cash-change-select"
                 usageId="cash-change-history"
-                usageLabel={selectedExchangeDetail ? 'Desglose del intercambio' : 'Histórico de intercambios'}
+                usageLabel="Histórico de intercambios"
                 headerTone="petroleum"
                 headerTitleAlign="left"
-                title={selectedExchangeDetail ? 'Desglose del intercambio' : 'Histórico de intercambios'}
-                onBack={selectedExchangeDetail ? () => setSelectedExchangeDetail(null) : undefined}
-                headerTrailing={!selectedExchangeDetail ? (
+                title="Histórico de intercambios"
+                headerTrailing={
                     <div className="flex items-center gap-1">
                         <button
                             type="button"
@@ -723,7 +723,7 @@ export const CashChangeModal = ({
                                 const y = prev.month === 1 ? prev.year - 1 : prev.year;
                                 return { year: y, month: m };
                             })}
-                            className="flex h-full min-w-ds-tactil items-center justify-center border-0 bg-transparent text-white shadow-none outline-none"
+                            className="flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none"
                             aria-label="Mes anterior"
                         >
                             <ChevronLeft size={20} strokeWidth={3} />
@@ -738,31 +738,16 @@ export const CashChangeModal = ({
                                 const y = prev.month === 12 ? prev.year + 1 : prev.year;
                                 return { year: y, month: m };
                             })}
-                            className="flex h-full min-w-ds-tactil items-center justify-center border-0 bg-transparent text-white shadow-none outline-none"
+                            className="flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none"
                             aria-label="Mes siguiente"
                         >
                             <ChevronRight size={20} strokeWidth={3} />
                         </button>
                     </div>
-                ) : undefined}
+                }
             >
                         <div className="p-4">
-                            {selectedExchangeDetail ? (
-                                <div className="space-y-4">
-                                    {selectedExchangeDetail.legs.map((leg, idx) => (
-                                        <div key={idx} className="bg-zinc-50 rounded-xl p-3 border border-zinc-100">
-                                            <p className="text-[10px] font-black text-zinc-500 uppercase mb-2">{leg.from_box_name} → {leg.to_box_name} ({leg.amount.toFixed(2)}€)</p>
-                                            <div className="flex flex-wrap gap-2">
-                                                {Object.entries(leg.breakdown).filter(([, q]) => Number(q) > 0).map(([denom, q]) => (
-                                                    <span key={denom} className="text-xs font-bold text-zinc-700 bg-white px-2 py-1 rounded">
-                                                        {Number(denom) >= 1 ? `${denom}€` : `${(Number(denom) * 100).toFixed(0)}c`}: {q}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : exchangeHistoryLoading ? (
+                            {exchangeHistoryLoading ? (
                                 <p className="text-center text-zinc-500 text-sm">Cargando...</p>
                             ) : exchangeHistoryList.length === 0 ? (
                                 <p className="text-center text-zinc-500 text-sm">No hay intercambios en este mes.</p>
@@ -786,6 +771,39 @@ export const CashChangeModal = ({
                                 </ul>
                             )}
                         </div>
+            </Modal>
+
+            <Modal
+                open={showExchangeHistoryModal && !!selectedExchangeDetail}
+                onClose={() => setSelectedExchangeDetail(null)}
+                variant="standard"
+                layer="derived"
+                instance="cash-change-history-detail"
+                parentInstance="cash-change-history"
+                usageId="cash-change-history-detail"
+                usageLabel="Desglose del intercambio"
+                headerTone="petroleum"
+                headerTitleAlign="left"
+                title="Desglose del intercambio"
+            >
+                <div className="p-4">
+                    {selectedExchangeDetail ? (
+                        <div className="space-y-4">
+                            {selectedExchangeDetail.legs.map((leg, idx) => (
+                                <div key={idx} className="bg-zinc-50 rounded-xl p-3 border border-zinc-100">
+                                    <p className="text-[10px] font-black text-zinc-500 uppercase mb-2">{leg.from_box_name} → {leg.to_box_name} ({leg.amount.toFixed(2)}€)</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {Object.entries(leg.breakdown).filter(([, q]) => Number(q) > 0).map(([denom, q]) => (
+                                            <span key={denom} className="text-xs font-bold text-zinc-700 bg-white px-2 py-1 rounded">
+                                                {Number(denom) >= 1 ? `${denom}€` : `${(Number(denom) * 100).toFixed(0)}c`}: {q}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : null}
+                </div>
             </Modal>
             </>
         );

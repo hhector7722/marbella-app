@@ -214,7 +214,7 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
             usageLabel="Nóminas"
             headerTrailing={uploadTrailing}
         >
-            <div className="max-h-[60vh] overflow-y-auto p-4">
+            <div className="overflow-y-auto p-4">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-12">
                             <LoadingSpinner size="lg" className="text-[#36606F]" />

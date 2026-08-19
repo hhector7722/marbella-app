@@ -25,6 +25,10 @@ interface DaySummaryModalProps {
     isManager?: boolean;
 }
 
+/** Chrome cabecera Modal (36px visual, 48px táctil). */
+const modalHeaderChromeBtn =
+    'relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white/90 shadow-none outline-none transition-opacity hover:opacity-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-[""]';
+
 export function DaySummaryModal({ isOpen, onClose, date, logs, onSelectLog, employees = [], onFichajeCreated, isManager }: DaySummaryModalProps) {
     const trackDaySummary = useTrackModalApply('day-summary', 'Resumen de fichajes');
     const [showCreateFichaje, setShowCreateFichaje] = useState(false);
@@ -90,8 +94,9 @@ export function DaySummaryModal({ isOpen, onClose, date, logs, onSelectLog, empl
                         <button
                             type="button"
                             onClick={() => setShowCreateFichaje(true)}
-                            className="min-h-[48px] min-w-[48px] flex items-center justify-center text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-xl transition-colors"
+                            className={modalHeaderChromeBtn}
                             title="Nuevo fichaje"
+                            aria-label="Nuevo fichaje"
                         >
                             <Plus size={20} strokeWidth={2.5} />
                         </button>

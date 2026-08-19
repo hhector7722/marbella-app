@@ -1119,14 +1119,14 @@ export default function MovementsPage() {
                     : 'Tesorería'
                 }
                 headerTone="petroleum"
-                hideHeader
                 title={
                     cashModalMode === 'in' ? 'Entrada de caja'
                     : cashModalMode === 'out' ? 'Salida de caja'
                     : cashModalMode === 'audit' ? 'Arqueo de caja'
-                    : cashModalMode === 'inventory' ? 'Inventario de caja'
+                    : cashModalMode === 'inventory' ? 'Inventario de efectivo'
                     : 'Tesorería'
                 }
+                subtitle={cashModalMode === 'inventory' ? (boxData?.name || 'Caja') : (boxData?.name || undefined)}
                 ariaLabel={
                     cashModalMode === 'in' ? 'Entrada de caja'
                     : cashModalMode === 'out' ? 'Salida de caja'
@@ -1136,10 +1136,11 @@ export default function MovementsPage() {
                 }
             >
                 {cashModalMode === 'inventory' ? (
-                    <BoxInventoryView boxName={boxData?.name || 'Caja'} inventory={boxInventory} onBack={() => setCashModalMode('none')} />
+                    <BoxInventoryView boxName={boxData?.name || 'Caja'} inventory={boxInventory} />
                 ) : cashModalMode !== 'none' ? (
                     <CashDenominationForm
                         key={cashModalMode + (boxData?.id || '')}
+                        variant="embedded"
                         type={cashModalMode === 'audit' ? 'audit' : (cashModalMode === 'in' ? 'in' : 'out')}
                         boxName={boxData?.name || 'Caja'}
                         boxId={boxData?.id}

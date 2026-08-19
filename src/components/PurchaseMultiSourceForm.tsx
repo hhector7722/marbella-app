@@ -39,6 +39,8 @@ interface PurchaseMultiSourceFormProps {
     inventoriesByBoxId: Record<string, Record<number, number>>;
     onSubmit: (payload: PurchaseMultiSourcePayload) => void;
     onCancel: () => void;
+    /** Host Modal aporta título/cierre; oculta cabecera petróleo duplicada. */
+    embedded?: boolean;
 }
 
 type PurchaseStep = 'details' | 'payment' | 'change' | 'scanner' | 'summary';
@@ -72,7 +74,8 @@ export function PurchaseMultiSourceForm({
     paymentSources,
     inventoriesByBoxId,
     onSubmit,
-    onCancel
+    onCancel,
+    embedded = false,
 }: PurchaseMultiSourceFormProps) {
     const [step, setStep] = useState<PurchaseStep>('details');
     const [price, setPrice] = useState<number | ''>('');
@@ -179,7 +182,11 @@ export function PurchaseMultiSourceForm({
     };
 
     return (
-        <div className="flex flex-col h-full overflow-hidden bg-white rounded-2xl relative">
+        <div className={cn(
+            'relative flex flex-col h-full overflow-hidden bg-white',
+            !embedded && 'rounded-2xl',
+        )}>
+            {!embedded ? (
             <div className="bg-[#36606F] px-4 py-2.5 flex items-center justify-between text-white shrink-0 relative">
                 <h3 className="text-lg font-black uppercase tracking-wider">Compra</h3>
                 <input
@@ -199,6 +206,24 @@ export function PurchaseMultiSourceForm({
                     )}
                 </div>
             </div>
+            ) : (
+            <div className="flex shrink-0 items-center justify-between gap-2 border-b border-zinc-100 bg-[#36606F]/5 px-4 py-2">
+                <input
+                    type="datetime-local"
+                    value={selectedDate}
+                    onChange={e => setSelectedDate(e.target.value)}
+                    className="min-h-10 flex-1 bg-transparent border-none p-0 text-[10px] font-black uppercase tracking-widest text-[#36606F] outline-none text-center cursor-pointer [color-scheme:light]"
+                />
+                {step === 'payment' ? (
+                    <div className="shrink-0 text-right">
+                        <span className="block text-[8px] font-black uppercase tracking-widest text-zinc-500 leading-none">Total</span>
+                        <span className="text-[12px] font-black tabular-nums text-[#36606F] leading-none">
+                            {totalFromSources > 0.005 ? `${totalFromSources.toFixed(2)}€` : ' '}
+                        </span>
+                    </div>
+                ) : null}
+            </div>
+            )}
 
             <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
             <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />

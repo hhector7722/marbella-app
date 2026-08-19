@@ -103,7 +103,7 @@ export function CashBoxEditModal({ box, onClose, onSuccess }: CashBoxEditModalPr
                 </Button>
             }
         >
-            <div className="p-6 space-y-6">
+            <div className="space-y-6 p-4">
                 <div className="flex flex-col items-center gap-4">
                     <div className="relative w-32 h-32 rounded-3xl overflow-hidden border-4 border-zinc-50 shadow-inner bg-zinc-100 flex items-center justify-center group">
                         {imageUrl ? (

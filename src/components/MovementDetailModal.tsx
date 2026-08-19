@@ -125,11 +125,11 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                 usageId="treasury-movement-edit"
                 usageLabel="Editar movimiento"
                 headerTone="petroleum"
-                hideHeader
                 title="Editar movimiento"
                 ariaLabel="Editar movimiento"
             >
                     <CashDenominationForm
+                        variant="embedded"
                         type={isAdjustment ? 'audit' : (isIncome ? 'in' : 'out')}
                         boxName="Editando Movimiento"
                         initialCounts={breakdown}

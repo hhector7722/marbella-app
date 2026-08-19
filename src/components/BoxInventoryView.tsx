@@ -1,39 +1,24 @@
 'use client';
 
-import { ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import { CURRENCY_IMAGES } from '@/lib/constants';
 
 interface BoxInventoryViewProps {
     boxName: string;
     inventory: any[];
-    onBack: () => void;
 }
 
-export const BoxInventoryView = ({ boxName, inventory, onBack }: BoxInventoryViewProps) => {
+export const BoxInventoryView = ({ inventory }: BoxInventoryViewProps) => {
     const total = inventory.reduce((sum, item) => sum + (item.denomination * item.quantity), 0);
 
     return (
-        <div className="flex flex-col h-full bg-white rounded-2xl">
-            <div className="bg-[#36606F] px-8 py-4 flex justify-between items-center text-white shrink-0">
-                <div className="flex flex-col">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Inventario de Efectivo</span>
-                    <h3 className="text-lg font-black uppercase tracking-wider mt-1">{boxName}</h3>
-                </div>
-                <button
-                    onClick={onBack}
-                    className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-90"
-                >
-                    <ArrowLeft size={20} strokeWidth={3} />
-                </button>
-            </div>
-
-            <div className="p-6 bg-gray-50 border-b flex justify-between items-center shrink-0">
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total en Caja</span>
+        <div className="flex min-h-0 flex-1 flex-col bg-white">
+            <div className="flex shrink-0 items-center justify-between border-b bg-gray-50 p-4">
+                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Total en Caja</span>
                 <span className="text-3xl font-black text-[#5B8FB9]">{total.toFixed(2)}€</span>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+            <div className="custom-scrollbar flex-1 overflow-y-auto p-4">
                 <div className="grid grid-cols-2 gap-3">
                     {inventory.sort((a, b) => b.denomination - a.denomination).map((item, idx) => (
                         <div key={idx} className="bg-white p-2 rounded-xl border border-gray-100 flex items-center justify-between shadow-sm">

@@ -1052,7 +1052,7 @@ export default function HistoryPage() {
                 title="Seleccionar mes"
                 headerTone="petroleum"
             >
-                <div className="p-6">
+                <div className="p-4">
                     <div className="flex items-center justify-between mb-6 px-2">
                         <button type="button" onClick={() => setPickerYear(pickerYear - 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"><ChevronLeft size={20} className="text-zinc-400" /></button>
                         <span className="font-black text-xl text-zinc-900 tracking-tighter">{pickerYear}</span>

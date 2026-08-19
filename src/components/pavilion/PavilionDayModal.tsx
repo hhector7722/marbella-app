@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronRight, Edit2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -130,12 +130,19 @@ export function PavilionDayModal({
       instance="pavilion-day"
       headerTone="petroleum"
       headerCompact
-      onBack={() => onNavigateDay(-1)}
       usageId="pavilion-day"
       usageLabel="Pavelló dia"
       scrollContent={false}
       headerTrailing={
         <>
+          <button
+            type="button"
+            onClick={() => onNavigateDay(-1)}
+            className={dayChromeBtn}
+            aria-label="Dia anterior"
+          >
+            <ChevronLeft className="h-[clamp(0.875rem,2.8vw,1rem)] w-[clamp(0.875rem,2.8vw,1rem)]" strokeWidth={2.5} />
+          </button>
           <button
             type="button"
             onClick={() => onNavigateDay(1)}
