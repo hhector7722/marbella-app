@@ -306,8 +306,33 @@ export default function ConsumoPersonalDashboardPage() {
     fetchSummary();
   }, [fetchSummary]);
 
-  const handlePrevMonth = () => setViewMonth((vm) => subMonths(vm, 1));
-  const handleNextMonth = () => setViewMonth((vm) => addMonths(vm, 1));
+  const handlePrevMonth = () => {
+    const newMonth = subMonths(viewMonth, 1);
+    const s = startOfMonth(newMonth);
+    const e = endOfMonth(newMonth);
+    setViewMonth(s);
+    setPeriodStart(format(s, 'yyyy-MM-dd'));
+    setPeriodEnd(format(e, 'yyyy-MM-dd'));
+    setAppliedFilter({
+      kind: 'month',
+      year: s.getFullYear(),
+      month: s.getMonth() + 1,
+    });
+  };
+
+  const handleNextMonth = () => {
+    const newMonth = addMonths(viewMonth, 1);
+    const s = startOfMonth(newMonth);
+    const e = endOfMonth(newMonth);
+    setViewMonth(s);
+    setPeriodStart(format(s, 'yyyy-MM-dd'));
+    setPeriodEnd(format(e, 'yyyy-MM-dd'));
+    setAppliedFilter({
+      kind: 'month',
+      year: s.getFullYear(),
+      month: s.getMonth() + 1,
+    });
+  };
 
   const clearTimeFilter = () => {
     const cur = defaultFullMonthPeriod();

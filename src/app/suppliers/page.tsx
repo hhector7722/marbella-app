@@ -627,6 +627,34 @@ export default function SuppliersPage() {
                 headerTone="petroleum"
                 usageId="supplier-detail"
                 usageLabel="Detalle proveedor"
+                footer={
+                    userRole === 'manager' && detailSupplier ? (
+                        <div className="flex w-full justify-end gap-3">
+                            <Button
+                                type="button"
+                                variant="primary"
+                                instance="supplier-detail-edit"
+                                layout="hug"
+                                disabled={!canEditOrDelete}
+                                onClick={() => openEditModalFromDetail(detailSupplier)}
+                            >
+                                Editar
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="destructive"
+                                instance="supplier-detail-delete"
+                                layout="hug"
+                                disabled={!canEditOrDelete || isDeleting}
+                                loading={isDeleting}
+                                loadingLabel="Eliminando…"
+                                onClick={() => void handleDeleteSupplier(detailSupplier)}
+                            >
+                                Eliminar
+                            </Button>
+                        </div>
+                    ) : undefined
+                }
             >
                 {detailSupplier ? (
                     <div className="flex flex-col items-center text-center">
@@ -637,33 +665,6 @@ export default function SuppliersPage() {
                                 <Truck className="h-12 w-12 text-gray-200" />
                             )}
                         </div>
-
-                        {userRole === 'manager' ? (
-                            <div className="mt-4 mb-6 grid w-full grid-cols-2 gap-3">
-                                <Button
-                                    type="button"
-                                    variant="primary"
-                                    instance="supplier-detail-edit"
-                                    layout="hug"
-                                    disabled={!canEditOrDelete}
-                                    onClick={() => openEditModalFromDetail(detailSupplier)}
-                                >
-                                    Editar
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="destructive"
-                                    instance="supplier-detail-delete"
-                                    layout="hug"
-                                    disabled={!canEditOrDelete || isDeleting}
-                                    loading={isDeleting}
-                                    loadingLabel="Eliminando…"
-                                    onClick={() => void handleDeleteSupplier(detailSupplier)}
-                                >
-                                    Eliminar
-                                </Button>
-                            </div>
-                        ) : null}
 
                         <div className="mt-2 flex items-center justify-center gap-6">
                             {detailSupplier.phone ? (
@@ -707,18 +708,30 @@ export default function SuppliersPage() {
                 usageId="supplier-edit"
                 usageLabel="Editar proveedor"
                 footer={
-                    <Button
-                        type="button"
-                        variant="primary"
-                        instance="supplier-edit-save"
-                        layout="fill"
-                        disabled={isSavingEdit}
-                        loading={isSavingEdit}
-                        loadingLabel="Guardando…"
-                        onClick={() => void handleSaveEdit()}
-                    >
-                        Guardar cambios
-                    </Button>
+                    <div className="flex w-full justify-end gap-3">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            instance="supplier-edit-cancel"
+                            layout="hug"
+                            disabled={isSavingEdit}
+                            onClick={closeEditModal}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="primary"
+                            instance="supplier-edit-save"
+                            layout="hug"
+                            disabled={isSavingEdit}
+                            loading={isSavingEdit}
+                            loadingLabel="Guardando…"
+                            onClick={() => void handleSaveEdit()}
+                        >
+                            Guardar cambios
+                        </Button>
+                    </div>
                 }
             >
                 {editSupplier ? (
