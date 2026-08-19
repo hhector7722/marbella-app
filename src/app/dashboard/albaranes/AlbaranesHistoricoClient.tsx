@@ -1455,7 +1455,7 @@ export default function AlbaranesHistoricoClient({
           className="hidden"
           onChange={handleReplaceImageFileChange}
         />
-        <div className="p-2.5 sm:p-3 space-y-2.5 min-w-0 max-w-full">
+        <div className="space-y-2.5 min-w-0 max-w-full">
 
                   {/* Status & Errors */}
                   {deleteError ? (
@@ -1864,7 +1864,7 @@ export default function AlbaranesHistoricoClient({
                   subtitle="Busca y selecciona el proveedor correcto"
                   disableUsageTracking
                 >
-                      <div className="p-4 flex flex-col gap-3 min-w-0 max-w-full">
+                      <div className="flex flex-col gap-3 min-w-0 max-w-full">
                         {supplierError ? (
                           <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm font-bold text-red-700">{supplierError}</div>
                         ) : null}
@@ -1895,24 +1895,25 @@ export default function AlbaranesHistoricoClient({
                             <div className="text-sm font-bold text-zinc-500 px-1">Sin resultados.</div>
                           ) : (
                             supplierResults.map((s) => (
-                              <button
+                              <Button
                                 key={s.id}
                                 type="button"
+                                variant="tertiary"
+                                className="w-full"
+                                instance={`albaranes-supplier-picker-${s.id}`}
                                 onClick={() => assignSupplier(s.id)}
                                 disabled={supplierSaving}
-                                className={cn(
-                                  'w-full text-left rounded-xl border border-zinc-100 hover:border-zinc-200 hover:bg-zinc-50 p-3 min-h-[64px] active:scale-[0.995] transition flex items-center gap-3',
-                                  supplierSaving && 'opacity-60 pointer-events-none'
-                                )}
                               >
-                                <div className="h-10 w-10 rounded-xl border border-zinc-100 bg-zinc-50 overflow-hidden flex items-center justify-center shrink-0">
-                                  {s.image_url ? <img src={s.image_url} alt="" className="h-full w-full object-contain" /> : null}
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="text-sm font-black text-zinc-900 truncate">{s.name}</p>
-                                  <p className="text-xs font-bold text-zinc-500 mt-1">ID {s.id}</p>
-                                </div>
-                              </button>
+                                <span className="flex w-full min-w-0 items-center gap-3 text-left">
+                                  <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50">
+                                    {s.image_url ? <img src={s.image_url} alt="" className="h-full w-full object-contain" /> : null}
+                                  </span>
+                                  <span className="min-w-0">
+                                    <span className="block truncate text-sm font-black">{s.name}</span>
+                                    <span className="mt-1 block text-xs font-bold text-zinc-500">ID {s.id}</span>
+                                  </span>
+                                </span>
+                              </Button>
                             ))
                           )}
                         </div>
@@ -1935,7 +1936,6 @@ export default function AlbaranesHistoricoClient({
                   headerTone="petroleum"
                   headerTitleAlign="left"
                   ariaLabel="Wizard de ingrediente"
-                  className="p-2"
                   disableUsageTracking
                 >
                       <IngredientWizard
@@ -1982,33 +1982,43 @@ export default function AlbaranesHistoricoClient({
           </Button>
         }
       >
-        <div className="flex min-h-0 flex-1 flex-col gap-1 p-2 md:p-4 min-w-0 max-w-full bg-zinc-950">
+        <div className="flex min-h-0 flex-1 flex-col gap-1 min-w-0 max-w-full bg-zinc-950">
                 <div className="relative min-h-0 shrink-0 overflow-visible">
                   {invoiceImageSheetOptions.length > 1 ? (
                     <>
-                      <button
-                        type="button"
+                      <div
                         className={cn(
-                          'absolute left-1 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#36606F] shadow-md ring-1 ring-zinc-200/90 hover:bg-white md:flex',
+                          'absolute left-1 top-1/2 z-20 hidden -translate-y-1/2 md:block',
                           invoiceCarouselIndex <= 0 && 'pointer-events-none opacity-35'
                         )}
-                        aria-label="Hoja anterior"
-                        onClick={() => scrollInvoiceCarouselToIndex(invoiceCarouselIndex - 1)}
                       >
-                        <ChevronLeft className="h-6 w-6" strokeWidth={2.5} />
-                      </button>
-                      <button
-                        type="button"
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          instance="albaran-invoice-image-prev"
+                          icon={<ChevronLeft className="h-6 w-6" strokeWidth={2.5} />}
+                          aria-label="Hoja anterior"
+                          disabled={invoiceCarouselIndex <= 0}
+                          onClick={() => scrollInvoiceCarouselToIndex(invoiceCarouselIndex - 1)}
+                        />
+                      </div>
+                      <div
                         className={cn(
-                          'absolute right-1 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#36606F] shadow-md ring-1 ring-zinc-200/90 hover:bg-white md:flex',
+                          'absolute right-1 top-1/2 z-20 hidden -translate-y-1/2 md:block',
                           invoiceCarouselIndex >= invoiceImageSheetOptions.length - 1 &&
                             'pointer-events-none opacity-35'
                         )}
-                        aria-label="Hoja siguiente"
-                        onClick={() => scrollInvoiceCarouselToIndex(invoiceCarouselIndex + 1)}
                       >
-                        <ChevronRight className="h-6 w-6" strokeWidth={2.5} />
-                      </button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          instance="albaran-invoice-image-next"
+                          icon={<ChevronRight className="h-6 w-6" strokeWidth={2.5} />}
+                          aria-label="Hoja siguiente"
+                          disabled={invoiceCarouselIndex >= invoiceImageSheetOptions.length - 1}
+                          onClick={() => scrollInvoiceCarouselToIndex(invoiceCarouselIndex + 1)}
+                        />
+                      </div>
                     </>
                   ) : null}
 
@@ -2049,24 +2059,23 @@ export default function AlbaranesHistoricoClient({
                 {invoiceImageSheetOptions.length > 1 ? (
                   <div className="flex shrink-0 justify-center gap-0 pb-1 pt-0">
                     {invoiceImageSheetOptions.map((_, i) => (
-                      <button
+                      <Button
                         key={i}
                         type="button"
-                        onClick={() => scrollInvoiceCarouselToIndex(i)}
+                        variant="tertiary"
+                        instance={`albaran-invoice-image-dot-${i}`}
+                        icon={
+                          <span
+                            className={cn(
+                              'block h-1.5 w-1.5 rounded-full transition-colors',
+                              i === invoiceCarouselIndex ? 'bg-white' : 'bg-current'
+                            )}
+                          />
+                        }
                         aria-label={`Ir a ${invoiceImageSheetOptions[i]?.label ?? `hoja ${i + 1}`}`}
                         aria-current={i === invoiceCarouselIndex ? 'true' : undefined}
-                        className={cn(
-                          'inline-flex min-h-9 min-w-[1.125rem] shrink-0 items-center justify-center rounded-full border-0 bg-transparent p-0 shadow-none ring-0 outline-none active:scale-95',
-                          i === invoiceCarouselIndex ? 'text-white' : 'text-zinc-500'
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            'block h-1.5 w-1.5 rounded-full transition-colors',
-                            i === invoiceCarouselIndex ? 'bg-white' : 'bg-current'
-                          )}
-                        />
-                      </button>
+                        onClick={() => scrollInvoiceCarouselToIndex(i)}
+                      />
                     ))}
                   </div>
                 ) : null}
@@ -2092,7 +2101,7 @@ export default function AlbaranesHistoricoClient({
         title="Filtrar"
         disableUsageTracking
         footer={
-          <div className="flex w-full justify-end gap-2">
+          <>
             <Button
               type="button"
               variant="tertiary"
@@ -2126,10 +2135,10 @@ export default function AlbaranesHistoricoClient({
             >
               Aplicar
             </Button>
-          </div>
+          </>
         }
       >
-        <div className="p-4 space-y-3 min-w-0 max-w-full">
+        <div className="space-y-3 min-w-0 max-w-full">
           <div className="grid grid-cols-2 gap-2">
             <div>
               <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Desde</p>

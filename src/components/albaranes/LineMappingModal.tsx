@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Check, Loader2, Search, Plus, Settings } from 'lucide-react'
+import { Check, Loader2, Search } from 'lucide-react'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
@@ -17,7 +17,6 @@ import {
   suggestedDimensionalMappingFromIngredient,
   type IngredientDimensionalSource,
 } from '@/lib/ingredient-pack-pricing'
-import { cn } from '@/lib/utils'
 import type { PurchaseInvoiceLine } from '@/app/dashboard/albaranes/actions'
 import {
   confirmInvoiceLineMappingAction,
@@ -523,7 +522,7 @@ export function LineMappingModal({
       className="bg-zinc-50"
       disableUsageTracking
       footer={
-        <div className="flex w-full flex-col gap-1.5 sm:flex-row sm:justify-end">
+        <>
           <Button
             type="button"
             variant="tertiary"
@@ -544,10 +543,10 @@ export function LineMappingModal({
           >
             {alreadyMappedSameIngredient ? 'Guardar' : 'Vincular'}
           </Button>
-        </div>
+        </>
       }
     >
-      <div className="px-2.5 py-2.5 flex flex-col gap-1.5 min-w-0 max-w-full">
+      <div className="flex flex-col gap-1.5 min-w-0 max-w-full">
         {loading ? (
             <div className="flex items-center justify-center gap-2 py-8 text-xs font-medium text-zinc-600">
               <Loader2 className="h-5 w-5 animate-spin text-[#36606F]" />
@@ -571,16 +570,17 @@ export function LineMappingModal({
                     />
                   </div>
                   {onOpenWizardNew && !ingredientId && (
-                    <button
+                    <Button
                       type="button"
+                      variant="secondary"
+                      instance="albaran-line-mapping-new-ingredient"
+                      className="shrink-0"
                       onClick={() => {
                         onOpenWizardNew()
                       }}
-                      className="shrink-0 min-h-12 px-3 inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white text-[10px] font-semibold uppercase tracking-wide text-zinc-700 hover:bg-zinc-50 active:scale-[0.99] transition"
                     >
-                      <Plus className="h-4 w-4" />
                       Nuevo
-                    </button>
+                    </Button>
                   )}
                 </div>
 
@@ -597,20 +597,23 @@ export function LineMappingModal({
                     </div>
                     <div className="flex items-center gap-1">
                       {onOpenWizardPrice && (
-                        <button
+                        <Button
                           type="button"
-                          className="shrink-0 min-h-12 px-2 text-[10px] font-medium uppercase text-[#36606F] underline flex items-center gap-1"
+                          variant="tertiary"
+                          instance="albaran-line-mapping-edit-price"
+                          className="shrink-0"
                           onClick={() => {
                             onOpenWizardPrice()
                           }}
                         >
-                          <Settings className="h-3.5 w-3.5" />
                           Precio
-                        </button>
+                        </Button>
                       )}
-                      <button
+                      <Button
                         type="button"
-                        className="shrink-0 min-h-12 px-2 text-[10px] font-medium uppercase text-emerald-900 underline"
+                        variant="tertiary"
+                        instance="albaran-line-mapping-change-ingredient"
+                        className="shrink-0"
                         onClick={() => {
                           setIngredientId(null)
                           setIngredientLabel(null)
@@ -619,7 +622,7 @@ export function LineMappingModal({
                         }}
                       >
                         Cambiar
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ) : null}
@@ -632,26 +635,25 @@ export function LineMappingModal({
                 ) : searchResults.length > 0 ? (
                   <div className="max-h-40 overflow-y-auto space-y-1 px-1">
                     {searchResults.map((it) => (
-                      <button
+                      <Button
                         key={it.id}
                         type="button"
+                        variant={ingredientId === it.id ? 'secondary' : 'tertiary'}
+                        className="w-full"
+                        instance={`albaran-line-mapping-search-${it.id}`}
                         onClick={() => {
                           setIngredientId(it.id)
                           setIngredientLabel(it.name)
                           applySuggestion(it, { lineUnitFromInvoice: line.line_unit })
                         }}
-                        className={cn(
-                          'flex w-full min-h-12 items-center justify-between gap-2 rounded-lg border px-2 py-1.5 text-left transition active:scale-[0.99]',
-                          ingredientId === it.id
-                            ? 'border-[#36606F] bg-[#36606F]/8 ring-1 ring-[#36606F]/20'
-                            : 'border-zinc-100 bg-zinc-50 hover:bg-white'
-                        )}
                       >
-                        <span className="truncate text-xs font-medium text-zinc-900">{it.name}</span>
-                        <span className="shrink-0 text-[10px] font-normal text-zinc-500 tabular-nums">
-                          {Number(it.current_price || 0).toFixed(2)}€/{it.purchase_unit}
+                        <span className="flex w-full min-w-0 items-center justify-between gap-2 text-left">
+                          <span className="truncate text-xs font-medium">{it.name}</span>
+                          <span className="shrink-0 text-[10px] font-normal tabular-nums">
+                            {Number(it.current_price || 0).toFixed(2)}€/{it.purchase_unit}
+                          </span>
                         </span>
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 ) : searchQuery.trim().length >= 2 ? (
@@ -674,13 +676,15 @@ export function LineMappingModal({
                             `Conversión automática: 1 ${billingMassVolumeNorm} = 1 ${purchaseMassVolumeNorm}`}
                         </p>
                       </div>
-                      <button
+                      <Button
                         type="button"
+                        variant="tertiary"
+                        className="w-full"
+                        instance="albaran-line-mapping-advanced-calibration"
                         onClick={() => setShowAdvancedCalibration(true)}
-                        className="min-h-12 w-full rounded-lg border border-dashed border-zinc-300 bg-zinc-50 px-2 text-[10px] font-semibold uppercase tracking-wide text-zinc-600 hover:bg-white active:scale-[0.99] transition"
                       >
                         Caja, ud u otra conversión…
-                      </button>
+                      </Button>
                     </>
                   ) : isSimpleMode ? (
                     <>
@@ -692,13 +696,15 @@ export function LineMappingModal({
                           1 unidad en el albarán = 1 unidad en almacén
                         </p>
                       </div>
-                      <button
+                      <Button
                         type="button"
+                        variant="tertiary"
+                        className="w-full"
+                        instance="albaran-line-mapping-advanced-calibration-simple"
                         onClick={() => setShowAdvancedCalibration(true)}
-                        className="min-h-12 w-full rounded-lg border border-dashed border-zinc-300 bg-zinc-50 px-2 text-[10px] font-semibold uppercase tracking-wide text-zinc-600 hover:bg-white active:scale-[0.99] transition"
                       >
                         Caja, litros u otra conversión…
-                      </button>
+                      </Button>
                     </>
                   ) : (
                     <>
@@ -770,8 +776,11 @@ export function LineMappingModal({
                         billingMassVolumeNorm,
                         selectedIngredientMeta
                       ) ? (
-                        <button
+                        <Button
                           type="button"
+                          variant="secondary"
+                          className="w-full"
+                          instance="albaran-line-mapping-auto-conversion"
                           onClick={() => {
                             const auto = buildAutomaticSameFamilyDimensional(
                               billingMassVolumeNorm,
@@ -787,23 +796,24 @@ export function LineMappingModal({
                             }
                             setShowAdvancedCalibration(false)
                           }}
-                          className="min-h-12 w-full rounded-lg border border-emerald-200 bg-emerald-50 px-2 text-[10px] font-semibold uppercase tracking-wide text-emerald-900 hover:bg-emerald-100 active:scale-[0.99] transition"
                         >
                           Volver a conversión automática
-                        </button>
+                        </Button>
                       ) : selectedIngredientMeta &&
                         isSimpleAlbaranUnitMapping(selectedIngredientMeta, dimensional, factor) ? (
-                        <button
+                        <Button
                           type="button"
+                          variant="secondary"
+                          className="w-full"
+                          instance="albaran-line-mapping-simple-unit"
                           onClick={() => {
                             setDimensional({ ...SIMPLE_ALBARAN_UNIT_DIMENSIONAL })
                             setFactor('1')
                             setShowAdvancedCalibration(false)
                           }}
-                          className="min-h-12 w-full rounded-lg border border-emerald-200 bg-emerald-50 px-2 text-[10px] font-semibold uppercase tracking-wide text-emerald-900 hover:bg-emerald-100 active:scale-[0.99] transition"
                         >
                           Volver a modo unidad simple
-                        </button>
+                        </Button>
                       ) : null}
                     </>
                   )}
@@ -822,57 +832,53 @@ export function LineMappingModal({
                     Acciones de vínculo / stock
                   </p>
                   {needsRepair && onRepairStock ? (
-                    <button
+                    <Button
                       type="button"
+                      variant="primary"
+                      className="w-full"
+                      instance="albaran-line-mapping-repair-stock"
                       onClick={() => void onRepairStock()}
                       disabled={busy || saving}
-                      className={cn(
-                        'w-full min-h-12 rounded-lg bg-amber-500 text-white text-[10px] font-semibold uppercase tracking-wide',
-                        (busy || saving) && 'opacity-60 pointer-events-none'
-                      )}
                     >
                       Aplicar stock pendiente
-                    </button>
+                    </Button>
                   ) : null}
                   <div className="flex flex-wrap gap-1.5">
                     {stockApplied && onRectifyStock ? (
-                      <button
+                      <Button
                         type="button"
+                        variant="secondary"
+                        instance="albaran-line-mapping-rectify-stock"
+                        className="flex-1 min-w-[8rem]"
                         onClick={() => void onRectifyStock()}
                         disabled={busy || saving}
-                        className={cn(
-                          'min-h-12 flex-1 min-w-[8rem] rounded-lg border border-amber-200 bg-amber-50 text-[10px] font-semibold uppercase text-amber-800',
-                          (busy || saving) && 'opacity-60 pointer-events-none'
-                        )}
                       >
                         Rectificar stock
-                      </button>
+                      </Button>
                     ) : null}
                     {onEditMapping ? (
-                      <button
+                      <Button
                         type="button"
+                        variant="secondary"
+                        instance="albaran-line-mapping-edit-match"
+                        className="flex-1 min-w-[8rem]"
                         onClick={() => void onEditMapping()}
                         disabled={busy || saving}
-                        className={cn(
-                          'min-h-12 flex-1 min-w-[8rem] rounded-lg border border-zinc-200 bg-white text-[10px] font-semibold uppercase text-zinc-700',
-                          (busy || saving) && 'opacity-60 pointer-events-none'
-                        )}
                       >
                         Editar match
-                      </button>
+                      </Button>
                     ) : null}
                     {onRemoveMapping ? (
-                      <button
+                      <Button
                         type="button"
+                        variant="destructive"
+                        instance="albaran-line-mapping-remove-match"
+                        className="flex-1 min-w-[8rem]"
                         onClick={() => void onRemoveMapping()}
                         disabled={busy || saving}
-                        className={cn(
-                          'min-h-12 flex-1 min-w-[8rem] rounded-lg border border-rose-200 bg-rose-50 text-[10px] font-semibold uppercase text-rose-700',
-                          (busy || saving) && 'opacity-60 pointer-events-none'
-                        )}
                       >
                         Eliminar match
-                      </button>
+                      </Button>
                     ) : null}
                   </div>
                 </section>

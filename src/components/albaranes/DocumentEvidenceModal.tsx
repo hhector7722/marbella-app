@@ -9,6 +9,7 @@ import {
   type DocumentEvidencePayload,
 } from '@/app/dashboard/albaranes/actions'
 import { Modal } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
 import { resolveActiveProvenance } from '@/lib/albaranes/document-evidence'
 
 interface DocumentEvidenceModalProps {
@@ -168,7 +169,7 @@ export function DocumentEvidenceModal({
       title="Auditoría de evidencia"
       subtitle={formatEvidenceSubtitle(supplierName, invoiceNumber)}
     >
-      <div className="px-3 py-3 bg-zinc-50/50 min-w-0 max-w-full flex flex-col gap-2">
+      <div className="bg-zinc-50/50 min-w-0 max-w-full flex flex-col gap-2">
           {loading ? (
             <div className="flex flex-col items-center justify-center min-h-[200px] text-zinc-500 gap-2">
               <Loader2 className="h-6 w-6 animate-spin text-[#36606F]" />
@@ -238,71 +239,75 @@ export function DocumentEvidenceModal({
                   onOpenProduct ||
                   (data.line && data.line.status !== 'excluded' && data.line.status !== 'expense_only' && (onExcludeFromMapping || onMarkExpenseOnly)) ||
                   (data.line && (data.line.status === 'excluded' || data.line.status === 'expense_only') && onRestoreStatus) ? (
-                    <div className="flex flex-col gap-1.5 pt-1 border-t border-zinc-100 px-1">
-                      <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap">
+                    <div className="flex flex-col gap-1.5 pt-1 border-t border-zinc-100">
+                      <div className="flex flex-wrap gap-1.5">
                         {onOpenProduct && (
-                          <button
+                          <Button
                             type="button"
+                            variant="tertiary"
+                            instance="albaran-document-evidence-open-product"
                             onClick={() => {
                               onOpenProduct()
                             }}
-                            className="min-h-12 text-[10px] font-semibold uppercase tracking-wide text-sky-700 bg-sky-50 hover:bg-sky-100 px-2 rounded-lg transition active:scale-[0.98]"
                           >
                             Ver producto
-                          </button>
+                          </Button>
                         )}
                         {isManager && onOpenEditor && (
-                          <button
+                          <Button
                             type="button"
+                            variant="secondary"
+                            instance="albaran-document-evidence-open-editor"
                             onClick={() => onOpenEditor()}
-                            className="min-h-12 text-[10px] font-semibold uppercase tracking-wide text-[#36606F] bg-zinc-100 hover:bg-zinc-200 px-2 rounded-lg transition active:scale-[0.98]"
                           >
-                            <span className="sm:hidden">Corregir</span>
-                            <span className="hidden sm:inline">Corregir valores</span>
-                          </button>
+                            Corregir valores
+                          </Button>
                         )}
                       </div>
 
                       {data.line && data.line.status !== 'excluded' && data.line.status !== 'expense_only' && (onExcludeFromMapping || onMarkExpenseOnly) ? (
-                        <div className="flex flex-wrap items-center gap-1">
+                        <div className="flex flex-wrap items-center gap-1.5">
                           {onExcludeFromMapping && (
-                            <button
+                            <Button
                               type="button"
+                              variant="tertiary"
+                              instance="albaran-document-evidence-exclude-portes"
                               onClick={() => {
                                 onExcludeFromMapping()
                                 onClose()
                               }}
-                              className="min-h-12 px-2 text-[10px] font-medium uppercase tracking-wide text-zinc-500 hover:text-zinc-700 hover:bg-zinc-50 rounded-lg transition active:scale-[0.98]"
                             >
                               Portes
-                            </button>
+                            </Button>
                           )}
                           {onMarkExpenseOnly && (
-                            <button
+                            <Button
                               type="button"
+                              variant="tertiary"
+                              instance="albaran-document-evidence-mark-expense"
                               onClick={() => {
                                 onMarkExpenseOnly()
                                 onClose()
                               }}
-                              className="min-h-12 px-2 text-[10px] font-medium uppercase tracking-wide text-amber-700/80 hover:text-amber-800 hover:bg-amber-50 rounded-lg transition active:scale-[0.98]"
                             >
                               Gasto
-                            </button>
+                            </Button>
                           )}
                         </div>
                       ) : null}
 
                       {data.line && (data.line.status === 'excluded' || data.line.status === 'expense_only') && onRestoreStatus ? (
-                        <button
+                        <Button
                           type="button"
+                          variant="secondary"
+                          instance="albaran-document-evidence-restore-status"
                           onClick={() => {
                             onRestoreStatus()
                             onClose()
                           }}
-                          className="min-h-12 w-full sm:w-auto text-[10px] font-medium uppercase tracking-wide text-zinc-600 bg-white border border-zinc-200 hover:bg-zinc-50 px-2 rounded-lg transition active:scale-[0.98]"
                         >
                           Restaurar estado
-                        </button>
+                        </Button>
                       ) : null}
                     </div>
                   ) : null}
@@ -438,20 +443,21 @@ export function DocumentEvidenceModal({
 
                       if (canSelectRows) {
                         return (
-                          <button
+                          <Button
                             key={row.document_row_id}
                             type="button"
+                            variant={isSelected ? 'secondary' : 'tertiary'}
+                            className="w-full"
+                            instance={`albaran-document-evidence-row-${row.document_row_id}`}
                             onClick={() => {
                               setSelectedRowId(row.document_row_id)
                               setConfirmError(null)
                             }}
-                            className={cn(
-                              'group flex flex-row items-center gap-1.5 sm:gap-3 px-1 py-1.5 min-h-12 w-full text-left rounded-lg transition-colors hover:bg-zinc-50 active:bg-zinc-100 min-w-0',
-                              isSelected && 'bg-[#36606F]/[0.06]'
-                            )}
                           >
-                            {rowBody}
-                          </button>
+                            <span className="flex w-full min-w-0 flex-row items-center gap-1.5 sm:gap-3 text-left">
+                              {rowBody}
+                            </span>
+                          </Button>
                         )
                       }
 
@@ -474,19 +480,18 @@ export function DocumentEvidenceModal({
                       {confirmError ? (
                         <p className="text-xs font-medium text-red-600 px-1">{confirmError}</p>
                       ) : null}
-                      <button
+                      <Button
                         type="button"
+                        variant="primary"
+                        className="w-full"
+                        instance="albaran-document-evidence-confirm"
                         disabled={!selectedRowId || confirming}
+                        loading={confirming}
+                        loadingLabel="Confirmando…"
                         onClick={() => void handleConfirmEvidence()}
-                        className={cn(
-                          'w-full min-h-12 rounded-lg text-xs font-semibold transition active:scale-[0.99]',
-                          selectedRowId && !confirming
-                            ? 'bg-[#36606F] text-white hover:bg-[#2c4f5c]'
-                            : 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
-                        )}
                       >
-                        {confirming ? 'Confirmando…' : 'Confirmar evidencia'}
-                      </button>
+                        Confirmar evidencia
+                      </Button>
                       <p className="text-[9px] font-normal text-zinc-400 text-center leading-snug">
                         Solo vínculo documental · no modifica mapping
                       </p>

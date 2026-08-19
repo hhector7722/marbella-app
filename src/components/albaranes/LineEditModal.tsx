@@ -1,6 +1,5 @@
 'use client'
 
-import { cn } from '@/lib/utils'
 import type { PurchaseInvoiceLine } from '@/app/dashboard/albaranes/actions'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
@@ -69,7 +68,7 @@ export function LineEditModal({
       }
     >
       {draft ? (
-        <div className="px-3 py-3 flex flex-col gap-2 min-w-0 max-w-full">
+        <div className="flex flex-col gap-2 min-w-0 max-w-full">
           <section className="rounded-lg border border-zinc-200 bg-white p-2 space-y-2">
             <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">Datos del albarán</p>
             <label className="block space-y-0.5 px-1">
@@ -119,17 +118,18 @@ export function LineEditModal({
               </label>
             </div>
             {isDirty ? (
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                className="w-full"
+                instance="albaran-line-edit-save"
                 onClick={() => void onSaveLine()}
                 disabled={saving}
-                className={cn(
-                  'w-full min-h-12 rounded-lg bg-[#36606F] text-white text-[10px] font-semibold uppercase tracking-wider',
-                  saving && 'opacity-60 pointer-events-none'
-                )}
+                loading={saving}
+                loadingLabel="Guardando…"
               >
-                {saving ? 'Guardando…' : 'Guardar línea'}
-              </button>
+                Guardar línea
+              </Button>
             ) : null}
           </section>
         </div>
