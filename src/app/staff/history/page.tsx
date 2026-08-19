@@ -28,6 +28,7 @@ import {
 import { formatMadridHmFromIso, formatYmdInMadrid, madridRangeUtcIso } from '@/lib/madrid-date-bounds';
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Modal } from '@/components/ui/modal';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { trackUsageModalApply } from '@/lib/usage/client';
@@ -134,12 +135,6 @@ export default function HistoryPage() {
         open: showEmployeeDropdown,
         usageId: 'staff-history-employee-filter',
         usageLabel: 'Filtro asistencia',
-    });
-
-    useModalUsageTracking({
-        open: showMonthPicker,
-        usageId: 'staff-history-month-picker',
-        usageLabel: 'Selector de mes',
     });
 
     const [editingDate, setEditingDate] = useState<string | null>(null);
@@ -1046,65 +1041,54 @@ export default function HistoryPage() {
                 />
             ) : null}
 
-            {showMonthPicker && (
-                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[150] p-4 animate-in fade-in duration-200" onClick={() => setShowMonthPicker(false)}>
-                    <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col" onClick={e => e.stopPropagation()}>
-                        {/* Header Estilo Marbella (como Plantilla) */}
-                        <div className="bg-[#36606F] px-8 py-6 flex justify-between items-center text-white shrink-0">
-                            <h3 className="text-xl font-black uppercase tracking-wider leading-none">Seleccionar mes</h3>
-                            <button onClick={() => setShowMonthPicker(false)} className="w-12 h-12 min-h-[48px] flex items-center justify-center bg-white/10 rounded-2xl hover:bg-white/20 transition-all text-white active:scale-90">
-                                <X size={24} strokeWidth={3} />
-                            </button>
-                        </div>
-
-                        <div className="p-6 overflow-y-auto bg-white">
-                            <div className="flex items-center justify-between mb-6 px-2">
-                                <button onClick={() => setPickerYear(pickerYear - 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"><ChevronLeft size={20} className="text-zinc-400" /></button>
-                                <span className="font-black text-xl text-zinc-900 tracking-tighter">{pickerYear}</span>
-                                <button onClick={() => setPickerYear(pickerYear + 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"><ChevronRight size={20} className="text-zinc-400" /></button>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2">
-                                {Array.from({ length: 12 }).map((_, i) => {
-                                    const date = new Date(pickerYear, i, 1);
-                                    const isSelected = filterMonth === i && filterYear === pickerYear;
-                                    return (
-                                        <button
-                                            key={i}
-                                            onClick={() => {
-                                                setFilterMonth(i);
-                                                setFilterYear(pickerYear);
-                                                setShowMonthPicker(false);
-                                                trackUsageModalApply(
-                                                    'staff-history-month-picker',
-                                                    'Selector de mes',
-                                                    pathname,
-                                                    format(date, 'MMMM yyyy', { locale: es })
-                                                );
-                                            }}
-                                            className={cn(
-                                                "py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 min-h-[48px]",
-                                                isSelected ? "bg-[#36606F] border-[#36606F] text-white shadow-lg" : "bg-zinc-50 border-transparent text-zinc-400 hover:border-[#36606F]/20 hover:text-zinc-900 hover:bg-[#36606F]/5"
-                                            )}
-                                        >
-                                            {format(date, 'MMM', { locale: es })}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        <div className="p-4 bg-zinc-50 border-t border-zinc-100 shrink-0">
-                            <button
-                                type="button"
-                                onClick={() => setShowMonthPicker(false)}
-                                className="w-full min-h-[48px] h-12 bg-zinc-200 text-zinc-600 font-black uppercase tracking-widest text-[10px] rounded-xl hover:bg-zinc-300 transition-all active:scale-95"
-                            >
-                                Cerrar Ventana
-                            </button>
-                        </div>
+            <Modal
+                open={showMonthPicker}
+                onClose={() => setShowMonthPicker(false)}
+                variant="compact"
+                layer="base"
+                instance="staff-history-month-picker"
+                usageId="staff-history-month-picker"
+                usageLabel="Selector de mes"
+                title="Seleccionar mes"
+                headerTone="petroleum"
+            >
+                <div className="p-6">
+                    <div className="flex items-center justify-between mb-6 px-2">
+                        <button type="button" onClick={() => setPickerYear(pickerYear - 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"><ChevronLeft size={20} className="text-zinc-400" /></button>
+                        <span className="font-black text-xl text-zinc-900 tracking-tighter">{pickerYear}</span>
+                        <button type="button" onClick={() => setPickerYear(pickerYear + 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"><ChevronRight size={20} className="text-zinc-400" /></button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                        {Array.from({ length: 12 }).map((_, i) => {
+                            const date = new Date(pickerYear, i, 1);
+                            const isSelected = filterMonth === i && filterYear === pickerYear;
+                            return (
+                                <button
+                                    key={i}
+                                    type="button"
+                                    onClick={() => {
+                                        setFilterMonth(i);
+                                        setFilterYear(pickerYear);
+                                        setShowMonthPicker(false);
+                                        trackUsageModalApply(
+                                            'staff-history-month-picker',
+                                            'Selector de mes',
+                                            pathname,
+                                            format(date, 'MMMM yyyy', { locale: es })
+                                        );
+                                    }}
+                                    className={cn(
+                                        "py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 min-h-[48px]",
+                                        isSelected ? "bg-[#36606F] border-[#36606F] text-white shadow-lg" : "bg-zinc-50 border-transparent text-zinc-400 hover:border-[#36606F]/20 hover:text-zinc-900 hover:bg-[#36606F]/5"
+                                    )}
+                                >
+                                    {format(date, 'MMM', { locale: es })}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
-            )}
+            </Modal>
         </div >
     );
 }

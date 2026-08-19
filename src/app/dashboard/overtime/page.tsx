@@ -1,7 +1,7 @@
 'use client';
 
 import {
-    ChevronLeft, ChevronRight, Check, Circle, X
+    ChevronLeft, ChevronRight, Check, Circle
 } from 'lucide-react';
 import React, { memo, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -15,7 +15,7 @@ import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { Modal } from '@/components/ui/modal';
 import { overtimeWeekDetailUsageLabel } from '@/lib/usage/modal-apply';
 
 // REGLA ZERO-DISPLAY: En vistas de lectura, cualquier valor igual a 0 debe mostrarse como un espacio vacío " ".
@@ -96,11 +96,6 @@ export default function OvertimePage() {
         return overtimeWeekDetailUsageLabel(weekDetailModal.week.weekId, getISOWeek(weekStart));
     }, [weekDetailModal]);
 
-    useModalUsageTracking({
-        open: weekDetailModal !== null,
-        usageId: 'overtime-week-detail',
-        usageLabel: weekDetailTrackingLabel,
-    });
     const [paidStatus, setPaidStatus] = useState<Record<string, boolean>>({});
     const [selectedHistory, setSelectedHistory] = useState<{ workerId: string; weekId: string } | null>(null);
     const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
@@ -321,19 +316,28 @@ export default function OvertimePage() {
                 const weekNum = getISOWeek(modalWeekStart);
                 const periodStr = `${format(modalWeekStart, 'd MMM', { locale: es })} - ${format(addDays(modalWeekStart, 6), 'd MMM yyyy', { locale: es })}`;
                 return (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setWeekDetailModal(null)}>
-                        <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[85vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-                            <div className="bg-[#36606F] px-4 py-3 flex items-center justify-between gap-3 shrink-0">
-                                <span className="text-base font-black text-white shrink-0">{weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}</span>
-                                <div className="flex-1 flex flex-col gap-0.5 min-w-0 text-center">
-                                    <h3 className="text-sm font-black uppercase tracking-wider text-white">Semana {weekNum}</h3>
-                                    <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">{periodStr}</span>
-                                </div>
-                                <button type="button" onClick={() => setWeekDetailModal(null)} className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white shrink-0"><X className="w-5 h-5" /></button>
-                            </div>
+                    <Modal
+                        open
+                        onClose={() => {
+                            setWeekDetailModal(null);
+                            setSelectedHistory(null);
+                        }}
+                        variant="standard"
+                        layer="base"
+                        instance="overtime-week-detail"
+                        usageId="overtime-week-detail"
+                        usageLabel={weekDetailTrackingLabel}
+                        headerTone="petroleum"
+                        title={`Semana ${weekNum}`}
+                        subtitle={periodStr}
+                    >
+                        <div className="px-4 pb-4 space-y-3">
+                            <span className="text-base font-black text-zinc-900 leading-none">
+                                {weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}
+                            </span>
                             <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
                             <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
-                            <div className="p-4 overflow-y-auto flex-1 space-y-2">
+                            <div className="space-y-2">
                                 {weekStaff.map((s: any) => (
                                     <StaffOvertimeRow
                                         key={s.id}
@@ -351,7 +355,7 @@ export default function OvertimePage() {
                                 )}
                             </div>
                         </div>
-                    </div>
+                    </Modal>
                 );
             })()}
 
@@ -377,6 +381,7 @@ export default function OvertimePage() {
                 onClose={() => setSelectedHistory(null)}
                 workerId={selectedHistory?.workerId || ''}
                 weekStart={selectedHistory?.weekId || ''}
+                layer="derived"
             />
         </>
     );

@@ -25,9 +25,11 @@ interface CashDenominationFormProps {
     submitLabel?: string;
     isEditing?: boolean; // New prop
     forcePurchaseMode?: boolean; // New prop
-    /** Modal botes propinas: sin subtítulo, fecha ni concepto; cabecera con esquinas redondeadas */
+    /** Modal botes propinas: solo el contenido funcional; el host aporta chrome Modal. */
     variant?: 'default' | 'tipPool';
 }
+
+export const TIP_POOL_CASH_FORM_ID = 'tips-cash-denomination-form';
 
 function inventoryFromStockMap(stock: Record<number, number>) {
     return DENOMINATIONS.map((d) => ({ denomination: d, quantity: stock[d] || 0 })).filter((r) => r.quantity > 0);
@@ -233,12 +235,13 @@ export const CashDenominationForm = ({
 
     const bgClass = isAudit ? 'bg-orange-400' : (type === 'in' ? 'bg-emerald-400' : 'bg-rose-400');
 
-    return (
-        <div className={cn('flex flex-col h-full overflow-hidden bg-white relative', !isTipPool && 'rounded-2xl')}>
-            <div className={cn(
-                'bg-[#36606F] px-6 py-2.5 flex items-center gap-3 text-white shrink-0',
-                isTipPool && 'rounded-t-xl md:rounded-t-[2.5rem]'
-            )}>
+    const tree = (
+        <div className={cn(
+            'relative flex flex-col bg-white',
+            isTipPool ? 'min-h-0' : 'h-full overflow-hidden rounded-2xl',
+        )}>
+            {!isTipPool ? (
+            <div className="bg-[#36606F] px-6 py-2.5 flex items-center gap-3 text-white shrink-0">
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                     {!isSimplifiedHeader && (
                         <div className={cn(
@@ -324,6 +327,7 @@ export const CashDenominationForm = ({
                     )}
                 </div>
             </div>
+            ) : null}
             <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
             <FloatingCalculatorFab
                 isOpen={calculatorOpen}
@@ -340,7 +344,18 @@ export const CashDenominationForm = ({
                     availableStock={((type === 'out' && !isPurchaseMode) || (isPurchaseMode && purchaseTab === 'given')) ? (availableStock[zoomDenom] || 0) : undefined}
                 />
             )}
-            <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
+            <div className={cn(
+                isTipPool ? 'min-h-0 space-y-4 p-4' : 'flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4',
+            )}>
+
+                {isTipPool ? (
+                    <div className="flex items-center justify-end gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Total</span>
+                        <span className="text-base font-black tabular-nums text-zinc-800">
+                            {totalGiven > 0.005 ? `${totalGiven.toFixed(2)}€` : ' '}
+                        </span>
+                    </div>
+                ) : null}
 
                 {/* DATE & NOTES & PRICE ROW (oculto en variant tipPool) */}
                 {!isTipPool && isPurchaseMode ? (
@@ -526,7 +541,10 @@ export const CashDenominationForm = ({
                     )
                 ) : null}
 
-                <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5 p-0.5">
+                <div className={cn(
+                    'grid gap-y-2 gap-x-1.5 p-0.5',
+                    isTipPool ? 'grid-cols-3 sm:grid-cols-5' : 'grid-cols-4 sm:grid-cols-5',
+                )}>
                     {DENOMINATIONS.map(denom => {
                         const hasStockIssue = ((type === 'out' && !isPurchaseMode) || (isPurchaseMode && purchaseTab === 'given')) && (counts[denom] || 0) > (availableStock[denom] || 0);
                         const currentCounts = isPurchaseMode && purchaseTab === 'received' ? receivedCounts : counts;
@@ -582,7 +600,7 @@ export const CashDenominationForm = ({
                         );
                     })}
 
-                    {/* IN-GRID ACTIONS (Fills the remaining 3 columns next to 1c on small screens, or wraps on larger depending on cols) */}
+                    {!isTipPool ? (
                     <div className={cn(
                         "col-span-3 sm:hidden flex items-end justify-end gap-1.5 h-full pt-4",
                         (((!isPurchaseMode && type === 'out') || (isPurchaseMode && purchaseTab === 'given')) && (availableStock[0.01] || 0) > 0)
@@ -656,9 +674,11 @@ export const CashDenominationForm = ({
                             </>
                         )}
                     </div>
+                    ) : null}
                 </div>
             </div>
             {/* DESKTOP FOOTER */}
+            {!isTipPool ? (
             <div className={cn(
                 'hidden sm:flex p-3 bg-white border-t gap-2 shrink-0',
                 isEntradaSalidaFlow && 'justify-end',
@@ -730,6 +750,24 @@ export const CashDenominationForm = ({
                     </>
                 )}
             </div>
-        </div >
+            ) : null}
+        </div>
+    );
+
+    if (!isTipPool) {
+        return tree;
+    }
+
+    return (
+        <form
+            id={TIP_POOL_CASH_FORM_ID}
+            className="min-h-0"
+            onSubmit={(e) => {
+                e.preventDefault();
+                handleConfirm();
+            }}
+        >
+            {tree}
+        </form>
     );
 };

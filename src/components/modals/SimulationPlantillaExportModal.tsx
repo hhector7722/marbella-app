@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Search, FileText } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 import { MIN_PLANTILLA_DAILY_STAFF } from '@/lib/staff/plantilla-schedule-coordinator';
 
 export interface SimulationPlantillaEmployee {
@@ -93,13 +94,25 @@ export function SimulationPlantillaExportModal({
         <Modal
             open={isOpen}
             onClose={onClose}
-            title="Simulación de jornada"
-            subtitle={`Ene – hoy ${year} · elige quién entra en la plantilla simulada`}
-            headerVariant="petroleum"
-            wrapperClassName="max-w-md"
-            zIndexClass="z-[160]"
+            variant="standard"
+            layer="base"
+            instance="staff-history-simulation-export"
             usageId="staff-history-simulation-export"
             usageLabel="Exportar simulación"
+            title="Simulación de jornada"
+            subtitle={`Ene – hoy ${year} · elige quién entra en la plantilla simulada`}
+            headerTone="petroleum"
+            footer={
+                <Button
+                    type="button"
+                    variant="primary"
+                    instance="staff-history-simulation-export-pdf"
+                    onClick={handleExport}
+                    disabled={selectedCount === 0 || isExporting}
+                >
+                    Generar PDF
+                </Button>
+            }
         >
             <div className="flex flex-col max-h-[75dvh]">
                 <div className="shrink-0 px-4 pt-3 pb-2 border-b border-zinc-100">
@@ -177,17 +190,6 @@ export function SimulationPlantillaExportModal({
                     )}
                 </div>
 
-                <div className="shrink-0 border-t border-zinc-100 px-4 py-3">
-                    <button
-                        type="button"
-                        onClick={handleExport}
-                        disabled={selectedCount === 0 || isExporting}
-                        className="w-full flex items-center justify-center gap-2 min-h-12 rounded-xl bg-[#36606F] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#36606F]/90 disabled:opacity-40 transition-all active:scale-[0.98]"
-                    >
-                        <FileText size={14} />
-                        Generar {selectedCount} PDF{selectedCount !== 1 ? 's' : ''}
-                    </button>
-                </div>
             </div>
         </Modal>
     );

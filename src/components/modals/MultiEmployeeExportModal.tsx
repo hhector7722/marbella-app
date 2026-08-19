@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Search, X, ChevronLeft, ChevronRight, FileText, FileSpreadsheet } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -101,11 +102,36 @@ export function MultiEmployeeExportModal({
         <Modal
             open={isOpen}
             onClose={onClose}
+            variant="standard"
+            layer="base"
+            instance="staff-history-export-employees"
+            usageId="staff-history-export-employees"
+            usageLabel="Exportar empleados"
             title="Exportar empleados"
             subtitle={`${employees.length} empleados activos`}
-            headerVariant="petroleum"
-            wrapperClassName="max-w-md"
-            zIndexClass="z-[160]"
+            headerTone="petroleum"
+            footer={
+                <>
+                    <Button
+                        type="button"
+                        variant="primary"
+                        instance="staff-history-export-employees-pdf"
+                        onClick={() => handleExport('pdf')}
+                        disabled={selectedCount === 0 || monthsArray.length === 0 || isExporting}
+                    >
+                        PDF
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        instance="staff-history-export-employees-excel"
+                        onClick={() => handleExport('xlsx')}
+                        disabled={selectedCount === 0 || monthsArray.length === 0 || isExporting}
+                    >
+                        Excel
+                    </Button>
+                </>
+            }
         >
             <div className="flex flex-col max-h-[75dvh]">
                 {/* ── SELECCIÓN DE MESES ── */}
@@ -214,26 +240,6 @@ export function MultiEmployeeExportModal({
                     )}
                 </div>
 
-                <div className="shrink-0 border-t border-zinc-100 px-4 py-3 flex gap-2">
-                    <button
-                        type="button"
-                        onClick={() => handleExport('pdf')}
-                        disabled={selectedCount === 0 || monthsArray.length === 0 || isExporting}
-                        className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl bg-[#36606F] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#36606F]/90 disabled:opacity-40 transition-all active:scale-[0.98]"
-                    >
-                        <FileText size={14} />
-                        PDF
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => handleExport('xlsx')}
-                        disabled={selectedCount === 0 || monthsArray.length === 0 || isExporting}
-                        className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 disabled:opacity-40 transition-all active:scale-[0.98]"
-                    >
-                        <FileSpreadsheet size={14} />
-                        EXCEL
-                    </button>
-                </div>
             </div>
         </Modal>
     );

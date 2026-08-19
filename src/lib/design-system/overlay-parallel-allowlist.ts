@@ -21,8 +21,6 @@ export const LEGACY_PARALLEL_OVERLAY_ALLOWLIST = [
     'src/app/dashboard/history/page.tsx',
     'src/app/dashboard/insights/InsightsClient.tsx',
     'src/app/dashboard/insights/insights-date-filter.tsx',
-    'src/app/dashboard/labor/page.tsx',
-    'src/app/dashboard/overtime/page.tsx',
     'src/app/dashboard/scanner/ScannerClient.tsx',
     'src/app/dashboard/ventas/page.tsx',
     'src/app/error.tsx',

@@ -21,7 +21,7 @@ Techo duro: 200 líneas. Si no cabe, es que se está usando como changelog.
 
 ## Resumen en tres frases
 
-El producto está en producción y sostiene la operación diaria del negocio. El dominio de horas acaba de completar la reconstrucción de su motor de cálculo y es la zona en movimiento. La deuda dominante sigue siendo estructural: hay contrato oficial de Modal (Albaranes, Caja/Tesorería, Perfil/documentos RRHH, Propinas, Pedidos/Proveedores, Consumo personal, parte de Staff/Admin y el escandallo de mapeo TPV) y de Button, y `DashboardShortcut` en Master más los 8 atajos cuadrados de Staff/Admin, pero no hay sistema de componentes completo y la mitad del código vive innecesariamente en el navegador.
+El producto está en producción y sostiene la operación diaria del negocio. El dominio de horas acaba de completar la reconstrucción de su motor de cálculo y es la zona en movimiento. La deuda dominante sigue siendo estructural: hay contrato oficial de Modal (Albaranes, Caja/Tesorería, Perfil/documentos RRHH, Propinas, Pedidos/Proveedores, Consumo personal, parte de Staff/Admin, el escandallo TPV y la oleada parcial de Labor/Overtime/Historial) y de Button, y `DashboardShortcut` en Master más los 8 atajos cuadrados de Staff/Admin, pero no hay sistema de componentes completo y la mitad del código vive innecesariamente en el navegador.
 
 ---
 

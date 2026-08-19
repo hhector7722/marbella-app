@@ -11,7 +11,7 @@ import { CheckCircle2, Clock, Plus, RefreshCw } from 'lucide-react';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
-import { CashDenominationForm } from '@/components/CashDenominationForm';
+import { CashDenominationForm, TIP_POOL_CASH_FORM_ID } from '@/components/CashDenominationForm';
 import { TipOverrideModal, type TipOverrideDraft } from '@/components/tips/TipOverrideModal';
 import { TipConfirmDistributionModal } from '@/components/tips/TipConfirmDistributionModal';
 import { TipDistributionHistorySection } from '@/components/tips/TipDistributionHistorySection';
@@ -82,7 +82,7 @@ const TIP_EXPAND_TD = 'bg-[#36606F]/[0.07] hover:bg-[#36606F]/[0.11]';
 
 const TIP_TABLE_TH = 'whitespace-nowrap px-2 py-1.5 align-middle leading-none';
 const TIP_TABLE_TH_TEXT =
-  'text-[7px] font-black uppercase tracking-wide md:text-[8px]';
+  'text-[10px] font-black uppercase tracking-wide md:text-[8px]';
 const TIP_TABLE_TH_BTN =
   'inline-flex w-full max-w-full items-center gap-1 py-0 leading-none active:scale-95';
 const TIP_TABLE_BODY_TEXT = 'text-[10px] font-black leading-none md:text-[11px]';
@@ -410,12 +410,12 @@ export default function TipsDashboardView({
       <div className="max-w-6xl mx-auto space-y-3 md:space-y-6 min-w-0">
         <div className="bg-white rounded-xl md:rounded-[2.5rem] shadow-xl md:shadow-2xl overflow-hidden min-w-0">
           <div className="bg-[#36606F] p-3 md:p-6 relative">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <div className="min-w-0">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0 flex-1">
                 <h1 className="text-sm md:text-4xl font-black text-white uppercase tracking-tight italic truncate">
                   Propinas
                 </h1>
-                <p className="text-white text-[7px] md:text-[10px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] mt-0.5 md:mt-1 truncate">
+                <p className="text-white text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] mt-0.5 md:mt-1 truncate">
                   Rango manual • {rangeLabel}
                 </p>
               </div>
@@ -461,10 +461,14 @@ export default function TipsDashboardView({
                 <button
                   type="button"
                   onClick={() => openCash('weekday')}
-                  className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-white/15 hover:bg-white/25 flex items-center justify-center shrink-0 active:scale-95 transition-all min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
+                  className="relative h-7 w-7 shrink-0 md:h-8 md:w-8"
                   title="Introducir cantidades"
+                  aria-label="Introducir cantidades entre semana"
                 >
-                  <Plus size={15} strokeWidth={3.5} className="text-white" />
+                  <span className="absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2" aria-hidden />
+                  <span className="relative flex h-full w-full items-center justify-center rounded-lg bg-white/15 hover:bg-white/25 active:scale-95 transition-all">
+                    <Plus size={15} strokeWidth={3.5} className="text-white" />
+                  </span>
                 </button>
               </div>
 
@@ -485,10 +489,14 @@ export default function TipsDashboardView({
                 <button
                   type="button"
                   onClick={() => openCash('weekend')}
-                  className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-white/15 hover:bg-white/25 flex items-center justify-center shrink-0 active:scale-95 transition-all min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
+                  className="relative h-7 w-7 shrink-0 md:h-8 md:w-8"
                   title="Introducir cantidades"
+                  aria-label="Introducir cantidades fin de semana"
                 >
-                  <Plus size={15} strokeWidth={3.5} className="text-white" />
+                  <span className="absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2" aria-hidden />
+                  <span className="relative flex h-full w-full items-center justify-center rounded-lg bg-white/15 hover:bg-white/25 active:scale-95 transition-all">
+                    <Plus size={15} strokeWidth={3.5} className="text-white" />
+                  </span>
                 </button>
               </div>
             </div>
@@ -515,7 +523,7 @@ export default function TipsDashboardView({
                 </div>
               )}
               <div className="isolate overflow-x-auto touch-pan-y overscroll-y-auto">
-                <table className="w-full table-fixed border-collapse">
+                <table className="w-full border-collapse max-md:table-auto md:table-fixed">
                   <thead>
                     <tr className="align-middle bg-[#36606F] text-white">
                       <th
@@ -883,10 +891,25 @@ export default function TipsDashboardView({
           usageLabel={
             cashModal.poolType === 'weekday' ? 'Bote propina entre semana' : 'Bote propina fin de semana'
           }
-          hideHeader
-          scrollContent={false}
-          ariaLabel={
-            cashModal.poolType === 'weekday' ? 'Propina entre semana' : 'Propina fin de semana'
+          footer={
+            <div className="flex w-full flex-wrap items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                instance={`tips-cash-${cashModal.poolType}-cancel`}
+                onClick={() => setCashModal(null)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                instance={`tips-cash-${cashModal.poolType}-submit`}
+                form={TIP_POOL_CASH_FORM_ID}
+              >
+                Guardar
+              </Button>
+            </div>
           }
         >
           <CashDenominationForm
