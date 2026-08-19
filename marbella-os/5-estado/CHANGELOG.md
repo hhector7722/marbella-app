@@ -38,6 +38,7 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-19
 
+- **Corrección visual TipOverride.** El modal de usuario de Propinas deja el Avatar fuera de la cabecera de 36 px y alinea el body con el inset de Albaranes (`p-4`, sin fondo gris de segunda superficie). Footer y capa `base` sin cambio.
 - **Corrección visual Propinas (página y bote).** En `/propinas` la cabecera deja de partirse en móvil, los `+` de bote ya no inflan las tarjetas y la tabla gana cuerpo legible sin rediseño. El modal de entrada de dinero usa cabecera y footer oficiales; `CashDenominationForm` en `tipPool` aporta solo el desglose. Caja (`variant` por defecto) no cambia de cromo.
 - **Oleada parcial Horarios / Labor / Historial.** El detalle de día de coste laboral, el detalle de semana de horas extras, el selector de mes del historial y `DaySummaryModal` (con crear fichaje `derived`) adoptan `Modal`. Los footers de exportación de historial usan `Button`. Quedan fuera `StaffScheduleModal`, `ScheduleDayEditor`, `AttendanceDetailModal`, el overlay de `WeekCard` y `QuickCalculatorModal` (residual). Sin cambio de contrato Modal/Button ni ADR.
 - **Button: fondo compacto 28 px y radio propio.** El área táctil sigue en 48 px, transparente. El fondo visual compacto pasa a 28 px (12 px de tipo + `espacio.2` arriba y abajo). El radio contractual es 8 px (`espacio.2`), menor que la mitad del alto visual, para no producir píldora. `radio.superficie` (16 px) permanece en Modal. Icon-only sigue en 48×48.

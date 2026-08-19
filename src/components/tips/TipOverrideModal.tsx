@@ -98,17 +98,7 @@ export function TipOverrideModal({
       <Modal
         open={isOpen}
         onClose={handleClose}
-        title={
-          <span className="flex min-w-0 items-center gap-2 md:gap-3">
-            <Avatar
-              src={profile?.avatar_url ?? undefined}
-              alt={displayName}
-              size="sm"
-              className="shrink-0 ring-2 ring-white/30"
-            />
-            <span className="truncate">{displayName}</span>
-          </span>
-        }
+        title={displayName}
         variant="standard"
         layer="base"
         instance="tip-override"
@@ -140,39 +130,47 @@ export function TipOverrideModal({
           </div>
         }
       >
-        <div className="space-y-2 bg-gray-50 p-2.5 sm:p-3 md:space-y-3">
+        <div className="flex min-w-0 max-w-full flex-col gap-3 p-4">
           <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm md:rounded-2xl">
-            <label className="group flex cursor-pointer items-center gap-3">
-              <div className="relative flex h-6 w-6 items-center justify-center rounded-lg border-2 border-zinc-300 bg-zinc-50 transition-all group-hover:border-rose-400 md:h-8 md:w-8">
-                <input
-                  type="checkbox"
-                  checked={isSanctioned}
-                  onChange={(e) => setIsSanctioned(e.target.checked)}
-                  className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                />
-                <div
-                  className={cn(
-                    'absolute inset-0 scale-0 rounded-md bg-rose-500 opacity-0 transition-all',
-                    isSanctioned && 'scale-100 opacity-100'
-                  )}
-                />
-                <X
-                  strokeWidth={4}
-                  className={cn(
-                    'relative z-10 h-4 w-4 text-white transition-all scale-0 opacity-0 md:h-5 md:w-5',
-                    isSanctioned && 'scale-100 opacity-100'
-                  )}
-                />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-sm font-black uppercase tracking-wide text-rose-600 md:text-base">
-                  Sin propina
-                </span>
-                <span className="text-[9px] font-bold leading-tight text-zinc-400 md:text-[11px]">
-                  Excluye a este empleado del reparto y su parte se distribuye equitativamente.
-                </span>
-              </div>
-            </label>
+            <div className="flex items-center gap-3 min-w-0">
+              <Avatar
+                src={profile?.avatar_url ?? undefined}
+                alt={displayName}
+                size="sm"
+                className="shrink-0"
+              />
+              <label className="group flex min-w-0 flex-1 cursor-pointer items-center gap-3">
+                <div className="relative flex h-6 w-6 items-center justify-center rounded-lg border-2 border-zinc-300 bg-zinc-50 transition-all group-hover:border-rose-400 md:h-8 md:w-8">
+                  <input
+                    type="checkbox"
+                    checked={isSanctioned}
+                    onChange={(e) => setIsSanctioned(e.target.checked)}
+                    className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                  />
+                  <div
+                    className={cn(
+                      'absolute inset-0 scale-0 rounded-md bg-rose-500 opacity-0 transition-all',
+                      isSanctioned && 'scale-100 opacity-100'
+                    )}
+                  />
+                  <X
+                    strokeWidth={4}
+                    className={cn(
+                      'relative z-10 h-4 w-4 text-white transition-all scale-0 opacity-0 md:h-5 md:w-5',
+                      isSanctioned && 'scale-100 opacity-100'
+                    )}
+                  />
+                </div>
+                <div className="flex min-w-0 flex-col">
+                  <span className="text-sm font-black uppercase tracking-wide text-rose-600 md:text-base">
+                    Sin propina
+                  </span>
+                  <span className="text-[9px] font-bold leading-tight text-zinc-400 md:text-[11px]">
+                    Excluye a este empleado del reparto y su parte se distribuye equitativamente.
+                  </span>
+                </div>
+              </label>
+            </div>
           </div>
 
           <div className="rounded-xl border border-zinc-100 bg-white p-2 shadow-sm md:rounded-2xl md:p-3">
