@@ -382,6 +382,7 @@ export default function OvertimePage() {
                 workerId={selectedHistory?.workerId || ''}
                 weekStart={selectedHistory?.weekId || ''}
                 layer="derived"
+                parentInstance="overtime-week-detail"
             />
         </>
     );

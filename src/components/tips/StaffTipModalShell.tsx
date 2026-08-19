@@ -15,6 +15,7 @@ type StaffTipModalShellProps = {
   instance: string;
   usageId: string;
   usageLabel: string;
+  parentInstance?: string;
 };
 
 export function StaffTipModalShell({
@@ -27,6 +28,7 @@ export function StaffTipModalShell({
   instance,
   usageId,
   usageLabel,
+  parentInstance,
 }: StaffTipModalShellProps) {
   return (
     <Modal
@@ -36,6 +38,7 @@ export function StaffTipModalShell({
       variant="compact"
       layer={layer}
       instance={instance}
+      parentInstance={parentInstance}
       headerTone="petroleum"
       headerCompact
       usageId={usageId}

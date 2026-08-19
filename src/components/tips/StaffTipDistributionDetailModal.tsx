@@ -22,7 +22,11 @@ export function StaffTipDistributionDetailModal({
       usageId="staff-tip-distribution-detail"
       usageLabel="Detalle reparto propinas"
     >
-      <StaffTipRepartoPanel entry={entry} breakdownLayer="derived" />
+      <StaffTipRepartoPanel
+        entry={entry}
+        breakdownLayer="derived"
+        breakdownParentInstance="staff-tip-distribution-detail"
+      />
     </StaffTipModalShell>
   );
 }

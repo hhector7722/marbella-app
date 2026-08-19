@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, it } from 'node:test';
 
-import { DS_SCREEN_TOKENS } from './tokens.ts';
+import { DS_CSS_VARS, DS_SCREEN_TOKENS } from './tokens.ts';
 import {
     BUTTON_COMPONENT_ID,
     BUTTON_CONTRACT,
@@ -108,8 +108,15 @@ describe('Button identidad y variantes', () => {
         assert.equal(BUTTON_CONTRACT.iconSlot, 'start');
         assert.equal(DS_SCREEN_TOKENS.colorMarca, '#36606F');
         assert.equal(DS_SCREEN_TOKENS.colorMarcaIntenso, '#2F5D6A');
+        assert.equal(DS_SCREEN_TOKENS.colorPositivo, '#059669');
+        assert.equal(DS_CSS_VARS.colorPositivo, '--color-positivo');
         assert.equal(DS_SCREEN_TOKENS.colorNegativo, '#E11D48');
         assert.equal(DS_SCREEN_TOKENS.colorNegativoFondo, '#FFF1F2');
+        assert.equal(BUTTON_CONTRACT.variantFill.primary, 'color.positivo');
+        assert.equal(BUTTON_CONTRACT.variantFill.secondary, 'color.superficie.inactiva');
+        assert.equal(BUTTON_CONTRACT.variantFill.tertiary, 'color.marca');
+        assert.equal(BUTTON_CONTRACT.variantFill.destructive, 'color.negativo');
+        assert.notEqual(BUTTON_CONTRACT.variantFill.primary, 'color.marca');
         assert.equal(DS_SCREEN_TOKENS.espacio2, '8px');
         assert.equal(DS_SCREEN_TOKENS.espacio3, '12px');
         assert.equal(DS_SCREEN_TOKENS.espacio4, '16px');
@@ -236,8 +243,22 @@ describe('Button className no escapa del contrato visual', () => {
         assert.match(css, /font-size:\s*12px/);
         assert.match(css, /font-weight:\s*800/);
         assert.match(css, /text-transform:\s*uppercase/);
+        assert.match(css, /--color-positivo:\s*#059669/i);
+        assert.match(
+            css,
+            /\[data-component='Button'\]\[data-variant='primary'\]::before \{[\s\S]*?background-color:\s*var\(--color-positivo\)/
+        );
+        assert.equal(
+            /\[data-component='Button'\]\[data-variant='primary'\]::before \{[\s\S]*?background-color:\s*var\(--color-marca\)/.test(
+                css
+            ),
+            false
+        );
         assert.match(css, /\[data-variant='primary'\]:hover:not\(:disabled\)::before/);
-        assert.match(css, /--color-marca-intenso/);
+        assert.match(
+            css,
+            /\[data-variant='primary'\]:hover:not\(:disabled\)::before \{[\s\S]*?color-mix\(in srgb, var\(--color-positivo\)/
+        );
         assert.match(css, /\[data-component='Button'\]:focus-visible/);
         assert.match(css, /outline:\s*2px solid var\(--color-marca\)/);
         assert.match(css, /\[data-component='Button'\]:disabled/);

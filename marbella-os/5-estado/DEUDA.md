@@ -31,6 +31,8 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 
 **Pago parcial (2026-08-16):** el piloto `DashboardShortcut` adoptó un subconjunto mínimo vía CSS variables y Tailwind (`superficie`, `borde`, `texto.fuerte`, radios, elevación, táctil, `espacio.1/2`). El contrato Modal adoptó además `color.marca`, `espacio.3/4`, `elevacion.modal`, `estructura.alto-modal` (como `--modal-max-height`) y capas `--z-modal-*`. El contrato Button adoptó `color.marca.intenso`, `color.negativo`, `color.negativo.fondo`, `color.superficie.inactiva` y `color.texto.invertido`. El resto del catálogo y la adopción global de marca en pantallas legacy siguen pendientes.
 
+**Pago parcial (2026-08-19):** Button `primary` adopta `color.positivo` (`--color-positivo`). `color.marca.intenso` deja de pintar el hover de `primary`; el petróleo permanece en Modal, Button tertiary y chrome.
+
 **Coste residual**: un cambio de color de marca sigue siendo un cambio en cientos de ficheros fuera del Design System.
 
 **Disparador de pago**: continuar la adopción token a token al construir cada componente base. Contrato en [TOKENS](../2-diseno/TOKENS.md).

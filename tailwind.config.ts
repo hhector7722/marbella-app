@@ -17,6 +17,7 @@ const config: Config = {
                 "ds-marca-intenso": "var(--color-marca-intenso)",
                 "ds-superficie-inactiva": "var(--color-superficie-inactiva)",
                 "ds-texto-invertido": "var(--color-texto-invertido)",
+                "ds-positivo": "var(--color-positivo)",
                 "ds-negativo": "var(--color-negativo)",
                 "ds-negativo-fondo": "var(--color-negativo-fondo)",
             },

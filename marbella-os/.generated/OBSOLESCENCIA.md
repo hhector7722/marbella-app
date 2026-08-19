@@ -1,5 +1,5 @@
 <!-- Generado desde 41 documentos de marbella-os/.
-     Huella del origen: dca502c3fff9302a
+     Huella del origen: b4129a0d2de164b6
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -38,11 +38,11 @@ siendo verdad y dejar constancia de la revisión en el cambio que la hace.
 | 2027-01-29 | `marbella-os/3-ingenieria/MODELO-DE-DATOS.md` | 2026-07-29 | 6 meses | propiedad del producto |
 | 2027-01-29 | `marbella-os/3-ingenieria/operacion/README.md` | 2026-07-29 | 6 meses | propiedad del producto |
 | 2027-01-29 | `marbella-os/3-ingenieria/operacion/RUNBOOK-BDP-VENTAS.md` | 2026-07-29 | 6 meses | propiedad del producto |
-| 2027-02-16 | `marbella-os/2-diseno/PATRONES.md` | 2026-08-16 | 6 meses | propiedad del producto |
 | 2027-02-16 | `marbella-os/3-ingenieria/FRONTEND.md` | 2026-08-16 | 6 meses | propiedad del producto |
-| 2027-02-16 | `marbella-os/GLOSARIO.md` | 2026-08-16 | 6 meses | propiedad del producto |
+| 2027-02-19 | `marbella-os/2-diseno/PATRONES.md` | 2026-08-19 | 6 meses | propiedad del producto |
 | 2027-02-19 | `marbella-os/2-diseno/SISTEMA-DE-COMPONENTES.md` | 2026-08-19 | 6 meses | propiedad del producto |
 | 2027-02-19 | `marbella-os/2-diseno/TOKENS.md` | 2026-08-19 | 6 meses | propiedad del producto |
+| 2027-02-19 | `marbella-os/GLOSARIO.md` | 2026-08-19 | 6 meses | propiedad del producto |
 | 2027-07-29 | `marbella-os/1-producto/PRINCIPIOS.md` | 2026-07-29 | 12 meses | propiedad del producto |
 | 2027-07-29 | `marbella-os/1-producto/VISION.md` | 2026-07-29 | 12 meses | propiedad del producto |
 | 2027-07-29 | `marbella-os/2-diseno/DOCUMENTOS-IMPRESOS.md` | 2026-07-29 | 12 meses | propiedad del producto |

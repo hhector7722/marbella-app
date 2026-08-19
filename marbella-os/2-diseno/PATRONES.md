@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-16
+revisado: 2026-08-19
 caducidad: 6 meses
 supersede: docs/PLAN_ASISTENCIA_UNIFICADA.md
 ---
@@ -51,9 +51,10 @@ El patrón más usado del producto. Sus leyes están en [EXPERIENCIA §8](EXPERI
 - **`amplify`** — imagen o dato ampliado (`max-w-2xl`).
 
 **Reglas**:
-- La cabecera dice de qué es el modal, no qué debe hacer la persona. Altura fija (`estructura.cabecera-modal`); inset horizontal único (`estructura.modal-cabecera-inset`); título y subtítulo en la misma fila; iconos sin marco/fondo por defecto. Radio único del panel (`radio.superficie`). Separación Header → Body fija (`espacio.3`).
+- La cabecera dice de qué es el modal, no qué debe hacer la persona. Altura fija (`estructura.cabecera-modal`); inset horizontal único (`estructura.modal-cabecera-inset`); título y subtítulo en la misma fila, centrados por el trazo; iconos sin marco/fondo por defecto. Radio único del panel (`radio.superficie`). Separación Header → Body fija (`espacio.3`).
 - El pie de acciones no se desplaza y no se encoge nunca (slot `footer` del componente). No fuerza botones a ancho completo.
 - Un modal no abre otro modal de tarea. Solo se admite **una superficie derivada** auxiliar ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)); el backdrop no acumula blur ([ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md)).
+- La navegación padre→hijo no es nesting de capas ni z-index (`AF-MODAL-NAV-NO-ES-LAYER`). Contrato en [Modal](SISTEMA-DE-COMPONENTES.md#modal).
 - Al abrirse, las barras fijas de la aplicación se atenúan y dejan de responder al toque.
 - Sin scroll horizontal. Centrado respecto al viewport visible.
 - El componente que materializa este patrón es el [Modal de sistema](SISTEMA-DE-COMPONENTES.md#modal). Las leyes de interacción, incluido el viewport estrecho, están en [EXPERIENCIA §8](EXPERIENCIA.md#8-modales).

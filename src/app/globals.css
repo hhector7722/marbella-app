@@ -14,6 +14,7 @@
   --color-marca-intenso: #2f5d6a;
   --color-superficie-inactiva: #f4f4f5;
   --color-texto-invertido: #ffffff;
+  --color-positivo: #059669;
   --color-negativo: #e11d48;
   --color-negativo-fondo: #fff1f2;
   --radio-superficie: 16px;
@@ -120,10 +121,28 @@
   display: flex;
   flex-direction: row;
   align-items: center;
+  align-self: stretch;
   min-width: 0;
   min-height: 0;
   flex: 1 1 0%;
   overflow: hidden;
+}
+
+/*
+ * Título y subtítulo: la caja debe ser el trazo (cap), no el em.
+ * `leading-none` + `truncate` recortaba Inter (~1.21 em) y el peso 900
+ * vs 500 dejaba cajas distintas; `align-items: center` centraba esas
+ * cajas, no la tinta. `text-box-trim` alinea los caps. `line-height:
+ * normal` cubre motores sin trim para que overflow no recorte glifos.
+ */
+[data-component='Modal'] [data-element='heading'] h2,
+[data-component='Modal'] [data-element='subtitle'] {
+  margin: 0;
+  padding-block: 0;
+  min-width: 0;
+  line-height: normal;
+  text-box-trim: trim-both;
+  text-box-edge: cap alphabetic;
 }
 
 [data-component='Modal'] [data-element='body'] table,
@@ -224,13 +243,13 @@
 }
 
 [data-component='Button'][data-variant='primary']::before {
-  background-color: var(--color-marca);
-  border-color: var(--color-marca);
+  background-color: var(--color-positivo);
+  border-color: var(--color-positivo);
 }
 
 [data-component='Button'][data-variant='primary']:hover:not(:disabled)::before {
-  background-color: var(--color-marca-intenso);
-  border-color: var(--color-marca-intenso);
+  background-color: color-mix(in srgb, var(--color-positivo) 82%, var(--color-texto-fuerte));
+  border-color: color-mix(in srgb, var(--color-positivo) 82%, var(--color-texto-fuerte));
 }
 
 [data-component='Button'][data-variant='secondary'] {

@@ -100,10 +100,12 @@ function MetricCell({
 export function StaffTipRepartoPanel({
   entry,
   breakdownLayer = 'base',
+  breakdownParentInstance,
 }: {
   entry: StaffTipHistoryEntry;
   /** Layer del desglose: `base` en página; `derived` encima del detalle (ADR-0007). */
   breakdownLayer?: ModalLayer;
+  breakdownParentInstance?: string;
 }) {
   const [detail, setDetail] = useState<DetailKind>(null);
 
@@ -183,6 +185,7 @@ export function StaffTipRepartoPanel({
           title="Horas trabajadas"
           onClose={() => setDetail(null)}
           layer={breakdownLayer}
+          parentInstance={breakdownParentInstance}
         >
           <StaffTipModalColumnGrid
             columns={[
@@ -194,7 +197,7 @@ export function StaffTipRepartoPanel({
       ) : null}
 
       {detail === 'propina' ? (
-        <StaffTipBreakdownModal title="Propina" onClose={() => setDetail(null)} layer={breakdownLayer}>
+        <StaffTipBreakdownModal title="Propina" onClose={() => setDetail(null)} layer={breakdownLayer} parentInstance={breakdownParentInstance}>
           <StaffTipModalColumnGrid
             columns={[
               {
@@ -217,6 +220,7 @@ export function StaffTipRepartoPanel({
           title={adjustmentLabel}
           onClose={() => setDetail(null)}
           layer={breakdownLayer}
+          parentInstance={breakdownParentInstance}
         >
           <StaffTipModalColumnGrid
             columns={[
@@ -244,6 +248,7 @@ export function StaffTipRepartoPanel({
           title="Propina final"
           onClose={() => setDetail(null)}
           layer={breakdownLayer}
+          parentInstance={breakdownParentInstance}
         >
           <div className="flex items-start gap-0.5">
             <div className="flex min-w-0 flex-1 flex-col items-center px-0.5 py-1">

@@ -1085,6 +1085,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 workerId={selectedHistory?.workerId || ''}
                 weekStart={selectedHistory?.weekId || ''}
                 layer="derived"
+                parentInstance="admin-overtime-week-detail"
             />
             <SupplierSelectionModal isOpen={isSupplierModalOpen} onClose={() => setIsSupplierModalOpen(false)} />
         </div>

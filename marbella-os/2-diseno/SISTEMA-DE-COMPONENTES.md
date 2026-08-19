@@ -41,7 +41,16 @@ Button
  └── label?
 ```
 
-**Variantes** (cerradas; nombres de código): `primary`, `secondary`, `tertiary`, `destructive`. No existe `success`, `positive`, `emerald`, `ghost`, `danger` ni quinta variante. Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`** (ancho = contenido + padding horizontal). `fill` / ancho completo solo cuando el consumidor lo declara. El host táctil mide `tactil.minimo` (48 px): área de toque transparente; no obliga al fondo visual. El fondo visual compacto es independiente: 12 px de tipo + `espacio.2` arriba y abajo = 28 px. Padding horizontal compacto: `espacio.2`. Radio contractual del Button: 8 px (`espacio.2`), estrictamente menor que la mitad del alto visual (14 px) para dejar tramo recto, no píldora. No usa `radio.superficie` (16 px), que permanece en Modal. Icon-only conserva superficie visual 48×48. La prop `icon` existe; el Footer de Modal no la usa.
+**Variantes** (cerradas; nombres de código): `primary`, `secondary`, `tertiary`, `destructive`. No existe `success`, `positive`, `emerald`, `ghost`, `danger`, `confirmar` ni quinta variante. El fill lo fija el contrato, no el consumidor:
+
+| Variante | Token de fill | Papel |
+|---|---|---|
+| `primary` | `color.positivo` | Acción afirmativa: Guardar, Confirmar, Siguiente, Crear, Enviar, Generar, Aplicar, Continuar |
+| `secondary` | `color.superficie.inactiva` | Cancelar, volver, cerrar |
+| `tertiary` | `color.marca` | Menor jerarquía. El petróleo no pinta `primary` |
+| `destructive` | `color.negativo` | Eliminar, destruir, acción irreversible |
+
+Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`** (ancho = contenido + padding horizontal). `fill` / ancho completo solo cuando el consumidor lo declara. El host táctil mide `tactil.minimo` (48 px): área de toque transparente; no obliga al fondo visual. El fondo visual compacto es independiente: 12 px de tipo + `espacio.2` arriba y abajo = 28 px. Padding horizontal compacto: `espacio.2`. Radio contractual del Button: 8 px (`espacio.2`), estrictamente menor que la mitad del alto visual (14 px) para dejar tramo recto, no píldora. No usa `radio.superficie` (16 px), que permanece en Modal. Icon-only conserva superficie visual 48×48. La prop `icon` existe; el Footer de Modal no la usa.
 
 **Estados**: reposo, hover (sin scale-up), pulsado (`scale(0.95)`), foco visible (anillo de marca), en curso (equivale a deshabilitado + spinner a la izquierda), deshabilitado (opacity 50). El estado visual de error no se implementa en v1: el error vive en el campo o el aviso.
 
@@ -57,6 +66,7 @@ Button
 - El Footer de Modal no convierte los botones en `fill`; el consumidor decide.
 - El Footer de Modal usa Button solo con texto, sin `icon`. Icon-only sigue permitido fuera de ese pie.
 - El radio contractual es 8 px (`espacio.2`). No píldora: el radio es menor que la mitad del alto visual. Distinto de `radio.superficie` del Modal. El consumidor no puede sobrescribirlo.
+- `primary` pinta con `color.positivo`. El petróleo no es el fill de Guardar / Confirmar / Crear. No se inventa variante `confirmar` ni color local en el consumidor.
 
 **Código**: `src/components/ui/button.tsx`, `src/lib/design-system/button-contract.ts`.
 
@@ -145,13 +155,17 @@ Piezas transversales con comportamiento propio y contrato estricto. **Estas sí 
 - Atenúa y desactiva las barras fijas de la aplicación mientras está abierto.
 - Cabecera fija (`estructura.cabecera-modal` = 36px) y pie no se desplazan; el pie no se encoge. El contenido de cabecera (título, iconos, acciones) se adapta tipográficamente; no se trunca el título por la altura. Botones de cabecera (chrome) independientes de Button, cuadrados al alto de la cabecera.
 - **Inset horizontal único de cabecera:** `espacio.4` (16 px, ref. Albaranes). Título, subtítulo y texto de cabecera empiezan en el mismo punto. El chrome de la derecha no reserva un hueco simétrico a la izquierda. `headerCompact` y `headerTitleAlign` no cambian ese inicio.
-- **Título y subtítulo van en la misma fila.** El título lleva la jerarquía principal (`font-black`). El subtítulo es menor y de peso medio, nunca negrita pesada. Si el texto no cabe, se recorta en esa fila; la cabecera no crece por encima de 36 px.
+- **Título y subtítulo van en la misma fila.** El título lleva la jerarquía principal (`font-black`). El subtítulo es menor y de peso medio, nunca negrita pesada. El shell centra ambos por el trazo (cap), no por el em: no flotan uno respecto al otro. Si el texto no cabe, se recorta en esa fila; la cabecera no crece por encima de 36 px.
 - **Separación Header → Body:** exactamente 12 px (`espacio.3` / `estructura.modal-cuerpo-inicio`) como `padding-top` del Body. No es padding completo del Body. El consumidor no decide ni elimina esa distancia (`pt-0` en hijos no la anula).
 - Radio único del panel: `radio.superficie` (16 px). El consumidor no puede sobrescribirlo con `className`.
 - **Nesting:** máximo una superficie derivada sobre el modal base ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)). Backdrop por capa sin blur acumulado ([ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md)).
+- **Navegación padre→hijo ≠ layer ≠ z-index ≠ pila de Escape.** <!-- af: AF-MODAL-NAV-NO-ES-LAYER --> Relación explícita: `parentInstance` + `instance`. No se infiere por cima de pila ni por layer. Un Modal puede tener padre y ser `base`; un `derived` no implica ←. `system` no es padre de navegación.
+- **Historial interno por `surfaceId`**, junto a `registerModalSurface` y separado de las capas. `instance` es identidad semántica; varias aperturas simultáneas de la misma instance no comparten id interno. El consumidor sigue dueño de `open`.
+- **Raíz** (sin padre vivo): no hay ←. X, Escape y backdrop cierran toda la cadena. **Hijo** (padre vivo): ← a la izquierda; X a la derecha, Escape y backdrop hacen pop (el padre vuelve activo). Encima, Escape cierra primero `system`.
+- `onBack` permanece para usos que no son esta navegación. No es el historial padre→hijo.
 - Cero scroll horizontal en Modal, Header, Body, Footer y tablas internas.
 - Cerrar con cambios sin guardar pide confirmación. El consumidor usa `layer="system"`, no un segundo modal de tarea.
-- **Declara identidad estable** (`data-component="Modal"`, `data-variant`, `data-instance`, `data-layer`). `data-instance` es el id de negocio; la prop `instance` lo emite. `usageId` es un alias de implementación para telemetría, no una vía para overlays propios.
+- **Declara identidad estable** (`data-component="Modal"`, `data-variant`, `data-instance`, `data-parent-instance`, `data-layer`). `data-instance` es el id de negocio; la prop `instance` lo emite. `data-parent-instance` es la identidad semántica del padre de navegación, no una capa. `usageId` es un alias de implementación para telemetría, no una vía para overlays propios.
 - **Portal, Escape, bloqueo de desplazamiento y backdrop los posee este componente.** El consumidor no monta otro `createPortal` de overlay, no pinta `fixed inset-0` de modal, no elige z-index numérico y no inventa un fondo.
 - Si el contrato no cubre el comportamiento pedido, se para y se pregunta. No se abre un overlay paralelo.
 

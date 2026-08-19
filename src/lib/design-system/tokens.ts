@@ -18,8 +18,10 @@ export const DS_SCREEN_TOKENS = {
     colorMarcaIntenso: '#2F5D6A',
     /** TOKENS `color.superficie.inactiva` — secondary en reposo */
     colorSuperficieInactiva: '#F4F4F5',
-    /** TOKENS `color.texto.invertido` — texto sobre marca o negativo */
+    /** TOKENS `color.texto.invertido` — texto sobre marca, positivo o negativo */
     colorTextoInvertido: '#FFFFFF',
+    /** TOKENS `color.positivo` — Button primary (acción afirmativa) */
+    colorPositivo: '#059669',
     /** TOKENS `color.negativo` */
     colorNegativo: '#E11D48',
     /** TOKENS `color.negativo.fondo` */
@@ -93,6 +95,7 @@ export const DS_CSS_VARS = {
     colorMarcaIntenso: '--color-marca-intenso',
     colorSuperficieInactiva: '--color-superficie-inactiva',
     colorTextoInvertido: '--color-texto-invertido',
+    colorPositivo: '--color-positivo',
     colorNegativo: '--color-negativo',
     colorNegativoFondo: '--color-negativo-fondo',
     radioSuperficie: '--radio-superficie',

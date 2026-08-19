@@ -1,12 +1,12 @@
-<!-- Generado desde 38 documentos de marbella-os/.
-     Huella del origen: eaf4f8a2e0b39e03
+<!-- Generado desde 39 documentos de marbella-os/.
+     Huella del origen: 3bf4b8d3713c1c29
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
 
 # Afirmaciones citables
 
-Los 38 hechos del corpus que tienen identificador estable, con dónde
+Los 39 hechos del corpus que tienen identificador estable, con dónde
 viven y desde cuántos sitios se citan. Derivado. **No es norma**: la norma está
 en el documento de origen, y este índice solo dice dónde.
 
@@ -17,6 +17,7 @@ texto crea un segundo dueño, y eso es exactamente lo que prohíbe `CANON §5`.
 |---|---|---|---|---|
 | `AF-DERIVADO-NO-SE-EDITA` | Regla: si un fichero se puede derivar, se deriva; si se deriva, no se edita; si no se edita, no se discute. | `marbella-os/CANON.md` | 100 |  |
 | `AF-DUENO-UNICO` | **Cada hecho vive en exactamente un documento. Los demás enlazan, no copian.** | `marbella-os/CANON.md` | 100 | 4 |
+| `AF-MODAL-NAV-NO-ES-LAYER` | - **Navegación padre→hijo ≠ layer ≠ z-index ≠ pila de Escape.** Relación explícita: `parentInstance` + `instance`. No se infiere por cima d… | `marbella-os/2-diseno/SISTEMA-DE-COMPONENTES.md` | 20 | 1 |
 | `AF-NO-NORMATIVO-NO-AUTORIZA` | **Un documento con `normativo: false` no autoriza nada**, con independencia de lo que afirme su texto y de lo asertivo que suene. Todo `6-i… | `marbella-os/CANON.md` | 100 |  |
 | `INV-$01` | `estimatedValue = priceWeekOvertime(...)` únicamente | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 | 6 |
 | `INV-$02` | `weekly_snapshots.total_cost ≡ estimatedValue` tras persist Cost | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 | 3 |

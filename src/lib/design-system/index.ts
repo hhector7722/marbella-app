@@ -42,6 +42,21 @@ export {
     type ModalLayer,
     type RegisterModalSurfaceResult,
 } from './modal-layers';
+export {
+    registerModalHistory,
+    unregisterModalHistory,
+    notifyModalHistoryOpen,
+    notifyModalHistoryClose,
+    requestModalClose,
+    hasLiveModalParent,
+    resolveModalHistoryParentSurfaceId,
+    subscribeModalHistory,
+    getModalHistoryVersion,
+    getModalHistorySnapshot,
+    resetModalHistoryForTests,
+    type RegisterModalHistoryInput,
+    type ModalHistorySnapshotEntry,
+} from './modal-history';
 
 export {
     MODAL_BACKDROP_BASE,

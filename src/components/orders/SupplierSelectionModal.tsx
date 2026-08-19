@@ -97,7 +97,7 @@ export function SupplierSelectionModal({ isOpen, onClose }: Props) {
             title="Proveedor"
             subtitle={
                 <span className="inline-flex items-center gap-1">
-                    <Package size={12} /> Selecciona proveedor
+                    <Package className="h-[1em] w-[1em] shrink-0" aria-hidden /> Selecciona proveedor
                 </span>
             }
             variant="standard"

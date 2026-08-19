@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import { ChevronLeft, X } from 'lucide-react';
@@ -13,8 +13,16 @@ import {
     MODAL_LAYER_Z_CLASS,
     modalBackdropDataAttr,
     pickModalPanelClassName,
+    hasLiveModalParent,
+    notifyModalHistoryClose,
+    notifyModalHistoryOpen,
+    registerModalHistory,
     registerModalSurface,
+    requestModalClose,
     resolveModalVariant,
+    subscribeModalHistory,
+    getModalHistoryVersion,
+    unregisterModalHistory,
     type ModalLayer,
     type ModalVariant,
 } from '@/lib/design-system';
@@ -44,6 +52,11 @@ export type ModalProps = {
      * Identidad estable de instancia (= usageId). Independiente del título.
      */
     instance?: string;
+    /**
+     * Identidad semántica del padre de navegación. No se infiere por layer ni por cima de pila.
+     * Un `base` puede tener padre; un `derived` no implica ←.
+     */
+    parentInstance?: string;
     /** Acciones fijas bajo el Body (no hacen scroll con el contenido). */
     footer?: ReactNode;
     className?: string;
@@ -186,6 +199,7 @@ function ModalPanelShell({
                         <button
                             type="button"
                             aria-label="Volver"
+                            data-element="back"
                             onClick={onBack}
                             className={headerActionClassName(petroleum, actionChrome, {
                                 plainForce: onBackPlain,
@@ -206,7 +220,7 @@ function ModalPanelShell({
                             <h2
                                 id={titleId}
                                 className={cn(
-                                    'min-w-0 overflow-hidden font-black uppercase tracking-wide leading-none truncate',
+                                    'min-w-0 overflow-hidden font-black uppercase tracking-wide truncate',
                                     'text-[clamp(0.5625rem,2.4vw,0.75rem)]',
                                     subtitle ? 'shrink' : 'flex-1',
                                     petroleum ? 'text-white' : 'text-ds-texto-fuerte'
@@ -218,7 +232,7 @@ function ModalPanelShell({
                                 <div
                                     data-element="subtitle"
                                     className={cn(
-                                        'min-w-0 flex-1 overflow-hidden truncate font-medium uppercase tracking-wide leading-none',
+                                        'min-w-0 flex-1 overflow-hidden truncate font-medium uppercase tracking-wide',
                                         'text-[clamp(0.4375rem,1.8vw,0.5625rem)]',
                                         petroleum ? 'text-white/70' : 'text-zinc-500'
                                     )}
@@ -289,6 +303,7 @@ export function Modal({
     variant = 'compact',
     layer: layerProp,
     instance,
+    parentInstance,
     footer,
     className,
     containerClassName,
@@ -325,12 +340,39 @@ export function Modal({
     const openedAtRef = useRef<number | null>(null);
     const trackedLabelRef = useRef<string | null>(null);
     const [derivedBlocked, setDerivedBlocked] = useState(false);
+    const [restoredOpen, setRestoredOpen] = useState(false);
+    const historyVersion = useSyncExternalStore(
+        subscribeModalHistory,
+        getModalHistoryVersion,
+        getModalHistoryVersion
+    );
 
     const headerTone = headerToneProp ?? headerVariant ?? 'white';
     const layout = resolveModalVariant(variant);
 
     const layer: ModalLayer = layerProp
         ?? (stackElevated ? 'system' : 'base');
+    const participatesInHistory = layer !== 'system';
+    const consumerVisible = open || restoredOpen;
+    const visible = consumerVisible && !derivedBlocked;
+
+    const onCloseRef = useRef(onClose);
+    onCloseRef.current = onClose;
+    const restoreRef = useRef(() => {
+        setRestoredOpen(true);
+    });
+    restoreRef.current = () => {
+        setRestoredOpen(true);
+    };
+
+    const requestClose = () => {
+        setRestoredOpen(false);
+        if (!participatesInHistory || !requestModalClose(surfaceId)) {
+            onCloseRef.current();
+        }
+    };
+    const requestCloseRef = useRef(requestClose);
+    requestCloseRef.current = requestClose;
 
     const resolvedInstance = instance ?? usageId;
     const resolvedUsageLabel =
@@ -387,15 +429,27 @@ export function Modal({
     }, [disableUsageTracking, open, pathname, resolvedUsageId, resolvedUsageLabel]);
 
     useEffect(() => {
-        if (!open) {
+        if (open) setRestoredOpen(false);
+    }, [open]);
+
+    useLayoutEffect(() => {
+        if (!participatesInHistory) return;
+        return () => {
+            unregisterModalHistory(surfaceId);
+        };
+    }, [participatesInHistory, surfaceId]);
+
+    useEffect(() => {
+        if (!consumerVisible) {
             setDerivedBlocked(false);
+            if (participatesInHistory) notifyModalHistoryClose(surfaceId);
             return;
         }
 
         const registration = registerModalSurface({
             id: surfaceId,
             layer,
-            onEscape: onClose,
+            onEscape: () => requestCloseRef.current(),
         });
 
         if (!registration.ok) {
@@ -411,6 +465,17 @@ export function Modal({
         }
 
         setDerivedBlocked(false);
+        if (participatesInHistory) {
+            registerModalHistory({
+                surfaceId,
+                instance: resolvedInstance ?? resolvedUsageId,
+                parentInstance,
+                layer,
+                dismiss: () => onCloseRef.current(),
+                restore: () => restoreRef.current(),
+            });
+            notifyModalHistoryOpen(surfaceId);
+        }
         const unlockScroll = lockScrollGlobal();
         panelRef.current?.focus();
 
@@ -418,9 +483,21 @@ export function Modal({
             registration.unregister();
             unlockScroll();
         };
-    }, [open, onClose, layer, surfaceId]);
+    }, [
+        consumerVisible,
+        layer,
+        surfaceId,
+        participatesInHistory,
+        resolvedInstance,
+        resolvedUsageId,
+        parentInstance,
+    ]);
 
-    if (!open || derivedBlocked) return null;
+    const showNavBack = participatesInHistory && hasLiveModalParent(surfaceId);
+    void historyVersion;
+    const backHandler = showNavBack ? () => requestCloseRef.current() : onBack;
+
+    if (!visible) return null;
 
     const zClass = zIndexClass ?? MODAL_LAYER_Z_CLASS[layer];
     const backdropKind = modalBackdropDataAttr(layer);
@@ -430,6 +507,7 @@ export function Modal({
             data-component={MODAL_COMPONENT_ID}
             data-variant={variant}
             data-instance={resolvedUsageId}
+            data-parent-instance={parentInstance || undefined}
             data-layer={layer}
             className={cn(
                 'fixed inset-0 box-border flex items-center justify-center animate-in fade-in duration-200',
@@ -452,7 +530,7 @@ export function Modal({
                     'absolute inset-0 touch-none overscroll-none border-0 p-0',
                     backdropClassName
                 )}
-                onClick={closeOnBackdrop ? onClose : undefined}
+                onClick={closeOnBackdrop ? () => requestCloseRef.current() : undefined}
             />
             <div
                 className={cn(
@@ -482,8 +560,8 @@ export function Modal({
                         subtitle={subtitle}
                         headerTone={headerTone}
                         headerActionChrome={headerActionChrome}
-                        onClose={onClose}
-                        onBack={onBack}
+                        onClose={() => requestCloseRef.current()}
+                        onBack={backHandler}
                         onBackPlain={onBackPlain}
                         hideHeaderDivider={hideHeaderDivider}
                         hideTitle={hideTitle}

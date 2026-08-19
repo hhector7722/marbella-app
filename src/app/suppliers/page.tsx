@@ -705,6 +705,7 @@ export default function SuppliersPage() {
                 variant="standard"
                 layer="derived"
                 instance="supplier-edit"
+                parentInstance="supplier-detail"
                 usageId="supplier-edit"
                 usageLabel="Editar proveedor"
                 footer={

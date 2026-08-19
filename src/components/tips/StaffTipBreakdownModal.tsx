@@ -9,12 +9,14 @@ export function StaffTipBreakdownModal({
   onClose,
   children,
   layer = 'base',
+  parentInstance,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
   /** `base` si abre desde la página; `derived` si abre encima de otro Modal. */
   layer?: ModalLayer;
+  parentInstance?: string;
 }) {
   return (
     <StaffTipModalShell
@@ -22,6 +24,7 @@ export function StaffTipBreakdownModal({
       onClose={onClose}
       layer={layer}
       instance="staff-tip-breakdown"
+      parentInstance={parentInstance}
       usageId="staff-tip-breakdown"
       usageLabel="Desglose propina"
     >

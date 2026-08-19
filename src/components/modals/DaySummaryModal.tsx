@@ -168,6 +168,7 @@ export function DaySummaryModal({ isOpen, onClose, date, logs, onSelectLog, empl
                 variant="compact"
                 layer="derived"
                 instance="attendance-day-create-fichaje"
+                parentInstance="attendance-day-summary"
                 usageId="day-summary-create-fichaje"
                 usageLabel="Nuevo fichaje día"
                 title="Nuevo fichaje"

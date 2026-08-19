@@ -111,4 +111,15 @@ export const BUTTON_CONTRACT = {
     iconSlot: 'start',
     /** Default de layout: hug. `fill` solo si el consumidor lo declara. */
     defaultLayout: 'hug',
+    /**
+     * Fill de variantes. Nombres de token TOKENS, no hex.
+     * `primary` = acción afirmativa (`color.positivo`).
+     * El petróleo (`color.marca`) no pinta primary; queda en tertiary y chrome.
+     */
+    variantFill: {
+        primary: 'color.positivo',
+        secondary: 'color.superficie.inactiva',
+        tertiary: 'color.marca',
+        destructive: 'color.negativo',
+    },
 } as const;

@@ -24,6 +24,8 @@ interface WorkerWeeklyHistoryModalProps {
    * En Admin dashboard se abre como `derived` sobre el detalle de semana.
    */
   layer?: ModalLayer;
+  /** Padre de navegación. Independiente de `layer`. */
+  parentInstance?: string;
 }
 
 /**
@@ -37,6 +39,7 @@ export default function WorkerWeeklyHistoryModal({
   workerId,
   weekStart,
   layer = 'base',
+  parentInstance,
 }: WorkerWeeklyHistoryModalProps) {
   const [loading, setLoading] = useState(true);
   const [week, setWeek] = useState<HistoryWeekDto | null>(null);
@@ -98,6 +101,7 @@ export default function WorkerWeeklyHistoryModal({
       variant="standard"
       layer={layer}
       instance="admin-overtime-worker-history"
+      parentInstance={parentInstance}
       usageId="overtime-worker-history"
       usageLabel={trackingLabel}
       title={workerName || '…'}

@@ -34,8 +34,8 @@ Los valores recogidos aquí **son los que el producto usa hoy**, no una propuest
 
 | Token | Valor | Papel | Estado |
 |---|---|---|---|
-| `color.marca` | `#36606F` | Identidad del producto en pantalla. Acción principal, cabeceras, elementos activos | adoptado (piloto Modal vía `--color-marca`; resto del producto aún literal) |
-| `color.marca.intenso` | `#2F5D6A` | Estado pulsado y variantes de mayor contraste de la marca | adoptado (piloto Button vía `--color-marca-intenso`) |
+| `color.marca` | `#36606F` | Identidad del producto en pantalla. Cabeceras, elementos activos, Button tertiary | adoptado (piloto Modal vía `--color-marca`; Button tertiary; resto del producto aún literal) |
+| `color.marca.intenso` | `#2F5D6A` | Estado pulsado y variantes de mayor contraste de la marca | adoptado (variable `--color-marca-intenso`; Button primary ya no la usa) |
 | `color.marca.profundo` | `#2A4A56` | Fondos de marca de máxima intensidad | declarado |
 | `color.marca.suave` | `#407080` | Marca sobre fondo oscuro, bordes de elementos de marca | declarado |
 | `color.marca.impresa` | `#1F5FAF` | Identidad en documentos impresos. **No es el mismo azul** que en pantalla | adoptado |
@@ -72,7 +72,7 @@ Es el único token con implementación centralizada real: existe como utilidad �
 | `color.texto.medio` | `#52525B` | Texto de apoyo, descripciones | declarado |
 | `color.texto.suave` | `#71717A` | Etiquetas, metadatos | declarado |
 | `color.texto.tenue` | `#A1A1AA` | Texto de mínima jerarquía, marcas de posición | declarado |
-| `color.texto.invertido` | `#FFFFFF` | Texto sobre superficie de marca o envolvente | adoptado (piloto Button vía `--color-texto-invertido`) |
+| `color.texto.invertido` | `#FFFFFF` | Texto sobre marca, positivo, negativo o envolvente | adoptado (piloto Button vía `--color-texto-invertido`) |
 
 ## 5. Bordes y separadores
 
@@ -88,7 +88,7 @@ Es el único token con implementación centralizada real: existe como utilidad �
 
 | Token | Valor | Significado | Estado |
 |---|---|---|---|
-| `color.positivo` | `#059669` | Cuadrado, cobrado, a favor, completado | declarado |
+| `color.positivo` | `#059669` | Cuadrado, cobrado, a favor, completado. Button primary (acción afirmativa) | adoptado (piloto Button vía `--color-positivo`) |
 | `color.positivo.fondo` | `#ECFDF5` | Fondo de aviso positivo | declarado |
 | `color.negativo` | `#E11D48` | Descuadre, deuda, pérdida, error de negocio | adoptado (piloto Button vía `--color-negativo`) |
 | `color.negativo.fondo` | `#FFF1F2` | Fondo de aviso negativo | adoptado (variable `--color-negativo-fondo`; Button v1 usa el pleno, no el fondo) |
