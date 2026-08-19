@@ -20,6 +20,7 @@ import {
     dispatchModalEscapeForTests,
     getModalSurfaceStackSnapshot,
     hasDerivedModalSurface,
+    isModalSurfaceSubordinate,
     registerModalSurface,
     resetModalSurfaceStackForTests,
 } from './modal-layers.ts';
@@ -123,6 +124,18 @@ describe('Modal identidad y variantes', () => {
         assert.match(css, /border-radius:\s*var\(--radio-superficie\)/);
         assert.match(css, /\[data-component='Modal'\] \[data-element='body'\]/);
         assert.match(css, /padding-top:\s*var\(--modal-body-start-gap\)/);
+        assert.match(css, /--modal-content-inset-start:\s*var\(--modal-header-inset\)/);
+        assert.match(css, /\[data-element='container'\]\[data-has-back='true'\]/);
+        assert.match(css, /padding-inline-start:\s*var\(--modal-content-inset-start\)/);
+        assert.match(css, /\[data-element='footer'\][\s\S]*flex-wrap:\s*nowrap/);
+        assert.match(css, /\[data-subordinate='true'\]/);
+        assert.match(css, /--modal-subordinate-blur:/);
+        assert.match(modalSource, /headerToneProp \?\? headerVariant \?\? 'petroleum'/);
+        assert.match(modalSource, /isModalSurfaceSubordinate/);
+        assert.match(modalSource, /data-has-back/);
+        assert.match(modalSource, /Botón ad-hoc en body/);
+        assert.match(modalSource, /data-subordinate/);
+        assert.equal(modalSource.includes("?? 'white'"), false);
         assert.match(css, /\[data-component='Modal'\]\[data-layer='base'\]/);
         assert.match(css, /z-index:\s*var\(--z-modal-base\)/);
         assert.match(css, /z-index:\s*var\(--z-modal-derived\)/);
@@ -154,6 +167,30 @@ describe('Modal backdrop por capa (ADR-0008)', () => {
 describe('Modal capas y nesting (ADR-0007)', () => {
     beforeEach(() => {
         resetModalSurfaceStackForTests();
+    });
+
+    it('superficie cubierta queda subordinada en la pila', () => {
+        const base = registerModalSurface({
+            id: 'base-1',
+            layer: 'base',
+            onEscape: () => {},
+        });
+        assert.equal(base.ok, true);
+        assert.equal(isModalSurfaceSubordinate('base-1'), false);
+
+        const derived = registerModalSurface({
+            id: 'derived-1',
+            layer: 'derived',
+            onEscape: () => {},
+        });
+        assert.equal(derived.ok, true);
+        assert.equal(isModalSurfaceSubordinate('base-1'), true);
+        assert.equal(isModalSurfaceSubordinate('derived-1'), false);
+
+        if (derived.ok) derived.unregister();
+        assert.equal(isModalSurfaceSubordinate('base-1'), false);
+
+        if (base.ok) base.unregister();
     });
 
     it('permite base + una derived', () => {

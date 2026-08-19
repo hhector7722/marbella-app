@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import { ChevronLeft, X } from 'lucide-react';
@@ -23,6 +23,9 @@ import {
     subscribeModalHistory,
     getModalHistoryVersion,
     unregisterModalHistory,
+    isModalSurfaceSubordinate,
+    subscribeModalSurfaceStack,
+    getModalSurfaceStackVersion,
     type ModalLayer,
     type ModalVariant,
 } from '@/lib/design-system';
@@ -145,6 +148,8 @@ function ModalPanelShell({
     footer,
     loading = false,
     hideCloseButton = false,
+    isSubordinate = false,
+    bodyRef,
 }: {
     title: ReactNode;
     titleId: string;
@@ -167,13 +172,19 @@ function ModalPanelShell({
     footer?: ReactNode;
     loading?: boolean;
     hideCloseButton?: boolean;
+    isSubordinate?: boolean;
+    bodyRef?: RefObject<HTMLDivElement | null>;
 }) {
     const petroleum = headerTone === 'petroleum';
     const actionChrome = onBackPlain ? 'plain' : headerActionChrome;
+    const hasBack = Boolean(onBack);
 
     return (
         <div
             data-element="container"
+            data-has-back={hasBack ? 'true' : undefined}
+            data-header-compact={headerCompact ? 'true' : undefined}
+            data-subordinate={isSubordinate ? 'true' : undefined}
             className={cn(
                 'flex w-full max-w-full flex-col overflow-hidden overflow-x-hidden rounded-ds-superficie bg-ds-superficie shadow-ds-modal outline-none',
                 'max-h-ds-modal',
@@ -265,6 +276,7 @@ function ModalPanelShell({
             )}
 
             <div
+                ref={bodyRef}
                 data-element="body"
                 className={cn(
                     'relative flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-hidden',
@@ -282,7 +294,7 @@ function ModalPanelShell({
             {footer ? (
                 <div
                     data-element="footer"
-                    className="flex max-w-full shrink-0 items-center gap-ds-2 overflow-x-hidden border-t border-ds-borde bg-ds-superficie px-ds-4 py-ds-3"
+                    className="flex max-w-full shrink-0 items-center overflow-x-hidden border-t border-ds-borde bg-ds-superficie py-ds-3"
                 >
                     {footer}
                 </div>
@@ -337,6 +349,7 @@ export function Modal({
     const surfaceId = useId();
     const pathname = usePathname();
     const panelRef = useRef<HTMLDivElement>(null);
+    const bodyRef = useRef<HTMLDivElement>(null);
     const openedAtRef = useRef<number | null>(null);
     const trackedLabelRef = useRef<string | null>(null);
     const [derivedBlocked, setDerivedBlocked] = useState(false);
@@ -346,8 +359,13 @@ export function Modal({
         getModalHistoryVersion,
         getModalHistoryVersion
     );
+    const stackVersion = useSyncExternalStore(
+        subscribeModalSurfaceStack,
+        getModalSurfaceStackVersion,
+        getModalSurfaceStackVersion
+    );
 
-    const headerTone = headerToneProp ?? headerVariant ?? 'white';
+    const headerTone = headerToneProp ?? headerVariant ?? 'petroleum';
     const layout = resolveModalVariant(variant);
 
     const layer: ModalLayer = layerProp
@@ -493,9 +511,30 @@ export function Modal({
         parentInstance,
     ]);
 
+    useEffect(() => {
+        if (process.env.NODE_ENV === 'production' || !visible) return;
+        const root = bodyRef.current;
+        if (!root) return;
+
+        const offenders: Element[] = [];
+        for (const btn of root.querySelectorAll('button')) {
+            if (btn.closest('[data-component="Button"]')) continue;
+            offenders.push(btn);
+        }
+
+        for (const btn of offenders) {
+            console.warn(
+                '[Modal] Botón ad-hoc en body: usar @/components/ui/button (Button Contract).',
+                btn
+            );
+        }
+    }, [children, visible]);
+
     const showNavBack = participatesInHistory && hasLiveModalParent(surfaceId);
     void historyVersion;
+    void stackVersion;
     const backHandler = showNavBack ? () => requestCloseRef.current() : onBack;
+    const isSubordinate = visible && isModalSurfaceSubordinate(surfaceId);
 
     if (!visible) return null;
 
@@ -552,7 +591,12 @@ export function Modal({
                               : undefined
                     }
                     tabIndex={-1}
-                    className={cn('pointer-events-auto w-full max-w-full outline-none', panelHostClassName)}
+                    data-subordinate={isSubordinate ? 'true' : undefined}
+                    className={cn(
+                        'pointer-events-auto w-full max-w-full outline-none transition-[filter,opacity] duration-200',
+                        isSubordinate && 'pointer-events-none',
+                        panelHostClassName
+                    )}
                 >
                     <ModalPanelShell
                         title={title}
@@ -575,6 +619,8 @@ export function Modal({
                         loading={loading}
                         hideCloseButton={hideCloseButton}
                         footer={footer}
+                        isSubordinate={isSubordinate}
+                        bodyRef={bodyRef}
                     >
                         {children}
                     </ModalPanelShell>

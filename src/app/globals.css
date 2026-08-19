@@ -30,6 +30,13 @@
   --modal-header-height: 36px;
   /* Inset horizontal único de cabecera Modal (ref. Albaranes) = espacio.4 */
   --modal-header-inset: var(--espacio-4);
+  /* Inset horizontal del contenido (body/footer) alineado al título de cabecera */
+  --modal-content-inset-start: var(--modal-header-inset);
+  --modal-content-inset-end: var(--modal-header-inset);
+  /* Subordinación visual cuando una capa superior cubre este panel (derived/system) */
+  --modal-subordinate-blur: 4px;
+  --modal-subordinate-saturate: 72%;
+  --modal-subordinate-opacity: 0.58;
   /* Separación Header → Body (ref. detalle Albaranes) = espacio.3 */
   --modal-body-start-gap: var(--espacio-3);
   /* Referencia Albaranes detalle: max-h 68dvh con safe-area */
@@ -115,6 +122,57 @@
  */
 [data-component='Modal'] [data-element='header'] {
   padding-inline: var(--modal-header-inset);
+}
+
+/*
+ * Inset horizontal único de contenido (body/footer).
+ * Alineado al inicio del título: tras el chrome ← si existe.
+ */
+[data-component='Modal'] [data-element='container'][data-has-back='true'] {
+  --modal-content-inset-start: calc(
+    var(--modal-header-inset) + var(--modal-header-height) + var(--espacio-2)
+  );
+}
+
+[data-component='Modal'] [data-element='container'][data-has-back='true'][data-header-compact='true'] {
+  --modal-content-inset-start: calc(
+    var(--modal-header-inset) + var(--modal-header-height) + var(--espacio-1)
+  );
+}
+
+[data-component='Modal'] [data-element='body'] {
+  padding-inline-start: var(--modal-content-inset-start);
+  padding-inline-end: var(--modal-content-inset-end);
+}
+
+[data-component='Modal'] [data-element='footer'] {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: clamp(var(--espacio-1), 2vw, var(--espacio-2));
+  padding-inline-start: var(--modal-content-inset-start);
+  padding-inline-end: var(--modal-content-inset-end);
+}
+
+[data-component='Modal'] [data-element='footer'] > * {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: inherit;
+  gap: inherit;
+  min-width: 0;
+  max-width: 100%;
+  flex: 1 1 auto;
+}
+
+/*
+ * Capas superiores: el panel cubierto pierde protagonismo (blur + oscurecimiento).
+ * El backdrop elevated sigue sin acumular blur de fondo (ADR-0008).
+ */
+[data-component='Modal'] [data-subordinate='true'] {
+  filter: blur(var(--modal-subordinate-blur)) saturate(var(--modal-subordinate-saturate));
+  opacity: var(--modal-subordinate-opacity);
 }
 
 [data-component='Modal'] [data-element='heading'] {

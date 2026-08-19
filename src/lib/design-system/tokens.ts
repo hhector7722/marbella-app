@@ -110,6 +110,10 @@ export const DS_CSS_VARS = {
     modalHeaderHeight: '--modal-header-height',
     /** Alias estructural: apunta a `--espacio-4` (16px). */
     modalHeaderInset: '--modal-header-inset',
+    modalContentInsetStart: '--modal-content-inset-start',
+    modalContentInsetEnd: '--modal-content-inset-end',
+    modalSubordinateBlur: '--modal-subordinate-blur',
+    modalSubordinateOpacity: '--modal-subordinate-opacity',
     /** Alias estructural: apunta a `--espacio-3` (12px). */
     modalBodyStartGap: '--modal-body-start-gap',
     modalMaxHeight: '--modal-max-height',

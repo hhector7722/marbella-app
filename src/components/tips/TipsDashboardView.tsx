@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Clock, Plus, RefreshCw } from 'lucide-react';
+import { Clock, RefreshCw } from 'lucide-react';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
@@ -80,20 +80,20 @@ const fmtHours = (val: number) => (Math.abs(val) < 0.005 ? ' ' : (val % 1 === 0 
 const TIP_EXPAND_TH = 'bg-[#4a7583]';
 const TIP_EXPAND_TD = 'bg-[#36606F]/[0.07] hover:bg-[#36606F]/[0.11]';
 
-const TIP_TABLE_TH = 'whitespace-nowrap px-2 py-1.5 align-middle leading-none';
+const TIP_TABLE_TH = 'whitespace-nowrap px-1 py-1 align-middle leading-none';
 const TIP_TABLE_TH_TEXT =
   'text-[10px] font-black uppercase tracking-wide md:text-[8px]';
 const TIP_TABLE_TH_BTN =
-  'inline-flex w-full max-w-full items-center gap-1 py-0 leading-none active:scale-95';
+  'inline-flex w-full max-w-full items-center gap-0.5 py-0 leading-none active:scale-95';
 const TIP_TABLE_BODY_TEXT = 'text-[10px] font-black leading-none md:text-[11px]';
 const TIP_TABLE_DATA_CELL = cn(
-  'whitespace-nowrap px-2 py-2 text-center align-middle tabular-nums',
+  'whitespace-nowrap px-1 py-1.5 text-center align-middle tabular-nums',
   TIP_TABLE_BODY_TEXT
 );
 const TIP_TABLE_NAME_TH =
-  'sticky left-0 z-[1] max-w-none whitespace-nowrap bg-[#36606F] px-2.5 text-left align-middle';
+  'sticky left-0 z-[1] max-w-none whitespace-nowrap bg-[#36606F] px-1.5 text-left align-middle';
 const TIP_TABLE_NAME_TD = cn(
-  'sticky left-0 z-[1] max-w-none whitespace-nowrap bg-white px-2.5 py-2 cursor-pointer align-middle',
+  'sticky left-0 z-[1] max-w-none whitespace-nowrap bg-white px-1.5 py-1.5 cursor-pointer align-middle',
   TIP_TABLE_BODY_TEXT,
   'text-left text-zinc-900'
 );
@@ -123,19 +123,24 @@ function buildTipTableColWidths(flags: {
   showSinRegCol: boolean;
   showPropDetail: boolean;
 }): Record<TipTableColKey, string> {
+  const nameWeight = flags.showPropDetail ? 1.6 : 2.5;
   const cols: { key: TipTableColKey; weight: number }[] = [
-    { key: 'name', weight: 2.5 },
-    { key: 'h', weight: 1 },
+    { key: 'name', weight: nameWeight },
+    { key: 'h', weight: flags.showPropDetail ? 0.85 : 1 },
   ];
   if (flags.showHoursDetail) {
-    cols.push({ key: 'hLv', weight: 1 }, { key: 'hSd', weight: 1 });
+    cols.push({ key: 'hLv', weight: 0.85 }, { key: 'hSd', weight: 0.85 });
   }
-  cols.push({ key: 'pen', weight: 1 });
-  if (flags.showSinRegCol) cols.push({ key: 'sinReg', weight: 1 });
-  cols.push({ key: 'propF', weight: 1.2 });
+  cols.push({ key: 'pen', weight: flags.showPropDetail ? 0.85 : 1 });
+  if (flags.showSinRegCol) cols.push({ key: 'sinReg', weight: 0.85 });
+  cols.push({ key: 'propF', weight: flags.showPropDetail ? 1 : 1.2 });
   if (flags.showPropDetail) {
-    cols.push({ key: 'prop', weight: 1.2 });
-    cols.push({ key: 'sinPen', weight: 1 }, { key: 'eLv', weight: 1 }, { key: 'eSd', weight: 1 });
+    cols.push(
+      { key: 'prop', weight: 1.05 },
+      { key: 'sinPen', weight: 1 },
+      { key: 'eLv', weight: 1 },
+      { key: 'eSd', weight: 1.1 }
+    );
   }
   const total = cols.reduce((sum, c) => sum + c.weight, 0);
   return Object.fromEntries(cols.map((c) => [c.key, `${(c.weight / total) * 100}%`])) as Record<
@@ -177,6 +182,7 @@ export default function TipsDashboardView({
 
   const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
   const [cashModal, setCashModal] = useState<{ open: boolean; poolType: PoolType } | null>(null);
+  const [cashModalTotal, setCashModalTotal] = useState(0);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [overrideModal, setOverrideModal] = useState<{
@@ -444,61 +450,43 @@ export default function TipsDashboardView({
             {lastDistBanner}
 
             <div className="grid grid-cols-2 gap-2 md:gap-4">
-              <div className="bg-emerald-600 rounded-xl md:rounded-3xl shadow-md px-2.5 py-1.5 md:px-3 md:py-2 flex flex-row items-center justify-between gap-2 text-white border-b-2 border-emerald-800">
-                <div className="flex flex-row items-baseline gap-1.5 min-w-0">
-                  <span className="text-[8px] md:text-[9px] font-black uppercase tracking-wider text-white/70 whitespace-nowrap">
-                    Lun – Vie
+              <button
+                type="button"
+                onClick={() => openCash('weekday')}
+                className="bg-emerald-600 rounded-xl md:rounded-3xl shadow-md px-2.5 py-1.5 md:px-3 md:py-2 flex flex-row items-center justify-center gap-1.5 text-white border-b-2 border-emerald-800 cursor-pointer hover:bg-emerald-500 active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-600 min-h-[48px] w-full"
+                aria-label="Introducir cantidades entre semana"
+              >
+                <span className="text-[8px] md:text-[9px] font-black uppercase tracking-wider text-white/70 whitespace-nowrap">
+                  Lun – Vie
+                </span>
+                {(weekdayPool?.cashTotal ?? 0) > 0.005 ? (
+                  <span className="text-xs md:text-base font-black tabular-nums truncate">
+                    {fmtZeroBlank(weekdayPool!.cashTotal, 2)}
+                    <span className="text-[8px] font-black ml-0.5 opacity-80">€</span>
                   </span>
-                  {(weekdayPool?.cashTotal ?? 0) > 0.005 ? (
-                    <span className="text-xs md:text-base font-black tabular-nums truncate">
-                      {fmtZeroBlank(weekdayPool!.cashTotal, 2)}
-                      <span className="text-[8px] font-black ml-0.5 opacity-80">€</span>
-                    </span>
-                  ) : (
-                    <span className="text-xs md:text-base font-black text-white/30"> </span>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => openCash('weekday')}
-                  className="relative h-7 w-7 shrink-0 md:h-8 md:w-8"
-                  title="Introducir cantidades"
-                  aria-label="Introducir cantidades entre semana"
-                >
-                  <span className="absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2" aria-hidden />
-                  <span className="relative flex h-full w-full items-center justify-center rounded-lg bg-white/15 hover:bg-white/25 active:scale-95 transition-all">
-                    <Plus size={15} strokeWidth={3.5} className="text-white" />
-                  </span>
-                </button>
-              </div>
+                ) : (
+                  <span className="text-xs md:text-base font-black text-white/30"> </span>
+                )}
+              </button>
 
-              <div className="bg-emerald-600 rounded-xl md:rounded-3xl shadow-md px-2.5 py-1.5 md:px-3 md:py-2 flex flex-row items-center justify-between gap-2 text-white border-b-2 border-emerald-800">
-                <div className="flex flex-row items-baseline gap-1.5 min-w-0">
-                  <span className="text-[8px] md:text-[9px] font-black uppercase tracking-wider text-white/70 whitespace-nowrap">
-                    Sáb – Dom
+              <button
+                type="button"
+                onClick={() => openCash('weekend')}
+                className="bg-emerald-600 rounded-xl md:rounded-3xl shadow-md px-2.5 py-1.5 md:px-3 md:py-2 flex flex-row items-center justify-center gap-1.5 text-white border-b-2 border-emerald-800 cursor-pointer hover:bg-emerald-500 active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-600 min-h-[48px] w-full"
+                aria-label="Introducir cantidades fin de semana"
+              >
+                <span className="text-[8px] md:text-[9px] font-black uppercase tracking-wider text-white/70 whitespace-nowrap">
+                  Sáb – Dom
+                </span>
+                {(weekendPool?.cashTotal ?? 0) > 0.005 ? (
+                  <span className="text-xs md:text-base font-black tabular-nums truncate">
+                    {fmtZeroBlank(weekendPool!.cashTotal, 2)}
+                    <span className="text-[8px] font-black ml-0.5 opacity-80">€</span>
                   </span>
-                  {(weekendPool?.cashTotal ?? 0) > 0.005 ? (
-                    <span className="text-xs md:text-base font-black tabular-nums truncate">
-                      {fmtZeroBlank(weekendPool!.cashTotal, 2)}
-                      <span className="text-[8px] font-black ml-0.5 opacity-80">€</span>
-                    </span>
-                  ) : (
-                    <span className="text-xs md:text-base font-black text-white/30"> </span>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => openCash('weekend')}
-                  className="relative h-7 w-7 shrink-0 md:h-8 md:w-8"
-                  title="Introducir cantidades"
-                  aria-label="Introducir cantidades fin de semana"
-                >
-                  <span className="absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2" aria-hidden />
-                  <span className="relative flex h-full w-full items-center justify-center rounded-lg bg-white/15 hover:bg-white/25 active:scale-95 transition-all">
-                    <Plus size={15} strokeWidth={3.5} className="text-white" />
-                  </span>
-                </button>
-              </div>
+                ) : (
+                  <span className="text-xs md:text-base font-black text-white/30"> </span>
+                )}
+              </button>
             </div>
 
             {canConfirmDistribution && (
@@ -521,7 +509,7 @@ export default function TipsDashboardView({
                   Calculando…
                 </div>
               )}
-              <div className="isolate overflow-x-auto touch-pan-y overscroll-y-auto">
+              <div className="isolate overflow-x-auto touch-pan-y overscroll-y-auto md:overflow-x-visible">
                 <table className="w-full border-collapse max-md:table-auto md:table-fixed">
                   <thead>
                     <tr className="align-middle bg-[#36606F] text-white">
@@ -880,7 +868,10 @@ export default function TipsDashboardView({
       {cashModal?.open ? (
         <Modal
           open
-          onClose={() => setCashModal(null)}
+          onClose={() => {
+            setCashModal(null);
+            setCashModalTotal(0);
+          }}
           title={cashModal.poolType === 'weekday' ? 'Propina entre semana' : 'Propina fin de semana'}
           variant="amplify"
           layer="base"
@@ -892,11 +883,20 @@ export default function TipsDashboardView({
           }
           footer={
             <div className="flex w-full flex-wrap items-center justify-end gap-2">
+              <div className="mr-auto flex items-center gap-2 shrink-0">
+                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Total</span>
+                <span className="text-base font-black tabular-nums text-zinc-800">
+                  {cashModalTotal > 0.005 ? `${cashModalTotal.toFixed(2)}€` : ' '}
+                </span>
+              </div>
               <Button
                 type="button"
                 variant="secondary"
                 instance={`tips-cash-${cashModal.poolType}-cancel`}
-                onClick={() => setCashModal(null)}
+                onClick={() => {
+                  setCashModal(null);
+                  setCashModalTotal(0);
+                }}
               >
                 Cancelar
               </Button>
@@ -915,8 +915,12 @@ export default function TipsDashboardView({
             key={`tip-cash-${cashModal.poolType}-${startDate}-${endDate}`}
             type="in"
             boxName={cashModal.poolType === 'weekday' ? 'Propina entre semana' : 'Propina fin de semana'}
-            onCancel={() => setCashModal(null)}
+            onCancel={() => {
+              setCashModal(null);
+              setCashModalTotal(0);
+            }}
             onSubmit={(total, breakdown, notes) => handleSaveCash(cashModal.poolType, total, breakdown, notes)}
+            onTotalChange={setCashModalTotal}
             initialCounts={breakdownToInitialCounts(
               cashModal.poolType === 'weekday'
                 ? preview?.pools?.weekday?.cashBreakdown

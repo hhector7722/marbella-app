@@ -23,6 +23,34 @@ type StackEntry = {
 
 const stack: StackEntry[] = [];
 let escapeListenerBound = false;
+let stackVersion = 0;
+const stackListeners = new Set<() => void>();
+
+function emitStackChange() {
+    stackVersion += 1;
+    for (const listener of stackListeners) {
+        listener();
+    }
+}
+
+/** Suscripción para re-render cuando cambia la pila (p. ej. subordinación visual). */
+export function subscribeModalSurfaceStack(onStoreChange: () => void): () => void {
+    stackListeners.add(onStoreChange);
+    return () => {
+        stackListeners.delete(onStoreChange);
+    };
+}
+
+export function getModalSurfaceStackVersion(): number {
+    return stackVersion;
+}
+
+/** Superficie cubierta por otra capa → pierde protagonismo visual. */
+export function isModalSurfaceSubordinate(surfaceId: string): boolean {
+    const idx = stack.findIndex((e) => e.id === surfaceId);
+    if (idx < 0) return false;
+    return idx < stack.length - 1;
+}
 
 function onDocumentEscape(event: KeyboardEvent) {
     if (event.key !== 'Escape') return;
@@ -65,6 +93,7 @@ export function registerModalSurface(entry: StackEntry): RegisterModalSurfaceRes
 
     stack.push(entry);
     bindEscapeListener();
+    emitStackChange();
 
     return {
         ok: true,
@@ -72,6 +101,7 @@ export function registerModalSurface(entry: StackEntry): RegisterModalSurfaceRes
             const idx = stack.findIndex((e) => e.id === entry.id);
             if (idx >= 0) stack.splice(idx, 1);
             unbindEscapeListenerIfEmpty();
+            emitStackChange();
         },
     };
 }
@@ -94,6 +124,7 @@ export function resetModalSurfaceStackForTests(): void {
         document.removeEventListener('keydown', onDocumentEscape, true);
     }
     escapeListenerBound = false;
+    emitStackChange();
 }
 
 export function hasDerivedModalSurface(): boolean {

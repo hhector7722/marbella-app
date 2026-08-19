@@ -27,6 +27,8 @@ interface CashDenominationFormProps {
     forcePurchaseMode?: boolean; // New prop
     /** Modal botes propinas / host con chrome Modal: solo contenido funcional. */
     variant?: 'default' | 'tipPool' | 'embedded';
+    /** Solo tipPool: notifica el total en vivo al host (p. ej. footer del Modal). */
+    onTotalChange?: (total: number) => void;
 }
 
 export const TIP_POOL_CASH_FORM_ID = 'tips-cash-denomination-form';
@@ -52,6 +54,7 @@ export const CashDenominationForm = ({
     isEditing = false,
     forcePurchaseMode = false,
     variant = 'default',
+    onTotalChange,
 }: CashDenominationFormProps) => {
     const [counts, setCounts] = useState<Record<number, number>>(initialCounts);
 
@@ -209,6 +212,12 @@ export const CashDenominationForm = ({
     const totalReceived = calculateTotal(receivedCounts);
     const total = isPurchaseMode ? (purchasePrice || 0) : totalGiven;
 
+    useEffect(() => {
+        if (isTipPool && onTotalChange) {
+            onTotalChange(totalGiven);
+        }
+    }, [isTipPool, onTotalChange, totalGiven]);
+
     const netDifference = totalGiven - totalReceived;
     const isMathCorrect = Math.abs(netDifference - (purchasePrice || 0)) < 0.01;
     // check stock issue for OUTs
@@ -347,17 +356,8 @@ export const CashDenominationForm = ({
                 />
             )}
             <div className={cn(
-                isTipPool ? 'min-h-0 space-y-4 p-4' : 'flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4',
+                isTipPool ? 'min-h-0 space-y-1.5 p-2' : 'flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4',
             )}>
-
-                {isTipPool ? (
-                    <div className="flex items-center justify-end gap-2">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Total</span>
-                        <span className="text-base font-black tabular-nums text-zinc-800">
-                            {totalGiven > 0.005 ? `${totalGiven.toFixed(2)}€` : ' '}
-                        </span>
-                    </div>
-                ) : null}
 
                 {/* DATE & NOTES & PRICE ROW (oculto en variant tipPool) */}
                 {!isTipPool && isPurchaseMode ? (
@@ -544,30 +544,37 @@ export const CashDenominationForm = ({
                 ) : null}
 
                 <div className={cn(
-                    'grid gap-y-2 gap-x-1.5 p-0.5',
-                    isTipPool ? 'grid-cols-3 sm:grid-cols-5' : 'grid-cols-4 sm:grid-cols-5',
+                    'grid p-0.5',
+                    isTipPool ? 'grid-cols-3 sm:grid-cols-5 gap-y-1 gap-x-1' : 'grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5',
                 )}>
                     {DENOMINATIONS.map(denom => {
                         const hasStockIssue = ((type === 'out' && !isPurchaseMode) || (isPurchaseMode && purchaseTab === 'given')) && (counts[denom] || 0) > (availableStock[denom] || 0);
                         const currentCounts = isPurchaseMode && purchaseTab === 'received' ? receivedCounts : counts;
                         return (
-                            <div key={denom} className="flex flex-col items-center gap-1 group transition-all">
+                            <div key={denom} className={cn('flex flex-col items-center group transition-all', isTipPool ? 'gap-0.5' : 'gap-1')}>
                                 <div
                                     role="button"
                                     tabIndex={0}
                                     onClick={() => setZoomDenom(denom)}
                                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setZoomDenom(denom); }}
-                                    className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110 cursor-pointer rounded-lg hover:bg-white/60 focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]/40 focus:ring-offset-1 min-h-[48px]"
+                                    className={cn(
+                                        'w-full flex items-center justify-center transition-transform group-hover:scale-110 cursor-pointer rounded-lg hover:bg-white/60 focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]/40 focus:ring-offset-1',
+                                        isTipPool ? 'h-8 sm:h-9 min-h-[36px]' : 'h-11 sm:h-14 min-h-[48px]',
+                                    )}
                                     aria-label={`Editar cantidad de ${denom >= 1 ? `${denom} euros` : `${(denom * 100).toFixed(0)} céntimos`}`}
                                 >
                                     <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={140} height={140} className="h-full w-auto object-contain drop-shadow-lg pointer-events-none" />
                                 </div>
                                 <div className="text-center w-full">
-                                    <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">
+                                    <span className={cn(
+                                        'font-black text-gray-500 uppercase tracking-widest block',
+                                        isTipPool ? 'text-[7px] mb-0' : 'text-[9px] mb-0.5',
+                                    )}>
                                         {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
                                     </span>
                                     <div className={cn(
-                                        "flex items-center justify-between w-full h-10 bg-white border rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1",
+                                        'flex items-center justify-between w-full bg-white border rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1',
+                                        isTipPool ? 'h-8' : 'h-10',
                                         hasStockIssue
                                             ? "border-rose-300 focus-within:border-rose-400 focus-within:ring-rose-200"
                                             : "border-zinc-200 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20"
@@ -575,23 +582,32 @@ export const CashDenominationForm = ({
                                         <button
                                             type="button"
                                             onClick={() => handleAdjust(denom, -1)}
-                                            className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
+                                            className={cn(
+                                                'h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0',
+                                                isTipPool ? 'w-5' : 'w-6',
+                                            )}
                                         >
-                                            <Minus size={14} strokeWidth={3} />
+                                            <Minus size={isTipPool ? 12 : 14} strokeWidth={3} />
                                         </button>
                                         <input
                                             type="number"
                                             value={(isPurchaseMode && purchaseTab === 'received' ? receivedCounts[denom] : counts[denom]) || ''}
                                             onChange={(e) => handleCountChange(denom, e.target.value)}
                                             placeholder=""
-                                            className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-[10px] tracking-tighter tabular-nums focus:bg-blue-50/20 transition-colors"
+                                            className={cn(
+                                                'flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 tracking-tighter tabular-nums focus:bg-blue-50/20 transition-colors',
+                                                isTipPool ? 'text-[9px]' : 'text-[10px]',
+                                            )}
                                         />
                                         <button
                                             type="button"
                                             onClick={() => handleAdjust(denom, 1)}
-                                            className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
+                                            className={cn(
+                                                'h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0',
+                                                isTipPool ? 'w-5' : 'w-6',
+                                            )}
                                         >
-                                            <Plus size={14} strokeWidth={3} />
+                                            <Plus size={isTipPool ? 12 : 14} strokeWidth={3} />
                                         </button>
                                     </div>
                                     {((!isPurchaseMode && type === 'out') || (isPurchaseMode && purchaseTab === 'given')) && (availableStock[denom] || 0) > 0 && (
