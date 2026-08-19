@@ -4,14 +4,12 @@ import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, X, ArrowLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit2 } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import { format, addMonths, subMonths, isSameMonth, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { createClient } from '@/utils/supabase/client';
-import { Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ShrinkToFitText } from '@/components/ui/ShrinkToFitCell';
 import { ScheduleDayEditor } from '@/components/schedule/ScheduleDayEditor';
@@ -329,11 +327,81 @@ export const StaffScheduleModal = ({
             <Modal
                 open={isOpen}
                 onClose={handleClose}
-                title="Horario"
+                title={
+                    selectedDate
+                        ? format(selectedDate, "EEE d MMMM", { locale: es }).replace(/^(\w{3})\./, '$1')
+                        : format(currentDate, "MMMM yyyy", { locale: es })
+                }
                 instance="staff-schedule"
                 variant="work"
                 layer="base"
-                hideHeader
+                hideHeader={Boolean(editModeForDate)}
+                onBack={selectedDate ? handleBack : undefined}
+                headerTone="petroleum"
+                headerTrailing={
+                    !editModeForDate ? (
+                        <>
+                            {selectedDate ? (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const prevDay = new Date(selectedDate);
+                                        prevDay.setDate(prevDay.getDate() - 1);
+                                        void handleDayClick(prevDay);
+                                    }}
+                                    className="flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white/90 outline-none transition-opacity hover:opacity-100 active:opacity-70"
+                                    aria-label="Día anterior"
+                                >
+                                    <ChevronLeft size={18} strokeWidth={2.5} />
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => navigateMonth(-1)}
+                                    className="flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white/90 outline-none transition-opacity hover:opacity-100 active:opacity-70"
+                                    aria-label="Mes anterior"
+                                >
+                                    <ChevronLeft size={20} strokeWidth={2.5} />
+                                </button>
+                            )}
+
+                            {selectedDate ? (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const nextDay = new Date(selectedDate);
+                                        nextDay.setDate(nextDay.getDate() + 1);
+                                        void handleDayClick(nextDay);
+                                    }}
+                                    className="flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white/90 outline-none transition-opacity hover:opacity-100 active:opacity-70"
+                                    aria-label="Día siguiente"
+                                >
+                                    <ChevronRight size={18} strokeWidth={2.5} />
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => navigateMonth(1)}
+                                    className="flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white/90 outline-none transition-opacity hover:opacity-100 active:opacity-70"
+                                    aria-label="Mes siguiente"
+                                >
+                                    <ChevronRight size={20} strokeWidth={2.5} />
+                                </button>
+                            )}
+
+                            {selectedDate && userEmail === 'hhector7722@gmail.com' ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setEditModeForDate(format(selectedDate, 'yyyy-MM-dd'))}
+                                    className="flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white/90 outline-none transition-opacity hover:opacity-100 active:opacity-70"
+                                    aria-label="Editar este día"
+                                >
+                                    <Edit2 size={16} strokeWidth={2.5} />
+                                </button>
+                            ) : null}
+                        </>
+                    ) : null
+                }
                 scrollContent={false}
             >
 
@@ -346,89 +414,11 @@ export const StaffScheduleModal = ({
                             onSuccess={exitEditModeAndRefresh}
                             onRequestCloseModal={handleClose}
                             embedded
+                            modalParentInstance="staff-schedule"
                         />
                     </div>
                 ) : (
                 <>
-                {/* ── HEADER (petrol, same style as editor) ── */}
-                <div className="bg-[#36606F] px-4 py-3 flex items-center shrink-0 day-modal-header">
-                    {selectedDate ? (
-                        <div className="flex items-center justify-between w-full gap-2">
-                            {/* Volver al calendario */}
-                            <button onClick={handleBack} className="w-8 h-8 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-95 shrink-0">
-                                <ArrowLeft size={18} strokeWidth={2.5} />
-                            </button>
-
-                            {/* Navegación por todos los días (flechas día anterior / siguiente) */}
-                            <div className="flex items-center justify-center gap-2 flex-1 min-w-0">
-                                {(() => {
-                                    const prevDay = new Date(selectedDate!);
-                                    prevDay.setDate(prevDay.getDate() - 1);
-                                    const nextDay = new Date(selectedDate!);
-                                    nextDay.setDate(nextDay.getDate() + 1);
-                                    return (
-                                        <>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDayClick(prevDay)}
-                                                className="w-7 h-7 flex items-center justify-center rounded-xl transition-all active:scale-95 shrink-0 text-white hover:bg-white/10"
-                                            >
-                                                <ChevronLeft size={20} strokeWidth={2.5} />
-                                            </button>
-
-                                            <h3 className="text-[12px] font-black uppercase tracking-widest text-white truncate px-1 capitalize">
-                                                {format(selectedDate!, "EEE d MMMM", { locale: es }).replace(/^(\w{3})\./, '$1')}
-                                            </h3>
-
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDayClick(nextDay)}
-                                                className="w-7 h-7 flex items-center justify-center rounded-xl transition-all active:scale-95 shrink-0 text-white hover:bg-white/10"
-                                            >
-                                                <ChevronRight size={20} strokeWidth={2.5} />
-                                            </button>
-                                        </>
-                                    );
-                                })()}
-                            </div>
-
-                            {/* Botón de Edición (Solo para Managers): abre editor dentro del modal */}
-                            {(userEmail === 'hhector7722@gmail.com') && (
-                                <button
-                                    type="button"
-                                    onClick={() => setEditModeForDate(format(selectedDate!, 'yyyy-MM-dd'))}
-                                    className="w-8 h-8 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all text-white active:scale-95 shrink-0"
-                                    title="Editar este día"
-                                >
-                                    <Edit2 size={16} strokeWidth={2.5} />
-                                </button>
-                            )}
-
-                            {/* Cerrar */}
-                            <button onClick={handleClose} className="w-8 h-8 flex items-center justify-center bg-rose-500 rounded-xl hover:bg-rose-600 transition-all text-white active:scale-90 shadow-md shrink-0">
-                                <X size={18} strokeWidth={2.5} />
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="flex items-center gap-2 w-full justify-between">
-                            <div className="flex items-center">
-                                <button onClick={() => navigateMonth(-1)} className="p-2 hover:bg-white/10 rounded-xl transition-all active:scale-95 text-white">
-                                    <ChevronLeft size={22} />
-                                </button>
-                                <h3 className="text-xs font-black uppercase tracking-widest w-[130px] text-center text-white capitalize">
-                                    {format(currentDate, "MMMM yyyy", { locale: es })}
-                                </h3>
-                                <button onClick={() => navigateMonth(1)} className="p-2 hover:bg-white/10 rounded-xl transition-all active:scale-95 text-white">
-                                    <ChevronRight size={22} />
-                                </button>
-                            </div>
-                            <button onClick={handleClose} className="w-9 h-9 flex items-center justify-center bg-rose-500 rounded-xl hover:bg-rose-600 transition-all text-white active:scale-90 shadow-md">
-                                <X size={20} strokeWidth={2.5} />
-                            </button>
-                        </div>
-                    )}
-                </div>
-
                 {/* ── BODY ── */}
                 {!selectedDate ? (
                     // VISTA A: CALENDARIO MENSUAL

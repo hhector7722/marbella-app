@@ -1928,6 +1928,7 @@ export default function AlbaranesHistoricoClient({
                   variant="standard"
                   layer="derived"
                   instance="albaran-ingredient-wizard"
+                  parentInstance="albaran-detail"
                   usageId="albaran-ingredient-wizard"
                   usageLabel="Wizard de ingrediente"
                   title="Ingrediente"

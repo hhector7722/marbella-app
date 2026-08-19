@@ -29,7 +29,6 @@ export const LEGACY_PARALLEL_OVERLAY_ALLOWLIST = [
     'src/components/dashboards/StaffDashboardView.tsx',
     'src/components/kds/KDSView.tsx',
     'src/components/modals/StaffScheduleModal.tsx',
-    'src/components/schedule/ScheduleDayEditor.tsx',
     'src/components/ui/ImageLightbox.tsx',
     'src/components/ui/QuickCalculatorModal.tsx',
 ] as const;

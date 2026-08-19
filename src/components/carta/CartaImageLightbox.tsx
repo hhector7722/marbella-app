@@ -8,6 +8,7 @@ export function CartaImageLightbox({
   title,
   open,
   onClose,
+  parentInstance,
 }: {
   src: string | null
   alt: string
@@ -15,6 +16,8 @@ export function CartaImageLightbox({
   title: string
   open: boolean
   onClose: () => void
+  /** Solo cuando el lightbox se abre sobre un Modal padre aún montado. */
+  parentInstance?: string
 }) {
   if (!src) return null
 
@@ -24,19 +27,19 @@ export function CartaImageLightbox({
       onClose={onClose}
       title={title || alt}
       headerTitleAlign="left"
-      className="max-h-[min(94vh,960px)] w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl"
-      wrapperClassName="max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl"
-      layer="derived"
+      variant="work"
+      layer={parentInstance ? 'derived' : 'base'}
+      {...(parentInstance ? { parentInstance } : {})}
       backdropClassName="bg-black/80"
       usageId="carta-image-lightbox"
       usageLabel="Imagen carta"
     >
-      <div className="flex min-h-0 flex-1 items-center justify-center bg-zinc-50/40 p-6 sm:p-8 md:p-10">
+      <div className="flex min-h-0 flex-1 items-center justify-center bg-zinc-50/40 p-6">
         {/* eslint-disable-next-line @next/next/no-img-element -- URL externa / Storage */}
         <img
           src={src}
           alt={alt}
-          className="max-h-[min(68vh,680px)] w-full max-w-full object-contain"
+          className="h-full w-full max-w-full object-contain"
         />
       </div>
     </Modal>

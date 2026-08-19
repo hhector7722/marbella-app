@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import { createClient } from "@/utils/supabase/client";
 import {
     X,
@@ -38,6 +37,8 @@ export interface ScheduleDayEditorProps {
     onSuccess?: () => void;
     onRequestCloseModal?: () => void;
     embedded?: boolean;
+    /** Instancia del Modal padre vivo; solo cuando el editor está embebido en StaffScheduleModal. */
+    modalParentInstance?: string;
 }
 
 const START_HOUR = 7; // 7:00 AM
@@ -163,7 +164,7 @@ const ShiftBar = ({
 };
 
 
-export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCloseModal, embedded = false }: ScheduleDayEditorProps) {
+export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCloseModal, embedded = false, modalParentInstance }: ScheduleDayEditorProps) {
     const supabase = createClient();
     const [loading, setLoading] = useState(true);
 
@@ -774,32 +775,34 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                     {/* CABECERA (Fecha y Botones) */}
                     <div className="flex items-center justify-between px-4 py-3 shrink-0 relative">
                         <div className="flex items-center gap-0 sm:gap-1 mt-2">
-                            {embedded && (
-                                <button onClick={onClose} className="p-1.5 hover:bg-white/10 rounded-xl transition-colors text-white active:scale-95 flex-shrink-0" title="Volver">
+                            {embedded && modalParentInstance && (
+                                <button type="button" onClick={onClose} aria-label="Volver al calendario" className="p-1.5 hover:bg-white/10 rounded-xl transition-colors text-white active:scale-95 flex-shrink-0" title="Volver">
                                     <ArrowLeft size={22} strokeWidth={2.5} />
                                 </button>
                             )}
-                            <button onClick={() => navigateDay(-1)} className="p-1 sm:p-1.5 hover:bg-white/10 rounded-xl transition-colors text-white active:scale-95 flex-shrink-0">
+                            <button type="button" onClick={() => navigateDay(-1)} aria-label="Día anterior" className="p-1 sm:p-1.5 hover:bg-white/10 rounded-xl transition-colors text-white active:scale-95 flex-shrink-0">
                                 <ChevronLeft size={24} />
                             </button>
-                            <button onClick={() => setShowCalendarModal(true)} className="flex items-center gap-1 group cursor-pointer hover:bg-white/10 px-1 py-1 sm:py-1.5 rounded-xl transition-all">
+                            <button type="button" onClick={() => setShowCalendarModal(true)} aria-label="Abrir calendario" className="flex items-center gap-1 group cursor-pointer hover:bg-white/10 px-1 py-1 sm:py-1.5 rounded-xl transition-all">
                                 <h2 className="text-[13px] sm:text-[15px] md:text-xl font-black text-white uppercase tracking-widest whitespace-nowrap capitalize">
                                     {date && format(new Date(date), "EEE d MMMM", { locale: es }).replace(/^(\w{3})\./, '$1')}
                                 </h2>
                             </button>
-                            <button onClick={() => navigateDay(1)} className="p-1 sm:p-1.5 hover:bg-white/10 rounded-xl transition-colors text-white active:scale-95 flex-shrink-0">
+                            <button type="button" onClick={() => navigateDay(1)} aria-label="Día siguiente" className="p-1 sm:p-1.5 hover:bg-white/10 rounded-xl transition-colors text-white active:scale-95 flex-shrink-0">
                                 <ChevronRight size={24} />
                             </button>
                         </div>
 
                         <div className="flex items-center gap-1 mt-2">
                             {/* Movemos Botón Agregar Empleado a Cabecera */}
-                            <button onClick={() => setShowAddEmployeeModal(true)} className="w-7 h-7 md:w-8 md:h-8 bg-[#0FA968] hover:bg-emerald-600 rounded-xl flex items-center justify-center text-white transition-colors shadow-sm active:scale-95 group">
+                            <button type="button" onClick={() => setShowAddEmployeeModal(true)} aria-label="Añadir empleado" className="w-7 h-7 md:w-8 md:h-8 bg-[#0FA968] hover:bg-emerald-600 rounded-xl flex items-center justify-center text-white transition-colors shadow-sm active:scale-95 group">
                                 <Plus size={16} strokeWidth={3} className="group-hover:rotate-90 transition-transform" />
                             </button>
 
                             <button
+                                type="button"
                                 onClick={() => setShowShareModal(true)}
+                                aria-label="Compartir horario"
                                 className={`relative w-7 h-7 md:w-8 md:h-8 rounded-xl text-white transition-all active:scale-95 shadow-sm flex items-center justify-center bg-[#36606F] hover:bg-[#2a4d59] group ${isDayPublished && hasUnsavedChanges ? 'ring-2 ring-orange-400/80 ring-offset-2 ring-offset-[#36606F]' : ''}`}
                             >
                                 <Share2 size={16} strokeWidth={2.5} className="text-white" />
@@ -1215,62 +1218,67 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
 
             </div>
 
-            {/* Barra flotante en portal cuando está embebido: tarjeta oscura, + arriba (verde), - abajo (rojo). Cierre tocando fuera (overlay). */}
-            {embedded && editingIndex !== null && typeof document !== 'undefined' && shifts[editingIndex] && (() => {
+            {/* Task surface embebida migrada al Modal oficial. */}
+            {embedded && editingIndex !== null && shifts[editingIndex] && (() => {
                 const s = shifts[editingIndex];
                 const upd = (newS: typeof s) => handleUpdateShift(editingIndex, newS);
                 const step = SNAP_MINUTES;
-                return createPortal(
-                    <>
-                        <div className="fixed inset-0 z-[9998]" onClick={() => setEditingIndex(null)} aria-hidden />
-                        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] w-full max-w-md px-4 pointer-events-none" onClick={(e) => e.stopPropagation()}>
-                            <div className="pointer-events-auto flex flex-col gap-2 p-2 bg-zinc-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 animate-in fade-in zoom-in-95 duration-200">
-                                {/* Controles de Tiempo */}
-                                <div className="h-14 flex items-center gap-2">
-                                    <div className="flex flex-col gap-0.5 shrink-0">
-                                        <button type="button" onClick={() => upd({ ...s, start: stepTime(s.start, -step) })} className="w-8 h-6 flex items-center justify-center rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm active:scale-95" title="Inicio -30 min"><Plus size={14} strokeWidth={3} /></button>
-                                        <button type="button" onClick={() => { const t = stepTime(s.start, step); if (timeToPercent(t) < timeToPercent(s.end)) upd({ ...s, start: t }); }} className="w-8 h-6 flex items-center justify-center rounded-lg bg-red-500 hover:bg-red-600 text-white shadow-sm active:scale-95" title="Inicio +30 min"><Minus size={14} strokeWidth={3} /></button>
-                                    </div>
-                                    <div className="flex-1 relative h-full min-w-0 rounded-xl overflow-hidden">
-                                        <ShiftBar shift={s} onUpdate={upd} allowMove={true} barClass="bg-[#5B8FB9] border border-white/20" />
-                                    </div>
-                                    <div className="flex flex-col gap-0.5 shrink-0">
-                                        <button type="button" onClick={() => { const t = stepTime(s.end, step); if (timeToPercent(t) > timeToPercent(s.start)) upd({ ...s, end: t }); }} className="w-8 h-6 flex items-center justify-center rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm active:scale-95" title="Final +30 min"><Plus size={14} strokeWidth={3} /></button>
-                                        <button type="button" onClick={() => upd({ ...s, end: stepTime(s.end, -step) })} className="w-8 h-6 flex items-center justify-center rounded-lg bg-red-500 hover:bg-red-600 text-white shadow-sm active:scale-95" title="Final -30 min"><Minus size={14} strokeWidth={3} /></button>
+                return (
+                    <Modal
+                        open
+                        onClose={() => setEditingIndex(null)}
+                        title={s.name || 'Editar turno'}
+                        instance="schedule-shift-edit"
+                        variant="compact"
+                        layer={modalParentInstance ? 'derived' : 'base'}
+                        {...(modalParentInstance ? { parentInstance: modalParentInstance } : {})}
+                        headerTone="petroleum"
+                    >
+                        <div className="flex flex-col gap-2 p-2 bg-zinc-900/95 backdrop-blur-md">
+                            {/* Controles de Tiempo */}
+                            <div className="h-14 flex items-center gap-2">
+                                <div className="flex flex-col gap-0.5 shrink-0">
+                                    <button type="button" aria-label="Inicio -30 min" onClick={() => upd({ ...s, start: stepTime(s.start, -step) })} className="w-8 h-6 flex items-center justify-center rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm active:scale-95" title="Inicio -30 min"><Plus size={14} strokeWidth={3} /></button>
+                                    <button type="button" aria-label="Inicio +30 min" onClick={() => { const t = stepTime(s.start, step); if (timeToPercent(t) < timeToPercent(s.end)) upd({ ...s, start: t }); }} className="w-8 h-6 flex items-center justify-center rounded-lg bg-red-500 hover:bg-red-600 text-white shadow-sm active:scale-95" title="Inicio +30 min"><Minus size={14} strokeWidth={3} /></button>
+                                </div>
+                                <div className="flex-1 relative h-full min-w-0 rounded-xl overflow-hidden">
+                                    <ShiftBar shift={s} onUpdate={upd} allowMove={true} barClass="bg-[#5B8FB9] border border-white/20" />
+                                </div>
+                                <div className="flex flex-col gap-0.5 shrink-0">
+                                    <button type="button" aria-label="Final +30 min" onClick={() => { const t = stepTime(s.end, step); if (timeToPercent(t) > timeToPercent(s.start)) upd({ ...s, end: t }); }} className="w-8 h-6 flex items-center justify-center rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm active:scale-95" title="Final +30 min"><Plus size={14} strokeWidth={3} /></button>
+                                    <button type="button" aria-label="Final -30 min" onClick={() => upd({ ...s, end: stepTime(s.end, -step) })} className="w-8 h-6 flex items-center justify-center rounded-lg bg-red-500 hover:bg-red-600 text-white shadow-sm active:scale-95" title="Final -30 min"><Minus size={14} strokeWidth={3} /></button>
+                                </div>
+                            </div>
+
+                            {/* Controles de Actividad y Categoría del Trabajador */}
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-[7px] font-black text-white/60 uppercase tracking-widest pl-1">Actividad Trabajador</span>
+                                    <div className="h-9 bg-white/10 rounded-xl border border-white/10 overflow-hidden">
+                                        <input
+                                            type="text"
+                                            value={s.activity}
+                                            onChange={(e) => upd({ ...s, activity: e.target.value })}
+                                            placeholder="ACT."
+                                            className="w-full h-full bg-transparent border-none focus:outline-none text-white text-[10px] font-black uppercase px-3 placeholder:text-white/20"
+                                        />
                                     </div>
                                 </div>
-
-                                {/* Controles de Actividad y Categoría del Trabajador */}
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-[7px] font-black text-white/60 uppercase tracking-widest pl-1">Actividad Trabajador</span>
-                                        <div className="h-9 bg-white/10 rounded-xl border border-white/10 overflow-hidden">
-                                            <input
-                                                type="text"
-                                                value={s.activity}
-                                                onChange={(e) => upd({ ...s, activity: e.target.value })}
-                                                placeholder="ACT."
-                                                className="w-full h-full bg-transparent border-none focus:outline-none text-white text-[10px] font-black uppercase px-3 placeholder:text-white/20"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-[7px] font-black text-white/60 uppercase tracking-widest pl-1">Categoría Trabajador</span>
-                                        <div className="h-9 bg-white/10 rounded-xl border border-white/10 overflow-hidden">
-                                            <input
-                                                type="text"
-                                                value={s.categoria}
-                                                onChange={(e) => upd({ ...s, categoria: e.target.value })}
-                                                placeholder="CAT."
-                                                className="w-full h-full bg-transparent border-none focus:outline-none text-white text-[10px] font-black uppercase px-3 placeholder:text-white/20"
-                                            />
-                                        </div>
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-[7px] font-black text-white/60 uppercase tracking-widest pl-1">Categoría Trabajador</span>
+                                    <div className="h-9 bg-white/10 rounded-xl border border-white/10 overflow-hidden">
+                                        <input
+                                            type="text"
+                                            value={s.categoria}
+                                            onChange={(e) => upd({ ...s, categoria: e.target.value })}
+                                            placeholder="CAT."
+                                            className="w-full h-full bg-transparent border-none focus:outline-none text-white text-[10px] font-black uppercase px-3 placeholder:text-white/20"
+                                        />
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </>,
-                    document.body
+                    </Modal>
                 );
             })()}
 
@@ -1281,14 +1289,14 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 title="Calendario"
                 instance="schedule-calendar"
                 variant="compact"
-                layer={embedded ? 'derived' : 'base'}
-                {...(embedded ? { parentInstance: 'staff-schedule' } : {})}
+                layer={modalParentInstance ? 'derived' : 'base'}
+                {...(modalParentInstance ? { parentInstance: modalParentInstance } : {})}
                 headerTone="petroleum"
                 headerTrailing={
                     <div className="flex items-center gap-1">
-                        <button onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))} className="text-white hover:bg-white/10 p-2 rounded-xl transition-all"><ChevronLeft size={20} /></button>
+                        <button type="button" onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))} aria-label="Mes anterior" className="text-white hover:bg-white/10 p-2 rounded-xl transition-all"><ChevronLeft size={20} /></button>
                         <span className="text-white font-black uppercase tracking-widest text-sm min-w-[120px] text-center capitalize">{calendarDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</span>
-                        <button onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))} className="text-white hover:bg-white/10 p-2 rounded-xl transition-all"><ChevronRight size={20} /></button>
+                        <button type="button" onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))} aria-label="Mes siguiente" className="text-white hover:bg-white/10 p-2 rounded-xl transition-all"><ChevronRight size={20} /></button>
                     </div>
                 }
                 hideTitle
@@ -1318,8 +1326,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 title="Compartir"
                 instance="schedule-share"
                 variant="compact"
-                layer={embedded ? 'derived' : 'base'}
-                {...(embedded ? { parentInstance: 'staff-schedule' } : {})}
+                layer={modalParentInstance ? 'derived' : 'base'}
+                {...(modalParentInstance ? { parentInstance: modalParentInstance } : {})}
                 headerTone="petroleum"
             >
                 <div className="p-6 flex flex-col gap-5">

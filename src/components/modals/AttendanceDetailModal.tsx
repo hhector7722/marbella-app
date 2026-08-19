@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Save, Coins, Landmark, Calendar, Plus, Trash2 } from 'lucide-react';
+import { Coins, Landmark, Calendar, Plus, Trash2 } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import { format, startOfWeek, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -644,31 +644,21 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
             instance="attendance-detail"
             variant="compact"
             layer="base"
-            hideHeader
+            headerTrailing={
+                showAddFichajeButton ? (
+                    <button
+                        type="button"
+                        onClick={() => setShowCreateFichaje(true)}
+                        className="flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-zinc-500 outline-none transition-opacity hover:opacity-80 active:opacity-70"
+                        aria-label="Nuevo fichaje"
+                    >
+                        <Plus size={16} strokeWidth={2.5} />
+                    </button>
+                ) : null
+            }
             scrollContent={false}
         >
-                <div className="bg-gradient-to-b from-red-500 to-red-600 h-[44px] flex items-center justify-center px-4 relative shrink-0">
-                    <h3 className="text-white text-[9px] font-black uppercase tracking-[0.15em] drop-shadow-sm">
-                        {date ? format(date, "EEEE d 'de' MMMM", { locale: es }).replace(/^\w/, (c) => c.toUpperCase()) : ''}
-                    </h3>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                        {showAddFichajeButton && (
-                            <button
-                                type="button"
-                                onClick={() => setShowCreateFichaje(true)}
-                                className="min-h-[40px] min-w-[40px] flex items-center justify-center text-white/80 hover:text-white rounded-lg transition-colors"
-                                aria-label="Nuevo fichaje"
-                            >
-                                <Plus size={18} strokeWidth={2.5} />
-                            </button>
-                        )}
-                        <button onClick={onClose} className="text-white/50 hover:text-white transition-colors p-1" aria-label="Cerrar">
-                            <X size={16} />
-                        </button>
-                    </div>
-                </div>
-
-                <div className="px-4 pb-4 pt-2 flex flex-col flex-1 min-h-0 overflow-y-auto">
+                <div className="px-4 pb-4 flex flex-col flex-1 min-h-0 overflow-y-auto">
                     {loading ? (
                         <div className="py-8 flex flex-col items-center justify-center gap-1.5">
                             <LoadingSpinner size="md" className="text-red-500" />

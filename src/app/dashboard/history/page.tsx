@@ -453,7 +453,8 @@ const CashBreakdownModal = ({
         >
                 <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
                 <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
-                <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                <div className="flex min-h-0 flex-1 flex-col">
+                    <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar p-6">
                     <div className="space-y-2">
                         {Object.entries(displayBreakdown || {}).sort((a, b) => parseFloat(b[0]) - parseFloat(a[0])).map(([den, qty]) => {
                             const denNum = parseFloat(den);
@@ -521,6 +522,7 @@ const CashBreakdownModal = ({
                     <div className="mt-8 pt-6 border-t border-gray-100 flex justify-between items-center px-2">
                         <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Total Contado</span>
                         <span className="text-2xl font-black text-[#36606F]">{formatCurrencySpanish(total)}</span>
+                    </div>
                     </div>
                 </div>
                 {isEditing && (
@@ -1977,16 +1979,45 @@ export default function HistoryPage() {
                     variant="standard"
                     layer="base"
                     instance="history-closing-detail"
-                    title="Detalle de cierre"
+                    title={(() => {
+                        const d = new Date(selectedClosing.closed_at);
+                        return isNaN(d.getTime()) ? 'Fecha inválida' : format(d, 'eeee d MMMM', { locale: es });
+                    })()}
+                    subtitle="Detalle de cierre"
                     headerTone="petroleum"
-                    hideHeader
-                    hideCloseButton
                     scrollContent={false}
+                    headerTrailing={
+                        isManager ? (
+                            <>
+                                {isEditing ? (
+                                    <button
+                                        type="button"
+                                        onClick={handleDeleteClosing}
+                                        aria-label="Eliminar cierre"
+                                        title="Eliminar cierre"
+                                        className="flex h-full min-w-ds-tactil items-center justify-center border-0 bg-transparent text-white/90 shadow-none outline-none transition-opacity hover:text-rose-200 hover:opacity-100 opacity-90 active:scale-[0.99]"
+                                    >
+                                        <Trash2 className="h-[clamp(1rem,3.2vw,1.25rem)] w-[clamp(1rem,3.2vw,1.25rem)]" />
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={() => { setEditData({ ...selectedClosing, breakdown: selectedClosing.breakdown ?? {} }); setIsEditing(true); }}
+                                        aria-label="Editar cierre"
+                                        title="Editar cierre"
+                                        className="flex h-full min-w-ds-tactil items-center justify-center border-0 bg-transparent text-white/90 shadow-none outline-none transition-opacity hover:opacity-100 opacity-90 active:scale-[0.99]"
+                                    >
+                                        <Pencil className="h-[clamp(1rem,3.2vw,1.25rem)] w-[clamp(1rem,3.2vw,1.25rem)]" />
+                                    </button>
+                                )}
+                            </>
+                        ) : null
+                    }
                 >
-                    <div className="relative flex flex-col items-center gap-4 w-full max-w-md animate-in zoom-in-95 duration-200">
+                    <div className="relative flex flex-col items-center gap-4 w-full animate-in zoom-in-95 duration-200">
                         <div
                             ref={modalCardRef}
-                            className="relative bg-white rounded-[3rem] w-full overflow-hidden shadow-2xl flex flex-col max-h-[85vh] shrink-0"
+                            className="relative bg-white rounded-[3rem] w-full overflow-hidden shadow-2xl flex flex-col shrink-0"
                             style={{
                                 transform: `translateX(${swipeDragX}px)`,
                                 transition: swipePhase === 'animating' ? 'transform 300ms cubic-bezier(0.25, 0.1, 0.25, 1.0)' : 'none',
@@ -1997,91 +2028,48 @@ export default function HistoryPage() {
                             onTouchEnd={handleTouchEnd}
                             onClick={e => e.stopPropagation()}
                         >
-                        <div className="bg-[#36606F] px-4 py-2 text-white relative shrink-0 text-center">
-                            <div className="relative flex items-center justify-center z-10 w-full min-h-[32px]">
-                                <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center justify-start gap-1">
-                                    {isEditing && isManager && (
-                                        <button
-                                            onClick={handleDeleteClosing}
-                                            className="p-1 text-rose-300 hover:text-rose-200 hover:bg-rose-500/20 rounded-xl transition-all active:scale-95 min-h-[32px] min-w-[32px] flex items-center justify-center"
-                                            title="Eliminar cierre"
-                                        >
-                                            <Trash2 size={14} />
-                                        </button>
-                                    )}
-                                </div>
-
-                                <div className="flex items-center justify-center gap-1 md:gap-2 max-w-[70%] mx-auto">
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); handleNavigateClosing('prev'); }}
-                                        className="p-1 transition-all disabled:opacity-30 active:scale-90 text-white/60 hover:text-white shrink-0 min-h-[32px] min-w-[32px] flex items-center justify-center group"
-                                        disabled={closings.findIndex(c => c.id === selectedClosing.id) === closings.length - 1}
-                                        title="Día Anterior"
-                                    >
-                                        <ChevronLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
-                                    </button>
-                                    <div className="flex-shrink-0 min-w-0">
-                                        {isEditing ? (
-                                            <input
-                                                type="datetime-local"
-                                                value={(() => {
-                                                    const raw = editData?.closed_at ?? selectedClosing.closed_at;
-                                                    const d = new Date(raw);
-                                                    return isNaN(d.getTime()) ? '' : formatDateTimeLocalInput(d);
-                                                })()}
-                                                onChange={(e) => {
-                                                    if (!editData) return;
-                                                    const d = parseDateTimeLocal(e.target.value);
-                                                    setEditData({
-                                                        ...editData,
-                                                        closed_at: d.toISOString(),
-                                                        closing_date: formatClosingDate(d),
-                                                    });
-                                                }}
-                                                className="bg-transparent border-none text-white font-black text-[10px] sm:text-[11px] uppercase tracking-widest text-center outline-none focus:ring-0 w-auto cursor-pointer"
-                                            />
-                                        ) : (
-                                            <h2 className="text-xs sm:text-sm md:text-base font-black uppercase tracking-tighter break-words min-w-0 text-center">
-                                                {(() => {
-                                                    const d = new Date(selectedClosing.closed_at);
-                                                    return isNaN(d.getTime()) ? "Fecha Inválida" : format(d, 'eeee d MMMM', { locale: es });
-                                                })()}
-                                            </h2>
-                                        )}
-                                    </div>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); handleNavigateClosing('next'); }}
-                                        className="p-1 transition-all disabled:opacity-30 active:scale-90 text-white/60 hover:text-white shrink-0 min-h-[32px] min-w-[32px] flex items-center justify-center group"
-                                        disabled={closings.findIndex(c => c.id === selectedClosing.id) === 0}
-                                        title="Día Siguiente"
-                                    >
-                                        <ChevronRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
-                                    </button>
-                                </div>
-
-                                <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-end gap-1">
-                                    {!isEditing && isManager && (
-                                        <button
-                                            onClick={() => { setEditData({ ...selectedClosing, breakdown: selectedClosing.breakdown ?? {} }); setIsEditing(true); }}
-                                            className="p-1 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all active:scale-95 min-h-[32px] min-w-[32px] flex items-center justify-center"
-                                            title="Editar cierre"
-                                        >
-                                            <Pencil size={14} />
-                                        </button>
-                                    )}
-                                    <button
-                                        onClick={() => {
-                                            setIsEditing(false);
-                                            setSelectedClosing(null);
-                                            setLightboxIndex(null);
-                                            setClosingCalculatorOpen(false);
-                                        }}
-                                        className="p-1 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all shadow-sm active:scale-95 min-h-[32px] min-w-[32px] flex items-center justify-center"
-                                    >
-                                        <X size={18} strokeWidth={2.5} />
-                                    </button>
-                                </div>
-                            </div>
+                        <div className="flex items-center justify-center gap-1 px-8 pt-3 md:gap-2">
+                            <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); handleNavigateClosing('prev'); }}
+                                className="p-1 transition-all disabled:opacity-30 active:scale-90 text-zinc-400 hover:text-zinc-700 shrink-0 min-h-[32px] min-w-[32px] flex items-center justify-center group"
+                                disabled={closings.findIndex(c => c.id === selectedClosing.id) === closings.length - 1}
+                                aria-label="Día anterior"
+                                title="Día anterior"
+                            >
+                                <ChevronLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
+                            </button>
+                            {isEditing ? (
+                                <input
+                                    type="datetime-local"
+                                    value={(() => {
+                                        const raw = editData?.closed_at ?? selectedClosing.closed_at;
+                                        const d = new Date(raw);
+                                        return isNaN(d.getTime()) ? '' : formatDateTimeLocalInput(d);
+                                    })()}
+                                    onChange={(e) => {
+                                        if (!editData) return;
+                                        const d = parseDateTimeLocal(e.target.value);
+                                        setEditData({
+                                            ...editData,
+                                            closed_at: d.toISOString(),
+                                            closing_date: formatClosingDate(d),
+                                        });
+                                    }}
+                                    className="bg-transparent border border-zinc-200 rounded-xl px-2 py-1 text-[#36606F] font-black text-[10px] sm:text-[11px] uppercase tracking-widest text-center outline-none focus:ring-1 focus:ring-[#36606F]/30 w-auto cursor-pointer min-h-[32px]"
+                                    aria-label="Fecha y hora del cierre"
+                                />
+                            ) : null}
+                            <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); handleNavigateClosing('next'); }}
+                                className="p-1 transition-all disabled:opacity-30 active:scale-90 text-zinc-400 hover:text-zinc-700 shrink-0 min-h-[32px] min-w-[32px] flex items-center justify-center group"
+                                disabled={closings.findIndex(c => c.id === selectedClosing.id) === 0}
+                                aria-label="Día siguiente"
+                                title="Día siguiente"
+                            >
+                                <ChevronRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
+                            </button>
                         </div>
                         <div className="px-8 pb-8 pt-3 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
                             {(() => {

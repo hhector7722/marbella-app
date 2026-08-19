@@ -43,6 +43,7 @@ function ProductGrid({
   productToggleBusyId,
   onReorderTap,
   eventOrder,
+  lightboxParentInstance,
 }: {
   rows: StaffRow[]
   lang: CartaLang
@@ -54,6 +55,7 @@ function ProductGrid({
   productToggleBusyId?: number | null
   onReorderTap?: (articuloId: number) => void
   eventOrder?: EventOrderCartaControl
+  lightboxParentInstance?: string
 }) {
   if (rows.length === 0) {
     return (
@@ -115,6 +117,7 @@ function ProductGrid({
                       rowDensity={rowDensity}
                       photoFrameStyle={rowFrameStyle}
                       eventOrder={eventOrder}
+                      lightboxParentInstance={lightboxParentInstance}
                     />
                   </div>
                 )
@@ -139,6 +142,7 @@ export function PlatoMarbellaStaffGridView({
   onToggleProductActive,
   productToggleBusyId,
   eventOrder,
+  lightboxParentInstance,
   className,
 }: {
   rows: StaffRow[]
@@ -153,6 +157,7 @@ export function PlatoMarbellaStaffGridView({
   onToggleProductActive?: (articuloId: number) => void
   productToggleBusyId?: number | null
   eventOrder?: EventOrderCartaControl
+  lightboxParentInstance?: string
   className?: string
 }) {
   const ui = tPlatoMarbellaUi(lang)
@@ -196,6 +201,7 @@ export function PlatoMarbellaStaffGridView({
     productToggleBusyId,
     onReorderTap,
     eventOrder: reorderMode ? undefined : eventOrder,
+    lightboxParentInstance,
   }
 
   if (reorderMode) {

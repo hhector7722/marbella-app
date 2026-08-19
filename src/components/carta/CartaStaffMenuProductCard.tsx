@@ -58,6 +58,7 @@ export function CartaStaffMenuProductCard({
   platoLauncherTitle,
   platoLauncherPriceLabel,
   eventOrder,
+  lightboxParentInstance,
 }: {
   row: CartaStaffMenuProductRow
   lang: CartaLang
@@ -74,6 +75,8 @@ export function CartaStaffMenuProductCard({
   platoLauncherTitle?: string
   platoLauncherPriceLabel?: string
   eventOrder?: EventOrderCartaControl
+  /** Modal padre vivo (p. ej. menu-accordion-section): lightbox y picker de ración. */
+  lightboxParentInstance?: string
 }) {
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [racionPickerOpen, setRacionPickerOpen] = useState(false)
@@ -377,6 +380,7 @@ export function CartaStaffMenuProductCard({
           !eventTapToAdd
         }
         onClose={() => setLightboxOpen(false)}
+        {...(lightboxParentInstance ? { parentInstance: lightboxParentInstance } : {})}
       />
 
       <Modal
@@ -386,7 +390,8 @@ export function CartaStaffMenuProductCard({
         usageId="event-carta-racion-picker"
         usageLabel="Elegir ración pedido"
         className="max-w-sm"
-        layer="derived"
+        layer={lightboxParentInstance ? 'derived' : 'base'}
+        {...(lightboxParentInstance ? { parentInstance: lightboxParentInstance } : {})}
       >
         <div className="px-4 pb-4 pt-3">
           <p className="text-center text-sm font-semibold text-zinc-600">Selecciona la ración</p>

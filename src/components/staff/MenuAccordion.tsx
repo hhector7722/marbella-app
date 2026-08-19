@@ -1634,6 +1634,7 @@ export function MenuAccordion({
                                             lang={lang}
                                             launcherArticuloId={platoLauncherArticuloId ?? null}
                                             eventOrder={eventOrder}
+                                            lightboxParentInstance="menu-accordion-section"
                                         />
                                     ) : (
                                         <PlatoMarbellaMenuView
@@ -1738,6 +1739,7 @@ export function MenuAccordion({
                                                                     eventOrder={
                                                                         encargoEditActive ? undefined : eventOrder
                                                                     }
+                                                                    lightboxParentInstance="menu-accordion-section"
                                                                 />
                                                             </div>
                                                         )
@@ -1810,6 +1812,7 @@ export function MenuAccordion({
                                                                 eventOrder={
                                                                     encargoEditActive ? undefined : eventOrder
                                                                 }
+                                                                lightboxParentInstance="menu-accordion-section"
                                                             />
                                                         </div>
                                                     ))}
@@ -1834,6 +1837,7 @@ export function MenuAccordion({
                 title={platoLightbox?.alt ?? ''}
                 open={platoLightbox != null}
                 onClose={() => setPlatoLightbox(null)}
+                parentInstance="menu-accordion-section"
             />
         </div>
     )
