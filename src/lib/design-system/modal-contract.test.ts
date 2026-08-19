@@ -125,8 +125,12 @@ describe('Modal identidad y variantes', () => {
         assert.match(css, /\[data-component='Modal'\] \[data-element='body'\]/);
         assert.match(css, /padding-top:\s*var\(--modal-body-start-gap\)/);
         assert.match(css, /--modal-content-inset-start:\s*var\(--modal-header-inset\)/);
-        assert.match(css, /\[data-element='container'\]\[data-has-back='true'\]/);
+        assert.match(css, /\[data-element='container'\]\[data-has-back='true'\][\s\S]*\[data-element='back'\]/);
         assert.match(css, /padding-inline-start:\s*var\(--modal-content-inset-start\)/);
+        assert.equal(
+            css.includes('--modal-content-inset-start: calc'),
+            false
+        );
         assert.match(css, /\[data-element='footer'\][\s\S]*flex-wrap:\s*nowrap/);
         assert.match(css, /\[data-subordinate='true'\]/);
         assert.match(css, /--modal-subordinate-blur:/);

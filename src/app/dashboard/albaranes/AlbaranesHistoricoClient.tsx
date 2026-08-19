@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { useSearchParams } from 'next/navigation'
 import {
   AlertCircle,
-  Camera,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -1498,30 +1497,28 @@ export default function AlbaranesHistoricoClient({
                               </div>
                             </div>
                             <div className="flex flex-col gap-2 sm:flex-row">
-                              <button
+                              <Button
                                 type="button"
+                                variant="primary"
+                                instance="albaran-detail-retry-ocr"
+                                className="flex-1"
                                 onClick={() => void handleRetryOcr()}
                                 disabled={ocrActionBusy}
-                                className={cn(
-                                  'min-h-12 flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[#36606F] px-4 text-xs font-black uppercase tracking-wider text-white active:scale-[0.99] transition',
-                                  ocrActionBusy && 'opacity-60 pointer-events-none'
-                                )}
+                                loading={ocrActionBusy}
+                                loadingLabel="Reintentar lectura"
                               >
-                                {ocrActionBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
                                 Reintentar lectura
-                              </button>
-                              <button
+                              </Button>
+                              <Button
                                 type="button"
+                                variant="secondary"
+                                instance="albaran-detail-replace-photo"
+                                className="flex-1"
                                 onClick={() => replaceImageInputRef.current?.click()}
                                 disabled={ocrActionBusy}
-                                className={cn(
-                                  'min-h-12 flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-rose-300 bg-white px-4 text-xs font-black uppercase tracking-wider text-rose-900 active:scale-[0.99] transition',
-                                  ocrActionBusy && 'opacity-60 pointer-events-none'
-                                )}
                               >
-                                <Camera className="h-4 w-4" />
                                 Sustituir foto
-                              </button>
+                              </Button>
                             </div>
                           </div>
                         )
@@ -1536,21 +1533,18 @@ export default function AlbaranesHistoricoClient({
                         {mappedLinesWithoutStockCount} línea
                         {mappedLinesWithoutStockCount === 1 ? '' : 's'} sin movimiento
                       </p>
-                      <button
+                      <Button
                         type="button"
+                        variant="primary"
+                        instance="albaran-detail-repair-all-stock"
+                        className="shrink-0"
                         onClick={() => void repairAllMappedLinesWithoutStock()}
                         disabled={repairingInvoiceStockBatch || repairingStockLineId !== null || lineActionBusy}
-                        className={cn(
-                          'shrink-0 px-2.5 py-1 rounded-lg bg-amber-700/90 text-white text-[10px] font-semibold uppercase tracking-wide active:scale-[0.99] transition inline-flex items-center justify-center gap-1.5 hover:bg-amber-800',
-                          (repairingInvoiceStockBatch || repairingStockLineId !== null || lineActionBusy) &&
-                            'opacity-60 pointer-events-none'
-                        )}
+                        loading={repairingInvoiceStockBatch}
+                        loadingLabel="Reparar"
                       >
-                        {repairingInvoiceStockBatch ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : null}
                         Reparar
-                      </button>
+                      </Button>
                     </div>
                   ) : null}
 
@@ -1583,8 +1577,11 @@ export default function AlbaranesHistoricoClient({
                       </div>
                       <div className="min-w-0 self-end text-center">
                         {invoiceImageSheetOptions.length > 0 ? (
-                          <button
+                          <Button
                             type="button"
+                            variant="tertiary"
+                            instance="albaran-detail-view-original"
+                            className="w-full"
                             onClick={() => {
                               setLineForEditModal(null)
                               setLineForMappingModal(null)
@@ -1595,10 +1592,9 @@ export default function AlbaranesHistoricoClient({
                               invoiceCarouselIndexRef.current = 0
                               setInvoiceImageViewerOpen(true)
                             }}
-                            className="inline-flex min-h-12 w-full items-center justify-center text-[10px] font-normal uppercase tracking-wide text-zinc-500 hover:text-[#36606F] transition-colors"
                           >
                             Ver original
-                          </button>
+                          </Button>
                         ) : (
                           <div className="flex min-h-12 w-full items-center justify-center text-xs font-medium text-zinc-400">
                             Sin imagen
@@ -1681,26 +1677,20 @@ export default function AlbaranesHistoricoClient({
                                       <span className="inline-flex text-zinc-400" aria-label="Portes o ajuste" title="Portes / ajuste / sin cargo"><MinusCircle className="h-3.5 w-3.5" strokeWidth={2.5} /></span>
                                     ) : null}
                                     {needsRepair ? (
-                                      <button
+                                      <Button
                                         type="button"
+                                        variant="primary"
+                                        instance={`albaran-detail-repair-line-${l.id}`}
+                                        className="shrink-0"
+                                        icon={<AlertCircle className="h-3.5 w-3.5" strokeWidth={2.5} />}
                                         aria-label="Sin stock aplicado — reparar"
-                                        title="Sin stock aplicado — pulsa para aplicar"
                                         onClick={(e) => {
                                           e.stopPropagation()
                                           void repairStockForLine(l.id)
                                         }}
                                         disabled={repairingStockLineId !== null || lineActionBusy}
-                                        className={cn(
-                                          'inline-flex min-h-12 min-w-12 items-center justify-center rounded-xl text-amber-500 hover:bg-amber-50 active:scale-[0.99] transition',
-                                          (repairingStockLineId !== null || lineActionBusy) && 'opacity-60 pointer-events-none'
-                                        )}
-                                      >
-                                        {repairingStockLineId === l.id ? (
-                                          <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={2.5} />
-                                        ) : (
-                                          <AlertCircle className="h-3.5 w-3.5" strokeWidth={2.5} />
-                                        )}
-                                      </button>
+                                        loading={repairingStockLineId === l.id}
+                                      />
                                     ) : null}
                                     {stockApplied ? (
                                       <span className="inline-flex text-emerald-600" aria-label="Stock aplicado" title="Stock aplicado"><Check className="h-3.5 w-3.5" strokeWidth={3} /></span>
