@@ -478,47 +478,41 @@ export default function TipsDashboardView({
           <div className="p-2.5 md:p-6 space-y-3 md:space-y-4">
             {lastDistBanner}
 
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-2 md:gap-3">
-              <div className="flex min-w-0 flex-1 items-center gap-1.5 basis-[calc(50%-0.25rem)] sm:basis-auto sm:max-w-none">
-                <span className="text-[8px] md:text-[9px] font-black uppercase tracking-wider text-emerald-800/80 whitespace-nowrap shrink-0">
+            <div className="flex flex-nowrap items-center gap-x-2 overflow-x-auto">
+              <div className="flex shrink-0 items-center gap-1.5">
+                <span className="text-[8px] md:text-[9px] font-black uppercase tracking-wider text-emerald-800/80 whitespace-nowrap">
                   Lun – Vie
                 </span>
-                <button
+                <Button
                   type="button"
-                  onClick={() => openCash('weekday')}
-                  className="min-w-0 flex-1 bg-emerald-600 rounded-xl md:rounded-3xl shadow-md px-2.5 py-1.5 md:px-3 md:py-2 flex items-center justify-center text-white border-b-2 border-emerald-800 cursor-pointer hover:bg-emerald-500 active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/40 focus-visible:ring-offset-2 min-h-[48px]"
+                  variant="primary"
+                  layout="hug"
+                  instance="tips-pool-weekday-open"
                   aria-label="Introducir cantidades entre semana"
+                  onClick={() => openCash('weekday')}
                 >
-                  {(weekdayPool?.cashTotal ?? 0) > 0.005 ? (
-                    <span className="text-xs md:text-base font-black tabular-nums truncate">
-                      {fmtZeroBlank(weekdayPool!.cashTotal, 2)}
-                      <span className="text-[8px] font-black ml-0.5 opacity-80">€</span>
-                    </span>
-                  ) : (
-                    <span className="text-xs md:text-base font-black text-white/30"> </span>
-                  )}
-                </button>
+                  {(weekdayPool?.cashTotal ?? 0) > 0.005
+                    ? `${weekdayPool!.cashTotal.toFixed(2)} €`
+                    : ' '}
+                </Button>
               </div>
 
-              <div className="flex min-w-0 flex-1 items-center gap-1.5 basis-[calc(50%-0.25rem)] sm:basis-auto sm:max-w-none">
-                <span className="text-[8px] md:text-[9px] font-black uppercase tracking-wider text-emerald-800/80 whitespace-nowrap shrink-0">
+              <div className="flex shrink-0 items-center gap-1.5">
+                <span className="text-[8px] md:text-[9px] font-black uppercase tracking-wider text-emerald-800/80 whitespace-nowrap">
                   Sáb – Dom
                 </span>
-                <button
+                <Button
                   type="button"
-                  onClick={() => openCash('weekend')}
-                  className="min-w-0 flex-1 bg-emerald-600 rounded-xl md:rounded-3xl shadow-md px-2.5 py-1.5 md:px-3 md:py-2 flex items-center justify-center text-white border-b-2 border-emerald-800 cursor-pointer hover:bg-emerald-500 active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/40 focus-visible:ring-offset-2 min-h-[48px]"
+                  variant="primary"
+                  layout="hug"
+                  instance="tips-pool-weekend-open"
                   aria-label="Introducir cantidades fin de semana"
+                  onClick={() => openCash('weekend')}
                 >
-                  {(weekendPool?.cashTotal ?? 0) > 0.005 ? (
-                    <span className="text-xs md:text-base font-black tabular-nums truncate">
-                      {fmtZeroBlank(weekendPool!.cashTotal, 2)}
-                      <span className="text-[8px] font-black ml-0.5 opacity-80">€</span>
-                    </span>
-                  ) : (
-                    <span className="text-xs md:text-base font-black text-white/30"> </span>
-                  )}
-                </button>
+                  {(weekendPool?.cashTotal ?? 0) > 0.005
+                    ? `${weekendPool!.cashTotal.toFixed(2)} €`
+                    : ' '}
+                </Button>
               </div>
 
               {canConfirmDistribution ? (
@@ -527,6 +521,7 @@ export default function TipsDashboardView({
                   variant="primary"
                   layout="hug"
                   instance="tips-confirm-distribution-open"
+                  className="shrink-0"
                   disabled={loading || !preview || staffWithWorkedHours.length === 0}
                   onClick={() => setConfirmModalOpen(true)}
                 >
