@@ -15,6 +15,7 @@ type PoolType = 'weekday' | 'weekend';
 
 export type TipOverrideDraft = {
   isSanctioned: boolean;
+  overrideAmount: number | null;
   notes: string;
 };
 
@@ -28,6 +29,7 @@ export function TipOverrideModal({
   staffId,
   employeeName,
   poolType,
+  poolId,
   initial,
   onSave,
 }: {
@@ -36,10 +38,12 @@ export function TipOverrideModal({
   staffId: string;
   employeeName: string;
   poolType: PoolType;
+  poolId: string | null;
   initial?: TipOverrideDraft;
   onSave: (draft: TipOverrideDraft) => Promise<void> | void;
 }) {
   const [isSanctioned, setIsSanctioned] = useState(false);
+  const [overrideAmountText, setOverrideAmountText] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<{ first_name: string; avatar_url: string | null } | null>(null);
@@ -51,9 +55,15 @@ export function TipOverrideModal({
     if (!isOpen) return;
     setIsSanctioned(initial?.isSanctioned ?? false);
     setNotes(initial?.notes ?? '');
+    setOverrideAmountText(
+      initial?.overrideAmount != null && Number.isFinite(initial.overrideAmount)
+        ? String(initial.overrideAmount)
+        : ''
+    );
     setProfile(null);
+
+    const supabase = createClient();
     if (staffId) {
-      const supabase = createClient();
       supabase
         .from('profiles')
         .select('first_name, avatar_url')
@@ -61,14 +71,43 @@ export function TipOverrideModal({
         .single()
         .then(({ data }) => setProfile(data || null));
     }
-  }, [isOpen, staffId, initial]);
+
+    if (staffId && poolId) {
+      supabase
+        .from('tip_pool_overrides')
+        .select('override_amount, notes, is_sanctioned')
+        .eq('pool_id', poolId)
+        .eq('user_id', staffId)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (!data) return;
+          if (data.is_sanctioned != null) setIsSanctioned(Boolean(data.is_sanctioned));
+          if (data.notes) setNotes(String(data.notes));
+          if (data.override_amount != null) {
+            setOverrideAmountText(String(data.override_amount));
+          }
+        });
+    }
+  }, [isOpen, staffId, poolId, initial]);
 
   const displayName = useMemo(
     () => (profile?.first_name ? profile.first_name.trim() : firstNameOnly(employeeName)),
     [profile?.first_name, employeeName]
   );
 
-  const canSave = true;
+  const amountLabel = poolType === 'weekday' ? 'Importe Lun – Vie' : 'Importe Sáb – Dom';
+
+  const parsedOverrideAmount = useMemo(() => {
+    const trimmed = overrideAmountText.trim();
+    if (trimmed === '') return null;
+    const n = Number(trimmed.replace(',', '.'));
+    return Number.isFinite(n) && n >= 0 ? n : null;
+  }, [overrideAmountText]);
+
+  const amountInvalid =
+    overrideAmountText.trim() !== '' && parsedOverrideAmount === null;
+
+  const canSave = !amountInvalid;
 
   const handleClose = () => {
     if (saving) return;
@@ -81,6 +120,7 @@ export function TipOverrideModal({
     try {
       await onSave({
         isSanctioned,
+        overrideAmount: parsedOverrideAmount,
         notes: (notes || '').trim(),
       });
       trackTipOverrideSave(
@@ -170,6 +210,34 @@ export function TipOverrideModal({
                   </span>
                 </div>
               </label>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-zinc-100 bg-white p-2 shadow-sm md:rounded-2xl md:p-3">
+            <label
+              htmlFor="tip-override-amount"
+              className="mb-1 block text-[7px] font-black uppercase tracking-widest text-zinc-400 md:mb-2 md:text-[9px]"
+            >
+              {amountLabel}
+            </label>
+            <div className="relative">
+              <input
+                id="tip-override-amount"
+                type="text"
+                inputMode="decimal"
+                value={overrideAmountText}
+                onChange={(e) => setOverrideAmountText(e.target.value)}
+                className={cn(
+                  'h-10 min-h-[44px] w-full rounded-xl border px-3 pr-8 text-sm font-black text-zinc-800 outline-none tabular-nums focus:ring-2 md:h-12 md:rounded-2xl md:px-4 md:pr-10',
+                  amountInvalid
+                    ? 'border-rose-300 focus:border-rose-400 focus:ring-rose-200'
+                    : 'border-zinc-200 focus:border-[#5B8FB9]/40 focus:ring-[#5B8FB9]/20'
+                )}
+                placeholder="Opcional…"
+              />
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm font-black text-zinc-400 md:right-4">
+                €
+              </span>
             </div>
           </div>
 

@@ -90,6 +90,10 @@ const TIP_TABLE_DATA_CELL = cn(
   'whitespace-nowrap px-1 py-1.5 text-center align-middle tabular-nums',
   TIP_TABLE_BODY_TEXT
 );
+const TIP_TABLE_COMPACT_TH = 'px-0.5 py-0.5';
+const TIP_TABLE_COMPACT_TH_TEXT = 'text-[7px] tracking-tight md:text-[8px]';
+const TIP_TABLE_COMPACT_DATA_CELL = 'px-0.5 py-1 text-[8px] md:text-[9px]';
+const TIP_TABLE_COMPACT_NAME = 'px-1 py-1 text-[8px] md:text-[9px]';
 const TIP_TABLE_NAME_TH =
   'sticky left-0 z-[1] max-w-none whitespace-nowrap bg-[#36606F] px-1.5 text-left align-middle';
 const TIP_TABLE_NAME_TD = cn(
@@ -123,23 +127,24 @@ function buildTipTableColWidths(flags: {
   showSinRegCol: boolean;
   showPropDetail: boolean;
 }): Record<TipTableColKey, string> {
-  const nameWeight = flags.showPropDetail ? 1.6 : 2.5;
+  const compact = flags.showPropDetail;
+  const nameWeight = compact ? 1.15 : 2.5;
   const cols: { key: TipTableColKey; weight: number }[] = [
     { key: 'name', weight: nameWeight },
-    { key: 'h', weight: flags.showPropDetail ? 0.85 : 1 },
+    { key: 'h', weight: compact ? 0.65 : 1 },
   ];
   if (flags.showHoursDetail) {
-    cols.push({ key: 'hLv', weight: 0.85 }, { key: 'hSd', weight: 0.85 });
+    cols.push({ key: 'hLv', weight: compact ? 0.65 : 0.85 }, { key: 'hSd', weight: compact ? 0.65 : 0.85 });
   }
-  cols.push({ key: 'pen', weight: flags.showPropDetail ? 0.85 : 1 });
-  if (flags.showSinRegCol) cols.push({ key: 'sinReg', weight: 0.85 });
-  cols.push({ key: 'propF', weight: flags.showPropDetail ? 1 : 1.2 });
+  cols.push({ key: 'pen', weight: compact ? 0.65 : flags.showPropDetail ? 0.85 : 1 });
+  if (flags.showSinRegCol) cols.push({ key: 'sinReg', weight: compact ? 0.65 : 0.85 });
+  cols.push({ key: 'propF', weight: compact ? 0.85 : flags.showPropDetail ? 1 : 1.2 });
   if (flags.showPropDetail) {
     cols.push(
-      { key: 'prop', weight: 1.05 },
-      { key: 'sinPen', weight: 1 },
-      { key: 'eLv', weight: 1 },
-      { key: 'eSd', weight: 1.1 }
+      { key: 'prop', weight: 0.8 },
+      { key: 'sinPen', weight: 0.75 },
+      { key: 'eLv', weight: 0.75 },
+      { key: 'eSd', weight: 0.85 }
     );
   }
   const total = cols.reduce((sum, c) => sum + c.weight, 0);
@@ -208,6 +213,30 @@ export default function TipsDashboardView({
       }),
     [showHoursDetail, showSinRegCol, showPropDetail]
   );
+
+  const tableCompact = showPropDetail;
+
+  const tipThClass = cn(TIP_TABLE_TH, tableCompact && TIP_TABLE_COMPACT_TH);
+  const tipThTextClass = cn(TIP_TABLE_TH_TEXT, tableCompact && TIP_TABLE_COMPACT_TH_TEXT);
+  const tipThBtnClass = cn(TIP_TABLE_TH_BTN, tableCompact && 'gap-0');
+  const tipDataCellClass = cn(TIP_TABLE_DATA_CELL, tableCompact && TIP_TABLE_COMPACT_DATA_CELL);
+  const tipNameThClass = cn(TIP_TABLE_NAME_TH, tipThClass, tipThTextClass);
+  const tipNameTdClass = cn(TIP_TABLE_NAME_TD, tableCompact && TIP_TABLE_COMPACT_NAME);
+  const tipBodyTextClass = cn(TIP_TABLE_BODY_TEXT, tableCompact && 'text-[8px] md:text-[9px]');
+
+  const cashModalInitialCounts = useMemo(() => {
+    if (!cashModal?.open) return {};
+    return breakdownToInitialCounts(
+      cashModal.poolType === 'weekday'
+        ? preview?.pools?.weekday?.cashBreakdown
+        : preview?.pools?.weekend?.cashBreakdown
+    );
+  }, [
+    cashModal?.open,
+    cashModal?.poolType,
+    preview?.pools?.weekday?.cashBreakdown,
+    preview?.pools?.weekend?.cashBreakdown,
+  ]);
 
   const rangeLabel = useMemo(() => {
     try {
@@ -341,7 +370,7 @@ export default function TipsDashboardView({
         p_pool_id: poolId,
         p_user_id: overrideModal.staffId,
         p_override_hours: null,
-        p_override_amount: null,
+        p_override_amount: draft.overrideAmount,
         p_is_sanctioned: draft.isSanctioned,
         p_notes: draft.notes || null,
       });
@@ -449,58 +478,62 @@ export default function TipsDashboardView({
           <div className="p-2.5 md:p-6 space-y-3 md:space-y-4">
             {lastDistBanner}
 
-            <div className="grid grid-cols-2 gap-2 md:gap-4">
-              <button
-                type="button"
-                onClick={() => openCash('weekday')}
-                className="bg-emerald-600 rounded-xl md:rounded-3xl shadow-md px-2.5 py-1.5 md:px-3 md:py-2 flex flex-row items-center justify-center gap-1.5 text-white border-b-2 border-emerald-800 cursor-pointer hover:bg-emerald-500 active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-600 min-h-[48px] w-full"
-                aria-label="Introducir cantidades entre semana"
-              >
-                <span className="text-[8px] md:text-[9px] font-black uppercase tracking-wider text-white/70 whitespace-nowrap">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-2 md:gap-3">
+              <div className="flex min-w-0 flex-1 items-center gap-1.5 basis-[calc(50%-0.25rem)] sm:basis-auto sm:max-w-none">
+                <span className="text-[8px] md:text-[9px] font-black uppercase tracking-wider text-emerald-800/80 whitespace-nowrap shrink-0">
                   Lun – Vie
                 </span>
-                {(weekdayPool?.cashTotal ?? 0) > 0.005 ? (
-                  <span className="text-xs md:text-base font-black tabular-nums truncate">
-                    {fmtZeroBlank(weekdayPool!.cashTotal, 2)}
-                    <span className="text-[8px] font-black ml-0.5 opacity-80">€</span>
-                  </span>
-                ) : (
-                  <span className="text-xs md:text-base font-black text-white/30"> </span>
-                )}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => openCash('weekday')}
+                  className="min-w-0 flex-1 bg-emerald-600 rounded-xl md:rounded-3xl shadow-md px-2.5 py-1.5 md:px-3 md:py-2 flex items-center justify-center text-white border-b-2 border-emerald-800 cursor-pointer hover:bg-emerald-500 active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/40 focus-visible:ring-offset-2 min-h-[48px]"
+                  aria-label="Introducir cantidades entre semana"
+                >
+                  {(weekdayPool?.cashTotal ?? 0) > 0.005 ? (
+                    <span className="text-xs md:text-base font-black tabular-nums truncate">
+                      {fmtZeroBlank(weekdayPool!.cashTotal, 2)}
+                      <span className="text-[8px] font-black ml-0.5 opacity-80">€</span>
+                    </span>
+                  ) : (
+                    <span className="text-xs md:text-base font-black text-white/30"> </span>
+                  )}
+                </button>
+              </div>
 
-              <button
-                type="button"
-                onClick={() => openCash('weekend')}
-                className="bg-emerald-600 rounded-xl md:rounded-3xl shadow-md px-2.5 py-1.5 md:px-3 md:py-2 flex flex-row items-center justify-center gap-1.5 text-white border-b-2 border-emerald-800 cursor-pointer hover:bg-emerald-500 active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-600 min-h-[48px] w-full"
-                aria-label="Introducir cantidades fin de semana"
-              >
-                <span className="text-[8px] md:text-[9px] font-black uppercase tracking-wider text-white/70 whitespace-nowrap">
+              <div className="flex min-w-0 flex-1 items-center gap-1.5 basis-[calc(50%-0.25rem)] sm:basis-auto sm:max-w-none">
+                <span className="text-[8px] md:text-[9px] font-black uppercase tracking-wider text-emerald-800/80 whitespace-nowrap shrink-0">
                   Sáb – Dom
                 </span>
-                {(weekendPool?.cashTotal ?? 0) > 0.005 ? (
-                  <span className="text-xs md:text-base font-black tabular-nums truncate">
-                    {fmtZeroBlank(weekendPool!.cashTotal, 2)}
-                    <span className="text-[8px] font-black ml-0.5 opacity-80">€</span>
-                  </span>
-                ) : (
-                  <span className="text-xs md:text-base font-black text-white/30"> </span>
-                )}
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={() => openCash('weekend')}
+                  className="min-w-0 flex-1 bg-emerald-600 rounded-xl md:rounded-3xl shadow-md px-2.5 py-1.5 md:px-3 md:py-2 flex items-center justify-center text-white border-b-2 border-emerald-800 cursor-pointer hover:bg-emerald-500 active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/40 focus-visible:ring-offset-2 min-h-[48px]"
+                  aria-label="Introducir cantidades fin de semana"
+                >
+                  {(weekendPool?.cashTotal ?? 0) > 0.005 ? (
+                    <span className="text-xs md:text-base font-black tabular-nums truncate">
+                      {fmtZeroBlank(weekendPool!.cashTotal, 2)}
+                      <span className="text-[8px] font-black ml-0.5 opacity-80">€</span>
+                    </span>
+                  ) : (
+                    <span className="text-xs md:text-base font-black text-white/30"> </span>
+                  )}
+                </button>
+              </div>
 
-            {canConfirmDistribution && (
-              <Button
-                type="button"
-                variant="primary"
-                layout="hug"
-                instance="tips-confirm-distribution-open"
-                disabled={loading || !preview || staffWithWorkedHours.length === 0}
-                onClick={() => setConfirmModalOpen(true)}
-              >
-                Confirmar reparto
-              </Button>
-            )}
+              {canConfirmDistribution ? (
+                <Button
+                  type="button"
+                  variant="primary"
+                  layout="hug"
+                  instance="tips-confirm-distribution-open"
+                  disabled={loading || !preview || staffWithWorkedHours.length === 0}
+                  onClick={() => setConfirmModalOpen(true)}
+                >
+                  CONFIRMAR
+                </Button>
+              ) : null}
+            </div>
 
             <div className="bg-white rounded-xl md:rounded-3xl shadow-sm overflow-hidden">
               {loading && (
@@ -509,22 +542,22 @@ export default function TipsDashboardView({
                   Calculando…
                 </div>
               )}
-              <div className="isolate overflow-x-auto touch-pan-y overscroll-y-auto md:overflow-x-visible">
-                <table className="w-full border-collapse max-md:table-auto md:table-fixed">
+              <div className="isolate overflow-x-hidden touch-pan-y overscroll-y-auto md:overflow-x-visible">
+                <table className="w-full border-collapse table-fixed">
                   <thead>
                     <tr className="align-middle bg-[#36606F] text-white">
                       <th
                         style={{ width: colWidths.name }}
-                        className={cn(TIP_TABLE_NAME_TH, TIP_TABLE_TH, TIP_TABLE_TH_TEXT)}
+                        className={tipNameThClass}
                       />
-                      <th style={{ width: colWidths.h }} className={cn('text-center', TIP_TABLE_TH)}>
+                      <th style={{ width: colWidths.h }} className={cn('text-center', tipThClass)}>
                         <button
                           type="button"
                           onClick={() => setShowHoursDetail((v) => !v)}
                           className={cn(
-                            TIP_TABLE_TH_BTN,
+                            tipThBtnClass,
                             'justify-center',
-                            TIP_TABLE_TH_TEXT
+                            tipThTextClass
                           )}
                           title={showHoursDetail ? 'Ocultar desglose de horas' : 'Mostrar H Lun–Vie y H Sáb–Dom'}
                         >
@@ -538,15 +571,15 @@ export default function TipsDashboardView({
                             style={{ width: colWidths.hLv }}
                             className={cn(
                               'text-center',
-                              TIP_TABLE_TH,
-                              TIP_TABLE_TH_TEXT,
+                              tipThClass,
+                              tipThTextClass,
                               TIP_EXPAND_TH
                             )}
                           >
                             <span
                               className={cn(
                                 'inline-flex items-center justify-center gap-0.5',
-                                TIP_TABLE_TH_TEXT
+                                tipThTextClass
                               )}
                             >
                               <Clock size={8} strokeWidth={2.5} className="shrink-0" aria-hidden />
@@ -557,15 +590,15 @@ export default function TipsDashboardView({
                             style={{ width: colWidths.hSd }}
                             className={cn(
                               'text-center',
-                              TIP_TABLE_TH,
-                              TIP_TABLE_TH_TEXT,
+                              tipThClass,
+                              tipThTextClass,
                               TIP_EXPAND_TH
                             )}
                           >
                             <span
                               className={cn(
                                 'inline-flex items-center justify-center gap-0.5',
-                                TIP_TABLE_TH_TEXT
+                                tipThTextClass
                               )}
                             >
                               <Clock size={8} strokeWidth={2.5} className="shrink-0" aria-hidden />
@@ -574,14 +607,14 @@ export default function TipsDashboardView({
                           </th>
                         </>
                       )}
-                      <th style={{ width: colWidths.pen }} className={cn('text-center', TIP_TABLE_TH)}>
+                      <th style={{ width: colWidths.pen }} className={cn('text-center', tipThClass)}>
                         <button
                           type="button"
                           onClick={() => setShowSinRegCol((v) => !v)}
                           className={cn(
-                            TIP_TABLE_TH_BTN,
+                            tipThBtnClass,
                             'justify-center',
-                            TIP_TABLE_TH_TEXT
+                            tipThTextClass
                           )}
                           title={showSinRegCol ? 'Ocultar Sin reg' : 'Mostrar jornadas sin registro'}
                         >
@@ -594,22 +627,22 @@ export default function TipsDashboardView({
                           style={{ width: colWidths.sinReg }}
                           className={cn(
                             'text-center',
-                            TIP_TABLE_TH,
-                            TIP_TABLE_TH_TEXT,
+                            tipThClass,
+                            tipThTextClass,
                             TIP_EXPAND_TH
                           )}
                         >
                           Sin reg
                         </th>
                       )}
-                      <th style={{ width: colWidths.propF }} className={cn('text-right', TIP_TABLE_TH)}>
+                      <th style={{ width: colWidths.propF }} className={cn('text-right', tipThClass)}>
                         <button
                           type="button"
                           onClick={() => setShowPropDetail((v) => !v)}
                           className={cn(
-                            TIP_TABLE_TH_BTN,
+                            tipThBtnClass,
                             'justify-end',
-                            TIP_TABLE_TH_TEXT
+                            tipThTextClass
                           )}
                           title={
                             showPropDetail
@@ -627,8 +660,8 @@ export default function TipsDashboardView({
                             style={{ width: colWidths.prop }}
                             className={cn(
                               'text-right',
-                              TIP_TABLE_TH,
-                              TIP_TABLE_TH_TEXT,
+                              tipThClass,
+                              tipThTextClass,
                               TIP_EXPAND_TH
                             )}
                           >
@@ -638,8 +671,8 @@ export default function TipsDashboardView({
                             style={{ width: colWidths.sinPen }}
                             className={cn(
                               'text-center',
-                              TIP_TABLE_TH,
-                              TIP_TABLE_TH_TEXT,
+                              tipThClass,
+                              tipThTextClass,
                               TIP_EXPAND_TH
                             )}
                           >
@@ -649,8 +682,8 @@ export default function TipsDashboardView({
                             style={{ width: colWidths.eLv }}
                             className={cn(
                               'text-center',
-                              TIP_TABLE_TH,
-                              TIP_TABLE_TH_TEXT,
+                              tipThClass,
+                              tipThTextClass,
                               TIP_EXPAND_TH
                             )}
                           >
@@ -660,8 +693,8 @@ export default function TipsDashboardView({
                             style={{ width: colWidths.eSd }}
                             className={cn(
                               'text-center',
-                              TIP_TABLE_TH,
-                              TIP_TABLE_TH_TEXT,
+                              tipThClass,
+                              tipThTextClass,
                               TIP_EXPAND_TH
                             )}
                           >
@@ -702,7 +735,7 @@ export default function TipsDashboardView({
                           >
                             <td
                               style={{ width: colWidths.name }}
-                              className={cn(TIP_TABLE_NAME_TD, strikeClass)}
+                              className={cn(tipNameTdClass, strikeClass)}
                               onClick={openRow}
                             >
                               {staffTableDisplayName(s.name)}
@@ -710,7 +743,7 @@ export default function TipsDashboardView({
                             <td
                               style={{ width: colWidths.h }}
                               className={cn(
-                                TIP_TABLE_DATA_CELL,
+                                tipDataCellClass,
                                 'text-zinc-700 cursor-pointer',
                                 strikeClass
                               )}
@@ -723,7 +756,7 @@ export default function TipsDashboardView({
                                 <td
                                   style={{ width: colWidths.hLv }}
                                   className={cn(
-                                    TIP_TABLE_DATA_CELL,
+                                    tipDataCellClass,
                                     'text-zinc-600 cursor-pointer',
                                     TIP_EXPAND_TD,
                                     strikeClass
@@ -735,7 +768,7 @@ export default function TipsDashboardView({
                                 <td
                                   style={{ width: colWidths.hSd }}
                                   className={cn(
-                                    TIP_TABLE_DATA_CELL,
+                                    tipDataCellClass,
                                     'text-zinc-600 cursor-pointer',
                                     TIP_EXPAND_TD,
                                     strikeClass
@@ -749,7 +782,7 @@ export default function TipsDashboardView({
                             <td
                               style={{ width: colWidths.pen }}
                               className={cn(
-                                TIP_TABLE_DATA_CELL,
+                                tipDataCellClass,
                                 'cursor-pointer',
                                 penalizacionColorClass(pen),
                                 strikeClass
@@ -762,7 +795,7 @@ export default function TipsDashboardView({
                               <td
                                 style={{ width: colWidths.sinReg }}
                                 className={cn(
-                                  TIP_TABLE_DATA_CELL,
+                                  tipDataCellClass,
                                   'cursor-pointer',
                                   TIP_EXPAND_TD,
                                   tjiColorClass(tji),
@@ -776,7 +809,7 @@ export default function TipsDashboardView({
                             <td
                               style={{ width: colWidths.propF }}
                               className={cn(
-                                TIP_TABLE_DATA_CELL,
+                                tipDataCellClass,
                                 'text-right text-emerald-600',
                                 strikeClass
                               )}
@@ -789,7 +822,7 @@ export default function TipsDashboardView({
                                     : null
                                 }
                                 isSanctioned={isSanc}
-                                className={cn(TIP_TABLE_BODY_TEXT, 'text-emerald-600')}
+                                className={cn(tipBodyTextClass, 'text-emerald-600')}
                                 formatFn={fmtMoney}
                               />
                             </td>
@@ -798,7 +831,7 @@ export default function TipsDashboardView({
                                 <td
                                   style={{ width: colWidths.prop }}
                                   className={cn(
-                                    TIP_TABLE_DATA_CELL,
+                                    tipDataCellClass,
                                     'text-right text-emerald-600',
                                     TIP_EXPAND_TD,
                                     strikeClass
@@ -808,14 +841,14 @@ export default function TipsDashboardView({
                                     amount={s.totalAmount}
                                     shadowAmount={s.shadowAmount ?? null}
                                     isSanctioned={isSanc}
-                                    className={cn(TIP_TABLE_BODY_TEXT, 'text-emerald-600')}
+                                    className={cn(tipBodyTextClass, 'text-emerald-600')}
                                     formatFn={fmtMoney}
                                   />
                                 </td>
                                 <td
                                   style={{ width: colWidths.sinPen }}
                                   className={cn(
-                                    TIP_TABLE_DATA_CELL,
+                                    tipDataCellClass,
                                     'text-zinc-500 cursor-pointer',
                                     TIP_EXPAND_TD,
                                     strikeClass
@@ -827,7 +860,7 @@ export default function TipsDashboardView({
                                 <td
                                   style={{ width: colWidths.eLv }}
                                   className={cn(
-                                    TIP_TABLE_DATA_CELL,
+                                    tipDataCellClass,
                                     'text-[#36606F] cursor-pointer',
                                     TIP_EXPAND_TD,
                                     strikeClass
@@ -839,7 +872,7 @@ export default function TipsDashboardView({
                                 <td
                                   style={{ width: colWidths.eSd }}
                                   className={cn(
-                                    TIP_TABLE_DATA_CELL,
+                                    tipDataCellClass,
                                     'text-[#36606F] cursor-pointer',
                                     TIP_EXPAND_TD,
                                     strikeClass
@@ -921,11 +954,7 @@ export default function TipsDashboardView({
             }}
             onSubmit={(total, breakdown, notes) => handleSaveCash(cashModal.poolType, total, breakdown, notes)}
             onTotalChange={setCashModalTotal}
-            initialCounts={breakdownToInitialCounts(
-              cashModal.poolType === 'weekday'
-                ? preview?.pools?.weekday?.cashBreakdown
-                : preview?.pools?.weekend?.cashBreakdown
-            )}
+            initialCounts={cashModalInitialCounts}
             availableStock={{}}
             submitLabel="Guardar bote"
             variant="tipPool"
@@ -940,9 +969,15 @@ export default function TipsDashboardView({
           staffId={overrideModal.staffId}
           employeeName={overrideModal.staffName}
           poolType={overrideModal.poolType}
+          poolId={
+            overrideModal.poolType === 'weekday'
+              ? preview?.pools.weekday.id ?? null
+              : preview?.pools.weekend.id ?? null
+          }
           onSave={handleSaveOverride}
           initial={{
             isSanctioned: preview?.staff.find((x) => x.id === overrideModal.staffId)?.isSanctioned ?? false,
+            overrideAmount: null,
             notes: '',
           }}
         />

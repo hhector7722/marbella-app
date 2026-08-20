@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Save, ShoppingCart, ArrowRightLeft, ArrowRight, Minus, Plus, Wand2, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { toast } from 'sonner';
@@ -57,9 +57,14 @@ export const CashDenominationForm = ({
     onTotalChange,
 }: CashDenominationFormProps) => {
     const [counts, setCounts] = useState<Record<number, number>>(initialCounts);
+    const countsSyncKeyRef = useRef('');
 
-    // Sync counts when initialCounts changes (important for Arqueos)
+    // Sync counts when initialCounts changes (important for Arqueos).
+    // Comparación por contenido: evita reset al re-renderizar el host con nueva referencia.
     useEffect(() => {
+        const key = JSON.stringify(initialCounts ?? {});
+        if (key === countsSyncKeyRef.current) return;
+        countsSyncKeyRef.current = key;
         if (initialCounts && Object.keys(initialCounts).length > 0) {
             setCounts(initialCounts);
         }
