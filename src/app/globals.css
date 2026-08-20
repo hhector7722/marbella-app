@@ -409,6 +409,36 @@
   }
 }
 
+/*
+ * Fila de recuentos / confirmación en Propinas.
+ * Override contextual: tipografía y fondo visual más compactos para caber en móvil.
+ * Hit-area táctil contractual (48px) se mantiene.
+ */
+[data-tips-action-row] [data-component='Button'] {
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  padding-inline: var(--espacio-1);
+}
+
+[data-tips-action-row] [data-component='Button']::before {
+  height: calc(9px + var(--espacio-1) * 2);
+}
+
+[data-tips-action-row] [data-component='Button'] [data-element='label'] {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 768px) {
+  [data-tips-action-row] [data-component='Button'] {
+    font-size: 10px;
+    letter-spacing: 0.06em;
+  }
+
+  [data-tips-action-row] [data-component='Button']::before {
+    height: calc(10px + var(--espacio-1) * 2);
+  }
+}
+
 /* Lente visual del sandbox: afecta a la expresión, nunca a datos o lógica. */
 [data-marbella-sandbox='true'][data-dl-elevation='0'] [class~='shadow-2xl'],
 [data-marbella-sandbox='true'][data-dl-elevation='0'] [class~='shadow-xl'],

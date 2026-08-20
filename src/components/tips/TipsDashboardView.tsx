@@ -478,9 +478,12 @@ export default function TipsDashboardView({
           <div className="p-2.5 md:p-6 space-y-3 md:space-y-4">
             {lastDistBanner}
 
-            <div className="flex flex-nowrap items-center gap-x-2 overflow-x-auto">
-              <div className="flex shrink-0 items-center gap-1.5">
-                <span className="text-[8px] md:text-[9px] font-black uppercase tracking-wider text-emerald-800/80 whitespace-nowrap">
+            <div
+              data-tips-action-row
+              className="flex w-full min-w-0 flex-nowrap items-center gap-x-1 overflow-x-auto overscroll-x-contain pe-0.5"
+            >
+              <div className="flex shrink-0 items-center gap-1">
+                <span className="text-[7px] md:text-[8px] font-black uppercase tracking-wide text-emerald-800/80 whitespace-nowrap">
                   Lun – Vie
                 </span>
                 <Button
@@ -497,8 +500,8 @@ export default function TipsDashboardView({
                 </Button>
               </div>
 
-              <div className="flex shrink-0 items-center gap-1.5">
-                <span className="text-[8px] md:text-[9px] font-black uppercase tracking-wider text-emerald-800/80 whitespace-nowrap">
+              <div className="flex shrink-0 items-center gap-1">
+                <span className="text-[7px] md:text-[8px] font-black uppercase tracking-wide text-emerald-800/80 whitespace-nowrap">
                   Sáb – Dom
                 </span>
                 <Button
