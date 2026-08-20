@@ -478,59 +478,62 @@ export default function TipsDashboardView({
           <div className="p-2.5 md:p-6 space-y-3 md:space-y-4">
             {lastDistBanner}
 
-            <div
-              data-tips-action-row
-              className="flex w-full min-w-0 flex-nowrap items-center gap-x-1 overflow-x-auto overscroll-x-contain pe-0.5"
-            >
-              <div className="flex shrink-0 items-center gap-1">
-                <span className="text-[7px] md:text-[8px] font-black uppercase tracking-wide text-emerald-800/80 whitespace-nowrap">
-                  Lun – Vie
-                </span>
-                <Button
-                  type="button"
-                  variant="primary"
-                  layout="hug"
-                  instance="tips-pool-weekday-open"
-                  aria-label="Introducir cantidades entre semana"
-                  onClick={() => openCash('weekday')}
-                >
-                  {(weekdayPool?.cashTotal ?? 0) > 0.005
-                    ? `${weekdayPool!.cashTotal.toFixed(2)} €`
-                    : ' '}
-                </Button>
-              </div>
+            <div className="-mx-2.5 md:-mx-6">
+              <div className="overflow-x-auto overscroll-x-contain px-2.5 md:px-6 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                <div className="flex w-max min-w-full flex-nowrap items-center gap-x-2 pe-2">
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <span className="text-[8px] md:text-[9px] font-black uppercase tracking-wider text-emerald-800/80 whitespace-nowrap">
+                      <span className="md:hidden">L-V</span>
+                      <span className="hidden md:inline">Lun – Vie</span>
+                    </span>
+                    <Button
+                      type="button"
+                      variant="primary"
+                      layout="hug"
+                      instance="tips-pool-weekday-open"
+                      aria-label="Introducir cantidades entre semana"
+                      onClick={() => openCash('weekday')}
+                    >
+                      {(weekdayPool?.cashTotal ?? 0) > 0.005
+                        ? `${weekdayPool!.cashTotal.toFixed(2)} €`
+                        : ' '}
+                    </Button>
+                  </div>
 
-              <div className="flex shrink-0 items-center gap-1">
-                <span className="text-[7px] md:text-[8px] font-black uppercase tracking-wide text-emerald-800/80 whitespace-nowrap">
-                  Sáb – Dom
-                </span>
-                <Button
-                  type="button"
-                  variant="primary"
-                  layout="hug"
-                  instance="tips-pool-weekend-open"
-                  aria-label="Introducir cantidades fin de semana"
-                  onClick={() => openCash('weekend')}
-                >
-                  {(weekendPool?.cashTotal ?? 0) > 0.005
-                    ? `${weekendPool!.cashTotal.toFixed(2)} €`
-                    : ' '}
-                </Button>
-              </div>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <span className="text-[8px] md:text-[9px] font-black uppercase tracking-wider text-emerald-800/80 whitespace-nowrap">
+                      <span className="md:hidden">S-D</span>
+                      <span className="hidden md:inline">Sáb – Dom</span>
+                    </span>
+                    <Button
+                      type="button"
+                      variant="primary"
+                      layout="hug"
+                      instance="tips-pool-weekend-open"
+                      aria-label="Introducir cantidades fin de semana"
+                      onClick={() => openCash('weekend')}
+                    >
+                      {(weekendPool?.cashTotal ?? 0) > 0.005
+                        ? `${weekendPool!.cashTotal.toFixed(2)} €`
+                        : ' '}
+                    </Button>
+                  </div>
 
-              {canConfirmDistribution ? (
-                <Button
-                  type="button"
-                  variant="primary"
-                  layout="hug"
-                  instance="tips-confirm-distribution-open"
-                  className="shrink-0"
-                  disabled={loading || !preview || staffWithWorkedHours.length === 0}
-                  onClick={() => setConfirmModalOpen(true)}
-                >
-                  CONFIRMAR
-                </Button>
-              ) : null}
+                  {canConfirmDistribution ? (
+                    <Button
+                      type="button"
+                      variant="primary"
+                      layout="hug"
+                      instance="tips-confirm-distribution-open"
+                      className="shrink-0"
+                      disabled={loading || !preview || staffWithWorkedHours.length === 0}
+                      onClick={() => setConfirmModalOpen(true)}
+                    >
+                      CONFIRMAR
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
             </div>
 
             <div className="bg-white rounded-xl md:rounded-3xl shadow-sm overflow-hidden">
