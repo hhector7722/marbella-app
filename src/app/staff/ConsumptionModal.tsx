@@ -206,224 +206,221 @@ export function ConsumptionModal({
       instance="staff-consumption"
       hideCloseButton={isSubmitting}
       footer={
-        <div className="flex w-full flex-col gap-2">
-          {cart.length > 0 ? (
-            <>
-              <h3 className="font-bold text-zinc-900">Has consumido:</h3>
-              <div className="flex flex-col gap-2">
-                {cart.map((c, i) => (
-                  <div
-                    key={`${c.recipe.id}-${c.is_half}-${i}`}
-                    className="flex min-h-12 items-center gap-2 rounded-xl px-2"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => handleDecrement(c.recipe.id, c.is_half)}
-                      disabled={isSubmitting}
-                      className={cn(
-                        'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl text-zinc-400',
-                        'hover:text-zinc-600 active:scale-[0.98] transition-colors disabled:pointer-events-none disabled:opacity-30',
-                      )}
-                      aria-label={`Quitar una unidad de ${c.recipe.name}`}
-                    >
-                      <Minus className="h-5 w-5" strokeWidth={2.5} />
-                    </button>
-                    <div className="min-w-0 flex-1">
-                      <p
-                        className="truncate text-sm font-bold text-zinc-900"
-                        title={c.recipe.name}
-                      >
-                        {c.recipe.name}
-                        {c.is_half ? ' (Mitad)' : ''}
-                      </p>
-                    </div>
-                    <div className="shrink-0 tabular-nums text-sm font-black text-zinc-700">
-                      ×{c.quantity}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleAdd(c.recipe, c.is_half)}
-                      disabled={isSubmitting}
-                      className={cn(
-                        'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl text-zinc-400',
-                        'hover:text-zinc-600 active:scale-[0.98] transition-colors disabled:pointer-events-none disabled:opacity-30',
-                      )}
-                      aria-label={`Añadir una unidad de ${c.recipe.name}`}
-                    >
-                      <Plus className="h-5 w-5" strokeWidth={2.5} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : null}
-          {emptyCartMessageVisible ? (
-            <p
-              className="text-center text-sm font-semibold text-red-600"
-              role="alert"
-            >
-              {step === 'drinks'
-                ? 'Apunta tu bebida antes de continuar.'
-                : 'Apunta al menos una comida antes de fichar.'}
-            </p>
-          ) : null}
-          {step === 'drinks' ? (
-            <Button
-              type="button"
-              variant="primary"
-              instance="staff-consumption-next"
-              layout="fill"
-              disabled={isSubmitting}
-              onClick={() => {
-                if (!cartHasDrink) {
-                  setShowEmptyCartError(true);
-                  return;
-                }
-                setShowEmptyCartError(false);
-                setSearch('');
-                setRacionPicker(null);
-                setStep('food');
-              }}
-            >
-              Siguiente
-            </Button>
-          ) : (
-            <div className="flex w-full gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                instance="staff-consumption-back"
-                layout="fill"
-                className="flex-1"
-                disabled={isSubmitting}
-                onClick={() => {
-                  setShowEmptyCartError(false);
-                  setSearch('');
-                  setRacionPicker(null);
-                  setStep('drinks');
-                }}
-              >
-                Atrás
-              </Button>
-              <Button
-                type="button"
-                variant="primary"
-                instance="staff-consumption-confirm"
-                layout="fill"
-                className="flex-1"
-                disabled={isSubmitting}
-                loading={isSubmitting}
-                loadingLabel="Confirmando"
-                onClick={() => void handleSubmit()}
-              >
-                Confirmar y fichar
-              </Button>
-            </div>
-          )}
-        </div>
-      }
-    >
-      {isLoading ? (
-        <div className="flex min-h-0 flex-1 items-center justify-center px-4 py-8">
-          <Loader2 className="h-12 w-12 shrink-0 animate-spin text-gray-400" aria-hidden />
-        </div>
-      ) : racionPicker ? (
-        <div className="flex flex-col gap-4 px-4 pb-4">
-          <p id="racion-picker-title" className="text-center text-base font-bold text-zinc-900">
-            {racionPicker.name}
-          </p>
-          <p className="text-center text-sm text-zinc-500">Selecciona la ración</p>
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              type="button"
-              variant="primary"
-              instance="staff-consumption-racion-full"
-              layout="hug"
-              disabled={isSubmitting}
-              onClick={() => {
-                handleAdd(racionPicker, false);
-                setRacionPicker(null);
-              }}
-            >
-              Entero
-            </Button>
+        step === 'drinks' ? (
+          <Button
+            type="button"
+            variant="primary"
+            instance="staff-consumption-next"
+            disabled={isSubmitting}
+            onClick={() => {
+              if (!cartHasDrink) {
+                setShowEmptyCartError(true);
+                return;
+              }
+              setShowEmptyCartError(false);
+              setSearch('');
+              setRacionPicker(null);
+              setStep('food');
+            }}
+          >
+            Siguiente
+          </Button>
+        ) : (
+          <div className="flex w-full items-center justify-end gap-2">
             <Button
               type="button"
               variant="secondary"
-              instance="staff-consumption-racion-half"
-              layout="hug"
+              instance="staff-consumption-back"
               disabled={isSubmitting}
               onClick={() => {
-                handleAdd(racionPicker, true);
+                setShowEmptyCartError(false);
+                setSearch('');
                 setRacionPicker(null);
+                setStep('drinks');
               }}
             >
-              Medio
+              Atrás
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              instance="staff-consumption-confirm"
+              disabled={isSubmitting}
+              loading={isSubmitting}
+              loadingLabel="Confirmando"
+              onClick={() => void handleSubmit()}
+            >
+              Confirmar y fichar
             </Button>
           </div>
-          <Button
-            type="button"
-            variant="secondary"
-            instance="staff-consumption-racion-cancel"
-            layout="hug"
-            onClick={() => setRacionPicker(null)}
-          >
-            Cancelar
-          </Button>
-        </div>
-      ) : (
-        <div className="flex min-h-0 flex-1 flex-col space-y-5 p-4 md:p-5">
-          <div className="relative shrink-0">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              type="search"
-              placeholder={step === 'drinks' ? 'Buscar bebidas...' : 'Buscar comida...'}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-10 w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-3 text-sm shadow-sm focus:ring-2 focus:ring-[#36606F]/40"
-            />
+        )
+      }
+    >
+      <div className="flex min-h-0 flex-1 flex-col">
+        {isLoading ? (
+          <div className="flex min-h-0 flex-1 items-center justify-center px-4 py-8">
+            <Loader2 className="h-12 w-12 shrink-0 animate-spin text-gray-400" aria-hidden />
           </div>
+        ) : racionPicker ? (
+          <div className="flex flex-col gap-4 px-4 pb-4">
+            <p id="racion-picker-title" className="text-center text-base font-bold text-zinc-900">
+              {racionPicker.name}
+            </p>
+            <p className="text-center text-sm text-zinc-500">Selecciona la ración</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                type="button"
+                variant="primary"
+                instance="staff-consumption-racion-full"
+                layout="hug"
+                disabled={isSubmitting}
+                onClick={() => {
+                  handleAdd(racionPicker, false);
+                  setRacionPicker(null);
+                }}
+              >
+                Entero
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                instance="staff-consumption-racion-half"
+                layout="hug"
+                disabled={isSubmitting}
+                onClick={() => {
+                  handleAdd(racionPicker, true);
+                  setRacionPicker(null);
+                }}
+              >
+                Medio
+              </Button>
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              instance="staff-consumption-racion-cancel"
+              layout="hug"
+              onClick={() => setRacionPicker(null)}
+            >
+              Cancelar
+            </Button>
+          </div>
+        ) : (
+          <div className="flex min-h-0 flex-1 flex-col space-y-5 p-4 md:p-5">
+            <div className="relative shrink-0">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                type="search"
+                placeholder={step === 'drinks' ? 'Buscar bebidas...' : 'Buscar comida...'}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-10 w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-3 text-sm shadow-sm focus:ring-2 focus:ring-[#36606F]/40"
+              />
+            </div>
 
-          <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
-            {gridRecipes.map((recipe) => {
-              const badgeCount =
-                getCartBadgeCount(recipe.id, false) + getCartBadgeCount(recipe.id, true);
-              return (
-                <button
-                  key={recipe.id}
-                  type="button"
-                  onClick={() => onRecipeActivate(recipe)}
-                  disabled={isSubmitting}
-                  className="relative flex min-h-0 flex-col items-center gap-0.5 rounded-xl bg-transparent p-1.5 text-center transition-transform active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
-                >
-                  {badgeCount > 0 ? (
-                    <span className="absolute right-0.5 top-0.5 z-10 min-h-6 min-w-6 rounded-full bg-[#36606F] px-1.5 text-[10px] font-black leading-6 text-white shadow-sm">
-                      ×{badgeCount}
-                    </span>
-                  ) : null}
-                  <div className="mb-0.5 flex h-12 w-full shrink-0 items-center justify-center">
-                    {recipe.photo_url ? (
-                      <img
-                        src={recipe.photo_url}
-                        alt=""
-                        className="max-h-12 w-full object-contain"
-                      />
-                    ) : (
-                      <Package className="h-5 w-5 text-zinc-300" aria-hidden />
-                    )}
-                  </div>
-                  <span
-                    className="line-clamp-2 w-full text-center text-[9px] font-black leading-tight text-zinc-800 min-[380px]:text-[10px]"
-                    title={recipe.name}
+            <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
+              {gridRecipes.map((recipe) => {
+                const badgeCount =
+                  getCartBadgeCount(recipe.id, false) + getCartBadgeCount(recipe.id, true);
+                return (
+                  <button
+                    key={recipe.id}
+                    type="button"
+                    onClick={() => onRecipeActivate(recipe)}
+                    disabled={isSubmitting}
+                    className="relative flex min-h-0 flex-col items-center gap-0.5 rounded-xl bg-transparent p-1.5 text-center transition-transform active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
                   >
-                    {recipe.name}
-                  </span>
-                </button>
-              );
-            })}
+                    {badgeCount > 0 ? (
+                      <span className="absolute right-0.5 top-0.5 z-10 min-h-6 min-w-6 rounded-full bg-[#36606F] px-1.5 text-[10px] font-black leading-6 text-white shadow-sm">
+                        ×{badgeCount}
+                      </span>
+                    ) : null}
+                    <div className="mb-0.5 flex h-12 w-full shrink-0 items-center justify-center">
+                      {recipe.photo_url ? (
+                        <img
+                          src={recipe.photo_url}
+                          alt=""
+                          className="max-h-12 w-full object-contain"
+                        />
+                      ) : (
+                        <Package className="h-5 w-5 text-zinc-300" aria-hidden />
+                      )}
+                    </div>
+                    <span
+                      className="line-clamp-2 w-full text-center text-[9px] font-black leading-tight text-zinc-800 min-[380px]:text-[10px]"
+                      title={recipe.name}
+                    >
+                      {recipe.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {cart.length > 0 ? (
+          <div className="shrink-0 space-y-2 border-t border-zinc-100 px-ds-4 py-3">
+            <h3 className="font-bold text-zinc-900">Has consumido:</h3>
+            <div className="flex flex-col gap-2">
+              {cart.map((c, i) => (
+                <div
+                  key={`${c.recipe.id}-${c.is_half}-${i}`}
+                  className="flex min-h-12 items-center gap-2 rounded-xl px-2"
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleDecrement(c.recipe.id, c.is_half)}
+                    disabled={isSubmitting}
+                    className={cn(
+                      'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl text-zinc-400',
+                      'hover:text-zinc-600 active:scale-[0.98] transition-colors disabled:pointer-events-none disabled:opacity-30',
+                    )}
+                    aria-label={`Quitar una unidad de ${c.recipe.name}`}
+                  >
+                    <Minus className="h-5 w-5" strokeWidth={2.5} />
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="truncate text-sm font-bold text-zinc-900"
+                      title={c.recipe.name}
+                    >
+                      {c.recipe.name}
+                      {c.is_half ? ' (Mitad)' : ''}
+                    </p>
+                  </div>
+                  <div className="shrink-0 tabular-nums text-sm font-black text-zinc-700">
+                    ×{c.quantity}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleAdd(c.recipe, c.is_half)}
+                    disabled={isSubmitting}
+                    className={cn(
+                      'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl text-zinc-400',
+                      'hover:text-zinc-600 active:scale-[0.98] transition-colors disabled:pointer-events-none disabled:opacity-30',
+                    )}
+                    aria-label={`Añadir una unidad de ${c.recipe.name}`}
+                  >
+                    <Plus className="h-5 w-5" strokeWidth={2.5} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {emptyCartMessageVisible ? (
+          <p
+            className="shrink-0 px-ds-4 pb-3 text-center text-sm font-semibold text-red-600"
+            role="alert"
+          >
+            {step === 'drinks'
+              ? 'Apunta tu bebida antes de continuar.'
+              : 'Apunta al menos una comida antes de fichar.'}
+          </p>
+        ) : null}
+      </div>
     </ConsumptionBottomSheet>
   );
 }

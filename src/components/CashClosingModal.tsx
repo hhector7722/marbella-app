@@ -649,7 +649,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
                     {/* STEP 1: SALES DATA */}
                     {step === 'tpv_data' && (
-                        <div className="space-y-5 p-4 sm:p-6">
+                        <div className="space-y-5">
                             <ClosingWeatherPicker
                                 selectedId={weatherId}
                                 onSelect={setWeatherId}
@@ -724,7 +724,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                     {/* STEP 2: COUNT */}
                     {step === 'count' && (
                         <div className="flex flex-col h-full overflow-hidden">
-                            <div className="p-4 sm:p-6 bg-gray-50 border-b flex justify-between items-center shrink-0">
+                            <div className="py-4 sm:py-6 bg-gray-50 border-b flex justify-between items-center shrink-0">
                                 <div>
                                     <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Arqueo en Caja</h3>
                                     <span className="text-3xl font-black text-[#5B8FB9]">{totalCounted.toFixed(2)}€</span>
@@ -734,7 +734,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                     <div className="text-lg font-bold text-gray-500">{expectedCash > 0.005 ? `${expectedCash.toFixed(2)}€` : " "}</div>
                                 </div>
                             </div>
-                            <div className="p-3 sm:p-4 flex flex-col gap-4 pb-4">
+                            <div className="flex flex-col gap-4 pt-3 sm:pt-4 pb-4">
                                 <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-y-5 sm:gap-y-6 gap-x-3 sm:gap-x-4">
                                     {BILLS.map((bill) => renderDenominationItem(bill))}
                                     {COINS.slice(0, -1).map((coin) => renderDenominationItem(coin))}
@@ -763,7 +763,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
 
                     {/* STEP 3: SUMMARY */}
                     {step === 'summary' && (
-                        <div className="space-y-5 p-4 sm:p-6 animate-in slide-in-from-bottom-4 duration-300">
+                        <div className="space-y-5 animate-in slide-in-from-bottom-4 duration-300">
                             <ClosingSummaryRow title="Ventas">
                                 <ClosingReadonlyValue value={tpvData.totalSales} showEuro />
                             </ClosingSummaryRow>

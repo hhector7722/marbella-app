@@ -337,7 +337,7 @@ function ReservationDetailModal({
       }
     >
       <div className="flex-1 overflow-y-auto min-h-0">
-          <div className="px-4 pt-4 pb-3">
+          <div className="pt-4 pb-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-[28px] font-black tabular-nums leading-none text-zinc-900">
@@ -366,14 +366,14 @@ function ReservationDetailModal({
               href={`https://wa.me/${formatPhone(reservation.customer_phone)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="min-h-12 px-4 flex items-center gap-2 text-[12px] font-bold text-zinc-700 active:bg-zinc-50"
+              className="min-h-12 flex items-center gap-2 text-[12px] font-bold text-zinc-700 active:bg-zinc-50"
             >
               <Phone className="h-4 w-4 shrink-0 text-emerald-600" strokeWidth={2.5} />
               <span className="truncate">{reservation.customer_phone}</span>
             </a>
 
             {reservation.notes ? (
-              <div className="px-4 py-4 text-center">
+              <div className="py-4 text-center">
                 <p className="text-[15px] font-medium leading-snug text-zinc-700 whitespace-pre-wrap">
                   {reservation.notes}
                 </p>
@@ -382,7 +382,7 @@ function ReservationDetailModal({
 
             {linkedEncargos.length > 0 ? (
               <div>
-                <p className="px-4 pt-3 pb-1 text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                <p className="pt-3 pb-1 text-[10px] font-black uppercase tracking-widest text-zinc-400">
                   Encargos
                 </p>
                 <div className="divide-y divide-zinc-100">
@@ -391,7 +391,7 @@ function ReservationDetailModal({
                       key={e.id}
                       type="button"
                       onClick={() => onOpenEncargo(e.id)}
-                      className="min-h-12 w-full px-4 flex items-center justify-between gap-2 text-left text-[12px] font-bold text-zinc-800 active:bg-zinc-50"
+                      className="min-h-12 w-full flex items-center justify-between gap-2 text-left text-[12px] font-bold text-zinc-800 active:bg-zinc-50"
                     >
                       <span className="truncate">
                         {timeShortHm(e.event_time)} · {e.name}
@@ -405,7 +405,7 @@ function ReservationDetailModal({
           </div>
         </div>
 
-        <div className="shrink-0 border-t border-zinc-100 bg-white px-4 py-3">
+        <div className="shrink-0 border-t border-zinc-100 bg-white py-3">
           {deleteConfirmOpen ? (
             <div className="flex flex-col gap-2">
               <p className="text-[12px] font-bold text-rose-700 text-center">

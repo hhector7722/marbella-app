@@ -206,12 +206,11 @@ export function ConsumptionRecipeOrderModal({
       instance="consumption-order"
       hideCloseButton={saving}
       footer={
-        <div className="flex w-full flex-col gap-2">
+        <div className="flex w-full items-center justify-end gap-2">
           <Button
             type="button"
             variant="secondary"
             instance="consumption-order-reset"
-            layout="fill"
             disabled={loading || saving}
             onClick={handleResetStepToDefault}
           >
@@ -221,7 +220,6 @@ export function ConsumptionRecipeOrderModal({
             type="button"
             variant="primary"
             instance="consumption-order-save"
-            layout="fill"
             disabled={loading || saving}
             loading={saving}
             loadingLabel="Guardando"
