@@ -896,26 +896,25 @@ export function EncargoProductEditor({
       <button
         type="button"
         onClick={() => setCartModalOpen(true)}
-        className="relative shrink-0 min-h-12 min-w-12 flex items-center justify-center active:opacity-70"
+        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
         aria-label={unitCount > 0 ? `Pedido actual, ${unitCount} unidades` : 'Pedido actual'}
       >
         <ShoppingBag size={20} strokeWidth={2.25} />
         {unitCount > 0 ? (
-          <span className="absolute top-1.5 right-1.5 min-h-[16px] min-w-[16px] px-0.5 rounded-full bg-rose-500 text-[9px] font-black text-white flex items-center justify-center leading-none">
+          <span className="absolute top-0.5 right-0.5 z-[1] min-h-[16px] min-w-[16px] px-0.5 rounded-full bg-rose-500 text-[9px] font-black text-white flex items-center justify-center leading-none">
             {unitCount > 99 ? '99+' : unitCount}
           </span>
         ) : null}
       </button>
-      <Button
+      <button
         type="button"
-        variant="tertiary"
-        instance="encargo-product-editor-delete"
         onClick={handleDeleteRequest}
         disabled={isPending}
-        className="shrink-0"
+        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
         aria-label="Eliminar encargo"
-        icon={<Trash2 size={20} strokeWidth={2.25} />}
-      />
+      >
+        <Trash2 size={20} strokeWidth={2.25} />
+      </button>
     </>
   )
 

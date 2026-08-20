@@ -324,12 +324,16 @@ describe('Button className no escapa del contrato visual', () => {
             css,
             /\[data-component='Button'\]\[data-variant='primary'\]::before \{[\s\S]*?background-color:\s*var\(--color-positivo\)/
         );
-        assert.equal(
-            /\[data-component='Button'\]\[data-variant='primary'\]::before \{[\s\S]*?background-color:\s*var\(--color-marca\)/.test(
-                css
-            ),
-            false
-        );
+        {
+            const primaryBefore = css.match(
+                /\[data-component='Button'\]\[data-variant='primary'\]::before \{([^}]+)\}/
+            );
+            assert.ok(primaryBefore, 'falta regla primary::before');
+            assert.doesNotMatch(
+                primaryBefore[1],
+                /background-color:\s*var\(--color-marca\)/
+            );
+        }
         assert.match(css, /\[data-variant='primary'\]:hover:not\(:disabled\)::before/);
         assert.match(
             css,

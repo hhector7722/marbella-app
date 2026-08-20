@@ -151,6 +151,35 @@ host (`<li>`)
 
 **Estado**: existe. Piloto: `NominasModal`, `ComunicadosModal`, `ContratoModal`. Gate: la huella legacy de la fila ad hoc no debe reaparecer fuera del host.
 
+### Segmented de borde petróleo (`PetroleumSegmented`)
+
+**Propósito**: elegir exactamente una opción entre un conjunto pequeño y cerrado, con el aspecto de borde `color.marca` y relleno de la opción activa. Familia canónica de Waste, precio de receta y subnav de ventas.
+
+**Anatomía**:
+```
+host (role=radiogroup)
+└── option* (role=radio, exclusivas)
+```
+
+**Densidades** (cerradas, obligatorias en la API):
+- `comfortable` — alto `tactil.minimo` (48 px); piloto Waste.
+- `compact` — padding `espacio.1` vertical; piloto recipes y SubNavVentas (sin imponer 48 px sobre la anatomía compacta existente).
+
+**Contrato**:
+- Identidad: `data-component="PetroleumSegmented"`, `data-instance`, `data-density`.
+- Selected: fondo `color.marca` + `color.texto.invertido`. Reposo: `color.superficie` + texto marca. Hover reposo: marca al 5%.
+- Radio del host: `espacio.2` (8 px; el shell legacy usaba `rounded-lg`, no `radio.control`).
+- Tipografía de opción: 10 px, `font-black`, uppercase (Ventas abandona el 8 px ad hoc al migrar a compact canónico).
+- Semántica: selección exclusiva vía `value` / `onChange`. Si el consumidor navega (p. ej. Ventas → sala), lo hace en el callback; el componente no conoce el router.
+- No es Button, Tab, Chip ni el segmented de track zinc (`bg-zinc-100`).
+- Sin `className` de shell: geometría solo por CSS.
+
+**Cuándo usarlo**: toggles de 2–N opciones con borde petróleo compartido.
+
+**Cuándo NO usarlo**: tabs underline, chips, segmented zinc (Inventario/Mapeo/Ledger), TimeFilter, CartaLangPicker, selectores de dominio (clima, SVG, listbox).
+
+**Estado**: existe. Piloto: `WasteClient`, `recipes/[id]` (×2), `SubNavVentas`. Gate de huella legacy.
+
 ### Aviso
 
 **Propósito**: comunicar el resultado de una acción o una condición del sistema.
@@ -349,10 +378,10 @@ Su contrato lo fija la [especificación de su capacidad](../1-producto/capacidad
 
 ## 5. Estado real del sistema
 
-Hay que decirlo con claridad: **Marbella aún no tiene un sistema de componentes completo**. Tiene piezas transversales, una estructura de pantalla de adopción parcial, el piloto `DashboardShortcut`, el **contrato oficial de Modal** (Albaranes y Caja/Tesorería), el **contrato oficial de Button** (piloto: footers de esos mismos modales) y el piloto **`DocumentListRow`** (listas de documento de perfil). El resto se resuelve pantalla a pantalla. En Caja/Tesorería, `QuickCalculatorModal` y `DenominationZoomModal` permanecen legacy a propósito: el contrato no admite un tercer nivel sobre `base → derived`.
+Hay que decirlo con claridad: **Marbella aún no tiene un sistema de componentes completo**. Tiene piezas transversales, una estructura de pantalla de adopción parcial, el piloto `DashboardShortcut`, el **contrato oficial de Modal** (Albaranes y Caja/Tesorería), el **contrato oficial de Button** (piloto: footers de esos mismos modales), el piloto **`DocumentListRow`** (listas de documento de perfil) y el piloto **`PetroleumSegmented`** (segmented de borde petróleo). El resto se resuelve pantalla a pantalla. En Caja/Tesorería, `QuickCalculatorModal` y `DenominationZoomModal` permanecen legacy a propósito: el contrato no admite un tercer nivel sobre `base → derived`.
 
 Consecuencias observables:
-- Existen Button, Modal y `DocumentListRow` de sistema, con adopción parcial. Siguen sin componente de sistema el campo, la tarjeta, la insignia y el estado vacío.
+- Existen Button, Modal, `DocumentListRow` y `PetroleumSegmented` de sistema, con adopción parcial. Siguen sin componente de sistema el campo, la tarjeta, la insignia y el estado vacío.
 - El mismo bloque visual está reescrito decenas de veces con variaciones no intencionadas (incluidos atajos Staff/Admin aún no unificados, y botones fuera del piloto).
 - La navegación inferior está implementada dos veces.
 - Las piezas de dominio, muy numerosas, se apoyan directamente en utilidades y no en base.

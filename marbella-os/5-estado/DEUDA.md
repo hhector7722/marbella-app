@@ -314,7 +314,8 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 | Grid de avatares (`StaffSelectionModal`) | Mantener | Opción de selector (avatar+nombre), no CTA | Contrato `SelectionOption` / listbox |
 | Filas `w-full text-left` (resto) | Mantener | Selección / navegación / expansión fuera de documentos | Familia canónica por anatomía (no ListRow genérico) |
 | Filas de documento (Nóminas / Comunicados / Contrato) | **Pagado parcial 2B** | Misma anatomía en 3 sitios | `DocumentListRow` oficial |
-| Tabs / chips / filtros | Mantener | `TabBar` existe en pabellón pero no es contrato DS; chips ad hoc | Contrato Tab / Segmented / Chip |
+| Tabs / chips / filtros | **2D auditado; 2E pago parcial** | Segmented petróleo → `PetroleumSegmented`; resto local | Ver 2E; zinc/tabs/chips siguen locales |
+| Menú icono + label (Staff) | **Auditado 2C — no crear aún** | Ver pago diferido 2C abajo | Segundo uso fuera de StaffDashboard o unificación local |
 | Composer ChatMarbella (+/mic/teléfono) | Mantener | Chrome de composer; teléfono emerald y menú icono+texto no caben en Button | Composer chrome documentado |
 | Quantity steppers ± | Mantener | Widget compacto duplicado (`WasteClient`, `InventoryClient`, carrito, denominaciones) | Componente `QuantityStepper` oficial |
 | Badges 18px | Mantener | Presentación / dismiss compacto, no hit-area 48px de Button | Badge / dismiss chip |
@@ -325,13 +326,54 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 
 **Pago parcial Block 2B (2026-08-20) — fila canónica de documento:** se fijó anatomía en [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md) y se creó `DocumentListRow` (`src/components/ui/DocumentListRow.tsx`). Migrados: `NominasModal`, `ComunicadosModal`, `ContratoModal`. Gate de huella legacy. No se creó ListRow genérico.
 
+**Auditoría Block 2C (2026-08-20) — menú icono + label:** se inventariaron los candidatos reales. **Decisión: no crear componente de sistema.**
+
+Dos anatomías distintas viven solo en `StaffDashboardView.tsx`:
+
+1. *Menú modal 36+label* (Información + Manuales): `min-h-[56px]`, `p-4`, `rounded-2xl`, caja `40×40` / asset `36×36`, label `text-sm font-bold`, hover texto azul, `active:scale-95`. Semántica mixta (`button` / `Link` / `<a>`). Sin subtítulo ni trailing. ~5 ítems info + lista `STAFF_MANUAL_MENU`.
+2. *Opciones de caja 48+label*: `min-h-12`, `py-1`, sin radio de fila, caja `48×48`, label `font-black uppercase`, hover opacity. Solo acciones (`button`). 4 ítems (Cambio/Compra/Cierre/Propinas).
+
+No convergen entre sí. Las filas TPV/Horno (solo texto + borde) no pertenecen a esta familia. `DashboardShortcut` ya cubre atajos de cuadrícula, no menús de modal.
+
+Bloqueo normativo: [SISTEMA-DE-COMPONENTES §4.7](../2-diseno/SISTEMA-DE-COMPONENTES.md) — un componente de una sola pantalla no es del sistema. No hay segundo consumidor fuera de Staff.
+
 *SelectionOption* permanece sin componente (familias incompatibles).
 
-*ListRow* genérico permanece sin componente. Resto de `text-left` (~69 hits): menús icono 48px, agenda, albaranes, popups filtro, etc.
+*ListRow* genérico permanece sin componente.
 
-**Coste residual**: el resto de filas clicables y selectores siguen ad hoc; el chrome «Compartir» de documento sigue nativo en `trailing`.
+**Coste residual**: duplicación local en Staff (className repetido); chrome «Compartir» de documento sigue nativo en `trailing`.
 
-**Disparador de pago**: inventariar la siguiente familia canónica (p. ej. menú icono+label o SelectionOption grid) en SISTEMA-DE-COMPONENTES antes de codificar. No convertir mecánicamente a Button.
+**Disparador de pago (menú icono+label):** aparece el mismo patrón 36+label (o el 48+label) en un segundo módulo/pantalla, o se decide helper local de Staff sin inventariarlo como sistema. No unificar las dos anatomías en un kitchen-sink. No convertir a Button (icono+texto prohibido en Button).
+
+**Auditoría Block 2D (2026-08-20) — Tabs / Chips / Segmented:** inventario completo sin crear componente. **Ninguna familia A–E recomienda creación inmediata de pieza de sistema.**
+
+Hallazgos clave:
+- `TabBar` (`src/components/pavilion/TabBar.tsx`): existe, **cero imports** (código muerto o preparado). Mencionado en SISTEMA solo como «no es Button». Sin contrato, sin consumers, anatomía underline petróleo ≠ resto de tabs.
+- *Segmented borde petróleo* (`inline-flex rounded-lg border border-[#36606F]`): 3 módulos (`SubNavVentas`, `WasteClient`, `recipes/[id]` ×2). Anatomía cercana pero densidades distintas (8px vs 10px; con/sin `min-h-48`) y semántica mixta (navegación de rutas en Ventas vs toggle de contenido). Unificar hoy exigiría variantes de densidad + polimorfismo de navegación → **no crear todavía**; disparador = cerrar anatomía canónica (altura, tipo, selected) y decidir si Ventas entra o queda fuera.
+- *Segmented track zinc* (`bg-zinc-100` + pill blanca): `InventoryClient`, `MapeoClient` (cercanos); `ManagerLedgerView` (selected coloreado distinto). **No unificar** con el borde petróleo.
+- *Tabs underline / FilterButton*: solo `MappingClient` (local). `QuickCalculatorModal` segmented en chrome de modal legacy (1 sitio).
+- *Chips*: `PavilionVenueChip` (badge no interactivo); `FinancialKpiChip` (KPI/botón, no filtro); food-cost dismiss en recipes (filtro activo + X); `CartaLangPicker` (toggle texto `aria-pressed`, no chip). Familias distintas.
+- *Selectores*: `ClosingWeatherPicker` (icon ring); `DashboardSwitcher` dots `role=tab`; `PlatoMarbellaPlateVisual` SVG tabs; listbox departamentos Mapping. Dominio/local.
+- Pabellón día: toggle ACT/PDF en chrome de cabecera, **no** usa `TabBar`.
+
+**Decisión 2D por familia:** Tabs navegación → no; Tabs contenido → no (heterogéneos); Chips → no; Segmented → candidato diferido (borde petróleo, ≥3 módulos) tras fijar anatomía; Selector → no.
+
+**Pago parcial Block 2E (2026-08-20) — PetroleumSegmented:** se fijaron densidades `comfortable` (Waste, `tactil.minimo`) y `compact` (recipes ×2, SubNavVentas). Componente `src/components/ui/PetroleumSegmented.tsx` + gate de huella legacy. Semántica: radiogroup/radio; navegación de Ventas permanece en el callback del consumidor. Ventas pasa de `text-[8px]` a tipografía compact canónica (10 px). No se migró segmented zinc.
+
+**Auditoría Block 2F (2026-08-20) — Segmented zinc:** se revisaron `InventoryClient`, `MapeoClient` y `ManagerLedgerView`. **Decisión: mantener local. No crear componente. No absorber en PetroleumSegmented.**
+
+Comparación:
+- *Inventory*: track `bg-zinc-100 p-1 rounded-xl min-h-48`; selected pill blanca + texto marca; unselected zinc-500 + hover bg; `font-black` uppercase; opciones `flex-1` sin badge.
+- *Mapeo*: track similar + `shadow-inner p-1.5`; selected pill blanca + texto **zinc-900** (no marca); `font-semibold` sin uppercase; altura fija 38px; **badges de conteo** en cada opción (estructura distinta).
+- *Ledger*: track zinc pero `rounded-2xl` + `grid` + `gap-2`; selected **asimétrico** (entrada = emerald fill; salida = pill blanca); semántica de tipo de apunte, no de vista. Familia distinta dentro del “zinc”.
+
+También existe un track zinc cercano en `StaffCartaEditor` (Activos/Desactivados/Todos) fuera del trío pedido; no cambia la decisión.
+
+Vs PetroleumSegmented: shell borde+fill marca ≠ track+pill. Son dos familias visuales (opción B/C). Unificar exigiría booleanos de badge, color de selected y selected semántico.
+
+**Disparador de pago (segmented zinc):** solo si Inventory + Mapeo (y opcionalmente StaffCarta) convergen a una anatomía canónica sin badges de dominio ni selected asimétrico — entonces sí pieza propia, nunca variante de PetroleumSegmented.
+
+**Disparador de pago (resto D27):** inventariar la siguiente familia (p. ej. SelectionOption grid) en SISTEMA-DE-COMPONENTES antes de codificar.
 
 ---
 

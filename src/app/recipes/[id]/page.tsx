@@ -24,6 +24,7 @@ import { IngredientEditModal, type Ingredient } from '@/components/ingredients/I
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { namedEntitySummary } from '@/lib/usage/modal-apply';
 import * as XLSX from 'xlsx';
@@ -1016,49 +1017,38 @@ function RecipeDetailContent() {
                                 {/* Sección 1: precio actual + KPIs */}
                                 <div className="p-3 flex flex-col shrink-0">
                                     <div className="flex gap-4 justify-center mb-2 shrink-0">
-                                        {/* Toggle PVP / PAV */}
-                                        <div className="inline-flex rounded-lg overflow-hidden border border-[#36606F] shadow-sm shrink-0">
-                                            <button
-                                                onClick={() => setView(v => ({ ...v, location: 'pvp' }))}
-                                                className={cn(
-                                                    "px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-colors outline-none",
-                                                    view.location === 'pvp' ? "bg-[#36606F] text-white" : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
-                                                )}
-                                            >
-                                                PVP
-                                            </button>
-                                            <button
-                                                onClick={() => setView(v => ({ ...v, location: 'pavello' }))}
-                                                className={cn(
-                                                    "px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-colors outline-none",
-                                                    view.location === 'pavello' ? "bg-[#36606F] text-white" : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
-                                                )}
-                                            >
-                                                Pabellón
-                                            </button>
-                                        </div>
-
-                                        {/* Toggle 1 / 1/2 */}
-                                        <div className="inline-flex rounded-lg overflow-hidden border border-[#36606F] shadow-sm shrink-0">
-                                            <button
-                                                onClick={() => setView(v => ({ ...v, size: 'full' }))}
-                                                className={cn(
-                                                    "px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-colors outline-none",
-                                                    view.size === 'full' ? "bg-[#36606F] text-white" : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
-                                                )}
-                                            >
-                                                Entero
-                                            </button>
-                                            <button
-                                                onClick={() => setView(v => ({ ...v, size: 'half' }))}
-                                                className={cn(
-                                                    "px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-colors outline-none",
-                                                    view.size === 'half' ? "bg-[#36606F] text-white" : "bg-white text-[#36606F] hover:bg-[#36606F]/5"
-                                                )}
-                                            >
-                                                Medio
-                                            </button>
-                                        </div>
+                                        <PetroleumSegmented
+                                            instance="recipe-price-location"
+                                            density="compact"
+                                            aria-label="Ubicación de precio"
+                                            value={view.location}
+                                            onChange={(location) =>
+                                                setView((v) => ({
+                                                    ...v,
+                                                    location: location as 'pvp' | 'pavello',
+                                                }))
+                                            }
+                                            options={[
+                                                { value: 'pvp', label: 'PVP' },
+                                                { value: 'pavello', label: 'Pabellón' },
+                                            ]}
+                                        />
+                                        <PetroleumSegmented
+                                            instance="recipe-price-size"
+                                            density="compact"
+                                            aria-label="Tamaño de ración"
+                                            value={view.size}
+                                            onChange={(size) =>
+                                                setView((v) => ({
+                                                    ...v,
+                                                    size: size as 'full' | 'half',
+                                                }))
+                                            }
+                                            options={[
+                                                { value: 'full', label: 'Entero' },
+                                                { value: 'half', label: 'Medio' },
+                                            ]}
+                                        />
                                     </div>
 
                                     <div className="flex items-center justify-center gap-1 my-2 shrink-0">

@@ -325,7 +325,7 @@ function ReservationDetailModal({
           type="button"
           onClick={onPlusPedido}
           disabled={plusPedidoBusy || isBusy}
-          className="shrink-0 min-h-12 px-2 text-[10px] font-black uppercase tracking-widest flex items-center gap-1 hover:opacity-75 disabled:opacity-50 transition-colors"
+          className="relative flex h-full max-h-full min-h-0 shrink-0 items-center gap-1 px-1.5 text-[10px] font-black uppercase tracking-widest text-white hover:opacity-75 disabled:opacity-50 transition-colors before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
         >
           {plusPedidoBusy ? (
             <Loader2 className="h-4 w-4 animate-spin" />

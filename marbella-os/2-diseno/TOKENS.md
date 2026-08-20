@@ -34,7 +34,7 @@ Los valores recogidos aquí **son los que el producto usa hoy**, no una propuest
 
 | Token | Valor | Papel | Estado |
 |---|---|---|---|
-| `color.marca` | `#36606F` | Identidad del producto en pantalla. Cabeceras, elementos activos, Button tertiary | adoptado (piloto Modal vía `--color-marca`; Button tertiary; resto del producto aún literal) |
+| `color.marca` | `#36606F` | Identidad del producto en pantalla. Cabeceras, elementos activos, Button tertiary, PetroleumSegmented | adoptado (piloto Modal vía `--color-marca`; Button tertiary; PetroleumSegmented; resto del producto aún literal) |
 | `color.marca.intenso` | `#2F5D6A` | Estado pulsado y variantes de mayor contraste de la marca | adoptado (variable `--color-marca-intenso`; Button primary ya no la usa) |
 | `color.marca.profundo` | `#2A4A56` | Fondos de marca de máxima intensidad | declarado |
 | `color.marca.suave` | `#407080` | Marca sobre fondo oscuro, bordes de elementos de marca | declarado |

@@ -210,7 +210,7 @@ export function EncargoOrderViewModal({
               type="button"
               onClick={() => void handlePrint()}
               disabled={items.length === 0 || printBusy}
-              className="shrink-0 min-h-12 min-w-12 flex items-center justify-center hover:bg-white/10 disabled:opacity-40"
+              className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
               aria-label="Imprimir comanda"
             >
               {printBusy ? (
@@ -219,28 +219,27 @@ export function EncargoOrderViewModal({
                 <Printer size={18} strokeWidth={2.5} />
               )}
             </button>
-            <Button
+            <button
               type="button"
-              variant="tertiary"
-              instance="encargo-order-editar"
               onClick={onEdit}
+              className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
               aria-label="Editar encargo"
-              icon={<Pencil size={18} strokeWidth={2.5} />}
-              className="shrink-0"
-            />
+            >
+              <Pencil size={18} strokeWidth={2.5} />
+            </button>
             <button
               type="button"
               onClick={() => void handlePrintInvoice()}
               disabled={items.length === 0 || invoiceBusy}
-              className="shrink-0 min-h-12 min-w-12 flex items-center justify-center hover:bg-white/10 disabled:opacity-40"
+              className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
               aria-label="Imprimir factura"
-          >
-            {invoiceBusy ? (
-              <Loader2 size={18} strokeWidth={2.5} className="animate-spin" />
-            ) : (
-              <Receipt size={18} strokeWidth={2.5} />
-            )}
-          </button>
+            >
+              {invoiceBusy ? (
+                <Loader2 size={18} strokeWidth={2.5} className="animate-spin" />
+              ) : (
+                <Receipt size={18} strokeWidth={2.5} />
+              )}
+            </button>
           </>
         }
       >

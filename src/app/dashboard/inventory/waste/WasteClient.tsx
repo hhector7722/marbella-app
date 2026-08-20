@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { ChefHat, Filter, Minus, Package, Plus, Save, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented'
 import { processRecipeWaste, processWasteEntries } from './actions'
 
 type Ingredient = {
@@ -525,38 +526,22 @@ export function WasteClient({
         </p>
 
         <div className="flex shrink-0 w-full justify-start">
-          <div className="inline-flex rounded-lg overflow-hidden border border-[#36606F] shadow-sm max-w-full">
-            <button
-              type="button"
-              onClick={() => {
-                setMode('recipes')
-                setAmounts({})
-              }}
-              className={cn(
-                'px-3 py-2 min-h-[48px] h-auto inline-flex items-center justify-center text-[10px] font-black uppercase tracking-widest transition-colors outline-none whitespace-nowrap',
-                mode === 'recipes'
-                  ? 'bg-[#36606F] text-white'
-                  : 'bg-white text-[#36606F] hover:bg-[#36606F]/5',
-              )}
-            >
-              Recetas
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMode('ingredients')
-                setRecipeAmounts({})
-              }}
-              className={cn(
-                'px-3 py-2 min-h-[48px] h-auto inline-flex items-center justify-center text-[10px] font-black uppercase tracking-widest transition-colors outline-none whitespace-nowrap',
-                mode === 'ingredients'
-                  ? 'bg-[#36606F] text-white'
-                  : 'bg-white text-[#36606F] hover:bg-[#36606F]/5',
-              )}
-            >
-              Ingredientes
-            </button>
-          </div>
+          <PetroleumSegmented
+            instance="waste-mode"
+            density="comfortable"
+            aria-label="Modo de merma"
+            value={mode}
+            onChange={(next) => {
+              const nextMode = next as WasteMode
+              setMode(nextMode)
+              if (nextMode === 'recipes') setAmounts({})
+              else setRecipeAmounts({})
+            }}
+            options={[
+              { value: 'recipes', label: 'Recetas' },
+              { value: 'ingredients', label: 'Ingredientes' },
+            ]}
+          />
         </div>
       </div>
 

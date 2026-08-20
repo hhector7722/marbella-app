@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { navigateInsideSandbox } from '@/lib/sandbox/client';
 import { Printer, Share } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
 
 export type VentasTab = 'VENTAS' | 'LIVE' | 'PRODUCTOS' | 'HORAS';
 
@@ -129,22 +130,14 @@ export function SubNavVentas({ activeTab, onTabChange, showPrint = false, onExpo
 
   return (
     <div className="flex shrink-0 border-b border-zinc-100 px-4 py-2 justify-center items-center relative print:hidden">
-      <div className="inline-flex rounded-lg overflow-hidden border border-[#36606F] shadow-sm">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => handleTab(tab.id)}
-            className={cn(
-              'px-2.5 py-1 text-[8px] font-black uppercase tracking-wider transition-colors outline-none',
-              activeTab === tab.id
-                ? 'bg-[#36606F] text-white'
-                : 'bg-white text-[#36606F] hover:bg-[#36606F]/5'
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <PetroleumSegmented
+        instance="ventas-subnav"
+        density="compact"
+        aria-label="Sección de ventas"
+        value={activeTab}
+        onChange={(tab) => handleTab(tab as VentasTab)}
+        options={tabs.map((tab) => ({ value: tab.id, label: tab.label }))}
+      />
 
       {showPrint && (
         <div className="absolute right-4 top-1/2 -translate-y-1/2" data-ventas-share-root="true">

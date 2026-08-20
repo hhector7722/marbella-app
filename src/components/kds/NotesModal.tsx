@@ -109,7 +109,7 @@ export function NotesModal(props: {
         <button
           type="button"
           onClick={() => setIsWriting((v) => !v)}
-          className="min-h-[48px] px-3 rounded-xl border border-zinc-200/90 bg-white text-zinc-900 shadow-sm transition active:scale-[0.99] hover:bg-zinc-50"
+          className="relative flex h-full max-h-full min-h-0 shrink-0 items-center px-2 rounded-xl border border-zinc-200/90 bg-white text-zinc-900 shadow-sm transition active:scale-[0.99] hover:bg-zinc-50 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
           title="Escribir"
         >
           <span className="text-[12px] sm:text-[13px] font-black uppercase tracking-[0.14em]">

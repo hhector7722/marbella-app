@@ -511,6 +511,76 @@
   gap: var(--espacio-1);
 }
 
+/*
+ * PetroleumSegmented — borde color.marca, fill selected.
+ * Densidades: comfortable (tactil.minimo) | compact (piloto recipes/ventas).
+ * Radio del host = espacio.2 (8px), como el shell legacy rounded-lg — no radio.control.
+ */
+[data-component='PetroleumSegmented'] {
+  box-sizing: border-box;
+  display: inline-flex;
+  max-width: 100%;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid var(--color-marca);
+  border-radius: var(--espacio-2);
+  box-shadow: var(--elevacion-superficie);
+  background-color: var(--color-superficie);
+}
+
+[data-component='PetroleumSegmented'] [data-element='option'] {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  border: 0;
+  margin: 0;
+  cursor: pointer;
+  font-weight: 900;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: background-color 150ms ease, color 150ms ease;
+  background-color: var(--color-superficie);
+  color: var(--color-marca);
+  outline: none;
+}
+
+[data-component='PetroleumSegmented'] [data-element='option']:hover {
+  background-color: color-mix(in srgb, var(--color-marca) 5%, var(--color-superficie));
+}
+
+[data-component='PetroleumSegmented'] [data-element='option'][aria-checked='true'] {
+  background-color: var(--color-marca);
+  color: var(--color-texto-invertido);
+}
+
+[data-component='PetroleumSegmented'] [data-element='option'][aria-checked='true']:hover {
+  background-color: var(--color-marca);
+  color: var(--color-texto-invertido);
+}
+
+[data-component='PetroleumSegmented'] [data-element='option']:focus-visible {
+  outline: 2px solid var(--color-marca);
+  outline-offset: 2px;
+  z-index: 1;
+}
+
+[data-component='PetroleumSegmented'][data-density='comfortable'] [data-element='option'] {
+  min-height: var(--tactil-minimo);
+  padding-inline: var(--espacio-3);
+  padding-block: var(--espacio-2);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+[data-component='PetroleumSegmented'][data-density='compact'] [data-element='option'] {
+  padding-inline: var(--espacio-3);
+  padding-block: var(--espacio-1);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+
 /* Lente visual del sandbox: afecta a la expresión, nunca a datos o lógica. */
 [data-marbella-sandbox='true'][data-dl-elevation='0'] [class~='shadow-2xl'],
 [data-marbella-sandbox='true'][data-dl-elevation='0'] [class~='shadow-xl'],

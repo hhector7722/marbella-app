@@ -98,4 +98,11 @@ export {
     DOCUMENT_LIST_ROW_COMPONENT_ID,
     DOCUMENT_LIST_ROW_LEGACY_FINGERPRINT,
 } from './document-list-row';
+export {
+    PETROLEUM_SEGMENTED_COMPONENT_ID,
+    PETROLEUM_SEGMENTED_DENSITIES,
+    PETROLEUM_SEGMENTED_LEGACY_FINGERPRINT,
+    isPetroleumSegmentedDensity,
+    type PetroleumSegmentedDensity,
+} from './petroleum-segmented';
 export { CONSUMPTION_BOTTOM_SHEET_COMPONENT_ID } from './consumption-bottom-sheet';
