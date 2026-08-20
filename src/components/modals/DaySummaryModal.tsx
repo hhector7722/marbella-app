@@ -25,10 +25,6 @@ interface DaySummaryModalProps {
     isManager?: boolean;
 }
 
-/** Chrome cabecera Modal (36px visual, 48px táctil). */
-const modalHeaderChromeBtn =
-    'relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white/90 shadow-none outline-none transition-opacity hover:opacity-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-[""]';
-
 export function DaySummaryModal({ isOpen, onClose, date, logs, onSelectLog, employees = [], onFichajeCreated, isManager }: DaySummaryModalProps) {
     const trackDaySummary = useTrackModalApply('day-summary', 'Resumen de fichajes');
     const [showCreateFichaje, setShowCreateFichaje] = useState(false);
@@ -91,15 +87,14 @@ export function DaySummaryModal({ isOpen, onClose, date, logs, onSelectLog, empl
                 headerTone="petroleum"
                 headerTrailing={
                     canAddFichaje ? (
-                        <button
+                        <Button
                             type="button"
+                            variant="tertiary"
+                            instance="attendance-day-summary-new-fichaje"
                             onClick={() => setShowCreateFichaje(true)}
-                            className={modalHeaderChromeBtn}
-                            title="Nuevo fichaje"
                             aria-label="Nuevo fichaje"
-                        >
-                            <Plus size={20} strokeWidth={2.5} />
-                        </button>
+                            icon={<Plus size={20} strokeWidth={2.5} />}
+                        />
                     ) : undefined
                 }
                 footer={
@@ -113,7 +108,7 @@ export function DaySummaryModal({ isOpen, onClose, date, logs, onSelectLog, empl
                     </Button>
                 }
             >
-                <div className="p-4">
+                <div className="">
                     {logs.length === 0 ? (
                         <div className="py-12 flex flex-col items-center justify-center gap-3">
                             <div className="w-12 h-12 bg-zinc-50 rounded-2xl flex items-center justify-center border border-zinc-100">
@@ -204,7 +199,7 @@ export function DaySummaryModal({ isOpen, onClose, date, logs, onSelectLog, empl
                     </>
                 }
             >
-                <div className="space-y-4 p-4">
+                <div className="space-y-4">
                     <div>
                         <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-1">Empleado</label>
                         <select

@@ -318,15 +318,14 @@ export default function ManagerLedgerView() {
                                 <h1 className="text-lg md:text-4xl font-black text-white uppercase tracking-tight italic truncate">Libro Mayor</h1>
                             </div>
                             <div className="flex items-center justify-end gap-1 md:gap-4 shrink-0">
-                                <button
+                                <Button
+                                    type="button"
+                                    variant="primary"
+                                    instance="manager-ledger-new-entry"
                                     onClick={openCreateModal}
-                                    className="bg-transparent hover:bg-white/10 px-1.5 md:px-3 py-1.5 rounded-xl flex flex-col items-center gap-1 transition-all active:scale-95 group"
                                 >
-                                    <div className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center bg-emerald-500 rounded-full shadow-md group-hover:scale-110 transition-transform">
-                                        <Plus className="w-[14px] h-[14px] md:w-4 md:h-4 text-white" strokeWidth={3} />
-                                    </div>
-                                    <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest text-white/90">NUEVO APUNTE</span>
-                                </button>
+                                    NUEVO APUNTE
+                                </Button>
                             </div>
                         </div>
 
@@ -548,7 +547,7 @@ export default function ManagerLedgerView() {
                 title={editModalOpen ? 'Editar Apunte' : 'Nuevo Apunte'}
                 subtitle="Transcripción"
             >
-                        <form onSubmit={editModalOpen ? handleEdit : handleCreate} className="p-6">
+                        <form onSubmit={editModalOpen ? handleEdit : handleCreate}>
                             <div className="grid grid-cols-2 gap-2 mb-4 bg-zinc-100 p-1.5 rounded-2xl">
                                 <button type="button" onClick={() => setType('entrada')} className={`py-2 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${type === 'entrada' ? 'bg-emerald-500 text-white shadow-md' : 'text-zinc-400 hover:text-zinc-600'}`}>Entrada</button>
                                 <button type="button" onClick={() => setType('salida')} className={`py-2 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${type === 'salida' ? 'bg-white text-zinc-900 shadow-md' : 'text-zinc-400 hover:text-zinc-600'}`}>Salida</button>
@@ -619,7 +618,7 @@ export default function ManagerLedgerView() {
                     </div>
                 }
             >
-                        <div className="p-6 text-center">
+                        <div className="text-center">
                         <div className="mx-auto w-16 h-16 bg-red-50 text-rose-500 rounded-full flex items-center justify-center mb-4 border border-red-100 shadow-inner">
                             <Trash2 size={24} strokeWidth={2.5} />
                         </div>

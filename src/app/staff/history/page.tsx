@@ -29,6 +29,7 @@ import { formatMadridHmFromIso, formatYmdInMadrid, madridRangeUtcIso } from '@/l
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { trackUsageModalApply } from '@/lib/usage/client';
@@ -776,18 +777,15 @@ export default function HistoryPage() {
                             {/* Botón exportar — individual siempre; plantilla solo master con datos */}
                             {showExportButton && (
                                 <div className="relative">
-                                    <button
+                                    <Button
                                         type="button"
+                                        variant="tertiary"
+                                        instance="staff-history-export-menu"
                                         onClick={() => setShowExportMenu((v) => !v)}
                                         disabled={isExporting}
-                                        className="text-white hover:text-white/70 transition-colors p-1.5 active:scale-90 opacity-80 hover:opacity-100 disabled:opacity-40"
-                                        title="Exportar historial"
                                         aria-label="Exportar historial de jornada"
-                                        aria-expanded={showExportMenu}
-                                        aria-haspopup="menu"
-                                    >
-                                        <Share2 size={16} strokeWidth={2} />
-                                    </button>
+                                        icon={<Share2 size={16} strokeWidth={2} />}
+                                    />
 
                                     {showExportMenu && (
                                         <>
@@ -806,25 +804,25 @@ export default function HistoryPage() {
                                             >
                                                 {isPlantilla && isMaster ? (
                                                     <>
-                                                        <button
+                                                        <Button
                                                             type="button"
-                                                            role="menuitem"
+                                                            variant="secondary"
+                                                            instance="staff-history-export-all-pdf"
                                                             onClick={() => { setShowExportMenu(false); setExportFormat('pdf'); setShowExportEmployeeModal(true); }}
-                                                            className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
+                                                            layout="fill"
                                                         >
-                                                            <span className="text-base leading-none">📄</span>
-                                                            <span>Exportar todos <span className="font-normal text-zinc-400">(PDF)</span></span>
-                                                        </button>
+                                                            Exportar todos (PDF)
+                                                        </Button>
                                                         <div className="h-px bg-zinc-100 mx-3" />
-                                                        <button
+                                                        <Button
                                                             type="button"
-                                                            role="menuitem"
+                                                            variant="secondary"
+                                                            instance="staff-history-export-all-xlsx"
                                                             onClick={() => { setShowExportMenu(false); setExportFormat('xlsx'); setShowExportEmployeeModal(true); }}
-                                                            className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
+                                                            layout="fill"
                                                         >
-                                                            <span className="text-base leading-none">📊</span>
-                                                            <span>Exportar todos <span className="font-normal text-zinc-400">(Excel)</span></span>
-                                                        </button>
+                                                            Exportar todos (Excel)
+                                                        </Button>
                                                         <div className="h-px bg-zinc-100 mx-3" />
                                                         <button
                                                             type="button"
@@ -1052,7 +1050,7 @@ export default function HistoryPage() {
                 title="Seleccionar mes"
                 headerTone="petroleum"
             >
-                <div className="p-4">
+                <div>
                     <div className="flex items-center justify-between mb-6 px-2">
                         <button type="button" onClick={() => setPickerYear(pickerYear - 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"><ChevronLeft size={20} className="text-zinc-400" /></button>
                         <span className="font-black text-xl text-zinc-900 tracking-tighter">{pickerYear}</span>

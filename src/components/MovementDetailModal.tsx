@@ -110,7 +110,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                         </Button>
                     }
                 >
-                    <div className="p-6" />
+                    <div />
                 </Modal>
             );
         }
@@ -256,7 +256,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
             }
         >
                 <div className={cn(
-                    "px-6 py-4 text-white",
+                    "text-white",
                     isIncome ? "bg-emerald-600" : isAdjustment ? "bg-orange-500" : "bg-rose-600"
                 )}>
                     <div className="flex flex-col items-center justify-center py-2">

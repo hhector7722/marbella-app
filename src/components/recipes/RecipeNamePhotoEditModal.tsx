@@ -156,7 +156,7 @@ export function RecipeNamePhotoEditModal({
                 </>
             }
         >
-            <div className="flex flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 <label className="block">
                     <span className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-zinc-400">Nombre</span>
                     <input

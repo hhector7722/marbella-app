@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { CheckCircle2, Loader2 } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 import { CartaLangPicker } from '@/components/carta/CartaLangPicker'
 import {
   publicMenuRowsToDigitalMenu,
@@ -17,6 +17,7 @@ import {
 import type { MenuCategoryCatalogEntry } from '@/lib/carta-plato-marbella'
 import type { CartaPhotoScale } from '@/lib/carta-product-photo'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import { submitEventOrderAction } from './actions'
 
 export type PublicEventRow = {
@@ -199,13 +200,15 @@ export default function EventOrderFormClient({
                 </p>
                 <p className="truncate text-[11px] font-bold text-zinc-600">{event.name}</p>
               </div>
-              <button
+              <Button
                 type="button"
-                className={cn(
-                  'flex min-h-14 shrink-0 items-center gap-2 rounded-xl px-5 text-[12px] font-black uppercase tracking-wider transition-colors',
-                  canSubmit ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-zinc-200 text-zinc-600'
-                )}
+                variant="primary"
+                instance="event-order-confirm"
+                className="shrink-0"
                 disabled={!canSubmit}
+                loading={isPending}
+                loadingLabel="Confirmar pedido"
+                aria-label="Confirmar pedido"
                 onClick={() => {
                   const name = responsibleName.trim()
                   if (!name) {
@@ -233,11 +236,9 @@ export default function EventOrderFormClient({
                     setStep('success')
                   })
                 }}
-                aria-label="Confirmar pedido"
               >
-                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 Confirmar pedido
-              </button>
+              </Button>
             </div>
           </div>
         </div>

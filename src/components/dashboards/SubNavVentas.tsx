@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { navigateInsideSandbox } from '@/lib/sandbox/client';
-import { Download, Printer, Share } from 'lucide-react';
+import { Printer, Share } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export type VentasTab = 'VENTAS' | 'LIVE' | 'PRODUCTOS' | 'HORAS';
 
@@ -164,14 +165,15 @@ export function SubNavVentas({ activeTab, onTabChange, showPrint = false, onExpo
 
             {shareMenuOpen && (
               <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden">
-                <button
+                <Button
                   type="button"
+                  variant="tertiary"
+                  instance="ventas-export-excel"
+                  layout="fill"
                   onClick={exportActiveTableToExcel}
-                  className="w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors"
                 >
-                  <span className="text-[11px] font-black uppercase tracking-widest">Exportar Excel</span>
-                  <Download className="w-4 h-4 text-zinc-500" />
-                </button>
+                  Exportar Excel
+                </Button>
                 <div className="h-px bg-zinc-100" />
                 <button
                   type="button"

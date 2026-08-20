@@ -6,7 +6,7 @@ capa: estado
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-19
+revisado: 2026-08-20
 caducidad: 3 meses
 supersede: —
 ---
@@ -54,6 +54,10 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 **Pago parcial (2026-08-19):** el contrato Button declara anatomía binaria (texto XOR icono). Los usos existentes de icono+texto quedan en allowlist de las pruebas; no se migran en este cambio.
 
 **Pago (2026-08-19):** oleada de consumidores Button. Se retiró `icon` de todos los Button con texto visible (consumo, pedidos, propinas, condiciones laborales, proveedores, revisión de actividades). Las pruebas exigen cero combinaciones icono+texto. Icon-only con `aria-label` sigue permitido fuera del footer de Modal.
+
+**Pago parcial (2026-08-20, Block 0 enforcement):** Button lanza en desarrollo/test ante anatomía inválida (`assertButtonAnatomy`). Modal: filtro allow-list de `className` del panel; gates de regresión para footer nativo, padding raíz del body, `zIndexClass` (allowlist vacía) y `backdropClassName` (solo lightbox). Allowlists en `src/lib/design-system/modal-consumer-allowlists.ts` y overlays en `overlay-parallel-allowlist.ts`. Sin migración masiva de pantallas.
+
+**Pago parcial (2026-08-20, Block 1B/1C Button consumers):** CTAs de negocio claros migrados a `Button` (~155). Gate de regresión: cero CTAs claros nativos (`button-native-business-scan`). Block 1C: «Vista plantilla» en `StaffSelectionModal` pasa a `Button`; el grid de avatares, filas `text-left`, tabs/chips, composer de chat, steppers ±, badges 18px, celdas de escandallo y «Ver foto» se mantienen como controles especializados — ver D27.
 
 **Coste residual**: deriva visual continua fuera de los pilotos; overlays legacy con z-index ad hoc hasta migrar. En Caja/Tesorería quedan deliberadamente legacy `QuickCalculatorModal` y `DenominationZoomModal` por el techo `base → derived` ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)). En Perfil queda fuera `AvatarCropModal` (fullscreen de herramienta). En Propinas, la calculadora anidada en ajuste de propina y en el form de bote sigue el mismo residual. En Pedidos, la calculadora del resumen, el popup de categoría de proveedores y el `window.confirm` de Pedido Nuevo quedan fuera a propósito. El zoom de `OrderProductCard` usa `hideHeader` porque la tarjeta trae su propio cromo. En Consumo personal, `StaffSelectionModal` y `TimeFilterModal` quedan residuales compartidos; la ración Entero/Medio es inline en `ConsumptionBottomSheet`. En Staff/Admin, la cadena Info/Manuales no cabe en una sola `derived`; `StaffScheduleModal`, `ScheduleDayEditor` y `AttendanceDetailModal` siguen en allowlist. En overtime, `QuickCalculatorModal` permanece residual. El dismiss del menú de exportación de `/staff/history` no es Modal; el fichero sigue en allowlist porque la huella de archivo aún dispara.
 
@@ -298,6 +302,36 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 **Coste**: exposición de material sensible a quien conozca o adivine la ruta del archivo.
 
 **Disparador de pago**: inmediato. Es un cambio de una bandera más las políticas de lectura correspondientes.
+
+---
+
+## D27 · Controles interactivos que no son Button
+
+**Prioridad: media.** Tras Block 1B/1C, ~680 `<button>` nativos restantes no son CTAs de negocio. Son patrones sin contrato de Design System (o con host local). Forzarlos a `Button` rompería anatomía (texto XOR icono), densidad o semántica.
+
+| Patrón | Decisión 1C | Motivo | Disparador de pago |
+|---|---|---|---|
+| Grid de avatares (`StaffSelectionModal`) | Mantener | Opción de selector (avatar+nombre), no CTA | Contrato `SelectionOption` / listbox |
+| Filas `w-full text-left` (resto) | Mantener | Selección / navegación / expansión fuera de documentos | Familia canónica por anatomía (no ListRow genérico) |
+| Filas de documento (Nóminas / Comunicados / Contrato) | **Pagado parcial 2B** | Misma anatomía en 3 sitios | `DocumentListRow` oficial |
+| Tabs / chips / filtros | Mantener | `TabBar` existe en pabellón pero no es contrato DS; chips ad hoc | Contrato Tab / Segmented / Chip |
+| Composer ChatMarbella (+/mic/teléfono) | Mantener | Chrome de composer; teléfono emerald y menú icono+texto no caben en Button | Composer chrome documentado |
+| Quantity steppers ± | Mantener | Widget compacto duplicado (`WasteClient`, `InventoryClient`, carrito, denominaciones) | Componente `QuantityStepper` oficial |
+| Badges 18px | Mantener | Presentación / dismiss compacto, no hit-area 48px de Button | Badge / dismiss chip |
+| Celdas escandallo TPV | Mantener | Celda de tabla que abre detalle | Patrón celda interactiva |
+| «Ver foto» sobre imagen | Mantener | Presentación interactiva (lightbox), no CTA | Media control / lightbox trigger |
+
+**Auditoría Block 2A (2026-08-20) — SelectionOption / ListRow:** se inventariaron las variantes reales antes de crear componente. **Decisión: C (no crear ListRow/SelectionOption genéricos).**
+
+**Pago parcial Block 2B (2026-08-20) — fila canónica de documento:** se fijó anatomía en [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md) y se creó `DocumentListRow` (`src/components/ui/DocumentListRow.tsx`). Migrados: `NominasModal`, `ComunicadosModal`, `ContratoModal`. Gate de huella legacy. No se creó ListRow genérico.
+
+*SelectionOption* permanece sin componente (familias incompatibles).
+
+*ListRow* genérico permanece sin componente. Resto de `text-left` (~69 hits): menús icono 48px, agenda, albaranes, popups filtro, etc.
+
+**Coste residual**: el resto de filas clicables y selectores siguen ad hoc; el chrome «Compartir» de documento sigue nativo en `trailing`.
+
+**Disparador de pago**: inventariar la siguiente familia canónica (p. ej. menú icono+label o SelectionOption grid) en SISTEMA-DE-COMPONENTES antes de codificar. No convertir mecánicamente a Button.
 
 ---
 

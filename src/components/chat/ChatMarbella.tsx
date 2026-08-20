@@ -49,7 +49,6 @@ export default function ChatMarbella() {
           <Image src="/icons/logo-white.png" alt="Logo" fill className="object-contain" priority />
         </div>
       }
-      className="h-[80vh]"
     >
       <div className="relative flex-1 flex flex-col min-h-0">
         <TextChatView onCallOpen={() => setShowVoiceCall(true)} />

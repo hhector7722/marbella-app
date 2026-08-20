@@ -5,16 +5,15 @@ import Link from 'next/link'
 import {
   ArrowLeft,
   BookOpen,
-  Check,
   FileImage,
   FileText,
   Loader2,
-  Plus,
   Trash2,
   Upload,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import {
   applyValidatedRecipesAction,
   extractRecipesFromDocumentAction,
@@ -234,18 +233,17 @@ export default function RecetasImportClient({ allIngredients }: { allIngredients
                 <BookOpen className="w-5 h-5 text-[#36606F]" />
                 Propuestas
               </h2>
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                instance="recetas-import-apply-accepted"
                 onClick={runImport}
                 disabled={applying || accepted.length === 0}
-                className={cn(
-                  'inline-flex items-center justify-center gap-2 min-h-12 px-5 rounded-xl font-medium',
-                  'bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 shrink-0'
-                )}
+                loading={applying}
+                loadingLabel={`Importar aceptadas (${accepted.length})`}
               >
-                {applying ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
                 Importar aceptadas ({accepted.length})
-              </button>
+              </Button>
             </div>
 
             {rows.map((r) => {
@@ -262,18 +260,14 @@ export default function RecetasImportClient({ allIngredients }: { allIngredients
                   <div className="flex flex-wrap justify-between gap-2">
                     <span className="text-xs font-bold uppercase text-zinc-400">Receta</span>
                     <div className="flex gap-2 shrink-0">
-                      <button
+                      <Button
                         type="button"
+                        variant="primary"
+                        instance={`recetas-import-accept-${r.proposalId}`}
                         onClick={() => updateRow(r.proposalId, { decision: 'accepted' })}
-                        className={cn(
-                          'min-h-12 px-4 rounded-xl border text-sm font-medium',
-                          r.decision === 'accepted'
-                            ? 'border-emerald-500 bg-emerald-100 text-emerald-900'
-                            : 'border-zinc-200 bg-white'
-                        )}
                       >
                         Aceptar
-                      </button>
+                      </Button>
                       <button
                         type="button"
                         onClick={() => updateRow(r.proposalId, { decision: 'discarded' })}
@@ -377,13 +371,14 @@ export default function RecetasImportClient({ allIngredients }: { allIngredients
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-bold uppercase text-zinc-400">Ingredientes (nombre = BD)</span>
-                      <button
+                      <Button
                         type="button"
+                        variant="secondary"
+                        instance={`recetas-import-add-line-${r.proposalId}`}
                         onClick={() => addIngredient(r.proposalId)}
-                        className="inline-flex items-center gap-1 min-h-10 px-3 rounded-lg text-sm border border-zinc-200 bg-white"
                       >
-                        <Plus className="w-4 h-4" /> Añadir línea
-                      </button>
+                        Añadir línea
+                      </Button>
                     </div>
                     {missing.length > 0 && (
                       <p className="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-2 py-1">

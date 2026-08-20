@@ -1143,7 +1143,7 @@ export default function StaffDashboardView() {
                 headerTone="petroleum"
                 onBack={infoSubMenu ? () => setInfoSubMenu(null) : undefined}
             >
-                <div className="p-8 space-y-2">
+                <div className="space-y-2">
                     {!infoSubMenu && (
                         <div className="space-y-1">
                             <button onClick={() => { trackStaffInfoMenu('Contactos de Interés'); setInfoSubMenu('contactos'); }} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
@@ -1239,7 +1239,7 @@ export default function StaffDashboardView() {
                 headerTone="petroleum"
                 onBack={backToInfoFromManuals}
             >
-                <div className="p-8 space-y-1">
+                <div className="space-y-1">
                     {STAFF_MANUAL_MENU.map((item) => (
                         <button
                             key={item.id}
@@ -1272,7 +1272,7 @@ export default function StaffDashboardView() {
                 title="TPV"
                 headerTone="petroleum"
             >
-                <div className="max-h-[60vh] space-y-1 overflow-y-auto p-6">
+                <div className="max-h-[60vh] space-y-1 overflow-y-auto">
                     {STAFF_TPV_MANUAL_ITEMS.map((label) => (
                         <button
                             key={label}
@@ -1305,7 +1305,7 @@ export default function StaffDashboardView() {
                 title="Horno"
                 headerTone="petroleum"
             >
-                <div className="space-y-3 p-6">
+                <div className="space-y-3">
                     <button
                         type="button"
                         onClick={() => openStaffPdf(STAFF_MANUAL_ASSETS.hornoLimpiezaPdf)}
@@ -1342,7 +1342,7 @@ export default function StaffDashboardView() {
                 headerTone="petroleum"
                 wrapperClassName="max-w-3xl"
             >
-                <div className="min-h-0 flex-1 overflow-y-auto bg-zinc-50 p-4">
+                <div className="min-h-0 flex-1 overflow-y-auto bg-zinc-50">
                     {manualMediaViewer?.type === 'video' ? (
                         <video
                             src={manualMediaViewer.src}

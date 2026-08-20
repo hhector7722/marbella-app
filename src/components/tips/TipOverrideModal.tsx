@@ -170,7 +170,7 @@ export function TipOverrideModal({
           </div>
         }
       >
-        <div className="flex min-w-0 max-w-full flex-col gap-3 p-4">
+        <div className="flex min-w-0 max-w-full flex-col gap-3">
           <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm md:rounded-2xl">
             <div className="flex items-center gap-3 min-w-0">
               <Avatar

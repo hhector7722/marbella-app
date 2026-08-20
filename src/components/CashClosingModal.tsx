@@ -815,7 +815,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                 </Button>
             }
         >
-            <div className="p-5 sm:p-6">
+            <div>
                 <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col items-center">
                         <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center">

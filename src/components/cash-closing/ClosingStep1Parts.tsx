@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import Image from 'next/image';
 import { X, Plus, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import {
   CLOSING_WEATHER_OPTIONS,
   type ClosingWeatherId,
@@ -295,20 +296,23 @@ export function ClosingPhotoField({
               alt={ariaLabel}
               className="h-9 w-auto max-w-full rounded-md object-contain sm:h-10"
             />
-            <button
+            <Button
               type="button"
+              variant="tertiary"
+              instance="closing-photo-clear"
               onClick={onClear}
-              className="absolute -right-0.5 -top-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-rose-500 text-white transition-all hover:bg-rose-600 active:scale-95"
               aria-label={`Eliminar ${ariaLabel}`}
-            >
-              <X size={7} strokeWidth={3} />
-            </button>
+              icon={<X size={7} strokeWidth={3} />}
+              className="absolute -right-0.5 -top-0.5"
+            />
           </div>
         </div>
       ) : (
         <div className={cn(CLOSING_INPUT_HEIGHT, 'flex w-full items-center justify-center')}>
-          <button
+          <Button
             type="button"
+            variant="primary"
+            instance="closing-photo-add"
             onClick={() => {
               const trigger = () => fileInputRef.current?.click();
               if (onClickAdd) {
@@ -317,11 +321,10 @@ export function ClosingPhotoField({
                 trigger();
               }
             }}
-            className="flex h-7 min-w-[4.25rem] shrink-0 items-center justify-center rounded-xl bg-emerald-500 px-2.5 text-[10px] font-black text-white transition-all hover:bg-emerald-600 active:scale-95 sm:min-w-[4.5rem] sm:px-3 sm:text-xs"
             aria-label={ariaLabel}
           >
             Añadir
-          </button>
+          </Button>
         </div>
       )}
     </>

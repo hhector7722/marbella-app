@@ -8,6 +8,7 @@ import { NotesModal } from './NotesModal';
 import { combinedLineNotesForDisplay } from './combined-line-notes';
 import { KdsMesaNumber } from './KdsMesaNumber';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface CommandCardProps {
     order: KDSOrder;
@@ -277,8 +278,10 @@ export function CommandCard({
                     {/* Izquierda: notas comanda + cliente */}
                     <div className="flex min-w-0 flex-1 flex-col items-start justify-start gap-1 pt-0.5">
                         <div className="flex items-start gap-2 min-w-0">
-                            <button
+                            <Button
                                 type="button"
+                                variant="tertiary"
+                                instance={`kds-edit-order-notes-${order.id}`}
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setNotesModal({
@@ -288,17 +291,18 @@ export function CommandCard({
                                         initialNotes: order.notas_comanda,
                                     });
                                 }}
-                                className="shrink-0 w-12 h-12 sm:w-14 sm:h-14 min-h-[48px] min-w-[48px] sm:min-h-[48px] sm:min-w-[48px] flex items-center justify-center bg-transparent border-0 p-0 shadow-none hover:opacity-90 active:scale-95 transition"
-                                title="Editar nota comanda"
-                            >
-                                <Image
-                                    src="/icons/notas.png"
-                                    alt="Notas"
-                                    width={34}
-                                    height={34}
-                                    className={cn(chromeCompleted ? 'opacity-45' : 'opacity-90', 'drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]')}
-                                />
-                            </button>
+                                className="shrink-0"
+                                aria-label="Editar nota comanda"
+                                icon={
+                                    <Image
+                                        src="/icons/notas.png"
+                                        alt=""
+                                        width={34}
+                                        height={34}
+                                        className={cn(chromeCompleted ? 'opacity-45' : 'opacity-90', 'drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]')}
+                                    />
+                                }
+                            />
                             <div className="min-w-0 flex-1">
                                 {hasNotes(order.notas_comanda) ? (
                                     <div className={cn('text-xs sm:text-sm font-black uppercase tracking-[0.1em] leading-snug text-slate-700', chromeCompleted && 'text-slate-500')}>
@@ -378,8 +382,10 @@ export function CommandCard({
                                     <div className="flex flex-col pr-1 min-w-0">
                                         <div className="flex items-center gap-0 min-w-0">
                                             {showLineNotesButton ? (
-                                                <button
+                                                <Button
                                                     type="button"
+                                                    variant="tertiary"
+                                                    instance={`kds-edit-line-notes-${group.ids[0]}`}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         setNotesModal({
@@ -390,17 +396,18 @@ export function CommandCard({
                                                             lineIds: group.ids,
                                                         });
                                                     }}
-                                                    className="shrink-0 w-12 h-12 sm:w-14 sm:h-14 min-h-[48px] min-w-[48px] sm:min-h-[48px] sm:min-w-[48px] flex items-center justify-center bg-transparent border-0 p-0 shadow-none hover:opacity-90 active:scale-95 transition"
-                                                    title="Editar nota artículo"
-                                                >
-                                                    <Image
-                                                        src="/icons/notas.png"
-                                                        alt="Notas"
-                                                        width={34}
-                                                        height={34}
-                                                        className={cn(chromeCompleted ? 'opacity-45' : 'opacity-90', 'drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]')}
-                                                    />
-                                                </button>
+                                                    className="shrink-0"
+                                                    aria-label="Editar nota artículo"
+                                                    icon={
+                                                        <Image
+                                                            src="/icons/notas.png"
+                                                            alt=""
+                                                            width={34}
+                                                            height={34}
+                                                            className={cn(chromeCompleted ? 'opacity-45' : 'opacity-90', 'drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]')}
+                                                        />
+                                                    }
+                                                />
                                             ) : reserveLineNotesSlot ? (
                                                 <div
                                                     className="shrink-0 w-12 h-12 sm:w-14 sm:h-14 min-h-[48px] min-w-[48px] sm:min-h-[48px] sm:min-w-[48px]"

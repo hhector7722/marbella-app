@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { createClient } from '@/utils/supabase/client'
 import { Modal } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
 import {
   setMenuCategoryCover,
   upsertMenuCategoryOverride,
@@ -127,7 +128,7 @@ export function MenuCategoryEditModal({
       loading={isPending}
       closeOnBackdrop={!isPending}
     >
-        <div className="p-4">
+        <div>
           <div className="space-y-3">
             <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-3">
               <p className="text-[11px] font-black uppercase tracking-widest text-[#36606F]">Actual</p>
@@ -313,14 +314,15 @@ export function MenuCategoryEditModal({
                 </div>
 
                 <div className="mt-4 grid grid-cols-2 gap-2">
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary"
+                    instance="carta-category-edit-cancel"
                     onClick={onClose}
                     disabled={isPending}
-                    className="min-h-[48px] rounded-xl border border-zinc-200 bg-white text-xs font-black uppercase tracking-widest text-zinc-700 active:bg-zinc-50 disabled:opacity-50"
                   >
                     Cancelar
-                  </button>
+                  </Button>
                   <button
                     type="button"
                     disabled={isPending}

@@ -11,6 +11,7 @@ import { createClient } from '@/utils/supabase/client'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
 import { namedEntitySummary } from '@/lib/usage/modal-apply'
 import { Modal } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
 
 interface Supplier {
   id: number
@@ -437,17 +438,17 @@ export function ScannerClient({
               </div>
             ) : null}
 
-            <button
+            <Button
               type="button"
+              variant="tertiary"
+              instance="scanner-add-sheet"
               onClick={triggerAnotherCapture}
               disabled={isProcessing}
-              className={cn(
-                'min-h-12 w-full shrink-0 border-0 bg-transparent p-0 text-center text-sm font-semibold uppercase tracking-wide text-[#36606F] shadow-none outline-none ring-0 hover:underline hover:underline-offset-4 active:opacity-80',
-                isProcessing && 'pointer-events-none opacity-50'
-              )}
+              layout="fill"
+              className="shrink-0"
             >
               Añadir hoja
-            </button>
+            </Button>
 
             <button
               type="button"
@@ -501,7 +502,7 @@ export function ScannerClient({
         headerTone="petroleum"
         loading={loadingSuppliers}
       >
-        <div className="p-4 flex-1 overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-hidden flex flex-col">
           <div className="relative mb-4 shrink-0">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input

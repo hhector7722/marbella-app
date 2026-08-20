@@ -4,9 +4,10 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation';
 import { useMemo, useRef, useState, useTransition, useEffect } from 'react'
 import { toast } from 'sonner'
-import { Check, Filter, Loader2, Plus, Search, Trash2, ChevronDown, X } from 'lucide-react'
+import { Check, Filter, Search, Trash2, ChevronDown, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Modal } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
 import { namedEntitySummary } from '@/lib/usage/modal-apply'
 import type { AlbaranLearnedName, MappingRow, Recipe, RecipeIngredientMatchRow, TpvArticle } from './page'
@@ -285,17 +286,15 @@ export default function MappingClient({
               </button>
             </span>
           ) : null}
-          <button
+          <Button
             type="button"
+            variant="tertiary"
+            instance="recetas-tpv-filtrar-departamento"
             onClick={() => setDeptMenuOpen((v) => !v)}
-            className="flex h-9 min-h-9 w-9 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-zinc-600 outline-none ring-0 hover:text-zinc-900"
-            aria-expanded={deptMenuOpen}
-            aria-haspopup="listbox"
             aria-label="Filtrar por departamento"
-            title="Departamento"
-          >
-            <Filter className="h-5 w-5" strokeWidth={2} />
-          </button>
+            icon={<Filter className="h-5 w-5" strokeWidth={2} />}
+            className="shrink-0"
+          />
           {deptMenuOpen ? (
             <div
               className="absolute right-0 top-full z-[60] mt-1 max-h-56 min-w-[12rem] overflow-y-auto rounded-lg border border-zinc-200 bg-white py-1 shadow-xl"
@@ -426,35 +425,27 @@ export default function MappingClient({
 
                   <div className="flex shrink-0 flex-col items-center justify-center gap-0 px-0 py-1">
                     {hasChanges && draft.recipe_id ? (
-                      <button
+                      <Button
                         type="button"
+                        variant="primary"
+                        instance={`recetas-tpv-guardar-${row.articulo_id}`}
                         onClick={() => onSave(row)}
                         disabled={isBusy}
-                        className={cn(
-                          'flex min-h-9 w-full shrink-0 items-center justify-center border-0 bg-transparent p-0 py-0.5 shadow-none outline-none ring-0',
-                          'text-[10px] font-bold text-emerald-600 transition-colors hover:text-emerald-800',
-                          isBusy && 'opacity-60'
-                        )}
-                        title="Guardar"
-                      >
-                        {isBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                      </button>
+                        loading={isBusy}
+                        aria-label="Guardar"
+                        icon={<Check className="h-3.5 w-3.5" />}
+                      />
                     ) : null}
                     {row.mapped ? (
-                      <button
+                      <Button
                         type="button"
+                        variant="destructive"
+                        instance={`recetas-tpv-eliminar-mapeo-${row.articulo_id}`}
                         onClick={() => onDelete(row)}
                         disabled={isBusy}
-                        className={cn(
-                          'flex min-h-9 w-full shrink-0 items-center justify-center border-0 bg-transparent p-0 py-0.5 shadow-none outline-none ring-0',
-                          'text-rose-600 transition-colors hover:text-rose-800',
-                          isBusy && 'opacity-60'
-                        )}
-                        title="Eliminar mapeo"
                         aria-label="Eliminar"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                        icon={<Trash2 className="h-3.5 w-3.5" />}
+                      />
                     ) : null}
                   </div>
                 </div>
@@ -712,15 +703,16 @@ function IngredientEscandalloModal({
                                 <span className="text-zinc-500"> · {a.supplier_name}</span>
                               ) : null}
                             </div>
-                            <button
+                            <Button
                               type="button"
+                              variant="destructive"
+                              instance={`recetas-tpv-eliminar-albaran-${a.id || `${line.ingredient_id}-${i}`}`}
                               disabled={pending}
                               onClick={() => removeAlbaranRow(a)}
-                              className="shrink-0 rounded p-1 text-rose-600 hover:bg-rose-100 disabled:opacity-50"
                               aria-label="Eliminar mapeo de albarán"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </button>
+                              icon={<Trash2 className="h-3 w-3" />}
+                              className="shrink-0"
+                            />
                           </li>
                         ))}
                       </ul>
@@ -749,23 +741,26 @@ function IngredientEscandalloModal({
                           />
                         </div>
                         <div className="mt-1 flex items-center justify-end gap-1">
-                          <button
+                          <Button
                             type="button"
+                            variant="destructive"
+                            instance={`recetas-tpv-eliminar-ingrediente-${line.ingredient_id}`}
                             disabled={pending}
                             onClick={() => removeIngredientFromRecipe(line.ingredient_id)}
-                            className="h-8 min-h-8 shrink-0 rounded border border-rose-300 bg-rose-50 px-2 text-[10px] font-bold text-rose-700 hover:bg-rose-100 disabled:opacity-50"
+                            className="shrink-0"
                           >
                             Eliminar
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             type="button"
+                            variant="primary"
+                            instance={`recetas-tpv-guardar-albaran-${line.ingredient_id}`}
                             disabled={pending}
                             onClick={() => addAlbaranRow(line.ingredient_id)}
-                            className="flex h-8 min-h-8 shrink-0 items-center gap-0.5 rounded bg-[#36606F] px-2.5 text-[10px] font-bold text-white hover:bg-[#2A4B57] disabled:opacity-50"
+                            className="shrink-0"
                           >
-                            <Plus className="h-3 w-3" />
                             Guardar
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     </li>
@@ -839,15 +834,16 @@ function RecipeLinkIngredientBlock({
           <option value="ml">ml</option>
           <option value="ud">ud</option>
         </select>
-        <button
+        <Button
           type="button"
+          variant="primary"
+          instance="recetas-tpv-añadir-ingrediente"
           disabled={pending}
           onClick={onSubmit}
-          className="flex h-8 min-h-8 shrink-0 items-center justify-center gap-0.5 rounded bg-[#36606F] px-2 text-[10px] font-bold text-white hover:bg-[#2A4B57] disabled:opacity-50"
+          className="shrink-0"
         >
-          <Plus className="h-3 w-3" />
           Añadir
-        </button>
+        </Button>
       </div>
       {linkableIngredients.length === 0 ? (
         <p className="mt-1 text-[9px] text-amber-800">Sin ingredientes libres en la lista.</p>

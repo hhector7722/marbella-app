@@ -172,7 +172,7 @@ export default function ChangePasswordModal({
                 </div>
             }
         >
-            <form id="change-password-form" onSubmit={handleSubmit} className="space-y-6 px-6 pb-6">
+            <form id="change-password-form" onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-5">
                     {!isRecoveryMode && (
                         <div className="relative group">

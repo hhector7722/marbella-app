@@ -1,10 +1,11 @@
 'use client';
 
-import { Copy, Check, Upload, Eye } from 'lucide-react';
+import { Copy, Check, Upload } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 
 interface DatosPersonalesModalProps {
     isOpen: boolean;
@@ -159,7 +160,7 @@ export default function DatosPersonalesModal({
             usageId="profile-personal"
             usageLabel="Datos personales"
         >
-            <div className="p-6 space-y-5">
+            <div className="space-y-5">
                 <div>
                     <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">DNI / NIE</p>
                     <div className="flex items-center gap-2">
@@ -200,16 +201,16 @@ export default function DatosPersonalesModal({
                                     </span>
                                 </button>
                                 {openHref && (
-                                    <button
+                                    <Button
                                         type="button"
+                                        variant="tertiary"
+                                        instance="datos-personales-ver-dni"
                                         onClick={() => window.open(openHref, '_blank')}
-                                        className="shrink-0 min-h-[48px] min-w-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-[#36606F]/10 hover:text-[#36606F] transition-colors active:scale-95"
+                                        className="shrink-0"
                                         aria-label="Ver imagen DNI"
-                                        title="Ver imagen DNI"
                                     >
-                                        <Eye size={18} />
-                                        <span className="text-[10px] text-zinc-400 font-medium leading-tight">ver</span>
-                                    </button>
+                                        ver
+                                    </Button>
                                 )}
                             </>
                         )}

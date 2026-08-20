@@ -21,6 +21,7 @@ import {
 } from '@/lib/carta-product-photo'
 import { EventCartaOrderControls } from '@/components/carta/EventCartaOrderControls'
 import { Modal } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
 import { formatCartaPrice } from '@/lib/carta-price-display'
 import {
   eventOrderProductId,
@@ -389,11 +390,11 @@ export function CartaStaffMenuProductCard({
         title={displayName}
         usageId="event-carta-racion-picker"
         usageLabel="Elegir ración pedido"
-        className="max-w-sm"
+        variant="compact"
         layer={lightboxParentInstance ? 'derived' : 'base'}
         {...(lightboxParentInstance ? { parentInstance: lightboxParentInstance } : {})}
       >
-        <div className="px-4 pb-4 pt-3">
+        <div className="space-y-3">
           <p className="text-center text-sm font-semibold text-zinc-600">Selecciona la ración</p>
           <div className="mt-4 grid grid-cols-2 gap-3">
             <button
@@ -427,13 +428,16 @@ export function CartaStaffMenuProductCard({
               ) : null}
             </button>
           </div>
-          <button
+          <Button
             type="button"
-            className="mt-3 flex min-h-12 w-full items-center justify-center rounded-xl bg-zinc-100 text-sm font-bold text-zinc-800 active:bg-zinc-200"
+            variant="secondary"
+            instance="carta-staff-racion-cancel"
+            layout="fill"
+            className="mt-3"
             onClick={() => setRacionPickerOpen(false)}
           >
             Cancelar
-          </button>
+          </Button>
         </div>
       </Modal>
     </div>

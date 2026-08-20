@@ -2,8 +2,9 @@
 
 import { useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { Check, Loader2, Search, Trash2, Eye, EyeOff } from 'lucide-react'
+import { Search, Trash2, Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import { deleteMenuOverride, upsertMenuOverride } from './actions'
 import type { CartaEditorMappingRow, CartaOverrideRow } from './types'
 
@@ -426,20 +427,17 @@ export default function CartaEditorClient({
                         Reset
                       </button>
 
-                      <button
+                      <Button
+                        type="button"
+                        variant="primary"
+                        instance={`carta-editor-save-${row.articulo_id}`}
                         onClick={() => onSave(row)}
                         disabled={!changed}
-                        className={cn(
-                          'h-12 px-5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors',
-                          !changed
-                            ? 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
-                            : 'bg-[#36606F] text-white hover:bg-[#2A4B57] shadow-sm'
-                        )}
-                        title="Guardar"
+                        loading={isBusy}
+                        loadingLabel="Guardando…"
                       >
-                        {isBusy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
                         Guardar
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )

@@ -54,7 +54,7 @@ export function AdminProductModal({ isOpen, onClose, onOpenSupplierModal }: Admi
             wrapperClassName="max-w-md"
             scrollContent={false}
         >
-            <div className="relative p-4 grid grid-cols-2 gap-3 bg-gray-50/30 overflow-y-auto">
+            <div className="relative grid grid-cols-2 gap-3 bg-gray-50/30 overflow-y-auto">
                 {ADMIN_MENU_ITEMS.map((item, i) => {
                     if ('special' in item && item.special === 'pedidos') {
                         return (

@@ -460,14 +460,14 @@ export default function ConsumoPersonalDashboardPage() {
                 buttonClassName="bg-transparent border-transparent shadow-none hover:bg-white/15 min-h-[40px] md:min-h-[40px] px-2 py-1.5"
               />
               <div className="relative shrink-0 flex items-center justify-center">
-                <button
+                <Button
                   type="button"
+                  variant="tertiary"
+                  instance="consumo-personal-filtrar-trabajador"
                   onClick={() => setIsWorkerModalOpen(true)}
-                  className="relative text-white/90 hover:text-white transition-colors h-10 w-10 md:h-10 md:w-10 flex items-center justify-center rounded-lg hover:bg-white/10"
                   aria-label="Filtrar por trabajador"
-                >
-                  <User size={20} strokeWidth={2.25} className="shrink-0" />
-                </button>
+                  icon={<User size={20} strokeWidth={2.25} />}
+                />
                 {workerFilterId ? (
                   <button
                     type="button"

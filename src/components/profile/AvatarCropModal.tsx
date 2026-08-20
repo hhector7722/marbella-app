@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import Cropper, { Area } from 'react-easy-crop';
 import { getCroppedImg, type CropAreaPixels } from '@/lib/crop-image';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 interface AvatarCropModalProps {
@@ -102,14 +103,16 @@ export function AvatarCropModal({ imageSrc, onSave, onCancel }: AvatarCropModalP
           aria-label="Zoom"
         />
         <div className="flex gap-3 mt-6">
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            instance="avatar-crop-cancel"
             onClick={onCancel}
-            className="flex-1 min-h-[48px] flex items-center justify-center rounded-xl border border-white/80 text-white font-bold uppercase text-[10px] tracking-widest hover:bg-white/10"
             aria-label="Cancelar"
+            className="flex-1"
           >
             Cancelar
-          </button>
+          </Button>
           <button
             type="button"
             onClick={handleSave}

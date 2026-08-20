@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 import { isHiddenPlantillaName } from '@/lib/staff/plantilla-employees';
 import { trackUsageModalApply } from '@/lib/usage/client';
 import { staffSelectionApplySummary } from '@/lib/usage/modal-apply';
@@ -154,8 +155,7 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
             headerVariant="petroleum"
             usageId={usageId}
             usageLabel={usageLabel}
-            wrapperClassName={variant === 'profile-list' ? 'max-w-xl' : 'max-w-md'}
-            className="rounded-[2rem]"
+            variant={variant === 'profile-list' ? 'amplify' : 'standard'}
             scrollContent={false}
             headerTrailing={headerTrailing}
             hideCloseButton={hideHeaderClose}
@@ -163,7 +163,7 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
             onBackPlain={Boolean(onBack)}
         >
             <div className={cn(
-                "p-4 bg-white",
+                "bg-white",
                 manageVisibility || variant !== 'profile-list'
                     ? 'overflow-y-auto no-scrollbar flex-1'
                     : 'overflow-visible'
@@ -171,13 +171,17 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                 {children}
 
                 {allowPlantilla && !manageVisibility && (
-                    <button
-                        type="button"
-                        onClick={() => handleSelect(PLANTILLA_SENTINEL)}
-                        className="w-full mb-3 py-2.5 px-3 rounded-xl bg-[#36606F]/10 border border-[#36606F]/20 text-[#36606F] text-[10px] font-black uppercase tracking-widest hover:bg-[#36606F]/20 active:scale-[0.98] transition-all"
-                    >
-                        Vista plantilla (todos)
-                    </button>
+                    <div className="mb-3">
+                        <Button
+                            type="button"
+                            variant="tertiary"
+                            instance="staff-selection-plantilla-vista"
+                            className="w-full"
+                            onClick={() => handleSelect(PLANTILLA_SENTINEL)}
+                        >
+                            Vista plantilla (todos)
+                        </Button>
+                    </div>
                 )}
 
                 {manageVisibility ? (

@@ -2,8 +2,9 @@
 
 import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { Home, RefreshCw } from 'lucide-react';
+import { Home } from 'lucide-react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 export default function Error({
   error,
@@ -44,20 +45,14 @@ export default function Error({
             inicio.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <button
+            <Button
               type="button"
+              variant="primary"
+              instance="error-retry"
               onClick={reset}
-              className={cn(
-                'inline-flex items-center justify-center gap-2',
-                'min-h-[48px] px-6 rounded-xl shrink-0',
-                'bg-zinc-700 text-white font-semibold',
-                'hover:bg-zinc-600 active:scale-[0.98]',
-                'transition-all duration-200'
-              )}
             >
-              <RefreshCw className="w-5 h-5 shrink-0" />
               Reintentar
-            </button>
+            </Button>
             <Link
               href="/"
               className={cn(

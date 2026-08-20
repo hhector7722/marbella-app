@@ -3,7 +3,7 @@
 import { useState, useEffect, useLayoutEffect, useMemo } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { cn } from '@/lib/utils';
-import { Camera, X, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
+import { Camera, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast } from 'sonner';
 import { PricingChoiceButton, PricingStepHeader } from '@/components/ingredients/PricingAssistantControls';
@@ -467,7 +467,7 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                 </>
             }
         >
-            <div className="space-y-4 bg-[#fafafa] p-4">
+            <div className="space-y-4 bg-[#fafafa]">
                     <div className="space-y-4">
                         <div className="flex items-center justify-center gap-8">
                             {showNavArrows ? (
@@ -541,17 +541,17 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                         </div>
                                     ) : null}
                                 </div>
-                                <button
+                                <Button
                                     type="button"
+                                    variant="secondary"
+                                    instance="ingredient-edit-pricing"
                                     onClick={() => {
                                         setEditPricingOpen((v) => !v);
                                         setEditPricingStep(1);
                                     }}
-                                    className="inline-flex min-h-12 shrink-0 items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 font-black text-[#36606F] hover:bg-zinc-50"
                                 >
-                                    <Pencil className="h-4 w-4" />
                                     Editar
-                                </button>
+                                </Button>
                             </div>
 
                             <label className="mt-3 flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 px-3 py-2">
@@ -575,16 +575,17 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                                 {pricingAssistantCopy.modal.step(pricingWizardSteps.current, pricingWizardSteps.total)}
                                             </div>
                                         </div>
-                                        <button
+                                        <Button
                                             type="button"
+                                            variant="secondary"
+                                            instance="ingredient-pricing-close"
                                             onClick={() => {
                                                 setEditPricingOpen(false);
                                                 setEditPricingStep(1);
                                             }}
-                                            className="min-h-12 shrink-0 rounded-xl bg-white/10 px-4 font-black text-white hover:bg-white/15"
                                         >
                                             Cerrar
-                                        </button>
+                                        </Button>
                                     </div>
 
                                     <div className="space-y-3 rounded-2xl bg-white p-4">
@@ -681,16 +682,19 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                                     />
                                                 </div>
                                                 <div className="flex gap-2">
-                                                    <button
+                                                    <Button
                                                         type="button"
+                                                        variant="secondary"
+                                                        instance="ingredient-pricing-cancel"
+                                                        layout="fill"
+                                                        className="flex-1"
                                                         onClick={() => {
                                                             setEditPricingOpen(false);
                                                             setEditPricingStep(1);
                                                         }}
-                                                        className="min-h-12 flex-1 rounded-xl bg-rose-600 font-black text-white hover:bg-rose-700"
                                                     >
                                                         Cancelar
-                                                    </button>
+                                                    </Button>
                                                 </div>
                                             </>
                                         )}

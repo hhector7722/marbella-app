@@ -23,6 +23,7 @@ import { IngredientWizard } from '@/components/ingredients/IngredientWizard';
 import { IngredientEditModal, type Ingredient } from '@/components/ingredients/IngredientEditModal';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { namedEntitySummary } from '@/lib/usage/modal-apply';
 import * as XLSX from 'xlsx';
@@ -904,32 +905,28 @@ function RecipeDetailContent() {
                         </div>
                         <div className="flex shrink-0 items-center justify-end gap-2">
                             {!isRestricted && (
-                                <button
+                                <Button
                                     type="button"
+                                    variant="tertiary"
+                                    instance="recipe-editar-nombre-imagen"
                                     onClick={() => setRecipeMetaModalOpen(true)}
-                                    className={cn(
-                                        'flex h-10 w-10 shrink-0 items-center justify-center text-white/60 transition hover:text-white active:scale-95',
-                                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
-                                    )}
-                                    title="Editar nombre e imagen"
                                     aria-label="Editar nombre e imagen"
-                                >
-                                    <Pencil className="h-5 w-5" strokeWidth={2.2} />
-                                </button>
+                                    icon={<Pencil className="h-5 w-5" strokeWidth={2.2} />}
+                                    className="shrink-0"
+                                />
                             )}
                             {canImportRecipe && (
-                                <button
+                                <Button
                                     type="button"
+                                    variant="tertiary"
+                                    instance="recipe-importar"
                                     onClick={handleImportIconClick}
                                     disabled={importingRecipe}
-                                    title="Importar (sobrescribe esta receta)"
-                                    className={cn(
-                                        'flex h-10 w-10 shrink-0 items-center justify-center text-white/60 transition hover:text-white active:scale-95',
-                                        importingRecipe ? 'pointer-events-none opacity-40' : '',
-                                    )}
-                                >
-                                    <Import className="h-5 w-5" />
-                                </button>
+                                    loading={importingRecipe}
+                                    aria-label="Importar (sobrescribe esta receta)"
+                                    icon={<Import className="h-5 w-5" />}
+                                    className="shrink-0"
+                                />
                             )}
                         </div>
                     </div>
@@ -996,9 +993,14 @@ function RecipeDetailContent() {
                             <span>{recipe.servings || 1} rac</span>
                         </div>
                         {!isRestricted && (
-                            <button onClick={handleDelete} className="px-2 py-0.5 bg-rose-500/20 hover:bg-rose-500/40 text-rose-100 border border-rose-500/30 rounded-full transition font-black text-[9px] flex items-center gap-1.5 active:scale-95">
-                                <Trash2 size={11} strokeWidth={3} /> ELIMINAR
-                            </button>
+                            <Button
+                                type="button"
+                                variant="destructive"
+                                instance="recipe-eliminar"
+                                onClick={handleDelete}
+                            >
+                                ELIMINAR
+                            </Button>
                         )}
                     </div>
                 </div>
@@ -1066,14 +1068,15 @@ function RecipeDetailContent() {
                                                 <div className="text-3xl font-black text-center text-gray-800 tabular-nums">
                                                     {(currentPrice || 0).toFixed(2)}
                                                 </div>
-                                                <button
+                                                <Button
                                                     type="button"
+                                                    variant="tertiary"
+                                                    instance="recipe-editar-precio"
                                                     onClick={startEditPrice}
-                                                    className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-[#36606F] hover:bg-[#36606F]/5 rounded-lg transition shrink-0"
-                                                    title="Editar precio"
-                                                >
-                                                    <Pencil className="w-4 h-4" />
-                                                </button>
+                                                    aria-label="Editar precio"
+                                                    icon={<Pencil className="w-4 h-4" />}
+                                                    className="shrink-0"
+                                                />
                                             </div>
                                         ) : (
                                             <div className="flex items-center gap-2">
@@ -1093,24 +1096,27 @@ function RecipeDetailContent() {
                                                         themeColors.border
                                                     )}
                                                 />
-                                                <button
+                                                <Button
                                                     type="button"
+                                                    variant="primary"
+                                                    instance="recipe-confirmar-precio"
                                                     onClick={confirmEditPrice}
                                                     disabled={savingPrice}
-                                                    className="w-10 h-10 flex items-center justify-center text-emerald-600 hover:bg-emerald-50 rounded-lg transition shrink-0 disabled:opacity-50"
-                                                    title="Confirmar"
-                                                >
-                                                    <Check className="w-5 h-5" />
-                                                </button>
-                                                <button
+                                                    loading={savingPrice}
+                                                    aria-label="Confirmar"
+                                                    icon={<Check className="w-5 h-5" />}
+                                                    className="shrink-0"
+                                                />
+                                                <Button
                                                     type="button"
+                                                    variant="secondary"
+                                                    instance="recipe-cancelar-precio"
                                                     onClick={cancelEditPrice}
                                                     disabled={savingPrice}
-                                                    className="w-10 h-10 flex items-center justify-center text-rose-600 hover:bg-rose-50 rounded-lg transition shrink-0 disabled:opacity-50"
-                                                    title="Cancelar"
-                                                >
-                                                    <X className="w-5 h-5" />
-                                                </button>
+                                                    aria-label="Cancelar"
+                                                    icon={<X className="w-5 h-5" />}
+                                                    className="shrink-0"
+                                                />
                                             </div>
                                         )}
                                     </div>
@@ -1156,8 +1162,10 @@ function RecipeDetailContent() {
                                                 />
                                             </button>
                                             {simulatorExpanded && (
-                                                <button
+                                                <Button
                                                     type="button"
+                                                    variant="primary"
+                                                    instance="recipe-aplicar-precio-simulado"
                                                     onClick={async () => {
                                                         try {
                                                             await applySimulatedPrice();
@@ -1166,16 +1174,13 @@ function RecipeDetailContent() {
                                                         }
                                                     }}
                                                     disabled={applyingSimulation || isRestricted}
-                                                    className={cn(
-                                                        'shrink-0 self-center px-3 py-3 min-h-12',
-                                                        'text-[10px] font-black uppercase tracking-widest text-white/90 hover:text-white hover:bg-white/10 transition active:scale-[0.99]',
-                                                        (applyingSimulation || isRestricted) ? 'opacity-50 pointer-events-none' : '',
-                                                    )}
-                                                    title="Aplicar precio simulado"
+                                                    loading={applyingSimulation}
+                                                    loadingLabel="Aplicando…"
                                                     aria-label="Aplicar precio simulado"
+                                                    className="shrink-0 self-center"
                                                 >
-                                                    {applyingSimulation ? 'Aplicando…' : 'Aplicar'}
-                                                </button>
+                                                    Aplicar
+                                                </Button>
                                             )}
                                         </div>
 
@@ -1237,28 +1242,30 @@ function RecipeDetailContent() {
                             </h2>
                             {!isRestricted && (
                                 <div className="flex shrink-0 items-center gap-1.5">
-                                    <button
+                                    <Button
                                         type="button"
+                                        variant="primary"
+                                        instance="recipe-añadir-ingrediente"
                                         onClick={() => {
                                             setForceAddIngredientUnit(false);
                                             setAddIngredientUnit('kg');
                                             setShowIngredientModal(true);
                                         }}
-                                        title="Añadir ingrediente"
                                         aria-label="Añadir ingrediente"
-                                        className="whitespace-nowrap rounded px-2 py-0.5 text-[8px] font-black uppercase tracking-wider text-white bg-green-500 transition hover:bg-green-600 active:scale-95"
+                                        className="shrink-0"
                                     >
                                         + Añadir
-                                    </button>
-                                    <button
+                                    </Button>
+                                    <Button
                                         type="button"
+                                        variant="tertiary"
+                                        instance="recipe-nuevo-ingrediente"
                                         onClick={() => setIsModalOpen(true)}
-                                        title="Nuevo ingrediente"
                                         aria-label="Nuevo ingrediente"
-                                        className="whitespace-nowrap rounded px-2 py-0.5 text-[8px] font-black uppercase tracking-wider text-white bg-purple-500 transition hover:bg-purple-600 active:scale-95"
+                                        className="shrink-0"
                                     >
                                         + Nuevo
-                                    </button>
+                                    </Button>
                                 </div>
                             )}
                         </div>
@@ -1378,34 +1385,29 @@ function RecipeDetailContent() {
                             {!isRestricted && (
                                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 shrink-0">
                                     {canImportRecipe && (
-                                        <button
+                                        <Button
                                             type="button"
+                                            variant="tertiary"
+                                            instance="recipe-importar-elaboracion"
                                             onClick={() => handleImportSectionClick('elaboration')}
                                             disabled={importingRecipe}
-                                            title="Importar (solo elaboración)"
-                                            className={cn(
-                                                "w-12 h-12 flex items-center justify-center transition text-white/80 hover:text-white hover:bg-white/10 rounded-lg active:scale-95",
-                                                importingRecipe ? "opacity-40 pointer-events-none" : ""
-                                            )}
-                                        >
-                                            <Import className="w-4 h-4" />
-                                        </button>
+                                            loading={importingRecipe}
+                                            aria-label="Importar (solo elaboración)"
+                                            icon={<Import className="w-4 h-4" />}
+                                        />
                                     )}
                                     {canManageRecipeVideo && (
                                         <>
-                                            <button
+                                            <Button
                                                 type="button"
+                                                variant="tertiary"
+                                                instance="recipe-añadir-video-elaboracion"
                                                 onClick={() => elaborationVideoInputRef.current?.click()}
                                                 disabled={uploadingElaborationVideo}
-                                                title="Añadir vídeo de elaboración"
+                                                loading={uploadingElaborationVideo}
                                                 aria-label="Añadir vídeo de elaboración"
-                                                className={cn(
-                                                    "w-12 h-12 flex items-center justify-center transition text-white/80 hover:text-white hover:bg-white/10 rounded-lg active:scale-95",
-                                                    uploadingElaborationVideo ? "opacity-40 pointer-events-none" : ""
-                                                )}
-                                            >
-                                                <PlayCircle className="w-4 h-4" />
-                                            </button>
+                                                icon={<PlayCircle className="w-4 h-4" />}
+                                            />
                                             <input
                                                 ref={elaborationVideoInputRef}
                                                 type="file"
@@ -1415,13 +1417,14 @@ function RecipeDetailContent() {
                                             />
                                         </>
                                     )}
-                                    <button
+                                    <Button
+                                        type="button"
+                                        variant="tertiary"
+                                        instance="recipe-editar-elaboracion"
                                         onClick={() => setIsEditingElaboration(!isEditingElaboration)}
-                                        className="w-12 h-12 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors active:scale-95"
-                                        title="Editar"
-                                    >
-                                        <Edit2 size={13} />
-                                    </button>
+                                        aria-label="Editar"
+                                        icon={<Edit2 size={13} />}
+                                    />
                                 </div>
                             )}
                         </div>
@@ -1432,22 +1435,29 @@ function RecipeDetailContent() {
                                         {elaborationSteps.map((s, i) => (
                                             <div key={i} className="flex gap-1.5 items-center">
                                                 <input value={s} onChange={e => handleUpdateElaborationStep(i, e.target.value)} className="flex-1 border border-gray-100 rounded-lg px-2 py-1.5 text-[10px] focus:ring-1 focus:ring-blue-500 outline-none" />
-                                                <button
+                                                <Button
                                                     type="button"
+                                                    variant="destructive"
+                                                    instance={`recipe-eliminar-paso-${i}`}
                                                     onClick={() => {
                                                         const n = [...elaborationSteps];
                                                         n.splice(i, 1);
                                                         setElaborationSteps(n);
                                                         void updateTextDB('elaboration', n);
                                                     }}
-                                                    className="p-1 text-gray-300 hover:text-rose-500"
-                                                    title="Eliminar paso"
-                                                >
-                                                    <X size={14} />
-                                                </button>
+                                                    aria-label="Eliminar paso"
+                                                    icon={<X size={14} />}
+                                                />
                                             </div>
                                         ))}
-                                        <button onClick={handleAddElaborationStep} className="text-[10px] font-bold text-blue-500 w-full py-2 hover:bg-blue-50 rounded-lg transition-colors border border-dashed border-blue-200">+ Añadir paso</button>
+                                        <Button
+                                            type="button"
+                                            variant="tertiary"
+                                            instance="recipe-añadir-paso"
+                                            onClick={handleAddElaborationStep}
+                                        >
+                                            + Añadir paso
+                                        </Button>
                                         <div className="grid grid-cols-2 gap-2 mt-2">
                                             <button
                                                 type="button"
@@ -1460,8 +1470,10 @@ function RecipeDetailContent() {
                                                     {savingElaboration ? 'Guardando…' : 'Guardar'}
                                                 </span>
                                             </button>
-                                            <button
+                                            <Button
                                                 type="button"
+                                                variant="primary"
+                                                instance="recipe-cerrar-guardar-elaboracion"
                                                 onClick={async () => {
                                                     try {
                                                         await handleSaveElaboration();
@@ -1471,10 +1483,11 @@ function RecipeDetailContent() {
                                                     }
                                                 }}
                                                 disabled={savingElaboration}
-                                                className="h-12 w-full bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 active:scale-[0.99] disabled:opacity-60"
+                                                loading={savingElaboration}
+                                                loadingLabel="Cerrar (Guardar)"
                                             >
                                                 Cerrar (Guardar)
-                                            </button>
+                                            </Button>
                                         </div>
                                     </div>
                                 ) : (
@@ -1508,26 +1521,25 @@ function RecipeDetailContent() {
                             {!isRestricted && (
                                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 shrink-0">
                                     {canImportRecipe && (
-                                        <button
+                                        <Button
                                             type="button"
+                                            variant="tertiary"
+                                            instance="recipe-importar-presentacion"
                                             onClick={() => handleImportSectionClick('presentation')}
                                             disabled={importingRecipe}
-                                            title="Importar (solo presentación)"
-                                            className={cn(
-                                                "w-12 h-12 flex items-center justify-center transition text-white/80 hover:text-white hover:bg-white/10 rounded-lg active:scale-95",
-                                                importingRecipe ? "opacity-40 pointer-events-none" : ""
-                                            )}
-                                        >
-                                            <Import className="w-4 h-4" />
-                                        </button>
+                                            loading={importingRecipe}
+                                            aria-label="Importar (solo presentación)"
+                                            icon={<Import className="w-4 h-4" />}
+                                        />
                                     )}
-                                    <button
+                                    <Button
+                                        type="button"
+                                        variant="tertiary"
+                                        instance="recipe-editar-presentacion"
                                         onClick={() => setIsEditingPresentation(!isEditingPresentation)}
-                                        className="w-12 h-12 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors active:scale-95"
-                                        title="Editar"
-                                    >
-                                        <Edit2 size={13} />
-                                    </button>
+                                        aria-label="Editar"
+                                        icon={<Edit2 size={13} />}
+                                    />
                                 </div>
                             )}
                         </div>
@@ -1538,22 +1550,29 @@ function RecipeDetailContent() {
                                         {presentationSteps.map((s, i) => (
                                             <div key={i} className="flex gap-1.5 items-center">
                                                 <input value={s} onChange={e => handleUpdatePresentationStep(i, e.target.value)} className="flex-1 border border-gray-100 rounded-lg px-2 py-1.5 text-[10px] focus:ring-1 focus:ring-emerald-500 outline-none" />
-                                                <button
+                                                <Button
                                                     type="button"
+                                                    variant="destructive"
+                                                    instance={`recipe-eliminar-nota-${i}`}
                                                     onClick={() => {
                                                         const n = [...presentationSteps];
                                                         n.splice(i, 1);
                                                         setPresentationSteps(n);
                                                         void updateTextDB('presentation', n);
                                                     }}
-                                                    className="p-1 text-gray-300 hover:text-rose-500"
-                                                    title="Eliminar nota"
-                                                >
-                                                    <X size={14} />
-                                                </button>
+                                                    aria-label="Eliminar nota"
+                                                    icon={<X size={14} />}
+                                                />
                                             </div>
                                         ))}
-                                        <button onClick={handleAddPresentationStep} className="text-[10px] font-bold text-emerald-500 w-full py-2 hover:bg-emerald-50 rounded-lg transition-colors border border-dashed border-emerald-200">+ Añadir nota</button>
+                                        <Button
+                                            type="button"
+                                            variant="tertiary"
+                                            instance="recipe-añadir-nota"
+                                            onClick={handleAddPresentationStep}
+                                        >
+                                            + Añadir nota
+                                        </Button>
                                         <div className="grid grid-cols-2 gap-2 mt-2">
                                             <button
                                                 type="button"
@@ -1566,8 +1585,10 @@ function RecipeDetailContent() {
                                                     {savingPresentation ? 'Guardando…' : 'Guardar'}
                                                 </span>
                                             </button>
-                                            <button
+                                            <Button
                                                 type="button"
+                                                variant="primary"
+                                                instance="recipe-cerrar-guardar-presentacion"
                                                 onClick={async () => {
                                                     try {
                                                         await handleSavePresentation();
@@ -1577,10 +1598,11 @@ function RecipeDetailContent() {
                                                     }
                                                 }}
                                                 disabled={savingPresentation}
-                                                className="h-12 w-full bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 active:scale-[0.99] disabled:opacity-60"
+                                                loading={savingPresentation}
+                                                loadingLabel="Cerrar (Guardar)"
                                             >
                                                 Cerrar (Guardar)
-                                            </button>
+                                            </Button>
                                         </div>
                                     </div>
                                 ) : (

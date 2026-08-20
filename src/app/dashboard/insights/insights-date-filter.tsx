@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Modal } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
 import {
   MONTH_NAMES_ES,
   buildMonthDays,
@@ -71,7 +72,7 @@ function PickerShell({
       instance={usageId}
       hideTitle
     >
-      <div className={cn('p-4', className)}>
+      <div className={cn('', className)}>
         {children}
       </div>
     </Modal>
@@ -351,23 +352,25 @@ export function InsightsMainDateFilter({
                   })}
                 </div>
                 <div className="flex items-center justify-end gap-2 mt-3">
-                  <button
+                  <Button
                     type="button"
+                    variant="tertiary"
+                    instance="insights-date-months-clear"
                     onClick={() => setDraftMonths([])}
-                    className="text-[10px] font-black uppercase tracking-wider text-zinc-400 hover:text-zinc-600 active:scale-95 transition-colors"
                   >
                     Limpiar
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="primary"
+                    instance="insights-date-months-apply"
                     onClick={() => {
                       if (draftMonths.length === 0) return
                       onSelectMonths(draftMonths)
                     }}
-                    className="min-h-9 px-4 rounded-xl bg-[#36606F] text-white text-[10px] font-black uppercase tracking-wide hover:bg-[#2a4d59] active:scale-95 transition-colors"
                   >
                     Aplicar
-                  </button>
+                  </Button>
                 </div>
               </>
             )}
@@ -436,8 +439,11 @@ export function InsightsMainDateFilter({
                     className="mt-1 w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-bold tabular-nums"
                   />
                 </label>
-                <button
+                <Button
                   type="button"
+                  variant="primary"
+                  instance="insights-date-period-apply"
+                  layout="fill"
                   onClick={() => {
                     trackPeriodApply(periodRangeSummary(periodDraftFrom, periodDraftTo), {
                       periodFrom: periodDraftFrom,
@@ -445,10 +451,9 @@ export function InsightsMainDateFilter({
                     })
                     onApplyPeriod(periodDraftFrom, periodDraftTo)
                   }}
-                  className="w-full min-h-12 rounded-xl bg-[#36606F] text-white text-xs font-black uppercase tracking-wide"
                 >
                   Aplicar
-                </button>
+                </Button>
               </div>
             )}
           </PickerShell>

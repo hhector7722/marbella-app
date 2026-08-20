@@ -12,6 +12,8 @@ export const DS_SCREEN_TOKENS = {
     colorBorde: '#F4F4F5',
     /** TOKENS `color.texto.fuerte` */
     colorTextoFuerte: '#27272A',
+    /** TOKENS `color.texto.tenue` — metadato DocumentListRow */
+    colorTextoTenue: '#A1A1AA',
     /** TOKENS `color.marca` */
     colorMarca: '#36606F',
     /** TOKENS `color.marca.intenso` — hover/pressed de marca */
@@ -91,6 +93,7 @@ export const DS_CSS_VARS = {
     colorSuperficie: '--color-superficie',
     colorBorde: '--color-borde',
     colorTextoFuerte: '--color-texto-fuerte',
+    colorTextoTenue: '--color-texto-tenue',
     colorMarca: '--color-marca',
     colorMarcaIntenso: '--color-marca-intenso',
     colorSuperficieInactiva: '--color-superficie-inactiva',

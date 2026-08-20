@@ -15,15 +15,12 @@ import {
 } from 'date-fns'
 import { es } from 'date-fns/locale'
 import {
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  CircleSlash2,
   Loader2,
   Phone,
   Plus,
   X,
-  XCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -41,6 +38,7 @@ import {
 
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Modal } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
@@ -414,74 +412,61 @@ function ReservationDetailModal({
                 ¿Eliminar la reserva de {reservation.customer_name}?
               </p>
               <div className="grid grid-cols-2 gap-2">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  instance="reserva-detalle-cancelar-eliminar"
                   onClick={() => setDeleteConfirmOpen(false)}
                   disabled={isBusy}
-                  className="min-h-12 text-[10px] font-black uppercase text-zinc-600 disabled:opacity-50"
                 >
                   Cancelar
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="destructive"
+                  instance="reserva-detalle-confirmar-eliminar"
                   onClick={() => onAction('delete')}
                   disabled={isBusy}
-                  className="min-h-12 text-[10px] font-black uppercase text-rose-600 disabled:opacity-50"
+                  loading={actionBusy === 'delete'}
+                  loadingLabel="Sí, eliminar"
                 >
-                  <span className="inline-flex items-center justify-center gap-1">
-                    {actionBusy === 'delete' ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <CircleSlash2 className="h-4 w-4" strokeWidth={2.5} />
-                    )}
-                    Sí, eliminar
-                  </span>
-                </button>
+                  Sí, eliminar
+                </Button>
               </div>
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-1">
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                instance="reserva-detalle-confirmar"
                 onClick={() => onAction('confirm')}
                 disabled={isBusy}
-                className="min-h-12 text-[10px] font-black uppercase text-emerald-700 disabled:opacity-50"
+                loading={actionBusy === 'confirm'}
+                loadingLabel="Confirmar"
               >
-                <span className="inline-flex items-center justify-center gap-1">
-                  {actionBusy === 'confirm' ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <CheckCircle2 className="h-4 w-4" strokeWidth={2.5} />
-                  )}
-                  Confirmar
-                </span>
-              </button>
-              <button
+                Confirmar
+              </Button>
+              <Button
                 type="button"
+                variant="destructive"
+                instance="reserva-detalle-rechazar"
                 onClick={() => onAction('reject')}
                 disabled={isBusy}
-                className="min-h-12 text-[10px] font-black uppercase text-rose-600 disabled:opacity-50"
+                loading={actionBusy === 'reject'}
+                loadingLabel="Rechazar"
               >
-                <span className="inline-flex items-center justify-center gap-1">
-                  {actionBusy === 'reject' ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <XCircle className="h-4 w-4" strokeWidth={2.5} />
-                  )}
-                  Rechazar
-                </span>
-              </button>
-              <button
+                Rechazar
+              </Button>
+              <Button
                 type="button"
+                variant="tertiary"
+                instance="reserva-detalle-eliminar"
                 onClick={() => setDeleteConfirmOpen(true)}
                 disabled={isBusy}
-                className="min-h-12 text-[10px] font-black uppercase text-zinc-500 disabled:opacity-50"
               >
-                <span className="inline-flex items-center justify-center gap-1">
-                  <CircleSlash2 className="h-4 w-4" strokeWidth={2.5} />
-                  Eliminar
-                </span>
-              </button>
+                Eliminar
+              </Button>
             </div>
           )}
         </div>

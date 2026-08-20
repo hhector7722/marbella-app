@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { RECIPE_UNIT_OPTIONS, resolveIngredientRecipeUnit } from '@/lib/recipe-cost';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
@@ -70,7 +70,7 @@ export default function CreateModal({
                 </>
             }
         >
-            <div className="space-y-6 p-4">
+            <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2">
                         <label className="text-xs font-bold text-gray-500 uppercase">Nombre Receta</label>
@@ -121,9 +121,14 @@ export default function CreateModal({
                 <div>
                     <div className="flex justify-between items-center mb-3">
                         <h3 className="text-sm font-black text-gray-800 uppercase">Ingredientes</h3>
-                        <button onClick={addIngredientToRecipe} className="text-[10px] font-bold bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg flex items-center gap-1">
-                            <Plus size={14} /> AÑADIR
-                        </button>
+                        <Button
+                            type="button"
+                            variant="tertiary"
+                            instance="create-recipe-add-ingredient"
+                            onClick={addIngredientToRecipe}
+                        >
+                            AÑADIR
+                        </Button>
                     </div>
 
                     <div className="space-y-2">

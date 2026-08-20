@@ -35,7 +35,23 @@ import {
     unregisterModalHistory,
 } from './modal-history.ts';
 import { DS_SCREEN_TOKENS } from './tokens.ts';
-import { pickModalPanelClassName } from './modal-panel-class.ts';
+import { pickModalPanelClassName, isForbiddenModalPanelClassToken } from './modal-panel-class.ts';
+import {
+    findModalRootPaddingClassNames,
+    hasForbiddenModalRootPaddingClassName,
+} from './modal-body-padding.ts';
+import {
+    LEGACY_MODAL_BACKDROP_CLASSNAME_ALLOWLIST,
+    LEGACY_MODAL_FOOTER_NATIVE_BUTTON_ALLOWLIST,
+    LEGACY_MODAL_PANEL_CLASSNAME_ALLOWLIST,
+    LEGACY_MODAL_ROOT_PADDING_ALLOWLIST,
+    LEGACY_MODAL_ZINDEX_CLASS_ALLOWLIST,
+} from './modal-consumer-allowlists.ts';
+import {
+    classNameLiteralsFromAttr,
+    eachModalOpenTag,
+    listTsxFiles,
+} from './modal-source-scan.ts';
 
 describe('Modal identidad y variantes', () => {
     it('id de componente estable', () => {
@@ -96,12 +112,22 @@ describe('Modal identidad y variantes', () => {
         assert.equal(MODAL_LAYER_Z_CLASS.sheet, 'z-[var(--z-modal-sheet)]');
     });
 
-    it('className del panel no puede sobrescribir el radio', () => {
+    it('className del panel solo admite composición; bloquea shell contractual', () => {
         const kept = pickModalPanelClassName(
-            'max-w-lg rounded-3xl rounded-[2rem] sm:rounded-2xl relative min-h-0'
+            'relative min-h-0 flex flex-col max-w-lg max-h-[90vh] rounded-3xl rounded-[2rem] sm:rounded-2xl p-4 px-6 m-2 shadow-2xl bg-zinc-50 z-[999] text-white w-full'
         );
-        assert.equal(kept, 'max-w-lg relative min-h-0');
+        assert.equal(kept, 'relative min-h-0 flex flex-col text-white w-full');
         assert.equal(kept.includes('rounded'), false);
+        assert.equal(kept.includes('max-w-lg'), false);
+        assert.equal(kept.includes('max-h-'), false);
+        assert.equal(kept.includes('p-4'), false);
+        assert.equal(kept.includes('shadow'), false);
+        assert.equal(kept.includes('bg-'), false);
+        assert.equal(kept.includes('z-['), false);
+        assert.equal(isForbiddenModalPanelClassToken('max-w-sm'), true);
+        assert.equal(isForbiddenModalPanelClassToken('bg-zinc-50'), true);
+        assert.equal(isForbiddenModalPanelClassToken('flex-col'), false);
+        assert.equal(isForbiddenModalPanelClassToken('max-w-full'), false);
     });
     it('CSS bloquea radio del panel, cabecera 36px y gap Header→Body 12px', () => {
         const css = readFileSync(join(process.cwd(), 'src/app/globals.css'), 'utf8');
@@ -591,5 +617,153 @@ describe('Modal navegación padre→hijo (historial ≠ layer)', () => {
         );
         assert.equal(historySource.includes('registerModalSurface'), false);
         assert.match(historySource, /Navegación ≠ layer ≠ z-index/);
+    });
+});
+
+function toPosix(path: string): string {
+    return path.split('\\').join('/');
+}
+
+function assertAllowlistExact(
+    label: string,
+    allowlist: readonly string[],
+    offenders: string[]
+): void {
+    const allow = new Set(allowlist);
+    const unexpected = offenders.filter((rel) => !allow.has(rel)).sort();
+    const stale = [...allow].filter((rel) => !offenders.includes(rel)).sort();
+    assert.deepEqual(
+        unexpected,
+        [],
+        `${label}: incumplimiento nuevo fuera de allowlist.\n${unexpected.join('\n')}`
+    );
+    assert.deepEqual(
+        stale,
+        [],
+        `${label}: ruta en allowlist que ya no dispara la regla — retírala.\n${stale.join('\n')}`
+    );
+}
+
+describe('Modal footer: Button oficial (gate de consumidores)', () => {
+    it('detecta <button> nativo en footer=; deuda solo en allowlist', () => {
+        const offenders: string[] = [];
+        for (const full of listTsxFiles(join(process.cwd(), 'src'))) {
+            const rel = toPosix(full.slice(process.cwd().length + 1));
+            if (rel === 'src/components/ui/modal.tsx') continue;
+            const source = readFileSync(full, 'utf8');
+            if (!/from ['"]@\/components\/ui\/modal['"]/.test(source)) continue;
+            eachModalOpenTag(source, ({ attrs }) => {
+                const footer = attrs.footer;
+                if (typeof footer !== 'string') return;
+                if (/<button\b/.test(footer)) offenders.push(rel);
+            });
+        }
+        assertAllowlistExact(
+            'footer native button',
+            LEGACY_MODAL_FOOTER_NATIVE_BUTTON_ALLOWLIST,
+            [...new Set(offenders)]
+        );
+    });
+});
+
+describe('Modal panel className: sin overrides de shell nuevos', () => {
+    it('tokens de shell en className del panel solo en allowlist', () => {
+        const offenders: string[] = [];
+        for (const full of listTsxFiles(join(process.cwd(), 'src'))) {
+            const rel = toPosix(full.slice(process.cwd().length + 1));
+            if (rel === 'src/components/ui/modal.tsx') continue;
+            const source = readFileSync(full, 'utf8');
+            if (!/from ['"]@\/components\/ui\/modal['"]/.test(source)) continue;
+            eachModalOpenTag(source, ({ attrs }) => {
+                for (const lit of classNameLiteralsFromAttr(attrs.className)) {
+                    for (const token of lit.split(/\s+/)) {
+                        if (!token) continue;
+                        if (isForbiddenModalPanelClassToken(token)) {
+                            offenders.push(rel);
+                            return;
+                        }
+                    }
+                }
+            });
+        }
+        assertAllowlistExact(
+            'panel className shell',
+            LEGACY_MODAL_PANEL_CLASSNAME_ALLOWLIST,
+            [...new Set(offenders)]
+        );
+    });
+});
+
+describe('Modal body: padding raíz que duplica inset', () => {
+    it('detector unitario', () => {
+        assert.equal(hasForbiddenModalRootPaddingClassName('p-4 pb-4'), true);
+        assert.equal(hasForbiddenModalRootPaddingClassName('px-6 py-4'), true);
+        assert.equal(hasForbiddenModalRootPaddingClassName('flex flex-col gap-2'), false);
+        assert.equal(hasForbiddenModalRootPaddingClassName('p-2'), false);
+        const hits = findModalRootPaddingClassNames(
+            `import { Modal } from '@/components/ui/modal';
+            <Modal open onClose={() => {}} title="T"><div className="p-4">x</div></Modal>`
+        );
+        assert.equal(hits.length, 1);
+    });
+
+    it('hijos raíz con padding ≥4 solo en allowlist', () => {
+        const offenders: string[] = [];
+        for (const full of listTsxFiles(join(process.cwd(), 'src'))) {
+            const rel = toPosix(full.slice(process.cwd().length + 1));
+            if (rel === 'src/components/ui/modal.tsx') continue;
+            const source = readFileSync(full, 'utf8');
+            if (!/from ['"]@\/components\/ui\/modal['"]/.test(source)) continue;
+            if (findModalRootPaddingClassNames(source).length > 0) {
+                offenders.push(rel);
+            }
+        }
+        assertAllowlistExact(
+            'root body padding',
+            LEGACY_MODAL_ROOT_PADDING_ALLOWLIST,
+            offenders
+        );
+    });
+});
+
+describe('Modal escape hatches: zIndexClass y backdropClassName', () => {
+    it('zIndexClass: allowlist vacía — ningún uso en consumidores', () => {
+        const offenders: string[] = [];
+        for (const full of listTsxFiles(join(process.cwd(), 'src'))) {
+            const rel = toPosix(full.slice(process.cwd().length + 1));
+            if (rel === 'src/components/ui/modal.tsx') continue;
+            const source = readFileSync(full, 'utf8');
+            if (/\bzIndexClass\s*=/.test(source)) offenders.push(rel);
+        }
+        assertAllowlistExact(
+            'zIndexClass',
+            LEGACY_MODAL_ZINDEX_CLASS_ALLOWLIST,
+            offenders
+        );
+        assert.equal(LEGACY_MODAL_ZINDEX_CLASS_ALLOWLIST.length, 0);
+    });
+
+    it('backdropClassName: solo excepciones documentadas', () => {
+        const offenders: string[] = [];
+        for (const full of listTsxFiles(join(process.cwd(), 'src'))) {
+            const rel = toPosix(full.slice(process.cwd().length + 1));
+            if (rel === 'src/components/ui/modal.tsx') continue;
+            const source = readFileSync(full, 'utf8');
+            if (/\bbackdropClassName\s*=/.test(source)) offenders.push(rel);
+        }
+        assertAllowlistExact(
+            'backdropClassName',
+            LEGACY_MODAL_BACKDROP_CLASSNAME_ALLOWLIST,
+            offenders
+        );
+    });
+
+    it('Modal documenta deprecación de zIndexClass y backdropClassName', () => {
+        const modalSource = readFileSync(
+            join(process.cwd(), 'src/components/ui/modal.tsx'),
+            'utf8'
+        );
+        assert.match(modalSource, /@deprecated[\s\S]*zIndexClass/);
+        assert.match(modalSource, /@deprecated[\s\S]*backdropClassName/);
     });
 });

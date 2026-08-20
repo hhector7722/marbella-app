@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-19
+revisado: 2026-08-20
 caducidad: 6 meses
 supersede: —
 ---
@@ -34,6 +34,8 @@ Los que sostienen toda pantalla. **Button ya existe** (piloto de footers). Campo
 **Propósito**: ejecutar una acción.
 
 **Anatomía**: un único `<button>`. Texto XOR icono. Un Button con texto visible no lleva icono. Un Button icon-only no lleva texto. No existe la combinación icono + texto. Icon-only (48×48) sin etiqueta, con `aria-label` obligatorio. La prop `icon` existe para el caso icon-only.
+
+**Enforcement**: `assertButtonAnatomy` lanza en desarrollo/test ante anatomía inválida (texto+icono, icon-only sin `aria-label`, vacío sin nombre). En producción el render aplica fallback seguro (prioriza texto; no inventa UI nueva). El aspecto lo bloquea CSS `[data-component='Button']`; `className` solo admite composición externa. El chrome close/back de Modal **no** es este componente.
 
 ```text
 Button
@@ -71,7 +73,7 @@ Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`
 
 **Código**: `src/components/ui/button.tsx`, `src/lib/design-system/button-contract.ts`.
 
-**Estado**: existe. Piloto: footers de Modal en Albaranes y Caja/Tesorería. `fill` retenido solo donde hay jerarquía explícita de pie (avance de cierre de caja; canje single-box). El resto de la aplicación sigue con recetas locales. `ActionButton` se retiró.
+**Estado**: existe. Anatomía XOR e `aria-label` icon-only enforced en runtime (dev/test). Piloto footer Modal en Albaranes y Caja/Tesorería; gate global anti-`<button>` en footers con allowlist temporal. `fill` retenido solo donde hay jerarquía explícita de pie (avance de cierre de caja; canje single-box). El resto de la aplicación sigue con `<button>` nativo (bypass). `ActionButton` se retiró.
 
 ### Campo de entrada
 
@@ -124,6 +126,31 @@ Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`
 
 **Estado**: sin componente. Es la carencia más peligrosa del inventario: sin pieza común, la variante de fallo se confunde sistemáticamente con la de ausencia.
 
+### Fila de documento (`DocumentListRow`)
+
+**Propósito**: abrir un documento de perfil en una lista (nómina, comunicado, contrato). Familia canónica cerrada; **no** es un ListRow genérico ni un SelectionOption.
+
+**Anatomía**:
+```
+host (`<li>`)
+├── open (`<button>` — acción de abrir)
+│   └── body
+│       ├── title (obligatorio)
+│       └── subtitle (opcional)
+└── trailing (slot opcional: compartir, eliminar…)
+```
+
+**Contrato**:
+- Semántica de **acción** en `open` (`<button type="button">`), no de navegación fingida ni de Button de sistema.
+- `instance` obligatorio (`data-instance`). Identidad: `data-component="DocumentListRow"`.
+- Título: `tipo.minimo` (11 px), mayúsculas, `color.texto.fuerte`. Subtítulo: metadato 10 px con `color.texto.tenue` (densidad de esta familia; por debajo de `tipo.minimo` solo aquí).
+- Alto mínimo de fila 56 px (≥ `tactil.minimo`). Radio `radio.control`. Espaciado `espacio.1/3/4`.
+- `trailing` no conoce negocio: el consumidor pasa chrome (p. ej. compartir) y/o `Button` icon-only (eliminar).
+- No hay `className` de estilo de fila: el aspecto lo fija CSS por `data-component`.
+- No sustituye filas de agenda, menús con icono 48 px, albaranes multi-columna, popups de filtro ni grids de avatares.
+
+**Estado**: existe. Piloto: `NominasModal`, `ComunicadosModal`, `ContratoModal`. Gate: la huella legacy de la fila ad hoc no debe reaparecer fuera del host.
+
 ### Aviso
 
 **Propósito**: comunicar el resultado de una acción o una condición del sistema.
@@ -159,6 +186,11 @@ Piezas transversales con comportamiento propio y contrato estricto. **Estas sí 
 - **Título y subtítulo van en la misma fila.** El título lleva la jerarquía principal (`font-black`). El subtítulo es menor y de peso medio, nunca negrita pesada. El shell centra ambos por el trazo (cap), no por el em: no flotan uno respecto al otro. Si el texto no cabe, se recorta en esa fila; la cabecera no crece por encima de 36 px.
 - **Separación Header → Body:** exactamente 12 px (`espacio.3` / `estructura.modal-cuerpo-inicio`) como `padding-top` del Body. No es padding completo del Body. El consumidor no decide ni elimina esa distancia (`pt-0` en hijos no la anula).
 - Radio único del panel: `radio.superficie` (16 px). El consumidor no puede sobrescribirlo con `className`.
+- **`className` del panel** solo admite composición externa (flex, overflow, tipografía de tono…). `pickModalPanelClassName` descarta max-width/max-height, padding, margin, radio, sombra, fondo y z-index. Ancho y alto los fija la variante / tokens del shell. Deuda de consumidores que aún pasan tokens de shell: allowlist `LEGACY_MODAL_PANEL_CLASSNAME_ALLOWLIST` (el runtime ya filtra).
+- **Inset del Body:** el shell aplica `padding-inline` + `padding-top` contractuales. Un hijo raíz con `p-4`/`px-6`/… (≥ `espacio.4`) **duplica** el inset. Gate de regresión: `findModalRootPaddingClassNames` + allowlist `LEGACY_MODAL_ROOT_PADDING_ALLOWLIST`. No se compensa con CSS inverso.
+- **Footer:** acciones con `<Button>` oficial (texto, sin iconos). Gate: ningún `<button>` nativo nuevo en `footer=`; deuda en `LEGACY_MODAL_FOOTER_NATIVE_BUTTON_ALLOWLIST` (7 rutas).
+- **`zIndexClass`:** deprecated; allowlist vacía — uso nuevo falla test. Preferir `layer`.
+- **`backdropClassName`:** deprecated salvo excepciones documentadas (`LEGACY_MODAL_BACKDROP_CLASSNAME_ALLOWLIST`: lightbox de carta). El backdrop lo posee la capa ([ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md)).
 - **Nesting:** máximo una superficie derivada sobre el modal base ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)). Backdrop por capa sin blur acumulado ([ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md)).
 - **Navegación padre→hijo ≠ layer ≠ z-index ≠ pila de Escape.** <!-- af: AF-MODAL-NAV-NO-ES-LAYER --> Relación explícita: `parentInstance` + `instance`. No se infiere por cima de pila ni por layer. Un Modal puede tener padre y ser `base`; un `derived` no implica ←. `system` no es padre de navegación.
 - **Historial interno por `surfaceId`**, junto a `registerModalSurface` y separado de las capas. `instance` es identidad semántica; varias aperturas simultáneas de la misma instance no comparten id interno. El consumidor sigue dueño de `open`.
@@ -174,7 +206,7 @@ Piezas transversales con comportamiento propio y contrato estricto. **Estas sí 
 
 **Código**: `src/components/ui/modal.tsx`, `src/components/ui/ConsumptionBottomSheet.tsx`, `src/lib/design-system/modal-*.ts`.
 
-**Estado**: contrato oficial + ampliación visual/capas implementados en infra; consumidores legacy pendientes de migración (piloto previsto: Albaranes). El contrato puede evolucionar; el cambio pasa por este documento, las ADR si la decisión es estructural, y después el código.
+**Estado**: contrato oficial + enforcement de capas, historial, filtro de `className` del panel, gates de footer/`zIndexClass`/`backdropClassName`/padding raíz. Consumidores en allowlists temporales pendientes de migración (Block 1). Overlays paralelos legacy: `LEGACY_PARALLEL_OVERLAY_ALLOWLIST` (cerrada). El contrato puede evolucionar; el cambio pasa por este documento, las ADR si la decisión es estructural, y después el código.
 
 ### Estructura de pantalla de detalle
 
@@ -317,12 +349,11 @@ Su contrato lo fija la [especificación de su capacidad](../1-producto/capacidad
 
 ## 5. Estado real del sistema
 
-Hay que decirlo con claridad: **Marbella aún no tiene un sistema de componentes completo**. Tiene piezas transversales, una estructura de pantalla de adopción parcial, el piloto `DashboardShortcut`, el **contrato oficial de Modal** (Albaranes y Caja/Tesorería) y el **contrato oficial de Button** (piloto: footers de esos mismos modales). El resto se resuelve pantalla a pantalla. En Caja/Tesorería, `QuickCalculatorModal` y `DenominationZoomModal` permanecen legacy a propósito: el contrato no admite un tercer nivel sobre `base → derived`.
+Hay que decirlo con claridad: **Marbella aún no tiene un sistema de componentes completo**. Tiene piezas transversales, una estructura de pantalla de adopción parcial, el piloto `DashboardShortcut`, el **contrato oficial de Modal** (Albaranes y Caja/Tesorería), el **contrato oficial de Button** (piloto: footers de esos mismos modales) y el piloto **`DocumentListRow`** (listas de documento de perfil). El resto se resuelve pantalla a pantalla. En Caja/Tesorería, `QuickCalculatorModal` y `DenominationZoomModal` permanecen legacy a propósito: el contrato no admite un tercer nivel sobre `base → derived`.
 
 Consecuencias observables:
-- Existen Button y Modal de sistema, con adopción parcial. Siguen sin componente de sistema el campo, la tarjeta, la insignia y el estado vacío.
+- Existen Button, Modal y `DocumentListRow` de sistema, con adopción parcial. Siguen sin componente de sistema el campo, la tarjeta, la insignia y el estado vacío.
 - El mismo bloque visual está reescrito decenas de veces con variaciones no intencionadas (incluidos atajos Staff/Admin aún no unificados, y botones fuera del piloto).
-- El mismo bloque visual está reescrito decenas de veces con variaciones no intencionadas (incluidos atajos Staff/Admin aún no unificados).
 - La navegación inferior está implementada dos veces.
 - Las piezas de dominio, muy numerosas, se apoyan directamente en utilidades y no en base.
 

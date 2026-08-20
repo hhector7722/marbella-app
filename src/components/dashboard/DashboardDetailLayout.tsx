@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 
 export function DashboardDetailLayout({
   title,
@@ -72,14 +73,15 @@ export function DashboardDetailLayout({
           >
             <div className="flex items-center gap-2 min-w-0 flex-1">
               {showBackButton ? (
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  instance="dashboard-detail-volver"
                   onClick={() => router.push(backHref)}
-                  className="p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center shrink-0"
                   aria-label="Volver"
-                >
-                  <ArrowLeft size={20} strokeWidth={2.5} />
-                </button>
+                  icon={<ArrowLeft size={20} strokeWidth={2.5} />}
+                  className="shrink-0"
+                />
               ) : null}
               <div className="min-w-0">
                 <h1

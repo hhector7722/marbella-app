@@ -519,7 +519,6 @@ export function LineMappingModal({
       headerTitleAlign="left"
       title="Producto"
       subtitle={headerTitle}
-      className="bg-zinc-50"
       disableUsageTracking
       footer={
         <>
@@ -546,7 +545,7 @@ export function LineMappingModal({
         </>
       }
     >
-      <div className="flex flex-col gap-1.5 min-w-0 max-w-full">
+      <div className="flex flex-col gap-1.5 min-w-0 max-w-full bg-zinc-50">
         {loading ? (
             <div className="flex items-center justify-center gap-2 py-8 text-xs font-medium text-zinc-600">
               <Loader2 className="h-5 w-5 animate-spin text-[#36606F]" />

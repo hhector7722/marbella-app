@@ -581,7 +581,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     ) : undefined
                 }
             >
-                        <div className="px-4 pb-2 flex items-center gap-2">
+                        <div className="pb-2 flex items-center gap-2">
                             <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider shrink-0">Seleccionar hora</span>
                             <select
                                 value={filterHourRange?.start ?? ''}

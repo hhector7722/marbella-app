@@ -1122,19 +1122,17 @@ export default function AlbaranesHistoricoClient({
   // → iconos blancos.
   const headerActions = (
     <>
-      <button
+      <Button
         type="button"
+        variant="tertiary"
+        instance="albaranes-header-auto-map"
         onClick={() => void runAutoMap()}
         disabled={autoMapLoading}
+        loading={autoMapLoading}
         aria-label="Auto-mapear aprendidos"
-        title="Auto-mapear líneas cuyo texto ya está en el diccionario del proveedor"
-        className={cn(
-          'min-h-9 min-w-9 inline-flex items-center justify-center text-white hover:opacity-70 active:scale-[0.99] transition shrink-0',
-          autoMapLoading && 'opacity-60 pointer-events-none'
-        )}
-      >
-        {autoMapLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
-      </button>
+        className="shrink-0"
+        icon={<Sparkles className="h-5 w-5" />}
+      />
       <button
         type="button"
         onClick={refresh}
@@ -1171,8 +1169,10 @@ export default function AlbaranesHistoricoClient({
           onChange={(e) => setQuery(e.target.value)}
           className="h-full w-full outline-none text-sm font-semibold text-zinc-800 placeholder:text-zinc-400"
         />
-        <button
+        <Button
           type="button"
+          variant="tertiary"
+          instance="albaranes-filter-open"
           onClick={async () => {
             setFilterOpen(true)
             if (filterSuppliers.length === 0 && !filterSuppliersLoading) {
@@ -1186,10 +1186,9 @@ export default function AlbaranesHistoricoClient({
             }
           }}
           aria-label="Filtrar"
-          className="inline-flex h-6 w-6 items-center justify-center text-[#36606F] hover:opacity-80 active:scale-[0.99] transition shrink-0"
-        >
-          <Filter className="h-3 w-3" />
-        </button>
+          className="shrink-0"
+          icon={<Filter className="h-3 w-3" />}
+        />
       </div>
 
       {/* Banners fijos bajo el buscador (no scrollean con la lista). */}
@@ -1237,14 +1236,15 @@ export default function AlbaranesHistoricoClient({
               </div>
             ) : null}
           </div>
-          <button
+          <Button
             type="button"
+            variant="tertiary"
+            instance="albaranes-auto-map-report-close"
             onClick={() => setAutoMapReport(null)}
             aria-label="Cerrar resumen"
-            className="ml-auto min-h-[32px] min-w-[32px] inline-flex items-center justify-center rounded-lg hover:bg-emerald-100 transition shrink-0"
-          >
-            <X className="h-4 w-4" />
-          </button>
+            className="ml-auto shrink-0"
+            icon={<X className="h-4 w-4" />}
+          />
         </div>
       ) : null}
 
@@ -1252,18 +1252,17 @@ export default function AlbaranesHistoricoClient({
         <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm font-bold text-red-700 flex flex-col sm:flex-row sm:items-center gap-3 shrink-0">
           <span className="flex-1 min-w-0">{error}</span>
           <div className="flex items-center gap-2 shrink-0">
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              instance="albaranes-list-retry"
               onClick={refresh}
               disabled={isPending}
-              className={cn(
-                'min-h-[40px] px-3 rounded-xl bg-white border border-red-200 text-red-700 text-xs font-black uppercase tracking-wider active:scale-[0.99] transition inline-flex items-center justify-center gap-2',
-                isPending && 'opacity-60 pointer-events-none'
-              )}
+              loading={isPending}
+              loadingLabel="Reintentar"
             >
-              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               Reintentar
-            </button>
+            </Button>
             <button
               type="button"
               onClick={() => {
@@ -1397,46 +1396,35 @@ export default function AlbaranesHistoricoClient({
         headerTrailing={
           <>
                     {detail?.id && detail?.supplier_id ? (
-                      <button
+                      <Button
                         type="button"
+                        variant="tertiary"
+                        instance="albaran-detail-auto-map"
                         onClick={() => void runAutoMap(detail.id)}
                         disabled={autoMapLoading}
+                        loading={autoMapLoading}
                         aria-label="Auto-mapear aprendidos"
-                        title="Auto-mapear líneas pendientes con texto ya aprendido para este proveedor"
-                        className={cn(
-                          'flex h-full min-w-ds-tactil items-center justify-center border-0 bg-transparent text-white/90 shadow-none outline-none transition-opacity hover:opacity-100 opacity-90 active:scale-[0.99]',
-                          autoMapLoading && 'opacity-60 pointer-events-none'
-                        )}
-                      >
-                        {autoMapLoading ? (
-                          <Loader2 className="h-[clamp(1rem,3.2vw,1.25rem)] w-[clamp(1rem,3.2vw,1.25rem)] animate-spin" />
-                        ) : (
+                        icon={
                           <Sparkles className="h-[clamp(1rem,3.2vw,1.25rem)] w-[clamp(1rem,3.2vw,1.25rem)]" />
-                        )}
-                      </button>
+                        }
+                      />
                     ) : null}
                     {isManager && detail?.id ? (
-                      <button
+                      <Button
                         type="button"
+                        variant="tertiary"
+                        instance="albaran-detail-delete"
                         onClick={() => void deleteInvoice(detail.id)}
                         disabled={deletingInvoice}
+                        loading={deletingInvoice}
                         aria-label="Eliminar albarán"
-                        title="Eliminar albarán y revertir su stock"
-                        className={cn(
-                          'flex h-full min-w-ds-tactil items-center justify-center border-0 bg-transparent text-white/90 shadow-none outline-none transition-opacity hover:text-rose-200 hover:opacity-100 opacity-90 active:scale-[0.99]',
-                          deletingInvoice && 'opacity-60 pointer-events-none'
-                        )}
-                      >
-                        {deletingInvoice ? (
-                          <Loader2 className="h-[clamp(1rem,3.2vw,1.25rem)] w-[clamp(1rem,3.2vw,1.25rem)] animate-spin" />
-                        ) : (
+                        icon={
                           <Trash2 className="h-[clamp(1rem,3.2vw,1.25rem)] w-[clamp(1rem,3.2vw,1.25rem)]" />
-                        )}
-                      </button>
+                        }
+                      />
                     ) : null}
                   </>
         }
-        className="bg-[#fafafa]"
       >
         <input
           ref={appendSheetInputRef}
@@ -1959,7 +1947,6 @@ export default function AlbaranesHistoricoClient({
         usageLabel="Visor de hojas del albarán"
         headerTone="petroleum"
         title={invoiceImageSheetOptions[invoiceCarouselIndex]?.label ?? 'Hoja'}
-        className="bg-zinc-950 text-white"
         footer={
           <Button
             type="button"
@@ -1972,7 +1959,7 @@ export default function AlbaranesHistoricoClient({
           </Button>
         }
       >
-        <div className="flex min-h-0 flex-1 flex-col gap-1 min-w-0 max-w-full bg-zinc-950">
+        <div className="flex min-h-0 flex-1 flex-col gap-1 min-w-0 max-w-full bg-zinc-950 text-white">
                 <div className="relative min-h-0 shrink-0 overflow-visible">
                   {invoiceImageSheetOptions.length > 1 ? (
                     <>

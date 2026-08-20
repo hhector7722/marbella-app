@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { createClient } from '@/utils/supabase/client'
 import { Modal } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
 import { upsertMenuOverride, type PlatoMarbellaSlotValue } from '@/app/dashboard/carta/actions'
 import { uploadNormalizedCartaItemPhoto } from '@/app/dashboard/carta/photo-actions'
 import { PLATO_MARBELLA_CHILD_SLUG } from '@/lib/carta-plato-marbella'
@@ -254,7 +255,7 @@ export function MenuItemEditModal({
       loading={isPending}
       closeOnBackdrop={!isPending}
     >
-        <div className="p-4">
+        <div>
           <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-3">
             <p className="text-[11px] font-black uppercase tracking-widest text-[#36606F]">TPV</p>
             <p className="mt-1 text-sm font-bold text-zinc-900">{tpvName}</p>
@@ -558,14 +559,15 @@ export function MenuItemEditModal({
               ) : null}
 
               <div className="mt-4 grid grid-cols-2 gap-2">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  instance="menu-item-edit-cancel"
                   onClick={onClose}
                   disabled={isPending}
-                  className="min-h-[48px] rounded-xl border border-zinc-200 bg-white text-xs font-black uppercase tracking-widest text-zinc-700 active:bg-zinc-50 disabled:opacity-50"
                 >
                   Cancelar
-                </button>
+                </Button>
                 <button
                   type="button"
                   disabled={isPending}

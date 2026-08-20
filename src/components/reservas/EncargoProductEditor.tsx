@@ -28,6 +28,7 @@ import {
 } from '@/lib/encargo-staff-helpers'
 import { cn } from '@/lib/utils'
 import { Modal } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
 import { createClient } from '@/utils/supabase/client'
 
 export type EncargoEditorMenuProduct = {
@@ -415,13 +416,9 @@ function EncargoCartModal({
       subtitle="Pedido actual"
       headerTone="petroleum"
       footer={
-        <button
-          type="button"
-          onClick={onClose}
-          className="min-h-10 w-full rounded-lg bg-[#36606F] text-[10px] font-black uppercase text-white"
-        >
+        <Button type="button" variant="tertiary" instance="encargo-product-editor-continue" onClick={onClose}>
           Continuar
-        </button>
+        </Button>
       }
     >
       <div className="flex-1 overflow-y-auto min-h-0 px-2 py-1.5">
@@ -909,15 +906,16 @@ export function EncargoProductEditor({
           </span>
         ) : null}
       </button>
-      <button
+      <Button
         type="button"
+        variant="tertiary"
+        instance="encargo-product-editor-delete"
         onClick={handleDeleteRequest}
         disabled={isPending}
-        className="shrink-0 min-h-12 min-w-12 flex items-center justify-center active:opacity-70 disabled:opacity-40"
+        className="shrink-0"
         aria-label="Eliminar encargo"
-      >
-        <Trash2 size={20} strokeWidth={2.25} />
-      </button>
+        icon={<Trash2 size={20} strokeWidth={2.25} />}
+      />
     </>
   )
 
@@ -964,14 +962,15 @@ export function EncargoProductEditor({
 
       <div className="shrink-0 border-t border-zinc-100 px-3 py-2 bg-white">
         <div className="grid grid-cols-2 gap-2">
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            instance="encargo-product-editor-cancel"
             disabled={isPending}
             onClick={onClose}
-            className="min-h-10 rounded-lg bg-zinc-100 text-[10px] font-black uppercase text-zinc-700"
           >
             Cancelar
-          </button>
+          </Button>
           <button
             type="button"
             disabled={isPending || loadingMenu}

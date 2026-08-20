@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { ChefHat, Filter, Minus, Package, Plus, Save, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import { processRecipeWaste, processWasteEntries } from './actions'
 
 type Ingredient = {
@@ -574,24 +575,18 @@ export function WasteClient({
                 />
               </div>
 
-              <div className="shrink-0 relative">
-                <button
+              <div className="shrink-0 relative" data-waste-filter-root="true">
+                <Button
                   type="button"
+                  variant="tertiary"
+                  instance="waste-filtrar-recetas-categoria"
                   onClick={() => {
                     setIngredientFilterOpen(false)
                     setRecipeFilterOpen((v) => !v)
                   }}
-                  className={cn(
-                    'min-h-[48px] min-w-[48px] flex items-center justify-center',
-                    'rounded-xl border-0 bg-transparent hover:bg-zinc-100/60 active:bg-zinc-100 transition-colors',
-                    recipeCategory ? 'text-[#36606F]' : 'text-zinc-400',
-                  )}
                   aria-label="Filtrar recetas por categoría"
-                  title="Filtrar"
-                  data-waste-filter-root="true"
-                >
-                  <Filter className="w-5 h-5" strokeWidth={2.5} />
-                </button>
+                  icon={<Filter className="w-5 h-5" strokeWidth={2.5} />}
+                />
 
                 {recipeFilterOpen ? (
                   <div
@@ -679,24 +674,18 @@ export function WasteClient({
                 />
               </div>
 
-              <div className="shrink-0 relative">
-                <button
+              <div className="shrink-0 relative" data-waste-filter-root="true">
+                <Button
                   type="button"
+                  variant="tertiary"
+                  instance="waste-filtrar-ingredientes-categoria"
                   onClick={() => {
                     setRecipeFilterOpen(false)
                     setIngredientFilterOpen((v) => !v)
                   }}
-                  className={cn(
-                    'min-h-[48px] min-w-[48px] flex items-center justify-center',
-                    'rounded-xl border-0 bg-transparent hover:bg-zinc-100/60 active:bg-zinc-100 transition-colors',
-                    ingredientCategory ? 'text-[#36606F]' : 'text-zinc-400',
-                  )}
                   aria-label="Filtrar ingredientes por categoría"
-                  title="Filtrar"
-                  data-waste-filter-root="true"
-                >
-                  <Filter className="w-5 h-5" strokeWidth={2.5} />
-                </button>
+                  icon={<Filter className="w-5 h-5" strokeWidth={2.5} />}
+                />
 
                 {ingredientFilterOpen ? (
                   <div

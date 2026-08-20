@@ -20,9 +20,10 @@ import { subsWithVisibleProducts } from '@/lib/event-encargo-config'
 import { type EventEncargoEditControl, type EventOrderCartaControl } from '@/lib/event-order-carta'
 import { cn } from '@/lib/utils'
 import { Modal } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
 import { namedEntitySummary } from '@/lib/usage/modal-apply'
-import { ChevronLeft, GripVertical, Loader2, Pencil, X } from 'lucide-react'
+import { ChevronLeft, GripVertical, Pencil, X } from 'lucide-react'
 import {
     type CartaLang,
     DEFAULT_CARTA_LANG,
@@ -980,19 +981,19 @@ export function MenuAccordion({
                                                 }
                                             )
                                         ) : editMode && isUuidLike(group.key) && onEditParentCategory ? (
-                                            <button
+                                            <Button
                                                 type="button"
+                                                variant="tertiary"
+                                                instance={`menu-accordion-editar-categoria-${group.key}`}
                                                 onClick={(e) => {
                                                     e.preventDefault()
                                                     e.stopPropagation()
                                                     onEditParentCategory(group.key)
                                                 }}
-                                                className="absolute right-0 top-0 z-20 flex min-h-[44px] min-w-[44px] items-center justify-center text-[#36606F] active:opacity-70 sm:min-h-[48px] sm:min-w-[48px]"
                                                 aria-label="Editar categoría"
-                                                title="Editar categoría"
-                                            >
-                                                <Pencil className="h-5 w-5" strokeWidth={2.5} />
-                                            </button>
+                                                icon={<Pencil className="h-5 w-5" strokeWidth={2.5} />}
+                                                className="absolute right-0 top-0 z-20"
+                                            />
                                         ) : null
                                     }
                                 />
@@ -1025,25 +1026,26 @@ export function MenuAccordion({
                         </span>
                     </span>
                     <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-                        <button
+                        <Button
                             type="button"
-                            className="min-h-[48px] rounded-xl bg-zinc-100 px-3 py-2 text-[11px] font-black uppercase tracking-wide text-zinc-800 active:bg-zinc-200/80"
+                            variant="secondary"
+                            instance="menu-accordion-reorder-cancelar"
                             onClick={cancelReorder}
                             disabled={committingReorder}
                         >
                             Cancelar
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="button"
-                            className="inline-flex min-h-[48px] min-w-[140px] items-center justify-center gap-2 rounded-xl bg-[#36606F] px-4 py-2 text-[11px] font-black uppercase tracking-wide text-white active:bg-[#2d4f5c] disabled:opacity-60"
+                            variant="primary"
+                            instance="menu-accordion-reorder-guardar"
                             onClick={() => void commitReorder()}
                             disabled={committingReorder}
+                            loading={committingReorder}
+                            loadingLabel="Guardar orden"
                         >
-                            {committingReorder ? (
-                                <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
-                            ) : null}
                             Guardar orden
-                        </button>
+                        </Button>
                     </div>
                 </div>
             ) : null}
@@ -1336,20 +1338,21 @@ export function MenuAccordion({
                                                                     e.stopPropagation()
                                                                 }}
                                                             >
-                                                                <button
+                                                                <Button
                                                                     type="button"
+                                                                    variant="tertiary"
+                                                                    instance={`menu-accordion-editar-subcategoria-${sub.key}`}
                                                                     onClick={() =>
                                                                         onEditChildCategory(sub.key)
                                                                     }
-                                                                    className="inline-flex min-h-[40px] min-w-[40px] items-center justify-center rounded-lg text-[#36606F] active:bg-zinc-100 sm:min-h-[44px] sm:min-w-[44px]"
                                                                     aria-label="Editar subcategoría"
-                                                                    title="Editar subcategoría"
-                                                                >
-                                                                    <Pencil
-                                                                        className="h-4 w-4"
-                                                                        strokeWidth={2.5}
-                                                                    />
-                                                                </button>
+                                                                    icon={
+                                                                        <Pencil
+                                                                            className="h-4 w-4"
+                                                                            strokeWidth={2.5}
+                                                                        />
+                                                                    }
+                                                                />
                                                             </span>
                                                         ) : null
                                                     }
@@ -1492,25 +1495,26 @@ export function MenuAccordion({
                                         </span>
                                     </span>
                                     <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-                                        <button
+                                        <Button
                                             type="button"
-                                            className="min-h-[48px] rounded-xl bg-zinc-100 px-3 py-2 text-[11px] font-black uppercase tracking-wide text-zinc-800 active:bg-zinc-200/80"
+                                            variant="secondary"
+                                            instance="menu-accordion-modal-reorder-cancelar"
                                             onClick={cancelReorder}
                                             disabled={committingReorder}
                                         >
                                             Cancelar
-                                        </button>
-                                        <button
+                                        </Button>
+                                        <Button
                                             type="button"
-                                            className="inline-flex min-h-[48px] min-w-[140px] items-center justify-center gap-2 rounded-xl bg-[#36606F] px-4 py-2 text-[11px] font-black uppercase tracking-wide text-white active:bg-[#2d4f5c] disabled:opacity-60"
+                                            variant="primary"
+                                            instance="menu-accordion-modal-reorder-guardar"
                                             onClick={() => void commitReorder()}
                                             disabled={committingReorder}
+                                            loading={committingReorder}
+                                            loadingLabel="Guardar orden"
                                         >
-                                            {committingReorder ? (
-                                                <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
-                                            ) : null}
                                             Guardar orden
-                                        </button>
+                                        </Button>
                                     </div>
                                     </div>
                                 {reorderScope === 'products' && reorderPlatoMarbellaBundle && platoBundleRows ? (
@@ -1573,15 +1577,15 @@ export function MenuAccordion({
                                         tPublicUi(lang).uncategorized
                                     )}
                                 </span>
-                                <button
+                                <Button
                                     type="button"
+                                    variant="tertiary"
+                                    instance={`menu-accordion-editar-subcategoria-unica-${openGroup._subList[0]!.key}`}
                                     onClick={() => onEditChildCategory(openGroup._subList[0]!.key)}
-                                    className="inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-xl text-[#36606F] active:bg-zinc-100 sm:min-h-[48px] sm:min-w-[48px]"
                                     aria-label="Editar subcategoría"
-                                    title="Editar subcategoría"
-                                >
-                                    <Pencil className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={2.5} />
-                                </button>
+                                    icon={<Pencil className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={2.5} />}
+                                    className="shrink-0"
+                                />
                             </div>
                         ) : null}
 

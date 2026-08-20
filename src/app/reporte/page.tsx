@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { format, addDays, getDay, subDays } from 'date-fns';
 import { submitReporteAction, ReportePayload } from './actions';
+import { Button } from '@/components/ui/button';
 import './premium.css';
 
 interface CategoryEntry {
@@ -546,12 +547,14 @@ export default function ReportePage() {
             {renderDayGroup('Diumenge')}
           </div>
 
-          <button
+          <Button
             type="submit"
-            className="w-full btn-premium py-3 rounded-xl text-base font-bold shadow-2xl uppercase tracking-widest"
+            variant="primary"
+            instance="reporte-enviar"
+            layout="fill"
           >
             ENVIAR
-          </button>
+          </Button>
         </form>
       </div>
 

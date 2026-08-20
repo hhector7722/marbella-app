@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import { pricingAssistantCopy } from '@/lib/ingredient-pricing-assistant-copy'
 import {
   resolveDeclaredPurchaseUnitWithPackContent,
@@ -1797,13 +1798,14 @@ export function IngredientWizard({
           >
             Terminar
           </button>
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            instance="ingredient-wizard-cerrar-sin-tocar"
             onClick={closeWithoutSavingOptional}
-            className="w-full min-h-12 rounded-xl bg-zinc-200 text-zinc-800 font-black hover:bg-zinc-300"
           >
             Cerrar sin tocar
-          </button>
+          </Button>
         </div>
       )}
     </div>

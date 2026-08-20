@@ -2,8 +2,9 @@
 
 import { useMemo, useRef, useState, useTransition, useEffect } from 'react'
 import { toast } from 'sonner'
-import { Check, ChevronDown, Loader2, Search, X } from 'lucide-react'
+import { ChevronDown, Search, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import { upsertMapping } from '@/app/dashboard/recetas-tpv/actions'
 import { setArticuloDepartamento } from './actions'
 
@@ -163,20 +164,17 @@ export default function CartaMappingCreatorClient({
                           />
                         </div>
                         <div className="md:col-span-2 flex justify-end shrink-0">
-                          <button
+                          <Button
+                            type="button"
+                            variant="primary"
+                            instance={`carta-mapping-add-${a.id}`}
                             onClick={() => onSave(a.id)}
                             disabled={!selected}
-                            className={cn(
-                              'h-12 px-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors min-w-[120px]',
-                              !selected
-                                ? 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
-                                : 'bg-[#36606F] text-white hover:bg-[#2A4B57] shadow-sm'
-                            )}
-                            title="Añadir a la carta"
+                            loading={isBusy}
+                            loadingLabel="Añadir"
                           >
-                            {isBusy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
                             Añadir
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     )

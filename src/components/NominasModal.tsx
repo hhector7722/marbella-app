@@ -7,6 +7,8 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
+import { DocumentListRow } from '@/components/ui/DocumentListRow';
 interface NominasModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -214,7 +216,7 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
             usageLabel="Nóminas"
             headerTrailing={uploadTrailing}
         >
-            <div className="overflow-y-auto p-4">
+            <div className="overflow-y-auto">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-12">
                             <LoadingSpinner size="lg" className="text-[#36606F]" />
@@ -233,44 +235,41 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
                     ) : (
                         <ul className="space-y-1">
                             {nominas.map((row) => (
-                                <li key={row.id} className="min-h-[56px] flex items-stretch gap-1 rounded-xl border border-transparent hover:border-zinc-100 hover:bg-zinc-50 transition-colors">
-                                    <button
-                                        type="button"
-                                        onClick={() => openNomina(row)}
-                                        className={cn(
-                                            'flex-1 min-w-0 flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors',
-                                            'active:bg-zinc-100'
-                                        )}
-                                    >
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-semibold text-zinc-700 truncate uppercase text-[11px] tracking-wide">{labelPeriod(row)}</p>
-                                            <p className="text-[10px] text-zinc-400 truncate">{row.filename.replace('.pdf', '')}</p>
-                                        </div>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={(e) => handleShare(e, row)}
-                                        className="shrink-0 self-center min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-zinc-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
-                                        title="Compartir"
-                                        aria-label="Compartir nómina"
-                                    >
-                                        <Share2 size={16} strokeWidth={2.5} />
-                                    </button>
-                                    {isManager && (
-                                        <button
-                                            type="button"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDelete(row);
-                                            }}
-                                            className="shrink-0 self-center min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-zinc-300 hover:text-rose-500 hover:bg-rose-50 transition-colors mr-1"
-                                            title="Eliminar"
-                                            aria-label="Eliminar nómina"
-                                        >
-                                            <Trash2 size={16} strokeWidth={2} />
-                                        </button>
-                                    )}
-                                </li>
+                                <DocumentListRow
+                                    key={row.id}
+                                    instance={`nominas-row-${row.id}`}
+                                    title={labelPeriod(row)}
+                                    subtitle={row.filename.replace('.pdf', '')}
+                                    onOpen={() => openNomina(row)}
+                                    aria-label={`Abrir nómina ${labelPeriod(row)}`}
+                                    trailing={
+                                        <>
+                                            <button
+                                                type="button"
+                                                onClick={(e) => handleShare(e, row)}
+                                                className="shrink-0 self-center min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-zinc-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                                                title="Compartir"
+                                                aria-label="Compartir nómina"
+                                            >
+                                                <Share2 size={16} strokeWidth={2.5} />
+                                            </button>
+                                            {isManager ? (
+                                                <Button
+                                                    type="button"
+                                                    variant="tertiary"
+                                                    instance={`nominas-delete-${row.id}`}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDelete(row);
+                                                    }}
+                                                    className="shrink-0 self-center mr-1"
+                                                    aria-label="Eliminar nómina"
+                                                    icon={<Trash2 size={16} strokeWidth={2} />}
+                                                />
+                                            ) : null}
+                                        </>
+                                    }
+                                />
                             ))}
                         </ul>
                     )}

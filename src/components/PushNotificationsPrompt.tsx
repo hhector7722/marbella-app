@@ -152,7 +152,7 @@ export function PushNotificationsPrompt() {
         <Bell size={22} strokeWidth={2.5} className="shrink-0 text-white" aria-hidden />
       }
     >
-      <div className="p-6 space-y-5">
+      <div className="space-y-5">
         <p className="text-sm text-zinc-600 leading-relaxed">{PUSH_PROMPT_COPY.lead}</p>
 
         {permissionDenied ? (

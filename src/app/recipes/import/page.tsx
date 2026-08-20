@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import { ArrowLeft, Upload, AlertTriangle, CheckCircle, Save, Database } from 'lucide-react';
+import { Upload, AlertTriangle, CheckCircle, Save, Database } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast, Toaster } from 'sonner';
+import { Button } from '@/components/ui/button';
 
 export default function BulkImportPage() {
     const supabase = createClient();
@@ -125,9 +126,16 @@ export default function BulkImportPage() {
             <Toaster position="top-right" />
 
             <div className="w-full max-w-4xl">
-                <button onClick={() => router.push('/recipes')} className="flex items-center gap-2 text-white/80 hover:text-white mb-6 font-bold">
-                    <ArrowLeft /> Volver a Recetas
-                </button>
+                <div className="mb-6">
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        instance="recipes-import-back"
+                        onClick={() => router.push('/recipes')}
+                    >
+                        Volver a Recetas
+                    </Button>
+                </div>
 
                 <h1 className="text-3xl font-bold mb-2">Importador Masivo de Recetas (JSON)</h1>
                 <p className="text-blue-100 mb-6">Pide a tu IA que genere un JSON con esta estructura y pégalo abajo.</p>

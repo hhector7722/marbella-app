@@ -1,8 +1,9 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import { PinchZoomViewport } from '@/components/ui/PinchZoomViewport'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 
@@ -173,15 +174,16 @@ export function ImageLightbox({
         </div>
 
         <div className="mt-2 flex shrink-0 justify-center pb-[max(10px,env(safe-area-inset-bottom))] pt-1 sm:mt-3">
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            instance="image-lightbox-cerrar"
             onClick={onClose}
-            className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-black uppercase tracking-wide text-zinc-900 shadow-md transition hover:bg-zinc-100 active:scale-[0.99]"
             aria-label="Cerrar imagen"
+            className="shrink-0"
           >
-            <X className="h-5 w-5 shrink-0" strokeWidth={2.5} />
             Cerrar
-          </button>
+          </Button>
         </div>
       </div>
     </div>

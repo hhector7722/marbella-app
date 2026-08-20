@@ -331,7 +331,7 @@ export default function OvertimePage() {
                         title={`Semana ${weekNum}`}
                         subtitle={periodStr}
                     >
-                        <div className="px-4 pb-4 space-y-3">
+                        <div className="space-y-3">
                             <span className="text-base font-black text-zinc-900 leading-none">
                                 {weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}
                             </span>

@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { X, Save, ShoppingCart, ArrowRightLeft, ArrowRight, Minus, Plus, Wand2, Loader2 } from 'lucide-react';
+import { Save, ShoppingCart, ArrowRightLeft, ArrowRight, Minus, Plus, Wand2, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { DenominationZoomModal } from '@/components/ui/DenominationZoomModal';
@@ -632,26 +633,20 @@ export const CashDenominationForm = ({
                     )}>
                         {isEntradaSalidaFlow ? (
                             <>
-                                <button
+                                <Button
                                     type="button"
+                                    variant="secondary"
+                                    instance="cash-denom-mobile-exit"
                                     onClick={onCancel}
-                                    className={cn(
-                                        ENTRADA_SALIDA_BTN_BASE,
-                                        'gap-1 px-3 text-[10px] bg-rose-500 text-white active:bg-rose-600 hover:bg-rose-600',
-                                    )}
                                 >
-                                    <X size={14} strokeWidth={3} />
                                     Salir
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     type="button"
+                                    variant="primary"
+                                    instance="cash-denom-mobile-save"
                                     onClick={handleConfirm}
                                     disabled={entradaSalidaGuardarDisabled}
-                                    className={cn(
-                                        ENTRADA_SALIDA_BTN_BASE,
-                                        'px-4 text-[11px] text-white flex-col gap-0.5',
-                                        entradaSalidaGuardarClass,
-                                    )}
                                 >
                                     Guardar
                                     {isPurchaseMode && !canSubmitPurchase && (purchasePrice || 0) > 0 && (
@@ -659,7 +654,7 @@ export const CashDenominationForm = ({
                                             {totalGiven < (purchasePrice || 0) ? `Falta ${Math.abs((purchasePrice || 0) - totalGiven) > 0.005 ? ((purchasePrice || 0) - totalGiven).toFixed(2) : " "}€` : `Da cambio: ${Math.abs(totalGiven - (purchasePrice || 0) - totalReceived) > 0.005 ? (totalGiven - (purchasePrice || 0) - totalReceived).toFixed(2) : " "}€`}
                                         </span>
                                     )}
-                                </button>
+                                </Button>
                             </>
                         ) : (
                             <>
@@ -687,13 +682,16 @@ export const CashDenominationForm = ({
                                         </span>
                                     )}
                                 </button>
-                                <button
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    instance="cash-denom-mobile-exit-alt"
                                     onClick={onCancel}
-                                    className="flex-1 h-10 bg-rose-500 text-white font-black uppercase tracking-widest text-[10px] active:bg-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md shadow-rose-200"
+                                    className="flex-1"
+                                    layout="fill"
                                 >
-                                    <X size={14} strokeWidth={3} />
                                     Salir
-                                </button>
+                                </Button>
                             </>
                         )}
                     </div>
@@ -708,17 +706,14 @@ export const CashDenominationForm = ({
             )}>
                 {isEntradaSalidaFlow ? (
                     <>
-                        <button
+                        <Button
                             type="button"
+                            variant="secondary"
+                            instance="cash-denom-desktop-exit"
                             onClick={onCancel}
-                            className={cn(
-                                ENTRADA_SALIDA_BTN_BASE,
-                                'gap-1 px-3 text-[9px] bg-rose-500 text-white hover:bg-rose-600',
-                            )}
                         >
-                            <X size={14} strokeWidth={3} />
                             Salir
-                        </button>
+                        </Button>
                         <button
                             type="button"
                             onClick={handleConfirm}
@@ -763,13 +758,16 @@ export const CashDenominationForm = ({
                                 </span>
                             )}
                         </button>
-                        <button
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            instance="cash-denom-desktop-exit-alt"
                             onClick={onCancel}
-                            className="flex-1 py-3 text-white bg-rose-500 font-black uppercase tracking-widest text-[9px] hover:bg-rose-600 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md shadow-rose-200"
+                            className="flex-1"
+                            layout="fill"
                         >
-                            <X size={14} strokeWidth={3} />
                             Salir
-                        </button>
+                        </Button>
                     </>
                 )}
             </div>

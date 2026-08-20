@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Minus, Plus } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { CURRENCY_IMAGES } from '@/lib/constants';
 import { Modal } from '@/components/ui/modal';
 
@@ -59,12 +58,11 @@ export function DenominationZoomModal({
             layer="derived"
             instance="denomination-zoom"
             headerVariant="petroleum"
-            className={cn('w-full max-w-[280px]', className)}
-            wrapperClassName="max-w-[280px]"
+            className={className}
             usageId="denomination-zoom"
             usageLabel="Zoom denominación"
         >
-            <div className="p-4 sm:p-6 flex flex-col items-center gap-4">
+            <div className="flex flex-col items-center gap-4">
                 <div className="w-full h-28 flex items-center justify-center bg-gray-50 rounded-xl border border-zinc-100">
                     <Image
                         src={CURRENCY_IMAGES[denomination]}

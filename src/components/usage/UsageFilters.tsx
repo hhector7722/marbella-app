@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import { firstNameOnly } from '@/lib/usage/display-name';
 import {
   defaultUsageProfileIds,
@@ -151,13 +152,14 @@ export function UsageFilters({ filters, users }: UsageFiltersProps) {
       {usersOpen ? (
         <div className="rounded-xl border border-zinc-100 bg-white p-3 shadow-sm">
           <div className="mb-2 flex gap-2">
-            <button
+            <Button
               type="button"
+              variant="tertiary"
+              instance="usage-filters-seleccionar-todos"
               onClick={selectAll}
-              className="min-h-10 rounded-lg border border-zinc-200 px-3 text-xs font-medium text-[#36606F] hover:bg-zinc-50"
             >
               Seleccionar todos
-            </button>
+            </Button>
             <button
               type="button"
               onClick={deselectAll}

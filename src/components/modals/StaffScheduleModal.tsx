@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Edit2 } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 import { format, addMonths, subMonths, isSameMonth, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { createClient } from '@/utils/supabase/client';
@@ -390,14 +390,14 @@ export const StaffScheduleModal = ({
                             )}
 
                             {selectedDate && userEmail === 'hhector7722@gmail.com' ? (
-                                <button
+                                <Button
                                     type="button"
+                                    variant="tertiary"
+                                    instance="staff-schedule-edit-day"
                                     onClick={() => setEditModeForDate(format(selectedDate, 'yyyy-MM-dd'))}
-                                    className="flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white/90 outline-none transition-opacity hover:opacity-100 active:opacity-70"
                                     aria-label="Editar este día"
-                                >
-                                    <Edit2 size={16} strokeWidth={2.5} />
-                                </button>
+                                    icon={<Edit2 size={16} strokeWidth={2.5} />}
+                                />
                             ) : null}
                         </>
                     ) : null
@@ -459,25 +459,16 @@ export const StaffScheduleModal = ({
                                 <h4 className="text-[10px] font-black uppercase text-gray-400 tracking-widest leading-none">
                                     Próximos Turnos
                                 </h4>
-                                <button
+                                <Button
                                     type="button"
+                                    variant="tertiary"
+                                    instance="staff-schedule-ver-actividades"
                                     onClick={openActividades}
-                                    className="inline-flex items-center justify-center gap-1.5 min-h-[48px] px-1 shrink-0 text-gray-500 hover:text-[#36606F] active:scale-95 transition-all"
                                     aria-label="Ver actividades del pabellón"
+                                    className="shrink-0"
                                 >
-                                    <span className="text-[9px] font-black uppercase tracking-[0.12em] leading-none whitespace-nowrap">
-                                        Ver actividades
-                                    </span>
-                                    <span className="relative inline-block h-5 w-5 shrink-0 align-middle">
-                                        <Image
-                                            src="/icons/calendar.png"
-                                            alt=""
-                                            fill
-                                            className="object-contain"
-                                            sizes="20px"
-                                        />
-                                    </span>
-                                </button>
+                                    Ver actividades
+                                </Button>
                             </div>
                             {futureShifts.length === 0 ? (
                                 <p className="text-center text-gray-400 text-xs font-bold py-10 italic">No hay más turnos este mes.</p>

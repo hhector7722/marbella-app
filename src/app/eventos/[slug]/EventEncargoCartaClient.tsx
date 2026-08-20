@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { CheckCircle2, Copy, Loader2 } from 'lucide-react'
 import { Modal } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
 import {
   EventEncargoCartFooter,
   type EventEncargoCartLine,
@@ -440,13 +441,14 @@ export default function EventEncargoCartaClient({
 
   const footer = editMode ? (
     <div className="space-y-2 px-0 py-3">
-      <button
+      <Button
         type="button"
-        className={cn(btnBase, 'w-full bg-zinc-100 text-zinc-800 hover:bg-zinc-200')}
+        variant="secondary"
+        instance="event-encargo-carta-listo"
         onClick={() => setEditMode(false)}
       >
         Listo
-      </button>
+      </Button>
       <button
         type="button"
         className={cn(btnBase, 'w-full bg-[#36606F] text-white hover:bg-[#2a4a56]')}
@@ -536,10 +538,13 @@ export default function EventEncargoCartaClient({
         variant="compact"
         layer="base"
         footer={
-          <button
+          <Button
             type="button"
-            className={cn(btnBase, 'w-full bg-emerald-600 text-white hover:bg-emerald-700')}
+            variant="primary"
+            instance="event-encargo-save-submit"
             disabled={isPending || responsibleName.trim().length < 2}
+            loading={isPending}
+            loadingLabel="Enviar"
             onClick={() => {
               const name = responsibleName.trim()
               const warnings = validateEventOrderLimits(
@@ -575,11 +580,11 @@ export default function EventEncargoCartaClient({
               })
             }}
           >
-            {isPending ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : 'Enviar'}
-          </button>
+            Enviar
+          </Button>
         }
       >
-        <div className="p-5">
+        <div>
           <input
             value={responsibleName}
             onChange={(e) => setResponsibleName(e.target.value)}

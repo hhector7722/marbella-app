@@ -13,6 +13,7 @@ import { resolveDeclaredPurchaseUnitWithPackContent } from '@/lib/ingredient-pac
 import { RECIPE_UNIT_OPTIONS, resolveIngredientRecipeUnit } from '@/lib/recipe-cost';
 import { resolveSupplierPickerItems } from '@/lib/supplier-seed';
 import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 
 // Unidades canónicas (sin duplicados tipo lt/l o u/ud)
 const STANDARD_UNITS = ['kg', 'g', 'l', 'ml', 'ud', 'cl'];
@@ -417,7 +418,7 @@ export default function IngredientsPage() {
                     </div>
                 }
             >
-                <div className="space-y-4 bg-[#fafafa] p-4">
+                <div className="space-y-4 bg-[#fafafa]">
                             {createMode === 'wizard' && (
                                 <IngredientWizard
                                     onClose={() => {
@@ -708,7 +709,9 @@ export default function IngredientsPage() {
                                     </button>
                                 </div>
                             )}
-                            <button onClick={handleCreate} className="w-full py-3 bg-[#5E35B1] text-white rounded-2xl font-bold">Crear</button>
+                            <Button type="button" variant="primary" instance="ingredient-create-submit" onClick={handleCreate} className="w-full">
+                                Crear
+                            </Button>
                             </div>
                             )}
                 </div>

@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 
 interface ActivityItem {
   activityName: string;
@@ -242,13 +243,14 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
           Totes les activitats són en espais sense impacte al bar
         </p>
         {isHector && date && (
-          <button
+          <Button
             type="button"
+            variant="primary"
+            instance="pavilion-activities-create-schedule"
             onClick={() => router.push(`/staff/actividades/revision?date=${date}`)}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#36606F] px-4 py-2.5 text-sm font-black uppercase tracking-wider text-white transition-all hover:bg-[#36606F]/90 active:scale-95 min-h-12"
           >
             Crear horari des de 0
-          </button>
+          </Button>
         )}
       </div>
     );

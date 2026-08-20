@@ -15,6 +15,7 @@ import {
 import { toast } from 'sonner'
 import { getIngredientMovements } from './actions'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 
 type Ingredient = {
   id: string
@@ -313,21 +314,15 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
               className="w-full min-h-[48px] pl-10 pr-4 rounded-xl border border-zinc-200 bg-white text-sm font-medium text-zinc-800 shadow-sm outline-none focus:ring-2 focus:ring-[#36606F]/25 focus:border-[#36606F]/40"
             />
           </div>
-          <div className="shrink-0 relative">
-            <button
+          <div className="shrink-0 relative" data-ledger-filter-root="true">
+            <Button
               type="button"
+              variant="tertiary"
+              instance="ledger-filter-category"
               onClick={() => setFilterOpen((v) => !v)}
-              className={cn(
-                'min-h-[48px] min-w-[48px] flex items-center justify-center',
-                'rounded-xl border-0 bg-transparent hover:bg-zinc-100/60 active:bg-zinc-100 transition-colors',
-                category ? 'text-[#36606F]' : 'text-zinc-400',
-              )}
               aria-label="Filtrar por categoría"
-              title="Filtrar"
-              data-ledger-filter-root="true"
-            >
-              <Filter className="w-5 h-5" strokeWidth={2.5} />
-            </button>
+              icon={<Filter className="w-5 h-5" strokeWidth={2.5} />}
+            />
             {filterOpen ? (
               <div
                 className="absolute right-0 mt-2 w-64 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden z-20"

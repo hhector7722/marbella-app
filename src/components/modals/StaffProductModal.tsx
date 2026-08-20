@@ -48,7 +48,7 @@ export function StaffProductModal({ isOpen, onClose, onOpenSupplierModal }: Staf
             usageLabel="Menú stock (staff)"
             scrollContent={false}
         >
-            <div className="relative p-4 grid grid-cols-2 gap-3 bg-gray-50/30 overflow-y-auto">
+            <div className="relative grid grid-cols-2 gap-3 bg-gray-50/30 overflow-y-auto">
                 {STAFF_MENU_ITEMS.map((item, i) => {
                     if ('special' in item && item.special === 'pedidos') {
                         return (

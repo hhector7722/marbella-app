@@ -6,6 +6,7 @@ import { processInventoryCounts, saveIngredientsInventoryVisibility } from './ac
 import { toast } from 'sonner'
 import { AlertCircle, Filter, Minus, Package, Plus, Save, Search } from 'lucide-react'
 import { FloatingCalculatorFab, QuickCalculatorModal } from '@/components/ui/QuickCalculatorModal'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 type Ingredient = {
@@ -523,21 +524,16 @@ export function InventoryClient({
                 </button>
               ) : null}
 
-              <div className="shrink-0 relative">
-                <button
+              <div className="shrink-0 relative" data-inventory-filter-root="true">
+                <Button
                   type="button"
+                  variant="tertiary"
+                  instance="inventory-filter-category"
                   onClick={() => setIngredientFilterOpen((v) => !v)}
-                  className={cn(
-                    'min-h-[48px] min-w-[48px] flex items-center justify-center',
-                    'rounded-xl border-0 bg-transparent hover:bg-zinc-100/60 active:bg-zinc-100 transition-colors',
-                    ingredientCategory ? 'text-[#36606F]' : 'text-zinc-400',
-                  )}
+                  icon={<Filter className="w-5 h-5" strokeWidth={2.5} />}
                   aria-label="Filtrar por categoría"
-                  title="Filtrar"
-                  data-inventory-filter-root="true"
-                >
-                  <Filter className="w-5 h-5" strokeWidth={2.5} />
-                </button>
+                  className="shrink-0"
+                />
 
                 {ingredientFilterOpen ? (
                   <div

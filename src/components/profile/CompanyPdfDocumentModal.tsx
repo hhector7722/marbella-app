@@ -43,7 +43,7 @@ export default function CompanyPdfDocumentModal({ isOpen, onClose, documentKind 
             usageId={instance}
             usageLabel={doc.usageLabel}
         >
-            <div className="flex flex-col items-center gap-4 p-4 py-4">
+            <div className="flex flex-col items-center gap-4">
                 <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-blue-50">
                     <FileText size={40} className="text-blue-400" strokeWidth={1.5} />
                 </div>

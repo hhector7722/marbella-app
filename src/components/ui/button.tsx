@@ -3,9 +3,9 @@
 import type { MouseEventHandler, ReactNode } from 'react';
 import {
     BUTTON_COMPONENT_ID,
+    assertButtonAnatomy,
     hasVisibleButtonLabel,
     pickButtonLayoutClassName,
-    resolveButtonAccessibleName,
     type ButtonLayout,
     type ButtonVariant,
 } from '@/lib/design-system';
@@ -38,8 +38,8 @@ export type ButtonProps = {
  *
  * Anatomía: texto XOR icono. Un Button con texto visible no lleva `icon`.
  * Un Button icon-only no lleva texto y exige `aria-label`.
- * El contrato prohíbe la combinación; el render no lanza: si un
- * consumidor legado pasa ambos, se siguen mostrando (deuda).
+ * Combinaciones inválidas: fallan en desarrollo/test; en producción el
+ * render aplica fallback seguro (prioriza texto; vacío no pinta icono huérfano).
  * Identidad: data-component / data-variant / data-instance
  */
 export function Button({
@@ -60,30 +60,36 @@ export function Button({
 }: ButtonProps) {
     const hasLabel = hasVisibleButtonLabel(children);
     const hasIcon = icon != null && icon !== false;
-    const naming = resolveButtonAccessibleName({
+    const naming = assertButtonAnatomy({
         hasLabel,
         hasIcon,
         ariaLabel,
+        instance,
     });
 
-    if (
-        !naming.ok &&
-        naming.reason !== 'label-and-icon-forbidden' &&
-        process.env.NODE_ENV !== 'production'
-    ) {
-        const hint =
-            naming.reason === 'icon-only-requires-aria-label'
-                ? 'Button icon-only exige aria-label.'
-                : 'Button sin etiqueta exige aria-label.';
-        console.error(`[Button] ${hint} instance="${instance}"`);
+    // Producción: fallback seguro si la anatomía es inválida (dev/test ya lanzó).
+    let renderLabel: ReactNode = children;
+    let renderIcon: ReactNode = hasIcon ? icon : null;
+    let iconOnly = false;
+
+    if (naming.ok) {
+        iconOnly = naming.iconOnly;
+    } else if (naming.reason === 'label-and-icon-forbidden') {
+        renderIcon = null;
+        iconOnly = false;
+    } else if (naming.reason === 'icon-only-requires-aria-label') {
+        // Mismo aspecto que antes; sin nombre accesible (solo prod).
+        iconOnly = true;
+        renderIcon = hasIcon ? icon : null;
+    } else {
+        return null;
     }
 
-    const iconOnly = naming.ok ? naming.iconOnly : !hasLabel && hasIcon;
     const busy = Boolean(loading);
     const isDisabled = disabled || busy;
-    const label = busy && loadingLabel ? loadingLabel : children;
+    const label = busy && loadingLabel ? loadingLabel : renderLabel;
     const showSpinner = busy;
-    const showIcon = hasIcon && !showSpinner;
+    const showIcon = renderIcon != null && !showSpinner;
     const layoutClassName = pickButtonLayoutClassName(className);
 
     return (
@@ -105,7 +111,7 @@ export function Button({
             {showSpinner ? <span data-element="spinner" aria-hidden /> : null}
             {showIcon ? (
                 <span data-element="icon" aria-hidden>
-                    {icon}
+                    {renderIcon}
                 </span>
             ) : null}
             {hasVisibleButtonLabel(label) ? <span data-element="label">{label}</span> : null}

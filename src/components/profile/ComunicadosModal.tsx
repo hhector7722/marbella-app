@@ -7,6 +7,8 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
+import { DocumentListRow } from '@/components/ui/DocumentListRow';
 import { addEmployeeDocumentByTipo, deleteEmployeeDocumentByTipo } from '@/app/actions/profile';
 
 interface ComunicadosModalProps {
@@ -243,7 +245,7 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
             usageLabel="Comunicados"
             headerTrailing={uploadTrailing}
         >
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto">
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-12">
                         <LoadingSpinner size="lg" className="text-[#36606F]" />
@@ -259,48 +261,40 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
                 ) : (
                     <ul className="space-y-1">
                         {docs.map((row) => (
-                            <li
+                            <DocumentListRow
                                 key={row.id}
-                                className="min-h-[56px] flex items-stretch gap-1 rounded-xl border border-transparent hover:border-zinc-100 hover:bg-zinc-50 transition-colors"
-                            >
-                                <button
-                                    type="button"
-                                    onClick={() => openDoc(row)}
-                                    className={cn(
-                                        'flex-1 min-w-0 flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors',
-                                        'active:bg-zinc-100'
-                                    )}
-                                >
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-semibold text-zinc-700 truncate uppercase text-[11px] tracking-wide">
-                                            {labelForRow(row)}
-                                        </p>
-                                    </div>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={(e) => handleShare(e, row)}
-                                    className="shrink-0 self-center min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-zinc-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
-                                    title="Compartir"
-                                    aria-label="Compartir"
-                                >
-                                    <Share2 size={16} strokeWidth={2.5} />
-                                </button>
-                                {isManager && (
-                                    <button
-                                        type="button"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDelete(row);
-                                        }}
-                                        className="shrink-0 self-center min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-zinc-300 hover:text-rose-500 hover:bg-rose-50 transition-colors mr-1"
-                                        title="Eliminar"
-                                        aria-label="Eliminar"
-                                    >
-                                        <Trash2 size={16} strokeWidth={2} />
-                                    </button>
-                                )}
-                            </li>
+                                instance={`comunicados-row-${row.id}`}
+                                title={labelForRow(row)}
+                                onOpen={() => openDoc(row)}
+                                aria-label={`Abrir ${labelForRow(row)}`}
+                                trailing={
+                                    <>
+                                        <button
+                                            type="button"
+                                            onClick={(e) => handleShare(e, row)}
+                                            className="shrink-0 self-center min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl text-zinc-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                                            title="Compartir"
+                                            aria-label="Compartir"
+                                        >
+                                            <Share2 size={16} strokeWidth={2.5} />
+                                        </button>
+                                        {isManager ? (
+                                            <Button
+                                                type="button"
+                                                variant="tertiary"
+                                                instance={`comunicados-delete-${row.id}`}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDelete(row);
+                                                }}
+                                                aria-label="Eliminar"
+                                                icon={<Trash2 size={16} strokeWidth={2} />}
+                                                className="mr-1"
+                                            />
+                                        ) : null}
+                                    </>
+                                }
+                            />
                         ))}
                     </ul>
                 )}

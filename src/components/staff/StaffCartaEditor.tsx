@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { toast } from 'sonner'
-import { Check, Loader2, Pencil, Search, Eye, EyeOff, ImageIcon } from 'lucide-react'
+import { Loader2, Pencil, Search, Eye, EyeOff, ImageIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Modal } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
 import {
   upsertMenuOverride,
   setMenuSectionCoverArticulo,
@@ -292,15 +293,14 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
 
   return (
     <>
-      <button
+      <Button
         type="button"
+        variant="tertiary"
+        instance="staff-carta-editor-open"
         onClick={() => setOpen(true)}
-        className="flex min-h-[48px] min-w-[48px] items-center justify-center p-3 text-white transition-opacity hover:opacity-85 active:opacity-70"
         aria-label="Editar carta"
-        title="Editar carta"
-      >
-        <Pencil className="h-5 w-5" strokeWidth={2.5} />
-      </button>
+        icon={<Pencil className="h-5 w-5" strokeWidth={2.5} />}
+      />
 
       <Modal
         open={open}
@@ -314,19 +314,12 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
         scrollContent={false}
         wrapperClassName="max-w-4xl"
         footer={
-          <div className="flex w-full justify-end">
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="inline-flex min-h-[48px] items-center justify-center rounded-xl bg-[#36606F] px-4 font-black uppercase tracking-wider text-[11px] text-white active:scale-[0.98]"
-            >
-              <Check className="mr-2 h-5 w-5" />
-              Listo
-            </button>
-          </div>
+          <Button type="button" variant="tertiary" instance="staff-carta-editor-done" onClick={() => setOpen(false)}>
+            Listo
+          </Button>
         }
       >
-            <div className="shrink-0 space-y-3 border-b border-zinc-100 p-4">
+            <div className="shrink-0 space-y-3 border-b border-zinc-100">
               <div className="relative w-full">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
                 <input

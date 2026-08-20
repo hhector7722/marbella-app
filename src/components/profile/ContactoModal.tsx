@@ -44,7 +44,7 @@ export default function ContactoModal({ isOpen, onClose, phone }: ContactoModalP
             usageId="profile-contact"
             usageLabel="Contacto perfil"
         >
-            <div className="p-6 space-y-5">
+            <div className="space-y-5">
                 <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
                         <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Teléfono</p>

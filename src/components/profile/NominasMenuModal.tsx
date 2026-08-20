@@ -34,7 +34,7 @@ export default function NominasMenuModal({ isOpen, onClose, onSelect }: NominasM
             usageId="documentos-menu"
             usageLabel="Menú documentos"
         >
-            <div className="p-6 grid grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 gap-6">
                 {OPTIONS.map(({ key, label, iconPath }) => (
                     <button
                         key={key}

@@ -2,9 +2,10 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Camera, Check, Loader2, Upload, X } from 'lucide-react'
+import { ArrowLeft, Camera, Loader2, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import {
   applyAlbaranPriceUpdatesAction,
   extractAlbaranPricesFromImageAction,
@@ -292,18 +293,18 @@ export default function AlbaranesPreciosClient({
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-black text-white uppercase tracking-widest">Líneas propuestas</h2>
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                instance="albaranes-precios-aplicar-aceptadas"
                 onClick={applyBatch}
                 disabled={applying || acceptedRows.length === 0}
-                className={cn(
-                  'inline-flex items-center justify-center gap-2 min-h-12 px-5 rounded-xl font-black text-sm',
-                  'bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 shrink-0 shadow-sm'
-                )}
+                loading={applying}
+                loadingLabel={`Aplicar aceptadas (${acceptedRows.length})`}
+                className="shrink-0"
               >
-                {applying ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
-                Aplicar aceptadas ({acceptedRows.length})
-              </button>
+                {`Aplicar aceptadas (${acceptedRows.length})`}
+              </Button>
             </div>
 
             {rows.map((row) => {
@@ -336,18 +337,14 @@ export default function AlbaranesPreciosClient({
                       {row.notas ? <p className="text-xs text-amber-800 mt-1">{row.notas}</p> : null}
                     </div>
                     <div className="flex gap-2 shrink-0">
-                      <button
+                      <Button
                         type="button"
+                        variant="primary"
+                        instance={`albaranes-precios-aceptar-${row.lineId}`}
                         onClick={() => updateRow(row.lineId, { decision: 'accepted' })}
-                        className={cn(
-                          'min-h-12 px-4 rounded-xl border text-sm font-black',
-                          row.decision === 'accepted'
-                            ? 'border-emerald-500 bg-emerald-100 text-emerald-900'
-                            : 'border-zinc-200 bg-white hover:bg-zinc-50'
-                        )}
                       >
                         Aceptar
-                      </button>
+                      </Button>
                       <button
                         type="button"
                         onClick={() => updateRow(row.lineId, { decision: 'discarded' })}
@@ -404,14 +401,15 @@ export default function AlbaranesPreciosClient({
                           Sin coincidencias automáticas; elige manualmente o crea el ingrediente en /ingredients.
                         </p>
                       )}
-                      <button
+                      <Button
                         type="button"
+                        variant="primary"
+                        instance={`albaranes-precios-continuar-${row.lineId}`}
                         disabled={!row.selectedIngredientId}
                         onClick={() => updateRow(row.lineId, { wizardStep: 2 })}
-                        className="w-full min-h-12 rounded-xl bg-[#36606F] text-white font-black disabled:opacity-40"
                       >
                         Continuar
-                      </button>
+                      </Button>
                     </div>
                   )}
 

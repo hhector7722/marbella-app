@@ -1,13 +1,11 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import * as XLSX from 'xlsx'
 import { Upload, FileUp, CheckCircle, AlertCircle, ArrowRight, Save, Database } from 'lucide-react'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
-// import { Button } from '@/components/ui/button' // Removed
-// import { Card, ... } from '@/components/ui/card' // Removed
-// import { Alert, ... } from '@/components/ui/alert' // Removed
+import { Button } from '@/components/ui/button'
 import { getImportRuns, getLatestImportRuns, importSuppliers, importProducts, importRecipes, importLogs, importInitialMovements, ImportResult, ImportStep } from '@/app/actions/import-legacy'
 import { cn } from '@/lib/utils'
 
@@ -114,6 +112,7 @@ export default function ImportPage() {
     const [historyOffset, setHistoryOffset] = useState(0)
     const historyLimit = 50
     const [overwriteExistingRecipes, setOverwriteExistingRecipes] = useState(false)
+    const fileInputRef = useRef<HTMLInputElement>(null)
 
     const steps: { id: ImportStep; label: string; description: string }[] = [
         { id: 'suppliers', label: '1. Proveedores', description: 'Base de datos de proveedores' },
@@ -540,15 +539,21 @@ export default function ImportPage() {
                                     <h3 className="text-lg font-semibold">Sube tu archivo Excel/CSV</h3>
                                     <p className="text-sm text-muted-foreground">Arrastra o selecciona el archivo para analizar</p>
                                 </div>
-                                <button className="inline-flex min-h-12 items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-zinc-100 px-4 py-2 relative cursor-pointer">
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    instance="import-select-file"
+                                    onClick={() => fileInputRef.current?.click()}
+                                >
                                     Seleccionar Archivo
-                                    <input
-                                        type="file"
-                                        accept=".xlsx, .xls, .csv"
-                                        className="absolute inset-0 opacity-0 cursor-pointer"
-                                        onChange={handleFileUpload}
-                                    />
-                                </button>
+                                </Button>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept=".xlsx, .xls, .csv"
+                                    className="sr-only"
+                                    onChange={handleFileUpload}
+                                />
                             </div>
                         ) : (
                             <div className="w-full h-full p-0 flex flex-col">

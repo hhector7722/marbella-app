@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Minus, Plus, ArrowRight, ArrowLeft, Eye, ChevronLeft, ChevronRight, Wallet } from 'lucide-react';
+import { Minus, Plus, ArrowRight, ArrowLeft, Eye, ChevronLeft, ChevronRight, Wallet } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { createClient } from "@/utils/supabase/client";
@@ -522,7 +522,7 @@ export const CashChangeModal = ({
                     </div>
                 }
             >
-                    <div className="bg-[#36606F] px-4 py-2.5">
+                    <div className="bg-[#36606F] py-2.5">
                         <div className="flex items-center justify-between gap-1.5 px-0.5">
                             <div className="flex-1 bg-black/10 rounded-2xl py-2 flex flex-col items-center border border-white/5">
                                 <span className="text-[8px] font-black text-rose-300/60 uppercase tracking-widest mb-0.5">Sale</span>
@@ -746,7 +746,7 @@ export const CashChangeModal = ({
                     </div>
                 }
             >
-                        <div className="p-4">
+                        <div>
                             {exchangeHistoryLoading ? (
                                 <p className="text-center text-zinc-500 text-sm">Cargando...</p>
                             ) : exchangeHistoryList.length === 0 ? (
@@ -785,7 +785,7 @@ export const CashChangeModal = ({
                 headerTitleAlign="left"
                 title="Desglose del intercambio"
             >
-                <div className="p-4">
+                <div>
                     {selectedExchangeDetail ? (
                         <div className="space-y-4">
                             {selectedExchangeDetail.legs.map((leg, idx) => (
@@ -925,13 +925,15 @@ export const CashChangeModal = ({
                         </div>
                         <div className="self-stretch flex flex-col justify-end">
                             {isStep1 ? (
-                                <button
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    instance="cash-change-salir"
                                     onClick={onClose}
-                                    className="w-full h-10 min-h-[48px] bg-rose-500 text-white font-black uppercase tracking-widest rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1.5 shadow-md shadow-rose-200 text-[11px]"
+                                    className="w-full"
                                 >
-                                    <X size={14} strokeWidth={3} />
                                     Salir
-                                </button>
+                                </Button>
                             ) : (
                                 <button
                                     onClick={() => setStep('step1')}
@@ -956,18 +958,16 @@ export const CashChangeModal = ({
                                     Siguiente
                                 </button>
                             ) : (
-                                <button
+                                <Button
+                                    type="button"
+                                    variant="primary"
+                                    instance="cash-change-guardar"
                                     onClick={handleGuardarStep2}
                                     disabled={totalStep2 < 0.005 || hasStockIssueStep2}
-                                    className={cn(
-                                        "w-full h-10 min-h-[48px] rounded-xl font-black text-[11px] uppercase tracking-widest shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2",
-                                        (totalStep2 >= 0.005 && !hasStockIssueStep2)
-                                            ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-200"
-                                            : "bg-zinc-100 text-zinc-300 cursor-not-allowed border border-zinc-200"
-                                    )}
+                                    className="w-full"
                                 >
                                     Guardar
-                                </button>
+                                </Button>
                             )}
                         </div>
                     </div>

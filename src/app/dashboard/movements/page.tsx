@@ -20,7 +20,6 @@ import {
     ArrowRightLeft,
     ArrowUp,
     ArrowDown,
-    Download,
     RefreshCw,
     AlertTriangle,
     Share,
@@ -40,6 +39,7 @@ import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 import * as XLSX from 'xlsx';
 
 interface Movement {
@@ -819,14 +819,15 @@ export default function MovementsPage() {
 
                                     {shareMenuOpen ? (
                                         <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden z-20">
-                                            <button
+                                            <Button
                                                 type="button"
+                                                variant="secondary"
+                                                instance="movements-export-excel"
                                                 onClick={exportFilteredTableToExcel}
-                                                className="w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors"
+                                                className="w-full"
                                             >
-                                                <span className="text-[11px] font-black uppercase tracking-widest">Exportar Excel</span>
-                                                <Download className="w-4 h-4 text-zinc-500" />
-                                            </button>
+                                                Exportar Excel
+                                            </Button>
                                             <div className="h-px bg-zinc-100" />
                                             <button
                                                 type="button"

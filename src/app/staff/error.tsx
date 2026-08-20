@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 
 export default function StaffError({
   error,
@@ -32,13 +33,15 @@ export default function StaffError({
           </div>
 
           <div className="mt-4 flex gap-3">
-            <button
+            <Button
               type="button"
+              variant="primary"
+              instance="staff-error-retry"
               onClick={() => reset()}
-              className="min-h-12 flex-1 rounded-xl bg-[#36606F] px-4 font-black text-white hover:bg-[#2A4C58] active:scale-[0.99] transition-all"
+              className="flex-1"
             >
               Reintentar
-            </button>
+            </Button>
             <button
               type="button"
               onClick={() => window.location.reload()}

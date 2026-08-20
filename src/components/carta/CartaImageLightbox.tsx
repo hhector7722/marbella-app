@@ -34,7 +34,7 @@ export function CartaImageLightbox({
       usageId="carta-image-lightbox"
       usageLabel="Imagen carta"
     >
-      <div className="flex min-h-0 flex-1 items-center justify-center bg-zinc-50/40 p-6">
+      <div className="flex min-h-0 flex-1 items-center justify-center bg-zinc-50/40">
         {/* eslint-disable-next-line @next/next/no-img-element -- URL externa / Storage */}
         <img
           src={src}

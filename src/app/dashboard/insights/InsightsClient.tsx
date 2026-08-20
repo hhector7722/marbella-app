@@ -9,10 +9,11 @@ import {
   type ReactNode,
 } from 'react'
 import { Modal } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
 import { useRouter } from 'next/navigation'
-import { ChevronDown, RefreshCw, X } from 'lucide-react'
+import { ChevronDown, X } from 'lucide-react'
 import {
   Bar,
   BarChart,
@@ -199,7 +200,7 @@ function FinancialDetailModal({
         ) : undefined
       }
     >
-      <div className="px-6 py-4">{children}</div>
+      <div>{children}</div>
     </Modal>
   )
 }
@@ -371,14 +372,15 @@ function SectionErrorBanner({
   return (
     <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <p className="text-sm font-semibold text-rose-700">{message}</p>
-      <button
+      <Button
         type="button"
+        variant="primary"
+        instance="insights-section-reintentar"
         onClick={onRetry}
-        className="min-h-12 shrink-0 inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 text-sm font-black uppercase tracking-wide text-white active:scale-95"
+        className="shrink-0"
       >
-        <RefreshCw className="h-4 w-4" />
         Reintentar
-      </button>
+      </Button>
     </div>
   )
 }
@@ -475,14 +477,15 @@ function WeekdayDetailCard({
 
   return (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white px-1.5 py-1.5 shadow-lg lg:flex-row lg:items-center lg:gap-4 lg:px-4 lg:py-3">
-      <button
+      <Button
         type="button"
+        variant="secondary"
+        instance="insights-weekday-cerrar-detalle"
         onClick={onClose}
         aria-label="Cerrar detalle del día"
-        className="absolute right-0 top-0 z-10 min-h-8 min-w-8 inline-flex shrink-0 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 lg:static lg:order-last lg:ml-1"
-      >
-        <X className="h-3 w-3" />
-      </button>
+        icon={<X className="h-3 w-3" />}
+        className="absolute right-0 top-0 z-10 lg:static lg:order-last lg:ml-1"
+      />
       <div className="flex min-h-0 flex-1 items-center justify-center lg:flex-none lg:shrink-0 lg:min-w-[4.5rem]">
         <p className="w-full px-0.5 text-center text-[9px] sm:text-[10px] font-black leading-tight text-[#36606F] line-clamp-2 lg:text-xs">
           {day.weekday_name}
@@ -522,14 +525,15 @@ function ProductDetailCard({
             {product.product_name}
           </p>
         )}
-        <button
+        <Button
           type="button"
+          variant="secondary"
+          instance="insights-product-cerrar-detalle"
           onClick={onClose}
           aria-label="Cerrar detalle"
-          className="min-h-9 min-w-9 shrink-0 inline-flex items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-100"
-        >
-          <X className="h-4 w-4" />
-        </button>
+          icon={<X className="h-4 w-4" />}
+          className="shrink-0"
+        />
       </div>
       <div className="grid grid-cols-3 grid-rows-2 gap-x-1.5 gap-y-1">
         <ProductStat

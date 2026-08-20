@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { KdsMesaNumber } from "@/components/kds/KdsMesaNumber";
 import { cn } from "@/lib/utils";
 import { Modal } from "@/components/ui/modal";
+import { Button } from "@/components/ui/button";
 
 function norm(s: string) {
   return s.trim().toLowerCase().replace(/\s+/g, " ");
@@ -117,17 +118,17 @@ export function NotesModal(props: {
         </button>
       }
       footer={
-        <div className="flex w-full items-center justify-between gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="min-h-[52px] px-5 rounded-xl bg-[#D56170] hover:bg-[#C55462] text-white font-black uppercase tracking-[0.16em] text-base"
-          >
+        <div className="flex w-full items-center justify-end gap-2">
+          <Button type="button" variant="secondary" instance="kds-notes-cancel" onClick={onClose}>
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            disabled={saving || !canSave}
+            variant="primary"
+            instance="kds-notes-save"
+            disabled={!canSave}
+            loading={saving}
+            loadingLabel="Guardar"
             onClick={async () => {
               const quickSelectedInOrder = quickNotes.filter((q) => selectedQuick.has(q));
               const free = splitNotes(freeText);
@@ -140,15 +141,13 @@ export function NotesModal(props: {
                 setSaving(false);
               }
             }}
-            className="flex-1 min-h-[52px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-[0.16em] text-base disabled:opacity-60"
           >
             Guardar
-          </button>
+          </Button>
         </div>
       }
-      className="bg-[#1b1c20] border border-black/30"
     >
-      <div className="p-3 sm:p-4 space-y-3">
+      <div className="space-y-3">
         {isWriting && (
           <div className="rounded-2xl border border-black/25 bg-white p-3 sm:p-4 shadow-sm">
             <textarea

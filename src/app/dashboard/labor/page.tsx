@@ -19,10 +19,11 @@ import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
-import { Modal } from '@/components/ui/modal';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import {
     filterVisiblePlantillaEmployees,
@@ -548,14 +549,15 @@ export default function LaborHistoryPage() {
                                 buttonClassName="bg-transparent border-transparent shadow-none hover:bg-white/15 min-h-[40px] md:min-h-[40px] px-2 py-1.5"
                             />
                             <div className="relative shrink-0">
-                                <button
+                                <Button
                                     type="button"
+                                    variant="tertiary"
+                                    instance="labor-filter-worker"
                                     onClick={() => setIsWorkerModalOpen(true)}
-                                    className="relative p-2 text-[#36606F] bg-white rounded-xl shadow-xs hover:bg-white/90"
+                                    className="relative shrink-0"
                                     aria-label="Filtrar por trabajador"
-                                >
-                                    <User size={24} strokeWidth={2.25} />
-                                </button>
+                                    icon={<User size={24} strokeWidth={2.25} />}
+                                />
                             </div>
                         </div>
                     </div>
@@ -725,7 +727,7 @@ export default function LaborHistoryPage() {
                 usageLabel="Detalle día laboral"
                 title={selectedDayStr ? format(parseLocalSafe(selectedDayStr), 'EEEE · d MMMM yyyy', { locale: es }) : 'Coste laboral'}
             >
-                <div className="p-4 pb-4">
+                <div>
                     {detailLoading ? (
                         <div className="flex justify-center py-20">
                             <LoadingSpinner size="lg" className="text-zinc-900" />

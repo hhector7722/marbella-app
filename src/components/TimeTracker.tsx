@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import { Play, Square, Clock, Coffee } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, MAX_DISTANCE_METERS } from '@/lib/location';
 import { formatMadridHmFromIso, formatYmdInMadrid } from '@/lib/madrid-date-bounds';
 import { syncOvertimeCostAfterTimeLogChange } from '@/app/actions/persist-overtime-cost';
@@ -169,21 +170,35 @@ export default function TimeTracker() {
 
             {/* Botón de Acción */}
             {currentLog ? (
-                <button
-                    onClick={handleClockOut}
-                    disabled={loading}
-                    className="w-full max-w-xs py-4 bg-red-500 hover:bg-red-600 active:scale-95 text-white rounded-2xl font-black shadow-lg hover:shadow-red-500/30 transition-all flex items-center justify-center gap-2 text-lg"
-                >
-                    <Square size={20} fill="currentColor" /> SALIR
-                </button>
+                <div className="w-full max-w-xs">
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        instance="time-tracker-salir"
+                        onClick={handleClockOut}
+                        disabled={loading}
+                        loading={loading}
+                        loadingLabel="Saliendo…"
+                        className="w-full"
+                    >
+                        SALIR
+                    </Button>
+                </div>
             ) : (
-                <button
-                    onClick={handleClockIn}
-                    disabled={loading}
-                    className="w-full max-w-xs py-4 bg-green-500 hover:bg-green-600 active:scale-95 text-white rounded-2xl font-black shadow-lg hover:shadow-green-500/30 transition-all flex items-center justify-center gap-2 text-lg animate-in slide-in-from-bottom-2"
-                >
-                    <Play size={24} fill="currentColor" /> ENTRAR
-                </button>
+                <div className="w-full max-w-xs">
+                    <Button
+                        type="button"
+                        variant="primary"
+                        instance="time-tracker-entrar"
+                        onClick={handleClockIn}
+                        disabled={loading}
+                        loading={loading}
+                        loadingLabel="Entrando…"
+                        className="w-full"
+                    >
+                        ENTRAR
+                    </Button>
+                </div>
             )}
 
             {currentLog && (

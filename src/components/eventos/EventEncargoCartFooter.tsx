@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Minus, Plus, Loader2 } from 'lucide-react'
 
 import { Modal } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
 import { formatCartaPrice } from '@/lib/carta-price-display'
 import { cn } from '@/lib/utils'
 
@@ -96,21 +97,17 @@ export function EventEncargoCartFooter({
         ) : null}
 
         <div className="flex items-center gap-2">
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            instance="event-encargo-ver-pedido"
             disabled={!hasLines}
             onClick={() => setCartOpen(true)}
-            className={cn(
-              'relative flex h-10 min-h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border px-3',
-              'text-sm font-bold whitespace-nowrap transition-colors',
-              hasLines
-                ? 'border-zinc-200 bg-white text-zinc-900 active:bg-zinc-50'
-                : 'cursor-not-allowed border-zinc-100 bg-zinc-50 text-zinc-400'
-            )}
+            className="relative flex-1"
           >
-            <span className="leading-none">Ver pedido</span>
+            Ver pedido
             {hasLines && units > 0 ? <UnitsBadge count={units} /> : null}
-          </button>
+          </Button>
 
           <button
             type="button"
@@ -137,9 +134,9 @@ export function EventEncargoCartFooter({
         instance="event-encargo-cart"
         usageId="event-encargo-cart"
         usageLabel="Ver pedido encargo"
-        className="max-w-sm"
+        variant="compact"
       >
-        <div className="px-4 pb-4 pt-3">
+        <div className="space-y-3">
           {lines.length === 0 ? (
             <p className="py-6 text-center text-sm font-semibold text-zinc-500">
               Aún no hay productos.
@@ -236,11 +233,11 @@ export function EventEncargoCartFooter({
         title={confirmTitle}
         usageId="event-encargo-send-confirm"
         usageLabel="Confirmar envío pedido"
-        className="max-w-sm"
+        variant="compact"
       >
-        <div className="px-4 pb-4 pt-3">
+        <div className="space-y-5">
           <p className="text-sm font-semibold leading-relaxed text-zinc-700">{confirmBody}</p>
-          <div className="mt-5 flex flex-col gap-2">
+          <div className="flex flex-col gap-2">
             <button
               type="button"
               className={cn(
@@ -256,14 +253,16 @@ export function EventEncargoCartFooter({
             >
               {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : confirmActionLabel}
             </button>
-            <button
+            <Button
               type="button"
-              className="flex min-h-12 w-full items-center justify-center rounded-xl bg-zinc-100 text-sm font-bold text-zinc-800 active:bg-zinc-200"
+              variant="secondary"
+              instance="event-encargo-cart-cancel"
+              className="w-full"
               disabled={isPending}
               onClick={() => setConfirmOpen(false)}
             >
               Cancelar
-            </button>
+            </Button>
           </div>
         </div>
       </Modal>

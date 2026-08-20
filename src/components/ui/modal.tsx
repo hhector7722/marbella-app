@@ -80,6 +80,11 @@ export type ModalProps = {
     hideHeader?: boolean;
     headerTrailing?: ReactNode;
     ariaLabel?: string;
+    /**
+     * @deprecated Escape hatch. El backdrop lo posee la capa (ADR-0008).
+     * Nuevos usos fallan `modal-contract.test.ts` salvo allowlist documentada
+     * (`LEGACY_MODAL_BACKDROP_CLASSNAME_ALLOWLIST`). Preferir capas semánticas.
+     */
     backdropClassName?: string;
     onBack?: () => void;
     onBackPlain?: boolean;
@@ -101,7 +106,9 @@ export type ModalProps = {
     usageLabel?: string;
     disableUsageTracking?: boolean;
     /**
-     * @deprecated Preferir `layer`. Escape hatch temporal para consumidores legacy.
+     * @deprecated Preferir `layer`. Escape hatch retirado del contrato activo:
+     * allowlist vacía — cualquier uso nuevo falla `modal-contract.test.ts`.
+     * El prop permanece tipado para no romper imports; no usarlo.
      */
     zIndexClass?: string;
     /** Clic en backdrop cierra. Default true. */

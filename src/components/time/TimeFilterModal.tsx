@@ -20,6 +20,7 @@ import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import type { TimeFilterKind, TimeFilterValue } from "@/components/time/time-filter-types";
 import { Modal } from "@/components/ui/modal";
+import { Button } from "@/components/ui/button";
 import { trackUsageModalApply } from "@/lib/usage/client";
 import { timeFilterApplySummary } from "@/lib/usage/modal-apply";
 
@@ -241,11 +242,11 @@ export function TimeFilterModal({
       onClose={onClose}
       title="Filtro"
       headerVariant="petroleum"
-      className="rounded-[2.5rem] max-w-sm"
+      variant="compact"
       usageId="time-filter"
       usageLabel="Filtro horario"
     >
-        <div className="p-4 space-y-3">
+        <div className="space-y-3">
           <div className="grid grid-cols-3 gap-2">
             {allowedKinds.includes("hours") && <TabButton kind="hours" />}
             {allowedKinds.includes("date") && <TabButton kind="date" />}
@@ -277,17 +278,16 @@ export function TimeFilterModal({
                   />
                 </div>
               </div>
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                instance="time-filter-apply-hours"
+                layout="fill"
                 disabled={!canApplyHours}
                 onClick={() => applyAndClose({ kind: "hours", startTime, endTime })}
-                className={cn(
-                  "w-full min-h-[48px] rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all",
-                  canApplyHours ? "bg-zinc-900 text-white hover:scale-[1.01] active:scale-[0.99]" : "bg-zinc-100 text-zinc-300"
-                )}
               >
                 Aplicar horas
-              </button>
+              </Button>
             </div>
           )}
 

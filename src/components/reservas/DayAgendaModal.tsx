@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { Loader2, Plus, X } from 'lucide-react'
 
 import { buildDayAgendaListRows } from '@/lib/encargo-staff-helpers'
 import { cn } from '@/lib/utils'
 import { Modal } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
 import type { EncargoRow } from '@/lib/reservas-encargos-calendar'
 import { timeShortHm } from '@/lib/reservas-encargos-calendar'
 
@@ -66,22 +66,19 @@ export function DayAgendaModal({
       headerTone="petroleum"
       wrapperClassName="max-w-[min(32rem,calc(100vw-2rem))]"
       footer={
-        <button
+        <Button
           type="button"
+          variant="tertiary"
+          instance="reservas-day-agenda-pedido"
           onClick={onPlusPedido}
-          disabled={plusPedidoBusy}
-          className="min-h-12 w-full flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-widest text-[#36606F] hover:bg-[#36606F]/5 active:bg-[#36606F]/10 rounded-xl transition-colors disabled:opacity-50"
+          loading={plusPedidoBusy}
+          loadingLabel="Pedido"
         >
-          {plusPedidoBusy ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Plus className="h-4 w-4" strokeWidth={2.5} />
-          )}
           Pedido
-        </button>
+        </Button>
       }
     >
-      <div className="flex-1 overflow-y-auto min-h-0 px-4 py-2">
+      <div className="flex-1 overflow-y-auto min-h-0 py-2">
         {rows.length === 0 ? (
           <p className="py-10 text-center text-xs font-semibold text-zinc-500">Nada programado este día.</p>
         ) : (
@@ -104,13 +101,15 @@ export function DayAgendaModal({
                       </span>
                     </button>
                     {row.linkedEncargo ? (
-                      <button
+                      <Button
                         type="button"
+                        variant="tertiary"
+                        instance={`day-agenda-view-order-${row.linkedEncargo.id}`}
                         onClick={() => onViewEncargoOrder(row.linkedEncargo!.id)}
-                        className="shrink-0 self-center min-h-12 px-2 text-[9px] font-black uppercase tracking-wide text-[#36606F] hover:underline"
+                        className="shrink-0 self-center"
                       >
                         Ver pedido
-                      </button>
+                      </Button>
                     ) : null}
                   </li>
                 )
@@ -238,18 +237,23 @@ export function CreateEncargoQuickModal({
       headerTone="petroleum"
       closeOnBackdrop={!busy}
       footer={
-        <div className="grid grid-cols-2 gap-2 w-full">
-          <button
+        <div className="flex w-full items-center justify-end gap-2">
+          <Button
             type="button"
+            variant="secondary"
+            instance="reservas-encargo-create-cancel"
             disabled={busy}
             onClick={onClose}
-            className="min-h-12 rounded-xl bg-zinc-100 text-[11px] font-black uppercase text-zinc-700 active:scale-[0.98] transition-transform"
           >
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="primary"
+            instance="reservas-encargo-create-continue"
             disabled={!canSubmit}
+            loading={busy}
+            loadingLabel="Continuar"
             onClick={() =>
               onSubmit({
                 contact_name: resolvedName,
@@ -258,14 +262,13 @@ export function CreateEncargoQuickModal({
                 reservation_id: linkedReservation?.id ?? null,
               })
             }
-            className="min-h-12 rounded-xl bg-emerald-500 text-[11px] font-black uppercase text-white hover:bg-emerald-600 disabled:opacity-50 active:scale-[0.98] transition-all"
           >
-            {busy ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : 'Continuar'}
-          </button>
+            Continuar
+          </Button>
         </div>
       }
     >
-      <div className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-5 space-y-5">
+      <div className="flex-1 overflow-y-auto min-h-0 space-y-5">
         {availableReservations.length > 0 ? (
           <EncargoFormStepRow title="Enlazar a reserva">
             <select

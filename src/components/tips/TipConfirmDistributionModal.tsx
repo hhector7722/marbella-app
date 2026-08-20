@@ -90,7 +90,7 @@ export function TipConfirmDistributionModal({
         </div>
       }
     >
-      <div className="space-y-4 p-4">
+      <div className="space-y-4">
         <div className="space-y-2 rounded-2xl border border-zinc-100 bg-zinc-50 p-3 text-sm">
           <p className="font-black text-zinc-800">
             Período: {formatLocalIsoDateLabel(startDate, 'd MMM yyyy')} →{' '}

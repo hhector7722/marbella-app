@@ -8,6 +8,7 @@ import { toast, Toaster } from 'sonner';
 import CreateModal from '@/components/CreateRecipeModal';
 import { useRouter } from 'next/navigation';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import {
@@ -609,18 +610,15 @@ function RecipesContent() {
                             {/* Misma rejilla que `/recipes/[id]`: columnas fijas a los lados → título e imagen centrados en el mismo eje */}
                             <div className="grid w-full grid-cols-[3rem_1fr_3rem] items-center gap-2 min-h-[48px]">
                                 <div className="flex items-center justify-center">
-                                    <button
+                                    <Button
                                         type="button"
+                                        variant="tertiary"
+                                        instance="recipes-modal-back"
                                         onClick={() => setSelectedRecipeId(null)}
+                                        icon={<ArrowLeft className="w-6 h-6" />}
                                         aria-label="Volver a la lista de recetas"
-                                        className={cn(
-                                            'flex h-12 w-12 shrink-0 items-center justify-center',
-                                            'text-white/70 hover:text-white active:scale-95 transition',
-                                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
-                                        )}
-                                    >
-                                        <ArrowLeft className="w-6 h-6" />
-                                    </button>
+                                        className="shrink-0"
+                                    />
                                 </div>
                                 <div className="min-w-0 flex justify-center px-1">
                                     <div className="max-w-[min(72vw,20rem)] text-center text-[13px] font-black leading-tight text-white md:text-[15px]">
@@ -631,22 +629,19 @@ function RecipesContent() {
                                 </div>
                                 <div className="flex items-center justify-center">
                                     {canEditRecipeFromModal && selectedRecipeId ? (
-                                        <button
+                                        <Button
                                             type="button"
+                                            variant="tertiary"
+                                            instance="recipes-modal-full-edit"
                                             onClick={() => {
                                                 const id = selectedRecipeId;
                                                 setSelectedRecipeId(null);
                                                 router.push(buildRecipesFullEditHref(id));
                                             }}
-                                            className={cn(
-                                                'flex h-10 w-10 shrink-0 items-center justify-center transition text-white/60 hover:text-white active:scale-95',
-                                                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
-                                            )}
+                                            icon={<Edit2 className="w-5 h-5" strokeWidth={2.5} />}
                                             aria-label="Abrir ficha de edición completa"
-                                            title="Editar ingredientes, elaboración y presentación"
-                                        >
-                                            <Edit2 className="w-5 h-5" strokeWidth={2.5} />
-                                        </button>
+                                            className="shrink-0"
+                                        />
                                     ) : (
                                         <span className="inline-flex h-10 w-10 shrink-0" aria-hidden />
                                     )}

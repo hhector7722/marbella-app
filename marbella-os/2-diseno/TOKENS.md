@@ -71,7 +71,7 @@ Es el único token con implementación centralizada real: existe como utilidad �
 | `color.texto.fuerte` | `#27272A` | Títulos y énfasis | adoptado (piloto `DashboardShortcut` vía `--color-texto-fuerte`) |
 | `color.texto.medio` | `#52525B` | Texto de apoyo, descripciones | declarado |
 | `color.texto.suave` | `#71717A` | Etiquetas, metadatos | declarado |
-| `color.texto.tenue` | `#A1A1AA` | Texto de mínima jerarquía, marcas de posición | declarado |
+| `color.texto.tenue` | `#A1A1AA` | Texto de mínima jerarquía, marcas de posición | adoptado (piloto `DocumentListRow` vía `--color-texto-tenue`) |
 | `color.texto.invertido` | `#FFFFFF` | Texto sobre marca, positivo, negativo o envolvente | adoptado (piloto Button vía `--color-texto-invertido`) |
 
 ## 5. Bordes y separadores
@@ -111,7 +111,7 @@ Los tokens semánticos de documentos impresos usan los mismos nombres con valore
 | `tipo.subtitulo` | 16 px / peso 600 | Título de bloque | declarado |
 | `tipo.cuerpo` | 14 px / peso 400 | Texto general | declarado |
 | `tipo.apoyo` | 12 px / peso 400 | Metadatos, etiquetas | declarado |
-| `tipo.minimo` | 11 px | Mínimo legible. Por debajo solo el calendario mensual en escritorio | declarado |
+| `tipo.minimo` | 11 px | Mínimo legible. Por debajo solo el calendario mensual en escritorio | adoptado (piloto `DocumentListRow` título; subtítulo de esa familia conserva 10 px documentado) |
 | `tipo.entrada` | 16 px | Mínimo en campos de entrada para evitar el zoom automático del móvil | declarado |
 
 ## 8. Espaciado

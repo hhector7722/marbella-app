@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { DENOMINATIONS, CURRENCY_IMAGES } from '@/lib/constants';
 import { DenominationZoomModal } from '@/components/ui/DenominationZoomModal';
+import { Button } from '@/components/ui/button';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 
 type ModalTab = 'calculator' | 'breakdown';
@@ -587,20 +588,26 @@ export function QuickCalculatorModal({ isOpen, onClose, overlayClassName }: Quic
                                 ¿Abrimos WhatsApp para que pegues la imagen del desglose?
                             </p>
                             <div className="flex gap-3">
-                                <button
+                                <Button
                                     type="button"
+                                    variant="secondary"
+                                    instance="quick-calc-confirm-cancel"
+                                    layout="fill"
+                                    className="flex-1"
                                     onClick={() => setShowConfirmEnviar(false)}
-                                    className="flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-wider bg-zinc-100 hover:bg-zinc-200 text-zinc-700 transition-all min-h-[48px]"
                                 >
                                     Cancelar
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     type="button"
+                                    variant="primary"
+                                    instance="quick-calc-confirm-send"
+                                    layout="fill"
+                                    className="flex-1"
                                     onClick={handleConfirmEnviar}
-                                    className="flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-wider bg-emerald-500 hover:bg-emerald-600 text-white transition-all min-h-[48px]"
                                 >
                                     Sí, enviar
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>

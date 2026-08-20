@@ -13,6 +13,7 @@ const config: Config = {
                 "ds-superficie": "var(--color-superficie)",
                 "ds-borde": "var(--color-borde)",
                 "ds-texto-fuerte": "var(--color-texto-fuerte)",
+                "ds-texto-tenue": "var(--color-texto-tenue)",
                 "ds-marca": "var(--color-marca)",
                 "ds-marca-intenso": "var(--color-marca-intenso)",
                 "ds-superficie-inactiva": "var(--color-superficie-inactiva)",

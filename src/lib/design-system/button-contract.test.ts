@@ -10,13 +10,21 @@ import {
     BUTTON_FORBIDDEN_VARIANTS,
     BUTTON_LAYOUTS,
     BUTTON_VARIANTS,
+    assertButtonAnatomy,
+    buttonAnatomyErrorMessage,
     hasVisibleButtonLabel,
+    isButtonAnatomyEnforced,
     isButtonAnatomyValid,
     isButtonLayout,
     isButtonVariant,
     pickButtonLayoutClassName,
     resolveButtonAccessibleName,
 } from './button-contract.ts';
+import {
+    findClearBusinessNativeButtons,
+    isClearBusinessNativeButtonLabel,
+    isSpecializedButtonHostPath,
+} from './button-native-business-scan.ts';
 
 const REPO_ROOT = process.cwd();
 const SRC_ROOT = join(REPO_ROOT, 'src');
@@ -186,6 +194,60 @@ describe('Button accesibilidad e icon-only', () => {
         });
         assert.equal(empty.ok, false);
         if (!empty.ok) assert.equal(empty.reason, 'empty-requires-name');
+    });
+
+    it('assertButtonAnatomy lanza fuera de producción', () => {
+        assert.equal(isButtonAnatomyEnforced('production'), false);
+        assert.equal(isButtonAnatomyEnforced('test'), true);
+        assert.equal(isButtonAnatomyEnforced(undefined), true);
+        assert.throws(
+            () =>
+                assertButtonAnatomy({
+                    hasLabel: true,
+                    hasIcon: true,
+                    instance: 'x',
+                }),
+            /texto XOR icono/
+        );
+        assert.throws(
+            () =>
+                assertButtonAnatomy({
+                    hasLabel: false,
+                    hasIcon: true,
+                    instance: 'y',
+                }),
+            /aria-label/
+        );
+        assert.throws(
+            () =>
+                assertButtonAnatomy({
+                    hasLabel: false,
+                    hasIcon: false,
+                    instance: 'z',
+                }),
+            /aria-label/
+        );
+        const ok = assertButtonAnatomy({
+            hasLabel: true,
+            hasIcon: false,
+            instance: 'ok',
+        });
+        assert.equal(ok.ok, true);
+        assert.match(
+            buttonAnatomyErrorMessage('label-and-icon-forbidden', 'a'),
+            /XOR/
+        );
+    });
+
+    it('en producción isButtonAnatomyEnforced es false (fallback del render)', () => {
+        assert.equal(isButtonAnatomyEnforced('production'), false);
+    });
+
+    it('el componente llama assertButtonAnatomy (enforcement runtime)', () => {
+        const source = readFileSync(BUTTON_SOURCE, 'utf8');
+        assert.match(source, /assertButtonAnatomy/);
+        assert.equal(source.includes('se siguen mostrando'), false);
+        assert.match(source, /fallan en desarrollo\/test/);
     });
 });
 
@@ -521,5 +583,36 @@ describe('Button anatomía: no icono + texto', () => {
             }
         }
         assert.deepEqual(offenders, []);
+    });
+});
+
+describe('Button consumers: CTAs de negocio nativos', () => {
+    it('clasifica labels de negocio vs chrome', () => {
+        assert.equal(isClearBusinessNativeButtonLabel('Guardar'), true);
+        assert.equal(isClearBusinessNativeButtonLabel('Cancelar'), true);
+        assert.equal(isClearBusinessNativeButtonLabel('Añadir una unidad de X'), false);
+        assert.equal(isClearBusinessNativeButtonLabel('', 'Ver foto ampliada'), false);
+    });
+
+    it('no quedan CTAs de negocio claros como <button> nativo', () => {
+        const offenders: string[] = [];
+        for (const full of listSourceFiles(SRC_ROOT)) {
+            if (full.endsWith('.test.ts') || full.endsWith('.test.tsx')) continue;
+            const rel = toPosix(relative(REPO_ROOT, full));
+            if (rel === 'src/components/ui/button.tsx') continue;
+            if (rel === 'src/components/ui/modal.tsx') continue;
+            if (rel.includes('/playground/')) continue;
+            if (isSpecializedButtonHostPath(rel)) continue;
+            const source = readFileSync(full, 'utf8');
+            if (!source.includes('<button')) continue;
+            for (const hit of findClearBusinessNativeButtons(source)) {
+                offenders.push(`${rel}:${hit.line} ${hit.label}`);
+            }
+        }
+        assert.deepEqual(
+            offenders,
+            [],
+            `CTAs de negocio nativos pendientes:\n${offenders.join('\n')}`
+        );
     });
 });

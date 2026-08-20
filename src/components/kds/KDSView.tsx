@@ -625,7 +625,7 @@ export default function KDSView() {
                 headerTone="petroleum"
                 wrapperClassName="max-w-4xl"
             >
-                <div className="p-3 sm:p-4">
+                <div className="p-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {aggregatedItems.map((item) => (
                             <div

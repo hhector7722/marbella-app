@@ -54,7 +54,6 @@ export function LineEditModal({
       headerTitleAlign="left"
       title="Editar línea"
       subtitle={subtitle}
-      className="bg-zinc-50"
       footer={
         <Button
           type="button"
@@ -68,7 +67,7 @@ export function LineEditModal({
       }
     >
       {draft ? (
-        <div className="flex flex-col gap-2 min-w-0 max-w-full">
+        <div className="flex flex-col gap-2 min-w-0 max-w-full bg-zinc-50">
           <section className="rounded-lg border border-zinc-200 bg-white p-2 space-y-2">
             <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1">Datos del albarán</p>
             <label className="block space-y-0.5 px-1">

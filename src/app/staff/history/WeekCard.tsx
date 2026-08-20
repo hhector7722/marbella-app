@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Coins, Landmark, Save } from 'lucide-react';
+import { X, Coins, Landmark } from 'lucide-react';
 import { parseISO, startOfWeek } from 'date-fns';
 import { cn, calculateRoundedHours } from '@/lib/utils';
 import { toast } from 'sonner';
 import { SpecialDayLabel } from '@/components/staff/SpecialDayLabel';
 import LaborConditionsView from '@/components/profile/LaborConditionsView';
 import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 
 const DAY_HEADERS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 
@@ -496,21 +497,18 @@ export function WeekCard({
                             aria-label="Coste por hora de extras"
                         />
                     </div>
-                    <button
+                    <Button
                         type="button"
+                        variant="primary"
+                        instance="staff-week-apply-overrides"
                         onClick={handleApplyOverrides}
                         disabled={savingOverrides}
-                        className="ml-auto flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[8px] font-black uppercase tracking-widest disabled:opacity-50"
+                        loading={savingOverrides}
+                        loadingLabel="…"
+                        className="ml-auto"
                     >
-                        {savingOverrides ? (
-                            <span className="animate-pulse">...</span>
-                        ) : (
-                            <>
-                                <Save size={10} />
-                                Aplicar
-                            </>
-                        )}
-                    </button>
+                        Aplicar
+                    </Button>
                 </div>
             )}
 
@@ -524,7 +522,7 @@ export function WeekCard({
                     title="Condiciones Laborales y Contrato"
                     wrapperClassName="max-w-3xl"
                 >
-                    <div className="p-4">
+                    <div>
                         <LaborConditionsView
                             employeeId={userId}
                             onSaveSuccess={async () => {

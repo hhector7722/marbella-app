@@ -12,14 +12,12 @@ import {
     TrendingUp,
     Pencil,
     Trash2,
-    Save,
     ChevronRight as ChevronRightIcon,
     Banknote,
     Minus,
     Plus,
     Printer,
     Share,
-    Download,
     Filter,
 } from 'lucide-react';
 import Image from 'next/image';
@@ -35,6 +33,7 @@ import CashClosingModal, { BILLS, COINS } from '@/components/CashClosingModal';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
+import { Button } from '@/components/ui/button';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import {
     formatMonthYear,
@@ -1670,14 +1669,15 @@ export default function HistoryPage() {
 
                                         {shareMenuOpen ? (
                                             <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden z-20">
-                                                <button
+                                                <Button
                                                     type="button"
+                                                    variant="secondary"
+                                                    instance="history-export-excel"
                                                     onClick={() => openExportMonthPicker('excel')}
-                                                    className="w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors"
+                                                    className="w-full"
                                                 >
-                                                    <span className="text-[11px] font-black uppercase tracking-widest">Exportar Excel</span>
-                                                    <Download className="w-4 h-4 text-zinc-500" />
-                                                </button>
+                                                    Exportar Excel
+                                                </Button>
                                                 <div className="h-px bg-zinc-100" />
                                                 <button
                                                     type="button"
@@ -1990,25 +1990,23 @@ export default function HistoryPage() {
                         isManager ? (
                             <>
                                 {isEditing ? (
-                                    <button
+                                    <Button
                                         type="button"
+                                        variant="tertiary"
+                                        instance="history-closing-delete"
                                         onClick={handleDeleteClosing}
                                         aria-label="Eliminar cierre"
-                                        title="Eliminar cierre"
-                                        className="flex h-full min-w-ds-tactil items-center justify-center border-0 bg-transparent text-white/90 shadow-none outline-none transition-opacity hover:text-rose-200 hover:opacity-100 opacity-90 active:scale-[0.99]"
-                                    >
-                                        <Trash2 className="h-[clamp(1rem,3.2vw,1.25rem)] w-[clamp(1rem,3.2vw,1.25rem)]" />
-                                    </button>
+                                        icon={<Trash2 className="h-[clamp(1rem,3.2vw,1.25rem)] w-[clamp(1rem,3.2vw,1.25rem)]" />}
+                                    />
                                 ) : (
-                                    <button
+                                    <Button
                                         type="button"
+                                        variant="tertiary"
+                                        instance="history-closing-edit"
                                         onClick={() => { setEditData({ ...selectedClosing, breakdown: selectedClosing.breakdown ?? {} }); setIsEditing(true); }}
                                         aria-label="Editar cierre"
-                                        title="Editar cierre"
-                                        className="flex h-full min-w-ds-tactil items-center justify-center border-0 bg-transparent text-white/90 shadow-none outline-none transition-opacity hover:opacity-100 opacity-90 active:scale-[0.99]"
-                                    >
-                                        <Pencil className="h-[clamp(1rem,3.2vw,1.25rem)] w-[clamp(1rem,3.2vw,1.25rem)]" />
-                                    </button>
+                                        icon={<Pencil className="h-[clamp(1rem,3.2vw,1.25rem)] w-[clamp(1rem,3.2vw,1.25rem)]" />}
+                                    />
                                 )}
                             </>
                         ) : null
@@ -2119,21 +2117,18 @@ export default function HistoryPage() {
                                             </span>
                                             <div className="flex min-w-0 items-center justify-center">
                                                 {isEditing && openEditor ? (
-                                                    <button
-                                                        type="button"
-                                                        onClick={openEditor}
-                                                        className="w-[8.75rem] sm:w-[9.5rem] min-h-[48px] h-12 border border-[#36606F]/80 rounded-xl bg-white flex items-center justify-center relative shadow-sm active:scale-[0.98] transition-transform"
-                                                        title="Editar desglose de efectivo"
-                                                    >
-                                                        <span className="text-sm font-black tabular-nums text-zinc-800">
-                                                            {text || ' '}
-                                                        </span>
-                                                        {hasValue && (
-                                                            <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-black text-zinc-500">
-                                                                €
-                                                            </span>
-                                                        )}
-                                                    </button>
+                                                    <div className="w-[8.75rem] sm:w-[9.5rem]">
+                                                        <Button
+                                                            type="button"
+                                                            variant="secondary"
+                                                            instance="history-edit-cash-breakdown"
+                                                            onClick={openEditor}
+                                                            aria-label="Editar desglose de efectivo"
+                                                            className="w-full"
+                                                        >
+                                                            {hasValue ? `${text} €` : (text || ' ')}
+                                                        </Button>
+                                                    </div>
                                                 ) : isEditing && editable && fieldKey ? (
                                                     <div className="w-[8.75rem] sm:w-[9.5rem] h-8 border border-[#36606F]/80 rounded-xl bg-white flex items-center justify-center relative shadow-sm">
                                                         <input
@@ -2385,9 +2380,18 @@ export default function HistoryPage() {
                             ) : null}
 
                             {isEditing && (
-                                <button onClick={() => persistEditData({ exitEdit: true })} disabled={loading} className="w-full h-16 bg-[#36606F] text-white rounded-[2rem] shadow-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2">
-                                    {loading ? <LoadingSpinner size="sm" /> : <><Save size={20} /> Guardar Cierre</>}
-                                </button>
+                                <Button
+                                    type="button"
+                                    variant="primary"
+                                    instance="history-save-closing"
+                                    onClick={() => persistEditData({ exitEdit: true })}
+                                    disabled={loading}
+                                    loading={loading}
+                                    loadingLabel="Guardando…"
+                                    className="w-full"
+                                >
+                                    Guardar Cierre
+                                </Button>
                             )}
                         </div>
                     </div>
@@ -2693,17 +2697,19 @@ export default function HistoryPage() {
                         </div>
 
                         <div className="p-6 pt-0 flex gap-2">
-                            <button
+                            <Button
                                 type="button"
+                                variant="secondary"
+                                instance="history-export-month-cancel"
                                 onClick={() => {
                                     if (shareBusy) return;
                                     setExportMonthPickerOpen(false);
                                     setExportPendingFormat(null);
                                 }}
-                                className="flex-1 min-h-12 rounded-2xl border border-zinc-200 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:bg-zinc-50 transition-colors"
+                                className="flex-1"
                             >
                                 Cancelar
-                            </button>
+                            </Button>
                             <button
                                 type="button"
                                 onClick={() => void confirmExport()}

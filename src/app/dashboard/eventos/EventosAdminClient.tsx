@@ -5,8 +5,9 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
-import { ClipboardList, Copy, Loader2, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ClipboardList, Copy, Loader2, Pencil } from 'lucide-react'
 import { Modal } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
 import { createEventAction, deleteEventAction } from './actions'
 
 export type AdminEventRow = {
@@ -89,14 +90,14 @@ export default function EventosAdminClient({
           Ver pedidos
         </Link>
         {canManage ? (
-          <button
+          <Button
             type="button"
-            className={cn(btnBase, 'bg-emerald-600 text-white hover:bg-emerald-700')}
+            variant="primary"
+            instance="eventos-admin-nuevo-encargo"
             onClick={() => setCreateOpen(true)}
           >
-            <Plus className="h-4 w-4" strokeWidth={2.5} />
             Nuevo encargo
-          </button>
+          </Button>
         ) : null}
       </div>
 
@@ -150,9 +151,10 @@ export default function EventosAdminClient({
                       <Copy className="h-4 w-4" strokeWidth={2.5} />
                       Copiar enlace
                     </button>
-                    <button
+                    <Button
                       type="button"
-                      className={cn(btnBase, 'bg-red-50 text-red-700 ring-1 ring-red-200 hover:bg-red-100')}
+                      variant="destructive"
+                      instance={`eventos-admin-eliminar-${e.id}`}
                       disabled={isPending}
                       onClick={() => {
                         if (!window.confirm(`¿Eliminar el encargo de «${e.name}»?`)) return
@@ -163,9 +165,8 @@ export default function EventosAdminClient({
                         })
                       }}
                     >
-                      <Trash2 className="h-4 w-4" strokeWidth={2.5} />
                       Eliminar
-                    </button>
+                    </Button>
                   </div>
                 ) : null}
               </div>
@@ -183,19 +184,23 @@ export default function EventosAdminClient({
         variant="standard"
         layer="base"
         footer={
-          <div className="flex w-full gap-2">
-            <button
+          <div className="flex w-full items-center justify-end gap-2">
+            <Button
               type="button"
-              className={cn(btnBase, 'flex-1 bg-zinc-100 text-zinc-800 hover:bg-zinc-200')}
+              variant="secondary"
+              instance="eventos-create-cancel"
               disabled={isPending}
               onClick={closeCreateModal}
             >
               Cancelar
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className={cn(btnBase, 'flex-1 bg-emerald-600 text-white hover:bg-emerald-700')}
+              variant="primary"
+              instance="eventos-create-submit"
               disabled={!canSubmitCreate}
+              loading={isPending}
+              loadingLabel="Crear"
               onClick={() => {
                 startTransition(async () => {
                   const res = await createEventAction({
@@ -213,12 +218,12 @@ export default function EventosAdminClient({
                 })
               }}
             >
-              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Crear'}
-            </button>
+              Crear
+            </Button>
           </div>
         }
       >
-        <div className="space-y-3 p-5">
+        <div className="space-y-3">
           <div>
             <label className="block text-xs font-black uppercase tracking-wider text-zinc-700">
               Contacto del encargo

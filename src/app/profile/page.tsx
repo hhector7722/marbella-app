@@ -450,7 +450,16 @@ function ProfileContent() {
             <div className="min-h-screen flex items-center justify-center p-6">
                 <div className="bg-white rounded-[2.5rem] p-10 text-center shadow-2xl max-w-sm w-full">
                     <p className="text-gray-500 font-black uppercase tracking-widest text-xs">Perfil no encontrado</p>
-                    <button onClick={() => router.back()} className="mt-6 w-full py-4 bg-[#36606F] text-white rounded-2xl font-black uppercase text-xs tracking-widest">Volver</button>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        instance="profile-not-found-back"
+                        onClick={() => router.back()}
+                        layout="fill"
+                        className="mt-6"
+                    >
+                        Volver
+                    </Button>
                 </div>
             </div>
         );
@@ -468,18 +477,14 @@ function ProfileContent() {
                         <div className="relative z-10 grid grid-cols-[auto_1fr_auto] items-center gap-2 min-h-0">
                             <div className="shrink-0 flex items-center gap-0.5">
                                 {isManager ? (
-                                    <button
+                                    <Button
                                         type="button"
+                                        variant="tertiary"
+                                        instance="profile-open-plantilla"
                                         onClick={() => void openPlantillaFromProfile()}
-                                        className={cn(
-                                            'inline-flex min-h-12 min-w-10 shrink-0 items-center justify-center',
-                                            'border-0 bg-transparent shadow-none',
-                                            'text-white active:opacity-70',
-                                        )}
                                         aria-label="Abrir plantilla"
-                                    >
-                                        <ChevronLeft className="size-5 shrink-0" strokeWidth={2.25} />
-                                    </button>
+                                        icon={<ChevronLeft className="size-5 shrink-0" strokeWidth={2.25} />}
+                                    />
                                 ) : null}
                                 <div className="flex flex-col items-center gap-1">
                                     <Avatar
@@ -634,13 +639,15 @@ function ProfileContent() {
                                     </div>
                                 </div>
                                 {viewingOtherProfile ? (
-                                    <button
+                                    <Button
                                         type="button"
+                                        variant="primary"
+                                        instance="profile-view-records"
                                         onClick={() => router.push(`/staff/history?id=${encodeURIComponent(profile.id)}`)}
-                                        className="flex items-center justify-center gap-2 w-full min-h-[48px] py-3 rounded-2xl bg-[#36606F] text-white font-black text-[10px] uppercase tracking-widest hover:bg-[#2d4d57]"
+                                        layout="fill"
                                     >
                                         Ver registros
-                                    </button>
+                                    </Button>
                                 ) : null}
                             </div>
                         )}

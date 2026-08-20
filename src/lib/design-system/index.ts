@@ -5,7 +5,10 @@ export {
     BUTTON_FORBIDDEN_VARIANTS,
     BUTTON_LAYOUTS,
     BUTTON_VARIANTS,
+    assertButtonAnatomy,
+    buttonAnatomyErrorMessage,
     hasVisibleButtonLabel,
+    isButtonAnatomyEnforced,
     isButtonAnatomyValid,
     isButtonLayout,
     isButtonVariant,
@@ -15,6 +18,12 @@ export {
     type ButtonNameResolution,
     type ButtonVariant,
 } from './button-contract';
+export {
+    findClearBusinessNativeButtons,
+    isClearBusinessNativeButtonLabel,
+    isSpecializedButtonHostPath,
+    type NativeBusinessHit,
+} from './button-native-business-scan';
 export {
     DASHBOARD_SHORTCUT_COMPONENT_ID,
     DASHBOARD_SHORTCUT_VARIANTS,
@@ -31,7 +40,22 @@ export {
     type ModalVariant,
     type ModalVariantLayout,
 } from './modal-variants';
-export { pickModalPanelClassName } from './modal-panel-class';
+export {
+    pickModalPanelClassName,
+    isForbiddenModalPanelClassToken,
+} from './modal-panel-class';
+export {
+    hasForbiddenModalRootPaddingClassName,
+    hasForbiddenModalRootPaddingToken,
+    findModalRootPaddingClassNames,
+} from './modal-body-padding';
+export {
+    LEGACY_MODAL_FOOTER_NATIVE_BUTTON_ALLOWLIST,
+    LEGACY_MODAL_PANEL_CLASSNAME_ALLOWLIST,
+    LEGACY_MODAL_ROOT_PADDING_ALLOWLIST,
+    LEGACY_MODAL_BACKDROP_CLASSNAME_ALLOWLIST,
+    LEGACY_MODAL_ZINDEX_CLASS_ALLOWLIST,
+} from './modal-consumer-allowlists';
 export {
     MODAL_LAYERS,
     MODAL_LAYER_Z_CLASS,
@@ -70,4 +94,8 @@ export {
     type ModalBackdropKind,
 } from './modal-backdrop';
 
+export {
+    DOCUMENT_LIST_ROW_COMPONENT_ID,
+    DOCUMENT_LIST_ROW_LEGACY_FINGERPRINT,
+} from './document-list-row';
 export { CONSUMPTION_BOTTOM_SHEET_COMPONENT_ID } from './consumption-bottom-sheet';

@@ -26,6 +26,7 @@ import {
 } from '@/lib/reservas/print-encargo-document'
 import { cn } from '@/lib/utils'
 import { Modal } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
 
 function formatEncargoPrintDate(ymd: string) {
   const parts = ymd.slice(0, 10).split('-').map(Number)
@@ -218,14 +219,15 @@ export function EncargoOrderViewModal({
                 <Printer size={18} strokeWidth={2.5} />
               )}
             </button>
-            <button
+            <Button
               type="button"
+              variant="tertiary"
+              instance="encargo-order-editar"
               onClick={onEdit}
-              className="shrink-0 min-h-12 min-w-12 flex items-center justify-center hover:bg-white/10"
               aria-label="Editar encargo"
-            >
-              <Pencil size={18} strokeWidth={2.5} />
-            </button>
+              icon={<Pencil size={18} strokeWidth={2.5} />}
+              className="shrink-0"
+            />
             <button
               type="button"
               onClick={() => void handlePrintInvoice()}
@@ -242,7 +244,7 @@ export function EncargoOrderViewModal({
           </>
         }
       >
-        <div ref={tableRef} className="flex-1 overflow-y-auto min-h-0 px-4 py-3">
+        <div ref={tableRef} className="flex-1 overflow-y-auto min-h-0 py-3">
           {items.length === 0 ? (
             <p className="py-10 text-center text-xs font-semibold text-zinc-500">
               Sin productos en el pedido.
@@ -352,7 +354,7 @@ export function EncargoOrderViewModal({
         title="Reabrir pedido al cliente"
         closeOnBackdrop={!isPending}
       >
-        <div className="px-4 pt-4 pb-2">
+        <div className="pb-2">
           <div className="mt-3 space-y-2 text-[13px] font-semibold leading-snug text-zinc-600">
             <p>El cliente ya ha enviado un pedido.</p>
             <p>Al reabrir el pedido:</p>
@@ -368,14 +370,15 @@ export function EncargoOrderViewModal({
           </div>
         </div>
         <div className="shrink-0 grid grid-cols-2 gap-2 p-4 pt-3">
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            instance="encargo-order-reopen-cancelar"
             disabled={isPending}
             onClick={() => setReopenConfirmOpen(false)}
-            className="min-h-12 rounded-xl border border-zinc-200 bg-white text-[12px] font-black uppercase tracking-wider text-zinc-700 disabled:opacity-50"
           >
             Cancelar
-          </button>
+          </Button>
           <button
             type="button"
             disabled={isPending}

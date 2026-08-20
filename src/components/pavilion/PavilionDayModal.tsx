@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 import { ActivitiesTab } from '@/components/pavilion/ActivitiesTab';
 import { PdfTab } from '@/components/pavilion/PdfTab';
 import { fetchDayDetailAction } from '@/app/staff/actividades/actions';
@@ -164,8 +165,10 @@ export function PavilionDayModal({
             </button>
           ) : null}
           {isHector ? (
-            <button
+            <Button
               type="button"
+              variant="tertiary"
+              instance="pavilion-day-edit-schedule"
               onClick={() => {
                 const params = new URLSearchParams({ date: date! });
                 if (dayDetail?.pdfFilePath) {
@@ -173,11 +176,9 @@ export function PavilionDayModal({
                 }
                 router.push(`/staff/actividades/revision?${params.toString()}`);
               }}
-              className={dayChromeBtn}
               aria-label="Editar horario"
-            >
-              <Edit2 size={16} />
-            </button>
+              icon={<Edit2 size={16} />}
+            />
           ) : null}
         </>
       }

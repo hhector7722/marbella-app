@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Coins, Landmark, Calendar, Plus, Trash2 } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 import { format, startOfWeek, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { fromZonedTime } from 'date-fns-tz';
@@ -222,27 +223,25 @@ function EditWeekModal({ isOpen, onClose, date, userId, onSuccess }: EditWeekMod
             headerTone="petroleum"
             footer={
                 !loading ? (
-                    <div className="flex gap-2 w-full">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="flex-1 h-12 rounded-xl bg-zinc-100 text-zinc-600 font-black text-[9px] uppercase tracking-widest active:scale-95"
-                        >
+                    <div className="flex w-full items-center justify-end gap-2">
+                        <Button type="button" variant="secondary" instance="attendance-detail-cancel" onClick={onClose}>
                             Cancelar
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="button"
+                            variant="primary"
+                            instance="attendance-detail-save"
                             onClick={handleSave}
-                            disabled={saving}
-                            className="flex-1 h-12 rounded-xl bg-emerald-500 text-white font-black text-[9px] uppercase tracking-widest active:scale-95 flex items-center justify-center gap-1 disabled:opacity-50"
+                            loading={saving}
+                            loadingLabel="Guardar"
                         >
-                            {saving ? <LoadingSpinner size="sm" /> : 'Guardar'}
-                        </button>
+                            Guardar
+                        </Button>
                     </div>
                 ) : undefined
             }
         >
-                <div className="px-4 py-4 space-y-4">
+                <div className="space-y-4">
                     {weekLabel && (
                         <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{weekLabel}</p>
                     )}
@@ -646,19 +645,20 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
             layer="base"
             headerTrailing={
                 showAddFichajeButton ? (
-                    <button
+                    <Button
                         type="button"
+                        variant="tertiary"
+                        instance="attendance-detail-nuevo-fichaje"
                         onClick={() => setShowCreateFichaje(true)}
-                        className="flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-zinc-500 outline-none transition-opacity hover:opacity-80 active:opacity-70"
                         aria-label="Nuevo fichaje"
-                    >
-                        <Plus size={16} strokeWidth={2.5} />
-                    </button>
+                        icon={<Plus size={16} strokeWidth={2.5} />}
+                        className="shrink-0"
+                    />
                 ) : null
             }
             scrollContent={false}
         >
-                <div className="px-4 pb-4 flex flex-col flex-1 min-h-0 overflow-y-auto">
+                <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
                     {loading ? (
                         <div className="py-8 flex flex-col items-center justify-center gap-1.5">
                             <LoadingSpinner size="md" className="text-red-500" />
@@ -675,22 +675,27 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                     className="w-full max-w-[140px] mx-auto h-12 px-3 rounded-xl border-2 border-zinc-200 text-[13px] font-bold text-zinc-800 bg-white focus:ring-2 focus:ring-[#36606F] focus:border-[#36606F] outline-none block"
                                 />
                                 <div className="flex gap-2">
-                                    <button
+                                    <Button
                                         type="button"
+                                        variant="secondary"
+                                        instance="attendance-detail-crear-cancelar"
                                         onClick={() => setShowCreateFichaje(false)}
-                                        className="flex-1 h-9 rounded-xl bg-zinc-100 text-zinc-600 font-black text-[8px] uppercase tracking-widest active:scale-95"
+                                        className="flex-1"
                                     >
                                         Cancelar
-                                    </button>
-                                    <button
+                                    </Button>
+                                    <Button
                                         type="button"
+                                        variant="primary"
+                                        instance="attendance-detail-crear"
                                         onClick={handleCreateFichaje}
                                         disabled={creating}
-                                        className="flex-1 h-9 rounded-xl bg-emerald-500 text-white font-black text-[8px] uppercase tracking-widest active:scale-95 flex items-center justify-center gap-1 disabled:opacity-50 min-h-[48px]"
+                                        loading={creating}
+                                        loadingLabel="Crear"
+                                        className="flex-1"
                                     >
-                                        {creating ? <LoadingSpinner size="sm" /> : <Plus size={12} />}
                                         Crear
-                                    </button>
+                                    </Button>
                                 </div>
                                 {isManager && (
                                     <button
@@ -715,14 +720,14 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                             <Plus size={14} strokeWidth={2.5} />
                                             <span className="text-[8px] font-black uppercase tracking-widest leading-tight">Horas justificadas</span>
                                         </button>
-                                        <button
+                                        <Button
                                             type="button"
+                                            variant="tertiary"
+                                            instance="attendance-detail-editar-semana-empty"
                                             onClick={() => setEditWeekModalOpen(true)}
-                                            className="w-full max-w-[160px] min-h-[48px] rounded-xl border border-[#36606F] bg-[#36606F]/10 text-[#36606F] flex items-center justify-center gap-1.5 py-2 px-2 hover:bg-[#36606F]/20 transition-colors active:scale-95"
                                         >
-                                            <Calendar size={14} strokeWidth={2.5} />
-                                            <span className="text-[8px] font-black uppercase tracking-widest leading-tight">Editar semana</span>
-                                        </button>
+                                            Editar semana
+                                        </Button>
                                     </>
                                 )}
                             </div>
@@ -926,15 +931,15 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                             <Calendar size={14} strokeWidth={2.5} />
                                             <span className="text-[8px] font-black uppercase tracking-widest leading-tight">Semana</span>
                                         </button>
-                                        <button
+                                        <Button
                                             type="button"
+                                            variant="destructive"
+                                            instance="attendance-detail-borrar-dia"
                                             onClick={handleDeleteDay}
                                             disabled={isSaving}
-                                            className="w-full min-h-[48px] rounded-xl bg-red-50 border border-red-100 text-red-600 font-black text-[8px] uppercase tracking-widest active:scale-95 flex items-center justify-center gap-1.5 hover:bg-red-100/50 disabled:opacity-50"
                                         >
-                                            <Trash2 size={12} strokeWidth={2.5} />
-                                            <span>Borrar día</span>
-                                        </button>
+                                            Borrar día
+                                        </Button>
                                     </div>
                                 </div>
                             )}
@@ -942,12 +947,15 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                             <div className="mt-1 flex gap-1.5 shrink-0">
                                 {isManager ? (
                                     <>
-                                        <button
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                            instance="attendance-detail-salir"
                                             onClick={onClose}
-                                            className="flex-1 min-h-[48px] rounded-xl bg-white border border-rose-100 text-rose-500 font-black text-[8px] uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center"
+                                            className="flex-1"
                                         >
                                             Salir
-                                        </button>
+                                        </Button>
                                         <button
                                             onClick={handleSave}
                                             disabled={isSaving}
@@ -957,12 +965,14 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                         </button>
                                     </>
                                 ) : (
-                                    <button
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        instance="attendance-detail-cerrar"
                                         onClick={onClose}
-                                        className="w-full min-h-[48px] rounded-xl bg-rose-500 text-white font-black text-[9px] uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center"
                                     >
                                         Cerrar
-                                    </button>
+                                    </Button>
                                 )}
                             </div>
                         </div>

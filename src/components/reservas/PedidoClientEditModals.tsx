@@ -1,6 +1,6 @@
 'use client'
 
-import { Copy, Loader2, MessageCircle, User, Users } from 'lucide-react'
+import { Copy, Loader2, User, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCallback, useState } from 'react'
 
@@ -10,6 +10,7 @@ import {
   formatWhatsAppPhone,
 } from '@/lib/client-pedido-link'
 import { Modal } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
 
 export function PedidoEditorChoiceModal({
   busy,
@@ -34,7 +35,7 @@ export function PedidoEditorChoiceModal({
       headerTone="petroleum"
       closeOnBackdrop={!busy}
     >
-      <div className="p-4 space-y-3">
+      <div className="space-y-3">
         <button
           type="button"
           disabled={busy}
@@ -145,7 +146,7 @@ export function ClientPedidoShareModal({
       subtitle="Enlace cliente"
       headerTone="petroleum"
     >
-      <div className="p-4 space-y-3">
+      <div className="space-y-3">
         <p className="text-xs font-semibold text-zinc-600 leading-relaxed">
           El cliente rellena el pedido una sola vez con la carta. Tras enviarlo, el enlace se
           cierra; solo el personal podrá modificarlo después.
@@ -161,26 +162,29 @@ export function ClientPedidoShareModal({
           Copiar enlace
         </button>
 
-        <button
+        <Button
           type="button"
+          variant="primary"
+          instance="pedido-client-send-whatsapp"
           onClick={handleWhatsApp}
           disabled={!formatWhatsAppPhone(customerPhone ?? '')}
-          className="w-full min-h-12 rounded-xl bg-emerald-500 text-[12px] font-black uppercase tracking-wider text-white hover:bg-emerald-600 disabled:opacity-40 inline-flex items-center justify-center gap-2"
+          className="w-full"
         >
-          <MessageCircle className="h-4 w-4" strokeWidth={2.5} />
           Enviar WhatsApp
-        </button>
+        </Button>
 
-        <button
+        <Button
           type="button"
+          variant="primary"
+          instance="pedido-client-listo"
           onClick={() => {
             onDone?.()
             onClose()
           }}
-          className="w-full min-h-12 rounded-xl bg-[#36606F] text-[12px] font-black uppercase tracking-wider text-white"
+          className="w-full"
         >
           Listo
-        </button>
+        </Button>
       </div>
     </Modal>
   )

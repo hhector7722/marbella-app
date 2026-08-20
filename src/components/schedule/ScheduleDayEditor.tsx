@@ -16,6 +16,7 @@ import {
     ArrowLeft
 } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 import { format, addDays, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -795,9 +796,14 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
 
                         <div className="flex items-center gap-1 mt-2">
                             {/* Movemos Botón Agregar Empleado a Cabecera */}
-                            <button type="button" onClick={() => setShowAddEmployeeModal(true)} aria-label="Añadir empleado" className="w-7 h-7 md:w-8 md:h-8 bg-[#0FA968] hover:bg-emerald-600 rounded-xl flex items-center justify-center text-white transition-colors shadow-sm active:scale-95 group">
-                                <Plus size={16} strokeWidth={3} className="group-hover:rotate-90 transition-transform" />
-                            </button>
+                            <Button
+                                type="button"
+                                variant="primary"
+                                instance="schedule-day-add-employee"
+                                onClick={() => setShowAddEmployeeModal(true)}
+                                aria-label="Añadir empleado"
+                                icon={<Plus size={16} strokeWidth={3} />}
+                            />
 
                             <button
                                 type="button"
@@ -961,13 +967,14 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                         <div className="mb-1.5 flex w-full items-center justify-center gap-2 text-center">
                                             <span className="text-[9px] font-black tracking-wide text-white/90 uppercase">TARDE</span>
                                             {secondSlotExpanded && !hasSlot2Activity && (
-                                                <button
+                                                <Button
                                                     type="button"
+                                                    variant="tertiary"
+                                                    instance="schedule-day-close-slot2"
                                                     onClick={() => setSecondSlotExpanded(false)}
-                                                    className="min-h-8 shrink-0 rounded-lg px-2 text-[9px] font-black uppercase text-white/70 underline-offset-2 hover:text-white hover:underline"
                                                 >
                                                     Cerrar
-                                                </button>
+                                                </Button>
                                             )}
                                         </div>
 
@@ -1301,7 +1308,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 }
                 hideTitle
             >
-                <div className="p-5">
+                <div>
                     <div className="grid grid-cols-7 gap-1">
                         {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => <div key={d} className="text-center text-xs font-bold text-gray-400 py-1">{d}</div>)}
                         {generateCalendarDays().map((day, i) => (
@@ -1330,7 +1337,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 {...(modalParentInstance ? { parentInstance: modalParentInstance } : {})}
                 headerTone="petroleum"
             >
-                <div className="p-6 flex flex-col gap-5">
+                <div className="flex flex-col gap-5">
                     <div className="flex flex-col gap-1 text-center">
                         <span className="text-[10px] font-black tracking-widest text-zinc-400 uppercase mb-1">Estado del Horario</span>
                         <div className="text-xs uppercase font-black px-4 py-1.5 bg-gray-100 rounded-xl inline-flex self-center">
@@ -1401,12 +1408,16 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                             <Send size={18} /> {!isDaySent ? 'Enviar' : 'Reenviar'}
                         </button>
 
-                        <button
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            instance="schedule-day-share-cancel"
+                            layout="fill"
                             onClick={() => setShowShareModal(false)}
-                            className="w-full min-h-12 bg-red-500 hover:bg-red-600 text-white py-3.5 rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95 uppercase mt-1"
+                            className="mt-1"
                         >
                             Cancelar
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </Modal>

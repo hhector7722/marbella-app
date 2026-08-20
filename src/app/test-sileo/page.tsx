@@ -4,6 +4,7 @@ import React from 'react';
 import { Toaster, sileo } from 'sileo';
 import 'sileo/styles.css';
 import { CheckCircle, AlertCircle, Info, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function TestSileoPage() {
     const showSuccess = () => {
@@ -126,12 +127,15 @@ export default function TestSileoPage() {
                     Estas notificaciones utilizan un motor de física para movimientos naturales y
                     están diseñadas para no interrumpir la experiencia táctil.
                 </p>
-                <button
+                <Button
+                    type="button"
+                    variant="secondary"
+                    instance="test-sileo-back"
+                    layout="fill"
                     onClick={() => window.history.back()}
-                    className="w-full py-3 px-6 rounded-xl border border-zinc-200 hover:bg-zinc-50 transition-colors font-medium text-zinc-600"
                 >
                     Volver
-                </button>
+                </Button>
             </div>
         </div>
     );

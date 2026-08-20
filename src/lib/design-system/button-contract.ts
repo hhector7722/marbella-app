@@ -106,6 +106,43 @@ export function resolveButtonAccessibleName(args: {
     return { ok: true, iconOnly: false };
 }
 
+export function buttonAnatomyErrorMessage(
+    reason: Exclude<ButtonNameResolution, { ok: true }>['reason'],
+    instance: string
+): string {
+    switch (reason) {
+        case 'label-and-icon-forbidden':
+            return `[Button] Anatomía inválida: texto XOR icono. instance="${instance}"`;
+        case 'icon-only-requires-aria-label':
+            return `[Button] Icon-only exige aria-label. instance="${instance}"`;
+        case 'empty-requires-name':
+            return `[Button] Sin etiqueta ni icono exige aria-label. instance="${instance}"`;
+    }
+}
+
+/**
+ * Enforcement de anatomía.
+ * En desarrollo/test: lanza. En producción: no lanza (el render aplica fallback seguro).
+ */
+export function isButtonAnatomyEnforced(
+    nodeEnv: string | undefined = process.env.NODE_ENV
+): boolean {
+    return nodeEnv !== 'production';
+}
+
+export function assertButtonAnatomy(args: {
+    hasLabel: boolean;
+    hasIcon: boolean;
+    ariaLabel?: string | undefined;
+    instance: string;
+}): ButtonNameResolution {
+    const naming = resolveButtonAccessibleName(args);
+    if (!naming.ok && isButtonAnatomyEnforced()) {
+        throw new Error(buttonAnatomyErrorMessage(naming.reason, args.instance));
+    }
+    return naming;
+}
+
 export const BUTTON_CONTRACT = {
     /** Alto mínimo táctil = `tactil.minimo`. El ancho por defecto es hug. */
     height: '48px',

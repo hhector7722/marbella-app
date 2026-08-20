@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { createClient } from "@/utils/supabase/client";
 import { ChevronLeft, ChevronRight, ChartLine, Filter } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { format, startOfMonth, endOfMonth, isSameDay, addDays, subDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths } from 'date-fns';
@@ -627,23 +628,17 @@ export default function VentasPage() {
 
                             <div className="flex items-center gap-1 shrink-0 text-white">
                                 {canAccessInsights ? (
-                                    <button
+                                    <Button
                                         type="button"
-                                         onClick={() => {
+                                        variant="tertiary"
+                                        instance="ventas-open-insights"
+                                        onClick={() => {
                                              if (!navigateInsideSandbox('/dashboard/insights')) router.push('/dashboard/insights');
                                          }}
+                                        icon={<ChartLine className="w-[18px] h-[18px]" strokeWidth={2} fill="none" />}
                                         aria-label="Abrir insights"
-                                        title="Insights"
-                                        className={cn(
-                                            'min-h-12 min-w-12 shrink-0',
-                                            'bg-transparent border-0 outline-none shadow-none',
-                                            'text-white/90 hover:text-white',
-                                            'inline-flex items-center justify-center',
-                                            'active:scale-95 transition-transform',
-                                        )}
-                                    >
-                                        <ChartLine className="w-[18px] h-[18px]" strokeWidth={2} fill="none" />
-                                    </button>
+                                        className="shrink-0"
+                                    />
                                 ) : null}
 
                                 <TimeFilterButton
@@ -1039,7 +1034,7 @@ export default function VentasPage() {
                 layer="base"
                 instance={showCalendar === 'single' ? 'ventas-date-single' : 'ventas-date-range'}
             >
-                <div className="p-6">
+                <div>
                     <div className="flex items-center justify-between mb-6 px-2">
                         <button
                             type="button"
@@ -1095,7 +1090,7 @@ export default function VentasPage() {
                 layer="base"
                 instance="ventas-month-picker"
             >
-                <div className="p-6">
+                <div>
                     <div className="flex items-center justify-between mb-8 px-2">
                         <button
                             type="button"

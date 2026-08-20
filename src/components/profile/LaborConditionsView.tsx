@@ -342,17 +342,17 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
                   {vigente ? 'Editar condiciones vigentes' : 'Definir condiciones'}
                 </button>
                 {vigente ? (
-                  <button
-                    type="button"
-                    onClick={startNewVigencia}
-                    className={cn(
-                      'mt-2 flex w-full min-h-12 shrink-0 items-center justify-center rounded-xl',
-                      'border border-zinc-200 bg-white px-4 text-[10px] font-black uppercase tracking-widest text-zinc-700',
-                      'active:scale-[0.98]',
-                    )}
-                  >
-                    Nueva vigencia desde fecha
-                  </button>
+                  <div className="mt-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      instance="labor-conditions-new-vigencia"
+                      onClick={startNewVigencia}
+                      className="w-full shrink-0"
+                    >
+                      Nueva vigencia desde fecha
+                    </Button>
+                  </div>
                 ) : null}
               </div>
             </section>

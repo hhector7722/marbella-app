@@ -239,13 +239,15 @@ export default function GestionActividadesPage() {
                 </td>
                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
                   <div className="flex items-center justify-end gap-1 sm:gap-2">
-                    <button
+                    <Button
+                      type="button"
+                      variant="tertiary"
+                      instance={`gestion-actividad-editar-${act.id}`}
                       onClick={() => openEditModal(act)}
                       disabled={savingId === act.id}
-                      className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 text-[10px] sm:text-xs font-semibold transition-colors disabled:opacity-50"
                     >
                       Editar
-                    </button>
+                    </Button>
                     <button
                       onClick={() => handleToggleActive(act)}
                       disabled={savingId === act.id}
