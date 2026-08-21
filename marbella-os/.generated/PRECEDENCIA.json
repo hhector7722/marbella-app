@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "d9cdf389c91bdc75",
+  "_huella": "9a5b2a953c0ebd6a",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -124,6 +124,21 @@
       "vence": null,
       "depende_de": [
         "ADR-0007"
+      ]
+    },
+    {
+      "ruta": "marbella-os/4-decisiones/ADR-0009-modal-subordinacion.md",
+      "documento": "ADR-0009",
+      "clase": "inmutable",
+      "estado": "vigente",
+      "capa": "decisiones",
+      "normativo": true,
+      "citable": true,
+      "precedencia": 80,
+      "vence": null,
+      "depende_de": [
+        "ADR-0007",
+        "ADR-0008"
       ]
     },
     {

@@ -172,6 +172,9 @@ Norma en [EXPERIENCIA §1](EXPERIENCIA.md#1-táctil).
 | `estructura.cabecera-modal` | 36 px | Alto fijo de cabecera de Modal (norma global; el contenido se adapta tipográficamente) | adoptado (`--modal-header-height`) |
 | `estructura.modal-cabecera-inset` | 16 px (= `espacio.4`) | Inset horizontal único de cabecera Modal (ref. Albaranes). Título y subtítulo empiezan aquí | adoptado (`--modal-header-inset`) |
 | `estructura.modal-cuerpo-inicio` | 12 px (= `espacio.3`) | Separación vertical mínima Header → primer contenido del Body. No es inset completo del Body | adoptado (`--modal-body-start-gap`) |
+| `estructura.modal-subordinado-blur` | 4 px | Blur del panel Modal cubierto bajo `derived`/`system` ([ADR-0009](../4-decisiones/ADR-0009-modal-subordinacion.md)) | adoptado (`--modal-subordinate-blur`) |
+| `estructura.modal-subordinado-saturate` | 72 % | Saturación del panel subordinado (acompaña al blur) | adoptado (`--modal-subordinate-saturate`) |
+| `estructura.modal-subordinado-opacity` | 0.58 | Opacidad del panel subordinado | adoptado (`--modal-subordinate-opacity`) |
 | `estructura.ancho-lectura` | 1400 px | Ancho máximo de contenido en escritorio | declarado |
 
 Se usa la medida de alto visible real del dispositivo, no la teórica: es la causa histórica de modales cortados en la aplicación instalada.

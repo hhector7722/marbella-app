@@ -421,7 +421,7 @@ function EncargoCartModal({
         </Button>
       }
     >
-      <div className="flex-1 overflow-y-auto min-h-0 px-2 py-1.5">
+      <div className="flex-1 overflow-y-auto min-h-0 py-1.5">
           {lines.length === 0 ? (
             <p className="py-8 text-center text-xs font-semibold text-zinc-500">Sin productos aún.</p>
           ) : (
@@ -918,9 +918,33 @@ export function EncargoProductEditor({
     </>
   )
 
-  const body = (
+  const editorFooter = (
     <>
+      <Button
+        type="button"
+        variant="secondary"
+        instance="encargo-product-editor-cancel"
+        disabled={isPending}
+        onClick={onClose}
+      >
+        Cancelar
+      </Button>
+      <Button
+        type="button"
+        variant="primary"
+        instance="encargo-product-editor-save"
+        disabled={isPending || loadingMenu}
+        loading={isPending}
+        loadingLabel="Guardar"
+        onClick={handleSave}
+      >
+        Guardar
+      </Button>
+    </>
+  )
 
+  const editorContent = (
+    <>
       <div className="flex-1 min-h-0 flex flex-col bg-white overflow-hidden">
         <div className="shrink-0 px-3 py-2 border-b border-zinc-100 bg-white">
           <div className="relative">
@@ -959,28 +983,6 @@ export function EncargoProductEditor({
         </div>
       </div>
 
-      <div className="shrink-0 border-t border-zinc-100 px-3 py-2 bg-white">
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            type="button"
-            variant="secondary"
-            instance="encargo-product-editor-cancel"
-            disabled={isPending}
-            onClick={onClose}
-          >
-            Cancelar
-          </Button>
-          <button
-            type="button"
-            disabled={isPending || loadingMenu}
-            onClick={handleSave}
-            className="min-h-10 rounded-lg bg-[#36606F] text-[10px] font-black uppercase text-white disabled:opacity-50"
-          >
-            {isPending ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : 'Guardar'}
-          </button>
-        </div>
-      </div>
-
       {cartModalOpen ? (
         <EncargoCartModal
           lines={lines}
@@ -995,7 +997,14 @@ export function EncargoProductEditor({
   )
 
   if (!asModal) {
-    return <div className={cn('min-h-screen flex flex-col bg-white mx-auto', EDITOR_MODAL_CLASS)}>{body}</div>
+    return (
+      <div className={cn('min-h-screen flex flex-col bg-white mx-auto', EDITOR_MODAL_CLASS)}>
+        {editorContent}
+        <div className="shrink-0 flex items-center justify-end gap-2 border-t border-zinc-100 px-3 py-2 bg-white">
+          {editorFooter}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -1012,8 +1021,9 @@ export function EncargoProductEditor({
       ariaLabel={`Editor de pedido: ${eventName}`}
       closeOnBackdrop={!isPending}
       className={EDITOR_MODAL_CLASS}
+      footer={editorFooter}
     >
-      {body}
+      {editorContent}
     </Modal>
   )
 }

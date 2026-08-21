@@ -349,7 +349,7 @@ export const StaffScheduleModal = ({
                                         prevDay.setDate(prevDay.getDate() - 1);
                                         void handleDayClick(prevDay);
                                     }}
-                                    className="flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white/90 outline-none transition-opacity hover:opacity-100 active:opacity-70"
+                                    className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white/90 outline-none transition-opacity hover:opacity-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                                     aria-label="Día anterior"
                                 >
                                     <ChevronLeft size={18} strokeWidth={2.5} />
@@ -358,7 +358,7 @@ export const StaffScheduleModal = ({
                                 <button
                                     type="button"
                                     onClick={() => navigateMonth(-1)}
-                                    className="flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white/90 outline-none transition-opacity hover:opacity-100 active:opacity-70"
+                                    className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white/90 outline-none transition-opacity hover:opacity-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                                     aria-label="Mes anterior"
                                 >
                                     <ChevronLeft size={20} strokeWidth={2.5} />
@@ -373,7 +373,7 @@ export const StaffScheduleModal = ({
                                         nextDay.setDate(nextDay.getDate() + 1);
                                         void handleDayClick(nextDay);
                                     }}
-                                    className="flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white/90 outline-none transition-opacity hover:opacity-100 active:opacity-70"
+                                    className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white/90 outline-none transition-opacity hover:opacity-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                                     aria-label="Día siguiente"
                                 >
                                     <ChevronRight size={18} strokeWidth={2.5} />
@@ -382,7 +382,7 @@ export const StaffScheduleModal = ({
                                 <button
                                     type="button"
                                     onClick={() => navigateMonth(1)}
-                                    className="flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white/90 outline-none transition-opacity hover:opacity-100 active:opacity-70"
+                                    className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white/90 outline-none transition-opacity hover:opacity-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                                     aria-label="Mes siguiente"
                                 >
                                     <ChevronRight size={20} strokeWidth={2.5} />
@@ -390,14 +390,14 @@ export const StaffScheduleModal = ({
                             )}
 
                             {selectedDate && userEmail === 'hhector7722@gmail.com' ? (
-                                <Button
+                                <button
                                     type="button"
-                                    variant="tertiary"
-                                    instance="staff-schedule-edit-day"
                                     onClick={() => setEditModeForDate(format(selectedDate, 'yyyy-MM-dd'))}
+                                    className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                                     aria-label="Editar este día"
-                                    icon={<Edit2 size={16} strokeWidth={2.5} />}
-                                />
+                                >
+                                    <Edit2 size={18} strokeWidth={2.5} />
+                                </button>
                             ) : null}
                         </>
                     ) : null

@@ -723,7 +723,7 @@ export const CashChangeModal = ({
                                 const y = prev.month === 1 ? prev.year - 1 : prev.year;
                                 return { year: y, month: m };
                             })}
-                            className="flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none"
+                            className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                             aria-label="Mes anterior"
                         >
                             <ChevronLeft size={20} strokeWidth={3} />
@@ -738,7 +738,7 @@ export const CashChangeModal = ({
                                 const y = prev.month === 12 ? prev.year + 1 : prev.year;
                                 return { year: y, month: m };
                             })}
-                            className="flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none"
+                            className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                             aria-label="Mes siguiente"
                         >
                             <ChevronRight size={20} strokeWidth={3} />

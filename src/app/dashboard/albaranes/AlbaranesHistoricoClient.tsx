@@ -1396,32 +1396,34 @@ export default function AlbaranesHistoricoClient({
         headerTrailing={
           <>
                     {detail?.id && detail?.supplier_id ? (
-                      <Button
+                      <button
                         type="button"
-                        variant="tertiary"
-                        instance="albaran-detail-auto-map"
                         onClick={() => void runAutoMap(detail.id)}
                         disabled={autoMapLoading}
-                        loading={autoMapLoading}
+                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                         aria-label="Auto-mapear aprendidos"
-                        icon={
-                          <Sparkles className="h-[clamp(1rem,3.2vw,1.25rem)] w-[clamp(1rem,3.2vw,1.25rem)]" />
-                        }
-                      />
+                      >
+                        {autoMapLoading ? (
+                          <Loader2 size={18} strokeWidth={2.5} className="animate-spin" />
+                        ) : (
+                          <Sparkles size={18} strokeWidth={2.5} />
+                        )}
+                      </button>
                     ) : null}
                     {isManager && detail?.id ? (
-                      <Button
+                      <button
                         type="button"
-                        variant="tertiary"
-                        instance="albaran-detail-delete"
                         onClick={() => void deleteInvoice(detail.id)}
                         disabled={deletingInvoice}
-                        loading={deletingInvoice}
+                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                         aria-label="Eliminar albarán"
-                        icon={
-                          <Trash2 className="h-[clamp(1rem,3.2vw,1.25rem)] w-[clamp(1rem,3.2vw,1.25rem)]" />
-                        }
-                      />
+                      >
+                        {deletingInvoice ? (
+                          <Loader2 size={18} strokeWidth={2.5} className="animate-spin" />
+                        ) : (
+                          <Trash2 size={18} strokeWidth={2.5} />
+                        )}
+                      </button>
                     ) : null}
                   </>
         }

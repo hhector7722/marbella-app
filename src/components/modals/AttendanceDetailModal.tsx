@@ -645,15 +645,14 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
             layer="base"
             headerTrailing={
                 showAddFichajeButton ? (
-                    <Button
+                    <button
                         type="button"
-                        variant="tertiary"
-                        instance="attendance-detail-nuevo-fichaje"
                         onClick={() => setShowCreateFichaje(true)}
+                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                         aria-label="Nuevo fichaje"
-                        icon={<Plus size={16} strokeWidth={2.5} />}
-                        className="shrink-0"
-                    />
+                    >
+                        <Plus size={18} strokeWidth={2.5} />
+                    </button>
                 ) : null
             }
             scrollContent={false}

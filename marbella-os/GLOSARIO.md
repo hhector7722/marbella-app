@@ -205,6 +205,7 @@ Vocabulario congelado por [ADR-0001](4-decisiones/ADR-0001-hours-engine-producto
 | **Superficie derivada** | Overlay auxiliar de la misma tarea que el Modal base. Como máximo una a la vez. Capa `derived`. Lo decide [ADR-0007](4-decisiones/ADR-0007-modal-superficie-derivada.md). |
 | **Capa semántica de overlay** | Papel de apilamiento del Modal: `base`, `sheet`, `derived` o `system`. El consumidor elige el nombre, no un z-index. [ADR-0007](4-decisiones/ADR-0007-modal-superficie-derivada.md). |
 | **Navegación padre→hijo (Modal)** | Historial explícito entre instancias de Modal (`parentInstance` → `instance`). No es layer, no es z-index y no es la pila de Escape. Un `base` puede tener padre; un `derived` no implica volver. Contrato en [SISTEMA-DE-COMPONENTES — Modal](2-diseno/SISTEMA-DE-COMPONENTES.md#modal). |
+| **Modal subordinado** | Panel de una superficie Modal que no es la cima de la pila: atenuado (blur, opacity) e inerte al pointer. No es un backdrop distinto. Lo decide [ADR-0009](4-decisiones/ADR-0009-modal-subordinacion.md). |
 | **Copiloto** | Asistente conversacional del producto, con permisos propios por rol. |
 | **Uso** | Telemetría interna de actividad de las personas del equipo dentro del producto. |
 | **Regla de valor vacío** | En vistas de lectura, un valor igual a cero se muestra en blanco, no como «0». Norma de producto, definida en `2-diseno/CONTENIDO-Y-TONO.md`. Nombre anterior: *Zero-Display*. |

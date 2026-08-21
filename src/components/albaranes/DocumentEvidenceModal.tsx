@@ -168,6 +168,21 @@ export function DocumentEvidenceModal({
       headerTitleAlign="left"
       title="Auditoría de evidencia"
       subtitle={formatEvidenceSubtitle(supplierName, invoiceNumber)}
+      footer={
+        canSelectRows ? (
+          <Button
+            type="button"
+            variant="primary"
+            instance="albaran-document-evidence-confirm"
+            disabled={!selectedRowId || confirming}
+            loading={confirming}
+            loadingLabel="Confirmando…"
+            onClick={() => void handleConfirmEvidence()}
+          >
+            Confirmar evidencia
+          </Button>
+        ) : undefined
+      }
     >
       <div className="bg-zinc-50/50 min-w-0 max-w-full flex flex-col gap-2">
           {loading ? (
@@ -476,22 +491,10 @@ export function DocumentEvidenceModal({
                   </div>
 
                   {canSelectRows ? (
-                    <div className="shrink-0 border-t border-zinc-100 px-2 py-2 flex flex-col gap-1 bg-white">
+                    <div className="pt-2 flex flex-col gap-1">
                       {confirmError ? (
-                        <p className="text-xs font-medium text-red-600 px-1">{confirmError}</p>
+                        <p className="text-xs font-medium text-red-600">{confirmError}</p>
                       ) : null}
-                      <Button
-                        type="button"
-                        variant="primary"
-                        className="w-full"
-                        instance="albaran-document-evidence-confirm"
-                        disabled={!selectedRowId || confirming}
-                        loading={confirming}
-                        loadingLabel="Confirmando…"
-                        onClick={() => void handleConfirmEvidence()}
-                      >
-                        Confirmar evidencia
-                      </Button>
                       <p className="text-[9px] font-normal text-zinc-400 text-center leading-snug">
                         Solo vínculo documental · no modifica mapping
                       </p>

@@ -44,7 +44,7 @@ Es la fuente única de esta correspondencia. La regla de agente de `.cursor/rule
 | Cualquier cosa, para situarte | [ARQUITECTURA](3-ingenieria/ARQUITECTURA.md) |
 | Cualquier cosa, para saber cómo está | [ESTADO](5-estado/ESTADO.md), [DEUDA](5-estado/DEUDA.md) |
 | Una pantalla o un componente | [EXPERIENCIA](2-diseno/EXPERIENCIA.md), [LENGUAJE-VISUAL](2-diseno/LENGUAJE-VISUAL.md), [TOKENS](2-diseno/TOKENS.md), [PATRONES](2-diseno/PATRONES.md), [SISTEMA-DE-COMPONENTES](2-diseno/SISTEMA-DE-COMPONENTES.md) |
-| Un overlay, modal o capa superpuesta | [EXPERIENCIA §8](2-diseno/EXPERIENCIA.md#8-modales), [PATRONES P2](2-diseno/PATRONES.md#p2--modal), [SISTEMA-DE-COMPONENTES — Modal](2-diseno/SISTEMA-DE-COMPONENTES.md#modal), [ADR-0007](4-decisiones/ADR-0007-modal-superficie-derivada.md), [ADR-0008](4-decisiones/ADR-0008-modal-backdrop-capas.md) |
+| Un overlay, modal o capa superpuesta | [EXPERIENCIA §8](2-diseno/EXPERIENCIA.md#8-modales), [PATRONES P2](2-diseno/PATRONES.md#p2--modal), [SISTEMA-DE-COMPONENTES — Modal](2-diseno/SISTEMA-DE-COMPONENTES.md#modal), [ADR-0007](4-decisiones/ADR-0007-modal-superficie-derivada.md), [ADR-0008](4-decisiones/ADR-0008-modal-backdrop-capas.md), [ADR-0009](4-decisiones/ADR-0009-modal-subordinacion.md) |
 | Código de interfaz | [FRONTEND](3-ingenieria/FRONTEND.md) |
 | Textos, etiquetas, formatos numéricos | [CONTENIDO-Y-TONO](2-diseno/CONTENIDO-Y-TONO.md) |
 | Un documento impreso | [DOCUMENTOS-IMPRESOS](2-diseno/DOCUMENTOS-IMPRESOS.md) |

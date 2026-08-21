@@ -180,7 +180,6 @@ export function OrderSuccessModal({
                         type="button"
                         variant="secondary"
                         instance="order-success-back"
-                        layout="fill"
                         onClick={onClose}
                     >
                         Atrás
@@ -247,13 +246,11 @@ export function OrderSuccessModal({
                 usageId="order-success-confirm-send"
                 usageLabel="Confirmar envío pedido"
                 footer={
-                    <div className="flex w-full gap-2">
+                    <>
                         <Button
                             type="button"
                             variant="secondary"
                             instance="order-success-confirm-cancel"
-                            layout="fill"
-                            className="flex-1"
                             onClick={() => setShowConfirmEnviar(false)}
                         >
                             Cancelar
@@ -262,13 +259,11 @@ export function OrderSuccessModal({
                             type="button"
                             variant="primary"
                             instance="order-success-confirm-submit"
-                            layout="fill"
-                            className="flex-1"
                             onClick={handleConfirmEnviar}
                         >
                             Sí, enviar
                         </Button>
-                    </div>
+                    </>
                 }
             >
                 <p className="text-sm font-medium text-zinc-700">

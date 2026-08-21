@@ -4,8 +4,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { Bell } from 'lucide-react'
 import { toast } from 'sonner'
 import { getPushSubscriptionStatus, saveSubscription } from '@/app/actions/notifications'
-import { cn } from '@/lib/utils'
 import { Modal } from '@/components/ui/modal'
+import { Button } from '@/components/ui/button'
 import {
   PUSH_PROMPT_COPY,
   PUSH_PROMPT_FORCE_PREVIEW,
@@ -17,7 +17,6 @@ import {
   PUSH_PROMPT_DISMISS_KEY,
   subscribeAndGetPushSubscription,
 } from '@/lib/push-notifications-client'
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { normalizeNotificationEmail } from '@/lib/notification-recipients'
 import { createClient } from '@/utils/supabase/client'
 
@@ -161,34 +160,27 @@ export function PushNotificationsPrompt() {
           </p>
         ) : null}
 
-        <div className="shrink-0 flex flex-col gap-3 pt-1">
-          <button
+        <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
+          <Button
             type="button"
+            variant="primary"
+            instance="push-notifications-activate"
+            disabled={loading}
+            loading={loading}
+            loadingLabel="Activando…"
             onClick={() => void handleActivate()}
-            disabled={loading}
-            className={cn(
-              'w-full min-h-[48px] rounded-xl font-black uppercase tracking-wider text-sm',
-              'bg-[#36606F] text-white shadow-sm active:scale-[0.98] transition-transform',
-              'disabled:opacity-60 disabled:pointer-events-none',
-            )}
           >
-            {loading ? (
-              <span className="inline-flex items-center justify-center gap-2">
-                <LoadingSpinner className="w-4 h-4 border-white/30 border-t-white" />
-                Activando…
-              </span>
-            ) : (
-              PUSH_PROMPT_COPY.activateLabel
-            )}
-          </button>
-          <button
+            {PUSH_PROMPT_COPY.activateLabel}
+          </Button>
+          <Button
             type="button"
-            onClick={handleDismiss}
+            variant="secondary"
+            instance="push-notifications-dismiss"
             disabled={loading}
-            className="w-full min-h-[48px] rounded-xl font-bold text-sm text-zinc-500 hover:bg-zinc-50 active:scale-[0.98] transition-transform"
+            onClick={handleDismiss}
           >
             {PUSH_PROMPT_COPY.dismissLabel}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>

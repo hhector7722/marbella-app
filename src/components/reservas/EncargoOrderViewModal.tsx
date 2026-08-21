@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useRef, useState, useTransition } from 'react'
-import { Copy, Link2, Loader2, MessageCircle, Pencil, Printer, Receipt, RotateCcw } from 'lucide-react'
+import { Loader2, Pencil, Printer, Receipt } from 'lucide-react'
 import { toast } from 'sonner'
 
 import type { EventOrderItem } from '@/app/dashboard/eventos/[eventId]/pedidos/PedidosEventoClient'
@@ -24,7 +24,6 @@ import {
   buildEncargoPrintHtml,
   printEncargoHtml,
 } from '@/lib/reservas/print-encargo-document'
-import { cn } from '@/lib/utils'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 
@@ -242,6 +241,51 @@ export function EncargoOrderViewModal({
             </button>
           </>
         }
+        footer={
+          alreadySubmitted ? (
+            <Button
+              type="button"
+              variant="primary"
+              instance="encargo-order-reopen"
+              disabled={isPending}
+              onClick={() => setReopenConfirmOpen(true)}
+            >
+              Reabrir pedido al cliente
+            </Button>
+          ) : linkOpen && localToken ? (
+            <>
+              <Button
+                type="button"
+                variant="secondary"
+                instance="encargo-order-copy-link"
+                onClick={() => void handleCopyLink()}
+              >
+                Copiar enlace
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                instance="encargo-order-whatsapp"
+                onClick={handleWhatsApp}
+                disabled={!formatWhatsAppPhone(contactPhone ?? '')}
+              >
+                WhatsApp
+              </Button>
+            </>
+          ) : (
+            <Button
+              type="button"
+              variant="primary"
+              instance="encargo-order-enable-client-edit"
+              disabled={isPending}
+              loading={isPending}
+              loadingLabel="Permitir edición cliente"
+              onClick={handleEnableClientEdit}
+            >
+              Permitir edición cliente
+            </Button>
+          )
+        }
       >
         <div ref={tableRef} className="flex-1 overflow-y-auto min-h-0 py-3">
           {items.length === 0 ? (
@@ -286,60 +330,13 @@ export function EncargoOrderViewModal({
               </table>
             </div>
           )}
-        </div>
 
-        <div className="shrink-0 border-t border-zinc-100 px-4 py-3 space-y-2">
           {alreadySubmitted ? (
-            <>
-              <p className="text-[11px] font-semibold leading-snug text-zinc-500">
-                El cliente ya envió este pedido. El enlace está cerrado. Solo el personal puede
-                editarlo.
-              </p>
-              <button
-                type="button"
-                disabled={isPending}
-                onClick={() => setReopenConfirmOpen(true)}
-                className="w-full min-h-12 rounded-xl border border-amber-200 bg-amber-50 text-[11px] font-black uppercase tracking-wider text-amber-900 disabled:opacity-50 inline-flex items-center justify-center gap-2"
-              >
-                <RotateCcw className="h-4 w-4" strokeWidth={2.5} />
-                Reabrir pedido al cliente
-              </button>
-            </>
-          ) : linkOpen && localToken ? (
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => void handleCopyLink()}
-                className="min-h-12 rounded-xl bg-zinc-100 text-[11px] font-black uppercase tracking-wider text-zinc-800 inline-flex items-center justify-center gap-1.5"
-              >
-                <Copy className="h-3.5 w-3.5" strokeWidth={2.5} />
-                Copiar enlace
-              </button>
-              <button
-                type="button"
-                onClick={handleWhatsApp}
-                disabled={!formatWhatsAppPhone(contactPhone ?? '')}
-                className="min-h-12 rounded-xl bg-emerald-500 text-[11px] font-black uppercase tracking-wider text-white disabled:opacity-40 inline-flex items-center justify-center gap-1.5"
-              >
-                <MessageCircle className="h-3.5 w-3.5" strokeWidth={2.5} />
-                WhatsApp
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={handleEnableClientEdit}
-              className="w-full min-h-12 rounded-xl border border-zinc-200 bg-white text-[11px] font-black uppercase tracking-wider text-[#36606F] disabled:opacity-50 inline-flex items-center justify-center gap-2"
-            >
-              {isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Link2 className="h-4 w-4" strokeWidth={2.5} />
-              )}
-              Permitir edición cliente
-            </button>
-          )}
+            <p className="pt-3 text-[11px] font-semibold leading-snug text-zinc-500">
+              El cliente ya envió este pedido. El enlace está cerrado. Solo el personal puede
+              editarlo.
+            </p>
+          ) : null}
         </div>
       </Modal>
 

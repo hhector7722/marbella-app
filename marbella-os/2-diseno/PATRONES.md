@@ -53,7 +53,7 @@ El patrón más usado del producto. Sus leyes están en [EXPERIENCIA §8](EXPERI
 **Reglas**:
 - La cabecera dice de qué es el modal, no qué debe hacer la persona. Altura fija (`estructura.cabecera-modal`); inset horizontal único (`estructura.modal-cabecera-inset`); título y subtítulo en la misma fila, centrados por el trazo; iconos sin marco/fondo por defecto. Radio único del panel (`radio.superficie`). Separación Header → Body fija (`espacio.3`).
 - El pie de acciones no se desplaza y no se encoge nunca (slot `footer` del componente). No fuerza botones a ancho completo.
-- Un modal no abre otro modal de tarea. Solo se admite **una superficie derivada** auxiliar ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)); el backdrop no acumula blur ([ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md)).
+- Un modal no abre otro modal de tarea. Solo se admite **una superficie derivada** auxiliar ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)); el backdrop no acumula blur ([ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md)); el panel cubierto se subordina visualmente ([ADR-0009](../4-decisiones/ADR-0009-modal-subordinacion.md)).
 - La navegación padre→hijo no es nesting de capas ni z-index (`AF-MODAL-NAV-NO-ES-LAYER`). Contrato en [Modal](SISTEMA-DE-COMPONENTES.md#modal).
 - Al abrirse, las barras fijas de la aplicación se atenúan y dejan de responder al toque.
 - Sin scroll horizontal. Centrado respecto al viewport visible.

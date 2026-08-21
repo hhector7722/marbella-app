@@ -335,6 +335,66 @@ function ReservationDetailModal({
           Pedido
         </button>
       }
+      footer={
+        deleteConfirmOpen ? (
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              instance="reserva-detalle-cancelar-eliminar"
+              onClick={() => setDeleteConfirmOpen(false)}
+              disabled={isBusy}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              instance="reserva-detalle-confirmar-eliminar"
+              onClick={() => onAction('delete')}
+              disabled={isBusy}
+              loading={actionBusy === 'delete'}
+              loadingLabel="Sí, eliminar"
+            >
+              Sí, eliminar
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              type="button"
+              variant="primary"
+              instance="reserva-detalle-confirmar"
+              onClick={() => onAction('confirm')}
+              disabled={isBusy}
+              loading={actionBusy === 'confirm'}
+              loadingLabel="Confirmar"
+            >
+              Confirmar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              instance="reserva-detalle-rechazar"
+              onClick={() => onAction('reject')}
+              disabled={isBusy}
+              loading={actionBusy === 'reject'}
+              loadingLabel="Rechazar"
+            >
+              Rechazar
+            </Button>
+            <Button
+              type="button"
+              variant="tertiary"
+              instance="reserva-detalle-eliminar"
+              onClick={() => setDeleteConfirmOpen(true)}
+              disabled={isBusy}
+            >
+              Eliminar
+            </Button>
+          </>
+        )
+      }
     >
       <div className="flex-1 overflow-y-auto min-h-0">
           <div className="pt-4 pb-3">
@@ -403,72 +463,12 @@ function ReservationDetailModal({
               </div>
             ) : null}
           </div>
-        </div>
 
-        <div className="shrink-0 border-t border-zinc-100 bg-white py-3">
           {deleteConfirmOpen ? (
-            <div className="flex flex-col gap-2">
-              <p className="text-[12px] font-bold text-rose-700 text-center">
-                ¿Eliminar la reserva de {reservation.customer_name}?
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  instance="reserva-detalle-cancelar-eliminar"
-                  onClick={() => setDeleteConfirmOpen(false)}
-                  disabled={isBusy}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  instance="reserva-detalle-confirmar-eliminar"
-                  onClick={() => onAction('delete')}
-                  disabled={isBusy}
-                  loading={actionBusy === 'delete'}
-                  loadingLabel="Sí, eliminar"
-                >
-                  Sí, eliminar
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-1">
-              <Button
-                type="button"
-                variant="primary"
-                instance="reserva-detalle-confirmar"
-                onClick={() => onAction('confirm')}
-                disabled={isBusy}
-                loading={actionBusy === 'confirm'}
-                loadingLabel="Confirmar"
-              >
-                Confirmar
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                instance="reserva-detalle-rechazar"
-                onClick={() => onAction('reject')}
-                disabled={isBusy}
-                loading={actionBusy === 'reject'}
-                loadingLabel="Rechazar"
-              >
-                Rechazar
-              </Button>
-              <Button
-                type="button"
-                variant="tertiary"
-                instance="reserva-detalle-eliminar"
-                onClick={() => setDeleteConfirmOpen(true)}
-                disabled={isBusy}
-              >
-                Eliminar
-              </Button>
-            </div>
-          )}
+            <p className="pt-4 pb-2 text-[12px] font-bold text-rose-700 text-center">
+              ¿Eliminar la reserva de {reservation.customer_name}?
+            </p>
+          ) : null}
         </div>
     </Modal>
   )

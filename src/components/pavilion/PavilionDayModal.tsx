@@ -7,7 +7,6 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Modal } from '@/components/ui/modal';
-import { Button } from '@/components/ui/button';
 import { ActivitiesTab } from '@/components/pavilion/ActivitiesTab';
 import { PdfTab } from '@/components/pavilion/PdfTab';
 import { fetchDayDetailAction } from '@/app/staff/actividades/actions';
@@ -27,9 +26,9 @@ function parseLocalSafe(dateStr: string): Date {
   return new Date(y, m - 1, d);
 }
 
-/** Chrome de cabecera Modal (36px). No es Button. */
+/** Chrome de cabecera Modal (36px visual + hit ≥48). No es Button. */
 const dayChromeBtn =
-  'flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white/90 shadow-none outline-none transition-opacity hover:opacity-100 active:opacity-70';
+  "relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white/90 shadow-none outline-none transition-opacity hover:opacity-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']";
 
 export function PavilionDayModal({
   open,
@@ -165,10 +164,8 @@ export function PavilionDayModal({
             </button>
           ) : null}
           {isHector ? (
-            <Button
+            <button
               type="button"
-              variant="tertiary"
-              instance="pavilion-day-edit-schedule"
               onClick={() => {
                 const params = new URLSearchParams({ date: date! });
                 if (dayDetail?.pdfFilePath) {
@@ -176,9 +173,11 @@ export function PavilionDayModal({
                 }
                 router.push(`/staff/actividades/revision?${params.toString()}`);
               }}
+              className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
               aria-label="Editar horario"
-              icon={<Edit2 size={16} />}
-            />
+            >
+              <Edit2 size={18} strokeWidth={2.5} />
+            </button>
           ) : null}
         </>
       }

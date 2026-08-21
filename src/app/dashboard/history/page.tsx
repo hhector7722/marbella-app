@@ -1990,23 +1990,23 @@ export default function HistoryPage() {
                         isManager ? (
                             <>
                                 {isEditing ? (
-                                    <Button
+                                    <button
                                         type="button"
-                                        variant="tertiary"
-                                        instance="history-closing-delete"
                                         onClick={handleDeleteClosing}
+                                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                                         aria-label="Eliminar cierre"
-                                        icon={<Trash2 className="h-[clamp(1rem,3.2vw,1.25rem)] w-[clamp(1rem,3.2vw,1.25rem)]" />}
-                                    />
+                                    >
+                                        <Trash2 size={18} strokeWidth={2.5} />
+                                    </button>
                                 ) : (
-                                    <Button
+                                    <button
                                         type="button"
-                                        variant="tertiary"
-                                        instance="history-closing-edit"
                                         onClick={() => { setEditData({ ...selectedClosing, breakdown: selectedClosing.breakdown ?? {} }); setIsEditing(true); }}
+                                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                                         aria-label="Editar cierre"
-                                        icon={<Pencil className="h-[clamp(1rem,3.2vw,1.25rem)] w-[clamp(1rem,3.2vw,1.25rem)]" />}
-                                    />
+                                    >
+                                        <Pencil size={18} strokeWidth={2.5} />
+                                    </button>
                                 )}
                             </>
                         ) : null

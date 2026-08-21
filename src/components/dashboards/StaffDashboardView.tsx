@@ -1409,7 +1409,7 @@ export default function StaffDashboardView() {
             >
                             <QuickCalculatorModal isOpen={cashOptionsCalculatorOpen} onClose={() => setCashOptionsCalculatorOpen(false)} />
                             <FloatingCalculatorFab isOpen={cashOptionsCalculatorOpen} onToggle={() => setCashOptionsCalculatorOpen(true)} />
-                            <div className="px-6 py-5 flex flex-col gap-5 bg-white">
+                            <div className="py-5 flex flex-col gap-5 bg-white">
                                 <button
                                     onClick={() => {
                                         trackStaffCashOption('Cambio');

@@ -36,6 +36,10 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
 
+## 2026-08-20
+
+- **ADR-0009 — subordinación visual del panel Modal cubierto.** Cuando hay `derived`/`system` encima, el panel base se atenúa (blur, opacity, `pointer-events-none`) sin portal ni z-index extra. Sustituye la lectura de nitidez del inferior en ADR-0008; ADR-0008 no se edita (backdrop por capa intacto). [ADR-0009](../4-decisiones/ADR-0009-modal-subordinacion.md).
+
 ## 2026-08-19
 
 - **Button: cero icono+texto en consumidores.** Los Button con etiqueta visible ya no llevan `icon`. El contrato no cambia. Icon-only con `aria-label` sigue fuera del footer de Modal.
