@@ -1301,9 +1301,23 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 headerTone="petroleum"
                 headerTrailing={
                     <div className="flex items-center gap-1">
-                        <button type="button" onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))} aria-label="Mes anterior" className="text-white hover:bg-white/10 p-2 rounded-xl transition-all"><ChevronLeft size={20} /></button>
+                        <button
+                            type="button"
+                            onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))}
+                            aria-label="Mes anterior"
+                            className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white outline-none transition-opacity hover:bg-white/10 hover:opacity-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+                        >
+                            <ChevronLeft size={20} />
+                        </button>
                         <span className="text-white font-black uppercase tracking-widest text-sm min-w-[120px] text-center capitalize">{calendarDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</span>
-                        <button type="button" onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))} aria-label="Mes siguiente" className="text-white hover:bg-white/10 p-2 rounded-xl transition-all"><ChevronRight size={20} /></button>
+                        <button
+                            type="button"
+                            onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))}
+                            aria-label="Mes siguiente"
+                            className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white outline-none transition-opacity hover:bg-white/10 hover:opacity-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+                        >
+                            <ChevronRight size={20} />
+                        </button>
                     </div>
                 }
                 hideTitle

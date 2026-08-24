@@ -197,7 +197,14 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
     const uploadTrailing = isManager && resolvedUserId ? (
         <>
             <input type="file" id="nomina-upload" className="hidden" accept=".pdf" onChange={handleUpload} disabled={uploading} />
-            <label htmlFor="nomina-upload" className={cn('min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl cursor-pointer transition-colors bg-white/20 hover:bg-white/30', uploading && 'opacity-60 cursor-wait')}>
+            <label
+                htmlFor="nomina-upload"
+                className={cn(
+                    'relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 cursor-pointer items-center justify-center rounded-ds-control border-0 bg-white/20 text-white shadow-none outline-none transition-colors hover:bg-white/30 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-[""]',
+                    uploading && 'opacity-60 cursor-wait'
+                )}
+                aria-label="Subir nómina"
+            >
                 {uploading ? <LoadingSpinner size="sm" className="text-white" /> : <Plus size={22} strokeWidth={2.5} />}
             </label>
         </>

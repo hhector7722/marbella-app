@@ -74,6 +74,9 @@ importers:
       next:
         specifier: ^16.2.6
         version: 16.2.11(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      ollama:
+        specifier: ^0.6.3
+        version: 0.6.3
       papaparse:
         specifier: ^5.5.3
         version: 5.5.4
@@ -1642,6 +1645,7 @@ packages:
   eslint@9.39.5:
     resolution: {integrity: sha512-DgZS62aPLXKlnxILS/AYCoRvHaZeXceIzlXPkkGGzJWSow1aEk0lbTlxUSlyjC8jcaKxAdOnTDz+o1JFSBsyjw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -2377,6 +2381,9 @@ packages:
     resolution: {integrity: sha512-gXah6aZrcUxjWg2zR2MwouP2eHlCBzdV4pygudehaKXSGW4v2AsRQUK+lwwXhii6KFZcunEnmSUoYp5CXibxtA==}
     engines: {node: '>= 0.4'}
 
+  ollama@0.6.3:
+    resolution: {integrity: sha512-KEWEhIqE5wtfzEIZbDCLH51VFZ6Z3ZSa6sIOg/E/tBV8S51flyqBOXi+bRxlOYKDf8i327zG9eSTb8IJxvm3Zg==}
+
   once@1.4.0:
     resolution: {integrity: sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==}
 
@@ -3038,6 +3045,9 @@ packages:
   webrtc-adapter@9.0.6:
     resolution: {integrity: sha512-CHbl2ZQbxx164IgWRgzJno4hWtM4tFbRam1QfI3Yxhs3w/DvqluVxVWeXs3oL5/fbGkSNLKo0Ty5MgUWceNhog==}
     engines: {node: '>=6.0.0', npm: '>=3.10.0'}
+
+  whatwg-fetch@3.6.20:
+    resolution: {integrity: sha512-EqhiFU6daOA8kpjOWTL0olhVOF3i7OrFzSYiGsEMB8GcXS+RrzauAERX65xMeNWVqxA6HXH2m69Z9LaKKdisfg==}
 
   whatwg-url@5.0.0:
     resolution: {integrity: sha512-saE57nupxk6v3HY35+jzBwYa0rKSy0XR8JSxZPwgLr7ys0IBzhGviA1/TUGJLmSVqs8pb9AnvICXEuOHLprYTw==}
@@ -5470,6 +5480,10 @@ snapshots:
       define-properties: 1.2.1
       es-object-atoms: 1.1.2
 
+  ollama@0.6.3:
+    dependencies:
+      whatwg-fetch: 3.6.20
+
   once@1.4.0:
     dependencies:
       wrappy: 1.0.2
@@ -6298,6 +6312,8 @@ snapshots:
   webrtc-adapter@9.0.6:
     dependencies:
       sdp: 3.2.2
+
+  whatwg-fetch@3.6.20: {}
 
   whatwg-url@5.0.0:
     dependencies:

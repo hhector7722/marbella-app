@@ -1400,7 +1400,7 @@ export default function StaffDashboardView() {
                             setIsCashOptionsModalOpen(false);
                             setIsCashChangeModalOpen(true);
                         }}
-                        className="flex h-full min-w-ds-tactil items-center justify-center border-0 bg-transparent p-0 text-white opacity-80 shadow-none outline-none transition-opacity hover:opacity-100"
+                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent p-0 text-white opacity-80 shadow-none outline-none transition-opacity hover:opacity-100 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                         aria-label="Cambio entre cajas"
                     >
                         <Image src="/icons/change.png" alt="" width={28} height={28} className="h-7 w-7 object-contain" aria-hidden />

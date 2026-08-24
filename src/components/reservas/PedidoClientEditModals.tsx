@@ -1,6 +1,6 @@
 'use client'
 
-import { Copy, Loader2, User, Users } from 'lucide-react'
+import { Loader2, User, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCallback, useState } from 'react'
 
@@ -145,47 +145,44 @@ export function ClientPedidoShareModal({
       title={customerName}
       subtitle="Enlace cliente"
       headerTone="petroleum"
+      footer={
+        <>
+          <Button
+            type="button"
+            variant="secondary"
+            instance="pedido-client-copy-link"
+            disabled={busy}
+            onClick={() => void handleCopy()}
+          >
+            Copiar enlace
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            instance="pedido-client-send-whatsapp"
+            onClick={handleWhatsApp}
+            disabled={!formatWhatsAppPhone(customerPhone ?? '')}
+          >
+            Enviar WhatsApp
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            instance="pedido-client-listo"
+            onClick={() => {
+              onDone?.()
+              onClose()
+            }}
+          >
+            Listo
+          </Button>
+        </>
+      }
     >
-      <div className="space-y-3">
-        <p className="text-xs font-semibold text-zinc-600 leading-relaxed">
-          El cliente rellena el pedido una sola vez con la carta. Tras enviarlo, el enlace se
-          cierra; solo el personal podrá modificarlo después.
-        </p>
-
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => void handleCopy()}
-          className="w-full min-h-12 rounded-xl bg-zinc-100 text-[12px] font-black uppercase tracking-wider text-zinc-800 active:opacity-80 disabled:opacity-50 inline-flex items-center justify-center gap-2"
-        >
-          <Copy className="h-4 w-4" strokeWidth={2.5} />
-          Copiar enlace
-        </button>
-
-        <Button
-          type="button"
-          variant="primary"
-          instance="pedido-client-send-whatsapp"
-          onClick={handleWhatsApp}
-          disabled={!formatWhatsAppPhone(customerPhone ?? '')}
-          className="w-full"
-        >
-          Enviar WhatsApp
-        </Button>
-
-        <Button
-          type="button"
-          variant="primary"
-          instance="pedido-client-listo"
-          onClick={() => {
-            onDone?.()
-            onClose()
-          }}
-          className="w-full"
-        >
-          Listo
-        </Button>
-      </div>
+      <p className="text-xs font-semibold text-zinc-600 leading-relaxed">
+        El cliente rellena el pedido una sola vez con la carta. Tras enviarlo, el enlace se
+        cierra; solo el personal podrá modificarlo después.
+      </p>
     </Modal>
   )
 }

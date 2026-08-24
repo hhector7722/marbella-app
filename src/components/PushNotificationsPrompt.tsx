@@ -150,17 +150,8 @@ export function PushNotificationsPrompt() {
       headerTrailing={
         <Bell size={22} strokeWidth={2.5} className="shrink-0 text-white" aria-hidden />
       }
-    >
-      <div className="space-y-5">
-        <p className="text-sm text-zinc-600 leading-relaxed">{PUSH_PROMPT_COPY.lead}</p>
-
-        {permissionDenied ? (
-          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 leading-relaxed">
-            {PUSH_PROMPT_COPY.deniedHint}
-          </p>
-        ) : null}
-
-        <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
+      footer={
+        <>
           <Button
             type="button"
             variant="primary"
@@ -181,7 +172,17 @@ export function PushNotificationsPrompt() {
           >
             {PUSH_PROMPT_COPY.dismissLabel}
           </Button>
-        </div>
+        </>
+      }
+    >
+      <div className="space-y-5">
+        <p className="text-sm text-zinc-600 leading-relaxed">{PUSH_PROMPT_COPY.lead}</p>
+
+        {permissionDenied ? (
+          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 leading-relaxed">
+            {PUSH_PROMPT_COPY.deniedHint}
+          </p>
+        ) : null}
       </div>
     </Modal>
   )
