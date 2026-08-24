@@ -12,7 +12,10 @@ import {
 } from '@/lib/albaranes-line-status'
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { formatYmdInMadrid } from '@/lib/madrid-date-bounds'
+import {
+  getDefaultPurchaseInvoicesDateRange,
+  PURCHASE_INVOICES_INITIAL_LIMIT,
+} from '@/lib/albaranes/purchase-invoices-list'
 
 type GateResult =
   | { ok: true; supabase: Awaited<ReturnType<typeof createClient>>; userId: string; role: string | null }
@@ -210,141 +213,126 @@ export type PurchaseInvoiceListItem = {
   is_fully_processed: boolean
 }
 
+const PURCHASE_INVOICE_LIST_SELECT = `
+      id,
+      created_at,
+      created_by,
+      source,
+      status,
+      ocr_error,
+      supplier_id,
+      invoice_number,
+      invoice_date,
+      total_amount,
+      file_path,
+      suppliers(name,image_url)
+    `
+
+function mapPurchaseInvoiceRows(data: unknown[]): Omit<PurchaseInvoiceListItem, 'is_fully_processed'>[] {
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    created_at: r.created_at,
+    created_by: r.created_by ?? null,
+    source: r.source ?? null,
+    status: r.status ?? null,
+    ocr_error: r.ocr_error ?? null,
+    supplier_id: r.supplier_id ?? null,
+    supplier_name: r.suppliers?.name ?? null,
+    supplier_image_url: r.suppliers?.image_url ?? null,
+    invoice_number: r.invoice_number ?? null,
+    invoice_date: r.invoice_date ?? null,
+    total_amount: r.total_amount ?? null,
+    file_path: r.file_path ?? null,
+  }))
+}
+
+type QueryPurchaseInvoicesListParams = {
+  limit: number
+  offset?: number
+  dateFrom?: string | null
+  dateTo?: string | null
+  supplierId?: number | null
+}
+
+/**
+ * Paginación por offset (`.range`): keyset compuesto con `invoice_date` nullable
+ * no es práctico en PostgREST sin RPC dedicada; el histórico es append-mostly y
+ * el orden es estable (invoice_date ↓, created_at ↓).
+ */
+async function queryPurchaseInvoicesList(
+  gate: Extract<GateResult, { ok: true }>,
+  params: QueryPurchaseInvoicesListParams
+): Promise<{ items: PurchaseInvoiceListItem[]; hasMore: boolean; canViewAll: boolean }> {
+  const limit = Math.min(Math.max(Number(params.limit) || 1, 1), 200)
+  const offset = Math.max(Number(params.offset ?? 0) || 0, 0)
+  const fetchCount = limit + 1
+  const canViewAll = gate.role === 'manager' || gate.role === 'admin' || gate.role === 'supervisor'
+
+  let q = gate.supabase
+    .from('purchase_invoices')
+    .select(PURCHASE_INVOICE_LIST_SELECT)
+    .order('invoice_date', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false })
+
+  const dateFrom = String(params.dateFrom ?? '').trim()
+  const dateTo = String(params.dateTo ?? '').trim()
+  if (dateFrom) q = q.gte('invoice_date', dateFrom)
+  if (dateTo) q = q.lte('invoice_date', dateTo)
+
+  const supplierId = params.supplierId
+  if (supplierId != null && Number.isFinite(supplierId)) {
+    q = q.eq('supplier_id', supplierId)
+  }
+
+  q = q.range(offset, offset + fetchCount - 1)
+
+  const { data, error } = await q
+  if (error) throw error
+
+  const rows = mapPurchaseInvoiceRows((data as unknown[]) ?? [])
+  const hasMore = rows.length > limit
+  const pageRows = hasMore ? rows.slice(0, limit) : rows
+  const items = await enrichInvoicesWithProcessingState(gate.supabase, pageRows)
+
+  return { items, hasMore, canViewAll }
+}
+
 export async function listPurchaseInvoicesAction(params?: {
   limit?: number
-}): Promise<{ success: true; items: PurchaseInvoiceListItem[]; canViewAll: boolean } | { success: false; message: string }> {
+  offset?: number
+  dateFrom?: string | null
+  dateTo?: string | null
+  supplierId?: number | null
+}): Promise<
+  | { success: true; items: PurchaseInvoiceListItem[]; hasMore: boolean; canViewAll: boolean }
+  | { success: false; message: string }
+> {
   const gate = await gateAuthenticated()
   if (!gate.ok) return { success: false, message: gate.message }
 
-  const limit = Math.min(Math.max(Number(params?.limit ?? 50) || 50, 1), 200)
-  // Lectura del histórico abierta a TODO authenticated (staff, supervisor,
-  // manager, admin). Está alineado con la RLS real de Supabase (SELECT con
-  // qual=true). Las acciones de modificación (UPDATE/DELETE/mapeo/reparar
-  // stock/cambio de proveedor) siguen restringidas a manager/admin más
-  // abajo. `canViewAll` se mantiene en el payload por compatibilidad
-  // (algunos consumidores aún lo leen) pero ya no filtra la query.
-  const canViewAll = gate.role === 'manager' || gate.role === 'admin' || gate.role === 'supervisor'
+  const limit = Math.min(Math.max(Number(params?.limit ?? PURCHASE_INVOICES_INITIAL_LIMIT) || PURCHASE_INVOICES_INITIAL_LIMIT, 1), 200)
 
-  const q = gate.supabase
-    .from('purchase_invoices')
-    .select(
-      `
-      id,
-      created_at,
-      created_by,
-      source,
-      status,
-      ocr_error,
-      supplier_id,
-      invoice_number,
-      invoice_date,
-      total_amount,
-      file_path,
-      suppliers(name,image_url)
-    `
-    )
-    .order('invoice_date', { ascending: false, nullsFirst: false })
-    .order('created_at', { ascending: false })
-    .limit(limit)
-
-  const { data, error } = await q
-  if (error) return { success: false, message: error.message }
-
-  const baseItems = (data ?? []).map((r: any) => ({
-    id: r.id,
-    created_at: r.created_at,
-    created_by: r.created_by ?? null,
-    source: r.source ?? null,
-    status: r.status ?? null,
-    ocr_error: r.ocr_error ?? null,
-    supplier_id: r.supplier_id ?? null,
-    supplier_name: r.suppliers?.name ?? null,
-    supplier_image_url: r.suppliers?.image_url ?? null,
-    invoice_number: r.invoice_number ?? null,
-    invoice_date: r.invoice_date ?? null,
-    total_amount: r.total_amount ?? null,
-    file_path: r.file_path ?? null,
-  })) as Omit<PurchaseInvoiceListItem, 'is_fully_processed'>[]
-
-  const items = await enrichInvoicesWithProcessingState(gate.supabase, baseItems)
-
-  return { success: true, items, canViewAll }
-}
-
-function parseYmd(ymd: string): { y: number; m: number; d: number } | null {
-  const t = String(ymd ?? '').trim()
-  const m = t.match(/^(\d{4})-(\d{2})-(\d{2})$/)
-  if (!m) return null
-  const y = Number(m[1])
-  const mo = Number(m[2])
-  const d = Number(m[3])
-  if (!Number.isFinite(y) || !Number.isFinite(mo) || !Number.isFinite(d)) return null
-  return { y, m: mo, d }
-}
-
-function formatYmd(d: Date): string {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
-
-function addDays(ymd: string, days: number): string {
-  const p = parseYmd(ymd)
-  if (!p) return ymd
-  const dt = new Date(p.y, p.m - 1, p.d)
-  dt.setDate(dt.getDate() + days)
-  return formatYmd(dt)
+  try {
+    const { items, hasMore, canViewAll } = await queryPurchaseInvoicesList(gate, {
+      limit,
+      offset: params?.offset ?? 0,
+      dateFrom: params?.dateFrom ?? null,
+      dateTo: params?.dateTo ?? null,
+      supplierId: params?.supplierId ?? null,
+    })
+    return { success: true, items, hasMore, canViewAll }
+  } catch (e: unknown) {
+    return { success: false, message: e instanceof Error ? e.message : 'Error listando albaranes' }
+  }
 }
 
 async function listPurchaseInvoicesByRange(gate: Extract<GateResult, { ok: true }>, startYmd: string, endYmd: string, limit = 200) {
-  // Lectura abierta a TODO authenticated (alineado con RLS de Supabase).
-  // Ver nota en `listPurchaseInvoicesAction`. `canViewAll` se mantiene
-  // por compatibilidad del payload.
-  const canViewAll = gate.role === 'manager' || gate.role === 'admin' || gate.role === 'supervisor'
-  const q = gate.supabase
-    .from('purchase_invoices')
-    .select(
-      `
-      id,
-      created_at,
-      created_by,
-      source,
-      status,
-      ocr_error,
-      supplier_id,
-      invoice_number,
-      invoice_date,
-      total_amount,
-      file_path,
-      suppliers(name,image_url)
-    `
-    )
-    .gte('invoice_date', startYmd)
-    .lte('invoice_date', endYmd)
-    .order('invoice_date', { ascending: false, nullsFirst: false })
-    .order('created_at', { ascending: false })
-    .limit(limit)
-  const { data, error } = await q
-  if (error) throw error
-  const baseItems = (data ?? []).map((r: any) => ({
-    id: r.id,
-    created_at: r.created_at,
-    created_by: r.created_by ?? null,
-    source: r.source ?? null,
-    status: r.status ?? null,
-    ocr_error: r.ocr_error ?? null,
-    supplier_id: r.supplier_id ?? null,
-    supplier_name: r.suppliers?.name ?? null,
-    supplier_image_url: r.suppliers?.image_url ?? null,
-    invoice_number: r.invoice_number ?? null,
-    invoice_date: r.invoice_date ?? null,
-    total_amount: r.total_amount ?? null,
-    file_path: r.file_path ?? null,
-  })) as Omit<PurchaseInvoiceListItem, 'is_fully_processed'>[]
-
-  const items = await enrichInvoicesWithProcessingState(gate.supabase, baseItems)
-  return { items, canViewAll }
+  return queryPurchaseInvoicesList(gate, {
+    limit,
+    offset: 0,
+    dateFrom: startYmd,
+    dateTo: endYmd,
+  })
 }
 
 async function enrichInvoicesWithProcessingState(
@@ -411,19 +399,31 @@ async function enrichInvoicesWithProcessingState(
 
 /** Listado inicial del histórico: últimos 45 días (Madrid), no solo la semana calendario. */
 export async function listPurchaseInvoicesDefaultWeekAction(): Promise<
-  | { success: true; items: PurchaseInvoiceListItem[]; canViewAll: boolean; weekStart: string; weekEnd: string }
+  | {
+      success: true
+      items: PurchaseInvoiceListItem[]
+      hasMore: boolean
+      canViewAll: boolean
+      weekStart: string
+      weekEnd: string
+    }
   | { success: false; message: string }
 > {
   const gate = await gateAuthenticated()
   if (!gate.ok) return { success: false, message: gate.message }
 
-  const todayYmd = formatYmdInMadrid(new Date())
-  const rangeEnd = todayYmd
-  const rangeStart = addDays(todayYmd, -44)
+  const { dateFrom: rangeStart, dateTo: rangeEnd } = getDefaultPurchaseInvoicesDateRange()
 
   try {
-    const cur = await listPurchaseInvoicesByRange(gate, rangeStart, rangeEnd, 200)
-    return { success: true, items: cur.items, canViewAll: cur.canViewAll, weekStart: rangeStart, weekEnd: rangeEnd }
+    const cur = await listPurchaseInvoicesByRange(gate, rangeStart, rangeEnd, PURCHASE_INVOICES_INITIAL_LIMIT)
+    return {
+      success: true,
+      items: cur.items,
+      hasMore: cur.hasMore,
+      canViewAll: cur.canViewAll,
+      weekStart: rangeStart,
+      weekEnd: rangeEnd,
+    }
   } catch (e: any) {
     return { success: false, message: e?.message ?? 'Error listando albaranes' }
   }

@@ -48,6 +48,10 @@ import type {
 import { appendScannerPageToInvoiceAction, replaceScannerImageAction, retryOcrInvoiceAction } from '../scanner/actions'
 import { ScannerClient } from '../scanner/ScannerClient'
 import {
+  PURCHASE_INVOICES_INITIAL_LIMIT,
+  PURCHASE_INVOICES_PAGE_SIZE,
+} from '@/lib/albaranes/purchase-invoices-list'
+import {
   autoMapKnownLinesAction,
   deletePurchaseInvoiceAction,
   excludeInvoiceLineFromMappingAction,
@@ -98,10 +102,16 @@ function isImagePath(filePath: string | null) {
 
 export default function AlbaranesHistoricoClient({
   initialItems,
+  initialHasMore,
+  defaultDateFrom,
+  defaultDateTo,
   initialError,
   isManager,
 }: {
   initialItems: PurchaseInvoiceListItem[]
+  initialHasMore: boolean
+  defaultDateFrom: string
+  defaultDateTo: string
   initialError: string | null
   isManager: boolean
 }) {
@@ -111,6 +121,11 @@ export default function AlbaranesHistoricoClient({
   const deepLinkHandledRef = useRef<string | null>(null)
 
   const [items, setItems] = useState<PurchaseInvoiceListItem[]>(initialItems)
+  const [hasMore, setHasMore] = useState(initialHasMore)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [activeDateFrom, setActiveDateFrom] = useState(defaultDateFrom)
+  const [activeDateTo, setActiveDateTo] = useState(defaultDateTo)
+  const [activeSupplierId, setActiveSupplierId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(initialError)
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -278,31 +293,65 @@ export default function AlbaranesHistoricoClient({
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    const supplierId = filterSupplierId.trim() ? Number(filterSupplierId) : null
-    const from = filterFrom.trim()
-    const to = filterTo.trim()
+    if (!q) return items
 
     return items.filter((it) => {
       const hay = [it.supplier_name, it.invoice_number, it.invoice_date, it.source, it.status, String(it.id)]
         .filter(Boolean)
         .join(' ')
         .toLowerCase()
-
-      if (q && !hay.includes(q)) return false
-
-      if (supplierId != null) {
-        const sid = it.supplier_id == null ? null : Number(it.supplier_id)
-        if (sid !== supplierId) return false
-      }
-
-      const d = String(it.invoice_date ?? '').trim()
-      if (from && d && d < from) return false
-      if (to && d && d > to) return false
-      if ((from || to) && !d) return false
-
-      return true
+      return hay.includes(q)
     })
-  }, [items, query, filterSupplierId, filterFrom, filterTo])
+  }, [items, query])
+
+  function resolveDateFilters(from: string, to: string) {
+    const hasCustomFrom = from.trim().length > 0
+    const hasCustomTo = to.trim().length > 0
+    if (!hasCustomFrom && !hasCustomTo) {
+      return { dateFrom: defaultDateFrom, dateTo: defaultDateTo }
+    }
+    return {
+      dateFrom: hasCustomFrom ? from.trim() : null,
+      dateTo: hasCustomTo ? to.trim() : null,
+    }
+  }
+
+  function buildListQueryParams(offset: number, limit: number) {
+    return {
+      limit,
+      offset,
+      dateFrom: activeDateFrom.trim() || null,
+      dateTo: activeDateTo.trim() || null,
+      supplierId: activeSupplierId,
+    }
+  }
+
+  function mergeUniqueInvoiceItems(
+    prev: PurchaseInvoiceListItem[],
+    next: PurchaseInvoiceListItem[]
+  ): PurchaseInvoiceListItem[] {
+    if (next.length === 0) return prev
+    const seen = new Set(prev.map((x) => x.id))
+    const merged = prev.slice()
+    for (const it of next) {
+      if (seen.has(it.id)) continue
+      seen.add(it.id)
+      merged.push(it)
+    }
+    return merged
+  }
+
+  async function fetchInvoiceListPage(offset: number, limit: number, replace: boolean) {
+    const res = await listPurchaseInvoicesAction(buildListQueryParams(offset, limit))
+    if (!res.success) {
+      setError(res.message)
+      return null
+    }
+    setError(null)
+    setItems((prev) => (replace ? res.items : mergeUniqueInvoiceItems(prev, res.items)))
+    setHasMore(res.hasMore)
+    return res
+  }
 
   const mappedLinesWithoutStockCount = useMemo(() => {
     if (!detail) return 0
@@ -362,12 +411,43 @@ export default function AlbaranesHistoricoClient({
   function refresh() {
     setError(null)
     startTransition(async () => {
-      const res = await listPurchaseInvoicesAction({ limit: 60 })
+      await fetchInvoiceListPage(0, Math.max(items.length, PURCHASE_INVOICES_INITIAL_LIMIT), true)
+    })
+  }
+
+  function loadMore() {
+    if (!hasMore || isLoadingMore || isPending) return
+    setIsLoadingMore(true)
+    void (async () => {
+      try {
+        await fetchInvoiceListPage(items.length, PURCHASE_INVOICES_PAGE_SIZE, false)
+      } finally {
+        setIsLoadingMore(false)
+      }
+    })()
+  }
+
+  async function applyServerFilters(nextFrom: string, nextTo: string, nextSupplierId: number | null) {
+    const { dateFrom, dateTo } = resolveDateFilters(nextFrom, nextTo)
+    setActiveDateFrom(dateFrom ?? '')
+    setActiveDateTo(dateTo ?? '')
+    setActiveSupplierId(nextSupplierId)
+    setFilterOpen(false)
+    startTransition(async () => {
+      const res = await listPurchaseInvoicesAction({
+        limit: PURCHASE_INVOICES_INITIAL_LIMIT,
+        offset: 0,
+        dateFrom,
+        dateTo,
+        supplierId: nextSupplierId,
+      })
       if (!res.success) {
         setError(res.message)
         return
       }
+      setError(null)
       setItems(res.items)
+      setHasMore(res.hasMore)
     })
   }
 
@@ -381,9 +461,12 @@ export default function AlbaranesHistoricoClient({
     if (!hasProcessingItems) return
     const t = window.setInterval(() => {
       void (async () => {
-        const res = await listPurchaseInvoicesAction({ limit: 60 })
+        const res = await listPurchaseInvoicesAction(
+          buildListQueryParams(0, Math.max(items.length, PURCHASE_INVOICES_INITIAL_LIMIT))
+        )
         if (!res.success) return
         setItems(res.items)
+        setHasMore(res.hasMore)
         const sid = selectedId
         if (!sid) return
         const row = res.items.find((x) => x.id === sid)
@@ -407,7 +490,7 @@ export default function AlbaranesHistoricoClient({
       })()
     }, 4000)
     return () => window.clearInterval(t)
-  }, [hasProcessingItems, selectedId])
+  }, [hasProcessingItems, selectedId, items.length, activeDateFrom, activeDateTo, activeSupplierId])
 
   async function handleRetryOcr() {
     if (!detail?.id) return
@@ -571,8 +654,7 @@ export default function AlbaranesHistoricoClient({
         setStockStatusByLineId(map)
       }
       startTransition(async () => {
-        const listRes = await listPurchaseInvoicesAction({ limit: 60 })
-        if (listRes.success) setItems(listRes.items)
+        await fetchInvoiceListPage(0, Math.max(items.length, PURCHASE_INVOICES_INITIAL_LIMIT), true)
       })
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Error al subir la hoja')
@@ -739,9 +821,15 @@ export default function AlbaranesHistoricoClient({
       }
 
       // Refrescar detalle y lista para que título/logo se actualicen al instante
-      const [dRes, lRes] = await Promise.all([getPurchaseInvoiceDetailAction(detail.id), listPurchaseInvoicesAction({ limit: 60 })])
+      const [dRes, lRes] = await Promise.all([
+        getPurchaseInvoiceDetailAction(detail.id),
+        listPurchaseInvoicesAction(buildListQueryParams(0, Math.max(items.length, PURCHASE_INVOICES_INITIAL_LIMIT))),
+      ])
       if (dRes.success) setDetail(dRes.detail)
-      if (lRes.success) setItems(lRes.items)
+      if (lRes.success) {
+        setItems(lRes.items)
+        setHasMore(lRes.hasMore)
+      }
 
       if (dRes.success) {
         const st = await getInvoiceStockStatusesAction({ lineIds: dRes.detail.lines.map((l) => l.id) })
@@ -1063,8 +1151,13 @@ export default function AlbaranesHistoricoClient({
       setAutoMapReport(res.report)
 
       // Refrescar la lista y, si hay un detalle abierto, también su contenido + estado de stock.
-      const lRes = await listPurchaseInvoicesAction({ limit: 60 })
-      if (lRes.success) setItems(lRes.items)
+      const lRes = await listPurchaseInvoicesAction(
+        buildListQueryParams(0, Math.max(items.length, PURCHASE_INVOICES_INITIAL_LIMIT))
+      )
+      if (lRes.success) {
+        setItems(lRes.items)
+        setHasMore(lRes.hasMore)
+      }
       if (detail) {
         const dRes = await getPurchaseInvoiceDetailAction(detail.id)
         if (dRes.success) {
@@ -1110,8 +1203,13 @@ export default function AlbaranesHistoricoClient({
       setStockStatusByLineId({})
       setLineForEditModal(null)
       setLineForMappingModal(null)
-      const lRes = await listPurchaseInvoicesAction({ limit: 60 })
-      if (lRes.success) setItems(lRes.items)
+      const lRes = await listPurchaseInvoicesAction(
+        buildListQueryParams(0, Math.max(items.length, PURCHASE_INVOICES_INITIAL_LIMIT))
+      )
+      if (lRes.success) {
+        setItems(lRes.items)
+        setHasMore(lRes.hasMore)
+      }
     } finally {
       setDeletingInvoice(false)
     }
@@ -1354,6 +1452,22 @@ export default function AlbaranesHistoricoClient({
                     </button>
                   )
                 })}
+                {hasMore ? (
+                  <div className="px-2 py-3">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      instance="albaranes-load-more"
+                      onClick={loadMore}
+                      disabled={isLoadingMore || isPending}
+                      loading={isLoadingMore}
+                      loadingLabel="Cargando"
+                      className="w-full min-h-12"
+                    >
+                      VER MÁS
+                    </Button>
+                  </div>
+                ) : null}
               </div>
             )}
           </div>
@@ -2109,7 +2223,8 @@ export default function AlbaranesHistoricoClient({
                     supplierName,
                   })
                 )
-                setFilterOpen(false)
+                const nextSupplierId = filterSupplierId.trim() ? Number(filterSupplierId) : null
+                void applyServerFilters(filterFrom, filterTo, nextSupplierId)
               }}
             >
               Aplicar
