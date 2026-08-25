@@ -444,6 +444,10 @@
  */
 [data-component='PageScreen'] [data-element='header'],
 [data-component='Surface'][data-variant='page'] > [data-element='header'] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espacio-3);
   background-color: var(--color-marca);
   color: var(--color-texto-invertido);
   padding-inline: var(--espacio-4);

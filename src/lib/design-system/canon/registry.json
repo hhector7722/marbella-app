@@ -1,0 +1,265 @@
+{
+  "source": "marbella-visual-canon",
+    "updatedAt": "2026-08-25T20:30:00.000Z",
+  "elements": {
+    "color": {
+      "status": "CANON CERRADO",
+      "version": 1,
+      "properties": {}
+    },
+    "typography": {
+      "status": "CANON CERRADO",
+      "version": 1,
+      "properties": {}
+    },
+    "spacing": {
+      "status": "CANON CERRADO",
+      "version": 1,
+      "properties": {}
+    },
+    "radius": {
+      "status": "CANON CERRADO",
+      "version": 1,
+      "properties": {}
+    },
+    "elevation": {
+      "status": "CANON CERRADO",
+      "version": 1,
+      "properties": {}
+    },
+    "touch-target": {
+      "status": "CANON CERRADO",
+      "version": 1,
+      "properties": {}
+    },
+    "focus-ring": {
+      "status": "CANON CERRADO",
+      "version": 1,
+      "properties": {}
+    },
+    "page-header": {
+      "status": "CANON CERRADO",
+      "version": 1,
+      "properties": {
+        "align-x": "edges",
+        "align-y": "center",
+        "px": "espacio.4",
+        "py": "espacio.4",
+        "title-size": "tipo.titulo-pantalla"
+      }
+    },
+    "block-header": {
+      "status": "SIN CANON",
+      "version": 0,
+      "properties": {
+        "align-x": "edges",
+        "title-size": "tipo.minimo",
+        "px": "espacio.3",
+        "py": "espacio.2"
+      }
+    },
+    "modal-header": {
+      "status": "CANON CERRADO",
+      "version": 1,
+      "properties": {
+        "align-x": "left"
+      }
+    },
+    "derived-modal-header": {
+      "status": "HEREDADO",
+      "version": 1,
+      "properties": {},
+      "inherits": "modal-header"
+    },
+    "layout-alignment": {
+      "status": "BORRADOR / PROPUESTA",
+      "version": 0,
+      "properties": {
+        "align-x": "edges",
+        "align-y": "center"
+      }
+    },
+    "button": {
+      "status": "CANON CERRADO",
+      "version": 1,
+      "properties": {
+        "height": "tactil.minimo",
+        "radius": "espacio.2",
+        "px": "espacio.2",
+        "focus": "color.marca",
+        "align-x": "center"
+      }
+    },
+    "modal": {
+      "status": "CANON CERRADO",
+      "version": 1,
+      "properties": {}
+    },
+    "surface": {
+      "status": "CANON CERRADO",
+      "version": 1,
+      "properties": {}
+    },
+    "pagescreen": {
+      "status": "CANON CERRADO",
+      "version": 1,
+      "properties": {}
+    },
+    "field": {
+      "status": "BORRADOR / PROPUESTA",
+      "version": 0,
+      "properties": {
+        "height": "tactil.minimo",
+        "radius": "radio.control",
+        "px": "espacio.3",
+        "focus": "color.marca",
+        "label-gap": "espacio.1"
+      }
+    },
+    "search": {
+      "status": "BORRADOR / PROPUESTA",
+      "version": 0,
+      "properties": {
+        "height": "tactil.minimo",
+        "radius": "radio.control",
+        "px": "espacio.4"
+      }
+    },
+    "select": {
+      "status": "BORRADOR / PROPUESTA",
+      "version": 0,
+      "properties": {
+        "height": "tactil.minimo",
+        "radius": "radio.control",
+        "align-x": "left"
+      }
+    },
+    "quantity-stepper": {
+      "status": "BORRADOR / PROPUESTA",
+      "version": 0,
+      "properties": {
+        "height": "tactil.minimo",
+        "gap": "espacio.2",
+        "align-x": "center"
+      }
+    },
+    "table": {
+      "status": "BORRADOR / PROPUESTA",
+      "version": 0,
+      "properties": {
+        "row-height": "tactil.minimo",
+        "px": "espacio.3",
+        "density": "comfortable",
+        "align-x": "edges"
+      }
+    },
+    "empty-state": {
+      "status": "BORRADOR / PROPUESTA",
+      "version": 0,
+      "properties": {
+        "align-x": "center",
+        "pad-y": "espacio.8",
+        "gap": "espacio.2"
+      }
+    },
+    "notice": {
+      "status": "CANON CERRADO",
+      "version": 1,
+      "properties": {}
+    },
+    "loading-spinner": {
+      "status": "BORRADOR / PROPUESTA",
+      "version": 0,
+      "properties": {
+        "size": "espacio.8",
+        "align-x": "center"
+      }
+    },
+    "radio-segmented": {
+      "status": "BORRADOR / PROPUESTA",
+      "version": 0,
+      "properties": {
+        "density": "comfortable",
+        "height": "tactil.minimo"
+      }
+    },
+    "checkbox": {
+      "status": "BORRADOR / PROPUESTA",
+      "version": 0,
+      "properties": {
+        "height": "tactil.minimo",
+        "gap": "espacio.2",
+        "align-y": "center"
+      }
+    },
+    "calendar": {
+      "status": "CANON CERRADO",
+      "version": 1,
+      "properties": {}
+    },
+    "timefilter-chrome": {
+      "status": "BORRADOR / PROPUESTA",
+      "version": 0,
+      "properties": {
+        "height": "espacio.8",
+        "radius": "radio.control"
+      }
+    },
+    "petroleum-segmented": {
+      "status": "CANON CERRADO",
+      "version": 1,
+      "properties": {}
+    },
+    "document-list-row": {
+      "status": "ESPECIALIZADO",
+      "version": 0,
+      "properties": {}
+    },
+    "header-app-navbar": {
+      "status": "ESPECIALIZADO",
+      "version": 0,
+      "properties": {}
+    },
+    "header-t1-sala-staff": {
+      "status": "ESPECIALIZADO",
+      "version": 0,
+      "properties": {}
+    },
+    "header-t1-ventas": {
+      "status": "ESPECIALIZADO",
+      "version": 0,
+      "properties": {}
+    },
+    "header-bottom-sheet": {
+      "status": "ESPECIALIZADO",
+      "version": 0,
+      "properties": {}
+    },
+    "header-kds": {
+      "status": "ESPECIALIZADO",
+      "version": 0,
+      "properties": {}
+    },
+    "header-calendar": {
+      "status": "ESPECIALIZADO",
+      "version": 0,
+      "properties": {}
+    },
+    "header-carta-publica": {
+      "status": "ESPECIALIZADO",
+      "version": 0,
+      "properties": {}
+    }
+  },
+  "history": [
+    {
+      "at": "2026-08-25",
+      "elementId": "derived-modal-header",
+      "fromStatus": "CANON CERRADO",
+      "toStatus": "HEREDADO",
+      "version": 1,
+      "changes": [],
+      "kind": "revision"
+    }
+  ]
+}

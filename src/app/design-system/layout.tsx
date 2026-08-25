@@ -2,9 +2,10 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import { withTimeout } from '@/lib/with-timeout';
+import './studio.css';
 
 export const metadata = {
-    title: 'Design System · catálogo visual',
+    title: 'Design System · estudio visual',
 };
 
 export default async function DesignSystemLayout({
