@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { NotificationsBell } from '@/components/NotificationsBell';
 import { ReservationsBell } from '@/components/ReservationsBell';
+import { Modal } from '@/components/ui/modal';
 import { createClient } from "@/utils/supabase/client";
 import { useAIStore } from '@/store/aiStore';
 import { cn } from '@/lib/utils';
@@ -13,11 +15,15 @@ import { getHomeHrefForUser, isMasterDashboardUser } from '@/lib/master-dashboar
 import { isFullscreenCartaPath } from '@/lib/carta-fullscreen-path';
 import { navigateInsideSandbox } from '@/lib/sandbox/client';
 
+const PG_TOOL_LINK_CLASS =
+    'min-h-ds-tactil flex flex-col justify-center px-ds-3 py-ds-2 text-left text-ds-texto-fuerte hover:opacity-80 active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-marca';
+
 export default function Navbar() {
     const pathname = usePathname();
     const router = useRouter();
     const supabase = createClient();
     const [userData, setUserData] = useState<{ name: string; role: string; email: string; is_supervisor?: boolean } | null>(null);
+    const [pgMenuOpen, setPgMenuOpen] = useState(false);
 
     // ANÁLISIS CRÍTICO: Tienes esta función de Zustand activada en el botón.
     const toggleChat = useAIStore((state) => state.toggleChat);
@@ -101,12 +107,61 @@ export default function Navbar() {
                                 {userData ? `Hola, ${userData.name}` : ''}
                             </span>
                             {isMasterDashboardUser(userData?.email) && (
-                                <a
-                                    href="/playground"
-                                    className="ml-2 flex items-center px-2 h-5 bg-white/10 hover:bg-white/20 rounded-md transition-all border border-white/20 active:scale-95"
-                                >
-                                    <span className="text-[7px] font-black tracking-[0.12em] text-white/70">PG</span>
-                                </a>
+                                <>
+                                    <button
+                                        type="button"
+                                        aria-label="Herramientas internas"
+                                        aria-haspopup="dialog"
+                                        aria-expanded={pgMenuOpen}
+                                        onClick={() => setPgMenuOpen(true)}
+                                        className="ml-2 relative flex h-12 min-h-12 min-w-12 shrink-0 items-center justify-center border-0 bg-transparent p-0 shadow-none"
+                                    >
+                                        <span className="flex items-center px-2 h-5 bg-white/10 hover:bg-white/20 rounded-md transition-all border border-white/20">
+                                            <span className="text-[7px] font-black tracking-[0.12em] text-white/70">
+                                                PG
+                                            </span>
+                                        </span>
+                                    </button>
+                                    <Modal
+                                        open={pgMenuOpen}
+                                        onClose={() => setPgMenuOpen(false)}
+                                        title="Herramientas internas"
+                                        subtitle="Playground y Design System"
+                                        variant="compact"
+                                        layer="base"
+                                        instance="pg-herramientas"
+                                        headerTone="petroleum"
+                                        usageId="pg-herramientas"
+                                        usageLabel="Herramientas internas"
+                                    >
+                                        <div className="grid grid-cols-1 gap-ds-2">
+                                            <Link
+                                                href="/playground"
+                                                className={PG_TOOL_LINK_CLASS}
+                                                onClick={() => setPgMenuOpen(false)}
+                                            >
+                                                <span className="font-black text-sm uppercase tracking-wide">
+                                                    Playground
+                                                </span>
+                                                <span className="text-[12px] font-medium text-ds-texto-tenue">
+                                                    Estéticas y studio
+                                                </span>
+                                            </Link>
+                                            <Link
+                                                href="/design-system"
+                                                className={PG_TOOL_LINK_CLASS}
+                                                onClick={() => setPgMenuOpen(false)}
+                                            >
+                                                <span className="font-black text-sm uppercase tracking-wide">
+                                                    Design System
+                                                </span>
+                                                <span className="text-[12px] font-medium text-ds-texto-tenue">
+                                                    Catálogo visual
+                                                </span>
+                                            </Link>
+                                        </div>
+                                    </Modal>
+                                </>
                             )}
                         </div>
                     </div>
