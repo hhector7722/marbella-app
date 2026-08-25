@@ -40,7 +40,7 @@ export function previewStyle(element: StudioElement, values: PropertyValues): CS
     return style as CSSProperties;
 }
 
-function HeaderFrame({
+export function StudioHeaderFrame({
     title,
     action,
     values,
@@ -95,6 +95,10 @@ function HeaderFrame({
             ) : null}
         </div>
     );
+}
+
+function HeaderFrame(props: Parameters<typeof StudioHeaderFrame>[0]) {
+    return <StudioHeaderFrame {...props} />;
 }
 
 export function ElementPreview({

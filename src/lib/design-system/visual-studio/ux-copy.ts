@@ -1,4 +1,4 @@
-import type { CanonStatus, StudioElement, TokenOption } from './types.ts';
+import type { CanonStatus, ImpactReport, StudioElement, TokenOption } from './types.ts';
 
 const HUMAN_TITLES: Record<string, string> = {
     button: 'Botón',
@@ -252,4 +252,56 @@ function titleFromSlug(slug: string): string {
 
 export function humanInternalStatus(status: CanonStatus): string {
     return status;
+}
+
+/**
+ * ISO o fecha `YYYY-MM-DD` del registro. Se parte por componentes;
+ * no se usa `new Date('YYYY-MM-DD')`.
+ */
+export function formatStudioStamp(value: string): string {
+    const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/);
+    if (!match) return value;
+    const day = match[3];
+    const month = match[2];
+    const year = match[1];
+    const hour = match[4];
+    const minute = match[5];
+    if (hour && minute) return `${day}/${month}/${year} ${hour}:${minute}`;
+    return `${day}/${month}/${year}`;
+}
+
+export function humanImpactLead(element: StudioElement, impact: ImpactReport | null): string {
+    if (!impact || impact.undetermined) {
+        return 'No se puede saber con certeza cuántas pantallas usan esto.';
+    }
+    if (element.applyKind === 'css-contract') {
+        return `Esto llegará solo a las pantallas que ya usan esta pieza. Ahora mismo: ${impact.consumers} sitios.`;
+    }
+    return `Este cambio puede verse en ${impact.consumers} sitios y ${impact.routes} pantallas.`;
+}
+
+export function humanImpactSites(impact: ImpactReport | null): string | null {
+    if (!impact || impact.undetermined) return null;
+    return `${impact.consumers} sitios · ${impact.routes} pantallas`;
+}
+
+export function humanDebtLead(pendingCount: number): string | null {
+    if (pendingCount <= 0) return null;
+    return `${pendingCount} sitios todavía no la usan. No van a cambiar solos.`;
+}
+
+export function humanPublishResult(opts: {
+    blueprintUpdated: boolean;
+    sourcesUpdated: string[];
+    remainingDebt: string[];
+}): string {
+    const css = opts.sourcesUpdated.some((file) => file.endsWith('.css'));
+    const parts = [
+        css ? 'El CSS de esta pieza se ha reescrito.' : 'No había CSS de contrato que reescribir.',
+        opts.blueprintUpdated ? 'El Blueprint se ha actualizado.' : 'El Blueprint no ha cambiado.',
+    ];
+    if (opts.remainingDebt.length > 0) {
+        parts.push(`${opts.remainingDebt.length} sitios siguen pendientes.`);
+    }
+    return parts.join(' ');
 }

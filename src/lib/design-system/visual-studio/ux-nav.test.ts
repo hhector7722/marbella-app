@@ -44,7 +44,7 @@ describe('Design System Studio — UX de decisión visual', () => {
             'Colores',
         ]);
         const studio = readFileSync(STUDIO_UI, 'utf8');
-        assert.match(studio, /¿Qué quieres cambiar\?/);
+        assert.match(studio, /Toca lo que quieras cambiar/);
         assert.doesNotMatch(studio, /FOUNDATIONS/);
         assert.doesNotMatch(studio, /COMPONENTS/);
         assert.doesNotMatch(studio, /PATTERNS/);
@@ -52,7 +52,7 @@ describe('Design System Studio — UX de decisión visual', () => {
         assert.doesNotMatch(studio, /PROPOSALS/);
         assert.doesNotMatch(studio, /Guardar como canon/);
         assert.match(studio, /Hacer oficial/);
-        assert.match(studio, /Proponer cambio/);
+        assert.match(studio, /Guardar ensayo/);
         assert.match(studio, /Información técnica/);
     });
 
