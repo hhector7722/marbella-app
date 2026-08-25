@@ -106,7 +106,7 @@ Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`
 
 **Código**: `src/components/ui/Surface.tsx`.
 
-**Estado**: existe. Piloto: `PageScreen`, dashboard caja/ventas, Staff (semana y fichaje), matriz de propinas.
+**Estado**: existe. Piloto: `PageScreen`, dashboard caja/ventas, Staff (semana y fichaje), matriz de propinas, Sala LIVE.
 
 ### Insignia de estado
 
@@ -373,7 +373,7 @@ Su contrato lo fija la [especificación de su capacidad](../1-producto/capacidad
 
 **Identidad**: `data-component="DashboardShortcut"`, `data-variant`, `data-instance` (id de negocio, p. ej. `asistencia`). El label visible no forma parte de la identidad. `data-studio-target` (`bg` / `asset` / `text`) se conserva para compatibilidad con Marbella Studio.
 
-**Estado**: existe. Primer consumidor: rejilla Master. Staff (`IOSIconBoxed`) y Admin (`renderQuickActionSquare`) aún no migrados.
+**Estado**: existe. Consumidores: rejilla Master, Staff y Admin.
 
 **Código**: `src/components/dashboards/DashboardShortcut.tsx`.
 
@@ -400,6 +400,7 @@ Hoy existen: Button, Modal, Surface, Field, EmptyState, Notice, KpiStat, PageScr
 
 Consecuencias observables:
 - Las pantallas principales de gestión (Labor, Albaranes, Reservas, Propinas, Carta) usan `PageScreen`.
+- Sala LIVE no usa PageScreen: es `Surface` `page` + `block` (radar de mesas). Prohibido `rounded-[2.5rem]` e italic de título.
 - El resto de pantallas y los literales `#36606F` / `rounded-xl` fuera de esas piezas son [D28](../5-estado/DEUDA.md): deuda de migración, no permiso para clonar cabeceras.
 - La navegación inferior sigue implementada dos veces.
 - T1 (mosaico Admin/Staff) no es PageScreen: es composición de Surface + DashboardShortcut + KpiStat.

@@ -5,6 +5,8 @@ import { createClient } from '@supabase/supabase-js';
 import { Euro } from 'lucide-react';
 import { parseRadiografiaTimestamp, parseDBDate, formatLocalTime } from '@/utils/date-utils';
 import { cn } from '@/lib/utils';
+import { Surface } from '@/components/ui/Surface';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -289,17 +291,16 @@ export default function RadarSala() {
   });
 
   return (
-    <div className="font-sans bg-white rounded-xl shadow-sm overflow-hidden">
-      <header className="bg-[#36606F] px-3 py-2 md:px-4 md:py-2">
-        <div className="flex flex-wrap items-center gap-x-2.5 md:gap-3">
-          <h2 className="text-base md:text-lg font-bold tracking-tight text-white shrink-0">
-            Mesas Abiertas
-          </h2>
-          <span className="text-[10px] md:text-xs text-slate-300 tabular-nums">
-            {mesas.length} mesas activas • {ultimaAct ? formatLocalTime(ultimaAct) : '...'}
+    <Surface variant="block" instance="sala-mesas" className="overflow-hidden">
+      <div data-element="header" className="flex flex-wrap items-center gap-2 shrink-0">
+        <h2 data-element="title">Mesas Abiertas</h2>
+        {mesas.length > 0 ? (
+          <span className="text-[11px] tabular-nums opacity-60">
+            {mesas.length} mesas activas
+            {ultimaAct ? ` • ${formatLocalTime(ultimaAct)}` : ''}
           </span>
-        </div>
-      </header>
+        ) : null}
+      </div>
 
       <div className="p-3 md:p-6 lg:p-8 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 xl:gap-10">
         {mesasOrdenadas.map((m) => (
@@ -309,12 +310,17 @@ export default function RadarSala() {
             estado={calcularEstado(mesaAperturaToDate(resolveMesaAperturaRaw(m)))}
           />
         ))}
-        {mesas.length === 0 && (
-          <div className="col-span-full text-center py-10 text-gray-400 italic">
-            No hay mesas abiertas en este momento.
+        {mesas.length === 0 ? (
+          <div className="col-span-full">
+            <EmptyState
+              instance="sala-mesas-empty"
+              variant="none"
+              title="No hay mesas abiertas."
+              description="Cuando se abra una mesa en el TPV, aparecerá aquí."
+            />
           </div>
-        )}
+        ) : null}
       </div>
-    </div>
+    </Surface>
   );
 }

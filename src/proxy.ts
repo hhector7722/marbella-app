@@ -171,6 +171,12 @@ export async function proxy(request: NextRequest) {
       return pgRedirect;
     }
 
+    if (path.startsWith("/design-system") && !isMasterDashboardUser(emailFromJwt)) {
+      const dsRedirect = NextResponse.redirect(new URL("/dashboard", request.url));
+      copyResponseCookies(response, dsRedirect);
+      return dsRedirect;
+    }
+
     if (path.startsWith("/dashboard/uso") && !isMasterDashboardUser(emailFromJwt)) {
       const usoRedirect = NextResponse.redirect(new URL("/dashboard", request.url));
       copyResponseCookies(response, usoRedirect);

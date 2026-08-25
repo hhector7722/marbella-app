@@ -92,6 +92,7 @@ describe('DocumentListRow contract', () => {
         for (const full of listSourceFiles(SRC_ROOT)) {
             const rel = toPosix(relative(REPO_ROOT, full));
             if (rel.includes('/playground/')) continue;
+            if (rel.includes('/design-system/')) continue;
             if (rel === 'src/lib/design-system/document-list-row.ts') continue;
             if (rel === 'src/components/ui/DocumentListRow.tsx') continue;
             const source = readFileSync(full, 'utf8');

@@ -606,6 +606,7 @@ describe('Button consumers: CTAs de negocio nativos', () => {
             if (rel === 'src/components/ui/button.tsx') continue;
             if (rel === 'src/components/ui/modal.tsx') continue;
             if (rel.includes('/playground/')) continue;
+            if (rel.includes('/design-system/')) continue;
             if (isSpecializedButtonHostPath(rel)) continue;
             const source = readFileSync(full, 'utf8');
             if (!source.includes('<button')) continue;

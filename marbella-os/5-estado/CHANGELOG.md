@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-25
 
+- **Sala LIVE deja de clonar cabecera.** `/dashboard/sala` y el radar de mesas abandonan `rounded-[2.5rem]`, italic y petróleo escrito a mano: `Surface` `page`/`block` y `EmptyState`. No es PageScreen (no es listado/detalle/formulario). Sin ADR nueva ni primitivas extra.
+
 - **Homogenización visual visible (ADR-0010).** Labor, Albaranes, Carta, Reservas, Propinas, Caja, Staff, Eventos, Inventario y Recetas pasan a cabeceras, superficies, campos, avisos y botones del sistema. Horas extras del mosaico Admin conserva púrpura de dominio. Sin ADR nueva ni primitivas extra.
 
 - **ADR-0010 — jerarquía visual canónica.** Las pantallas de gestión se construyen con primitivas y plantillas de pantalla, no clonando cabeceras. Nacen `Surface`, `Field`, `EmptyState`, `Notice`, `KpiStat` y `PageScreen`. Migrados Labor, Albaranes, Reservas, Propinas, Carta y el mosaico de Caja/Staff/Ventas. El resto de literales queda en [D28](DEUDA.md). [ADR-0010](../4-decisiones/ADR-0010-jerarquia-visual-canonica.md).

@@ -164,6 +164,23 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(recetasImport, /<Surface/);
     });
 
+    it('sala LIVE usa Surface y no reintroduce radio ilegítimo ni cabecera clonada', () => {
+        const sala = readFileSync(join(SRC_ROOT, 'app/dashboard/sala/page.tsx'), 'utf8');
+        const radar = readFileSync(
+            join(SRC_ROOT, 'components/dashboards/RadarSala.tsx'),
+            'utf8'
+        );
+        assert.match(sala, /<Surface/);
+        assert.match(sala, /instance="sala-live"/);
+        assert.doesNotMatch(sala, /rounded-\[2\.5rem\]/);
+        assert.doesNotMatch(sala, /italic/);
+        assert.doesNotMatch(sala, /bg-\[#36606F\]/);
+        assert.match(radar, /<Surface/);
+        assert.match(radar, /<EmptyState/);
+        assert.doesNotMatch(radar, /bg-\[#36606F\]/);
+        assert.doesNotMatch(radar, /rounded-\[2\.5rem\]/);
+    });
+
     it('ningún piloto prioritario reintroduce rounded-[2.5rem]', () => {
         const offenders: string[] = [];
         for (const full of listSourceFiles(join(SRC_ROOT, 'components/tips'))) {

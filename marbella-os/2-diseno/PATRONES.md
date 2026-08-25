@@ -212,7 +212,7 @@ La composición por defecto de listado, detalle y formulario de gestión. No es 
 - `Button` `tertiary` dentro de la cabecera se pinta invertido (icono blanco). No es una quinta variante de Button.
 - Labor y Reservas montan el calendario mensual (P3) **dentro** de esta plantilla; no sustituyen la cabecera.
 
-**Cuándo no**: mosaico Admin/Staff (T1), pantalla de cocina, carta de cliente, overlay (P2).
+**Cuándo no**: mosaico Admin/Staff (T1), Sala LIVE, pantalla de cocina, carta de cliente, overlay (P2).
 
 ---
 

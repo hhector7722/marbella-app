@@ -61,6 +61,7 @@ export default function Navbar() {
     if (isFullscreenCartaPath(pathname)) return null;
     if (pathname.startsWith('/reporte')) return null;
     if (pathname.startsWith('/playground')) return null;
+    if (pathname.startsWith('/design-system')) return null;
 
     const isDashboard = pathname === '/dashboard' || pathname === '/staff/dashboard' || pathname === '/master/dashboard';
     const homePath = getHomeHrefForUser(userData?.email, userData?.role);

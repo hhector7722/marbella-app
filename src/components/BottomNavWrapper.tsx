@@ -15,6 +15,7 @@ export default function BottomNavWrapper() {
     if (pathname.startsWith('/staff')) return null;
     if (pathname.startsWith('/reporte')) return null;
     if (pathname.startsWith('/playground')) return null;
+    if (pathname.startsWith('/design-system')) return null;
 
     // Portal a <body> para blindar el `fixed` ante wrappers con transform/overflow/contain
     return createPortal(<BottomNavStaff />, document.body);

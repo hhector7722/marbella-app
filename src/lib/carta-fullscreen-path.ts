@@ -20,6 +20,7 @@ export function isInternalScrollShellPath(pathname: string): boolean {
   if (pathname === '/dashboard/web' || pathname.startsWith('/dashboard/web')) return true
   if (pathname === '/dashboard/instalacion-app') return true
   if (pathname.startsWith('/playground')) return true
+  if (pathname.startsWith('/design-system')) return true
   return false
 }
 
