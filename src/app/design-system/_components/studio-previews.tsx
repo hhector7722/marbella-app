@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type CSSProperties } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { ArrowLeft, Minus, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -12,8 +12,10 @@ import { Notice } from '@/components/ui/Notice';
 import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
 import { Surface } from '@/components/ui/Surface';
 import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
+import { DocumentListRow } from '@/components/ui/DocumentListRow';
 import { COLOR_OPTIONS, SPACE_OPTIONS, TYPE_SIZE_OPTIONS, findOption } from '@/lib/design-system/visual-studio/allowed-values';
 import type { PropertyValues, StudioElement } from '@/lib/design-system/visual-studio/types';
+import { humanSummary } from '@/lib/design-system/visual-studio/ux-copy';
 import { SampleLabel } from './catalog-kit';
 
 export function previewStyle(element: StudioElement, values: PropertyValues): CSSProperties {
@@ -115,7 +117,6 @@ export function ElementPreview({
                             style={{ background: swatch.value }}
                         />
                         <p className="m-0 text-[11px] font-bold truncate">{swatch.label}</p>
-                        <p className="m-0 text-[11px] text-ds-texto-tenue truncate">{swatch.token}</p>
                     </div>
                 ))}
             </div>
@@ -158,7 +159,7 @@ export function ElementPreview({
         return (
             <div className="border border-ds-borde rounded-ds-superficie overflow-hidden bg-ds-superficie">
                 <div
-                    className="flex h-[36px] items-center px-ds-4 bg-ds-marca text-ds-texto-invertido"
+                    className="flex h-ds-modal-header items-center px-ds-4 bg-ds-marca text-ds-texto-invertido"
                     data-studio-preview="header"
                     data-align-x={values['align-x'] ?? 'left'}
                 >
@@ -166,8 +167,8 @@ export function ElementPreview({
                 </div>
                 <p className="m-0 p-ds-4 text-[14px] text-ds-texto">
                     {element.id === 'derived-modal-header'
-                        ? 'Misma cabecera 36 px. Hereda Modal Header. ADR-0009 subordina el panel cubierto, no esta fila.'
-                        : 'Cabecera Modal 36 px. Chrome ≠ Button. Contrato cerrado.'}
+                        ? 'Las ventanas internas usan esta misma cabecera.'
+                        : 'Cabecera de ventana. 36 px.'}
                 </p>
             </div>
         );
@@ -176,8 +177,7 @@ export function ElementPreview({
     if (element.status === 'ESPECIALIZADO' && element.group === 'cabeceras') {
         return (
             <p className="m-0 text-[14px] text-ds-texto">
-                Catálogo explicativo. No es un contrato universal. No se edita ni se propaga estética desde
-                aquí.
+                Esta cabecera solo existe en una pantalla. No se cambia desde aquí el diseño general.
             </p>
         );
     }
@@ -390,8 +390,294 @@ export function ElementPreview({
     }
 
     return (
-        <p className="m-0 text-[14px] text-ds-texto">{element.summary}</p>
+        <p className="m-0 text-[14px] text-ds-texto">{humanSummary(element)}</p>
     );
+}
+
+function PageFrame({
+    title,
+    action,
+    values,
+    children,
+}: {
+    title: string;
+    action?: string;
+    values: PropertyValues;
+    children: ReactNode;
+}) {
+    return (
+        <Surface variant="page" instance="ds-ctx-page">
+            <HeaderFrame title={title} action={action} values={values} petroleum />
+            <div data-element="body" className="p-ds-4 space-y-ds-4">
+                {children}
+            </div>
+        </Surface>
+    );
+}
+
+function ModalContextDemo({
+    triggerLabel,
+    title,
+    children,
+    footer,
+}: {
+    triggerLabel: string;
+    title: string;
+    children: ReactNode;
+    footer?: ReactNode;
+}) {
+    const [open, setOpen] = useState(false);
+    return (
+        <>
+            <Button variant="secondary" instance="ds-ctx-open-modal" onClick={() => setOpen(true)}>
+                {triggerLabel}
+            </Button>
+            <Modal
+                open={open}
+                onClose={() => setOpen(false)}
+                title={title}
+                instance="ds-ctx-modal"
+                variant="compact"
+                layer="base"
+                disableUsageTracking
+                footer={footer}
+            >
+                {children}
+            </Modal>
+        </>
+    );
+}
+
+export function ElementContextPreview({
+    element,
+    values,
+    scene,
+}: {
+    element: StudioElement;
+    values: PropertyValues;
+    scene: string;
+}) {
+    const style = previewStyle(element, values);
+
+    if (element.id === 'page-header' || element.id === 'pagescreen' || element.id === 'block-header') {
+        const headerValues = element.id === 'block-header' ? values : values;
+        if (scene === 'list') {
+            return (
+                <PageFrame title="Albaranes" action="Nuevo" values={headerValues}>
+                    <EmptyState
+                        instance="ds-ctx-empty"
+                        variant="none"
+                        title="Aún no hay albaranes"
+                        description="Cuando llegue el primero, aparecerá aquí."
+                    />
+                </PageFrame>
+            );
+        }
+        if (scene === 'detail') {
+            return (
+                <PageFrame title="Trabajador" values={headerValues}>
+                    <Surface variant="block" instance="ds-ctx-block">
+                        <HeaderFrame
+                            title="Contrato"
+                            showBack={false}
+                            petroleum={false}
+                            values={{ ...values, 'title-size': 'tipo.minimo', px: 'espacio.3', py: 'espacio.2' }}
+                        />
+                        <p className="m-0 p-ds-3 text-[14px] text-ds-texto">Datos del contrato.</p>
+                    </Surface>
+                </PageFrame>
+            );
+        }
+        if (scene === 'form') {
+            return (
+                <PageFrame title="Fichaje" values={headerValues}>
+                    <Field instance="ds-ctx-notas" label="Notas" htmlFor="ds-ctx-notas">
+                        <input id="ds-ctx-notas" />
+                    </Field>
+                    <div className="shrink-0">
+                        <Button variant="primary" instance="ds-ctx-guardar" layout="fill">
+                            Guardar
+                        </Button>
+                    </div>
+                </PageFrame>
+            );
+        }
+        return (
+            <PageFrame title="Ventas" action="+" values={headerValues}>
+                <div className="grid grid-cols-2 gap-ds-3">
+                    <KpiStat instance="ds-ctx-kpi-1" label="Hoy" tone="positive">
+                        1.280 €
+                    </KpiStat>
+                    <KpiStat instance="ds-ctx-kpi-2" label="Tickets" tone="neutral">
+                        42
+                    </KpiStat>
+                </div>
+            </PageFrame>
+        );
+    }
+
+    if (element.id === 'button') {
+        if (scene === 'modal') {
+            return (
+                <ModalContextDemo
+                    triggerLabel="Ver en ventana"
+                    title="Pedido"
+                    footer={
+                        <div className="flex flex-wrap gap-ds-2 justify-end" data-studio-preview="button" style={style}>
+                            <Button variant="secondary" instance="ds-ctx-btn-cancel">
+                                Cancelar
+                            </Button>
+                            <Button variant="primary" instance="ds-ctx-btn-ok">
+                                Guardar
+                            </Button>
+                        </div>
+                    }
+                >
+                    <p className="m-0 text-[14px] text-ds-texto">Cuerpo de la ventana.</p>
+                </ModalContextDemo>
+            );
+        }
+        if (scene === 'form') {
+            return (
+                <div className="space-y-ds-4">
+                    <Field instance="ds-ctx-btn-field" label="Nombre" htmlFor="ds-ctx-btn-field">
+                        <input id="ds-ctx-btn-field" defaultValue="Ana" />
+                    </Field>
+                    <div className="shrink-0" data-studio-preview="button" style={style}>
+                        <Button variant="primary" instance="ds-ctx-btn-form" layout="fill">
+                            Guardar
+                        </Button>
+                    </div>
+                </div>
+            );
+        }
+        if (scene === 'list') {
+            return (
+                <ul className="m-0 p-0 space-y-ds-2">
+                    <DocumentListRow
+                        instance="ds-ctx-row"
+                        title="Nómina agosto"
+                        subtitle="PDF"
+                        onOpen={() => undefined}
+                        trailing={
+                            <span data-studio-preview="button" style={style}>
+                                <Button variant="tertiary" instance="ds-ctx-row-ver">
+                                    Ver
+                                </Button>
+                            </span>
+                        }
+                    />
+                </ul>
+            );
+        }
+        return (
+            <div className="overflow-x-auto">
+                <table className="w-full text-[14px]">
+                    <thead className="bg-ds-marca text-ds-texto-invertido">
+                        <tr>
+                            <th className="text-left font-black uppercase text-[11px] tracking-widest px-ds-3 py-ds-2">
+                                Persona
+                            </th>
+                            <th className="text-right font-black uppercase text-[11px] tracking-widest px-ds-3 py-ds-2">
+                                Acción
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr className="border-b border-ds-borde">
+                            <td className="px-ds-3 py-ds-3">Ana</td>
+                            <td className="px-ds-3 py-ds-3 text-right">
+                                <span data-studio-preview="button" style={style}>
+                                    <Button variant="tertiary" instance="ds-ctx-table-ver">
+                                        Ver
+                                    </Button>
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        );
+    }
+
+    if (element.id === 'field' || element.id === 'select' || element.id === 'search') {
+        if (scene === 'modal') {
+            return (
+                <ModalContextDemo triggerLabel="Ver en ventana" title="Nuevo registro">
+                    <ElementPreview element={element} values={values} />
+                </ModalContextDemo>
+            );
+        }
+        return (
+            <PageFrame title="Fichaje" values={values}>
+                <ElementPreview element={element} values={values} />
+                <div className="shrink-0">
+                    <Button variant="primary" instance="ds-ctx-field-save" layout="fill">
+                        Guardar
+                    </Button>
+                </div>
+            </PageFrame>
+        );
+    }
+
+    if (element.id === 'modal' || element.id === 'modal-header' || element.id === 'derived-modal-header') {
+        if (scene === 'form') {
+            return (
+                <ModalContextDemo
+                    triggerLabel="Abrir ventana"
+                    title="Fichaje"
+                    footer={
+                        <Button variant="primary" instance="ds-ctx-modal-save">
+                            Guardar
+                        </Button>
+                    }
+                >
+                    <Field instance="ds-ctx-modal-notas" label="Notas" htmlFor="ds-ctx-modal-notas">
+                        <input id="ds-ctx-modal-notas" />
+                    </Field>
+                </ModalContextDemo>
+            );
+        }
+        return (
+            <ModalContextDemo triggerLabel="Abrir ventana" title="Detalle">
+                <p className="m-0 text-[14px] text-ds-texto">Contenido de la ventana.</p>
+            </ModalContextDemo>
+        );
+    }
+
+    if (element.id === 'empty-state' || scene === 'list') {
+        return (
+            <PageFrame title="Albaranes" action="Nuevo" values={values}>
+                {element.id === 'document-list-row' ? (
+                    <ul className="m-0 p-0">
+                        <DocumentListRow
+                            instance="ds-ctx-doc"
+                            title="Albarán 1042"
+                            subtitle="Hoy"
+                            onOpen={() => undefined}
+                        />
+                    </ul>
+                ) : (
+                    <ElementPreview element={element} values={values} />
+                )}
+            </PageFrame>
+        );
+    }
+
+    if (scene === 'table' || element.id === 'table') {
+        return (
+            <PageFrame title="Nóminas" values={values}>
+                <ElementPreview element={getTableElement(element)} values={values} />
+            </PageFrame>
+        );
+    }
+
+    return <ElementPreview element={element} values={values} />;
+}
+
+function getTableElement(element: StudioElement): StudioElement {
+    if (element.id === 'table') return element;
+    return { ...element, id: 'table' };
 }
 
 export function CanonicalCompositions() {
