@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-20
+revisado: 2026-08-25
 caducidad: 6 meses
 supersede: —
 ---
@@ -27,7 +27,7 @@ Las tres capas del inventario tienen contratos de rigor distinto:
 
 ## 1. Componentes base
 
-Los que sostienen toda pantalla. **Button ya existe** (piloto de footers). Campo, tarjeta, insignia y vacío siguen reconstruyéndose pantalla a pantalla, y esa sigue siendo una causa de deriva visual.
+Los que sostienen toda pantalla. **Button, Surface, Field, EmptyState y Notice ya existen.** La insignia de estado sigue reconstruyéndose por vocabulario de dominio (D27).
 
 ### Botón
 
@@ -89,22 +89,24 @@ Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`
 - Los campos numéricos no muestran los controles nativos de incremento.
 - Nada de lo escrito se pierde por navegar o por un fallo de red.
 
-**Estado**: sin componente.
+**Estado**: existe. `src/components/ui/Field.tsx`. El aspecto lo fija CSS (`[data-component='Field']`). El consumidor pasa el `input`/`select`/`textarea`. No cubre barras de búsqueda compactas ni steppers de denominación ([D27](../5-estado/DEUDA.md)).
 
-### Tarjeta
+### Tarjeta (`Surface`)
 
 **Propósito**: agrupar información con una responsabilidad única.
 
-**Anatomía**: superficie con radio de control, borde de un píxel, elevación mínima, relleno estándar.
+**Anatomía**: superficie con radio contractual, borde de un píxel en `block`, elevación según variante.
 
-**Variantes**: informativa, pulsable, con cifra protagonista.
+**Variantes** (cerradas): `page` (superficie de trabajo sobre el envolvente; radio.superficie + elevacion.pagina), `block` (agrupación interior; radio.control + elevacion.superficie). No es un Card universal: no hay `hover`, `selected` ni slots de negocio. Una tarjeta pulsable de dominio (KDS, plato) no es esta pieza.
 
 **Reglas**:
 - Una tarjeta, una pregunta.
-- Si es pulsable, toda su superficie lo es.
-- No anida tarjetas: dentro de una tarjeta se usan zonas hundidas, no tarjetas.
+- Si es pulsable, toda su superficie lo es — y entonces es de dominio, no `Surface`.
+- No anida `page` dentro de `page`: dentro de una `page` se usa `block` o zonas hundidas.
 
-**Estado**: sin componente. Es el patrón visual más repetido del producto y el que más se ha desviado.
+**Código**: `src/components/ui/Surface.tsx`.
+
+**Estado**: existe. Piloto: `PageScreen`, dashboard caja/ventas, Staff (semana y fichaje), matriz de propinas.
 
 ### Insignia de estado
 
@@ -124,7 +126,7 @@ Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`
 
 **Reglas**: las tres variantes son obligatoriamente distinguibles, según [EXPERIENCIA §7](EXPERIENCIA.md#7-vacío). La tercera se comporta como un error.
 
-**Estado**: sin componente. Es la carencia más peligrosa del inventario: sin pieza común, la variante de fallo se confunde sistemáticamente con la de ausencia.
+**Estado**: existe. `src/components/ui/EmptyState.tsx`. Variantes `none` / `mismatch` / `error`. La de `error` usa `role="alert"`.
 
 ### Fila de documento (`DocumentListRow`)
 
@@ -180,6 +182,14 @@ host (role=radiogroup)
 
 **Estado**: existe. Piloto: `WasteClient`, `recipes/[id]` (×2), `SubNavVentas`. Gate de huella legacy.
 
+### Cifra de KPI (`KpiStat`)
+
+**Propósito**: cifra protagonista de un dashboard (T1).
+
+**Anatomía**: valor + etiqueta. El valor lo aporta el consumidor (p. ej. `PremiumCountUp`).
+
+**Estado**: existe. `src/components/ui/KpiStat.tsx`. Tono `neutral` / `positive` / `negative` / `info`. Label a `tipo.minimo` (11 px); nunca 5–7 px. No cubre la tira densa del calendario mensual (P3 / Labor): esa anatomía es de dominio.
+
 ### Aviso
 
 **Propósito**: comunicar el resultado de una acción o una condición del sistema.
@@ -191,7 +201,7 @@ host (role=radiogroup)
 - No tapa el dato necesario para el paso siguiente.
 - No expone detalle técnico.
 
-**Estado**: parcial. Existe una biblioteca de avisos flotantes; no existe el aviso embebido.
+**Estado**: parcial. Existe la biblioteca de avisos flotantes (toasts) y el aviso embebido `Notice` (`src/components/ui/Notice.tsx`; variantes `positive` / `negative` / `warning` / `info` / `critical`).
 
 ---
 
@@ -238,16 +248,21 @@ Piezas transversales con comportamiento propio y contrato estricto. **Estas sí 
 
 **Estado**: contrato oficial + enforcement de capas, historial, filtro de `className` del panel, gates de footer/`zIndexClass`/`backdropClassName`/padding raíz. Consumidores en allowlists temporales pendientes de migración (Block 1). Overlays paralelos legacy: `LEGACY_PARALLEL_OVERLAY_ALLOWLIST` (cerrada). El contrato puede evolucionar; el cambio pasa por este documento, las ADR si la decisión es estructural, y después el código.
 
-### Estructura de pantalla de detalle
+### Estructura de pantalla de detalle (`PageScreen`)
 
-**Propósito**: dar a toda pantalla de gestión la misma cabecera, el mismo ancho máximo y el mismo comportamiento de desplazamiento.
+**Propósito**: dar a toda pantalla de gestión la misma cabecera petróleo, el mismo ancho máximo y el mismo comportamiento de desplazamiento. Es la plantilla T2/T3/T4. Lo decide [ADR-0010](../4-decisiones/ADR-0010-jerarquia-visual-canonica.md).
+
+**Código**: `src/components/dashboard/DashboardDetailLayout.tsx` (exporta `PageScreen` y el alias `DashboardDetailLayout`).
 
 **Reglas**:
-- Título y subtítulo son obligatorios; el subtítulo explica el alcance de la pantalla, no la felicita.
-- El ancho máximo se elige entre valores predefinidos; no se escribe uno nuevo.
-- El filtro temporal, si existe, vive en esta cabecera.
+- Título y subtítulo son obligatorios en espíritu; el subtítulo explica el alcance, no felicita. El subtítulo puede omitirse en calendarios densos (Labor, Reservas).
+- El ancho máximo se elige entre valores predefinidos (`maxWidthClass`); no se escribe un radio nuevo.
+- El filtro temporal, si existe, vive en `rightSlot` de esta cabecera.
+- Identidad: `data-component="PageScreen"`, `data-template` = `list` | `detail` | `form`.
+- La card es `Surface` variante `page`. El consumidor no pinta `bg-white rounded-2xl shadow-2xl` ni `bg-[#36606F]` de cabecera.
+- Las acciones de cabecera (`rightSlot`) sobre petróleo: `Button` `tertiary` se pinta invertido por CSS de esta plantilla (icono blanco). No es una quinta variante de Button. El chrome de recarga nativo blanco (Albaranes) sigue siendo chrome, no Button.
 
-**Estado**: existe, con adopción parcial: una parte de las pantallas de gestión la usa y otra no.
+**Estado**: existe. Migrados: Labor, Albaranes, Reservas, Propinas, Carta e inventario que ya lo usaba. T1 (dashboard mosaico) no usa PageScreen: es otra anatomía.
 
 ### Navegación inferior
 
@@ -379,12 +394,59 @@ Su contrato lo fija la [especificación de su capacidad](../1-producto/capacidad
 
 ## 5. Estado real del sistema
 
-Hay que decirlo con claridad: **Marbella aún no tiene un sistema de componentes completo**. Tiene piezas transversales, una estructura de pantalla de adopción parcial, el piloto `DashboardShortcut`, el **contrato oficial de Modal** (Albaranes y Caja/Tesorería), el **contrato oficial de Button** (piloto: footers de esos mismos modales), el piloto **`DocumentListRow`** (listas de documento de perfil) y el piloto **`PetroleumSegmented`** (segmented de borde petróleo). El resto se resuelve pantalla a pantalla. En Caja/Tesorería, `QuickCalculatorModal` y `DenominationZoomModal` permanecen legacy a propósito: el contrato no admite un tercer nivel sobre `base → derived`.
+La jerarquía visual canónica está decidida ([ADR-0010](../4-decisiones/ADR-0010-jerarquia-visual-canonica.md)): tokens → primitivas → plantillas de pantalla → pantallas de negocio. **No se reabren** Modal, Button, PetroleumSegmented, DocumentListRow ni ADR-0007/0008/0009.
+
+Hoy existen: Button, Modal, Surface, Field, EmptyState, Notice, KpiStat, PageScreen, DocumentListRow, PetroleumSegmented, DashboardShortcut. La insignia de estado sigue sin pieza (D27 chips). En Caja/Tesorería, `QuickCalculatorModal` y `DenominationZoomModal` permanecen legacy a propósito: el contrato no admite un tercer nivel sobre `base → derived`.
 
 Consecuencias observables:
-- Existen Button, Modal, `DocumentListRow` y `PetroleumSegmented` de sistema, con adopción parcial. Siguen sin componente de sistema el campo, la tarjeta, la insignia y el estado vacío.
-- El mismo bloque visual está reescrito decenas de veces con variaciones no intencionadas (incluidos atajos Staff/Admin aún no unificados, y botones fuera del piloto).
-- La navegación inferior está implementada dos veces.
-- Las piezas de dominio, muy numerosas, se apoyan directamente en utilidades y no en base.
+- Las pantallas principales de gestión (Labor, Albaranes, Reservas, Propinas, Carta) usan `PageScreen`.
+- El resto de pantallas y los literales `#36606F` / `rounded-xl` fuera de esas piezas son [D28](../5-estado/DEUDA.md): deuda de migración, no permiso para clonar cabeceras.
+- La navegación inferior sigue implementada dos veces.
+- T1 (mosaico Admin/Staff) no es PageScreen: es composición de Surface + DashboardShortcut + KpiStat.
 
-Este documento es el contrato al que debe converger el código. La secuencia de convergencia y su coste están en [DEUDA](../5-estado/DEUDA.md); **construir los componentes base antes de tener [TOKENS](TOKENS.md) adoptados sería repetir el problema con otra sintaxis.**
+Este documento es el contrato al que debe converger el código.
+
+---
+
+## 6. Tabla de decisión visual
+
+Una familia = una implementación + el mínimo de variantes justificadas. «No me gusta cómo queda» no es variante.
+
+| Familia | Referencia elegida | Variantes permitidas | Qué hacer con el resto |
+|---|---|---|---|
+| Button | Contrato vigente | `primary` / `secondary` / `tertiary` / `destructive`; layout `hug`/`fill` | Seguir D27; no quinta variante |
+| Modal | Contrato vigente; contenido de detalle = Labor día | `compact` / `standard` / `work` / `day` / `amplify`; capas `base`/`derived`/`system` | No reabrir ADR-0007/8/9 |
+| Cabecera/pie Modal | Shell Modal | `headerTone` petroleum/white | Chrome ≠ Button |
+| Surface | PageScreen + Labor card | `page` / `block` | Clones `bg-white rounded-2xl shadow-*` migran; `RecipeCard` huérfano no es referencia |
+| Field | Filtro Albaranes (`min-h-12 rounded-xl`) | Una sola densidad de formulario | Búsqueda compacta y steppers: D27 |
+| Selector | PetroleumSegmented | `comfortable` / `compact` | Zinc, TimeFilter, CartaLangPicker, celdas de calendario: fuera |
+| Tabs | TabBar pabellón (underline) | Anatomía de sección, no radiogroup | No mezclar con PetroleumSegmented |
+| Filas | DocumentListRow (solo documentos) | Ninguna genérica | D27: no ListRow universal |
+| Tabla operativa (T8) | Propinas + ledger `thead` marca | Composición: `table` + `bg-ds-marca` + `tabular-nums` | No componente Table con 40 props |
+| Insignia | PavilionMatchingBadge (anatomía) | Aún local por vocabulario de dominio | No chip factory |
+| EmptyState | EXPERIENCIA §7 | `none` / `mismatch` / `error` | Migrar strings «No hay…» en pantallas tocadas |
+| Notice | OrphanedSupplierAlert + tokens semánticos | 5 variantes | Toasts (sonner) siguen para feedback de acción |
+| PageScreen | DashboardDetailLayout | `list` / `detail` / `form`; `compactHeader`; `fillViewport` | Prohibido `rounded-[2.5rem]` e italic de título |
+| Navegación | Navbar + StaffBottomNav | Por rol | Duplicación: deuda previa, no se toca hoy |
+| KPI | DashboardVentas + KpiStat | Tonos semánticos | Tira Labor 4 cols: dominio calendario |
+| Loading | LoadingSpinner | tamaños | Sin pantalla completa por dato secundario |
+| Color / radio / sombra | TOKENS | `elevacion.pagina` para PageScreen | Literales restantes = D28 |
+
+---
+
+## 7. Plantillas de pantalla (T1–T8)
+
+No son ocho componentes gigantes. Son composiciones. Lo decide [ADR-0010](../4-decisiones/ADR-0010-jerarquia-visual-canonica.md). El término es **plantilla de pantalla**, no «plantilla» (equipo).
+
+| Id | Nombre | Materialización | Anatomía |
+|---|---|---|---|
+| T1 | Dashboard mosaico | Surface `page`/`block` + DashboardShortcut + KpiStat. **No** PageScreen | cabecera de card, KPIs, atajos, acciones |
+| T2 | Listado | `PageScreen` `template="list"` | cabecera, filtros (`rightSlot` o cuerpo), lista/tabla, empty, acciones |
+| T3 | Detalle | `PageScreen` `template="detail"` | cabecera, información, secciones, acciones |
+| T4 | Formulario | `PageScreen` `template="form"` + Field + footer Button | cabecera, campos, grupos, validación, pie |
+| T5 | Modal | `Modal` contrato; densidad de cuerpo = Labor día | header / body / footer / `espacio.3` Header→Body |
+| T6 | Modal derivado | `Modal` `layer="derived"` + ADR-0009 | subordinación, header, body, footer, `parentInstance` |
+| T7 | Selector | PetroleumSegmented | opciones, selected, disabled vía CSS, feedback de foco |
+| T8 | Tabla operativa | Composición (no componente) | thead `color.marca`, filas uniformes, `tabular-nums` a la derecha, sin scroll X en Modal |
+
+Una pantalla nueva de gestión usa T2/T3/T4. Una pantalla nueva de mosaico usa T1. Un overlay usa T5/T6. Si la anatomía no cabe, se pregunta; no se clona una cabecera petróleo.

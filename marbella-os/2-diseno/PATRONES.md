@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-19
+revisado: 2026-08-25
 caducidad: 6 meses
 supersede: docs/PLAN_ASISTENCIA_UNIFICADA.md
 ---
@@ -197,6 +197,22 @@ Cuando se pulsa una cifra, se llega a lo que la compone.
 - El camino de vuelta conserva el periodo y los filtros de origen.
 
 Este patrón es la manifestación visual del principio de un único productor: si una cifra no se puede descomponer, no se puede auditar.
+
+---
+
+## P13 · Pantalla de gestión
+
+La composición por defecto de listado, detalle y formulario de gestión. No es el mosaico de atajos (T1) ni un Modal.
+
+**Anatomía**: cabecera petróleo, superficie de trabajo (`Surface` `page`), cuerpo, pie opcional. Materialización: `PageScreen`. Lo decide [ADR-0010](../4-decisiones/ADR-0010-jerarquia-visual-canonica.md).
+
+**Reglas**:
+- Una pantalla nueva de gestión usa esta composición. No se clona una cabecera petróleo.
+- El filtro temporal y las acciones de alcance viven en `rightSlot`.
+- `Button` `tertiary` dentro de la cabecera se pinta invertido (icono blanco). No es una quinta variante de Button.
+- Labor y Reservas montan el calendario mensual (P3) **dentro** de esta plantilla; no sustituyen la cabecera.
+
+**Cuándo no**: mosaico Admin/Staff (T1), pantalla de cocina, carta de cliente, overlay (P2).
 
 ---
 

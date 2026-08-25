@@ -6,7 +6,7 @@ capa: decisiones
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-07-29
+revisado: 2026-08-25
 caducidad: 12 meses
 ---
 
@@ -47,6 +47,7 @@ Las alternativas descartadas son la parte más valiosa y la que más se omite. S
 | [0007](./ADR-0007-modal-superficie-derivada.md) | Nesting de Modal: máximo una superficie derivada | Vigente |
 | [0008](./ADR-0008-modal-backdrop-capas.md) | Backdrop y jerarquía visual de capas Modal | Vigente |
 | [0009](./ADR-0009-modal-subordinacion.md) | Subordinación visual del panel Modal cubierto | Vigente |
+| [0010](./ADR-0010-jerarquia-visual-canonica.md) | Jerarquía visual canónica: primitivas y plantillas de pantalla | Vigente |
 
 ## Decisiones tomadas sin registrar
 

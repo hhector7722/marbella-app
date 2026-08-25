@@ -6,7 +6,7 @@ capa: estado
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-20
+revisado: 2026-08-25
 caducidad: 3 meses
 supersede: —
 ---
@@ -374,6 +374,22 @@ Vs PetroleumSegmented: shell borde+fill marca ≠ track+pill. Son dos familias v
 **Disparador de pago (segmented zinc):** solo si Inventory + Mapeo (y opcionalmente StaffCarta) convergen a una anatomía canónica sin badges de dominio ni selected asimétrico — entonces sí pieza propia, nunca variante de PetroleumSegmented.
 
 **Disparador de pago (resto D27):** inventariar la siguiente familia (p. ej. SelectionOption grid) en SISTEMA-DE-COMPONENTES antes de codificar.
+
+---
+
+## D28 · Literales visuales fuera de las primitivas canónicas
+
+**Prioridad: media.** [ADR-0010](../4-decisiones/ADR-0010-jerarquia-visual-canonica.md) fijó cómo se construye una pantalla nueva. Las pantallas de gestión prioritarias ya entran por `PageScreen` / `Surface`. El resto del producto sigue con literales de marca, radio y sombra.
+
+**Qué no es esta deuda:** `className` de layout (`flex`, `gap`, `min-h-0`, `overflow`) en consumidores. Eso es composición, no sistema.
+
+**Qué queda, a propósito:**
+- Literales `#36606F` / `rounded-*` / `shadow-*` en pantallas no migradas hoy.
+- Segmented zinc, TimeFilter, CartaLangPicker, RecipeCard huérfano, insignia de estado: anatomías distintas o un solo consumidor ([D27](#d27--controles-interactivos-que-no-son-button)).
+- Labels de 6–7 px en la tira del calendario mensual: excepción de `tipo.minimo` ya escrita en [TOKENS](../2-diseno/TOKENS.md).
+- Navegación inferior duplicada por rol: deuda previa, no se toca en este ciclo.
+
+**Disparador de pago:** al tocar una pantalla de gestión, entra por `PageScreen` o se declara por qué su anatomía es otra (T1, KDS, carta de cliente). No se clona una cabecera petróleo.
 
 ---
 

@@ -106,3 +106,34 @@ export {
     type PetroleumSegmentedDensity,
 } from './petroleum-segmented';
 export { CONSUMPTION_BOTTOM_SHEET_COMPONENT_ID } from './consumption-bottom-sheet';
+export {
+    SURFACE_COMPONENT_ID,
+    SURFACE_VARIANTS,
+    isSurfaceVariant,
+    pickSurfaceLayoutClassName,
+    type SurfaceVariant,
+} from './surface';
+export { FIELD_COMPONENT_ID } from './field';
+export {
+    EMPTY_STATE_COMPONENT_ID,
+    EMPTY_STATE_VARIANTS,
+    isEmptyStateVariant,
+    type EmptyStateVariant,
+} from './empty-state';
+export {
+    NOTICE_COMPONENT_ID,
+    NOTICE_VARIANTS,
+    isNoticeVariant,
+    type NoticeVariant,
+} from './notice';
+export {
+    KPI_STAT_COMPONENT_ID,
+    KPI_STAT_TONES,
+    type KpiStatTone,
+} from './kpi-stat';
+export {
+    PAGE_SCREEN_COMPONENT_ID,
+    PAGE_SCREEN_TEMPLATES,
+    PAGE_SCREEN_FORBIDDEN_RADIUS,
+    type PageScreenTemplate,
+} from './page-screen';

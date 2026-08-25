@@ -309,7 +309,7 @@ describe('Button className no escapa del contrato visual', () => {
             false
         );
         assert.equal(
-            /\[data-component='Button'\]::before \{[\s\S]*?border-radius:\s*var\(--radio-superficie\)/.test(css),
+            /\[data-component='Button'\]::before \{[^}]*border-radius:\s*var\(--radio-superficie\)/.test(css),
             false
         );
         assert.equal(

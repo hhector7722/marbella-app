@@ -6,7 +6,7 @@ capa: estado
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-07-29
+revisado: 2026-08-25
 caducidad: no aplica
 supersede: PROJECT_STATUS.md (función de historial)
 ---
@@ -35,6 +35,10 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 ## Formato
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
+
+## 2026-08-25
+
+- **ADR-0010 — jerarquía visual canónica.** Las pantallas de gestión se construyen con primitivas y plantillas de pantalla, no clonando cabeceras. Nacen `Surface`, `Field`, `EmptyState`, `Notice`, `KpiStat` y `PageScreen`. Migrados Labor, Albaranes, Reservas, Propinas, Carta y el mosaico de Caja/Staff/Ventas. El resto de literales queda en [D28](DEUDA.md). [ADR-0010](../4-decisiones/ADR-0010-jerarquia-visual-canonica.md).
 
 ## 2026-08-20
 

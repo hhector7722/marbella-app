@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-16
+revisado: 2026-08-25
 caducidad: 6 meses
 supersede: .cursor/rules/BAR-LA-MARBELLA-AI-OPERATING-PROTOCOL.mdc (reglas de estilo y de seguridad de layout)
 ---
@@ -70,6 +70,7 @@ Reglas:
 ## 5. Composición
 
 - **Antes de crear una pieza de interfaz, se busca** en [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md). Si existe, se reutiliza. Si la necesidad exige una pieza o variante de sistema nueva, se para y se pregunta.
+- **Una pantalla de gestión nueva usa `PageScreen`** o declara por qué su anatomía es otra (mosaico T1, cocina, carta de cliente). Color, radio y sombra de sistema no se reescriben en el consumidor. Lo decide [ADR-0010](../4-decisiones/ADR-0010-jerarquia-visual-canonica.md).
 - **Nunca se define un componente dentro de otro.** Provoca desmontaje y remontaje en cada renderizado, y es la causa habitual de que un campo pierda el foco al escribir.
 - **Interruptores booleanos, los mínimos.** Cinco parámetros booleanos son treinta y dos estados que nadie ha probado. Se resuelve con variantes explícitas o componiendo hijos.
 - **Se compone con hijos antes que con funciones de renderizado.**
@@ -79,7 +80,7 @@ Reglas:
 
 - **Solo utilidades de clase.** No hay estilos en línea salvo para valores calculados en tiempo de ejecución, como una posición o una altura medida.
 - **Las clases se combinan siempre con la utilidad de fusión del proyecto.** Concatenar cadenas de clases produce conflictos silenciosos donde gana la última declaración del fichero de estilos, no la última escrita.
-- **Los valores salen de [TOKENS](../2-diseno/TOKENS.md).** Un valor literal es un defecto, aunque hoy sea la norma en el código.
+- **Los valores salen de [TOKENS](../2-diseno/TOKENS.md).** Un valor literal es un defecto, aunque hoy sea la norma en el código. Tailwind local se reserva para layout y composición interna (`flex`, `gap`, `min-h-0`); no para redefinir el sistema.
 - Las utilidades globales propias se reservan para lo que las clases no pueden expresar: el envolvente de la aplicación, las áreas seguras del dispositivo, y el reparto de altura del calendario y de los modales de día.
 - **Nada de anulaciones con prioridad forzada en componentes nuevos.** Las que existen se concentran en el cálculo de altura del calendario en escritorio y son deuda contenida, no un patrón a imitar.
 

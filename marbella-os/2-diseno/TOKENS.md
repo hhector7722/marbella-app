@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-19
+revisado: 2026-08-25
 caducidad: 6 meses
 supersede: —
 ---
@@ -67,7 +67,7 @@ Es el único token con implementación centralizada real: existe como utilidad �
 
 | Token | Valor | Papel | Estado |
 |---|---|---|---|
-| `color.texto` | `#18181B` | Texto principal y cifras | declarado |
+| `color.texto` | `#18181B` | Texto principal y cifras | adoptado (piloto Field / KpiStat vía `--color-texto`) |
 | `color.texto.fuerte` | `#27272A` | Títulos y énfasis | adoptado (piloto `DashboardShortcut` vía `--color-texto-fuerte`) |
 | `color.texto.medio` | `#52525B` | Texto de apoyo, descripciones | declarado |
 | `color.texto.suave` | `#71717A` | Etiquetas, metadatos | declarado |
@@ -79,7 +79,7 @@ Es el único token con implementación centralizada real: existe como utilidad �
 | Token | Valor | Papel | Estado |
 |---|---|---|---|
 | `color.borde` | `#F4F4F5` | Borde por defecto de superficies de trabajo | adoptado (piloto `DashboardShortcut` vía `--color-borde`) |
-| `color.borde.marcado` | `#E4E4E7` | Separadores y bordes de campos de entrada | declarado |
+| `color.borde.marcado` | `#E4E4E7` | Separadores y bordes de campos de entrada | adoptado (piloto Field vía `--color-borde-marcado`) |
 | `color.borde.impreso` | `#D9E2EC` | Filetes y separadores en documentos impresos | adoptado |
 
 ## 6. Semánticos
@@ -89,14 +89,14 @@ Es el único token con implementación centralizada real: existe como utilidad �
 | Token | Valor | Significado | Estado |
 |---|---|---|---|
 | `color.positivo` | `#059669` | Cuadrado, cobrado, a favor, completado. Button primary (acción afirmativa) | adoptado (piloto Button vía `--color-positivo`) |
-| `color.positivo.fondo` | `#ECFDF5` | Fondo de aviso positivo | declarado |
+| `color.positivo.fondo` | `#ECFDF5` | Fondo de aviso positivo | adoptado (piloto Notice vía `--color-positivo-fondo`) |
 | `color.negativo` | `#E11D48` | Descuadre, deuda, pérdida, error de negocio | adoptado (piloto Button vía `--color-negativo`) |
-| `color.negativo.fondo` | `#FFF1F2` | Fondo de aviso negativo | adoptado (variable `--color-negativo-fondo`; Button v1 usa el pleno, no el fondo) |
-| `color.aviso` | `#B45309` | Advertencia que requiere atención pero no bloquea | declarado |
-| `color.aviso.fondo` | `#FFF6E5` | Fondo de advertencia | declarado |
-| `color.informativo` | `#1F5FAF` | Información neutra, contexto | declarado |
-| `color.informativo.fondo` | `#EFF6FF` | Fondo informativo | declarado |
-| `color.critico` | `#B91C1C` | Fallo del sistema, no del negocio | declarado |
+| `color.negativo.fondo` | `#FFF1F2` | Fondo de aviso negativo | adoptado (variable `--color-negativo-fondo`; Notice) |
+| `color.aviso` | `#B45309` | Advertencia que requiere atención pero no bloquea | adoptado (piloto Notice vía `--color-aviso`) |
+| `color.aviso.fondo` | `#FFF6E5` | Fondo de advertencia | adoptado (piloto Notice vía `--color-aviso-fondo`) |
+| `color.informativo` | `#1F5FAF` | Información neutra, contexto | adoptado (piloto Notice / KpiStat vía `--color-informativo`) |
+| `color.informativo.fondo` | `#EFF6FF` | Fondo informativo | adoptado (piloto Notice vía `--color-informativo-fondo`) |
+| `color.critico` | `#B91C1C` | Fallo del sistema, no del negocio | adoptado (piloto Notice vía `--color-critico`) |
 
 Los tokens semánticos de documentos impresos usan los mismos nombres con valores propios ya centralizados: positivo `#1B7A4E`, negativo `#B91C1C`, aviso `#B45309`, informativo `#1F5FAF`, con sus fondos correspondientes.
 
@@ -128,7 +128,7 @@ Escala de cuatro píxeles. **No existen valores intermedios.**
 | `espacio.8` | 32 px | Separación mayor y márgenes de página |
 | `espacio.12` | 48 px | Separación de zonas independientes |
 
-Estado: `espacio.1`–`espacio.4` adoptados en Design System (`--espacio-*`, clases `*-ds-*`) vía pilotos `DashboardShortcut` y Modal. El resto de la escala permanece adoptado por herencia del motor de estilos, sin nombres de token en la mayoría del producto.
+Estado: `espacio.1`–`espacio.4` adoptados en Design System (`--espacio-*`, clases `*-ds-*`) vía pilotos `DashboardShortcut` y Modal. `espacio.8` adoptado (`--espacio-8`, piloto EmptyState). `espacio.6` y `espacio.12` permanecen en la escala documental, sin variable CSS todavía.
 
 ## 9. Forma
 
@@ -145,9 +145,10 @@ Prohibido mezclar radios dentro de un mismo bloque, según [LENGUAJE-VISUAL §5]
 
 | Token | Valor | Papel | Estado |
 |---|---|---|---|
-| `elevacion.superficie` | sombra mínima | Separa la superficie de trabajo del envolvente. **Elevación por defecto** | adoptado (piloto `DashboardShortcut` vía `--elevacion-superficie`) |
+| `elevacion.superficie` | sombra mínima | Separa tiles y bloques interiores. **Elevación de `Surface` `block`** | adoptado (piloto `DashboardShortcut` vía `--elevacion-superficie`) |
 | `elevacion.flotante` | sombra media | Elementos que se despegan: menús, elementos arrastrados | declarado |
 | `elevacion.modal` | sombra amplia | Modales y capas superpuestas | adoptado (contrato Modal vía `--elevacion-modal`) |
+| `elevacion.pagina` | misma cifra que `elevacion.modal` (`shadow-2xl`) | Superficie de trabajo `page` sobre el envolvente. Ref. PageScreen / Labor. **No** es un overlay | adoptado (`--elevacion-pagina`) |
 | `elevacion.ninguna` | sin sombra | Elementos embebidos y filas de tabla | declarado |
 
 ## 11. Táctil
@@ -201,6 +202,6 @@ Añadir un token nuevo exige justificar por qué ninguno de los existentes sirve
 ## 15. Deuda de tokens conocida
 
 - **Dos escalas de neutros en uso.** Conviven la escala de grises fría y otra escala de grises distinta, con cientos de usos cada una. La canónica es la fría; la otra es deuda de migración.
-- **La marca y la mayoría de colores de pantalla siguen sin centralizar.** El piloto `DashboardShortcut` adoptó un subconjunto mínimo (`superficie`, `borde`, `texto.fuerte`, radios, elevación, táctil, `espacio.1/2`) vía CSS variables y Tailwind. El color de marca sigue repetido literalmente cientos de veces.
+- **La marca y la mayoría de colores de pantalla siguen sin centralizar fuera de las primitivas.** PageScreen, Surface, Field, Notice y KpiStat adoptan tokens. El color de marca sigue literal en pantallas no migradas ([D28](../5-estado/DEUDA.md)).
 - **El azul de marca difiere entre pantalla y documento impreso.**
 - **Una tipografía ajena** se introdujo en una superficie pública sin declararse como excepción.

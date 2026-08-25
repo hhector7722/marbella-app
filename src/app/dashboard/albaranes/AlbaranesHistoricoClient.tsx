@@ -38,6 +38,9 @@ import {
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { Field } from '@/components/ui/Field'
+import { Notice } from '@/components/ui/Notice'
 import { IngredientWizard, type IngredientWizardInvoiceContext } from '@/components/ingredients/IngredientWizard'
 import type {
   PurchaseInvoiceDetail,
@@ -1255,6 +1258,7 @@ export default function AlbaranesHistoricoClient({
       rightSlot={headerActions}
       compactHeader
       fillViewport
+      template="list"
       contentClassName="p-3 md:p-4 pt-2 md:pt-3 flex flex-col min-h-0 overflow-hidden"
       footerSlot={<ScannerClient onSuccess={refresh} compactTrigger />}
     >
@@ -1291,12 +1295,16 @@ export default function AlbaranesHistoricoClient({
 
       {/* Banners fijos bajo el buscador (no scrollean con la lista). */}
       {autoMapError ? (
-        <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs font-black text-rose-700 shrink-0">
-          Auto-mapeo: {autoMapError}
+        <div className="shrink-0">
+          <Notice instance="albaranes-automap-error" variant="negative">
+            Auto-mapeo: {autoMapError}
+          </Notice>
         </div>
       ) : null}
       {autoMapReport ? (
-        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs font-black text-emerald-800 flex items-start gap-2 shrink-0">
+        <div className="shrink-0">
+          <Notice instance="albaranes-automap-report" variant="positive">
+          <div className="flex items-start gap-2">
           <Sparkles className="h-4 w-4 mt-0.5 shrink-0" />
           <div className="min-w-0">
             <p className="leading-tight">
@@ -1343,11 +1351,15 @@ export default function AlbaranesHistoricoClient({
             className="ml-auto shrink-0"
             icon={<X className="h-4 w-4" />}
           />
+          </div>
+          </Notice>
         </div>
       ) : null}
 
       {error ? (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm font-bold text-red-700 flex flex-col sm:flex-row sm:items-center gap-3 shrink-0">
+        <div className="shrink-0">
+          <Notice instance="albaranes-list-error" variant="negative">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <span className="flex-1 min-w-0">{error}</span>
           <div className="flex items-center gap-2 shrink-0">
             <Button
@@ -1361,16 +1373,19 @@ export default function AlbaranesHistoricoClient({
             >
               Reintentar
             </Button>
-            <button
+            <Button
               type="button"
+              variant="primary"
+              instance="albaranes-list-reload"
               onClick={() => {
                 if (typeof window !== 'undefined') window.location.reload()
               }}
-              className="min-h-[40px] px-3 rounded-xl bg-red-600 text-white text-xs font-black uppercase tracking-wider active:scale-[0.99] transition"
             >
               Recargar página
-            </button>
+            </Button>
           </div>
+          </div>
+          </Notice>
         </div>
       ) : null}
 
@@ -1378,7 +1393,11 @@ export default function AlbaranesHistoricoClient({
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           <div className="px-1.5 py-1">
             {filtered.length === 0 ? (
-              <div className="px-2 py-6 text-xs font-medium text-zinc-500">No hay albaranes que coincidan.</div>
+              <EmptyState
+                instance="albaranes-list-empty"
+                variant="mismatch"
+                title="No hay albaranes que coincidan."
+              />
             ) : (
               <div className="flex flex-col">
                 {filtered.map((it) => {
@@ -1960,7 +1979,9 @@ export default function AlbaranesHistoricoClient({
                 >
                       <div className="flex flex-col gap-3 min-w-0 max-w-full">
                         {supplierError ? (
-                          <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm font-bold text-red-700">{supplierError}</div>
+                          <Notice instance="albaranes-supplier-error" variant="negative">
+                            {supplierError}
+                          </Notice>
                         ) : null}
 
                         <div className="bg-white rounded-xl border border-zinc-200 shadow-sm p-3 flex items-center gap-2 min-h-[56px]">
@@ -1986,7 +2007,11 @@ export default function AlbaranesHistoricoClient({
                           ) : supplierQuery.trim().length < 2 ? (
                             <div className="text-sm font-bold text-zinc-500 px-1">Escribe al menos 2 letras.</div>
                           ) : supplierResults.length === 0 ? (
-                            <div className="text-sm font-bold text-zinc-500 px-1">Sin resultados.</div>
+                            <EmptyState
+                              instance="albaranes-supplier-empty"
+                              variant="mismatch"
+                              title="Sin resultados."
+                            />
                           ) : (
                             supplierResults.map((s) => (
                               <Button
@@ -2234,31 +2259,28 @@ export default function AlbaranesHistoricoClient({
       >
         <div className="space-y-3 min-w-0 max-w-full">
           <div className="grid grid-cols-2 gap-2">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Desde</p>
+            <Field instance="albaranes-filter-from" label="Desde" htmlFor="albaranes-filter-from">
               <input
+                id="albaranes-filter-from"
                 type="date"
                 value={filterFrom}
                 onChange={(e) => setFilterFrom(e.target.value)}
-                className="mt-1 w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold"
               />
-            </div>
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Hasta</p>
+            </Field>
+            <Field instance="albaranes-filter-to" label="Hasta" htmlFor="albaranes-filter-to">
               <input
+                id="albaranes-filter-to"
                 type="date"
                 value={filterTo}
                 onChange={(e) => setFilterTo(e.target.value)}
-                className="mt-1 w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold"
               />
-            </div>
+            </Field>
           </div>
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Proveedor</p>
+          <Field instance="albaranes-filter-supplier" label="Proveedor" htmlFor="albaranes-filter-supplier">
             <select
+              id="albaranes-filter-supplier"
               value={filterSupplierId}
               onChange={(e) => setFilterSupplierId(e.target.value)}
-              className="mt-1 w-full min-h-[48px] px-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold"
             >
               <option value="">Todos</option>
               {filterSuppliers.map((s) => (
@@ -2267,8 +2289,8 @@ export default function AlbaranesHistoricoClient({
                 </option>
               ))}
             </select>
-            {filterSuppliersLoading ? <p className="mt-2 text-xs font-bold text-zinc-500">Cargando proveedores…</p> : null}
-          </div>
+          </Field>
+          {filterSuppliersLoading ? <p className="mt-2 text-xs font-bold text-zinc-500">Cargando proveedores…</p> : null}
         </div>
       </Modal>
     </div>

@@ -27,6 +27,8 @@ import { cn, calculateRoundedHours } from '@/lib/utils';
 import { getOvertimeData, togglePaidStatus, togglePreferStockStatus } from '@/app/actions/overtime';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import DashboardVentasSection from '@/components/dashboards/DashboardVentasSection';
+import { Surface } from '@/components/ui/Surface';
+import { EmptyState } from '@/components/ui/EmptyState';
 import WorkerWeeklyHistoryModal from '@/components/WorkerWeeklyHistoryModal';
 import { getDashboardData } from '@/app/actions/get-dashboard-data';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
@@ -494,7 +496,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         <DashboardVentasSection />
     );
     const cajaInicialSection = (
-        <div className={cn("bg-white rounded-2xl shadow-xl border border-gray-100 flex flex-col transition-all duration-300", isMovementsExpanded ? "p-3" : "p-2 pb-0.5")}>
+        <Surface variant="page" instance="dashboard-caja-inicial" className={cn("flex flex-col overflow-hidden", isMovementsExpanded ? "p-3" : "p-2 pb-0.5")}>
             {treasuryLoading ? (
                 <div className="flex items-center justify-center min-h-[88px] py-4" role="status" aria-label="Cargando caja">
                     <LoadingSpinner size="md" className="text-emerald-600" />
@@ -563,7 +565,11 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                 <div className={cn("overflow-hidden transition-all duration-300", isMovementsExpanded ? "flex-1 opacity-100" : "h-0 opacity-0")}>
                                     <div className="space-y-1.5 py-1.5 max-h-[120px] md:max-h-[200px] overflow-y-auto no-scrollbar">
                                         {boxMovements.length === 0 && (
-                                            <p className="text-[10px] md:text-sm text-gray-300 italic px-1 text-center py-4">Sin historial reciente</p>
+                                            <EmptyState
+                                                instance="dashboard-caja-movimientos-empty"
+                                                variant="none"
+                                                title="Sin historial reciente"
+                                            />
                                         )}
                                         {boxMovements.map(mov => (
                                             <div key={mov.id} className="flex justify-between items-center text-[10px] md:text-sm bg-zinc-50 p-3 md:p-4 rounded-xl shadow-sm border border-gray-50">
@@ -589,7 +595,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                         </div>
                 ))
             )}
-        </div>
+        </Surface>
     );
 
     const horasExtrasSection = (
@@ -727,21 +733,31 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const renderDashboardChangeCard = (title: string, idx: number) => {
         if (treasuryLoading) {
             return (
-                <div key={`change-loading-${idx}`} className="bg-white rounded-xl shadow-sm flex flex-col overflow-hidden h-full min-h-[72px] w-full min-w-0 border border-zinc-100">
-                    <div className="bg-[#36606F] pl-3 pr-2 py-0.5 flex items-center justify-between text-white shrink-0">
+                <Surface
+                    key={`change-loading-${idx}`}
+                    variant="block"
+                    instance={`dashboard-caja-cambio-loading-${idx}`}
+                    className="flex flex-col overflow-hidden h-full min-h-[72px] w-full min-w-0"
+                >
+                    <div className="bg-ds-marca pl-3 pr-2 py-0.5 flex items-center justify-between text-white shrink-0">
                         <h3 className="text-[8px] md:text-[9px] font-black uppercase tracking-wider truncate">{title}</h3>
                     </div>
                     <div className="flex-1 flex items-center justify-center min-h-[48px]" role="status" aria-label={`Cargando ${title}`}>
-                        <LoadingSpinner size="sm" className="text-[#36606F]" />
+                        <LoadingSpinner size="sm" className="text-ds-marca" />
                     </div>
-                </div>
+                </Surface>
             );
         }
         const box = dashboardChangeBoxes[idx];
         if (!box) return null;
         return (
-            <div key={box.id} className="bg-white rounded-xl shadow-sm flex flex-col overflow-hidden h-full min-h-0 w-full min-w-0 border border-zinc-100">
-                <div className="bg-[#36606F] pl-3 pr-2 md:pl-3 md:pr-2 py-0.5 md:py-0.5 flex items-center justify-between text-white shrink-0">
+            <Surface
+                key={box.id}
+                variant="block"
+                instance={`dashboard-caja-cambio-${box.id}`}
+                className="flex flex-col overflow-hidden h-full min-h-0 w-full min-w-0"
+            >
+                <div className="bg-ds-marca pl-3 pr-2 md:pl-3 md:pr-2 py-0.5 md:py-0.5 flex items-center justify-between text-white shrink-0">
                     <h3 className="text-[8px] md:text-[9px] font-black uppercase tracking-wider truncate">{title}</h3>
                 </div>
                 <div className="flex-1 flex items-center justify-center min-h-0 p-0.5 md:p-0.5 min-w-0">
@@ -777,7 +793,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                         </div>
                     </div>
                 </div>
-            </div>
+            </Surface>
         );
     };
 

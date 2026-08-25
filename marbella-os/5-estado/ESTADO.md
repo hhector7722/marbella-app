@@ -6,12 +6,12 @@ capa: estado
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-19
+revisado: 2026-08-25
 caducidad: 1 mes
 supersede: PROJECT_STATUS.md §ESTADO GENERAL
 ---
 
-# ESTADO — Fotografía del 16 de agosto de 2026
+# ESTADO — Fotografía del 25 de agosto de 2026
 
 Dónde está Marbella hoy. **Este documento se reescribe, no se acumula**: el historial vive en [CHANGELOG](CHANGELOG.md) y en git.
 
@@ -21,7 +21,7 @@ Techo duro: 200 líneas. Si no cabe, es que se está usando como changelog.
 
 ## Resumen en tres frases
 
-El producto está en producción y sostiene la operación diaria del negocio. El dominio de horas acaba de completar la reconstrucción de su motor de cálculo y es la zona en movimiento. La deuda dominante sigue siendo estructural: hay contrato oficial de Modal (Albaranes, Caja/Tesorería, Perfil/documentos RRHH, Propinas, Pedidos/Proveedores, Consumo personal, parte de Staff/Admin, el escandallo TPV y la oleada parcial de Labor/Overtime/Historial) y de Button, y `DashboardShortcut` en Master más los 8 atajos cuadrados de Staff/Admin, pero no hay sistema de componentes completo y la mitad del código vive innecesariamente en el navegador.
+El producto está en producción y sostiene la operación diaria del negocio. El dominio de horas sigue en movimiento. La interfaz de gestión tiene jerarquía visual canónica ([ADR-0010](../4-decisiones/ADR-0010-jerarquia-visual-canonica.md)): tokens, primitivas y plantillas de pantalla; Modal y Button no se reabren. La deuda dominante de interfaz es migración de literales ([D28](DEUDA.md)), no la ausencia de contrato.
 
 ---
 
@@ -45,6 +45,7 @@ El producto está en producción y sostiene la operación diaria del negocio. El
 - **Coste laboral.** El coste ordinario procede del resumen mensual de la gestoría. El productor mensual está endurecido con versionado de intérprete y registro de importaciones; parte del diseño documentado todavía no está implementado.
 - **Pabellón.** Importación e interpretación automática de la programación, con revisión humana. En estabilización.
 - **Análisis de negocio.** Indicadores en evolución.
+- **Jerarquía visual.** Contrato vigente (ADR-0010). Migración de literales en pantallas no prioritarias: [D28](DEUDA.md).
 
 ## Frágil
 
@@ -97,9 +98,9 @@ Sirven para dimensionar, no para presumir:
 - 588 ficheros de código en la aplicación, 58 pantallas.
 - 227 ficheros marcados como cliente. **Es la cifra que hay que bajar.**
 - 40 módulos de acciones de servidor y 27 manejadores de ruta.
-- 26 ficheros de prueba, concentrados en el motor de horas, el sistema de comparación y el intérprete de nóminas. Cero pruebas de interfaz.
-- 14 componentes transversales para todo el producto. **Es la cifra que hay que subir.**
-- **Cero tokens de color centralizados; el color de marca aparece repetido casi 900 veces.** El Design System ya materializa un subconjunto (superficie, marca, táctil, Button/Modal). El resto sigue literal.
+- 26 ficheros de prueba, concentrados en el motor de horas, el sistema de comparación, el intérprete de nóminas y el Design System. Cero pruebas de interfaz.
+- ~20 componentes transversales (Button, Modal, Surface, Field, EmptyState, Notice, KpiStat, PageScreen, DocumentListRow, PetroleumSegmented, DashboardShortcut…). La insignia de estado sigue sin pieza.
+- Tokens de pantalla adoptados en esas primitivas. Los literales de marca restantes son [D28](DEUDA.md), no ausencia de contrato.
 
 ---
 

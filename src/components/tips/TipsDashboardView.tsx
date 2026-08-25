@@ -19,6 +19,9 @@ import { SanctionedTipMoney } from '@/components/tips/SanctionedTipMoney';
 import { TipExpandBadge, TipSinRegHeaderBadge } from '@/components/tips/TipColumnToggleBadge';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import { Surface } from '@/components/ui/Surface';
+import { EmptyState } from '@/components/ui/EmptyState';
 import {
   formatLocalIsoDateLabel,
   formatTipInt,
@@ -78,7 +81,7 @@ const fmtHours = (val: number) => (Math.abs(val) < 0.005 ? ' ' : (val % 1 === 0 
 
 /** Columnas desplegables (desglose H/€, Sin reg) vs fijas (nombre, H, PEN, PROP). */
 const TIP_EXPAND_TH = 'bg-[#4a7583]';
-const TIP_EXPAND_TD = 'bg-[#36606F]/[0.07] hover:bg-[#36606F]/[0.11]';
+const TIP_EXPAND_TD = 'bg-ds-marca/[0.07] hover:bg-ds-marca/[0.11]';
 
 const TIP_TABLE_TH = 'whitespace-nowrap px-1 py-1 align-middle leading-none';
 const TIP_TABLE_TH_TEXT =
@@ -95,7 +98,7 @@ const TIP_TABLE_COMPACT_TH_TEXT = 'text-[7px] tracking-tight md:text-[8px]';
 const TIP_TABLE_COMPACT_DATA_CELL = 'px-0.5 py-1 text-[8px] md:text-[9px]';
 const TIP_TABLE_COMPACT_NAME = 'px-1 py-1 text-[8px] md:text-[9px]';
 const TIP_TABLE_NAME_TH =
-  'sticky left-0 z-[1] max-w-none whitespace-nowrap bg-[#36606F] px-1.5 text-left align-middle';
+  'sticky left-0 z-[1] max-w-none whitespace-nowrap bg-ds-marca px-1.5 text-left align-middle';
 const TIP_TABLE_NAME_TD = cn(
   'sticky left-0 z-[1] max-w-none whitespace-nowrap bg-white px-1.5 py-1.5 cursor-pointer align-middle',
   TIP_TABLE_BODY_TEXT,
@@ -435,25 +438,24 @@ export default function TipsDashboardView({
       <span className="font-black tabular-nums">{Number(lastDistribution.weekend_total).toFixed(2)}€</span>
     </div>
   ) : (
-    <div className="rounded-xl md:rounded-2xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 md:px-4 md:py-3 text-[10px] md:text-xs font-bold text-zinc-500">
-      Aún no hay ningún reparto confirmado en el historial.
-    </div>
+    <EmptyState
+      instance="tips-history-none"
+      variant="none"
+      title="Aún no hay ningún reparto confirmado en el historial."
+    />
   );
 
   return (
-    <div className="min-h-screen p-2 sm:p-4 md:p-8 pb-24 text-zinc-900">
-      <div className="max-w-6xl mx-auto space-y-3 md:space-y-6 min-w-0">
-        <div className="bg-white rounded-xl md:rounded-[2.5rem] shadow-xl md:shadow-2xl overflow-hidden min-w-0">
-          <div className="bg-[#36606F] p-3 md:p-6 relative">
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0 flex-1">
-                <h1 className="text-sm md:text-4xl font-black text-white uppercase tracking-tight italic truncate">
-                  Propinas
-                </h1>
-                <p className="text-white text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] mt-0.5 md:mt-1 truncate">
-                  Rango manual • {rangeLabel}
-                </p>
-              </div>
+    <>
+    <DashboardDetailLayout
+      title="Propinas"
+      subtitle={`Rango manual • ${rangeLabel}`}
+      showBackButton={false}
+      maxWidthClass="max-w-6xl"
+      template="list"
+      className="p-2 sm:p-4 md:p-8"
+      contentClassName="p-2.5 md:p-6 space-y-3 md:space-y-4 min-w-0"
+      rightSlot={
               <div className="flex items-center gap-1.5 md:gap-2 shrink-0 text-white">
                 <TimeFilterButton
                   onClick={() => setIsTimeFilterOpen(true)}
@@ -463,19 +465,18 @@ export default function TipsDashboardView({
                     setEndDate(initialEndDate);
                   }}
                 />
-                <button
+                <Button
                   type="button"
+                  variant="tertiary"
+                  instance="tips-recalculate"
                   onClick={() => void fetchPreview()}
-                  className="w-10 h-10 md:w-11 md:h-11 rounded-xl md:rounded-2xl bg-white/10 hover:bg-white/20 transition-all active:scale-95 flex items-center justify-center text-white shrink-0 min-h-[48px]"
                   aria-label="Recalcular"
-                >
-                  <RefreshCw size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
-                </button>
+                  className="shrink-0"
+                  icon={<RefreshCw size={16} strokeWidth={3} />}
+                />
               </div>
-            </div>
-          </div>
-
-          <div className="p-2.5 md:p-6 space-y-3 md:space-y-4">
+      }
+    >
             {lastDistBanner}
 
             <div className="-mx-2.5 md:-mx-6">
@@ -536,7 +537,7 @@ export default function TipsDashboardView({
               </div>
             </div>
 
-            <div className="bg-white rounded-xl md:rounded-3xl shadow-sm overflow-hidden">
+            <Surface variant="block" instance="tips-matrix" className="overflow-hidden">
               {loading && (
                 <div className="px-4 py-2 flex items-center gap-2 text-zinc-400 text-[10px] font-black uppercase tracking-widest">
                   <RefreshCw className="animate-spin shrink-0" size={12} strokeWidth={3} />
@@ -546,7 +547,7 @@ export default function TipsDashboardView({
               <div className="isolate overflow-x-hidden touch-pan-y overscroll-y-auto md:overflow-x-visible">
                 <table className="w-full border-collapse table-fixed">
                   <thead>
-                    <tr className="align-middle bg-[#36606F] text-white">
+                    <tr className="align-middle bg-ds-marca text-white">
                       <th
                         style={{ width: colWidths.name }}
                         className={tipNameThClass}
@@ -862,7 +863,7 @@ export default function TipsDashboardView({
                                   style={{ width: colWidths.eLv }}
                                   className={cn(
                                     tipDataCellClass,
-                                    'text-[#36606F] cursor-pointer',
+                                    'text-ds-marca cursor-pointer',
                                     TIP_EXPAND_TD,
                                     strikeClass
                                   )}
@@ -874,7 +875,7 @@ export default function TipsDashboardView({
                                   style={{ width: colWidths.eSd }}
                                   className={cn(
                                     tipDataCellClass,
-                                    'text-[#36606F] cursor-pointer',
+                                    'text-ds-marca cursor-pointer',
                                     TIP_EXPAND_TD,
                                     strikeClass
                                   )}
@@ -891,13 +892,11 @@ export default function TipsDashboardView({
                   </tbody>
                 </table>
               </div>
-            </div>
-          </div>
-        </div>
+            </Surface>
 
         <TipDistributionHistorySection refreshToken={historyRefreshToken} />
         <div className="scroll-end-touch" aria-hidden />
-      </div>
+    </DashboardDetailLayout>
 
       {cashModal?.open ? (
         <Modal
@@ -1032,6 +1031,6 @@ export default function TipsDashboardView({
           }
         }}
       />
-    </div>
+    </>
   );
 }

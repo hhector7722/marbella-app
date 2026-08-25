@@ -9,6 +9,8 @@
 :root {
   --color-superficie: #ffffff;
   --color-borde: #f4f4f5;
+  --color-borde-marcado: #e4e4e7;
+  --color-texto: #18181b;
   --color-texto-fuerte: #27272a;
   /* TOKENS color.texto.tenue — metadato de DocumentListRow */
   --color-texto-tenue: #a1a1aa;
@@ -19,15 +21,23 @@
   --color-positivo: #059669;
   --color-negativo: #e11d48;
   --color-negativo-fondo: #fff1f2;
+  --color-positivo-fondo: #ecfdf5;
+  --color-aviso: #b45309;
+  --color-aviso-fondo: #fff6e5;
+  --color-informativo: #1f5faf;
+  --color-informativo-fondo: #eff6ff;
+  --color-critico: #b91c1c;
   --radio-superficie: 16px;
   --radio-control: 12px;
   --espacio-1: 4px;
   --espacio-2: 8px;
   --espacio-3: 12px;
   --espacio-4: 16px;
+  --espacio-8: 32px;
   --tactil-minimo: 48px;
   --elevacion-superficie: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --elevacion-modal: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  --elevacion-pagina: 0 25px 50px -12px rgb(0 0 0 / 0.25);
   /* TOKENS estructura.cabecera-modal — altura fija global */
   --modal-header-height: 36px;
   /* Inset horizontal único de cabecera Modal (ref. Albaranes) = espacio.4 */
@@ -409,6 +419,248 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/*
+ * Surface — page (sobre el envolvente) / block (agrupación interior).
+ */
+[data-component='Surface'] {
+  box-sizing: border-box;
+  background-color: var(--color-superficie);
+}
+[data-component='Surface'][data-variant='page'] {
+  border-radius: var(--radio-superficie);
+  box-shadow: var(--elevacion-pagina);
+}
+[data-component='Surface'][data-variant='block'] {
+  border-radius: var(--radio-control);
+  box-shadow: var(--elevacion-superficie);
+  border: 1px solid var(--color-borde);
+}
+
+/*
+ * PageScreen — cabecera petróleo canónica (T2 / T3 / T4).
+ */
+[data-component='PageScreen'] [data-element='header'] {
+  background-color: var(--color-marca);
+  color: var(--color-texto-invertido);
+}
+[data-component='PageScreen'] [data-element='title'] {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 900;
+  font-size: 1.125rem;
+  line-height: 1.25;
+  color: var(--color-texto-invertido);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+@media (min-width: 768px) {
+  [data-component='PageScreen'] [data-element='title'] {
+    font-size: 1.25rem;
+  }
+}
+[data-component='PageScreen'] [data-element='header'][data-compact='true'] [data-element='title'] {
+  font-size: 0.875rem;
+}
+@media (min-width: 768px) {
+  [data-component='PageScreen'] [data-element='header'][data-compact='true'] [data-element='title'] {
+    font-size: 1rem;
+  }
+}
+[data-component='PageScreen'] [data-element='header'] [data-component='Button'][data-variant='tertiary'] {
+  color: var(--color-texto-invertido);
+}
+[data-component='PageScreen'] [data-element='header'] [data-component='Button'][data-variant='tertiary']::before {
+  border-color: color-mix(in srgb, var(--color-texto-invertido) 28%, transparent);
+}
+[data-component='PageScreen'] [data-element='header'] [data-component='Button'][data-variant='tertiary']:hover:not(:disabled)::before {
+  background-color: color-mix(in srgb, var(--color-texto-invertido) 15%, transparent);
+}
+[data-component='PageScreen'] [data-element='subtitle'] {
+  margin: 0.25rem 0 0;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: color-mix(in srgb, var(--color-texto-invertido) 60%, transparent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/*
+ * Field — control de formulario táctil.
+ */
+[data-component='Field'] {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+[data-component='Field'] [data-element='label'] {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-texto-tenue);
+}
+[data-component='Field'] [data-element='control'] {
+  margin-top: var(--espacio-1);
+}
+[data-component='Field'] [data-element='control'] input,
+[data-component='Field'] [data-element='control'] select,
+[data-component='Field'] [data-element='control'] textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--tactil-minimo);
+  padding-inline: var(--espacio-3);
+  border-radius: var(--radio-control);
+  border: 1px solid var(--color-borde-marcado);
+  background-color: var(--color-superficie);
+  color: var(--color-texto);
+  font-size: 16px;
+  font-weight: 700;
+}
+[data-component='Field'] [data-element='control'] input:focus,
+[data-component='Field'] [data-element='control'] select:focus,
+[data-component='Field'] [data-element='control'] textarea:focus {
+  outline: 2px solid color-mix(in srgb, var(--color-marca) 25%, transparent);
+  outline-offset: 0;
+  border-color: var(--color-marca);
+}
+[data-component='Field'][data-invalid='true'] [data-element='control'] input,
+[data-component='Field'][data-invalid='true'] [data-element='control'] select,
+[data-component='Field'][data-invalid='true'] [data-element='control'] textarea {
+  border-color: var(--color-negativo);
+}
+[data-component='Field'] [data-element='error'] {
+  margin: var(--espacio-1) 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-negativo);
+}
+[data-component='Field'] [data-element='hint'] {
+  margin: var(--espacio-1) 0 0;
+  font-size: 12px;
+  color: var(--color-texto-tenue);
+}
+
+/*
+ * EmptyState — tres variantes distinguibles (EXPERIENCIA §7).
+ */
+[data-component='EmptyState'] {
+  padding: var(--espacio-8) var(--espacio-4);
+  text-align: center;
+}
+[data-component='EmptyState'] [data-element='title'] {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-texto-fuerte);
+}
+[data-component='EmptyState'] [data-element='description'] {
+  margin: var(--espacio-2) 0 0;
+  font-size: 14px;
+  color: var(--color-texto-tenue);
+}
+[data-component='EmptyState'][data-variant='error'] [data-element='title'] {
+  color: var(--color-negativo);
+}
+[data-component='EmptyState'] [data-element='action'] {
+  margin-top: var(--espacio-4);
+}
+
+/*
+ * Notice — aviso embebido.
+ */
+[data-component='Notice'] {
+  box-sizing: border-box;
+  border-radius: var(--radio-control);
+  border: 1px solid var(--color-borde-marcado);
+  padding: var(--espacio-3);
+  font-size: 12px;
+  font-weight: 700;
+}
+[data-component='Notice'] [data-element='title'] {
+  margin: 0 0 var(--espacio-1);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 11px;
+}
+[data-component='Notice'][data-variant='negative'],
+[data-component='Notice'][data-variant='critical'] {
+  background-color: var(--color-negativo-fondo);
+  border-color: color-mix(in srgb, var(--color-negativo) 40%, transparent);
+  color: var(--color-negativo);
+}
+[data-component='Notice'][data-variant='positive'] {
+  background-color: var(--color-positivo-fondo);
+  border-color: color-mix(in srgb, var(--color-positivo) 40%, transparent);
+  color: var(--color-positivo);
+}
+[data-component='Notice'][data-variant='warning'] {
+  background-color: var(--color-aviso-fondo);
+  border-color: color-mix(in srgb, var(--color-aviso) 40%, transparent);
+  color: var(--color-aviso);
+}
+[data-component='Notice'][data-variant='info'] {
+  background-color: var(--color-informativo-fondo);
+  border-color: color-mix(in srgb, var(--color-informativo) 35%, transparent);
+  color: var(--color-informativo);
+}
+
+/*
+ * KpiStat — cifra protagonista (T1). Label nunca por debajo de tipo.minimo.
+ */
+[data-component='KpiStat'] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-width: 0;
+}
+[data-component='KpiStat'] [data-element='value'] {
+  font-size: 1.125rem;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--color-texto);
+  font-variant-numeric: tabular-nums;
+}
+[data-component='KpiStat'] [data-element='value'] > * {
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  color: inherit;
+  font-variant-numeric: inherit;
+}
+@media (min-width: 768px) {
+  [data-component='KpiStat'] [data-element='value'] {
+    font-size: 1.875rem;
+  }
+}
+[data-component='KpiStat'] [data-element='label'] {
+  margin-top: var(--espacio-1);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-texto-tenue);
+}
+[data-component='KpiStat'][data-tone='positive'] [data-element='value'] {
+  color: var(--color-positivo);
+}
+[data-component='KpiStat'][data-tone='negative'] [data-element='value'] {
+  color: var(--color-negativo);
+}
+[data-component='KpiStat'][data-tone='info'] [data-element='value'] {
+  color: var(--color-informativo);
 }
 
 /*

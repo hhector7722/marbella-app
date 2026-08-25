@@ -10,6 +10,10 @@ export const DS_SCREEN_TOKENS = {
     colorSuperficie: '#FFFFFF',
     /** TOKENS `color.borde` */
     colorBorde: '#F4F4F5',
+    /** TOKENS `color.borde.marcado` */
+    colorBordeMarcado: '#E4E4E7',
+    /** TOKENS `color.texto` */
+    colorTexto: '#18181B',
     /** TOKENS `color.texto.fuerte` */
     colorTextoFuerte: '#27272A',
     /** TOKENS `color.texto.tenue` — metadato DocumentListRow */
@@ -28,6 +32,18 @@ export const DS_SCREEN_TOKENS = {
     colorNegativo: '#E11D48',
     /** TOKENS `color.negativo.fondo` */
     colorNegativoFondo: '#FFF1F2',
+    /** TOKENS `color.positivo.fondo` */
+    colorPositivoFondo: '#ECFDF5',
+    /** TOKENS `color.aviso` */
+    colorAviso: '#B45309',
+    /** TOKENS `color.aviso.fondo` */
+    colorAvisoFondo: '#FFF6E5',
+    /** TOKENS `color.informativo` */
+    colorInformativo: '#1F5FAF',
+    /** TOKENS `color.informativo.fondo` */
+    colorInformativoFondo: '#EFF6FF',
+    /** TOKENS `color.critico` */
+    colorCritico: '#B91C1C',
     /** TOKENS `radio.superficie` — 16px */
     radioSuperficie: '16px',
     /** TOKENS `radio.control` — 12px */
@@ -40,6 +56,8 @@ export const DS_SCREEN_TOKENS = {
     espacio3: '12px',
     /** TOKENS `espacio.4` — 16px */
     espacio4: '16px',
+    /** TOKENS `espacio.8` — 32px */
+    espacio8: '32px',
     /** TOKENS `tactil.minimo` — 48px */
     tactilMinimo: '48px',
     /**
@@ -48,10 +66,16 @@ export const DS_SCREEN_TOKENS = {
      */
     elevacionSuperficie: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
     /**
- * Elevación de modal (TOKENS `elevacion.modal`).
- * Equivale a Tailwind `shadow-2xl`.
- */
+     * Elevación de modal (TOKENS `elevacion.modal`).
+     * Equivale a Tailwind `shadow-2xl`.
+     */
     elevacionModal: '0 25px 50px -12px rgb(0 0 0 / 0.25)',
+    /**
+     * Superficie de página sobre el envolvente (TOKENS `elevacion.pagina`).
+     * Mismo valor que modal: es la card de trabajo, no un overlay.
+     * Ref. DashboardDetailLayout / Labor.
+     */
+    elevacionPagina: '0 25px 50px -12px rgb(0 0 0 / 0.25)',
     /**
      * Cabecera fija de Modal — norma global.
      * TOKENS `estructura.cabecera-modal`.
@@ -92,6 +116,8 @@ export const DS_SCREEN_TOKENS = {
 export const DS_CSS_VARS = {
     colorSuperficie: '--color-superficie',
     colorBorde: '--color-borde',
+    colorBordeMarcado: '--color-borde-marcado',
+    colorTexto: '--color-texto',
     colorTextoFuerte: '--color-texto-fuerte',
     colorTextoTenue: '--color-texto-tenue',
     colorMarca: '--color-marca',
@@ -101,15 +127,23 @@ export const DS_CSS_VARS = {
     colorPositivo: '--color-positivo',
     colorNegativo: '--color-negativo',
     colorNegativoFondo: '--color-negativo-fondo',
+    colorPositivoFondo: '--color-positivo-fondo',
+    colorAviso: '--color-aviso',
+    colorAvisoFondo: '--color-aviso-fondo',
+    colorInformativo: '--color-informativo',
+    colorInformativoFondo: '--color-informativo-fondo',
+    colorCritico: '--color-critico',
     radioSuperficie: '--radio-superficie',
     radioControl: '--radio-control',
     espacio1: '--espacio-1',
     espacio2: '--espacio-2',
     espacio3: '--espacio-3',
     espacio4: '--espacio-4',
+    espacio8: '--espacio-8',
     tactilMinimo: '--tactil-minimo',
     elevacionSuperficie: '--elevacion-superficie',
     elevacionModal: '--elevacion-modal',
+    elevacionPagina: '--elevacion-pagina',
     modalHeaderHeight: '--modal-header-height',
     /** Alias estructural: apunta a `--espacio-4` (16px). */
     modalHeaderInset: '--modal-header-inset',

@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
+import { Surface } from '@/components/ui/Surface'
 import CartaEditorClient from './CartaEditorClient'
 import type { CartaEditorMappingRow, CartaOverrideRow } from './types'
 import Link from 'next/link'
@@ -66,6 +67,7 @@ export default async function CartaDashboardPage() {
       title="Carta"
       subtitle="Ocultar, ordenar y sobrescribir nombre/descr/precio/foto (sin tocar TPV)"
       maxWidthClass="max-w-7xl"
+      template="detail"
       rightSlot={
         <Link
           href="/dashboard/recetas-tpv"
@@ -84,15 +86,15 @@ export default async function CartaDashboardPage() {
           departamentos={(departamentos ?? []) as any[]}
         />
 
-        <div className="rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-xs font-black uppercase tracking-widest text-[#36606F]">Edición visual (nueva)</p>
+        <Surface variant="block" instance="carta-edicion-visual" className="p-4">
+          <p className="text-xs font-black uppercase tracking-widest text-ds-marca">Edición visual (nueva)</p>
           <p className="mt-1 text-xs text-zinc-600">
             Editor inline en la misma página (categorías y productos). El editor avanzado por departamento se retirará cuando el nuevo flujo esté completo.
           </p>
           <div className="mt-4">
             <StaffCartaInlineEditor canEdit />
           </div>
-        </div>
+        </Surface>
 
         <CartaEditorClient
           mappings={enrichedMappings as unknown as CartaEditorMappingRow[]}

@@ -5,8 +5,36 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { Surface } from '@/components/ui/Surface'
+import {
+  PAGE_SCREEN_COMPONENT_ID,
+  type PageScreenTemplate,
+} from '@/lib/design-system'
 
-export function DashboardDetailLayout({
+export type PageScreenProps = {
+  title: string
+  subtitle?: string
+  backHref?: string
+  maxWidthClass?: string
+  rightSlot?: ReactNode
+  showBackButton?: boolean
+  compactHeader?: boolean
+  fillViewport?: boolean
+  footerSlot?: ReactNode
+  className?: string
+  contentClassName?: string
+  /** Clases de layout del host de Surface page (p. ej. month-cal-card). */
+  cardClassName?: string
+  /** Identidad de plantilla T2/T3/T4. Default list. */
+  template?: PageScreenTemplate
+  children: ReactNode
+}
+
+/**
+ * Plantilla de pantalla de gestión (T2 listado, T3 detalle, T4 formulario).
+ * También exportada como DashboardDetailLayout.
+ */
+export function PageScreen({
   title,
   subtitle,
   backHref = '/dashboard',
@@ -14,39 +42,24 @@ export function DashboardDetailLayout({
   rightSlot,
   showBackButton = true,
   compactHeader = false,
-  /** Card a altura fija del viewport con scroll interno del contenido. */
   fillViewport = false,
-  /** Contenido fuera de la card (p. ej. acción fija inferior). */
   footerSlot,
   className,
   contentClassName,
+  cardClassName,
+  template = 'list',
   children,
-}: {
-  title: string
-  subtitle?: string
-  backHref?: string
-  maxWidthClass?: string
-  rightSlot?: ReactNode
-  showBackButton?: boolean
-  /** Cabecera con menos padding vertical (listados densos). */
-  compactHeader?: boolean
-  fillViewport?: boolean
-  footerSlot?: ReactNode
-  /** Clases extra para el contenedor exterior (p. ej. padding superior adicional). */
-  className?: string
-  /** Clases extra para el área de contenido bajo la cabecera. */
-  contentClassName?: string
-  children: ReactNode
-}) {
+}: PageScreenProps) {
   const router = useRouter()
   const hasFooter = Boolean(footerSlot)
 
   return (
     <div
+      data-component={PAGE_SCREEN_COMPONENT_ID}
+      data-template={template}
       className={cn(
         fillViewport
-          ? // pb-24: hueco para StaffBottomNav (h-20 / md:h-16)
-            'flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden p-4 md:p-6 pb-24'
+          ? 'flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden p-4 md:p-6 pb-24'
           : 'min-h-screen p-4 md:p-6 pb-24',
         className
       )}
@@ -58,16 +71,20 @@ export function DashboardDetailLayout({
           fillViewport ? 'min-h-0 flex-1 flex-col gap-3' : null
         )}
       >
-        <div
+        <Surface
+          variant="page"
+          instance={`page-${template}`}
           className={cn(
-            'bg-white rounded-2xl shadow-2xl flex flex-col min-h-0',
-            // basis-0: la card cede espacio al footer; no lo solapa.
-            fillViewport ? 'min-h-0 flex-1 basis-0 overflow-hidden' : 'min-h-[85vh]'
+            'flex flex-col min-h-0 overflow-hidden',
+            fillViewport ? 'min-h-0 flex-1 basis-0' : 'min-h-[85vh]',
+            cardClassName
           )}
         >
           <div
+            data-element="header"
+            data-compact={compactHeader ? 'true' : undefined}
             className={cn(
-              'bg-[#36606F] rounded-t-2xl px-4 md:px-8 flex items-center justify-between gap-3 shrink-0',
+              'flex items-center justify-between gap-3 shrink-0 px-4 md:px-8',
               compactHeader ? 'py-0.5 md:py-1' : 'py-4 md:py-5'
             )}
           >
@@ -76,7 +93,7 @@ export function DashboardDetailLayout({
                 <Button
                   type="button"
                   variant="secondary"
-                  instance="dashboard-detail-volver"
+                  instance="pagescreen-volver"
                   onClick={() => router.push(backHref)}
                   aria-label="Volver"
                   icon={<ArrowLeft size={20} strokeWidth={2.5} />}
@@ -84,32 +101,32 @@ export function DashboardDetailLayout({
                 />
               ) : null}
               <div className="min-w-0">
-                <h1
-                  className={cn(
-                    'font-black text-white uppercase tracking-wider truncate',
-                    compactHeader ? 'text-sm md:text-base' : 'text-lg md:text-xl'
-                  )}
-                >
-                  {title}
-                </h1>
-                {subtitle ? (
-                  <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider mt-1 line-clamp-2">
-                    {subtitle}
-                  </p>
-                ) : null}
+                <h1 data-element="title">{title}</h1>
+                {subtitle ? <p data-element="subtitle">{subtitle}</p> : null}
               </div>
             </div>
             {rightSlot ? (
-              <div className="shrink-0 flex items-center justify-end gap-2">{rightSlot}</div>
+              <div data-element="actions" className="shrink-0 flex items-center justify-end gap-2">
+                {rightSlot}
+              </div>
             ) : null}
           </div>
-          <div className={cn('p-4 md:p-6 flex-1 flex flex-col min-h-0', contentClassName)}>{children}</div>
-        </div>
+          <div
+            data-element="body"
+            className={cn('p-4 md:p-6 flex-1 flex flex-col min-h-0', contentClassName)}
+          >
+            {children}
+          </div>
+        </Surface>
 
         {hasFooter ? (
-          <div className="w-full shrink-0">{footerSlot}</div>
+          <div data-element="footer" className="w-full shrink-0">
+            {footerSlot}
+          </div>
         ) : null}
       </div>
     </div>
   )
 }
+
+export const DashboardDetailLayout = PageScreen

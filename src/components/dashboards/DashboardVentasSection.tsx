@@ -16,6 +16,8 @@ import LiveClock from '@/components/ui/LiveClock';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { Surface } from '@/components/ui/Surface';
+import { KpiStat } from '@/components/ui/KpiStat';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
 
@@ -282,8 +284,8 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
 
     return (
         <>
-            <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
-                <div className="bg-[#36606F] px-2 py-1 flex items-center justify-between gap-2 text-white shrink-0">
+            <Surface variant="page" instance="dashboard-ventas" className="flex flex-col overflow-hidden">
+                <div className="bg-ds-marca px-2 py-1 flex items-center justify-between gap-2 text-white shrink-0">
                     <Link
                         href="/dashboard/ventas"
                         className={cn(
@@ -351,7 +353,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                 <div className={cn('p-3 md:p-2.5 grid grid-cols-3 gap-2 md:gap-4 items-center shrink-0 transition-all duration-300 relative min-h-[72px]', isSalesExpanded ? 'pb-1' : 'pb-0')}>
                     {salesLoading ? (
                         <div className="col-span-3 flex items-center justify-center py-2" role="status" aria-label="Cargando ventas">
-                            <LoadingSpinner size="md" className="text-[#36606F]" />
+                            <LoadingSpinner size="md" className="text-ds-marca" />
                         </div>
                     ) : (
                     <>
@@ -366,12 +368,14 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                         </span>
                     </button>
                     <div className="flex flex-col items-center justify-center text-center">
-                        <PremiumCountUp value={displaySummary.total > 0 ? displaySummary.total / 1.1 : 0} suffix="€" decimals={2} className="text-lg md:text-3xl font-black text-emerald-600 leading-none" />
-                        <span className="text-[7px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Venta Neta</span>
+                        <KpiStat instance="dashboard-ventas-neta" label="Venta Neta" tone="positive">
+                        <PremiumCountUp value={displaySummary.total > 0 ? displaySummary.total / 1.1 : 0} suffix="€" decimals={2} />
+                        </KpiStat>
                     </div>
                     <div className="flex flex-col items-center justify-center text-center">
-                        <PremiumCountUp value={displaySummary.count > 0 ? displaySummary.total / displaySummary.count : 0} suffix="€" decimals={2} className="text-lg md:text-3xl font-black text-blue-600 leading-none" />
-                        <span className="text-[7px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Ticket Medio</span>
+                        <KpiStat instance="dashboard-ventas-ticket" label="Ticket Medio" tone="info">
+                        <PremiumCountUp value={displaySummary.count > 0 ? displaySummary.total / displaySummary.count : 0} suffix="€" decimals={2} />
+                        </KpiStat>
                     </div>
                     </>
                     )}
@@ -551,7 +555,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                         )}
                     </div>
                 </div>
-            </div>
+            </Surface>
 
             <Modal
                 open={isSalesDateModalOpen}

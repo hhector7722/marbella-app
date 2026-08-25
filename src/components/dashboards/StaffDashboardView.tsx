@@ -32,6 +32,7 @@ import { syncOvertimeCostAfterTimeLogChange } from '@/app/actions/persist-overti
 import { getWeekDetailDto } from '@/app/actions/history-read';
 import WorkTimer from '@/components/ui/WorkTimer';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Surface } from '@/components/ui/Surface';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
@@ -763,9 +764,9 @@ export default function StaffDashboardView() {
             <div className="px-4 md:px-0 w-full max-w-lg md:max-w-2xl mx-auto space-y-3 md:space-y-4">
                 <div className="flex flex-col gap-4 md:gap-4 items-center">
                     <div className="w-full space-y-3 md:space-y-4">
-                        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+                        <Surface variant="page" instance="staff-semana" className="flex flex-col overflow-hidden">
                             {/* Header Estrecho - Estilo Vista Marbella Detail */}
-                            <div className="bg-[#36606F] px-4 py-1.5 md:py-1 flex justify-between items-center text-white shrink-0">
+                            <div className="bg-ds-marca px-4 py-1.5 md:py-1 flex justify-between items-center text-white shrink-0">
                                 <div className="flex items-center">
                                     <span className="text-[10px] md:text-sm font-black uppercase tracking-widest leading-none text-white">
                                         {currentMonthName} {weekNumber ? `- SEMANA ${weekNumber}` : ''}
@@ -921,10 +922,10 @@ export default function StaffDashboardView() {
                                 </div>
 
                             </div>
-                        </div>
+                        </Surface>
                     </div>
 
-                    <div className="w-full bg-white rounded-2xl p-4 md:p-3 shadow-xl flex flex-col items-center text-center relative gap-3 md:gap-2">
+                    <Surface variant="page" instance="staff-fichaje" className="flex w-full flex-col items-center overflow-hidden p-4 md:p-3 gap-3 md:gap-2 text-center">
                         <button
                             type="button"
                             onClick={() => {
@@ -958,7 +959,7 @@ export default function StaffDashboardView() {
                         <div className="w-full">
                             <WorkTimer clockIn={todayLog?.clock_in || null} status={status} totalHours={todayLog?.total_hours} />
                         </div>
-                    </div>
+                    </Surface>
 
                     <div className="w-full grid grid-cols-2 gap-3 md:gap-4">
                         {/* MINI CALENDAR HORARIOS CARD — scaled */}

@@ -39,6 +39,7 @@ import {
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { cn } from '@/lib/utils'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
@@ -1111,12 +1112,17 @@ export default function ReservasClient() {
   const handleNextMonth = () => setViewMonth((vm) => addMonths(vm, 1))
 
   return (
-    <div className="min-h-screen px-1 py-3 sm:px-1.5 md:px-2 md:py-4 month-cal-shell">
-      <div className="bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 w-full max-w-none month-cal-card">
-          <div className="bg-[#36606F] rounded-t-2xl px-3 py-2.5 flex items-center justify-between gap-3 shrink-0 min-h-[52px]">
-            <h1 className="text-[13px] md:text-sm font-black text-white uppercase tracking-widest shrink min-w-0 truncate">
-              Reservas y encargos
-            </h1>
+    <>
+    <DashboardDetailLayout
+      title="Reservas y encargos"
+      showBackButton={false}
+      compactHeader
+      template="list"
+      maxWidthClass="max-w-none"
+      className="px-1 py-3 sm:px-1.5 md:px-2 md:py-4 month-cal-shell"
+      cardClassName="month-cal-card"
+      contentClassName="p-0 flex flex-col min-h-0"
+      rightSlot={
             <a
               href="https://marbella-web.vercel.app/reservas-interno"
               target="_blank"
@@ -1125,26 +1131,26 @@ export default function ReservasClient() {
             >
               + HACER RESERVA
             </a>
-          </div>
-
+      }
+    >
           <div className="py-4 bg-zinc-50/50 flex flex-col gap-2 month-cal-body">
             <div className="flex justify-center w-full px-2 sm:px-3 shrink-0">
               <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
                 <button
                   type="button"
                   onClick={handlePrevMonth}
-                  className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-[#36606F]"
+                  className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
                   aria-label="Mes anterior"
                 >
                   <ChevronLeft size={22} />
                 </button>
-                <span className="text-base md:text-lg font-black text-[#36606F] capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,14rem)] sm:max-w-none">
+                <span className="text-base md:text-lg font-black text-ds-marca capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,14rem)] sm:max-w-none">
                   {format(viewMonth, 'MMMM yyyy', { locale: es })}
                 </span>
                 <button
                   type="button"
                   onClick={handleNextMonth}
-                  className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-[#36606F]"
+                  className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
                   aria-label="Mes siguiente"
                 >
                   <ChevronRight size={22} />
@@ -1254,7 +1260,7 @@ export default function ReservasClient() {
 
             {!loading && !rpcError ? <div className="shrink-0"><ReservasCalendarLegend /></div> : null}
           </div>
-      </div>
+    </DashboardDetailLayout>
 
       {listModalDay && (
         <DayAgendaModal
@@ -1386,6 +1392,6 @@ export default function ReservasClient() {
           onDeleted={refreshAfterEncargoChange}
         />
       )}
-    </div>
+    </>
   )
 }

@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
@@ -535,13 +536,16 @@ export default function LaborHistoryPage() {
     }, []);
 
     return (
-            <div className="p-4 md:p-6 pb-24 month-cal-shell">
-                <div className="bg-white rounded-2xl shadow-2xl relative overflow-hidden flex flex-col month-cal-card w-full max-w-4xl mx-auto">
-                    <div className="bg-[#36606F] px-4 md:px-8 py-5 flex items-center justify-between gap-2 shrink-0">
-                        <h1 className="text-lg md:text-xl font-black text-white uppercase tracking-wider shrink-0 min-w-0">
-                            Coste laboral
-                        </h1>
-                        <div className="flex items-center gap-1 md:gap-2 shrink-0 text-white">
+            <>
+            <DashboardDetailLayout
+                title="Coste laboral"
+                showBackButton={false}
+                template="list"
+                className="month-cal-shell"
+                cardClassName="month-cal-card"
+                contentClassName="flex flex-col min-h-0 p-0"
+                rightSlot={
+                    <div className="flex items-center gap-1 md:gap-2 shrink-0 text-white">
                             <TimeFilterButton
                                 onClick={() => setIsTimeFilterOpen(true)}
                                 hasActiveFilter={filterActive}
@@ -559,27 +563,27 @@ export default function LaborHistoryPage() {
                                     icon={<User size={24} strokeWidth={2.25} />}
                                 />
                             </div>
-                        </div>
                     </div>
-
+                }
+            >
                     <div className="px-4 md:px-8 pt-3 pb-3 shrink-0">
                         <div className="flex justify-center w-full">
                             <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
                                 <button
                                     type="button"
                                     onClick={handlePrevMonth}
-                                    className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-[#36606F]"
+                                    className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
                                     aria-label="Mes anterior"
                                 >
                                     <ChevronLeft size={22} />
                                 </button>
-                                <span className="text-base md:text-lg font-black text-[#36606F] capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,14rem)] sm:max-w-none">
+                                <span className="text-base md:text-lg font-black text-ds-marca capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,14rem)] sm:max-w-none">
                                     {format(viewMonth, 'MMMM yyyy', { locale: es })}
                                 </span>
                                 <button
                                     type="button"
                                     onClick={handleNextMonth}
-                                    className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-[#36606F]"
+                                    className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
                                     aria-label="Mes siguiente"
                                 >
                                     <ChevronRight size={22} />
@@ -628,7 +632,7 @@ export default function LaborHistoryPage() {
 
                         {loading ? (
                             <div className="flex flex-col items-center justify-center py-20 gap-4">
-                                <LoadingSpinner size="lg" className="text-[#36606F]" />
+                                <LoadingSpinner size="lg" className="text-ds-marca" />
                             </div>
                         ) : (
                             <div className="bg-transparent border-0 shadow-none overflow-visible month-cal-grid-wrap flex flex-col flex-1 min-h-0">
@@ -715,7 +719,7 @@ export default function LaborHistoryPage() {
                             </div>
                         )}
                     </div>
-                </div>
+            </DashboardDetailLayout>
 
             <Modal
                 open={detailOpen}
@@ -840,6 +844,6 @@ export default function LaborHistoryPage() {
                 employees={employees}
                 onSelect={(emp) => setWorkerFilterId(emp.id)}
             />
-        </div>
+        </>
     );
 }

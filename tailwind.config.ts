@@ -12,6 +12,8 @@ const config: Config = {
             colors: {
                 "ds-superficie": "var(--color-superficie)",
                 "ds-borde": "var(--color-borde)",
+                "ds-borde-marcado": "var(--color-borde-marcado)",
+                "ds-texto": "var(--color-texto)",
                 "ds-texto-fuerte": "var(--color-texto-fuerte)",
                 "ds-texto-tenue": "var(--color-texto-tenue)",
                 "ds-marca": "var(--color-marca)",
@@ -21,6 +23,12 @@ const config: Config = {
                 "ds-positivo": "var(--color-positivo)",
                 "ds-negativo": "var(--color-negativo)",
                 "ds-negativo-fondo": "var(--color-negativo-fondo)",
+                "ds-positivo-fondo": "var(--color-positivo-fondo)",
+                "ds-aviso": "var(--color-aviso)",
+                "ds-aviso-fondo": "var(--color-aviso-fondo)",
+                "ds-informativo": "var(--color-informativo)",
+                "ds-informativo-fondo": "var(--color-informativo-fondo)",
+                "ds-critico": "var(--color-critico)",
             },
             borderRadius: {
                 "ds-control": "var(--radio-control)",
@@ -31,6 +39,7 @@ const config: Config = {
                 "ds-2": "var(--espacio-2)",
                 "ds-3": "var(--espacio-3)",
                 "ds-4": "var(--espacio-4)",
+                "ds-8": "var(--espacio-8)",
             },
             minHeight: {
                 "ds-tactil": "var(--tactil-minimo)",
@@ -49,6 +58,7 @@ const config: Config = {
             boxShadow: {
                 "ds-superficie": "var(--elevacion-superficie)",
                 "ds-modal": "var(--elevacion-modal)",
+                "ds-pagina": "var(--elevacion-pagina)",
             },
         },
     },
