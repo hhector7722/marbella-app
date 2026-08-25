@@ -5,9 +5,11 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
-import { ClipboardList, Copy, Loader2, Pencil } from 'lucide-react'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
+import { Surface } from '@/components/ui/Surface'
+import { Field } from '@/components/ui/Field'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { createEventAction, deleteEventAction } from './actions'
 
 export type AdminEventRow = {
@@ -38,6 +40,9 @@ function publicEventUrl(slug: string): string {
   return `${window.location.origin}/eventos/${slug}`
 }
 
+const navLinkClass =
+  'inline-flex min-h-12 shrink-0 items-center justify-center px-4 text-[12px] font-black uppercase tracking-wider'
+
 export default function EventosAdminClient({
   events,
   canManage = true,
@@ -59,10 +64,6 @@ export default function EventosAdminClient({
   const [eventTime, setEventTime] = useState('10:00')
   const [guestCount, setGuestCount] = useState('20')
 
-  const cardClass = 'rounded-xl border border-zinc-100 bg-white shadow-sm'
-  const btnBase =
-    'inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-[12px] font-black uppercase tracking-wider transition-colors disabled:cursor-not-allowed disabled:opacity-50'
-
   const canSubmitCreate =
     Boolean(contactName.trim() && eventDate.trim() && eventTime.trim() && guestCount.trim()) && !isPending
 
@@ -82,11 +83,7 @@ export default function EventosAdminClient({
   return (
     <div className="space-y-4">
       <div className={cn('flex flex-wrap gap-2', canManage ? 'justify-between' : 'justify-end')}>
-        <Link
-          href="/dashboard/eventos/pedidos"
-          className={cn(btnBase, 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200')}
-        >
-          <ClipboardList className="h-4 w-4" strokeWidth={2.5} />
+        <Link href="/dashboard/eventos/pedidos" className={cn(navLinkClass, 'text-ds-marca')}>
           Ver pedidos
         </Link>
         {canManage ? (
@@ -101,79 +98,78 @@ export default function EventosAdminClient({
         ) : null}
       </div>
 
-      <div className={cn(cardClass, 'divide-y divide-zinc-100')}>
-        {events.length === 0 ? (
-          <p className="p-6 text-center text-sm font-bold text-zinc-600">
-            {canManage ? 'Pulsa «Nuevo encargo» para crear el primero.' : 'No hay encargos.'}
-          </p>
-        ) : (
-          events.map((e) => {
-            const url = publicEventUrl(e.slug)
-            const guests = formatGuestCount(e.guest_count)
+      <Surface variant="block" instance="eventos-admin-list">
+        <div className="divide-y divide-zinc-100">
+          {events.length === 0 ? (
+            <EmptyState
+              instance="eventos-admin-empty"
+              variant="none"
+              title={canManage ? 'Pulsa «Nuevo encargo» para crear el primero.' : 'No hay encargos.'}
+            />
+          ) : (
+            events.map((e) => {
+              const url = publicEventUrl(e.slug)
+              const guests = formatGuestCount(e.guest_count)
 
-            return (
-              <div key={e.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-black text-zinc-900">{e.name}</p>
-                  <p className="mt-1 text-xs font-semibold text-zinc-600">
-                    {e.event_date} · {toHm(e.event_time)}h
-                    {guests !== ' ' ? ` · ${guests}` : ''}
-                    {!e.is_active ? ' · Inactivo' : ''}
-                  </p>
-                </div>
-
-                {canManage ? (
-                  <div className="flex shrink-0 flex-wrap gap-2">
-                    <Link
-                      href={`/eventos/${e.slug}`}
-                      className={cn(btnBase, 'bg-[#36606F] text-white hover:bg-[#2a4a56]')}
-                    >
-                      <Pencil className="h-4 w-4" strokeWidth={2.5} />
-                      Editar
-                    </Link>
-                    <Link
-                      href={`/dashboard/eventos/${e.id}/pedidos`}
-                      className={cn(btnBase, 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200')}
-                    >
-                      <ClipboardList className="h-4 w-4" strokeWidth={2.5} />
-                      Pedidos
-                    </Link>
-                    <button
-                      type="button"
-                      className={cn(btnBase, 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200')}
-                      onClick={() => {
-                        void navigator.clipboard
-                          ?.writeText(url)
-                          .then(() => toast.success('Enlace copiado'))
-                          .catch(() => toast.error('No se pudo copiar'))
-                      }}
-                    >
-                      <Copy className="h-4 w-4" strokeWidth={2.5} />
-                      Copiar enlace
-                    </button>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      instance={`eventos-admin-eliminar-${e.id}`}
-                      disabled={isPending}
-                      onClick={() => {
-                        if (!window.confirm(`¿Eliminar el encargo de «${e.name}»?`)) return
-                        startTransition(async () => {
-                          const res = await deleteEventAction({ eventId: e.id })
-                          if (!res.success) toast.error(res.message)
-                          else toast.success('Encargo eliminado')
-                        })
-                      }}
-                    >
-                      Eliminar
-                    </Button>
+              return (
+                <div key={e.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-black text-zinc-900">{e.name}</p>
+                    <p className="mt-1 text-xs font-semibold text-zinc-600">
+                      {e.event_date} · {toHm(e.event_time)}h
+                      {guests !== ' ' ? ` · ${guests}` : ''}
+                      {!e.is_active ? ' · Inactivo' : ''}
+                    </p>
                   </div>
-                ) : null}
-              </div>
-            )
-          })
-        )}
-      </div>
+
+                  {canManage ? (
+                    <div className="flex shrink-0 flex-wrap gap-2">
+                      <Link href={`/eventos/${e.slug}`} className={cn(navLinkClass, 'bg-ds-marca text-white')}>
+                        Editar
+                      </Link>
+                      <Link
+                        href={`/dashboard/eventos/${e.id}/pedidos`}
+                        className={cn(navLinkClass, 'bg-zinc-100 text-zinc-800')}
+                      >
+                        Pedidos
+                      </Link>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        instance={`eventos-admin-copiar-${e.id}`}
+                        onClick={() => {
+                          void navigator.clipboard
+                            ?.writeText(url)
+                            .then(() => toast.success('Enlace copiado'))
+                            .catch(() => toast.error('No se pudo copiar'))
+                        }}
+                      >
+                        Copiar enlace
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        instance={`eventos-admin-eliminar-${e.id}`}
+                        disabled={isPending}
+                        onClick={() => {
+                          if (!window.confirm(`¿Eliminar el encargo de «${e.name}»?`)) return
+                          startTransition(async () => {
+                            const res = await deleteEventAction({ eventId: e.id })
+                            if (!res.success) toast.error(res.message)
+                            else toast.success('Encargo eliminado')
+                          })
+                        }}
+                      >
+                        Eliminar
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
+              )
+            })
+          )}
+        </div>
+      </Surface>
 
       <Modal
         open={createOpen}
@@ -224,51 +220,43 @@ export default function EventosAdminClient({
         }
       >
         <div className="space-y-3">
-          <div>
-            <label className="block text-xs font-black uppercase tracking-wider text-zinc-700">
-              Contacto del encargo
-            </label>
+          <Field instance="eventos-create-contacto" label="Contacto del encargo" htmlFor="eventos-create-contacto">
             <input
+              id="eventos-create-contacto"
               value={contactName}
               onChange={(ev) => setContactName(ev.target.value)}
-              className="mt-2 min-h-12 w-full rounded-xl border border-zinc-200 px-3 text-sm font-semibold text-zinc-900 outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/25"
               placeholder="Nombre del responsable"
               autoComplete="name"
             />
-          </div>
+          </Field>
           <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-[11px] font-black uppercase tracking-wider text-zinc-700">Fecha</label>
+            <Field instance="eventos-create-fecha" label="Fecha" htmlFor="eventos-create-fecha">
               <input
+                id="eventos-create-fecha"
                 type="date"
                 value={eventDate}
                 onChange={(ev) => setEventDate(ev.target.value)}
-                className="mt-2 min-h-12 w-full rounded-xl border border-zinc-200 px-3 text-sm font-semibold text-zinc-900 outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/25"
               />
-            </div>
-            <div>
-              <label className="block text-[11px] font-black uppercase tracking-wider text-zinc-700">Hora</label>
+            </Field>
+            <Field instance="eventos-create-hora" label="Hora" htmlFor="eventos-create-hora">
               <input
+                id="eventos-create-hora"
                 type="time"
                 value={eventTime}
                 onChange={(ev) => setEventTime(ev.target.value)}
-                className="mt-2 min-h-12 w-full rounded-xl border border-zinc-200 px-3 text-sm font-semibold text-zinc-900 outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/25"
               />
-            </div>
+            </Field>
           </div>
-          <div>
-            <label className="block text-xs font-black uppercase tracking-wider text-zinc-700">
-              Cantidad de personas
-            </label>
+          <Field instance="eventos-create-personas" label="Cantidad de personas" htmlFor="eventos-create-personas">
             <input
+              id="eventos-create-personas"
               type="number"
               min={1}
               max={9999}
               value={guestCount}
               onChange={(ev) => setGuestCount(ev.target.value)}
-              className="mt-2 min-h-12 w-full rounded-xl border border-zinc-200 px-3 text-sm font-semibold text-zinc-900 outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/25"
             />
-          </div>
+          </Field>
         </div>
       </Modal>
     </div>

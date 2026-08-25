@@ -599,9 +599,9 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     );
 
     const horasExtrasSection = (
-        <div className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
-                    <div className="bg-purple-600 px-4 py-1.5 md:py-1 flex justify-between items-center text-white shrink-0 relative">
-                        <h2 className="text-[10px] md:text-sm font-black uppercase tracking-wider">
+        <Surface variant="page" instance="dashboard-horas-extras" className="flex flex-col overflow-hidden">
+                    <div className="bg-purple-600 px-4 py-4 md:px-8 flex justify-between items-center text-white shrink-0 relative">
+                        <h2 className="text-lg md:text-xl font-black uppercase tracking-wider leading-tight">
                             <span className="md:hidden">H. EXTRAS</span>
                             <span className="hidden md:inline">Horas Extras</span>
                         </h2>
@@ -610,14 +610,14 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                             <button type="button" onClick={() => setOvertimeViewMonth(prev => subMonths(prev, 1))} className="p-1 rounded-lg hover:bg-purple-500 text-white/90 hover:text-white transition-colors shrink-0 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center" aria-label="Mes anterior">
                                 <ChevronLeft className="w-4 h-4" />
                             </button>
-                            <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-white min-w-[70px] md:min-w-[80px] text-center">
+                            <span className="text-[11px] md:text-xs font-black uppercase tracking-wider text-white min-w-[70px] md:min-w-[80px] text-center">
                                 {format(overtimeViewMonth, 'MMMM yyyy', { locale: es })}
                             </span>
                             <button type="button" onClick={() => setOvertimeViewMonth(prev => addMonths(prev, 1))} className="p-1 rounded-lg hover:bg-purple-500 text-white/90 hover:text-white transition-colors shrink-0 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center" aria-label="Mes siguiente">
                                 <ChevronRight className="w-4 h-4" />
                             </button>
                         </div>
-                        <Link href="/dashboard/overtime" className="text-[8px] md:text-[10px] font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
+                        <Link href="/dashboard/overtime" className="text-[11px] font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
                     </div>
                     <div className="p-2 md:p-2 relative min-h-[120px]">
                         {overtimeLoading ? (
@@ -717,7 +717,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                         </div>
                         )}
                     </div>
-        </div>
+        </Surface>
     );
 
     // Cajas cambio + accesos rápidos: rejilla unificada para que cada fila tenga la misma altura
@@ -739,8 +739,8 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     instance={`dashboard-caja-cambio-loading-${idx}`}
                     className="flex flex-col overflow-hidden h-full min-h-[72px] w-full min-w-0"
                 >
-                    <div className="bg-ds-marca pl-3 pr-2 py-0.5 flex items-center justify-between text-white shrink-0">
-                        <h3 className="text-[8px] md:text-[9px] font-black uppercase tracking-wider truncate">{title}</h3>
+                    <div data-element="header" className="flex items-center justify-between shrink-0">
+                        <h3 data-element="title">{title}</h3>
                     </div>
                     <div className="flex-1 flex items-center justify-center min-h-[48px]" role="status" aria-label={`Cargando ${title}`}>
                         <LoadingSpinner size="sm" className="text-ds-marca" />
@@ -757,8 +757,8 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 instance={`dashboard-caja-cambio-${box.id}`}
                 className="flex flex-col overflow-hidden h-full min-h-0 w-full min-w-0"
             >
-                <div className="bg-ds-marca pl-3 pr-2 md:pl-3 md:pr-2 py-0.5 md:py-0.5 flex items-center justify-between text-white shrink-0">
-                    <h3 className="text-[8px] md:text-[9px] font-black uppercase tracking-wider truncate">{title}</h3>
+                <div data-element="header" className="flex items-center justify-between shrink-0">
+                    <h3 data-element="title">{title}</h3>
                 </div>
                 <div className="flex-1 flex items-center justify-center min-h-0 p-0.5 md:p-0.5 min-w-0">
                     <div className="grid w-full min-w-0 grid-cols-3 items-center gap-x-1 sm:gap-x-1 md:gap-x-1.5 px-0.5 sm:px-1 md:px-1.5">

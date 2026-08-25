@@ -74,7 +74,7 @@ export default async function InventoryPage() {
   }
 
   return (
-    <DashboardDetailLayout title="Inventario" maxWidthClass="max-w-7xl" className="pt-6 md:pt-8">
+    <DashboardDetailLayout title="Inventario" maxWidthClass="max-w-7xl">
       <InventoryClient initialIngredients={ingredients ?? []} />
     </DashboardDetailLayout>
   )

@@ -21,7 +21,7 @@ Techo duro: 200 líneas. Si no cabe, es que se está usando como changelog.
 
 ## Resumen en tres frases
 
-El producto está en producción y sostiene la operación diaria del negocio. El dominio de horas sigue en movimiento. La interfaz de gestión tiene jerarquía visual canónica ([ADR-0010](../4-decisiones/ADR-0010-jerarquia-visual-canonica.md)): tokens, primitivas y plantillas de pantalla; Modal y Button no se reabren. La deuda dominante de interfaz es migración de literales ([D28](DEUDA.md)), no la ausencia de contrato.
+El producto está en producción y sostiene la operación diaria del negocio. El dominio de horas sigue en movimiento. La interfaz de gestión tiene jerarquía visual canónica ([ADR-0010](../4-decisiones/ADR-0010-jerarquia-visual-canonica.md)) aplicada a las pantallas piloto (Labor, Albaranes, Carta, Reservas, Propinas, Caja, Staff, Eventos, Inventario, Recetas). Modal y Button no se reabren. Quedan literales en [D28](DEUDA.md).
 
 ---
 

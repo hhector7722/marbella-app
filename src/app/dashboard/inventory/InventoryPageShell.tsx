@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { Pencil } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
+import { Button } from '@/components/ui/button'
 import { InventoryClient, type ManagerIngredientRow } from './InventoryClient'
 
 type Props = {
@@ -19,20 +19,15 @@ export function InventoryPageShell({ visibleIngredients, managerFullList, manage
     <DashboardDetailLayout
       title="Inventario"
       maxWidthClass="max-w-7xl"
-      className="pt-6 md:pt-8"
       rightSlot={
-        <button
+        <Button
           type="button"
-          onClick={() => setVisibilityEditMode((v) => !v)}
-          className={cn(
-            'min-h-[48px] min-w-[48px] flex items-center justify-center transition-colors shrink-0',
-            visibilityEditMode ? 'text-white' : 'text-white/90 hover:text-white',
-          )}
+          variant="tertiary"
+          instance="inventory-visibility-edit"
+          icon={<Pencil strokeWidth={2} />}
           aria-label={visibilityEditMode ? 'Salir de edición de lista' : 'Editar lista de inventario'}
-          title={visibilityEditMode ? 'Cerrar edición de lista' : 'Editar lista de inventario'}
-        >
-          <Pencil className="w-6 h-6" strokeWidth={2} />
-        </button>
+          onClick={() => setVisibilityEditMode((v) => !v)}
+        />
       }
     >
       <InventoryClient

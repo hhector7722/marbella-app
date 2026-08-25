@@ -1116,10 +1116,9 @@ export default function ReservasClient() {
     <DashboardDetailLayout
       title="Reservas y encargos"
       showBackButton={false}
-      compactHeader
       template="list"
       maxWidthClass="max-w-none"
-      className="px-1 py-3 sm:px-1.5 md:px-2 md:py-4 month-cal-shell"
+      className="month-cal-shell"
       cardClassName="month-cal-card"
       contentClassName="p-0 flex flex-col min-h-0"
       rightSlot={
@@ -1127,15 +1126,16 @@ export default function ReservasClient() {
               href="https://marbella-web.vercel.app/reservas-interno"
               target="_blank"
               rel="noopener noreferrer"
-              className="shrink-0 text-[10px] md:text-[11px] font-black text-white uppercase tracking-widest hover:text-white/80 transition-colors min-h-[48px] flex items-center"
+              className="shrink-0 text-[11px] font-black text-white uppercase tracking-widest hover:text-white/80 transition-colors min-h-[48px] flex items-center"
             >
-              + HACER RESERVA
+              Hacer reserva
             </a>
       }
     >
-          <div className="py-4 bg-zinc-50/50 flex flex-col gap-2 month-cal-body">
-            <div className="flex justify-center w-full px-2 sm:px-3 shrink-0">
-              <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
+          <div className="flex flex-col gap-2 month-cal-body">
+            <div className="px-4 md:px-8 pt-3 pb-3 shrink-0">
+              <div className="flex justify-center w-full">
+                <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
                 <button
                   type="button"
                   onClick={handlePrevMonth}
@@ -1155,12 +1155,13 @@ export default function ReservasClient() {
                 >
                   <ChevronRight size={22} />
                 </button>
+                </div>
               </div>
             </div>
 
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4 px-2 sm:px-3 flex-1">
-                <LoadingSpinner size="lg" className="text-[#36606F]" />
+                <LoadingSpinner size="lg" className="text-ds-marca" />
               </div>
             ) : rpcError ? (
               <div className="mx-2 sm:mx-3 rounded-xl border border-rose-100 bg-rose-50 p-4 text-rose-700">

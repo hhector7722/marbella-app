@@ -1,8 +1,19 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
+import { Notice } from '@/components/ui/Notice'
 import EventosAdminClient, { type AdminEventRow } from './EventosAdminClient'
 import { canManageEventos, canViewEventos } from './roles'
+
+function EncargosError({ subtitle, message }: { subtitle: string; message: string }) {
+  return (
+    <DashboardDetailLayout title="Encargos" subtitle={subtitle}>
+      <Notice instance="eventos-admin-error" variant="negative" title={subtitle}>
+        {message}
+      </Notice>
+    </DashboardDetailLayout>
+  )
+}
 
 export default async function EventosAdminPage() {
   const supabase = await createClient()
@@ -13,24 +24,12 @@ export default async function EventosAdminPage() {
   } = await supabase.auth.getSession()
 
   if (sessErr) {
-    return (
-      <DashboardDetailLayout title="Encargos" subtitle="Error de autenticación">
-        <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-red-700">No se pudo leer la sesión: {sessErr.message}</p>
-        </div>
-      </DashboardDetailLayout>
-    )
+    return <EncargosError subtitle="Error de autenticación" message={`No se pudo leer la sesión: ${sessErr.message}`} />
   }
 
   const user = session?.user ?? null
   if (!user) {
-    return (
-      <DashboardDetailLayout title="Encargos" subtitle="Requiere login">
-        <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-red-700">No autenticado.</p>
-        </div>
-      </DashboardDetailLayout>
-    )
+    return <EncargosError subtitle="Requiere login" message="No autenticado." />
   }
 
   const { data: profile, error: profileErr } = await supabase
@@ -40,13 +39,7 @@ export default async function EventosAdminPage() {
     .maybeSingle()
 
   if (profileErr) {
-    return (
-      <DashboardDetailLayout title="Encargos" subtitle="Error de permisos">
-        <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-red-700">Error leyendo perfil: {profileErr.message}</p>
-        </div>
-      </DashboardDetailLayout>
-    )
+    return <EncargosError subtitle="Error de permisos" message={`Error leyendo perfil: ${profileErr.message}`} />
   }
 
   const role = (profile as { role?: string } | null)?.role ?? null
@@ -54,13 +47,7 @@ export default async function EventosAdminPage() {
     redirect('/staff/reservas')
   }
   if (!canViewEventos(role)) {
-    return (
-      <DashboardDetailLayout title="Encargos" subtitle="Acceso restringido">
-        <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-red-700">Sin permiso para ver encargos.</p>
-        </div>
-      </DashboardDetailLayout>
-    )
+    return <EncargosError subtitle="Acceso restringido" message="Sin permiso para ver encargos." />
   }
 
   const canManage = canManageEventos(role)
@@ -73,13 +60,7 @@ export default async function EventosAdminPage() {
     .limit(500)
 
   if (evErr) {
-    return (
-      <DashboardDetailLayout title="Encargos" subtitle="Error de datos">
-        <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-red-700">Error cargando encargos: {evErr.message}</p>
-        </div>
-      </DashboardDetailLayout>
-    )
+    return <EncargosError subtitle="Error de datos" message={`Error cargando encargos: ${evErr.message}`} />
   }
 
   const adminEvents: AdminEventRow[] = ((events ?? []) as Array<Record<string, unknown>>).map((e) => ({

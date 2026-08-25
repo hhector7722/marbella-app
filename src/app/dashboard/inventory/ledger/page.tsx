@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { BookOpen } from 'lucide-react'
 import { createClient } from '@/utils/supabase/server'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { LedgerClient } from './LedgerClient'
@@ -22,13 +21,11 @@ export default async function LedgerPage() {
       title="Stock"
       subtitle="Historial de movimientos y trazabilidad por ingrediente"
       maxWidthClass="max-w-7xl"
-      className="pt-6 md:pt-8"
       rightSlot={
         <Link
           href="/dashboard/recetas-tpv"
-          className="min-h-[48px] px-4 rounded-xl bg-white/15 hover:bg-white/25 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-2 transition-colors"
+          className="shrink-0 text-[11px] font-black text-white uppercase tracking-widest hover:text-white/80 transition-colors min-h-[48px] flex items-center"
         >
-          <BookOpen className="w-5 h-5 shrink-0" strokeWidth={2.5} />
           Mapeo TPV
         </Link>
       }

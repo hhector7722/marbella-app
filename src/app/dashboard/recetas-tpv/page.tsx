@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
+import { Notice } from '@/components/ui/Notice'
 import MappingClient from './MappingClient'
 
 export type Recipe = {
@@ -82,13 +83,9 @@ export default async function RecetasTpvPage() {
   if (articlesRes.error) {
     return (
       <DashboardDetailLayout title="Mapeo TPV" maxWidthClass="max-w-7xl">
-        <div
-          className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-900 shadow-sm"
-          role="alert"
-        >
-          <p className="text-sm font-black uppercase tracking-wide">No se pudo cargar el catálogo TPV</p>
-          <p className="mt-2 font-mono text-xs leading-relaxed text-red-800">{articlesRes.error.message}</p>
-        </div>
+        <Notice instance="recetas-tpv-catalogo-error" variant="negative" title="No se pudo cargar el catálogo TPV">
+          {articlesRes.error.message}
+        </Notice>
       </DashboardDetailLayout>
     )
   }
@@ -255,15 +252,12 @@ export default async function RecetasTpvPage() {
 
   return (
     <DashboardDetailLayout title="Mapeo TPV" maxWidthClass="max-w-7xl">
+      <div className="space-y-4">
       {mappingsRes.error ? (
-        <div
-          className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
-          role="status"
-        >
-          <span className="font-black uppercase tracking-wide">Aviso: </span>
+        <Notice instance="recetas-tpv-mapeos-aviso" variant="warning" title="Aviso">
           No se pudieron leer los mapeos guardados; la lista muestra todos los artículos como «sin receta». Detalle:{' '}
-          <span className="font-mono text-xs">{mappingsRes.error.message}</span>
-        </div>
+          {mappingsRes.error.message}
+        </Notice>
       ) : null}
       <MappingClient
         mappings={mappings}
@@ -273,6 +267,7 @@ export default async function RecetasTpvPage() {
         ingredientsMini={ingredientsMini}
         recipeIngredientMatchByRecipeId={recipeIngredientMatchByRecipeId}
       />
+      </div>
     </DashboardDetailLayout>
   )
 }

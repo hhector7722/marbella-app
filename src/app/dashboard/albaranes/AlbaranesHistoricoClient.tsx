@@ -1234,18 +1234,17 @@ export default function AlbaranesHistoricoClient({
         className="shrink-0"
         icon={<Sparkles className="h-5 w-5" />}
       />
-      <button
+      <Button
         type="button"
+        variant="tertiary"
+        instance="albaranes-header-refresh"
         onClick={refresh}
         disabled={isPending}
+        loading={isPending}
         aria-label="Recargar"
-        className={cn(
-          'min-h-9 min-w-9 inline-flex items-center justify-center text-white hover:opacity-70 active:scale-[0.99] transition shrink-0',
-          isPending && 'opacity-60 pointer-events-none'
-        )}
-      >
-        {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <RefreshCw className="h-5 w-5" />}
-      </button>
+        className="shrink-0"
+        icon={<RefreshCw className="h-5 w-5" />}
+      />
     </>
   )
 
@@ -1256,20 +1255,20 @@ export default function AlbaranesHistoricoClient({
       maxWidthClass="max-w-5xl"
       showBackButton={false}
       rightSlot={headerActions}
-      compactHeader
       fillViewport
       template="list"
-      contentClassName="p-3 md:p-4 pt-2 md:pt-3 flex flex-col min-h-0 overflow-hidden"
+      contentClassName="flex flex-col min-h-0 overflow-hidden"
       footerSlot={<ScannerClient onSuccess={refresh} compactTrigger />}
     >
     <div className="flex min-h-0 flex-1 flex-col gap-2">
       {/* Buscador fijo: no scrollea con la lista */}
-      <div className="flex h-8 w-full shrink-0 items-center gap-1.5 rounded-lg border border-zinc-100 bg-white px-2 shadow-sm">
-        <Search className="h-3 w-3 text-zinc-400 shrink-0" />
+      <div className="flex min-h-12 w-full shrink-0 items-center gap-2 rounded-ds-control border border-ds-borde-marcado bg-ds-superficie px-3">
+        <Search className="h-4 w-4 text-ds-texto-tenue shrink-0" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="h-full w-full outline-none text-sm font-semibold text-zinc-800 placeholder:text-zinc-400"
+          className="h-full w-full min-h-12 outline-none text-base font-semibold text-ds-texto placeholder:text-ds-texto-tenue"
+          aria-label="Buscar albaranes"
         />
         <Button
           type="button"
@@ -1730,7 +1729,7 @@ export default function AlbaranesHistoricoClient({
                   {/* 4. SECCIÓN ARTÍCULOS */}
                   {isLoadingDetail ? (
                     <div className="flex flex-col items-center justify-center py-8 gap-2 text-sm font-bold text-zinc-600">
-                      <Loader2 className="h-8 w-8 animate-spin text-[#36606F]" />
+                      <Loader2 className="h-8 w-8 animate-spin text-ds-marca" />
                       Cargando detalle…
                     </div>
                   ) : detailError ? (
@@ -2001,7 +2000,7 @@ export default function AlbaranesHistoricoClient({
                         <div className="flex flex-col gap-2">
                           {supplierLoading ? (
                             <div className="flex items-center gap-3 text-sm font-bold text-zinc-600 px-1">
-                              <Loader2 className="h-5 w-5 animate-spin text-[#36606F]" />
+                              <Loader2 className="h-5 w-5 animate-spin text-ds-marca" />
                               Buscando…
                             </div>
                           ) : supplierQuery.trim().length < 2 ? (

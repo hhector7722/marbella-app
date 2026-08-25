@@ -1,9 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import Link from 'next/link'
 import {
-  ArrowLeft,
   BookOpen,
   FileImage,
   FileText,
@@ -14,6 +12,8 @@ import {
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
+import { Surface } from '@/components/ui/Surface'
 import {
   applyValidatedRecipesAction,
   extractRecipesFromDocumentAction,
@@ -173,33 +173,14 @@ export default function RecetasImportClient({ allIngredients }: { allIngredients
   }
 
   return (
-    <div className="min-h-screen bg-white pb-24">
-      <div className="max-w-4xl mx-auto px-4 pt-6 space-y-6">
-        <div className="flex items-start gap-4">
-          <Link
-            href="/dashboard/import"
-            className={cn(
-              'shrink-0 inline-flex items-center justify-center min-h-12 min-w-12 rounded-xl border border-zinc-100 bg-white shadow-sm',
-              'text-[#36606F] hover:bg-zinc-50'
-            )}
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Importar recetas (IA + validación)</h1>
-            <p className="text-zinc-500 text-sm mt-1">
-              Sube un PDF o una foto de fichas de recetas. La IA extrae ingredientes, elaboración y presentación; tú
-              revisas antes de guardar. Los nombres de ingrediente deben coincidir con la base de datos.
-            </p>
-          </div>
-        </div>
-
-        <div
-          className={cn(
-            'rounded-xl border border-zinc-100 bg-white shadow-sm p-6',
-            'flex flex-col items-center justify-center gap-4 min-h-[140px]'
-          )}
-        >
+    <DashboardDetailLayout
+      title="Importar recetas"
+      subtitle="Sube un PDF o una foto de fichas. La IA extrae; tú revisas antes de guardar."
+      backHref="/dashboard/import"
+      maxWidthClass="max-w-4xl"
+    >
+      <div className="space-y-6">
+        <Surface variant="block" instance="recetas-import-upload" className="p-6 flex flex-col items-center justify-center gap-4 min-h-[140px]">
           <div className="flex gap-3 text-zinc-400">
             <FileText className="w-8 h-8" />
             <FileImage className="w-8 h-8" />
@@ -209,8 +190,8 @@ export default function RecetasImportClient({ allIngredients }: { allIngredients
           </p>
           <label
             className={cn(
-              'inline-flex items-center justify-center gap-2 min-h-12 px-6 rounded-xl font-medium cursor-pointer',
-              'bg-[#36606F] text-white hover:bg-[#2A4C58] shadow-sm shrink-0',
+              'inline-flex items-center justify-center gap-2 min-h-12 px-6 font-medium cursor-pointer',
+              'bg-ds-marca text-white hover:bg-ds-marca/90 shrink-0',
               extracting && 'opacity-60 pointer-events-none'
             )}
           >
@@ -224,13 +205,13 @@ export default function RecetasImportClient({ allIngredients }: { allIngredients
             />
           </label>
           {statusLine ? <p className="text-sm text-center text-zinc-700 max-w-lg">{statusLine}</p> : null}
-        </div>
+        </Surface>
 
         {rows.length > 0 && (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-semibold text-zinc-900 flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-[#36606F]" />
+                <BookOpen className="w-5 h-5 text-ds-marca" />
                 Propuestas
               </h2>
               <Button
@@ -429,6 +410,6 @@ export default function RecetasImportClient({ allIngredients }: { allIngredients
           </div>
         )}
       </div>
-    </div>
+    </DashboardDetailLayout>
   )
 }

@@ -58,6 +58,11 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             css,
             /\[data-component='PageScreen'\] \[data-element='header'\] \[data-component='Button'\]\[data-variant='tertiary'\]/
         );
+        assert.match(
+            css,
+            /\[data-component='Surface'\]\[data-variant='page'\] > \[data-element='header'\]/
+        );
+        assert.doesNotMatch(css, /\[data-compact='true'\]/);
     });
 
     it('PageScreen es el host de DashboardDetailLayout', () => {
@@ -120,9 +125,43 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'utf8'
         );
         assert.match(admin, /<Surface /);
+        assert.match(admin, /dashboard-horas-extras/);
+        assert.match(admin, /bg-purple-600/);
         assert.match(ventas, /<Surface /);
+        assert.match(ventas, /data-element="header"/);
+        assert.match(ventas, /dashboard-ventas-total/);
+        assert.doesNotMatch(ventas, /#36606F|#407080/);
         assert.match(ventas, /<KpiStat /);
         assert.match(staff, /<Surface /);
+        assert.match(staff, /data-element="header"/);
+    });
+
+    it('eventos, inventario y recetas usan primitivas canónicas', () => {
+        const eventos = readFileSync(
+            join(SRC_ROOT, 'app/dashboard/eventos/EventosAdminClient.tsx'),
+            'utf8'
+        );
+        const eventosPage = readFileSync(join(SRC_ROOT, 'app/dashboard/eventos/page.tsx'), 'utf8');
+        const inventoryShell = readFileSync(
+            join(SRC_ROOT, 'app/dashboard/inventory/InventoryPageShell.tsx'),
+            'utf8'
+        );
+        const inventoryPage = readFileSync(join(SRC_ROOT, 'app/dashboard/inventory/page.tsx'), 'utf8');
+        const recetas = readFileSync(join(SRC_ROOT, 'app/dashboard/recetas-tpv/page.tsx'), 'utf8');
+        const recetasImport = readFileSync(
+            join(SRC_ROOT, 'app/dashboard/recetas-import/RecetasImportClient.tsx'),
+            'utf8'
+        );
+        assert.match(eventos, /<EmptyState/);
+        assert.match(eventos, /<Field/);
+        assert.match(eventos, /<Surface/);
+        assert.match(eventosPage, /<Notice/);
+        assert.match(inventoryShell, /variant="tertiary"/);
+        assert.doesNotMatch(inventoryShell, /pt-6 md:pt-8/);
+        assert.doesNotMatch(inventoryPage, /pt-6 md:pt-8/);
+        assert.match(recetas, /<Notice/);
+        assert.match(recetasImport, /DashboardDetailLayout/);
+        assert.match(recetasImport, /<Surface/);
     });
 
     it('ningún piloto prioritario reintroduce rounded-[2.5rem]', () => {

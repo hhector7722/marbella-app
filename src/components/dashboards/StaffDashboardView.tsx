@@ -766,15 +766,13 @@ export default function StaffDashboardView() {
                     <div className="w-full space-y-3 md:space-y-4">
                         <Surface variant="page" instance="staff-semana" className="flex flex-col overflow-hidden">
                             {/* Header Estrecho - Estilo Vista Marbella Detail */}
-                            <div className="bg-ds-marca px-4 py-1.5 md:py-1 flex justify-between items-center text-white shrink-0">
-                                <div className="flex items-center">
-                                    <span className="text-[10px] md:text-sm font-black uppercase tracking-widest leading-none text-white">
-                                        {currentMonthName} {weekNumber ? `- SEMANA ${weekNumber}` : ''}
-                                    </span>
-                                </div>
+                            <div data-element="header" className="flex justify-between items-center shrink-0">
+                                <span data-element="title">
+                                    {currentMonthName} {weekNumber ? `- SEMANA ${weekNumber}` : ''}
+                                </span>
                                 <div className="flex items-center gap-3 shrink-0">
-                                    <Link href="/staff/history" className="text-[10px] font-black flex items-center gap-1 hover:text-white/80 transition-colors uppercase tracking-widest">
-                                        Historial <ArrowRight size={10} strokeWidth={3} />
+                                    <Link href="/staff/history" className="text-[11px] font-black flex items-center gap-1 hover:text-white/80 transition-colors uppercase tracking-widest text-white">
+                                        Historial <ArrowRight size={12} strokeWidth={3} />
                                     </Link>
                                 </div>
                             </div>
@@ -782,11 +780,11 @@ export default function StaffDashboardView() {
                             <div className="p-4 relative min-h-[200px]">
                                 {weekLoading ? (
                                     <div className="absolute inset-0 flex items-center justify-center z-10 bg-white/80" role="status" aria-label="Cargando semana">
-                                        <LoadingSpinner size="md" className="text-[#36606F]" />
+                                        <LoadingSpinner size="md" className="text-ds-marca" />
                                     </div>
                                 ) : null}
 
-                                <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.3)] border border-gray-100 mb-4 relative z-0">
+                                <div className="overflow-hidden border border-ds-borde mb-4 relative z-0">
                                     <div className="grid grid-cols-7">
                                         {weekDays.map((day, i) => {
                                             const eventType = day.eventType ?? 'regular';

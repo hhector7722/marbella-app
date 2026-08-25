@@ -4,7 +4,6 @@ import { Surface } from '@/components/ui/Surface'
 import CartaEditorClient from './CartaEditorClient'
 import type { CartaEditorMappingRow, CartaOverrideRow } from './types'
 import Link from 'next/link'
-import { ArrowRightLeft } from 'lucide-react'
 import CartaMappingCreatorClient, {
   type CartaRecipe,
   type CartaTpvArticle,
@@ -71,10 +70,9 @@ export default async function CartaDashboardPage() {
       rightSlot={
         <Link
           href="/dashboard/recetas-tpv"
-          className="h-12 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white font-black uppercase tracking-wider text-[11px] flex items-center gap-2 transition-colors min-h-[48px]"
+          className="shrink-0 text-[11px] font-black text-white uppercase tracking-widest hover:text-white/80 transition-colors min-h-[48px] flex items-center"
           aria-label="Ir a Mapeo TPV"
         >
-          <ArrowRightLeft size={18} strokeWidth={2.5} />
           Mapeo TPV
         </Link>
       }

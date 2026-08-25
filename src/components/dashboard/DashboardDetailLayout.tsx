@@ -83,10 +83,7 @@ export function PageScreen({
           <div
             data-element="header"
             data-compact={compactHeader ? 'true' : undefined}
-            className={cn(
-              'flex items-center justify-between gap-3 shrink-0 px-4 md:px-8',
-              compactHeader ? 'py-0.5 md:py-1' : 'py-4 md:py-5'
-            )}
+            className="flex items-center justify-between gap-3 shrink-0"
           >
             <div className="flex items-center gap-2 min-w-0 flex-1">
               {showBackButton ? (

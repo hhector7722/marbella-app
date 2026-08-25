@@ -1,7 +1,18 @@
 import { createClient } from '@/utils/supabase/server'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
+import { Notice } from '@/components/ui/Notice'
 import PedidosTodosClient, { type PedidoConEncargo } from './PedidosTodosClient'
 import { canViewEventos } from '../roles'
+
+function PedidosError({ subtitle, message }: { subtitle: string; message: string }) {
+  return (
+    <DashboardDetailLayout title="Pedidos" subtitle={subtitle}>
+      <Notice instance="eventos-pedidos-error" variant="negative" title={subtitle}>
+        {message}
+      </Notice>
+    </DashboardDetailLayout>
+  )
+}
 
 export default async function PedidosTodosPage() {
   const supabase = await createClient()
@@ -12,24 +23,12 @@ export default async function PedidosTodosPage() {
   } = await supabase.auth.getSession()
 
   if (sessErr) {
-    return (
-      <DashboardDetailLayout title="Pedidos" subtitle="Error de autenticación">
-        <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-red-700">No se pudo leer la sesión: {sessErr.message}</p>
-        </div>
-      </DashboardDetailLayout>
-    )
+    return <PedidosError subtitle="Error de autenticación" message={`No se pudo leer la sesión: ${sessErr.message}`} />
   }
 
   const user = session?.user ?? null
   if (!user) {
-    return (
-      <DashboardDetailLayout title="Pedidos" subtitle="Requiere login">
-        <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-red-700">No autenticado.</p>
-        </div>
-      </DashboardDetailLayout>
-    )
+    return <PedidosError subtitle="Requiere login" message="No autenticado." />
   }
 
   const { data: profile, error: profileErr } = await supabase
@@ -39,24 +38,12 @@ export default async function PedidosTodosPage() {
     .maybeSingle()
 
   if (profileErr) {
-    return (
-      <DashboardDetailLayout title="Pedidos" subtitle="Error de permisos">
-        <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-red-700">Error leyendo perfil: {profileErr.message}</p>
-        </div>
-      </DashboardDetailLayout>
-    )
+    return <PedidosError subtitle="Error de permisos" message={`Error leyendo perfil: ${profileErr.message}`} />
   }
 
   const role = (profile as { role?: string } | null)?.role ?? null
   if (!canViewEventos(role)) {
-    return (
-      <DashboardDetailLayout title="Pedidos" subtitle="Acceso restringido">
-        <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-red-700">Sin permiso para ver pedidos.</p>
-        </div>
-      </DashboardDetailLayout>
-    )
+    return <PedidosError subtitle="Acceso restringido" message="Sin permiso para ver pedidos." />
   }
 
   const { data: orders, error: oErr } = await supabase
@@ -68,13 +55,7 @@ export default async function PedidosTodosPage() {
     .limit(500)
 
   if (oErr) {
-    return (
-      <DashboardDetailLayout title="Pedidos" subtitle="Error de datos">
-        <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-          <p className="text-sm font-bold text-red-700">Error cargando pedidos: {oErr.message}</p>
-        </div>
-      </DashboardDetailLayout>
-    )
+    return <PedidosError subtitle="Error de datos" message={`Error cargando pedidos: ${oErr.message}`} />
   }
 
   const rows: PedidoConEncargo[] = ((orders ?? []) as Array<Record<string, unknown>>).map((r) => {

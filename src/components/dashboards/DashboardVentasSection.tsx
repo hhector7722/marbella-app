@@ -285,12 +285,12 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
     return (
         <>
             <Surface variant="page" instance="dashboard-ventas" className="flex flex-col overflow-hidden">
-                <div className="bg-ds-marca px-2 py-1 flex items-center justify-between gap-2 text-white shrink-0">
+                <div data-element="header" className="flex items-center justify-between gap-2 shrink-0">
                     <Link
                         href="/dashboard/ventas"
                         className={cn(
-                            'py-1 px-2.5 md:py-1.5 md:px-3 flex items-center justify-center rounded-lg text-[9px] md:text-[10px] font-bold uppercase tracking-widest',
-                            'bg-[#407080] text-white hover:bg-[#467888] active:scale-[0.98] transition-all cursor-pointer border-0 shadow-none'
+                            'py-1 px-2.5 md:py-1.5 md:px-3 flex items-center justify-center rounded-lg text-[11px] font-bold uppercase tracking-widest',
+                            'bg-white/10 text-white hover:bg-white/15 active:scale-[0.98] transition-all cursor-pointer border-0 shadow-none'
                         )}
                     >
                         Ventas
@@ -342,8 +342,8 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     <Link
                         href="/dashboard/history"
                         className={cn(
-                            'py-1 px-2.5 md:py-1.5 md:px-3 flex items-center justify-center rounded-lg text-[9px] md:text-[10px] font-bold uppercase tracking-widest',
-                            'bg-[#407080] text-white hover:bg-[#467888] active:scale-[0.98] transition-all cursor-pointer border-0 shadow-none'
+                            'py-1 px-2.5 md:py-1.5 md:px-3 flex items-center justify-center rounded-lg text-[11px] font-bold uppercase tracking-widest',
+                            'bg-white/10 text-white hover:bg-white/15 active:scale-[0.98] transition-all cursor-pointer border-0 shadow-none'
                         )}
                     >
                         Cierres
@@ -361,11 +361,10 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                         onClick={() => setIsSalesExpanded(!isSalesExpanded)}
                         className="flex flex-col items-center justify-center text-center min-h-[48px] w-full rounded-xl hover:bg-zinc-50/50 active:scale-[0.98] transition-all cursor-pointer group"
                     >
-                        <PremiumCountUp value={displaySummary.total} suffix="€" decimals={2} className="text-lg md:text-3xl font-black text-black leading-none" />
-                        <span className="flex items-center justify-center gap-1 mt-1">
-                            <span className="text-[7px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Ventas</span>
-                            <ChevronDown className={cn('w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-600 transition-transform duration-200 shrink-0', isSalesExpanded && 'rotate-180')} />
-                        </span>
+                        <KpiStat instance="dashboard-ventas-total" label="Ventas">
+                            <PremiumCountUp value={displaySummary.total} suffix="€" decimals={2} />
+                        </KpiStat>
+                        <ChevronDown className={cn('w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-600 transition-transform duration-200 shrink-0 -mt-1', isSalesExpanded && 'rotate-180')} />
                     </button>
                     <div className="flex flex-col items-center justify-center text-center">
                         <KpiStat instance="dashboard-ventas-neta" label="Venta Neta" tone="positive">
@@ -431,10 +430,10 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                 }}
                             >
                                 <svg viewBox="0 0 120 24" className="w-full h-8 md:h-10 block select-none" preserveAspectRatio="none">
-                                    <path d={toPath(rangeData)} fill="none" stroke="#36606F" strokeWidth="2" strokeLinecap="butt" strokeLinejoin="miter" vectorEffect="non-scaling-stroke" />
+                                    <path d={toPath(rangeData)} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="butt" strokeLinejoin="miter" vectorEffect="non-scaling-stroke" className="text-ds-marca" />
                                 </svg>
                             </div>
-                            <div className="flex justify-between px-3 text-[9px] font-mono text-[#36606F] leading-none select-none pointer-events-none mt-0.5">
+                            <div className="flex justify-between px-3 text-[9px] font-mono text-ds-marca leading-none select-none pointer-events-none mt-0.5">
                                 <span>7h</span>
                                 <span>23h</span>
                             </div>
@@ -453,7 +452,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                                 <div className="text-[10px] md:text-xs font-mono font-bold text-zinc-800 leading-tight">{String(selectedChartHour).padStart(2, '0')}:00</div>
                                                 <div className="text-[10px] md:text-xs font-black tabular-nums text-emerald-600 leading-tight">{totalHastaHora.toFixed(2)}€</div>
                                             </div>
-                                            <div className="absolute left-1/2 top-full w-3 h-3 rounded-full bg-[#36606F] border-2 border-white shadow-sm -translate-x-1/2 -translate-y-1/2" />
+                                            <div className="absolute left-1/2 top-full w-3 h-3 rounded-full bg-ds-marca border-2 border-white shadow-sm -translate-x-1/2 -translate-y-1/2" />
                                         </div>
                                     );
                                     return typeof document !== 'undefined' ? createPortal(tooltipEl, document.body) : null;
@@ -466,7 +465,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     <div className={cn('pt-1 pb-1 px-1 space-y-1 transition-all duration-300', expandedTicket ? 'overflow-y-auto no-scrollbar max-h-none' : 'overflow-y-auto no-scrollbar max-h-[200px] md:max-h-[280px]')}>
                         {loadingSalesTickets ? (
                             <div className="flex justify-center py-8">
-                                <LoadingSpinner size="sm" className="text-[#36606F]/50" />
+                                <LoadingSpinner size="sm" className="text-ds-marca/50" />
                             </div>
                         ) : salesTickets.length === 0 ? (
                             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-300 italic px-2 py-6 text-center">
@@ -475,7 +474,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                         ) : (
                             <div className="bg-white rounded-xl shadow-sm border border-zinc-100 overflow-hidden max-md:[&_table_th]:border-r-0 max-md:[&_table_td]:border-r-0 relative">
                                 <table className="w-full text-left border-collapse">
-                                    <thead className="bg-[#36606F] text-white text-[8px] md:text-[9px] font-black uppercase tracking-wider">
+                                    <thead className="bg-ds-marca text-white text-[8px] md:text-[9px] font-black uppercase tracking-wider">
                                         <tr>
                                             <th className="py-2 px-2 md:px-3">Hora</th>
                                             <th className="py-2 px-2 md:px-3">Doc</th>
@@ -511,7 +510,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                                                     <div className="bg-[#fcfcfc] rounded-xl p-2 md:p-3 animate-in slide-in-from-top-2 duration-200">
                                                                         {loadingTicketLines ? (
                                                                             <div className="flex justify-center py-4">
-                                                                                <LoadingSpinner size="sm" className="text-[#36606F]/50" />
+                                                                                <LoadingSpinner size="sm" className="text-ds-marca/50" />
                                                                             </div>
                                                                         ) : ticketLines.length === 0 ? (
                                                                             <p className="text-[9px] font-black uppercase tracking-widest text-zinc-300 text-center py-2">Sin detalles</p>
@@ -666,7 +665,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                                 disabled={isFuture}
                                                 className={cn(
                                                     'aspect-square flex items-center justify-center rounded-2xl text-[11px] font-black transition-all min-h-[48px]',
-                                                    isSelected ? 'bg-[#36606F] text-white shadow-xl' : isFuture ? 'text-zinc-300 cursor-not-allowed' : 'hover:bg-zinc-50 text-zinc-600 active:scale-95'
+                                                    isSelected ? 'bg-ds-marca text-white shadow-xl' : isFuture ? 'text-zinc-300 cursor-not-allowed' : 'hover:bg-zinc-50 text-zinc-600 active:scale-95'
                                                 )}
                                             >
                                                 {day}

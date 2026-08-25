@@ -453,8 +453,7 @@ export default function TipsDashboardView({
       showBackButton={false}
       maxWidthClass="max-w-6xl"
       template="list"
-      className="p-2 sm:p-4 md:p-8"
-      contentClassName="p-2.5 md:p-6 space-y-3 md:space-y-4 min-w-0"
+      contentClassName="space-y-4 min-w-0"
       rightSlot={
               <div className="flex items-center gap-1.5 md:gap-2 shrink-0 text-white">
                 <TimeFilterButton
@@ -479,8 +478,8 @@ export default function TipsDashboardView({
     >
             {lastDistBanner}
 
-            <div className="-mx-2.5 md:-mx-6">
-              <div className="overflow-x-auto overscroll-x-contain px-2.5 md:px-6 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <div className="-mx-4 md:-mx-6">
+              <div className="overflow-x-auto overscroll-x-contain px-4 md:px-6 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 <div className="flex w-max min-w-full flex-nowrap items-center gap-x-2 pe-2">
                   <div className="flex shrink-0 items-center gap-1.5">
                     <span className="text-[8px] md:text-[9px] font-black uppercase tracking-wider text-emerald-800/80 whitespace-nowrap">
