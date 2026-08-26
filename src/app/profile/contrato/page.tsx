@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import LaborConditionsView from '@/components/profile/LaborConditionsView';
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 
 type SearchParams = Promise<{ id?: string }>;
 
@@ -25,5 +26,15 @@ export default async function ProfileContratoPage({
     redirect('/profile');
   }
 
-  return <LaborConditionsView employeeId={employeeId} />;
+  return (
+    <DashboardDetailLayout
+      title="Condiciones laborales"
+      showBackButton
+      backHref={`/profile?id=${encodeURIComponent(employeeId)}`}
+      template="form"
+      maxWidthClass="max-w-2xl"
+    >
+      <LaborConditionsView employeeId={employeeId} hostedInPageScreen />
+    </DashboardDetailLayout>
+  );
 }

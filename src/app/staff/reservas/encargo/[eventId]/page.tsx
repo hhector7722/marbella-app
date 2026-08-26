@@ -2,18 +2,20 @@ import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import { loadEncargoPageById } from '@/lib/load-event-encargo-page'
 import { canCreateEncargo } from '@/app/dashboard/eventos/roles'
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import StaffEncargoPageClient from './StaffEncargoPageClient'
 
 function ErrorView({ message }: { message: string }) {
   return (
-    <main className="flex min-h-[100dvh] flex-col bg-zinc-50 text-zinc-900">
-      <div className="mx-auto w-full max-w-2xl px-5 py-8">
-        <div className="rounded-xl border border-zinc-100 bg-white p-5">
-          <p className="text-[11px] font-black uppercase tracking-widest text-[#36606F]">Encargo</p>
-          <p className="mt-2 text-sm font-bold text-zinc-900">{message}</p>
-        </div>
-      </div>
-    </main>
+    <DashboardDetailLayout
+      title="Encargo"
+      showBackButton
+      backHref="/staff/reservas"
+      template="detail"
+      maxWidthClass="max-w-2xl"
+    >
+      <p className="text-sm font-bold text-zinc-900">{message}</p>
+    </DashboardDetailLayout>
   )
 }
 

@@ -2,14 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import { Upload, AlertTriangle, CheckCircle, Save, Database } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { toast, Toaster } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 
 export default function BulkImportPage() {
     const supabase = createClient();
-    const router = useRouter();
     const [jsonInput, setJsonInput] = useState('');
     const [logs, setLogs] = useState<string[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -122,30 +120,21 @@ export default function BulkImportPage() {
     };
 
     return (
-        <div className="min-h-screen p-6 text-white flex flex-col items-center">
+        <DashboardDetailLayout
+            title="Importador JSON de recetas"
+            subtitle="Pega un array JSON con esta estructura e impórtalo."
+            showBackButton
+            backHref="/recipes"
+            template="form"
+            maxWidthClass="max-w-4xl"
+        >
             <Toaster position="top-right" />
 
-            <div className="w-full max-w-4xl">
-                <div className="mb-6">
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        instance="recipes-import-back"
-                        onClick={() => router.push('/recipes')}
-                    >
-                        Volver a Recetas
-                    </Button>
-                </div>
-
-                <h1 className="text-3xl font-bold mb-2">Importador Masivo de Recetas (JSON)</h1>
-                <p className="text-blue-100 mb-6">Pide a tu IA que genere un JSON con esta estructura y pégalo abajo.</p>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-[600px]">
-                    {/* COLUMNA IZQUIERDA: INPUT */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 min-h-[600px]">
                     <div className="flex flex-col gap-4">
-                        <div className="bg-white/10 p-4 rounded-xl border border-white/20 text-sm">
-                            <span className="font-bold text-yellow-300">Estructura requerida (Array):</span>
-                            <pre className="mt-2 text-xs overflow-x-auto bg-black/30 p-2 rounded text-green-300">
+                        <div className="bg-zinc-50 p-4 rounded-xl border border-zinc-100 text-sm">
+                            <span className="font-bold text-zinc-800">Estructura requerida (Array):</span>
+                            <pre className="mt-2 text-xs overflow-x-auto bg-zinc-900 p-2 rounded text-green-300">
                                 {`[
   {
     "name": "Bravas La Marbella",
@@ -165,29 +154,32 @@ export default function BulkImportPage() {
                             value={jsonInput}
                             onChange={(e) => setJsonInput(e.target.value)}
                             placeholder="Pega aquí tu array de JSON..."
-                            className="flex-1 w-full bg-white text-gray-900 p-4 rounded-xl font-mono text-xs outline-none focus:ring-4 focus:ring-blue-500 shadow-xl"
+                            className="flex-1 w-full bg-white text-gray-900 p-4 rounded-xl font-mono text-xs outline-none focus:ring-2 focus:ring-ds-marca/25 border border-zinc-200 min-h-12"
                         />
-                        <button
-                            onClick={handleImport}
+                        <Button
+                            type="button"
+                            variant="primary"
+                            instance="recipes-import-run"
+                            layout="fill"
+                            onClick={() => void handleImport()}
                             disabled={isProcessing}
-                            className={`w-full py-4 rounded-xl font-bold text-lg shadow-xl flex items-center justify-center gap-2 transition-all ${isProcessing ? 'bg-gray-500 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600 hover:scale-105'}`}
+                            loading={isProcessing}
+                            loadingLabel="Procesando…"
                         >
-                            {isProcessing ? <><Database className="animate-bounce" /> Procesando...</> : <><Save /> IMPORTAR AHORA</>}
-                        </button>
+                            Importar ahora
+                        </Button>
                     </div>
 
-                    {/* COLUMNA DERECHA: LOGS */}
-                    <div className="bg-black/80 rounded-xl p-4 font-mono text-xs overflow-y-auto shadow-xl border border-white/10">
-                        <h3 className="text-gray-400 font-bold mb-2 border-b border-gray-700 pb-2">Log de Ejecución</h3>
-                        {logs.length === 0 && <span className="text-gray-600 italic">Esperando datos...</span>}
+                    <div className="bg-zinc-900 rounded-xl p-4 font-mono text-xs overflow-y-auto border border-zinc-200">
+                        <h3 className="text-zinc-400 font-bold mb-2 border-b border-zinc-700 pb-2">Log de ejecución</h3>
+                        {logs.length === 0 && <span className="text-zinc-600 italic">Esperando datos...</span>}
                         {logs.map((log, i) => (
                             <div key={i} className={`mb-1 ${log.includes('❌') ? 'text-red-400' : log.includes('⚠️') ? 'text-yellow-400' : 'text-green-400'}`}>
                                 {log}
                             </div>
                         ))}
                     </div>
-                </div>
             </div>
-        </div>
+        </DashboardDetailLayout>
     );
 }

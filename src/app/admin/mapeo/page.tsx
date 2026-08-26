@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { MapeoClient } from './MapeoClient';
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 
 // Local types to prevent build errors since they are not in global Types yet
 export type TpvArticle = {
@@ -69,21 +70,18 @@ export default async function AdminMapeoPage() {
     }));
 
     return (
-        <div className="w-full max-w-6xl mx-auto space-y-6">
-            <div className="flex flex-col gap-2">
-                <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
-                    Mapeo de Artículos TPV
-                </h1>
-                <p className="text-zinc-500 text-sm">
-                    Vincula los productos importados del TPV ("bdp_articulos") con las recetas del sistema para habilitar el control de inventario y escándallos.
-                </p>
-            </div>
-
+        <DashboardDetailLayout
+            title="Mapeo TPV"
+            subtitle="Vincula los artículos del terminal con las recetas para el inventario y los escandallos."
+            showBackButton={false}
+            template="list"
+            maxWidthClass="max-w-6xl"
+        >
             <MapeoClient
                 pendingArticles={pendingArticles}
                 recipes={recipes}
                 completedMappings={completedMappings}
             />
-        </div>
+        </DashboardDetailLayout>
     );
 }

@@ -24,6 +24,8 @@ import {
 } from '@/lib/tip-distribution-display';
 import { StaffTipRepartoPanel } from '@/components/tips/StaffTipRepartoPanel';
 import { StaffTipDistributionDetailModal } from '@/components/tips/StaffTipDistributionDetailModal';
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import { Button } from '@/components/ui/button';
 
 export type { StaffTipHistoryEntry };
 
@@ -124,105 +126,89 @@ export default function StaffPropinasView({
     : 'Sin repartos anteriores.';
 
   return (
-    <div className="min-h-screen pb-24">
-      <main className="mx-auto max-w-lg space-y-4 px-4 py-4">
-        <section className="overflow-hidden rounded-2xl bg-white shadow-xl">
-          <div className="border-b border-zinc-100 bg-[#36606F] px-4 py-3">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <h2 className="text-sm font-black uppercase tracking-wide text-white">Propinas</h2>
-                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-white/75">
-                  Último reparto
-                </p>
-              </div>
-
-              {canSelectEmployee ? (
-                <div className="relative shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setShowEmployeeModal(true)}
-                    className={cn(
-                      'flex h-8 min-h-[48px] shrink-0 items-center justify-center rounded-lg border px-3 text-[8px] font-black uppercase tracking-widest text-white transition-all active:scale-95',
-                      viewingOther
-                        ? 'border-white/30 bg-white/20'
-                        : 'border-white/10 bg-white/10 hover:bg-white/20'
-                    )}
-                  >
-                    <span className="max-w-[72px] truncate">{headerEmployeeLabel}</span>
-                    <ChevronDown size={10} className="ml-1.5 shrink-0 opacity-40" />
-                  </button>
-                  {viewingOther ? (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedEmployeeId(viewerUserId);
-                      }}
-                      className="absolute -right-1.5 -top-1.5 z-30 flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-[#36606F] bg-red-500 text-white shadow-lg transition-colors hover:bg-red-600"
-                      aria-label="Ver mis propinas"
-                    >
-                      <X size={8} strokeWidth={4} />
-                    </button>
-                  ) : null}
-                </div>
+    <>
+      <DashboardDetailLayout
+        title="Propinas"
+        subtitle="Último reparto"
+        showBackButton={false}
+        template="list"
+        maxWidthClass="max-w-lg"
+        rightSlot={
+          canSelectEmployee ? (
+            <div className="relative shrink-0">
+              <Button
+                type="button"
+                variant="tertiary"
+                instance="staff-propinas-select-employee"
+                onClick={() => setShowEmployeeModal(true)}
+              >
+                {headerEmployeeLabel}
+              </Button>
+              {viewingOther ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedEmployeeId(viewerUserId);
+                  }}
+                  className="absolute -right-1.5 -top-1.5 z-30 flex h-6 w-6 min-h-12 min-w-12 items-center justify-center rounded-full bg-red-500 text-white shadow-lg transition-colors hover:bg-red-600"
+                  aria-label="Ver mis propinas"
+                >
+                  <X size={10} strokeWidth={4} />
+                </button>
               ) : null}
             </div>
-          </div>
-
-          <div className="p-4">
-            {historyLoading ? (
-              <div className="flex justify-center py-8">
-                <LoadingSpinner className="text-[#36606F]" />
-              </div>
-            ) : !lastEntry ? (
-              <p className="text-sm font-medium text-zinc-500">{emptyLastMessage}</p>
-            ) : (
-              <StaffTipRepartoPanel entry={lastEntry} />
-            )}
-          </div>
+          ) : null
+        }
+      >
+        <section>
+          {historyLoading ? (
+            <div className="flex justify-center py-8">
+              <LoadingSpinner className="text-ds-marca" />
+            </div>
+          ) : !lastEntry ? (
+            <p className="text-sm font-medium text-zinc-500">{emptyLastMessage}</p>
+          ) : (
+            <StaffTipRepartoPanel entry={lastEntry} />
+          )}
         </section>
 
-        <section className="overflow-hidden rounded-2xl bg-white shadow-xl">
-          <div className="border-b border-zinc-100 bg-[#36606F] px-4 py-3">
-            <h2 className="text-sm font-black uppercase tracking-wide text-white">Historial</h2>
-          </div>
-
-          <div className="p-4">
-            {historyLoading ? (
-              <div className="flex justify-center py-6">
-                <LoadingSpinner className="text-[#36606F]" />
-              </div>
-            ) : history.length === 0 ? (
-              <p className="text-sm font-medium text-zinc-500">{emptyHistoryMessage}</p>
-            ) : (
-              <ul className="divide-y divide-zinc-100">
-                {history.map((entry) => (
-                  <li key={entry.lineId}>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedEntry(entry)}
-                      className="flex min-h-12 w-full items-center justify-between gap-3 py-4 text-left transition-colors hover:bg-zinc-50/80 active:scale-[0.99] first:pt-0 last:pb-0"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-zinc-900">
-                          {formatLocalIsoDateLabel(entry.periodStart, 'd MMM')} –{' '}
-                          {formatLocalIsoDateLabel(entry.periodEnd, 'd MMM yyyy')}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <span className="text-base font-black tabular-nums text-emerald-600">
-                          {formatRoundedTipMoney(entry.totalAmount)}
-                        </span>
-                        <ChevronRight size={18} className="text-zinc-300" strokeWidth={2.5} />
-                      </div>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+        <section className="mt-6">
+          <h2 className="mb-3 text-sm font-semibold text-zinc-900">Historial</h2>
+          {historyLoading ? (
+            <div className="flex justify-center py-6">
+              <LoadingSpinner className="text-ds-marca" />
+            </div>
+          ) : history.length === 0 ? (
+            <p className="text-sm font-medium text-zinc-500">{emptyHistoryMessage}</p>
+          ) : (
+            <ul className="divide-y divide-zinc-100">
+              {history.map((entry) => (
+                <li key={entry.lineId}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedEntry(entry)}
+                    className="flex min-h-12 w-full items-center justify-between gap-3 py-4 text-left transition-colors hover:bg-zinc-50/80 active:scale-[0.99] first:pt-0 last:pb-0"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-zinc-900">
+                        {formatLocalIsoDateLabel(entry.periodStart, 'd MMM')} –{' '}
+                        {formatLocalIsoDateLabel(entry.periodEnd, 'd MMM yyyy')}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="text-base font-black tabular-nums text-emerald-600">
+                        {formatRoundedTipMoney(entry.totalAmount)}
+                      </span>
+                      <ChevronRight size={18} className="text-zinc-300" strokeWidth={2.5} />
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
-      </main>
+      </DashboardDetailLayout>
 
       <StaffTipDistributionDetailModal
         entry={selectedEntry}
@@ -241,6 +227,6 @@ export default function StaffPropinasView({
           }}
         />
       ) : null}
-    </div>
+    </>
   );
 }

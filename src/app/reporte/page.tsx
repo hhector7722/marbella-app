@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { format, addDays, getDay, subDays } from 'date-fns';
 import { submitReporteAction, ReportePayload } from './actions';
 import { Button } from '@/components/ui/button';
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import './premium.css';
 
 interface CategoryEntry {
@@ -536,6 +537,13 @@ export default function ReportePage() {
   };
 
   return (
+    <DashboardDetailLayout
+      title="Reporte"
+      showBackButton={false}
+      template="form"
+      maxWidthClass="max-w-lg"
+      contentClassName="p-0"
+    >
     <div className="reporte-container px-3 overflow-x-hidden">
       <div className="max-w-lg mx-auto pt-0 pb-1">
         <form id="reportForm" className="space-y-1" onSubmit={handleSubmit} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}>
@@ -589,5 +597,6 @@ export default function ReportePage() {
         </div>
       )}
     </div>
+    </DashboardDetailLayout>
   );
 }

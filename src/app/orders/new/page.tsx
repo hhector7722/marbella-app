@@ -10,6 +10,7 @@ import { createClient } from "@/utils/supabase/client";
 import { OrderProductCard } from "@/components/orders/OrderProductCard";
 import { toast, Toaster } from 'sonner';
 import { cn } from "@/lib/utils";
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 
 interface Ingredient {
     id: string;
@@ -284,23 +285,40 @@ export default function NewOrderPage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <LoadingSpinner size="xl" className="text-white" />
-            </div>
+            <DashboardDetailLayout
+                title="Pedido nuevo"
+                showBackButton
+                backHref="/suppliers"
+                template="list"
+                maxWidthClass="max-w-7xl"
+                fillViewport
+            >
+                <div className="flex flex-1 items-center justify-center py-20">
+                    <LoadingSpinner size="xl" className="text-ds-marca" />
+                </div>
+            </DashboardDetailLayout>
         );
     }
 
     return (
-        <div className="flex h-[100dvh] max-h-[100dvh] w-full flex-col">
+        <DashboardDetailLayout
+            title="Pedido nuevo"
+            showBackButton
+            backHref="/suppliers"
+            template="list"
+            maxWidthClass="max-w-7xl"
+            fillViewport
+            contentClassName="p-4 md:p-6 flex flex-col min-h-0"
+        >
             <Toaster position="top-right" />
 
-            <div className="mx-auto flex h-full w-full max-w-7xl min-h-0 flex-col p-4 md:p-6">
+            <div className="flex min-h-0 flex-1 flex-col">
                 <div className="z-10 shrink-0 pb-4 pt-0">
                     <div className="flex flex-col gap-4">
                         <div className="flex items-center gap-2">
                             <div className={cn(
-                                "shrink-0 px-4 py-2 bg-white/90 rounded-xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm flex items-center justify-center text-center border border-white/50",
-                                selectedSupplier && "text-[#5E35B1] ring-1 ring-[#5E35B1]/10 border-[#5E35B1]/20 bg-white"
+                                "shrink-0 px-4 py-2 bg-white rounded-xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm flex items-center justify-center text-center border border-zinc-100 min-h-12",
+                                selectedSupplier && "text-ds-marca ring-1 ring-ds-marca/10 border-ds-marca/20 bg-white"
                             )}>
                                 {selectedSupplier || "PROVEEDOR"}
                             </div>
@@ -311,7 +329,7 @@ export default function NewOrderPage() {
                                     placeholder="Buscar ingrediente..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2 bg-white/95 rounded-xl shadow-sm outline-none text-[13px] font-medium text-gray-700 focus:ring-2 focus:ring-white/30 transition-all border border-transparent focus:border-[#5E35B1]/20"
+                                    className="w-full pl-10 pr-4 py-2 bg-white rounded-xl shadow-sm outline-none text-[13px] font-medium text-gray-700 focus:ring-2 focus:ring-ds-marca/25 transition-all border border-zinc-100 min-h-12"
                                 />
                             </div>
                         </div>
@@ -384,6 +402,6 @@ export default function NewOrderPage() {
                     // Persistent quantities: no router.refresh() or reset needed
                 }}
             />
-        </div>
+        </DashboardDetailLayout>
     );
 }

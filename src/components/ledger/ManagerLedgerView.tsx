@@ -4,7 +4,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'sonner';
 import {
-    ArrowLeft,
     Plus,
     Pencil,
     Trash2,
@@ -15,7 +14,6 @@ import {
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, isSameMonth, subMonths, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
@@ -25,6 +23,7 @@ import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { namedEntitySummary } from '@/lib/usage/modal-apply';
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 
 interface LedgerRow {
     id: string;
@@ -48,7 +47,6 @@ function madridYmd(iso: string): string {
 }
 
 export default function ManagerLedgerView() {
-    const router = useRouter();
     const supabase = createClient();
 
     const [allLogs, setAllLogs] = useState<LedgerRow[]>([]);
@@ -302,68 +300,72 @@ export default function ManagerLedgerView() {
     };
 
     return (
-        <div className="min-h-screen p-4 md:p-8 pb-24 text-zinc-900">
-            <div className="max-w-4xl mx-auto space-y-6">
-                <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden">
-                    {/* CABECERA (como movements: título + Nuevo apunte, sin Arqueo) */}
-                    <div className="bg-[#36606F] p-4 md:p-6 space-y-6">
-                        <div className="flex items-center justify-between gap-2 md:gap-4">
-                            <div className="flex items-center gap-3 md:gap-4 flex-1">
-                                <button
-                                    onClick={() => router.back()}
-                                    className="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 transition-all text-white border border-white/10 active:scale-95 shrink-0"
-                                >
-                                    <ArrowLeft className="w-[18px] h-[18px] md:w-5 md:h-5" strokeWidth={3} />
-                                </button>
-                                <h1 className="text-lg md:text-4xl font-black text-white uppercase tracking-tight italic truncate">Libro Mayor</h1>
-                            </div>
-                            <div className="flex items-center justify-end gap-1 md:gap-4 shrink-0">
-                                <Button
-                                    type="button"
-                                    variant="primary"
-                                    instance="manager-ledger-new-entry"
-                                    onClick={openCreateModal}
-                                >
-                                    NUEVO APUNTE
-                                </Button>
-                            </div>
-                        </div>
-
-                        {/* FILTROS (unificado) */}
-                        <div className="flex items-center justify-between gap-2 pb-2">
-                            <div className="flex items-center gap-0.5 md:gap-1">
-                                <button onClick={handlePrevMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none min-h-[48px] min-w-[48px] flex items-center justify-center">
-                                    <ChevronLeft size={18} />
-                                </button>
-                                <button onClick={() => setIsTimeFilterOpen(true)} className="py-1 px-1 md:px-2 text-[11px] md:text-[13px] font-black text-white uppercase tracking-widest text-center transition-all outline-none whitespace-nowrap">
-                                    {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(parseLocalSafe(rangeStart), parseLocalSafe(rangeEnd))
-                                        ? format(parseLocalSafe(rangeStart), 'MMMM yyyy', { locale: es })
-                                        : 'SELECCIONAR MES'}
-                                </button>
-                                <button onClick={handleNextMonth} className="p-1 md:p-1.5 hover:bg-white/10 rounded-lg text-white transition-all outline-none min-h-[48px] min-w-[48px] flex items-center justify-center">
-                                    <ChevronRight size={18} />
-                                </button>
-                            </div>
-                            <div className="flex items-center gap-1.5 shrink-0 text-white">
-                                <TimeFilterButton
-                                    onClick={() => setIsTimeFilterOpen(true)}
-                                    hasActiveFilter={(() => {
-                                        const d = new Date();
-                                        const defS = format(startOfMonth(d), 'yyyy-MM-dd');
-                                        const defE = format(endOfMonth(d), 'yyyy-MM-dd');
-                                        const isDefault = filterMode === 'range' && rangeStart === defS && rangeEnd === defE;
-                                        return !isDefault;
-                                    })()}
-                                    onClear={() => {
-                                        const d = new Date();
-                                        const s = startOfMonth(d);
-                                        const e = endOfMonth(d);
-                                        setFilterMode('range');
-                                        setRangeStart(format(s, 'yyyy-MM-dd'));
-                                        setRangeEnd(format(e, 'yyyy-MM-dd'));
-                                    }}
-                                />
-                            </div>
+        <>
+            <DashboardDetailLayout
+                title="Libro Mayor"
+                showBackButton={false}
+                template="list"
+                maxWidthClass="max-w-4xl"
+                contentClassName="p-0 flex flex-col min-h-0"
+                rightSlot={
+                    <div className="flex items-center gap-1 md:gap-2 shrink-0 text-white">
+                        <TimeFilterButton
+                            onClick={() => setIsTimeFilterOpen(true)}
+                            hasActiveFilter={(() => {
+                                const d = new Date();
+                                const defS = format(startOfMonth(d), 'yyyy-MM-dd');
+                                const defE = format(endOfMonth(d), 'yyyy-MM-dd');
+                                const isDefault = filterMode === 'range' && rangeStart === defS && rangeEnd === defE;
+                                return !isDefault;
+                            })()}
+                            onClear={() => {
+                                const d = new Date();
+                                const s = startOfMonth(d);
+                                const e = endOfMonth(d);
+                                setFilterMode('range');
+                                setRangeStart(format(s, 'yyyy-MM-dd'));
+                                setRangeEnd(format(e, 'yyyy-MM-dd'));
+                            }}
+                            buttonClassName="bg-transparent border-transparent shadow-none hover:bg-white/15 min-h-[40px] md:min-h-[40px] px-2 py-1.5"
+                        />
+                        <Button
+                            type="button"
+                            variant="tertiary"
+                            instance="manager-ledger-new-entry"
+                            onClick={openCreateModal}
+                        >
+                            Nuevo apunte
+                        </Button>
+                    </div>
+                }
+            >
+                    <div className="flex justify-center w-full px-2 pt-3">
+                        <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
+                            <button
+                                type="button"
+                                onClick={handlePrevMonth}
+                                className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
+                                aria-label="Mes anterior"
+                            >
+                                <ChevronLeft size={22} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setIsTimeFilterOpen(true)}
+                                className="text-base md:text-lg font-black text-ds-marca capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,14rem)] sm:max-w-none hover:opacity-80 min-h-12"
+                            >
+                                {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(parseLocalSafe(rangeStart), parseLocalSafe(rangeEnd))
+                                    ? format(parseLocalSafe(rangeStart), 'MMMM yyyy', { locale: es })
+                                    : 'Seleccionar mes'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleNextMonth}
+                                className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
+                                aria-label="Mes siguiente"
+                            >
+                                <ChevronRight size={22} />
+                            </button>
                         </div>
                     </div>
 
@@ -489,8 +491,7 @@ export default function ManagerLedgerView() {
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
+            </DashboardDetailLayout>
 
             {/* Modal calendario */}
             <TimeFilterModal
@@ -627,6 +628,6 @@ export default function ManagerLedgerView() {
                         </p>
                         </div>
             </Modal>
-        </div>
+        </>
     );
 }

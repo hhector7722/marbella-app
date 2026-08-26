@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-26
 
+- **Resto de gestión entra por PageScreen.** Proveedores, Pedido nuevo, Libro Mayor, Uso de la app, Analítica web, importación de fichajes, Mapeo TPV, Revisión de actividades, Editar horario, importador de recetas, Condiciones laborales, Reporte, Propinas staff y Encargo dejan de clonar cabecera. Un cambio en el sistema las pinta juntas. Sin ADR nueva.
+
 - **Oleada PageScreen de gestión.** Recetas, Ingredientes, Ventas, Tesorería, Asistencia, Perfil, detalle de receta, Insights, Precios desde albarán, catálogo de actividades e Importación entran por `PageScreen`. Recetas e Ingredientes muestran 4 ítems por fila. Asistencia conserva tarjetas semanales (P6), no el calendario P3. Sin ADR nueva.
 
 - **Horas extras recupera el mini-calendario.** `/dashboard/overtime` deja la rejilla mensual P3 y vuelve a días en círculos + filas de semana (importe y pagado). Sigue en PageScreen. No es un calendario mensual.

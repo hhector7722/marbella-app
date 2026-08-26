@@ -4,11 +4,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ChevronLeft, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import {
   prepareReviewAction,
   fetchVenuesAction,
@@ -240,44 +241,70 @@ export default function PavilionRevisionPage() {
 
   if (authChecking) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50">
-        <LoadingSpinner className="text-[#36606F]" />
-      </div>
+      <DashboardDetailLayout
+        title="Revisión de actividades"
+        showBackButton
+        backHref="/staff/actividades"
+        template="form"
+        maxWidthClass="max-w-6xl"
+      >
+        <div className="flex flex-1 items-center justify-center py-20">
+          <LoadingSpinner className="text-ds-marca" />
+        </div>
+      </DashboardDetailLayout>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-zinc-50 pb-6 lg:pb-10">
-      <div className="mx-auto max-w-5xl px-3 pt-4 md:pt-8 lg:max-w-6xl lg:px-8 lg:pt-10">
-        <div className="overflow-hidden bg-zinc-50 lg:rounded-2xl lg:border lg:border-zinc-100 lg:bg-white lg:shadow-sm">
-          {/* ---- Header bar ---- */}
-          <div className="flex shrink-0 items-center gap-3 bg-zinc-50 px-4 py-4 lg:bg-white lg:px-6 lg:py-5 lg:border-b lg:border-zinc-100">
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="flex min-h-[48px] min-w-[48px] shrink-0 items-center justify-center rounded-xl text-zinc-900 transition-colors hover:bg-zinc-200"
-              aria-label="Tornar"
-            >
-              <ChevronLeft size={22} strokeWidth={2.5} />
-            </button>
-            <div className="flex-1 min-w-0">
-              <h1 className="truncate text-sm font-black uppercase tracking-widest text-zinc-900 lg:text-base">
-                {dateStr ? format(parseLocalSafe(dateStr), 'EEEE d MMMM yyyy', { locale: es }) : ''}
-              </h1>
-            </div>
-            {loadedFromDb && filePath && (
-              <Button
-                type="button"
-                variant="secondary"
-                instance="pavilion-revision-reprocess"
-                onClick={() => void loadData(true)}
-              >
-                Re-procesar con OCR
-              </Button>
-            )}
-          </div>
+  const revisionTitle = dateStr
+    ? format(parseLocalSafe(dateStr), 'EEEE d MMMM yyyy', { locale: es })
+    : 'Revisión de actividades';
 
-          {/* ---- Content ---- */}
+  return (
+    <DashboardDetailLayout
+      title={revisionTitle}
+      showBackButton
+      backHref={dateStr ? `/staff/actividades?date=${dateStr}` : '/staff/actividades'}
+      template="form"
+      maxWidthClass="max-w-6xl"
+      rightSlot={
+        loadedFromDb && filePath ? (
+          <Button
+            type="button"
+            variant="tertiary"
+            instance="pavilion-revision-reprocess"
+            onClick={() => void loadData(true)}
+          >
+            Re-procesar con OCR
+          </Button>
+        ) : null
+      }
+      footerSlot={
+        state === 'parsed' || state === 'importing' ? (
+          <div className="flex items-center justify-end gap-3">
+            <Button
+              type="button"
+              variant="secondary"
+              instance="pavilion-revision-cancel"
+              onClick={handleCancel}
+              disabled={state === 'importing'}
+            >
+              Cancel·lar
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              instance="pavilion-revision-save"
+              loading={state === 'importing'}
+              loadingLabel="Guardar horario"
+              onClick={() => void handleAccept()}
+              disabled={state === 'importing'}
+            >
+              Guardar horario
+            </Button>
+          </div>
+        ) : undefined
+      }
+    >
           {state === 'loading' && (
             <div className="flex flex-col items-center gap-4 px-6 py-20">
               <LoadingSpinner size="xl" className="text-[#36606F]" />
@@ -516,34 +543,8 @@ export default function PavilionRevisionPage() {
                   Añadir actividad
                 </Button>
               </div>
-
-              {/* ---- Footer actions ---- */}
-              <div className="flex items-center justify-end gap-3 border-t border-zinc-100 px-4 py-4 lg:px-6 lg:py-5">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  instance="pavilion-revision-cancel"
-                  onClick={handleCancel}
-                  disabled={state === 'importing'}
-                >
-                  Cancel·lar
-                </Button>
-                <Button
-                  type="button"
-                  variant="primary"
-                  instance="pavilion-revision-save"
-                  loading={state === 'importing'}
-                  loadingLabel="Guardar horario"
-                  onClick={() => void handleAccept()}
-                  disabled={state === 'importing'}
-                >
-                  Guardar horario
-                </Button>
-              </div>
             </>
           )}
-        </div>
-      </div>
-    </div>
+    </DashboardDetailLayout>
   );
 }

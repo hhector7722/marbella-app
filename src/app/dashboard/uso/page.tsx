@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { BarChart3, Globe, Smartphone } from 'lucide-react';
+import { Globe, Smartphone } from 'lucide-react';
 import { UsageDashboard } from '@/components/usage/UsageDashboard';
 import { canAccessUsageAnalytics } from '@/lib/usage/access';
 import { getUsageDashboardData, parseUsageDashboardFilters } from '@/lib/usage/queries';
 import { createClient } from '@/utils/supabase/server';
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,32 +40,31 @@ export default async function UsoPage({ searchParams }: UsoPageProps) {
   const data = await getUsageDashboardData(filters);
 
   return (
-    <div className="mx-auto min-h-screen max-w-3xl space-y-4 p-4">
-      <div className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
-        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-zinc-100 bg-zinc-50">
-          <BarChart3 className="size-6 text-[#36606F]" aria-hidden />
-        </div>
-        <h1 className="min-w-0 flex-1 text-lg font-black uppercase tracking-wide text-zinc-800">
-          Uso de la app
-        </h1>
+    <DashboardDetailLayout
+      title="Uso de la app"
+      showBackButton={false}
+      template="list"
+      maxWidthClass="max-w-3xl"
+      rightSlot={
         <div className="flex shrink-0 items-center gap-1">
           <Link
             href="/dashboard/web"
             aria-label="Uso web"
-            className="flex size-12 shrink-0 items-center justify-center text-[#36606F]"
+            className="flex size-12 shrink-0 items-center justify-center text-white"
           >
             <Globe className="size-6" strokeWidth={1.5} aria-hidden />
           </Link>
           <Link
             href="/dashboard/instalacion-app"
             aria-label="Instalación de la app"
-            className="flex size-12 shrink-0 items-center justify-center text-[#36606F]"
+            className="flex size-12 shrink-0 items-center justify-center text-white"
           >
             <Smartphone className="size-6" strokeWidth={1.5} aria-hidden />
           </Link>
         </div>
-      </div>
+      }
+    >
       <UsageDashboard data={data} />
-    </div>
+    </DashboardDetailLayout>
   );
 }

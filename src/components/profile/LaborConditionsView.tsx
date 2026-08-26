@@ -49,9 +49,10 @@ type Props = {
   employeeId: string;
   onSaveSuccess?: () => void;
   onClose?: () => void;
+  hostedInPageScreen?: boolean;
 };
 
-export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose }: Props) {
+export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose, hostedInPageScreen = false }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -285,12 +286,12 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
   );
 
   return (
-    <div className="min-h-screen pb-24 p-4">
-      <div className="mx-auto flex max-w-2xl flex-col gap-4">
+    <div className={hostedInPageScreen ? 'flex flex-col gap-4' : 'min-h-screen pb-24 p-4'}>
+      <div className={hostedInPageScreen ? 'flex flex-col gap-4' : 'mx-auto flex max-w-2xl flex-col gap-4'}>
         {!editing ? (
           <>
-            <section className="overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm">
-              {cardHeader('Condiciones laborales', { withBack: true })}
+            <section className={hostedInPageScreen ? '' : 'overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm'}>
+              {hostedInPageScreen ? null : cardHeader('Condiciones laborales', { withBack: true })}
               <div className="p-4">
                 {vigente ? (
                   <dl className="divide-y divide-zinc-100">
@@ -357,10 +358,14 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
               </div>
             </section>
 
-            <section className="overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm">
-              <div className="bg-[#36606F] px-4 py-3">
-                <h2 className="text-sm font-semibold text-white">Histórico contractual</h2>
-              </div>
+            <section className={hostedInPageScreen ? '' : 'overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm'}>
+              {hostedInPageScreen ? (
+                <h2 className="px-1 pb-2 text-sm font-semibold text-zinc-900">Histórico contractual</h2>
+              ) : (
+                <div className="bg-[#36606F] px-4 py-3">
+                  <h2 className="text-sm font-semibold text-white">Histórico contractual</h2>
+                </div>
+              )}
               <div className="p-4">
                 {terms.length === 0 ? (
                   <p className="text-sm text-zinc-500">Sin histórico.</p>
@@ -421,8 +426,12 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
             </section>
           </>
         ) : (
-          <section className="overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm">
-            {cardHeader(editorTitle, { withBack: true })}
+          <section className={hostedInPageScreen ? '' : 'overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm'}>
+            {hostedInPageScreen ? (
+              <h2 className="px-1 pb-2 text-sm font-semibold text-zinc-900">{editorTitle}</h2>
+            ) : (
+              cardHeader(editorTitle, { withBack: true })
+            )}
             <div className="p-4">
               <p className="text-xs text-zinc-500">
                 {editMode === 'rewrite'

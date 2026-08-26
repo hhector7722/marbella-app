@@ -12,6 +12,8 @@ import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { namedEntitySummary } from '@/lib/usage/modal-apply';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 interface Supplier {
     id: string; // bigint en BD; string en UI para soportar rows "initial-*"
@@ -491,11 +493,28 @@ export default function SuppliersPage() {
     });
 
     return (
-        <div className="flex h-[100dvh] max-h-[100dvh] w-full flex-col">
+        <>
             <Toaster position="top-right" />
-
-            <div className="shrink-0 px-6 pb-4 pt-4 md:px-8 md:pb-6 md:pt-6">
-            <div className="flex flex-row items-center gap-2">
+            <DashboardDetailLayout
+                title="Proveedores"
+                showBackButton={false}
+                template="list"
+                maxWidthClass="max-w-7xl"
+                fillViewport
+                contentClassName="p-4 md:p-6 flex flex-col min-h-0"
+                rightSlot={
+                    <Button
+                        type="button"
+                        variant="tertiary"
+                        instance="supplier-create-open"
+                        layout="hug"
+                        icon={<Plus />}
+                        aria-label="Nuevo proveedor"
+                        onClick={() => setShowCreateModal(true)}
+                    />
+                }
+            >
+            <div className="flex flex-row items-center gap-2 shrink-0">
                 <div className="relative flex-1 min-w-0">
                     <Search className="absolute left-2.5 md:left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400" />
                     <input
@@ -503,7 +522,7 @@ export default function SuppliersPage() {
                         placeholder="Buscar..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-8 md:pl-10 pr-2 md:pr-4 py-2 md:py-3 bg-white/95 rounded-xl md:rounded-2xl shadow-sm outline-none text-xs md:text-sm font-medium text-gray-700 focus:ring-2 focus:ring-emerald-400"
+                        className="w-full pl-8 md:pl-10 pr-2 md:pr-4 py-2 md:py-3 bg-white rounded-xl md:rounded-2xl shadow-sm outline-none text-xs md:text-sm font-medium text-gray-700 focus:ring-2 focus:ring-ds-marca/25 min-h-12"
                     />
                 </div>
                 <div className="flex gap-1.5 md:gap-2 items-center shrink-0">
@@ -511,7 +530,7 @@ export default function SuppliersPage() {
                         <div className="relative">
                             <button
                                 onClick={() => setShowCategoryPopup(!showCategoryPopup)}
-                                className="px-2.5 md:px-5 py-2 md:py-3 bg-white/90 hover:bg-white rounded-xl md:rounded-2xl font-black text-[9px] md:text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-1 md:gap-2 border border-white/50"
+                                className="px-2.5 md:px-5 py-2 md:py-3 bg-white hover:bg-zinc-50 rounded-xl md:rounded-2xl font-black text-[9px] md:text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-1 md:gap-2 border border-zinc-100 min-h-12"
                             >
                                 <span className="hidden sm:inline">Categoría</span><span className="sm:hidden">Cat.</span> <ChevronDown size={12} className="text-zinc-400 md:w-3.5 md:h-3.5" />
                             </button>
@@ -552,23 +571,13 @@ export default function SuppliersPage() {
                             </button>
                         </div>
                     )}
-                    <Button
-                        type="button"
-                        variant="primary"
-                        instance="supplier-create-open"
-                        layout="hug"
-                        icon={<Plus />}
-                        aria-label="Nuevo proveedor"
-                        onClick={() => setShowCreateModal(true)}
-                    />
                 </div>
             </div>
-            </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y scroll-pb-end px-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:px-8">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y">
             {loading ? (
                 <div className="flex w-full items-center justify-center py-20">
-                    <LoadingSpinner size="xl" className="text-white" />
+                    <LoadingSpinner size="xl" className="text-ds-marca" />
                 </div>
             ) : (
                 <>
@@ -605,9 +614,12 @@ export default function SuppliersPage() {
                         </div>
                     ))}
                     {filteredSuppliers.length === 0 && !loading && (
-                        <div className="col-span-full py-20 bg-white/5 rounded-[2.5rem] border-2 border-dashed border-white/20 flex flex-col items-center justify-center gap-4">
-                            <Truck size={48} className="text-white/20" />
-                            <p className="text-white/40 font-black uppercase tracking-widest text-xs">No se encontraron proveedores</p>
+                        <div className="col-span-full py-20">
+                            <EmptyState
+                                instance="suppliers-empty"
+                                variant="mismatch"
+                                title="No se encontraron proveedores"
+                            />
                         </div>
                     )}
                 </div>
@@ -615,6 +627,7 @@ export default function SuppliersPage() {
                 </>
             )}
             </div>
+            </DashboardDetailLayout>
 
             <Modal
                 open={!!detailSupplier}
@@ -914,6 +927,6 @@ export default function SuppliersPage() {
                     </div>
                 </div>
             </Modal>
-        </div>
+        </>
     );
 }

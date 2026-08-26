@@ -29,6 +29,7 @@ import {
 import { cn } from '@/lib/utils'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { createClient } from '@/utils/supabase/client'
 
 export type EncargoEditorMenuProduct = {
@@ -998,12 +999,22 @@ export function EncargoProductEditor({
 
   if (!asModal) {
     return (
-      <div className={cn('min-h-screen flex flex-col bg-white mx-auto', EDITOR_MODAL_CLASS)}>
+      <DashboardDetailLayout
+        title={eventName}
+        subtitle="Encargo"
+        showBackButton
+        backHref="/staff/reservas"
+        template="form"
+        maxWidthClass="max-w-2xl"
+        fillViewport
+        contentClassName="p-0 flex flex-col min-h-0"
+        rightSlot={<div className="flex items-center">{editorHeaderTrailing}</div>}
+      >
         {editorContent}
         <div className="shrink-0 flex items-center justify-end gap-2 border-t border-zinc-100 px-3 py-2 bg-white">
           {editorFooter}
         </div>
-      </div>
+      </DashboardDetailLayout>
     )
   }
 

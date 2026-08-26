@@ -4,21 +4,17 @@ import { useState, useEffect, useCallback } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from 'next/navigation';
 import {
-    Upload,
     FileText,
     CheckCircle2,
-    AlertCircle,
-    ChevronLeft,
     Database,
     AlertTriangle,
-    X,
     FileUp
 } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import Papa from 'papaparse';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import Image from 'next/image';
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { persistOvertimeCostForEmployeesAction } from '@/app/actions/persist-overtime-cost';
 
 interface CSVRow {
@@ -237,37 +233,31 @@ export default function BulkImportPage() {
     };
 
     if (loading) return (
-        <div className="min-h-screen flex items-center justify-center p-4">
-            <LoadingSpinner size="xl" className="text-white" />
-        </div>
+        <DashboardDetailLayout
+            title="Importación masiva"
+            subtitle="Fichajes"
+            showBackButton
+            backHref="/dashboard"
+            template="form"
+            maxWidthClass="max-w-2xl"
+        >
+            <div className="flex flex-1 items-center justify-center py-20">
+                <LoadingSpinner size="xl" className="text-ds-marca" />
+            </div>
+        </DashboardDetailLayout>
     );
 
     if (!isAuthorized) return null;
 
     return (
-        <div className="min-h-screen p-4 md:p-6 pb-24">
-            <div className="max-w-2xl mx-auto">
-                <div className="bg-white rounded-2xl shadow-2xl relative overflow-hidden flex flex-col min-h-[85vh]">
-
-                    {/* CABECERA */}
-                    <div className="bg-[#5B8FB9] px-8 py-4 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <button
-                                onClick={() => router.back()}
-                                className="p-2 hover:bg-white/10 rounded-xl text-white transition-all active:scale-95"
-                            >
-                                <ChevronLeft size={20} />
-                            </button>
-                            <div className="flex items-center gap-2">
-                                <Database className="text-white" size={20} />
-                                <h1 className="text-base font-black text-white uppercase tracking-wider">
-                                    Importación Masiva
-                                </h1>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="p-8 flex-1 flex flex-col">
+        <DashboardDetailLayout
+            title="Importación masiva"
+            subtitle="Fichajes"
+            showBackButton
+            backHref="/dashboard"
+            template="form"
+            maxWidthClass="max-w-2xl"
+        >
                         {!result ? (
                             <>
                                 {/* DROPZONE */}
@@ -370,7 +360,7 @@ export default function BulkImportPage() {
                             /* RESULTS SUMMARY */
                             <div className="flex-1 flex flex-col">
                                 <div className="flex flex-col items-center text-center py-10">
-                                    <div className="w-24 h-24 rounded-[2.5rem] bg-emerald-50 text-emerald-500 flex items-center justify-center mb-6 shadow-sm">
+                                    <div className="w-24 h-24 rounded-3xl bg-emerald-50 text-emerald-500 flex items-center justify-center mb-6 shadow-sm">
                                         <CheckCircle2 size={48} />
                                     </div>
                                     <h2 className="text-2xl font-black text-gray-800 tracking-tighter mb-2">¡Importación Finalizada!</h2>
@@ -423,9 +413,6 @@ export default function BulkImportPage() {
                                 </button>
                             </div>
                         )}
-                    </div>
-                </div>
-            </div>
-        </div>
+        </DashboardDetailLayout>
     );
 }

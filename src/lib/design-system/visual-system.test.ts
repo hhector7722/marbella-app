@@ -101,6 +101,21 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'app/dashboard/albaranes-precios/AlbaranesPreciosClient.tsx',
             'app/staff/actividades/gestion/page.tsx',
             'app/dashboard/import/page.tsx',
+            'app/suppliers/page.tsx',
+            'app/orders/new/page.tsx',
+            'components/ledger/ManagerLedgerView.tsx',
+            'app/dashboard/uso/page.tsx',
+            'app/dashboard/web/page.tsx',
+            'app/admin/import/page.tsx',
+            'app/admin/mapeo/page.tsx',
+            'app/staff/actividades/revision/page.tsx',
+            'app/schedule/page.tsx',
+            'app/recipes/import/page.tsx',
+            'app/profile/contrato/page.tsx',
+            'app/reporte/page.tsx',
+            'components/tips/StaffPropinasView.tsx',
+            'components/reservas/EncargoProductEditor.tsx',
+            'app/staff/reservas/encargo/[eventId]/page.tsx',
         ];
         for (const rel of pilots) {
             const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
