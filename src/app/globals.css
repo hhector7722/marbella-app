@@ -185,6 +185,14 @@
 }
 
 /*
+ * Un Button hug en el pie no absorbe el ancho: si crece, el relleno
+ * compacto se lee como pastilla. El fill sigue decidiendo el ancho.
+ */
+[data-component='Modal'] [data-element='footer'] > [data-component='Button'][data-layout='hug'] {
+  flex: 0 0 auto;
+}
+
+/*
  * Capas superiores: el panel cubierto pierde protagonismo (blur + oscurecimiento).
  * El backdrop elevated sigue sin acumular blur de fondo (ADR-0008).
  */

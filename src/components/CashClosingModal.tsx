@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { X, Calendar, Minus, Plus, Check } from 'lucide-react';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -628,10 +627,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                     <Button
                         type="button"
                         variant="primary"
-                        // fill explícito: CTA de avance absorbe el resto del pie junto a «Atrás» hug
-                        layout="fill"
                         instance="cash-closing-advance"
-                        className="flex-1"
                         onClick={handleAdvanceStep}
                         disabled={loading || (step === 'summary' && !photosReady)}
                         loading={loading}
@@ -739,22 +735,25 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                                     {BILLS.map((bill) => renderDenominationItem(bill))}
                                     {COINS.slice(0, -1).map((coin) => renderDenominationItem(coin))}
                                     {renderDenominationItem(lastCoin)}
-                                    <div className="col-span-3 sm:col-span-5 lg:col-span-7 flex items-end gap-2 self-end pb-0.5">
-                                        <button
+                                    <div className="col-span-3 sm:col-span-5 lg:col-span-7 flex items-end justify-end gap-2 self-end pb-0.5">
+                                        <Button
                                             type="button"
+                                            variant="tertiary"
+                                            instance="cash-closing-count-back"
                                             onClick={() => setStep('tpv_data')}
-                                            className="h-10 shrink-0 rounded-xl px-3 font-black text-[9px] uppercase tracking-widest text-gray-400 transition-colors hover:bg-white hover:text-gray-600 active:bg-white/80 sm:px-4 sm:text-[10px]"
                                         >
                                             Atrás
-                                        </button>
-                                        <button
+                                        </Button>
+                                        <Button
                                             type="button"
+                                            variant="primary"
+                                            instance="cash-closing-count-summary"
                                             onClick={handleAdvanceStep}
                                             disabled={loading}
-                                            className="flex h-10 min-w-0 flex-1 items-center justify-center rounded-xl bg-emerald-500 px-2 text-[9px] font-black uppercase tracking-widest text-white transition-all active:scale-[0.98] sm:text-[10px]"
+                                            loading={loading}
                                         >
-                                            {loading ? <LoadingSpinner size="sm" className="text-white" /> : 'Ver Resumen'}
-                                        </button>
+                                            Ver Resumen
+                                        </Button>
                                     </div>
                                 </div>
                             </div>

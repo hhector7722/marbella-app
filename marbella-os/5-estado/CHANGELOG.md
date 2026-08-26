@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-26
 
+- **Siguiente de cerrar caja deja de ser pastilla.** El avance del cierre (y Ver resumen del arqueo) es el mismo botón compacto a la derecha, no una barra verde a todo el ancho.
+
 - **El periodo va en la cabecera, con el mismo filtro a la derecha.** Flechas y fecha en la franja petróleo; el icono de filtro no se convierte en una cruz. Tablas y calendarios empiezan más arriba. Los botones dejan de parecer pastilla. La tabla de ventas cabe entera, más compacta, sin scroll horizontal.
 
 - **El catálogo respira y el pie cabe en una línea.** Recetas, Ingredientes y Proveedores separan más las celdas. Las fotos de proveedor bajan al tamaño de las otras dos. Nombre y precio van en una sola fila.

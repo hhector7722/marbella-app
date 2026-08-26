@@ -294,6 +294,11 @@ describe('Button className no escapa del contrato visual', () => {
         assert.match(css, /width:\s*100%/);
         assert.match(
             css,
+            /\[data-element='footer'\] > \[data-component='Button'\]\[data-layout='hug'\] \{[\s\S]*?flex:\s*0 0 auto/,
+            'Siguiente y el resto de CTAs hug del pie no se estiran a pastilla'
+        );
+        assert.match(
+            css,
             /\[data-component='Button'\] \{[\s\S]*?background-color:\s*transparent/
         );
         assert.match(
@@ -512,9 +517,9 @@ describe('Piloto Button en footers oficiales', () => {
             'utf8'
         );
         assert.equal((cashChange.match(/layout="fill"/g) || []).length, 2);
-        assert.equal((cashClosing.match(/layout="fill"/g) || []).length, 1);
+        assert.equal((cashClosing.match(/layout="fill"/g) || []).length, 0);
         for (const rel of PILOT_FOOTER_HOSTS) {
-            if (rel.includes('CashChange') || rel.includes('CashClosing')) continue;
+            if (rel.includes('CashChange')) continue;
             const source = readFileSync(join(REPO_ROOT, rel), 'utf8');
             assert.equal(
                 source.includes('layout="fill"'),
