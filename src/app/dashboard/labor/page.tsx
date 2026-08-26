@@ -11,6 +11,7 @@ import {
     endOfWeek,
     format,
     isSameMonth,
+    isToday,
     startOfMonth,
     startOfWeek,
     subMonths,
@@ -541,6 +542,7 @@ export default function LaborHistoryPage() {
                 title="Coste laboral"
                 showBackButton={false}
                 template="list"
+                maxWidthClass="max-w-none"
                 className="month-cal-shell"
                 cardClassName="month-cal-card"
                 contentClassName="flex flex-col min-h-0 p-0"
@@ -635,86 +637,78 @@ export default function LaborHistoryPage() {
                                 <LoadingSpinner size="lg" className="text-ds-marca" />
                             </div>
                         ) : (
-                            <div className="bg-transparent border-0 shadow-none overflow-visible month-cal-grid-wrap flex flex-col flex-1 min-h-0">
-                                <div className="p-1 md:p-3 overflow-x-auto no-scrollbar flex flex-col flex-1 min-h-0">
-                                    <div className="min-w-0 flex flex-col flex-1 min-h-0">
-                                        <div className="grid grid-cols-7 mb-1 md:mb-2 px-0.5 md:px-2 shrink-0">
-                                            {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((d, index) => (
-                                                <div
-                                                    key={d}
-                                                    className="text-[7px] md:text-[10px] font-black text-zinc-400 uppercase tracking-[0.1em] text-center"
-                                                >
-                                                    <span className="hidden md:inline">{d}</span>
-                                                    <span className="md:hidden">{['L', 'M', 'X', 'J', 'V', 'S', 'D'][index]}</span>
-                                                </div>
-                                            ))}
+                            <div className="mx-auto w-[97%] min-w-0 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.08)] month-cal-grid-wrap flex flex-col flex-1 min-h-0">
+                                <div className="grid grid-cols-7 border-b border-gray-100 shrink-0">
+                                    {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((d, index) => (
+                                        <div
+                                            key={d}
+                                            className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-sm border-r border-white/30 last:border-r-0"
+                                        >
+                                            <span className="text-[9px] font-bold text-white uppercase tracking-wider truncate px-0.5 drop-shadow-sm leading-none">
+                                                <span className="hidden md:inline">{d}</span>
+                                                <span className="md:hidden">{['L', 'M', 'X', 'J', 'V', 'S', 'D'][index]}</span>
+                                            </span>
                                         </div>
-                                        <div className="grid grid-cols-7 gap-1 md:gap-2 month-cal-days month-cal-days--gap">
-                                            {calendarDays.map((day) => {
-                                                const key = format(day, 'yyyy-MM-dd');
-                                                const isFutureDay = key > todayStr;
-                                                const cell = summary?.byDate[key];
-                                                const total = cell?.total ?? 0;
-                                                const isViewMonthDay = isSameMonth(day, viewMonth);
-                                                const inPeriod = dayInPeriod(key, periodStart, periodEnd);
-                                                const showData =
-                                                    isViewMonthDay && inPeriod && !isFutureDay;
-                                                const clickable = showData;
+                                    ))}
+                                </div>
+                                <div className="grid grid-cols-7 month-cal-days">
+                                    {calendarDays.map((day) => {
+                                        const key = format(day, 'yyyy-MM-dd');
+                                        const isFutureDay = key > todayStr;
+                                        const cell = summary?.byDate[key];
+                                        const total = cell?.total ?? 0;
+                                        const isViewMonthDay = isSameMonth(day, viewMonth);
+                                        const inPeriod = dayInPeriod(key, periodStart, periodEnd);
+                                        const showData =
+                                            isViewMonthDay && inPeriod && !isFutureDay;
+                                        const clickable = showData;
+                                        const todayCell = isToday(day);
 
-                                                return (
-                                                    <button
-                                                        key={key}
-                                                        type="button"
-                                                        onClick={() => clickable && openDayDetail(day)}
+                                        return (
+                                            <button
+                                                key={key}
+                                                type="button"
+                                                onClick={() => clickable && openDayDetail(day)}
+                                                disabled={!clickable}
+                                                className={cn(
+                                                    'group relative flex flex-col text-left min-h-[52px] md:min-h-[100px] transition-colors p-0.5 sm:p-1 month-cal-cell',
+                                                    'border-r border-gray-100 last:border-r-0 bg-white',
+                                                    !isViewMonthDay && 'opacity-25 pointer-events-none',
+                                                    isViewMonthDay &&
+                                                        isFutureDay &&
+                                                        'cursor-default bg-zinc-50/90',
+                                                    isViewMonthDay &&
+                                                        !inPeriod &&
+                                                        !isFutureDay &&
+                                                        'opacity-60 cursor-not-allowed bg-zinc-50/90',
+                                                    clickable &&
+                                                        'hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer',
+                                                    todayCell && isViewMonthDay && !isFutureDay && 'bg-blue-50/10',
+                                                )}
+                                            >
+                                                <span
+                                                    className={cn(
+                                                        'absolute top-1 right-1 text-[9px] font-bold',
+                                                        todayCell && isViewMonthDay
+                                                            ? 'text-blue-600'
+                                                            : 'text-gray-400',
+                                                    )}
+                                                >
+                                                    {format(day, 'd')}
+                                                </span>
+                                                <div className="flex-1 flex flex-col justify-center items-center min-h-0 pt-4">
+                                                    <span
                                                         className={cn(
-                                                            'group relative rounded-lg md:rounded-2xl border flex flex-col overflow-hidden text-left min-h-[52px] md:min-h-[100px] transition-all month-cal-cell',
-                                                            !isViewMonthDay &&
-                                                                'bg-transparent border-transparent opacity-25 pointer-events-none',
-                                                            isViewMonthDay &&
-                                                                isFutureDay &&
-                                                                'cursor-default border-zinc-200/60 bg-zinc-50/90',
-                                                            isViewMonthDay &&
-                                                                !inPeriod &&
-                                                                !isFutureDay &&
-                                                                'bg-zinc-100/80 border-zinc-200/80 opacity-60 cursor-not-allowed',
-                                                            isViewMonthDay &&
-                                                                inPeriod &&
-                                                                !isFutureDay &&
-                                                                'bg-white border-zinc-100 shadow-sm hover:shadow-md active:scale-[0.99]',
+                                                            'text-[9px] min-[370px]:text-[11px] md:text-lg font-black tabular-nums leading-none',
+                                                            showData ? 'text-zinc-900' : 'text-zinc-400',
                                                         )}
                                                     >
-                                                        <div
-                                                            className={cn(
-                                                                'px-1 py-0.5 md:px-2 md:py-1 flex justify-center items-center shrink-0',
-                                                                showData
-                                                                    ? 'bg-[#D64D5D]'
-                                                                    : isFutureDay && isViewMonthDay
-                                                                      ? 'bg-zinc-300'
-                                                                      : 'bg-zinc-400',
-                                                            )}
-                                                        >
-                                                            <span className="text-[8px] md:text-[10px] font-black text-white">
-                                                                {format(day, 'd')}
-                                                            </span>
-                                                        </div>
-                                                        <div className="p-1 md:p-2 flex flex-col flex-1 justify-center items-center">
-                                                            <span
-                                                                className={cn(
-                                                                    'text-[9px] min-[370px]:text-[11px] md:text-lg font-black tabular-nums leading-none',
-                                                                    showData ? 'text-zinc-900' : 'text-zinc-400',
-                                                                )}
-                                                            >
-                                                                {showData ? formatEuroRead(total) : ' '}
-                                                            </span>
-                                                            <span className="text-[5px] md:text-[7px] font-black text-zinc-400 uppercase mt-0.5 hidden md:block">
-                                                                Total
-                                                            </span>
-                                                        </div>
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
+                                                        {showData ? formatEuroRead(total) : ' '}
+                                                    </span>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         )}

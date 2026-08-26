@@ -19,6 +19,8 @@ import { ChevronLeft, ChevronRight, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Button } from '@/components/ui/button';
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { PavilionDayModal } from '@/components/pavilion/PavilionDayModal';
 import {
   fetchActivitiesForRangeAction,
@@ -241,56 +243,67 @@ export default function ActividadesPage() {
     date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
 
   return (
-    <div className="pb-10 px-1 py-3 sm:px-1.5 md:px-2 md:py-4 month-cal-shell">
-      <div className="overflow-hidden rounded-2xl bg-white shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 w-full max-w-none month-cal-card">
-          {/* ── Header: centered month nav only ── */}
-          <div className="flex items-center justify-between bg-[#36606F] px-4 py-2.5 min-h-[52px] shrink-0">
-            <div className="w-[100px]" />
-            <div className="flex items-center gap-0.5">
-              <button
-                type="button"
-                onClick={() => setViewMonth((m) => subMonths(m, 1))}
-                className="flex min-h-[40px] min-w-[32px] items-center justify-center text-white transition-colors hover:bg-white/10 rounded-full"
-                aria-label="Mes anterior"
-              >
-                <ChevronLeft size={18} strokeWidth={2.5} />
-              </button>
-              <span className="text-xs font-black uppercase tracking-widest text-white select-none whitespace-nowrap">
-                {getMonthLabel(viewMonth)}
-              </span>
-              <button
-                type="button"
-                onClick={() => setViewMonth((m) => addMonths(m, 1))}
-                className="flex min-h-[40px] min-w-[32px] items-center justify-center text-white transition-colors hover:bg-white/10 rounded-full"
-                aria-label="Mes siguiente"
-              >
-                <ChevronRight size={18} strokeWidth={2.5} />
-              </button>
-            </div>
-            <div className="w-[100px] flex justify-end items-center gap-2">
-              {isMaster && (
+    <>
+    <DashboardDetailLayout
+      title="Actividades"
+      showBackButton={false}
+      template="list"
+      maxWidthClass="max-w-none"
+      className="month-cal-shell"
+      cardClassName="month-cal-card"
+      contentClassName="p-0 flex flex-col min-h-0"
+      rightSlot={
+        <div className="flex items-center justify-end gap-2">
+          {isMaster ? (
+            <Button
+              variant="tertiary"
+              instance="actividades-gestionar"
+              aria-label="Gestionar actividades"
+              icon={<Settings size={20} strokeWidth={2.5} />}
+              onClick={() => {
+                window.location.href = '/staff/actividades/gestion';
+              }}
+            />
+          ) : null}
+          <a
+            href="/horario"
+            className="shrink-0 text-[11px] font-black text-white uppercase tracking-widest hover:text-white/80 transition-colors min-h-[48px] flex items-center"
+          >
+            Horarios
+          </a>
+        </div>
+      }
+    >
+          <div className="px-4 md:px-8 pt-3 pb-2 shrink-0">
+            <div className="flex justify-center w-full">
+              <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
                 <button
                   type="button"
-                  onClick={() => window.location.href = '/staff/actividades/gestion'}
-                  className="text-white hover:text-white/70 transition-colors"
-                  aria-label="Gestionar actividades"
+                  onClick={() => setViewMonth((m) => subMonths(m, 1))}
+                  className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
+                  aria-label="Mes anterior"
                 >
-                  <Settings size={18} strokeWidth={1.5} />
+                  <ChevronLeft size={22} />
                 </button>
-              )}
-              <a
-                href="/horario"
-                className="px-2 py-1 bg-white/10 hover:bg-white/20 text-white rounded text-xs font-semibold transition-colors whitespace-nowrap"
-              >
-                Horarios
-              </a>
+                <span className="text-base md:text-lg font-black text-ds-marca capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,14rem)] sm:max-w-none">
+                  {getMonthLabel(viewMonth)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setViewMonth((m) => addMonths(m, 1))}
+                  className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
+                  aria-label="Mes siguiente"
+                >
+                  <ChevronRight size={22} />
+                </button>
+              </div>
             </div>
           </div>
 
           {/* ── Calendar ── */}
           {loading ? (
             <div className="flex flex-col items-center justify-center gap-4 py-20 month-cal-body">
-              <LoadingSpinner size="lg" className="text-[#36606F]" />
+              <LoadingSpinner size="lg" className="text-ds-marca" />
             </div>
           ) : (
             <div 
@@ -411,7 +424,7 @@ export default function ActividadesPage() {
               </div>
             </div>
           )}
-      </div>
+    </DashboardDetailLayout>
 
       <PavilionDayModal
         open={modalOpen}
@@ -419,6 +432,6 @@ export default function ActividadesPage() {
         date={selectedDayStr}
         onNavigateDay={navigateDay}
       />
-    </div>
+    </>
   );
 }

@@ -85,6 +85,11 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'app/staff/reservas/ReservasClient.tsx',
             'components/tips/TipsDashboardView.tsx',
             'app/dashboard/carta/page.tsx',
+            'app/dashboard/overtime/page.tsx',
+            'app/horario/page.tsx',
+            'app/staff/actividades/page.tsx',
+            'app/dashboard/consumo-personal/page.tsx',
+            'app/dashboard/history/page.tsx',
         ];
         for (const rel of pilots) {
             const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
@@ -97,6 +102,39 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
                 source,
                 /rounded-\[2\.5rem\]/,
                 `${rel} no debe usar radio ilegítimo 2.5rem`
+            );
+        }
+    });
+
+    it('calendarios mensuales de gestión usan el mismo cromo P3 dentro de PageScreen', () => {
+        const calendars = [
+            'app/dashboard/labor/page.tsx',
+            'app/staff/reservas/ReservasClient.tsx',
+            'app/horario/page.tsx',
+            'app/staff/actividades/page.tsx',
+            'app/dashboard/overtime/page.tsx',
+            'app/dashboard/consumo-personal/page.tsx',
+            'app/dashboard/history/page.tsx',
+        ];
+        for (const rel of calendars) {
+            const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
+            assert.match(source, /DashboardDetailLayout|PageScreen/, `${rel} debe usar PageScreen`);
+            assert.match(source, /month-cal-shell/, `${rel} debe usar month-cal-shell`);
+            assert.match(source, /month-cal-card/, `${rel} debe usar month-cal-card`);
+            assert.match(
+                source,
+                /from-red-500 to-red-600/,
+                `${rel} debe usar la misma cabecera de días`
+            );
+            assert.doesNotMatch(
+                source,
+                /month-cal-days--gap/,
+                `${rel} no debe usar tarjetas de día sueltas`
+            );
+            assert.doesNotMatch(
+                source,
+                /bg-white rounded-2xl shadow-2xl/,
+                `${rel} no debe clonar la tarjeta de pantalla`
             );
         }
     });

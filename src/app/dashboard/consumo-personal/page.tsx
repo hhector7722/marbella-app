@@ -13,6 +13,7 @@ import {
   endOfWeek,
   format,
   isSameMonth,
+  isToday,
   startOfMonth,
   startOfWeek,
   subMonths,
@@ -27,6 +28,7 @@ import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import {
     filterVisiblePlantillaEmployees,
     PLANTILLA_EMPLOYEE_SELECT,
@@ -435,74 +437,77 @@ export default function ConsumoPersonalDashboardPage() {
   const todayStr = format(new Date(), 'yyyy-MM-dd');
 
   return (
-    <div className="p-4 md:p-6 pb-24 month-cal-shell">
-      <div className="bg-white rounded-2xl shadow-2xl relative overflow-hidden flex flex-col month-cal-card w-full max-w-4xl mx-auto">
-          <div className="bg-[#36606F] px-3 md:px-6 py-4 flex items-center justify-between gap-2 shrink-0 min-h-0">
-            <h1 className="text-lg md:text-xl font-black text-white uppercase tracking-wider shrink min-w-0 truncate pr-2">
-              Consumo staff
-            </h1>
-            <div className="flex items-center gap-0.5 md:gap-1.5 shrink-0 text-white">
-              {canEditConsumptionOrder ? (
-                <button
-                  type="button"
-                  onClick={() => setOrderModalOpen(true)}
-                  className="text-white/90 hover:text-white transition-colors h-10 w-10 md:h-10 md:w-10 flex items-center justify-center rounded-lg hover:bg-white/10"
-                  aria-label="Ordenar productos del modal de fichaje"
-                  title="Orden productos (modal fichaje)"
-                >
-                  <ListOrdered size={20} strokeWidth={2.25} className="shrink-0" />
-                </button>
-              ) : null}
-              <TimeFilterButton
-                onClick={() => setIsTimeFilterOpen(true)}
-                hasActiveFilter={filterActive}
-                onClear={clearTimeFilter}
-                buttonClassName="bg-transparent border-transparent shadow-none hover:bg-white/15 min-h-[40px] md:min-h-[40px] px-2 py-1.5"
-              />
-              <div className="relative shrink-0 flex items-center justify-center">
-                <Button
-                  type="button"
-                  variant="tertiary"
-                  instance="consumo-personal-filtrar-trabajador"
-                  onClick={() => setIsWorkerModalOpen(true)}
-                  aria-label="Filtrar por trabajador"
-                  icon={<User size={20} strokeWidth={2.25} />}
-                />
-                {workerFilterId ? (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setWorkerFilterId(null);
-                    }}
-                    className="absolute -right-0.5 top-0.5 z-10 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 text-white shadow-sm ring-2 ring-[#36606F]"
-                    aria-label="Quitar filtro de trabajador"
-                  >
-                    <X size={9} strokeWidth={3} className="text-white" />
-                  </button>
-                ) : null}
-              </div>
-            </div>
+    <>
+    <DashboardDetailLayout
+      title="Consumo staff"
+      showBackButton={false}
+      template="list"
+      maxWidthClass="max-w-none"
+      className="month-cal-shell"
+      cardClassName="month-cal-card"
+      contentClassName="flex flex-col min-h-0 p-0"
+      rightSlot={
+        <div className="flex items-center gap-0.5 md:gap-1.5 shrink-0 text-white">
+          {canEditConsumptionOrder ? (
+            <Button
+              type="button"
+              variant="tertiary"
+              instance="consumo-personal-ordenar-productos"
+              onClick={() => setOrderModalOpen(true)}
+              aria-label="Ordenar productos del modal de fichaje"
+              icon={<ListOrdered size={20} strokeWidth={2.25} />}
+            />
+          ) : null}
+          <TimeFilterButton
+            onClick={() => setIsTimeFilterOpen(true)}
+            hasActiveFilter={filterActive}
+            onClear={clearTimeFilter}
+            buttonClassName="bg-transparent border-transparent shadow-none hover:bg-white/15 min-h-[40px] md:min-h-[40px] px-2 py-1.5"
+          />
+          <div className="relative shrink-0 flex items-center justify-center">
+            <Button
+              type="button"
+              variant="tertiary"
+              instance="consumo-personal-filtrar-trabajador"
+              onClick={() => setIsWorkerModalOpen(true)}
+              aria-label="Filtrar por trabajador"
+              icon={<User size={20} strokeWidth={2.25} />}
+            />
+            {workerFilterId ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setWorkerFilterId(null);
+                }}
+                className="absolute -right-0.5 top-0.5 z-10 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 text-white shadow-sm ring-2 ring-ds-marca"
+                aria-label="Quitar filtro de trabajador"
+              >
+                <X size={9} strokeWidth={3} className="text-white" />
+              </button>
+            ) : null}
           </div>
-
+        </div>
+      }
+    >
           <div className="px-4 md:px-8 pt-3 pb-3 shrink-0">
             <div className="flex justify-center w-full">
               <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
                 <button
                   type="button"
                   onClick={handlePrevMonth}
-                  className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-[#36606F]"
+                  className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
                   aria-label="Mes anterior"
                 >
                   <ChevronLeft size={22} />
                 </button>
-                <span className="text-base md:text-lg font-black text-[#36606F] capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,14rem)] sm:max-w-none">
+                <span className="text-base md:text-lg font-black text-ds-marca capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,14rem)] sm:max-w-none">
                   {format(viewMonth, 'MMMM yyyy', { locale: es })}
                 </span>
                 <button
                   type="button"
                   onClick={handleNextMonth}
-                  className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-[#36606F]"
+                  className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
                   aria-label="Mes siguiente"
                 >
                   <ChevronRight size={22} />
@@ -533,93 +538,77 @@ export default function ConsumoPersonalDashboardPage() {
 
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4">
-                <LoadingSpinner size="lg" className="text-[#36606F]" />
+                <LoadingSpinner size="lg" className="text-ds-marca" />
               </div>
             ) : (
-              <div className="flex flex-col">
-                <div className="p-0 md:p-1 overflow-x-auto no-scrollbar month-cal-grid-wrap">
-                  <div className="min-w-0 flex flex-col flex-1 min-h-0">
-                    <div className="grid grid-cols-7 mb-1 md:mb-2 px-0.5 md:px-2 shrink-0">
-                      {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((d, index) => (
-                        <div
-                          key={d}
-                          className="text-[7px] md:text-[10px] font-black text-zinc-400 uppercase tracking-[0.1em] text-center"
-                        >
-                          <span className="hidden md:inline">{d}</span>
-                          <span className="md:hidden">{['L', 'M', 'X', 'J', 'V', 'S', 'D'][index]}</span>
-                        </div>
-                      ))}
+              <div className="mx-auto w-[97%] min-w-0 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.08)] month-cal-grid-wrap flex flex-col flex-1 min-h-0">
+                <div className="grid grid-cols-7 border-b border-gray-100 shrink-0">
+                  {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((d, index) => (
+                    <div
+                      key={d}
+                      className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-sm border-r border-white/30 last:border-r-0"
+                    >
+                      <span className="text-[9px] font-bold text-white uppercase tracking-wider truncate px-0.5 drop-shadow-sm leading-none">
+                        <span className="hidden md:inline">{d}</span>
+                        <span className="md:hidden">{['L', 'M', 'X', 'J', 'V', 'S', 'D'][index]}</span>
+                      </span>
                     </div>
-                    <div className="grid grid-cols-7 gap-1 md:gap-2 month-cal-days month-cal-days--gap">
-                      {calendarDays.map((day) => {
-                        const key = format(day, 'yyyy-MM-dd');
-                        const isFutureDay = key > todayStr;
-                        const cell = summary?.byDate[key];
-                        const total = cell?.total ?? 0;
-                        const isViewMonthDay = isSameMonth(day, viewMonth);
-                        const inPeriod = dayInPeriod(key, periodStart, periodEnd);
-                        const showData = isViewMonthDay && inPeriod && !isFutureDay;
-                        const clickable = showData;
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 month-cal-days">
+                  {calendarDays.map((day) => {
+                    const key = format(day, 'yyyy-MM-dd');
+                    const isFutureDay = key > todayStr;
+                    const cell = summary?.byDate[key];
+                    const total = cell?.total ?? 0;
+                    const isViewMonthDay = isSameMonth(day, viewMonth);
+                    const inPeriod = dayInPeriod(key, periodStart, periodEnd);
+                    const showData = isViewMonthDay && inPeriod && !isFutureDay;
+                    const clickable = showData;
+                    const todayCell = isToday(day);
 
-                        return (
-                          <button
-                            key={key}
-                            type="button"
-                            onClick={() => clickable && openDayDetail(day)}
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => clickable && openDayDetail(day)}
+                        disabled={!clickable}
+                        className={cn(
+                          'group relative flex flex-col text-left min-h-[52px] md:min-h-[100px] transition-colors p-0.5 sm:p-1 month-cal-cell',
+                          'border-r border-gray-100 last:border-r-0 bg-white',
+                          !isViewMonthDay && 'opacity-25 pointer-events-none',
+                          isViewMonthDay && isFutureDay && 'cursor-default bg-zinc-50/90',
+                          isViewMonthDay && !inPeriod && !isFutureDay && 'opacity-60 cursor-not-allowed bg-zinc-50/90',
+                          clickable && 'hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer',
+                          todayCell && isViewMonthDay && !isFutureDay && 'bg-blue-50/10',
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            'absolute top-1 right-1 text-[9px] font-bold',
+                            todayCell && isViewMonthDay ? 'text-blue-600' : 'text-gray-400',
+                          )}
+                        >
+                          {format(day, 'd')}
+                        </span>
+                        <div className="flex-1 flex flex-col justify-center items-center min-h-0 pt-4">
+                          <span
                             className={cn(
-                              'group relative rounded-lg md:rounded-2xl border flex flex-col overflow-hidden text-left min-h-[52px] md:min-h-[100px] transition-all month-cal-cell',
-                              !isViewMonthDay &&
-                                'bg-transparent border-transparent opacity-25 pointer-events-none',
-                              isViewMonthDay &&
-                                isFutureDay &&
-                                'cursor-default border-zinc-200/60 bg-zinc-50/90',
-                              isViewMonthDay &&
-                                !inPeriod &&
-                                !isFutureDay &&
-                                'bg-zinc-100/80 border-zinc-200/80 opacity-60 cursor-not-allowed',
-                              isViewMonthDay &&
-                                inPeriod &&
-                                !isFutureDay &&
-                                'bg-white border-zinc-100 shadow-sm hover:shadow-md active:scale-[0.99]',
+                              'text-[9px] min-[370px]:text-[11px] md:text-lg font-black tabular-nums leading-none',
+                              showData ? 'text-zinc-900' : 'text-zinc-400',
                             )}
                           >
-                            <div
-                              className={cn(
-                                'px-1 py-0.5 md:px-2 md:py-1 flex justify-center items-center shrink-0',
-                                showData
-                                  ? 'bg-[#D64D5D]'
-                                  : isFutureDay && isViewMonthDay
-                                    ? 'bg-zinc-300'
-                                    : 'bg-zinc-400',
-                              )}
-                            >
-                              <span className="text-[8px] md:text-[10px] font-black text-white">
-                                {format(day, 'd')}
-                              </span>
-                            </div>
-                            <div className="p-1 md:p-2 flex flex-col flex-1 justify-center items-center">
-                              <span
-                                className={cn(
-                                  'text-[9px] min-[370px]:text-[11px] md:text-lg font-black tabular-nums leading-none',
-                                  showData ? 'text-zinc-900' : 'text-zinc-400',
-                                )}
-                              >
-                                {showData ? formatEuroRead(total) : ' '}
-                              </span>
-                              <span className="text-[5px] md:text-[7px] font-black text-zinc-400 uppercase mt-0.5 hidden md:block">
-                                Total
-                              </span>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+                            {showData ? formatEuroRead(total) : ' '}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
           </div>
-        </div>
+    </DashboardDetailLayout>
 
       <Modal
         open={detailOpen}
@@ -827,7 +816,7 @@ export default function ConsumoPersonalDashboardPage() {
           }
         }}
       />
-    </div>
+    </>
   );
 }
 

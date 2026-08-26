@@ -6,7 +6,7 @@ capa: estado
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-25
+revisado: 2026-08-26
 caducidad: no aplica
 supersede: PROJECT_STATUS.md (función de historial)
 ---
@@ -35,6 +35,10 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 ## Formato
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
+
+## 2026-08-26
+
+- **Calendarios mensuales del mismo tipo, dentro de PageScreen.** Horario, Actividades, Horas extras, Consumo staff y Cierres entran por `PageScreen`. Labor y Consumo dejan las tarjetas de día sueltas: todos los calendarios mensuales de gestión usan la misma rejilla continua (P3). Horas extras deja el mini-calendario y muestra el mes completo. Sin ADR nueva.
 
 ## 2026-08-25
 

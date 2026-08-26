@@ -34,6 +34,8 @@ import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/Qui
 import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import { Button } from '@/components/ui/button';
+import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import {
     formatMonthYear,
@@ -1591,134 +1593,121 @@ export default function HistoryPage() {
     };
 
     return (
-        <div className={cn('min-h-screen pb-20 text-zinc-900 print:bg-white print:p-0 print:pb-0', viewMode === 'calendar' && 'month-cal-shell px-1 py-3 sm:px-1.5 md:px-2 md:py-4')}>
-            <div className={cn('w-full max-w-none px-1 py-3 sm:px-1.5 md:px-2 md:py-4 print:max-w-none', viewMode === 'calendar' && 'contents')}>
-                <div className={cn('bg-white rounded-2xl shadow-2xl overflow-hidden w-full max-w-none print:rounded-none print:shadow-none', viewMode === 'calendar' && 'month-cal-card')}>
-                    <div className="bg-[#36606F] px-1.5 py-1 md:px-2 md:py-1.5 relative print:hidden shrink-0">
-                        <div className="relative flex items-center justify-between gap-1 min-w-0">
-                            <div className="flex items-center shrink-0 min-w-0 z-10">
-                                <div className="inline-flex w-fit rounded-md overflow-hidden border border-white/30 shadow-sm">
+        <>
+        <DashboardDetailLayout
+            title="Cierres"
+            showBackButton={false}
+            template="list"
+            maxWidthClass="max-w-none"
+            className={cn('print:bg-white print:p-0 print:pb-0', viewMode === 'calendar' && 'month-cal-shell')}
+            cardClassName={cn('print:rounded-none print:shadow-none', viewMode === 'calendar' && 'month-cal-card')}
+            contentClassName={cn('p-0 flex flex-col min-h-0', viewMode === 'calendar' && 'month-cal-body')}
+            rightSlot={
+                <div className="flex items-center gap-1 shrink-0 text-white">
+                    {viewMode === 'table' ? (
+                        <div className="relative" data-history-share-root="true">
+                            <Button
+                                type="button"
+                                variant="tertiary"
+                                instance="history-compartir"
+                                onClick={() => setShareMenuOpen(v => !v)}
+                                disabled={!!shareBusy}
+                                aria-label="Compartir"
+                                icon={<Share size={16} />}
+                            />
+
+                            {shareMenuOpen ? (
+                                <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden z-20">
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        instance="history-export-excel"
+                                        onClick={() => openExportMonthPicker('excel')}
+                                        className="w-full"
+                                    >
+                                        Exportar Excel
+                                    </Button>
+                                    <div className="h-px bg-zinc-100" />
                                     <button
                                         type="button"
-                                        onClick={() => setViewMode('table')}
-                                        className={cn(
-                                            'px-1.5 py-1 text-[7px] font-black uppercase tracking-wide leading-none transition-colors outline-none',
-                                            viewMode === 'table'
-                                                ? 'bg-white text-[#36606F]'
-                                                : 'bg-transparent text-white/70 hover:bg-white/10 hover:text-white'
-                                        )}
+                                        onClick={() => openExportMonthPicker('print')}
+                                        className="w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors"
                                     >
-                                        Tabla
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setViewMode('calendar')}
-                                        className={cn(
-                                            'px-1.5 py-1 text-[7px] font-black uppercase tracking-wide leading-none transition-colors outline-none',
-                                            viewMode === 'calendar'
-                                                ? 'bg-white text-[#36606F]'
-                                                : 'bg-transparent text-white/70 hover:bg-white/10 hover:text-white'
-                                        )}
-                                    >
-                                        Calendario
+                                        <span className="text-[11px] font-black uppercase tracking-widest">Imprimir / PDF</span>
+                                        <Printer className="w-4 h-4 text-zinc-500" />
                                     </button>
                                 </div>
-                            </div>
-                            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 inline-flex w-fit max-w-[calc(100%-9rem)] items-center">
-                                <button
-                                    type="button"
-                                    onClick={handlePrevMonth}
-                                    className="shrink-0 rounded-lg hover:bg-white/10 transition-colors min-h-10 pl-1.5 pr-0.5 flex items-center justify-center text-white"
-                                    aria-label="Mes anterior"
-                                >
-                                    <ChevronLeft size={18} />
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsTimeFilterOpen(true)}
-                                    className="text-[10px] sm:text-xs md:text-sm font-black text-white capitalize text-center px-0.5 whitespace-nowrap hover:text-white/80 transition-colors"
-                                >
-                                    {monthNavLabel}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleNextMonth}
-                                    className="shrink-0 rounded-lg hover:bg-white/10 transition-colors min-h-10 pl-0.5 pr-1.5 flex items-center justify-center text-white"
-                                    aria-label="Mes siguiente"
-                                >
-                                    <ChevronRight size={18} />
-                                </button>
-                            </div>
-
-                            <div className="flex items-center gap-1 shrink-0 text-white ml-auto z-10">
-                                {viewMode === 'table' ? (
-                                    <div className="relative" data-history-share-root="true">
-                                        <button
-                                            type="button"
-                                            onClick={() => setShareMenuOpen(v => !v)}
-                                            className={cn(
-                                                'p-2 rounded-xl text-white/90 hover:bg-white/10 hover:text-white transition-colors outline-none',
-                                                'min-h-[40px] min-w-[40px] flex items-center justify-center',
-                                                shareBusy ? 'opacity-60 pointer-events-none' : ''
-                                            )}
-                                            title="Compartir"
-                                            aria-label="Compartir"
-                                        >
-                                            <Share size={16} />
-                                        </button>
-
-                                        {shareMenuOpen ? (
-                                            <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden z-20">
-                                                <Button
-                                                    type="button"
-                                                    variant="secondary"
-                                                    instance="history-export-excel"
-                                                    onClick={() => openExportMonthPicker('excel')}
-                                                    className="w-full"
-                                                >
-                                                    Exportar Excel
-                                                </Button>
-                                                <div className="h-px bg-zinc-100" />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => openExportMonthPicker('print')}
-                                                    className="w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors"
-                                                >
-                                                    <span className="text-[11px] font-black uppercase tracking-widest">Imprimir / PDF</span>
-                                                    <Printer className="w-4 h-4 text-zinc-500" />
-                                                </button>
-                                            </div>
-                                        ) : null}
-                                    </div>
-                                ) : null}
-                                <TimeFilterButton
-                                    onClick={() => setIsTimeFilterOpen(true)}
-                                    showLabel={false}
-                                    icon={Filter}
-                                    buttonClassName={cn(
-                                        "min-h-10 min-w-10 px-0 py-0",
-                                        "rounded-xl border-0 bg-transparent hover:bg-white/10",
-                                        "text-white/90 hover:text-white"
-                                    )}
-                                    hasActiveFilter={(() => {
-                                        const now = new Date();
-                                        const defS = format(startOfMonth(now), 'yyyy-MM-dd');
-                                        const defE = format(endOfMonth(now), 'yyyy-MM-dd');
-                                        const isDefault = filterMode === 'range' && rangeStart === defS && rangeEnd === defE;
-                                        return !isDefault;
-                                    })()}
-                                    onClear={() => {
-                                        const now = new Date();
-                                        setFilterMode('range');
-                                        setRangeStart(format(startOfMonth(now), 'yyyy-MM-dd'));
-                                        setRangeEnd(format(endOfMonth(now), 'yyyy-MM-dd'));
-                                    }}
-                                />
-                            </div>
+                            ) : null}
                         </div>
+                    ) : null}
+                    <TimeFilterButton
+                        onClick={() => setIsTimeFilterOpen(true)}
+                        showLabel={false}
+                        icon={Filter}
+                        buttonClassName={cn(
+                            "min-h-10 min-w-10 px-0 py-0",
+                            "rounded-xl border-0 bg-transparent hover:bg-white/10",
+                            "text-white/90 hover:text-white"
+                        )}
+                        hasActiveFilter={(() => {
+                            const now = new Date();
+                            const defS = format(startOfMonth(now), 'yyyy-MM-dd');
+                            const defE = format(endOfMonth(now), 'yyyy-MM-dd');
+                            const isDefault = filterMode === 'range' && rangeStart === defS && rangeEnd === defE;
+                            return !isDefault;
+                        })()}
+                        onClear={() => {
+                            const now = new Date();
+                            setFilterMode('range');
+                            setRangeStart(format(startOfMonth(now), 'yyyy-MM-dd'));
+                            setRangeEnd(format(endOfMonth(now), 'yyyy-MM-dd'));
+                        }}
+                    />
+                </div>
+            }
+        >
+            <div className="px-4 md:px-8 pt-3 pb-2 shrink-0 space-y-ds-2 print:hidden">
+                <PetroleumSegmented
+                    instance="history-vista"
+                    density="compact"
+                    value={viewMode}
+                    onChange={(next) => setViewMode(next as 'calendar' | 'table')}
+                    aria-label="Vista del historial"
+                    options={[
+                        { value: 'calendar', label: 'Calendario' },
+                        { value: 'table', label: 'Tabla' },
+                    ]}
+                />
+                <div className="flex justify-center w-full">
+                    <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
+                        <button
+                            type="button"
+                            onClick={handlePrevMonth}
+                            className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
+                            aria-label="Mes anterior"
+                        >
+                            <ChevronLeft size={22} />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setIsTimeFilterOpen(true)}
+                            className="text-base md:text-lg font-black text-ds-marca capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,14rem)] sm:max-w-none hover:opacity-80"
+                        >
+                            {monthNavLabel}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleNextMonth}
+                            className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
+                            aria-label="Mes siguiente"
+                        >
+                            <ChevronRight size={22} />
+                        </button>
                     </div>
+                </div>
+            </div>
 
-                    <div className={cn('bg-white', viewMode === 'calendar' && 'month-cal-body')}>
+                    <div className="bg-white flex-1 min-h-0 flex flex-col">
                         <div className={cn(
                             'pt-5 md:pt-6 pb-0.5 px-2 grid grid-cols-3 print:hidden shrink-0',
                             viewMode === 'calendar' && 'month-cal-kpi lg:pt-2 lg:pb-0'
@@ -1784,7 +1773,7 @@ export default function HistoryPage() {
                                         <div className="hidden print:block text-lg font-black text-zinc-800 p-4 pb-2">Cierres — Historial</div>
                                         {loading ? (
                                             <div className="flex flex-col items-center justify-center py-20 gap-4">
-                                                <LoadingSpinner size="lg" className="text-[#36606F]" />
+                                                <LoadingSpinner size="lg" className="text-ds-marca" />
                                             </div>
                                         ) : closings.length === 0 ? (
                                             <div className="text-center py-20 opacity-30 flex flex-col items-center gap-3">
@@ -1867,7 +1856,7 @@ export default function HistoryPage() {
                                 <div className="min-w-0 flex-1 min-h-0 flex flex-col">
                                     {loading ? (
                                         <div className="flex flex-col items-center justify-center py-20 gap-4">
-                                            <LoadingSpinner size="lg" className="text-[#36606F]" />
+                                            <LoadingSpinner size="lg" className="text-ds-marca" />
                                         </div>
                                     ) : (
                                         <>
@@ -1949,8 +1938,7 @@ export default function HistoryPage() {
                             )}
                         </div>
                     </div>
-                </div>
-            </div>
+        </DashboardDetailLayout>
 
             {selectedClosing && (
                 <>
@@ -2871,6 +2859,6 @@ export default function HistoryPage() {
                     </div>
                 </Modal>
             )}
-        </div>
+        </>
     );
 }

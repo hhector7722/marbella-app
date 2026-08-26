@@ -65,7 +65,7 @@ El patrón más usado del producto. Sus leyes están en [EXPERIENCIA §8](EXPERI
 
 Patrón de navegación temporal para todo lo que se organiza por fechas: horarios, actividades, cierres, reservas, consumo, coste.
 
-**Anatomía**: cabecera con mes y navegación, rejilla de siete columnas, celdas de día con indicadores compactos, y una franja de indicadores del mes.
+**Anatomía**: cabecera con mes y navegación, rejilla continua de siete columnas, cabecera de días idéntica, celdas de día con indicadores compactos, y una franja de indicadores del mes cuando el dominio lo pide.
 
 **Reglas**:
 - **En escritorio cabe en un viewport.** El alto disponible se reparte entre las filas; las celdas no crecen con su contenido. Es el caso más exigente de la ley de densidad.
@@ -74,6 +74,7 @@ Patrón de navegación temporal para todo lo que se organiza por fechas: horario
 - Los indicadores de una celda se truncan con un contador de resto; nunca deforman la celda.
 - El día se construye en tiempo local del negocio. Un desplazamiento de zona horaria en este patrón produce un error de un día completo en toda la vista.
 - Pulsar un día abre P4.
+- **Un solo cromo.** Labor, Reservas, Horario, Actividades, Horas extras, Consumo staff y Cierres muestran el mismo tipo de calendario. Cambia el contenido de la celda, no la rejilla.
 
 ---
 
@@ -210,7 +211,7 @@ La composición por defecto de listado, detalle y formulario de gestión. No es 
 - Una pantalla nueva de gestión usa esta composición. No se clona una cabecera petróleo.
 - El filtro temporal y las acciones de alcance viven en `rightSlot`.
 - `Button` `tertiary` dentro de la cabecera se pinta invertido (icono blanco). No es una quinta variante de Button.
-- Labor y Reservas montan el calendario mensual (P3) **dentro** de esta plantilla; no sustituyen la cabecera.
+- Labor, Reservas, Horario, Actividades, Horas extras, Consumo staff y Cierres montan el calendario mensual (P3) **dentro** de esta plantilla; no sustituyen la cabecera. La rejilla es una.
 
 **Cuándo no**: mosaico Admin/Staff (T1), Sala LIVE, pantalla de cocina, carta de cliente, overlay (P2).
 
