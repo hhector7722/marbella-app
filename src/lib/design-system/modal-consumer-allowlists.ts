@@ -26,6 +26,7 @@ export const LEGACY_MODAL_ROOT_PADDING_ALLOWLIST = [] as const;
  */
 export const LEGACY_MODAL_BACKDROP_CLASSNAME_ALLOWLIST = [
     'src/components/carta/CartaImageLightbox.tsx', // lightbox: oscurecido > overlay base
+    'src/components/ui/ImageLightbox.tsx', // lightbox: oscurecido > overlay base
 ] as const;
 
 /**

@@ -3,9 +3,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import Cropper, { Area } from 'react-easy-crop';
 import { getCroppedImg, type CropAreaPixels } from '@/lib/crop-image';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
+import { Modal } from '@/components/ui/modal';
 
 interface AvatarCropModalProps {
   imageSrc: string;
@@ -30,12 +29,6 @@ export function AvatarCropModal({ imageSrc, onSave, onCancel }: AvatarCropModalP
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<CropAreaPixels | null>(null);
   const [saving, setSaving] = useState(false);
-
-  useModalUsageTracking({
-    open: true,
-    usageId: 'avatar-crop',
-    usageLabel: 'Recorte avatar',
-  });
 
   useEffect(() => {
     const img = new Image();
@@ -64,70 +57,71 @@ export function AvatarCropModal({ imageSrc, onSave, onCancel }: AvatarCropModalP
   }, [imageSrc, croppedAreaPixels, onSave]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[#36606F]">
-      {/* Título único: un solo paso (encuadrar + zoom y listo) */}
-      <div className="shrink-0 py-3 text-center text-white border-b border-white/20">
-        <span className="text-sm font-bold uppercase tracking-widest">Ajusta el encuadre y guarda</span>
-      </div>
-
-      {/* Área de recorte: círculo y zoom en un único paso */}
-      <div className="flex-1 relative w-full min-h-[280px]">
-        <Cropper
-          image={imageSrc}
-          crop={crop}
-          zoom={zoom}
-          aspect={1}
-          cropShape="round"
-          showGrid={false}
-          onCropChange={setCrop}
-          onZoomChange={setZoom}
-          onCropComplete={onCropComplete}
-          style={{
-            containerStyle: { backgroundColor: '#36606F' },
-            cropAreaStyle: { border: '2px solid rgba(255,255,255,0.9)' },
-          }}
-        />
-      </div>
-
-      {/* Zona inferior: zoom + botones (fácil de pulsar) */}
-      <div className="shrink-0 px-4 pt-4 pb-8 pb-safe bg-[#36606F] border-t border-white/20">
-        <p className="text-white/80 text-[10px] uppercase tracking-widest mb-2">Zoom</p>
-        <input
-          type="range"
-          min={ZOOM_MIN}
-          max={ZOOM_MAX}
-          step={ZOOM_STEP}
-          value={zoom}
-          onChange={(e) => setZoom(Number(e.target.value))}
-          className="w-full h-2 rounded-full appearance-none bg-white/30 accent-white min-h-[48px] touch-none"
-          aria-label="Zoom"
-        />
-        <div className="flex gap-3 mt-6">
+    <Modal
+      open
+      onClose={onCancel}
+      title="Ajusta el encuadre y guarda"
+      variant="work"
+      layer="base"
+      instance="avatar-crop"
+      usageId="avatar-crop"
+      usageLabel="Recorte avatar"
+      footer={
+        <div className="flex w-full flex-wrap items-center justify-end gap-2">
           <Button
             type="button"
             variant="secondary"
             instance="avatar-crop-cancel"
             onClick={onCancel}
-            aria-label="Cancelar"
-            className="flex-1"
           >
             Cancelar
           </Button>
-          <button
+          <Button
             type="button"
+            variant="primary"
+            instance="avatar-crop-save"
             onClick={handleSave}
             disabled={saving || !croppedAreaPixels}
-            className={cn(
-              'flex-1 min-h-[48px] flex items-center justify-center rounded-xl font-bold uppercase text-[10px] tracking-widest',
-              saving || !croppedAreaPixels
-                ? 'bg-white/30 text-white/70 cursor-not-allowed'
-                : 'bg-white text-[#36606F] hover:bg-white/90'
-            )}
           >
             {saving ? 'Guardando…' : 'Guardar'}
-          </button>
+          </Button>
         </div>
+      }
+    >
+      <div className="flex min-h-0 flex-1 flex-col gap-4">
+        <div className="relative min-h-[280px] flex-1 overflow-hidden rounded-xl bg-zinc-900">
+          <Cropper
+            image={imageSrc}
+            crop={crop}
+            zoom={zoom}
+            aspect={1}
+            cropShape="round"
+            showGrid={false}
+            onCropChange={setCrop}
+            onZoomChange={setZoom}
+            onCropComplete={onCropComplete}
+            style={{
+              containerStyle: { backgroundColor: '#18181b' },
+              cropAreaStyle: { border: '2px solid rgba(255,255,255,0.9)' },
+            }}
+          />
+        </div>
+        <label className="block">
+          <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-zinc-500">
+            Zoom
+          </span>
+          <input
+            type="range"
+            min={ZOOM_MIN}
+            max={ZOOM_MAX}
+            step={ZOOM_STEP}
+            value={zoom}
+            onChange={(e) => setZoom(Number(e.target.value))}
+            className="h-2 min-h-[48px] w-full touch-none appearance-none rounded-full bg-zinc-200 accent-ds-marca"
+            aria-label="Zoom"
+          />
+        </label>
       </div>
-    </div>
+    </Modal>
   );
 }

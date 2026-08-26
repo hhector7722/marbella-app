@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-26
 
+- **Foto, recorte y categorías de reporte pasan a Modal.** Ampliar una imagen (recetas, cierres), recortar el avatar y elegir categorías en Reporte usan el mismo panel que el resto de la app. La calculadora y el vídeo de fichaje siguen aparte.
+
 - **Un solo control de periodo.** Labor, Horario, Actividades, Reservas, Consumo, Horas extras, Asistencia, Cierres, Ventas, Tesorería y Libro Mayor usan el mismo `← periodo →`. Se retira el icono «Filtrar» duplicado: pulsar el mes abre el selector. Propinas e Insights siguen con picker propio. [PATRONES P7](../2-diseno/PATRONES.md#p7--filtro-temporal).
 
 - **Tarjeta semanal de una persona, una sola.** El mosaico Staff y el modal de horas extras pintan la misma semana que Asistencia de un trabajador (LUN–DOM, celdas, pie Horas / Pendiente / Extras / Importe). La vista de plantilla (todos los trabajadores) sigue aparte: iniciales y fichajes, sin pie de resumen. [PATRONES P6](../2-diseno/PATRONES.md#p6--tarjeta-semanal).

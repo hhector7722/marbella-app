@@ -2,10 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
+import { Modal } from '@/components/ui/modal'
+import type { ModalLayer } from '@/lib/design-system'
 import { PinchZoomViewport } from '@/components/ui/PinchZoomViewport'
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 
 export type ImageLightboxSlide = {
   src: string
@@ -15,7 +14,6 @@ export type ImageLightboxSlide = {
 type ImageLightboxProps = {
   open: boolean
   onClose: () => void
-  className?: string
   /** Modo simple: una sola imagen */
   src?: string | null
   alt?: string
@@ -23,6 +21,9 @@ type ImageLightboxProps = {
   slides?: ImageLightboxSlide[]
   activeIndex?: number
   onActiveIndexChange?: (index: number) => void
+  layer?: ModalLayer
+  /** Padre de navegación cuando se abre sobre otro Modal. */
+  parentInstance?: string
 }
 
 const SWIPE_THRESHOLD_PX = 48
@@ -30,12 +31,13 @@ const SWIPE_THRESHOLD_PX = 48
 export function ImageLightbox({
   open,
   onClose,
-  className,
   src,
   alt,
   slides,
   activeIndex = 0,
   onActiveIndexChange,
+  layer = 'base',
+  parentInstance,
 }: ImageLightboxProps) {
   const swipeStart = useRef<{ x: number; y: number } | null>(null)
   const [internalIndex, setInternalIndex] = useState(activeIndex)
@@ -54,13 +56,6 @@ export function ImageLightbox({
     : internalIndex
 
   const currentSlide = resolvedSlides[currentIndex]
-
-  useModalUsageTracking({
-    open,
-    usageId: 'image-lightbox',
-    usageLabel: 'Imagen ampliada',
-    disabled: !currentSlide,
-  })
 
   useEffect(() => {
     if (!isControlled) setInternalIndex(activeIndex)
@@ -100,57 +95,44 @@ export function ImageLightbox({
     else goPrev()
   }
 
-  if (!open || !currentSlide) return null
-
   const canPrev = slideCount > 1 && currentIndex > 0
   const canNext = slideCount > 1 && currentIndex < slideCount - 1
+  const resolvedLayer = parentInstance ? 'derived' : layer
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Imagen ampliada"
-      className={cn(
-        'fixed inset-0 z-[300] flex flex-col bg-black/80 backdrop-blur-sm',
-        'pt-[max(8px,env(safe-area-inset-top))]',
-        className,
-      )}
-      onClick={onClose}
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
+    <Modal
+      open={open && !!currentSlide}
+      onClose={onClose}
+      title={currentSlide?.alt || 'Imagen'}
+      subtitle={slideCount > 1 ? `${currentIndex + 1}/${slideCount}` : undefined}
+      variant="work"
+      layer={resolvedLayer}
+      instance="image-lightbox"
+      parentInstance={parentInstance}
+      backdropClassName="bg-black/80"
+      usageId="image-lightbox"
+      usageLabel="Imagen ampliada"
     >
       <div
-        className="flex min-h-0 flex-1 flex-col px-3 pb-2 pt-1 sm:px-5"
-        onClick={(e) => e.stopPropagation()}
+        className="relative flex min-h-0 flex-1 items-stretch"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
       >
-        {slideCount > 1 ? (
-          <p className="mb-2 shrink-0 text-center text-[10px] font-black uppercase tracking-widest text-white/80">
-            {currentSlide.alt}
-            <span className="ml-2 tabular-nums text-white/50">
-              {currentIndex + 1}/{slideCount}
-            </span>
-          </p>
-        ) : currentSlide.alt ? (
-          <p className="mb-2 shrink-0 text-center text-[10px] font-black uppercase tracking-widest text-white/80">
-            {currentSlide.alt}
-          </p>
+        {canPrev ? (
+          <button
+            type="button"
+            onClick={goPrev}
+            className="absolute left-0 top-1/2 z-10 flex h-12 w-12 min-h-[48px] min-w-[48px] -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white transition hover:bg-black/60 active:scale-95"
+            aria-label="Imagen anterior"
+          >
+            <ChevronLeft size={24} strokeWidth={2.5} />
+          </button>
         ) : null}
 
-        <div className="relative flex min-h-0 flex-1 items-stretch">
-          {canPrev ? (
-            <button
-              type="button"
-              onClick={goPrev}
-              className="absolute left-0 top-1/2 z-10 flex h-12 w-12 min-h-[48px] min-w-[48px] -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white transition hover:bg-black/60 active:scale-95"
-              aria-label="Imagen anterior"
-            >
-              <ChevronLeft size={24} strokeWidth={2.5} />
-            </button>
-          ) : null}
-
+        {currentSlide ? (
           <PinchZoomViewport
             resetKey={currentSlide.src}
-            className="flex-1 rounded-2xl border border-white/10 bg-black/40 shadow-2xl"
+            className="flex-1 rounded-2xl border border-zinc-100 bg-zinc-50"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -160,32 +142,19 @@ export function ImageLightbox({
               draggable={false}
             />
           </PinchZoomViewport>
+        ) : null}
 
-          {canNext ? (
-            <button
-              type="button"
-              onClick={goNext}
-              className="absolute right-0 top-1/2 z-10 flex h-12 w-12 min-h-[48px] min-w-[48px] -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white transition hover:bg-black/60 active:scale-95"
-              aria-label="Imagen siguiente"
-            >
-              <ChevronRight size={24} strokeWidth={2.5} />
-            </button>
-          ) : null}
-        </div>
-
-        <div className="mt-2 flex shrink-0 justify-center pb-[max(10px,env(safe-area-inset-bottom))] pt-1 sm:mt-3">
-          <Button
+        {canNext ? (
+          <button
             type="button"
-            variant="secondary"
-            instance="image-lightbox-cerrar"
-            onClick={onClose}
-            aria-label="Cerrar imagen"
-            className="shrink-0"
+            onClick={goNext}
+            className="absolute right-0 top-1/2 z-10 flex h-12 w-12 min-h-[48px] min-w-[48px] -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white transition hover:bg-black/60 active:scale-95"
+            aria-label="Imagen siguiente"
           >
-            Cerrar
-          </Button>
-        </div>
+            <ChevronRight size={24} strokeWidth={2.5} />
+          </button>
+        ) : null}
       </div>
-    </div>
+    </Modal>
   )
 }

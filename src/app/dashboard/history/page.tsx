@@ -2693,6 +2693,7 @@ export default function HistoryPage() {
                 activeIndex={lightboxIndex ?? 0}
                 onActiveIndexChange={setLightboxIndex}
                 onClose={() => setLightboxIndex(null)}
+                parentInstance="history-closing-detail"
             />
 
             <TimeFilterModal

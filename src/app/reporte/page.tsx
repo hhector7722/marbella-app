@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { format, addDays, getDay, subDays } from 'date-fns';
 import { submitReporteAction, ReportePayload } from './actions';
 import { Button } from '@/components/ui/button';
+import { Modal } from '@/components/ui/modal';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import './premium.css';
 
@@ -94,19 +94,6 @@ interface CategoryDropdownProps {
 
 function CategoryDropdown({ act, categoryOptions, onSelectAll, onToggle }: CategoryDropdownProps) {
   const [open, setOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    if (open) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [open]);
 
   const allSelected = act.categories.every(c => c.selected);
   const selectedNames = act.categories.filter(c => c.selected).map(c => c.name);
@@ -135,66 +122,73 @@ function CategoryDropdown({ act, categoryOptions, onSelectAll, onToggle }: Categ
            <span className="truncate w-full text-white font-medium">{displayNames || 'Selecciona'}</span>
         )}
       </div>
-      {open && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-lg" onClick={() => setOpen(false)}>
-          <div 
-            ref={dropdownRef}
-            className="w-full max-w-sm rounded-2xl bg-slate-800 border border-slate-700 shadow-2xl p-4"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-700">
-              <h3 className="text-white font-bold text-sm">Categories</h3>
-              <button
-                type="button"
-                onClick={() => onSelectAll(act.id)}
-                className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold"
-              >
-                {allSelected ? 'Desseleccionar totes' : 'Seleccionar totes'}
-              </button>
-            </div>
-            <div className="grid grid-cols-2 gap-2 max-h-[80vh] overflow-y-auto pr-1">
-              {act.categories.map(cat => (
-                <label
-                  key={cat.id}
-                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer transition-all text-sm hover:bg-slate-700/50"
-                >
-                  <input
-                    type="checkbox"
-                    checked={cat.selected}
-                    onChange={() => onToggle(act.id, cat.id)}
-                    className="sr-only"
-                  />
-                  <span className={`w-4 h-4 rounded border flex items-center justify-center transition-all shrink-0 ${
-                    cat.selected
-                      ? 'bg-indigo-500 border-indigo-500'
-                      : 'border-slate-600 bg-slate-700'
-                  }`}>
-                    {cat.selected && (
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </span>
-                  <span className="text-slate-200 font-medium">
-                    {cat.name}
-                    {ageMap[cat.name] && (
-                      <span className="text-slate-400 text-[10px] font-normal ml-0.5">{ageMap[cat.name]}</span>
-                    )}
-                  </span>
-                </label>
-              ))}
-            </div>
-            <button 
-              type="button" 
+      {open ? (
+        <Modal
+          open={open}
+          onClose={() => setOpen(false)}
+          title="Categories"
+          variant="standard"
+          layer="base"
+          instance={`reporte-categories-${act.id}`}
+          usageId="reporte-categories"
+          usageLabel="Categories reporte"
+          footer={
+            <Button
+              type="button"
+              variant="primary"
+              instance={`reporte-categories-acceptar-${act.id}`}
               onClick={() => setOpen(false)}
-              className="w-full mt-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm transition-colors"
             >
               Acceptar
-            </button>
+            </Button>
+          }
+        >
+          <div className="flex items-center justify-end pb-3">
+            <Button
+              type="button"
+              variant="tertiary"
+              instance={`reporte-categories-toggle-all-${act.id}`}
+              onClick={() => onSelectAll(act.id)}
+            >
+              {allSelected ? 'Desseleccionar totes' : 'Seleccionar totes'}
+            </Button>
           </div>
-        </div>,
-        document.body
-      )}
+          <div className="grid max-h-[60vh] grid-cols-2 gap-2 overflow-y-auto pr-1">
+            {act.categories.map((cat) => (
+              <label
+                key={cat.id}
+                className="flex cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm transition-all hover:bg-zinc-50"
+              >
+                <input
+                  type="checkbox"
+                  checked={cat.selected}
+                  onChange={() => onToggle(act.id, cat.id)}
+                  className="sr-only"
+                />
+                <span
+                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all ${
+                    cat.selected
+                      ? 'border-ds-marca bg-ds-marca'
+                      : 'border-zinc-300 bg-white'
+                  }`}
+                >
+                  {cat.selected ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : null}
+                </span>
+                <span className="font-medium text-zinc-800">
+                  {cat.name}
+                  {ageMap[cat.name] ? (
+                    <span className="ml-0.5 text-[10px] font-normal text-zinc-400">{ageMap[cat.name]}</span>
+                  ) : null}
+                </span>
+              </label>
+            ))}
+          </div>
+        </Modal>
+      ) : null}
     </div>
   );
 }
