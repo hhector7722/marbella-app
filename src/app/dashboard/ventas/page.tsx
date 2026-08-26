@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { createClient } from "@/utils/supabase/client";
-import { ChevronLeft, ChevronRight, ChartLine, Filter } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChartLine } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
@@ -16,7 +16,7 @@ import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { formatTicketTimeMadrid } from '@/utils/date-utils';
 import { toast } from 'sonner';
 import { BUSINESS_HOURS } from '@/lib/constants';
-import { TimeFilterButton } from '@/components/time/TimeFilterButton';
+import { PeriodNav } from '@/components/time/PeriodNav';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatMonthYear, formatYmdShort, periodRangeSummary } from '@/lib/usage/modal-apply';
@@ -599,77 +599,49 @@ export default function VentasPage() {
                             className="shrink-0"
                         />
                     ) : null}
-                    <TimeFilterButton
-                        onClick={() => setIsTimeFilterOpen(true)}
-                        showLabel={false}
-                        icon={Filter}
-                        buttonClassName={cn(
-                            "min-h-10 min-w-10 px-0 py-0",
-                            "rounded-xl border-0 bg-transparent hover:bg-white/10",
-                            "text-white/90 hover:text-white"
-                        )}
-                        hasActiveFilter={(() => {
-                            const today = new Date().toISOString().split('T')[0];
-                            const isDefault = filterMode === 'single' && selectedDate === today && !hourFilter;
-                            return !isDefault;
-                        })()}
-                        onClear={() => {
-                            const today = new Date().toISOString().split('T')[0];
-                            setHourFilter(null);
-                            setFilterMode('single');
-                            setSelectedDate(today);
-                        }}
-                        className="text-white"
-                    />
                 </div>
             }
         >
             <div className="px-4 md:px-8 pt-3 pb-2 shrink-0 print:hidden">
-                <div className="flex justify-center w-full">
-                    <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                if (filterMode === 'single') {
-                                    const prev = subDays(parseLocalSafe(selectedDate), 1);
-                                    setSelectedDate(format(prev, 'yyyy-MM-dd'));
-                                } else {
-                                    handlePrevMonth();
-                                }
-                            }}
-                            className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
-                            aria-label="Periodo anterior"
-                        >
-                            <ChevronLeft size={22} />
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setIsTimeFilterOpen(true)}
-                            className="text-base md:text-lg font-black text-ds-marca capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,18rem)] sm:max-w-none hover:opacity-80"
-                        >
-                            {filterMode === 'single'
-                                ? format(parseLocalSafe(selectedDate), "EEEE d 'de' MMMM", { locale: es })
-                                : (rangeStart && rangeEnd && isSameMonth(parseLocalSafe(rangeStart), parseLocalSafe(rangeEnd))
-                                    ? format(parseLocalSafe(rangeStart), "MMMM 'de' yyyy", { locale: es })
-                                    : 'Periodo')}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                if (filterMode === 'single') {
-                                    const next = addDays(parseLocalSafe(selectedDate), 1);
-                                    setSelectedDate(format(next, 'yyyy-MM-dd'));
-                                } else {
-                                    handleNextMonth();
-                                }
-                            }}
-                            className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
-                            aria-label="Periodo siguiente"
-                        >
-                            <ChevronRight size={22} />
-                        </button>
-                    </div>
-                </div>
+                <PeriodNav
+                    label={
+                        filterMode === 'single'
+                            ? format(parseLocalSafe(selectedDate), "EEEE d 'de' MMMM", { locale: es })
+                            : (rangeStart && rangeEnd && isSameMonth(parseLocalSafe(rangeStart), parseLocalSafe(rangeEnd))
+                                ? format(parseLocalSafe(rangeStart), "MMMM 'de' yyyy", { locale: es })
+                                : 'Periodo')
+                    }
+                    onPrev={() => {
+                        if (filterMode === 'single') {
+                            const prev = subDays(parseLocalSafe(selectedDate), 1);
+                            setSelectedDate(format(prev, 'yyyy-MM-dd'));
+                        } else {
+                            handlePrevMonth();
+                        }
+                    }}
+                    onNext={() => {
+                        if (filterMode === 'single') {
+                            const next = addDays(parseLocalSafe(selectedDate), 1);
+                            setSelectedDate(format(next, 'yyyy-MM-dd'));
+                        } else {
+                            handleNextMonth();
+                        }
+                    }}
+                    onLabelClick={() => setIsTimeFilterOpen(true)}
+                    prevAriaLabel="Periodo anterior"
+                    nextAriaLabel="Periodo siguiente"
+                    hasActiveFilter={(() => {
+                        const today = new Date().toISOString().split('T')[0];
+                        return !(filterMode === 'single' && selectedDate === today && !hourFilter);
+                    })()}
+                    onClear={() => {
+                        const today = new Date().toISOString().split('T')[0];
+                        setHourFilter(null);
+                        setFilterMode('single');
+                        setSelectedDate(today);
+                    }}
+                    labelClassName="sm:max-w-[18rem] max-w-[min(100%,18rem)]"
+                />
             </div>
 
                     {/* SECCIÓN DE KPIs */}

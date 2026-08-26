@@ -18,7 +18,6 @@ import {
     Plus,
     Printer,
     Share,
-    Filter,
 } from 'lucide-react';
 import Image from 'next/image';
 import { ImageLightbox, type ImageLightboxSlide } from '@/components/ui/ImageLightbox';
@@ -31,7 +30,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import CashClosingModal, { BILLS, COINS } from '@/components/CashClosingModal';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
-import { TimeFilterButton } from '@/components/time/TimeFilterButton';
+import { PeriodNav } from '@/components/time/PeriodNav';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import { Button } from '@/components/ui/button';
 import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
@@ -1641,29 +1640,6 @@ export default function HistoryPage() {
                             ) : null}
                         </div>
                     ) : null}
-                    <TimeFilterButton
-                        onClick={() => setIsTimeFilterOpen(true)}
-                        showLabel={false}
-                        icon={Filter}
-                        buttonClassName={cn(
-                            "min-h-10 min-w-10 px-0 py-0",
-                            "rounded-xl border-0 bg-transparent hover:bg-white/10",
-                            "text-white/90 hover:text-white"
-                        )}
-                        hasActiveFilter={(() => {
-                            const now = new Date();
-                            const defS = format(startOfMonth(now), 'yyyy-MM-dd');
-                            const defE = format(endOfMonth(now), 'yyyy-MM-dd');
-                            const isDefault = filterMode === 'range' && rangeStart === defS && rangeEnd === defE;
-                            return !isDefault;
-                        })()}
-                        onClear={() => {
-                            const now = new Date();
-                            setFilterMode('range');
-                            setRangeStart(format(startOfMonth(now), 'yyyy-MM-dd'));
-                            setRangeEnd(format(endOfMonth(now), 'yyyy-MM-dd'));
-                        }}
-                    />
                 </div>
             }
         >
@@ -1679,33 +1655,24 @@ export default function HistoryPage() {
                         { value: 'table', label: 'Tabla' },
                     ]}
                 />
-                <div className="flex justify-center w-full">
-                    <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
-                        <button
-                            type="button"
-                            onClick={handlePrevMonth}
-                            className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
-                            aria-label="Mes anterior"
-                        >
-                            <ChevronLeft size={22} />
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setIsTimeFilterOpen(true)}
-                            className="text-base md:text-lg font-black text-ds-marca capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,14rem)] sm:max-w-none hover:opacity-80"
-                        >
-                            {monthNavLabel}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleNextMonth}
-                            className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
-                            aria-label="Mes siguiente"
-                        >
-                            <ChevronRight size={22} />
-                        </button>
-                    </div>
-                </div>
+                <PeriodNav
+                    label={monthNavLabel}
+                    onPrev={handlePrevMonth}
+                    onNext={handleNextMonth}
+                    onLabelClick={() => setIsTimeFilterOpen(true)}
+                    hasActiveFilter={(() => {
+                        const now = new Date();
+                        const defS = format(startOfMonth(now), 'yyyy-MM-dd');
+                        const defE = format(endOfMonth(now), 'yyyy-MM-dd');
+                        return !(filterMode === 'range' && rangeStart === defS && rangeEnd === defE);
+                    })()}
+                    onClear={() => {
+                        const now = new Date();
+                        setFilterMode('range');
+                        setRangeStart(format(startOfMonth(now), 'yyyy-MM-dd'));
+                        setRangeEnd(format(endOfMonth(now), 'yyyy-MM-dd'));
+                    }}
+                />
             </div>
 
                     <div className="bg-white flex-1 min-h-0 flex flex-col">

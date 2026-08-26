@@ -129,11 +129,15 @@ El patrón propio del dominio de horas: una semana de negocio como unidad visual
 Toda vista con dimensión temporal usa el mismo control, en el mismo sitio y con el mismo comportamiento.
 
 **Reglas**:
-- Vive en la cabecera de la pantalla, nunca dentro del contenido.
-- Ofrece navegación al periodo anterior y siguiente, y salto al actual.
+- El control es uno: flechas y periodo visible. No hay un segundo icono «Filtrar» para la misma pregunta.
 - El periodo activo se ve siempre, sin abrir nada.
+- Pulsar el periodo abre el selector cuando la vista lo admite.
+- Ofrece navegación al periodo anterior y siguiente, y salto al actual.
+- Vive encima del contenido, no dentro de la rejilla. La cabecera petróleo guarda acciones de alcance (trabajador, exportar).
 - El periodo se conserva al navegar a un detalle y volver.
 - Cambiar de periodo no reinicia los demás filtros.
+
+Propinas e Insights todavía tienen picker propio.
 
 ---
 
@@ -210,7 +214,7 @@ La composición por defecto de listado, detalle y formulario de gestión. No es 
 
 **Reglas**:
 - Una pantalla nueva de gestión usa esta composición. No se clona una cabecera petróleo.
-- El filtro temporal y las acciones de alcance viven en `rightSlot`.
+- El periodo (P7) vive encima del contenido, no duplicado como icono en `rightSlot`. Las acciones de alcance (trabajador, exportar) sí viven en `rightSlot`.
 - `Button` `tertiary` dentro de la cabecera se pinta invertido (icono blanco). No es una quinta variante de Button.
 - Labor, Reservas, Horario, Actividades, Consumo staff y Cierres montan el calendario mensual (P3) **dentro** de esta plantilla; no sustituyen la cabecera. La rejilla es una. Horas extras también entra por PageScreen, pero su interior es vista semanal (mini-calendario + filas), no P3.
 - Recetas e Ingredientes montan la rejilla de catálogo a **4 columnas** dentro de esta plantilla.

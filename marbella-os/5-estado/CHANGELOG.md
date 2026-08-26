@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-26
 
+- **Un solo control de periodo.** Labor, Horario, Actividades, Reservas, Consumo, Horas extras, Asistencia, Cierres, Ventas, Tesorería y Libro Mayor usan el mismo `← periodo →`. Se retira el icono «Filtrar» duplicado: pulsar el mes abre el selector. Propinas e Insights siguen con picker propio. [PATRONES P7](../2-diseno/PATRONES.md#p7--filtro-temporal).
+
 - **Tarjeta semanal de una persona, una sola.** El mosaico Staff y el modal de horas extras pintan la misma semana que Asistencia de un trabajador (LUN–DOM, celdas, pie Horas / Pendiente / Extras / Importe). La vista de plantilla (todos los trabajadores) sigue aparte: iniciales y fichajes, sin pie de resumen. [PATRONES P6](../2-diseno/PATRONES.md#p6--tarjeta-semanal).
 
 - **Tablas, barras de sección y overlays se juntan al sistema.** Las tablas operativas (Ventas, Tesorería, Libro Mayor, Cierres, Catálogo, Propinas) pintan el `thead` con una sola identidad. Las barras de bloque interiores (Recetas, Insights, contrato, consumo) usan la misma cabecera de sección. El overlay de recetas staff pasa a Modal. Botones de confirmar/filtro dejan el petróleo escrito a mano. Sin ADR nueva.

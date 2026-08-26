@@ -9,9 +9,6 @@ import {
     Plus,
     Minus,
     Search,
-    Filter,
-    ChevronLeft,
-    ChevronRight,
     Check,
     TrendingUp,
     Wallet,
@@ -36,7 +33,7 @@ import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { BoxInventoryView } from '@/components/BoxInventoryView';
 import { MovementDetailModal } from '@/components/MovementDetailModal';
 import CashClosingModal from '@/components/CashClosingModal';
-import { TimeFilterButton } from '@/components/time/TimeFilterButton';
+import { PeriodNav } from '@/components/time/PeriodNav';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { Modal } from '@/components/ui/modal';
@@ -767,31 +764,6 @@ export default function MovementsPage() {
                             </div>
                         ) : null}
                     </div>
-                    <TimeFilterButton
-                        onClick={() => setIsTimeFilterOpen(true)}
-                        showLabel={false}
-                        icon={Filter}
-                        buttonClassName={cn(
-                            "min-h-10 min-w-10 px-0 py-0",
-                            "rounded-xl border-0 bg-transparent hover:bg-white/10",
-                            "text-white/90 hover:text-white"
-                        )}
-                        hasActiveFilter={(() => {
-                            const d = new Date();
-                            const defS = format(startOfMonth(d), 'yyyy-MM-dd');
-                            const defE = format(endOfMonth(d), 'yyyy-MM-dd');
-                            const isDefault = filterMode === 'range' && rangeStart === defS && rangeEnd === defE;
-                            return !isDefault;
-                        })()}
-                        onClear={() => {
-                            const d = new Date();
-                            const s = startOfMonth(d);
-                            const e = endOfMonth(d);
-                            setFilterMode('range');
-                            setRangeStart(format(s, 'yyyy-MM-dd'));
-                            setRangeEnd(format(e, 'yyyy-MM-dd'));
-                        }}
-                    />
                 </div>
             }
         >
@@ -831,35 +803,30 @@ export default function MovementsPage() {
                         <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500 leading-none">Arqueo</span>
                     </button>
                 </div>
-                <div className="flex justify-center w-full">
-                    <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
-                        <button
-                            type="button"
-                            onClick={handlePrevMonth}
-                            className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
-                            aria-label="Mes anterior"
-                        >
-                            <ChevronLeft size={22} />
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setIsTimeFilterOpen(true)}
-                            className="text-base md:text-lg font-black text-ds-marca capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,14rem)] sm:max-w-none hover:opacity-80"
-                        >
-                            {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(parseLocalSafe(rangeStart), parseLocalSafe(rangeEnd))
-                                ? format(parseLocalSafe(rangeStart), 'MMMM yyyy', { locale: es })
-                                : 'Seleccionar mes'}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleNextMonth}
-                            className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
-                            aria-label="Mes siguiente"
-                        >
-                            <ChevronRight size={22} />
-                        </button>
-                    </div>
-                </div>
+                <PeriodNav
+                    label={
+                        filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(parseLocalSafe(rangeStart), parseLocalSafe(rangeEnd))
+                            ? format(parseLocalSafe(rangeStart), 'MMMM yyyy', { locale: es })
+                            : 'Seleccionar mes'
+                    }
+                    onPrev={handlePrevMonth}
+                    onNext={handleNextMonth}
+                    onLabelClick={() => setIsTimeFilterOpen(true)}
+                    hasActiveFilter={(() => {
+                        const d = new Date();
+                        const defS = format(startOfMonth(d), 'yyyy-MM-dd');
+                        const defE = format(endOfMonth(d), 'yyyy-MM-dd');
+                        return !(filterMode === 'range' && rangeStart === defS && rangeEnd === defE);
+                    })()}
+                    onClear={() => {
+                        const d = new Date();
+                        const s = startOfMonth(d);
+                        const e = endOfMonth(d);
+                        setFilterMode('range');
+                        setRangeStart(format(s, 'yyyy-MM-dd'));
+                        setRangeEnd(format(e, 'yyyy-MM-dd'));
+                    }}
+                />
             </div>
 
                     {/* CUERPO BLANCO (RESUMEN + TABLA) */}

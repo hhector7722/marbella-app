@@ -237,6 +237,33 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.doesNotMatch(plantilla, /Pendiente|Importe/);
     });
 
+    it('el periodo temporal es PeriodNav; no se clona ← mes → ni un segundo Filtrar', () => {
+        const hosts = [
+            'app/dashboard/labor/page.tsx',
+            'app/horario/page.tsx',
+            'app/staff/actividades/page.tsx',
+            'app/staff/reservas/ReservasClient.tsx',
+            'app/dashboard/overtime/page.tsx',
+            'app/dashboard/consumo-personal/page.tsx',
+            'app/staff/history/page.tsx',
+            'app/dashboard/history/page.tsx',
+            'app/dashboard/ventas/page.tsx',
+            'app/dashboard/movements/page.tsx',
+            'components/ledger/ManagerLedgerView.tsx',
+        ];
+        const clone = /text-base md:text-lg font-black text-ds-marca capitalize/;
+        for (const rel of hosts) {
+            const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
+            assert.match(source, /<PeriodNav/, `${rel} debe usar PeriodNav`);
+            assert.doesNotMatch(source, clone, `${rel} no debe clonar la anatomía de PeriodNav`);
+            assert.doesNotMatch(
+                source,
+                /TimeFilterButton/,
+                `${rel} no duplica Filtrar cuando ya hay PeriodNav`
+            );
+        }
+    });
+
     it('eventos, inventario y recetas usan primitivas canónicas', () => {
         const eventos = readFileSync(
             join(SRC_ROOT, 'app/dashboard/eventos/EventosAdminClient.tsx'),

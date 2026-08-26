@@ -31,6 +31,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import { PeriodNav } from '@/components/time/PeriodNav';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { trackUsageModalApply } from '@/lib/usage/client';
@@ -892,36 +893,15 @@ export default function HistoryPage() {
                 }
             >
             <div className="px-4 md:px-8 pt-3 pb-2 shrink-0">
-                <div className="flex justify-center w-full">
-                    <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
-                        <button
-                            type="button"
-                            onClick={prevMonth}
-                            className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
-                            aria-label="Mes anterior"
-                        >
-                            <ChevronLeft size={22} />
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setPickerYear(filterYear);
-                                setShowMonthPicker(true);
-                            }}
-                            className="text-base md:text-lg font-black text-ds-marca capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,14rem)] sm:max-w-none hover:opacity-80"
-                        >
-                            {getMonthLabel(filterYear, filterMonth)}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={nextMonth}
-                            className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
-                            aria-label="Mes siguiente"
-                        >
-                            <ChevronRight size={22} />
-                        </button>
-                    </div>
-                </div>
+                <PeriodNav
+                    label={getMonthLabel(filterYear, filterMonth)}
+                    onPrev={prevMonth}
+                    onNext={nextMonth}
+                    onLabelClick={() => {
+                        setPickerYear(filterYear);
+                        setShowMonthPicker(true);
+                    }}
+                />
             </div>
 
                     {loading ? (

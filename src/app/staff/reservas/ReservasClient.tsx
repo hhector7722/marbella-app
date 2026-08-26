@@ -40,6 +40,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
+import { PeriodNav } from '@/components/time/PeriodNav'
 import { cn } from '@/lib/utils'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
@@ -1134,29 +1135,11 @@ export default function ReservasClient() {
     >
           <div className="flex flex-col gap-2 month-cal-body">
             <div className="px-4 md:px-8 pt-3 pb-3 shrink-0">
-              <div className="flex justify-center w-full">
-                <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
-                <button
-                  type="button"
-                  onClick={handlePrevMonth}
-                  className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
-                  aria-label="Mes anterior"
-                >
-                  <ChevronLeft size={22} />
-                </button>
-                <span className="text-base md:text-lg font-black text-ds-marca capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,14rem)] sm:max-w-none">
-                  {format(viewMonth, 'MMMM yyyy', { locale: es })}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleNextMonth}
-                  className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
-                  aria-label="Mes siguiente"
-                >
-                  <ChevronRight size={22} />
-                </button>
-                </div>
-              </div>
+              <PeriodNav
+                label={format(viewMonth, 'MMMM yyyy', { locale: es })}
+                onPrev={handlePrevMonth}
+                onNext={handleNextMonth}
+              />
             </div>
 
             {loading ? (

@@ -603,8 +603,8 @@ export const STUDIO_ELEMENTS: StudioElement[] = [
         status: 'BORRADOR / PROPUESTA',
         summary: 'P7 (vive en cabecera) está cerrado. El chrome visual 32 px no es contrato.',
         blueprintNeedle: '| TimeFilter (chrome) |',
-        sourceFiles: ['src/components/time/TimeFilterButton.tsx'],
-        impactPatterns: ['TimeFilterButton'],
+        sourceFiles: ['src/components/time/TimeFilterButton.tsx', 'src/components/time/PeriodNav.tsx'],
+        impactPatterns: ['TimeFilterButton', 'PeriodNav'],
         applyKind: 'blueprint-only',
         properties: [
             prop('height', 'Altura', 'espacio.8', HEIGHT_OPTIONS),

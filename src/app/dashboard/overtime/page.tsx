@@ -1,7 +1,7 @@
 'use client';
 
 import {
-    ChevronLeft, ChevronRight, Check, Circle
+    Check, Circle
 } from 'lucide-react';
 import React, { memo, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import WorkerWeeklyHistoryModal from '@/components/WorkerWeeklyHistoryModal';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { TimeFilterButton } from '@/components/time/TimeFilterButton';
+import { PeriodNav } from '@/components/time/PeriodNav';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
@@ -170,41 +170,16 @@ export default function OvertimePage() {
                 showBackButton={false}
                 template="list"
                 contentClassName="flex flex-col min-h-0"
-                rightSlot={
-                    <TimeFilterButton
-                        onClick={() => setIsTimeFilterOpen(true)}
+            >
+                <div className="pb-3 shrink-0">
+                    <PeriodNav
+                        label={format(viewMonth, 'MMMM yyyy', { locale: es })}
+                        onPrev={() => setViewMonth((prev) => subMonths(prev, 1))}
+                        onNext={() => setViewMonth((prev) => addMonths(prev, 1))}
+                        onLabelClick={() => setIsTimeFilterOpen(true)}
                         hasActiveFilter={!isSameMonth(viewMonth, new Date()) || viewMonth.getFullYear() !== new Date().getFullYear()}
                         onClear={() => setViewMonth(startOfMonth(new Date()))}
-                        buttonClassName="bg-transparent border-transparent shadow-none hover:bg-white/15 min-h-[40px] md:min-h-[40px] px-2 py-1.5"
                     />
-                }
-            >
-                <div className="flex justify-center w-full pb-3 shrink-0">
-                    <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
-                        <button
-                            type="button"
-                            onClick={() => setViewMonth((prev) => subMonths(prev, 1))}
-                            className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
-                            aria-label="Mes anterior"
-                        >
-                            <ChevronLeft size={22} />
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setIsTimeFilterOpen(true)}
-                            className="text-base md:text-lg font-black text-ds-marca capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,14rem)] sm:max-w-none hover:opacity-80"
-                        >
-                            {format(viewMonth, 'MMMM yyyy', { locale: es })}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setViewMonth((prev) => addMonths(prev, 1))}
-                            className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
-                            aria-label="Mes siguiente"
-                        >
-                            <ChevronRight size={22} />
-                        </button>
-                    </div>
                 </div>
 
                 <div className="flex flex-col min-h-0">

@@ -257,7 +257,7 @@ Piezas transversales con comportamiento propio y contrato estricto. **Estas sí 
 **Reglas**:
 - Título y subtítulo son obligatorios en espíritu; el subtítulo explica el alcance, no felicita. El subtítulo puede omitirse en calendarios densos (Labor, Reservas).
 - El ancho máximo se elige entre valores predefinidos (`maxWidthClass`); no se escribe un radio nuevo.
-- El filtro temporal, si existe, vive en `rightSlot` de esta cabecera.
+- El periodo (P7) vive encima del contenido. `rightSlot` guarda acciones de alcance, no un segundo «Filtrar».
 - Identidad: `data-component="PageScreen"`, `data-template` = `list` | `detail` | `form`.
 - La card es `Surface` variante `page`. El consumidor no pinta `bg-white rounded-2xl shadow-2xl` ni `bg-[#36606F]` de cabecera.
 - Las acciones de cabecera (`rightSlot`) sobre petróleo: `Button` `tertiary` se pinta invertido por CSS de esta plantilla (icono blanco). No es una quinta variante de Button. El chrome de recarga nativo blanco (Albaranes) sigue siendo chrome, no Button.

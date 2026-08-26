@@ -15,12 +15,13 @@ import {
   startOfWeek,
   subMonths,
 } from 'date-fns';
-import { ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import { PeriodNav } from '@/components/time/PeriodNav';
 import { PavilionDayModal } from '@/components/pavilion/PavilionDayModal';
 import {
   fetchActivitiesForRangeAction,
@@ -275,29 +276,11 @@ export default function ActividadesPage() {
       }
     >
           <div className="px-4 md:px-8 pt-3 pb-2 shrink-0">
-            <div className="flex justify-center w-full">
-              <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
-                <button
-                  type="button"
-                  onClick={() => setViewMonth((m) => subMonths(m, 1))}
-                  className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
-                  aria-label="Mes anterior"
-                >
-                  <ChevronLeft size={22} />
-                </button>
-                <span className="text-base md:text-lg font-black text-ds-marca capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,14rem)] sm:max-w-none">
-                  {getMonthLabel(viewMonth)}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setViewMonth((m) => addMonths(m, 1))}
-                  className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
-                  aria-label="Mes siguiente"
-                >
-                  <ChevronRight size={22} />
-                </button>
-              </div>
-            </div>
+            <PeriodNav
+              label={getMonthLabel(viewMonth)}
+              onPrev={() => setViewMonth((m) => subMonths(m, 1))}
+              onNext={() => setViewMonth((m) => addMonths(m, 1))}
+            />
           </div>
 
           {/* ── Calendar ── */}

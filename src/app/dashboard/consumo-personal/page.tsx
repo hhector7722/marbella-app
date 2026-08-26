@@ -22,8 +22,8 @@ import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { TimeFilterButton } from '@/components/time/TimeFilterButton';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
+import { PeriodNav } from '@/components/time/PeriodNav';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { Modal } from '@/components/ui/modal';
@@ -458,12 +458,6 @@ export default function ConsumoPersonalDashboardPage() {
               icon={<ListOrdered size={20} strokeWidth={2.25} />}
             />
           ) : null}
-          <TimeFilterButton
-            onClick={() => setIsTimeFilterOpen(true)}
-            hasActiveFilter={filterActive}
-            onClear={clearTimeFilter}
-            buttonClassName="bg-transparent border-transparent shadow-none hover:bg-white/15 min-h-[40px] md:min-h-[40px] px-2 py-1.5"
-          />
           <div className="relative shrink-0 flex items-center justify-center">
             <Button
               type="button"
@@ -491,29 +485,14 @@ export default function ConsumoPersonalDashboardPage() {
       }
     >
           <div className="px-4 md:px-8 pt-3 pb-3 shrink-0">
-            <div className="flex justify-center w-full">
-              <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
-                <button
-                  type="button"
-                  onClick={handlePrevMonth}
-                  className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
-                  aria-label="Mes anterior"
-                >
-                  <ChevronLeft size={22} />
-                </button>
-                <span className="text-base md:text-lg font-black text-ds-marca capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,14rem)] sm:max-w-none">
-                  {format(viewMonth, 'MMMM yyyy', { locale: es })}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleNextMonth}
-                  className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
-                  aria-label="Mes siguiente"
-                >
-                  <ChevronRight size={22} />
-                </button>
-              </div>
-            </div>
+            <PeriodNav
+              label={format(viewMonth, 'MMMM yyyy', { locale: es })}
+              onPrev={handlePrevMonth}
+              onNext={handleNextMonth}
+              onLabelClick={() => setIsTimeFilterOpen(true)}
+              hasActiveFilter={filterActive}
+              onClear={clearTimeFilter}
+            />
           </div>
 
           <div className="p-4 md:p-8 flex flex-col month-cal-body min-h-0">
