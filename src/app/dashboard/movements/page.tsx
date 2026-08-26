@@ -30,6 +30,7 @@ import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, isSameMonth, subMonths, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { BoxInventoryView } from '@/components/BoxInventoryView';
@@ -909,8 +910,8 @@ export default function MovementsPage() {
                         <div className="p-3 bg-white">
                             <div className="rounded-t-lg rounded-b-[1.5rem] overflow-hidden border border-zinc-100 shadow-xl">
                                 <div className="w-full">
-                                    <table ref={tableRef} className="w-full text-left font-sans">
-                                        <thead className="bg-[#36606F] text-white">
+                                    <table ref={tableRef} data-component={TABLE_COMPONENT_ID} data-instance="tesoreria-movimientos" className="w-full text-left font-sans">
+                                        <thead>
                                             <tr className="text-[8px] md:text-[9px] font-black uppercase tracking-wider md:tracking-[0.15em] leading-none">
                                                 <th className="px-1 md:px-4 py-1 md:py-2 w-[24%] md:w-[22%] text-center">
                                                     <button

@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import type { WebAnalyticsDashboardFilters } from '@/lib/web-analytics/types';
 
 type WebAnalyticsFiltersProps = {
@@ -43,12 +44,9 @@ export function WebAnalyticsFilters({ filters }: WebAnalyticsFiltersProps) {
           'focus:border-[#36606F] focus:ring-1 focus:ring-[#36606F]/30'
         )}
       />
-      <button
-        type="submit"
-        className="inline-flex h-12 shrink-0 items-center justify-center rounded-xl bg-[#36606F] px-4 text-xs font-semibold text-white"
-      >
+      <Button type="submit" variant="primary" instance="web-analytics-filters-ok">
         OK
-      </button>
+      </Button>
       <button
         type="button"
         onClick={() => {

@@ -137,3 +137,4 @@ export {
     PAGE_SCREEN_FORBIDDEN_RADIUS,
     type PageScreenTemplate,
 } from './page-screen';
+export { TABLE_COMPONENT_ID } from './table';

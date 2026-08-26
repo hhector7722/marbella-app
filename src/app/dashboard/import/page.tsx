@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import * as XLSX from 'xlsx'
-import { Upload, FileUp, CheckCircle, AlertCircle, ArrowRight, Save, Database } from 'lucide-react'
+import { Upload, FileUp, CheckCircle, AlertCircle, Database } from 'lucide-react'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Button } from '@/components/ui/button'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
@@ -612,31 +612,26 @@ export default function ImportPage() {
 
                                 <div className="p-4 border-t bg-zinc-50/30 flex justify-end gap-3 rounded-b-xl">
                                     {!importResult?.success ? (
-                                        <button
+                                        <Button
+                                            type="button"
+                                            variant="primary"
+                                            instance="import-confirmar"
                                             onClick={handleImport}
                                             disabled={isUploading}
-                                            className="inline-flex min-h-12 items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-[#36606F] text-white hover:bg-[#2A4C58] px-4 py-2"
+                                            loading={isUploading}
+                                            loadingLabel="Importando..."
                                         >
-                                            {isUploading ? (
-                                                <>
-                                                    <LoadingSpinner size="sm" className="mr-2" />
-                                                    Importando...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    Confirmar Importación
-                                                    <Save className="w-4 h-4 ml-2" />
-                                                </>
-                                            )}
-                                        </button>
+                                            Confirmar importación
+                                        </Button>
                                     ) : (
-                                        <button
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                            instance="import-siguiente"
                                             onClick={nextStep}
-                                            className="inline-flex min-h-12 items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-green-600 bg-transparent text-green-700 hover:bg-green-50 px-4 py-2"
                                         >
-                                            Siguiente Paso
-                                            <ArrowRight className="w-4 h-4 ml-2" />
-                                        </button>
+                                            Siguiente paso
+                                        </Button>
                                     )}
                                 </div>
                             </div>

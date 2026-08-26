@@ -501,6 +501,49 @@
   text-transform: uppercase;
   color: var(--color-texto-invertido);
 }
+
+/*
+ * Table / T8 — thead de marca. Composición, no componente de columnas.
+ * Un cambio aquí pinta Ventas, Tesorería, Libro Mayor, Cierres, Catálogo y Propinas.
+ */
+[data-component='Table'] thead {
+  background-color: var(--color-marca);
+  color: var(--color-texto-invertido);
+}
+[data-component='Table'] thead th {
+  color: var(--color-texto-invertido);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/*
+ * Cabecera de bloque interior (título de tarjeta dentro de una pantalla).
+ * Distinta de la cabecera de PageScreen. Un cambio pinta Recetas, Insights, contrato, sub-recetas.
+ */
+[data-element='block-header'] {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  flex-shrink: 0;
+  background-color: var(--color-marca);
+  color: var(--color-texto-invertido);
+  padding-inline: var(--espacio-4);
+  padding-block: var(--espacio-2);
+}
+[data-element='block-header'] [data-element='title'] {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.25;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-texto-invertido);
+}
 [data-component='PageScreen'] [data-element='header'] [data-component='Button'][data-variant='tertiary'],
 [data-component='Surface'][data-variant='page'] > [data-element='header'] [data-component='Button'][data-variant='tertiary'] {
   color: var(--color-texto-invertido);

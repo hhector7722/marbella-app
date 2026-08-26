@@ -11,6 +11,7 @@ import { FIELD_COMPONENT_ID } from './field.ts';
 import { EMPTY_STATE_COMPONENT_ID } from './empty-state.ts';
 import { NOTICE_COMPONENT_ID } from './notice.ts';
 import { KPI_STAT_COMPONENT_ID } from './kpi-stat.ts';
+import { TABLE_COMPONENT_ID } from './table.ts';
 
 const REPO_ROOT = process.cwd();
 const SRC_ROOT = join(REPO_ROOT, 'src');
@@ -40,6 +41,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.equal(EMPTY_STATE_COMPONENT_ID, 'EmptyState');
         assert.equal(NOTICE_COMPONENT_ID, 'Notice');
         assert.equal(KPI_STAT_COMPONENT_ID, 'KpiStat');
+        assert.equal(TABLE_COMPONENT_ID, 'Table');
         assert.equal(PAGE_SCREEN_FORBIDDEN_RADIUS, 'rounded-[2.5rem]');
     });
 
@@ -52,6 +54,8 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(css, /\[data-component='EmptyState'\]/);
         assert.match(css, /\[data-component='Notice'\]\[data-variant='negative'\]/);
         assert.match(css, /\[data-component='KpiStat'\]/);
+        assert.match(css, /\[data-component='Table'\] thead/);
+        assert.match(css, /\[data-element='block-header'\]/);
         assert.match(css, /min-height:\s*var\(--tactil-minimo\)/);
         assert.match(css, /--espacio-8/);
         assert.match(
@@ -199,6 +203,40 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(staff, /data-element="header"/);
     });
 
+    it('tarjeta semanal de una persona es WeekCard; plantilla sigue aparte', () => {
+        const staff = readFileSync(
+            join(SRC_ROOT, 'components/dashboards/StaffDashboardView.tsx'),
+            'utf8'
+        );
+        const overtimeModal = readFileSync(
+            join(SRC_ROOT, 'components/WorkerWeeklyHistoryModal.tsx'),
+            'utf8'
+        );
+        const history = readFileSync(join(SRC_ROOT, 'app/staff/history/page.tsx'), 'utf8');
+        const plantilla = readFileSync(
+            join(SRC_ROOT, 'app/staff/history/PlantillaWeekCard.tsx'),
+            'utf8'
+        );
+
+        assert.match(staff, /from '@\/app\/staff\/history\/WeekCard'/);
+        assert.match(staff, /<WeekCard/);
+        assert.doesNotMatch(
+            staff,
+            /from-red-500 to-red-600/,
+            'el mosaico Staff no clona la cabecera de días de la semana'
+        );
+
+        assert.match(overtimeModal, /from '@\/app\/staff\/history\/WeekCard'/);
+        assert.match(overtimeModal, /<WeekCard/);
+
+        assert.match(history, /<WeekCard/);
+        assert.match(history, /<PlantillaWeekCard/);
+
+        assert.doesNotMatch(plantilla, /from ['"].*\/WeekCard['"]/);
+        assert.match(plantilla, /getInitials/);
+        assert.doesNotMatch(plantilla, /Pendiente|Importe/);
+    });
+
     it('eventos, inventario y recetas usan primitivas canónicas', () => {
         const eventos = readFileSync(
             join(SRC_ROOT, 'app/dashboard/eventos/EventosAdminClient.tsx'),
@@ -242,6 +280,27 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(radar, /<EmptyState/);
         assert.doesNotMatch(radar, /bg-\[#36606F\]/);
         assert.doesNotMatch(radar, /rounded-\[2\.5rem\]/);
+    });
+
+    it('tablas operativas usan thead de sistema (T8)', () => {
+        const tables = [
+            'app/dashboard/ventas/page.tsx',
+            'app/dashboard/movements/page.tsx',
+            'app/dashboard/history/page.tsx',
+            'app/staff/actividades/gestion/page.tsx',
+            'components/ledger/ManagerLedgerView.tsx',
+            'components/tips/TipsDashboardView.tsx',
+            'components/dashboards/DashboardVentasSection.tsx',
+        ];
+        for (const rel of tables) {
+            const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
+            assert.match(source, /TABLE_COMPONENT_ID/, `${rel} debe usar Table`);
+            assert.doesNotMatch(
+                source,
+                /<thead className="[^"]*bg-\[#36606F\]/,
+                `${rel} no debe clonar thead petróleo`
+            );
+        }
     });
 
     it('recetas e ingredientes montan catálogo a 4 columnas dentro de PageScreen', () => {

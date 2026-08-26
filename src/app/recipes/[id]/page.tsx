@@ -994,8 +994,8 @@ function RecipeDetailContent() {
                 <div className="bg-[#fafafa] p-4 md:p-5 grid grid-cols-1 md:grid-cols-2 gap-4 content-start">
                     {!isRestricted && (
                         <div className="bg-white rounded-xl shadow-lg overflow-hidden h-full flex flex-col">
-                            <div className="bg-[#36606F] px-4 py-2 shrink-0">
-                                <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Precio</h2>
+                            <div data-element="block-header">
+                                <h2 data-element="title">Precio</h2>
                             </div>
                             <div className="flex flex-col">
                                 {/* Sección 1: precio actual + KPIs */}
@@ -1210,8 +1210,8 @@ function RecipeDetailContent() {
                         </div>
                     )}
                     <div className={`bg-white rounded-xl shadow-lg overflow-hidden flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
-                        <div className="flex h-9 shrink-0 items-center gap-2 bg-[#36606F] px-4">
-                            <h2 className="min-w-0 flex-1 truncate text-[10px] font-black uppercase tracking-[0.2em] text-white">
+                        <div data-element="block-header" className="h-9">
+                            <h2 data-element="title" className="min-w-0 flex-1">
                                 Ingredientes <span className="opacity-50">({ingredients.length})</span>
                             </h2>
                             {!isRestricted && (
@@ -1354,8 +1354,8 @@ function RecipeDetailContent() {
                         </div>
                     </div>
                     <div className={`bg-white rounded-xl shadow-lg overflow-hidden flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
-                        <div className="bg-[#36606F] px-4 py-2 shrink-0 relative flex items-center justify-between">
-                            <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Elaboración</h2>
+                        <div data-element="block-header" className="relative justify-between">
+                            <h2 data-element="title">Elaboración</h2>
                             {!isRestricted && (
                                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 shrink-0">
                                     {canImportRecipe && (
@@ -1490,8 +1490,8 @@ function RecipeDetailContent() {
                     </div>
 
                     <div className={`bg-white rounded-xl shadow-lg overflow-hidden flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
-                        <div className="bg-[#36606F] px-4 py-2 shrink-0 relative flex items-center justify-between">
-                            <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Presentación</h2>
+                        <div data-element="block-header" className="relative justify-between">
+                            <h2 data-element="title">Presentación</h2>
                             {!isRestricted && (
                                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 shrink-0">
                                     {canImportRecipe && (

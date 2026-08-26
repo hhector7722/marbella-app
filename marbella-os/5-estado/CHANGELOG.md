@@ -38,6 +38,10 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-26
 
+- **Tarjeta semanal de una persona, una sola.** El mosaico Staff y el modal de horas extras pintan la misma semana que Asistencia de un trabajador (LUN–DOM, celdas, pie Horas / Pendiente / Extras / Importe). La vista de plantilla (todos los trabajadores) sigue aparte: iniciales y fichajes, sin pie de resumen. [PATRONES P6](../2-diseno/PATRONES.md#p6--tarjeta-semanal).
+
+- **Tablas, barras de sección y overlays se juntan al sistema.** Las tablas operativas (Ventas, Tesorería, Libro Mayor, Cierres, Catálogo, Propinas) pintan el `thead` con una sola identidad. Las barras de bloque interiores (Recetas, Insights, contrato, consumo) usan la misma cabecera de sección. El overlay de recetas staff pasa a Modal. Botones de confirmar/filtro dejan el petróleo escrito a mano. Sin ADR nueva.
+
 - **Resto de gestión entra por PageScreen.** Proveedores, Pedido nuevo, Libro Mayor, Uso de la app, Analítica web, importación de fichajes, Mapeo TPV, Revisión de actividades, Editar horario, importador de recetas, Condiciones laborales, Reporte, Propinas staff y Encargo dejan de clonar cabecera. Un cambio en el sistema las pinta juntas. Sin ADR nueva.
 
 - **Oleada PageScreen de gestión.** Recetas, Ingredientes, Ventas, Tesorería, Asistencia, Perfil, detalle de receta, Insights, Precios desde albarán, catálogo de actividades e Importación entran por `PageScreen`. Recetas e Ingredientes muestran 4 ítems por fila. Asistencia conserva tarjetas semanales (P6), no el calendario P3. Sin ADR nueva.

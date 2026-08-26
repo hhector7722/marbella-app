@@ -149,7 +149,7 @@ export function TimeFilterModal({
       className={cn(
         "flex-1 min-h-[36px] px-1 rounded-xl",
         "text-[9px] font-black uppercase tracking-widest transition-all",
-        activeKind === kind ? "text-white bg-[#36606F]" : "text-[#36606F]"
+        activeKind === kind ? "text-white bg-ds-marca" : "text-ds-marca"
       )}
     >
       {KIND_LABEL[kind]}
@@ -222,11 +222,11 @@ export function TimeFilterModal({
           isMuted ? "opacity-20" : "opacity-100",
           // Semana: bloque completo
           inWeek
-            ? "bg-[#36606F] text-white"
+            ? "bg-ds-marca text-white"
             : selected
-              ? "bg-[#36606F] text-white"
+              ? "bg-ds-marca text-white"
               : inRange
-                ? "text-[#36606F]"
+                ? "text-ds-marca"
                 : "text-zinc-600"
         )}
         aria-label={format(day, "yyyy-MM-dd")}

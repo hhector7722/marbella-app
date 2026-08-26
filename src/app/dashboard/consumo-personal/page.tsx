@@ -679,8 +679,8 @@ export default function ConsumoPersonalDashboardPage() {
           </div>
         ) : dayDetail ? (
           <>
-            <div className="mb-4 rounded-[1.25rem] bg-[#36606F] p-3 shadow-md">
-              <p className="mb-2 text-center text-[9px] font-black uppercase tracking-[0.2em] text-white/90">
+            <div data-element="block-header" className="mb-4 rounded-[1.25rem] flex-col p-3">
+              <p data-element="title" className="mb-2 text-center tracking-[0.2em] w-full">
                 Resumen del día
               </p>
               <div className="grid grid-cols-1 gap-1 sm:gap-2">

@@ -3,12 +3,13 @@
 import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
-import { ChefHat, Search, Plus, X, ChevronDown, Users, Camera, Edit2, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChefHat, Search, Plus, X, ChevronDown, Users, Camera, Edit2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import CreateModal from '@/components/CreateRecipeModal';
 import { useRouter } from 'next/navigation';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
+import { Modal } from '@/components/ui/modal';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { cn } from '@/lib/utils';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
@@ -606,111 +607,75 @@ function RecipesContent() {
     </DashboardDetailLayout>
 
             {/* MODAL DE DETALLE (PARA STAFF): misma composición visual que `/recipes/[id]` en modo restringido */}
-            {selectedRecipeId && (
-                <div
-                    className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-300"
-                    onClick={() => setSelectedRecipeId(null)}
-                >
-                    <div
-                        className="bg-white w-full max-w-6xl max-h-[90vh] rounded-[20px] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="bg-[#36606F] px-3 md:px-5 py-2 flex flex-col shrink-0">
-                            {/* Misma rejilla que `/recipes/[id]`: columnas fijas a los lados → título e imagen centrados en el mismo eje */}
-                            <div className="grid w-full grid-cols-[3rem_1fr_3rem] items-center gap-2 min-h-[48px]">
-                                <div className="flex items-center justify-center">
-                                    <Button
-                                        type="button"
-                                        variant="tertiary"
-                                        instance="recipes-modal-back"
-                                        onClick={() => setSelectedRecipeId(null)}
-                                        icon={<ArrowLeft className="w-6 h-6" />}
-                                        aria-label="Volver a la lista de recetas"
-                                        className="shrink-0"
-                                    />
-                                </div>
-                                <div className="min-w-0 flex justify-center px-1">
-                                    <div className="max-w-[min(72vw,20rem)] text-center text-[13px] font-black leading-tight text-white md:text-[15px]">
-                                        <span className="inline-block max-w-full truncate">
-                                            {fullRecipeData?.name || (loadingDetails ? 'Cargando…' : '…')}
-                                        </span>
+            <Modal
+                open={!!selectedRecipeId}
+                onClose={() => setSelectedRecipeId(null)}
+                variant="work"
+                layer="base"
+                instance="recipes-staff-preview"
+                headerTone="petroleum"
+                title={fullRecipeData?.name || (loadingDetails ? 'Cargando…' : '…')}
+                headerTrailing={
+                    canEditRecipeFromModal && selectedRecipeId ? (
+                        <Button
+                            type="button"
+                            variant="tertiary"
+                            instance="recipes-modal-full-edit"
+                            onClick={() => {
+                                const id = selectedRecipeId;
+                                setSelectedRecipeId(null);
+                                router.push(buildRecipesFullEditHref(id));
+                            }}
+                            icon={<Edit2 className="w-5 h-5" strokeWidth={2.5} />}
+                            aria-label="Abrir ficha de edición completa"
+                        />
+                    ) : undefined
+                }
+            >
+                            <div className="flex items-center justify-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (staffNavIndex > 0) setSelectedRecipeId(staffNavRecipes[staffNavIndex - 1].id);
+                                    }}
+                                    disabled={staffNavIndex <= 0}
+                                    className="flex h-12 w-12 shrink-0 items-center justify-center transition disabled:opacity-0 text-ds-marca"
+                                    aria-label="Receta anterior"
+                                >
+                                    <ChevronLeft className="w-8 h-8" />
+                                </button>
+                                <div className="rounded-xl bg-white p-0.5 shadow-sm">
+                                    <div className="relative group h-14 w-24 rounded-lg border border-gray-100/50 bg-white flex items-center justify-center overflow-hidden">
+                                        {fullRecipeData?.photo_url ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsPhotoLightboxOpen(true)}
+                                                className="absolute inset-0 h-full w-full cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ds-marca/50"
+                                                aria-label="Ver foto ampliada"
+                                            >
+                                                <img src={fullRecipeData.photo_url} alt="" className="h-full w-full object-contain" />
+                                            </button>
+                                        ) : (
+                                            <Camera className="h-5 w-5 text-gray-300" aria-hidden />
+                                        )}
                                     </div>
                                 </div>
-                                <div className="flex items-center justify-center">
-                                    {canEditRecipeFromModal && selectedRecipeId ? (
-                                        <Button
-                                            type="button"
-                                            variant="tertiary"
-                                            instance="recipes-modal-full-edit"
-                                            onClick={() => {
-                                                const id = selectedRecipeId;
-                                                setSelectedRecipeId(null);
-                                                router.push(buildRecipesFullEditHref(id));
-                                            }}
-                                            icon={<Edit2 className="w-5 h-5" strokeWidth={2.5} />}
-                                            aria-label="Abrir ficha de edición completa"
-                                            className="shrink-0"
-                                        />
-                                    ) : (
-                                        <span className="inline-flex h-10 w-10 shrink-0" aria-hidden />
-                                    )}
-                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (staffNavIndex >= 0 && staffNavIndex < staffNavRecipes.length - 1) {
+                                            setSelectedRecipeId(staffNavRecipes[staffNavIndex + 1].id);
+                                        }
+                                    }}
+                                    disabled={staffNavIndex < 0 || staffNavIndex >= staffNavRecipes.length - 1}
+                                    className="flex h-12 w-12 shrink-0 items-center justify-center transition disabled:opacity-0 text-ds-marca"
+                                    aria-label="Receta siguiente"
+                                >
+                                    <ChevronRight className="w-8 h-8" />
+                                </button>
                             </div>
-
-                            <div className="mt-1 grid w-full grid-cols-[3rem_1fr_3rem] items-center gap-2">
-                                <div className="flex items-center justify-center">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            if (staffNavIndex > 0) setSelectedRecipeId(staffNavRecipes[staffNavIndex - 1].id);
-                                        }}
-                                        disabled={staffNavIndex <= 0}
-                                        className="flex h-10 w-10 shrink-0 items-center justify-center transition disabled:opacity-0 text-white/50 hover:text-white"
-                                        aria-label="Receta anterior"
-                                    >
-                                        <ChevronLeft className="w-8 h-8" />
-                                    </button>
-                                </div>
-                                <div className="flex justify-center">
-                                    <div className="rounded-xl bg-white p-0.5 shadow-sm">
-                                        <div className="relative group h-14 w-24 rounded-lg border border-gray-100/50 bg-white flex items-center justify-center overflow-hidden">
-                                            {fullRecipeData?.photo_url ? (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setIsPhotoLightboxOpen(true)}
-                                                    className={cn(
-                                                        'absolute inset-0 h-full w-full cursor-zoom-in',
-                                                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
-                                                    )}
-                                                    aria-label="Ver foto ampliada"
-                                                >
-                                                    <img src={fullRecipeData.photo_url} alt="" className="h-full w-full object-contain" />
-                                                </button>
-                                            ) : (
-                                                <Camera className="h-5 w-5 text-gray-300" aria-hidden />
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="flex items-center justify-center">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            if (staffNavIndex >= 0 && staffNavIndex < staffNavRecipes.length - 1) {
-                                                setSelectedRecipeId(staffNavRecipes[staffNavIndex + 1].id);
-                                            }
-                                        }}
-                                        disabled={staffNavIndex < 0 || staffNavIndex >= staffNavRecipes.length - 1}
-                                        className="flex h-10 w-10 shrink-0 items-center justify-center transition disabled:opacity-0 text-white/50 hover:text-white"
-                                        aria-label="Receta siguiente"
-                                    >
-                                        <ChevronRight className="w-8 h-8" />
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center justify-center gap-4 mt-2 text-white/90">
-                                <span className="px-2 py-0.5 bg-white/20 rounded-full font-medium uppercase tracking-wider text-[9px]">
+                            <div className="flex items-center justify-center gap-4 mt-2 text-ds-marca">
+                                <span className="px-2 py-0.5 bg-ds-marca/10 rounded-full font-medium uppercase tracking-wider text-[9px]">
                                     {fullRecipeData ? recipeMenuLabel(fullRecipeData as Recipe) : ' '}
                                 </span>
                                 <div className="flex items-center gap-1.5 text-[9px] font-bold">
@@ -718,7 +683,6 @@ function RecipesContent() {
                                     <span>{fullRecipeData?.servings || 1} rac</span>
                                 </div>
                             </div>
-                        </div>
 
                         <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar bg-[#fafafa]">
                             {loadingDetails ? (
@@ -729,8 +693,8 @@ function RecipesContent() {
                             ) : (
                                 <div className="p-4 md:p-5 grid grid-cols-1 md:grid-cols-2 gap-4 content-start">
                                     <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col h-fit">
-                                        <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center justify-between">
-                                            <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">
+                                        <div data-element="block-header" className="justify-between">
+                                            <h2 data-element="title">
                                                 Ingredientes{' '}
                                                 <span className="opacity-50">({modalSortedIngredients.length})</span>
                                             </h2>
@@ -766,8 +730,8 @@ function RecipesContent() {
                                     </div>
 
                                     <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col h-fit">
-                                        <div className="bg-[#36606F] px-4 py-2 shrink-0 relative flex items-center justify-between">
-                                            <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Elaboración</h2>
+                                        <div data-element="block-header" className="relative justify-between">
+                                            <h2 data-element="title">Elaboración</h2>
                                         </div>
                                         <div className="p-3">
                                             <div className="custom-scrollbar space-y-3">
@@ -794,8 +758,8 @@ function RecipesContent() {
                                     </div>
 
                                     <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col h-fit">
-                                        <div className="bg-[#36606F] px-4 py-2 shrink-0 relative flex items-center justify-between">
-                                            <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Presentación</h2>
+                                        <div data-element="block-header" className="relative justify-between">
+                                            <h2 data-element="title">Presentación</h2>
                                         </div>
                                         <div className="p-3 bg-zinc-50/30">
                                             <div className="custom-scrollbar">
@@ -817,9 +781,7 @@ function RecipesContent() {
                                 </div>
                             )}
                         </div>
-                    </div>
-                </div>
-            )}
+            </Modal>
             <CreateModal
                 showCreateModal={showCreateModal}
                 setShowCreateModal={setShowCreateModal}

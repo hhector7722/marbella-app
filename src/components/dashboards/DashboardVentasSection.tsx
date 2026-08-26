@@ -9,6 +9,7 @@ import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { createClient } from '@/utils/supabase/client';
 import { cn, getBusinessHourFromTicket } from '@/lib/utils';
+import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { formatTicketTimeMadrid } from '@/utils/date-utils';
 import { BUSINESS_HOURS } from '@/lib/constants';
 import PremiumCountUp from '@/components/ui/PremiumCountUp';
@@ -473,8 +474,8 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                             </p>
                         ) : (
                             <div className="bg-white rounded-xl shadow-sm border border-zinc-100 overflow-hidden max-md:[&_table_th]:border-r-0 max-md:[&_table_td]:border-r-0 relative">
-                                <table className="w-full text-left border-collapse">
-                                    <thead className="bg-ds-marca text-white text-[8px] md:text-[9px] font-black uppercase tracking-wider">
+                                <table data-component={TABLE_COMPONENT_ID} data-instance="dashboard-ventas-tickets" className="w-full text-left border-collapse">
+                                    <thead>
                                         <tr>
                                             <th className="py-2 px-2 md:px-3">Hora</th>
                                             <th className="py-2 px-2 md:px-3">Doc</th>

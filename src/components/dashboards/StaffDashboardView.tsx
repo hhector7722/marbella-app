@@ -7,7 +7,7 @@ import {
     Play, Square, CalendarDays,
     Calendar, ArrowRight, Play as PlayIcon, ArrowLeft,
     Check, Info, Package,
-    Phone, Scale, ShoppingCart, Boxes, X, MessageCircle,
+    Phone, Scale, ShoppingCart, Boxes, MessageCircle,
     ChefHat, Calculator, ArrowRightLeft, Save, ArrowDown, ArrowUp,
     Plus, Minus, BookOpen, CalendarCheck
 } from 'lucide-react';
@@ -21,15 +21,16 @@ import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { PurchaseMultiSourceForm, type PaymentSourceOption, type PurchaseMultiSourcePayload } from '@/components/PurchaseMultiSourceForm';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import { differenceInMinutes, startOfWeek, addDays, format, isSameDay } from 'date-fns';
+import { differenceInMinutes, startOfWeek, format } from 'date-fns';
 import { formatYmdInMadrid, madridDayUtcRangeIso, madridRangeUtcIso } from '@/lib/madrid-date-bounds';
 import { es } from 'date-fns/locale';
-import { cn, calculateRoundedHours } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, MAX_DISTANCE_METERS } from '@/lib/location';
 import { FICHAJE_OVERLAY_VIDEOS } from '@/lib/fichaje-overlay-videos';
 import { syncOvertimeCostAfterTimeLogChange } from '@/app/actions/persist-overtime-cost';
-import { getWeekDetailDto } from '@/app/actions/history-read';
+import { getEmployeeHistoryWeek, type HistoryWeekDto } from '@/app/actions/history-read';
+import { WeekCard } from '@/app/staff/history/WeekCard';
 import WorkTimer from '@/components/ui/WorkTimer';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Surface } from '@/components/ui/Surface';
@@ -41,7 +42,6 @@ import { ConsumptionModal } from '@/app/staff/ConsumptionModal';
 import { STAFF_MANUAL_ASSETS, STAFF_MANUAL_MENU, STAFF_TPV_MANUAL_ITEMS, STAFF_TPV_MANUAL_VIDEOS, type StaffManualMenuId } from '@/lib/staff-manuals';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
-import { SpecialDayLabel, specialEventFullLabel, specialEventTextClass } from '@/components/staff/SpecialDayLabel';
 
 const CONTACTS_DATA = [
     { name: 'Hielo Fenix', phone: '(3461) 028-8888' },
@@ -53,19 +53,6 @@ const CONTACTS_DATA = [
 ];
 
 type WorkStatus = 'idle' | 'working' | 'finished';
-
-interface DailyLog {
-    date: Date; dayName: string; dayNumber: number; hasLog: boolean; clockIn: string; clockOut: string; totalHours: number; extraHours: number; isToday: boolean; eventType?: string; clock_out_show_no_registrada?: boolean;
-}
-
-interface WeeklySummary {
-    totalHours: number;
-    hoursDifference: number;
-    currentBalance: number;
-    estimatedPayout: number;
-    status: 'paid' | 'pending';
-    startBalance: number;
-}
 
 interface ShiftMock {
     date: Date;
@@ -84,33 +71,6 @@ const applyRoundingRule = (totalMinutes: number): number => {
     if (m <= 50) return h + 0.5;
     return h + 1;
 };
-
-const roundHoursValue = (hours: number): number => {
-    const minutes = Math.round(hours * 60);
-    return applyRoundingRule(minutes);
-};
-
-const WEEK_DAY_NAMES = ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'] as const;
-
-function buildWeekSkeleton(today: Date): DailyLog[] {
-    const weekStart = startOfWeek(today, { weekStartsOn: 1 });
-    return Array.from({ length: 7 }).map((_, i) => {
-        const d = addDays(weekStart, i);
-        return {
-            date: d,
-            dayName: WEEK_DAY_NAMES[i] || '',
-            dayNumber: parseInt(format(d, 'd'), 10),
-            isToday: isSameDay(d, today),
-            hasLog: false,
-            clockIn: '',
-            clockOut: '',
-            totalHours: 0,
-            extraHours: 0,
-            eventType: 'regular',
-            clock_out_show_no_registrada: false,
-        };
-    });
-}
 
 function computeIsoWeekNumber(weekStart: Date): number {
     const target = new Date(weekStart.valueOf());
@@ -136,11 +96,10 @@ export default function StaffDashboardView() {
     const [status, setStatus] = useState<WorkStatus>('idle');
     const [todayLog, setTodayLog] = useState<any>(null);
 
-    const [weekDays, setWeekDays] = useState<DailyLog[]>(() => buildWeekSkeleton(new Date()));
+    const [historyWeek, setHistoryWeek] = useState<HistoryWeekDto | null>(null);
+    const [weekFilterYear, setWeekFilterYear] = useState(() => new Date().getFullYear());
+    const [weekFilterMonth, setWeekFilterMonth] = useState(() => new Date().getMonth());
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
-    const [weeklySummary, setWeeklySummary] = useState<WeeklySummary>({
-        totalHours: 0, hoursDifference: 0, currentBalance: 0, estimatedPayout: 0, status: 'pending', startBalance: 0
-    });
     const [monthShifts, setMonthShifts] = useState<ShiftMock[]>([]);
     const [nextShifts, setNextShifts] = useState<ShiftMock[]>([]);
     const [currentMonthName, setCurrentMonthName] = useState(() =>
@@ -188,7 +147,6 @@ export default function StaffDashboardView() {
     const [isTpvManualModalOpen, setIsTpvManualModalOpen] = useState(false);
     const [isHornoManualModalOpen, setIsHornoManualModalOpen] = useState(false);
     const [manualMediaViewer, setManualMediaViewer] = useState<ManualMediaViewerState>(null);
-    const [preferStock, setPreferStock] = useState(false);
     const [changeBox, setChangeBox] = useState<any>(null);
     const [changeBoxInventoryMap, setChangeBoxInventoryMap] = useState<Record<number, number>>({});
     const [liveTickets, setLiveTickets] = useState({ total: 0, count: 0 });
@@ -278,21 +236,6 @@ export default function StaffDashboardView() {
 
 
 
-    /** Horas Marbella: solo enteros o .5 */
-    const formatNumber = (val: number) => {
-        if (Math.abs(val) < 0.1) return " ";
-        const rounded = calculateRoundedHours(Math.abs(val));
-        const str = rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1);
-        return val < 0 ? `-${str}` : str;
-    };
-
-    const formatWorked = (val: number) => formatNumber(Math.abs(val));
-    const formatBalance = (val: number) => formatNumber(val);
-    const formatMoney = (val: number) => {
-        if (Math.abs(val) < 0.1) return " ";
-        return `${val.toFixed(0)}€`;
-    };
-
     const cleanPhone = (phone: string) => {
         const cleaned = phone.replace(/\D/g, '');
         return cleaned.startsWith('34') ? `+${cleaned}` : `+34${cleaned}`;
@@ -309,22 +252,14 @@ export default function StaffDashboardView() {
             setUserId(user.id);
             setUserEmail(user.email ?? '');
 
-            let contractHours = 40;
-            let isFixedSalary = false;
-            let userPreferStock = false;
-
             const { data: profile } = await supabase.from('profiles')
-                .select('first_name, role, contracted_hours_weekly, prefer_stock_hours, is_fixed_salary')
+                .select('first_name, role')
                 .eq('id', user.id)
                 .single();
 
             if (profile) {
                 setUserRole(profile.role as any);
                 setUserName(profile.first_name || "Personal");
-                if (profile.contracted_hours_weekly !== null) contractHours = profile.contracted_hours_weekly;
-                if (profile.prefer_stock_hours) userPreferStock = profile.prefer_stock_hours;
-                if (profile.is_fixed_salary) isFixedSalary = profile.is_fixed_salary;
-                setPreferStock(userPreferStock);
             }
 
             const today = new Date();
@@ -355,44 +290,16 @@ export default function StaffDashboardView() {
             const weekStartYmd = format(weekStart, 'yyyy-MM-dd');
 
             const weekTask = (async () => {
-                const detail = await getWeekDetailDto({ userId: user.id, weekStart: weekStartYmd });
-                if (!detail.success) {
-                    toast.error(detail.error || 'No se pudo cargar el resumen semanal');
+                const res = await getEmployeeHistoryWeek({ userId: user.id, weekStart: weekStartYmd });
+                if (!res.success) {
+                    toast.error(res.error || 'No se pudo cargar el resumen semanal');
+                    setHistoryWeek(null);
                     return;
                 }
-
-                const daysStructure: DailyLog[] = buildWeekSkeleton(today).map((base, i) => {
-                    const dayDto = detail.days[i];
-                    return {
-                        ...base,
-                        hasLog: dayDto?.hasLog ?? false,
-                        clockIn: dayDto?.clockIn || '',
-                        clockOut: dayDto?.clockOut || '',
-                        totalHours: dayDto?.totalHours ?? 0,
-                        extraHours: dayDto?.extraHours ?? 0,
-                    };
-                });
-                setWeekDays(daysStructure);
-
-                const summary = detail.summary;
-                let displayHours = summary.totalHours;
-                if (profile?.role === 'manager' || isFixedSalary) {
-                    if (summary.totalHours === 0) {
-                        displayHours = contractHours;
-                    } else {
-                        displayHours = contractHours + summary.totalHours;
-                    }
-                }
-
-                setWeeklySummary({
-                    totalHours: displayHours,
-                    hoursDifference: summary.weeklyBalance,
-                    currentBalance: summary.weeklyBalance,
-                    estimatedPayout: summary.estimatedValue ?? 0,
-                    status: 'pending',
-                    startBalance: summary.startBalance,
-                });
-                setPreferStock(summary.preferStock);
+                setHistoryWeek(res.week);
+                setWeekFilterYear(res.filterYear);
+                setWeekFilterMonth(res.filterMonth);
+                setWeekNumber(res.week.weekNumber);
             })().catch((e) => {
                 console.error(e);
                 toast.error('No se pudo cargar el resumen semanal');
@@ -783,142 +690,22 @@ export default function StaffDashboardView() {
                                         <LoadingSpinner size="md" className="text-ds-marca" />
                                     </div>
                                 ) : null}
-
-                                <div className="overflow-hidden border border-ds-borde mb-4 relative z-0">
-                                    <div className="grid grid-cols-7">
-                                        {weekDays.map((day, i) => {
-                                            const eventType = day.eventType ?? 'regular';
-                                            const specialLabel = specialEventFullLabel(eventType);
-                                            // Sin fichaje de entrada no hay horas que mostrar: la cruz ocupa la celda centrada.
-                                            const showCenteredCross = eventType === 'no_registered' && !day.hasLog;
-                                            return (
-                                            <div key={i} className="flex flex-col border-r border-gray-100 last:border-r-0 min-h-[108px] bg-white relative">
-                                                <div className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center relative z-10">
-                                                    <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">{day.dayName}</span>
-                                                </div>
-                                                <div
-                                                    className="flex-1 p-1 flex flex-col items-stretch relative z-0 bg-white cursor-pointer hover:bg-blue-50/50 transition-colors"
-                                                    onClick={() => {
-                                                        setSelectedDayDate(day.date);
-                                                        setIsDayDetailModalOpen(true);
-                                                    }}
-                                                >
-                                                    <span className={`absolute top-1 right-1 text-[9px] font-bold ${day.isToday ? 'text-blue-600' : 'text-gray-400'}`}>{day.dayNumber}</span>
-                                                    {/* Filas de altura fija para alinear círculos verde/rojo entre todos los días */}
-                                                    <div className="flex-1 flex flex-col justify-center w-full pb-1 mt-4 min-h-[52px]">
-                                                        {specialLabel ? (
-                                                            <SpecialDayLabel
-                                                                label={specialLabel}
-                                                                className={specialEventTextClass(eventType)}
-                                                            />
-                                                        ) : showCenteredCross ? (
-                                                            <div className="flex min-h-[40px] w-full min-w-0 flex-1 items-center justify-center">
-                                                                <X
-                                                                    size={22}
-                                                                    strokeWidth={2.5}
-                                                                    className={specialEventTextClass(eventType)}
-                                                                    aria-label="No registrado"
-                                                                />
-                                                            </div>
-                                                        ) : (
-                                                            <>
-                                                                {/* Fila entrada: misma altura en todos los días para alinear círculos verdes */}
-                                                                <div className="h-5 flex items-center justify-center gap-1 shrink-0">
-                                                                    {day.hasLog ? (
-                                                                        <>
-                                                                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
-                                                                            <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockIn}</span>
-                                                                        </>
-                                                                    ) : <span className="text-[9px] text-transparent select-none">0</span>}
-                                                                </div>
-                                                                {/* Fila salida: misma altura en todos los días para alinear círculos rojos */}
-                                                                <div className="h-5 flex items-center justify-center gap-1 shrink-0">
-                                                                    {eventType === 'no_registered' ? (
-                                                                        <X size={14} strokeWidth={2.5} className="text-red-600 shrink-0" />
-                                                                    ) : day.hasLog && day.clockOut ? (
-                                                                        day.clock_out_show_no_registrada ? (
-                                                                            <span title="Salida no registrada (olvidó fichar)" className="inline-flex items-center justify-center">
-                                                                                <X size={14} strokeWidth={2.5} className="text-red-600 shrink-0" />
-                                                                            </span>
-                                                                        ) : (
-                                                                            <>
-                                                                                <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
-                                                                                <span className="text-[9px] font-mono text-gray-700 leading-none">{day.clockOut}</span>
-                                                                            </>
-                                                                        )
-                                                                    ) : (day.hasLog && !day.clockOut ? <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0" /> : <span className="text-[9px] text-transparent select-none">0</span>)}
-                                                                </div>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                    <div className="w-full space-y-0 pt-0.5 min-h-[26px]">
-                                                        {day.hasLog && day.totalHours > 0 ? (
-                                                            <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                                                <span className="ml-0.5">H</span>
-                                                                <span className="font-bold text-gray-800 pr-1">{formatWorked(day.totalHours)}</span>
-                                                            </div>
-                                                        ) : <div className="h-3" />}
-                                                        {day.extraHours > 0 ? (
-                                                            <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                                                <span className="ml-0.5">Ex</span>
-                                                                <span className="font-bold text-gray-800 pr-1">{formatWorked(day.extraHours)}</span>
-                                                            </div>
-                                                        ) : <div className="h-3" />}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-
-                                <div className="p-2 md:p-3 flex items-center justify-between gap-1 md:gap-2 overflow-x-auto no-scrollbar">
-                                    <div className="flex flex-col items-center flex-1">
-                                        <div className="h-4 md:h-5 flex items-center">
-                                            <span className="font-black text-black text-[11px] md:text-sm leading-none">{formatWorked(weeklySummary.totalHours)}</span>
-                                        </div>
-                                        <span className="text-[7px] md:text-[10px] font-bold text-gray-400 uppercase leading-none mt-1">Horas</span>
-                                    </div>
-
-                                    <div className="flex flex-col items-center flex-1">
-                                        <div className="h-4 md:h-5 flex items-center">
-                                            {(() => {
-                                                const pending = weeklySummary.startBalance ?? 0;
-                                                const show = Math.abs(pending) > 0.05;
-                                                const color = !show
-                                                    ? 'text-transparent'
-                                                    : pending >= 0
-                                                      ? 'text-emerald-600'
-                                                      : 'text-red-600';
-                                                return (
-                                                    <span className={cn('font-black text-[11px] md:text-sm leading-none', color)}>
-                                                        {show ? formatWorked(pending) : '\u00a0'}
-                                                    </span>
-                                                );
-                                            })()}
-                                        </div>
-                                        <span className="text-[7px] md:text-[10px] font-bold text-gray-400 uppercase leading-none mt-1">Pendiente</span>
-                                    </div>
-                                    <div className="flex flex-col items-center flex-1">
-                                        <div className="h-4 md:h-5 flex items-center">
-                                            <span className={`font-black text-[11px] md:text-sm leading-none text-black`}>
-                                                {(weeklySummary.currentBalance ?? 0) > 0.05
-                                                    ? formatWorked(weeklySummary.currentBalance)
-                                                    : '\u00a0'}
-                                            </span>
-                                        </div>
-                                        <span className="text-[7px] md:text-[10px] font-bold text-gray-400 uppercase leading-none mt-1 text-center whitespace-nowrap">EXTRAS</span>
-                                    </div>
-                                    <div className="flex flex-col items-center flex-1">
-                                        <div className="h-4 md:h-5 flex items-center">
-                                            <span className="font-black text-[11px] md:text-sm leading-none text-emerald-600">
-                                                {formatMoney(weeklySummary.estimatedPayout)}
-                                            </span>
-                                        </div>
-                                        <span className="text-[7px] md:text-[10px] font-bold text-gray-400 uppercase leading-none mt-1 text-center">Importe</span>
-                                    </div>
-                                </div>
-
+                                {historyWeek ? (
+                                    <WeekCard
+                                        week={historyWeek as any}
+                                        idx={0}
+                                        filterMonth={weekFilterMonth}
+                                        filterYear={weekFilterYear}
+                                        onDayClick={(ymd) => {
+                                            const [y, m, d] = ymd.split('-').map(Number);
+                                            setSelectedDayDate(new Date(y, m - 1, d));
+                                            setIsDayDetailModalOpen(true);
+                                        }}
+                                        showWeekOverrides={false}
+                                    />
+                                ) : !weekLoading ? (
+                                    <p className="text-center text-sm text-zinc-500 py-10">Sin datos</p>
+                                ) : null}
                             </div>
                         </Surface>
                     </div>

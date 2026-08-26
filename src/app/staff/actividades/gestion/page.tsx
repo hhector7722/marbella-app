@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { getGestionActivitiesAction, updateActivityAction, mergeActivitiesAction } from './actions';
 
 interface GestionActivity {
@@ -209,8 +210,8 @@ export default function GestionActividadesPage() {
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full overflow-x-auto">
-        <table className="w-full text-left text-sm text-slate-700 min-w-[320px]">
-          <thead className="bg-[#36606F] text-[10px] sm:text-xs uppercase font-semibold text-white/90">
+        <table data-component={TABLE_COMPONENT_ID} data-instance="actividades-catalogo" className="w-full text-left text-sm text-slate-700 min-w-[320px]">
+          <thead>
             <tr>
               <th className="px-2 sm:px-3 py-2 sm:py-3 w-8"></th>
               <th className="px-2 sm:px-4 py-2 sm:py-3">Nombre</th>

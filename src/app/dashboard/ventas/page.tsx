@@ -12,6 +12,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { format, startOfMonth, endOfMonth, isSameDay, addDays, subDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, getBusinessHourFromTicket } from '@/lib/utils';
+import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { formatTicketTimeMadrid } from '@/utils/date-utils';
 import { toast } from 'sonner';
 import { BUSINESS_HOURS } from '@/lib/constants';
@@ -808,8 +809,8 @@ export default function VentasPage() {
                                     </div>
                                 ) : (
                                     <div className="w-full bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden print-table-ventas">
-                                        <table className="w-full text-left border-collapse">
-                                            <thead className="bg-[#36606F] text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em] border-b border-[#36606F]">
+                                        <table data-component={TABLE_COMPONENT_ID} data-instance="ventas-tickets" className="w-full text-left border-collapse">
+                                            <thead>
                                                 <tr>
                                                     <th className="py-4 px-3 md:px-6 whitespace-nowrap">Hora</th>
                                                     <th className="py-4 px-3 md:px-6 whitespace-nowrap">Documento</th>
@@ -946,8 +947,8 @@ export default function VentasPage() {
                                     </div>
                                 ) : (
                                     <div className="w-full bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden print-table-ventas">
-                                        <table className="w-full text-left border-collapse">
-                                            <thead className="bg-[#36606F] text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em] border-b border-[#36606F]">
+                                        <table data-component={TABLE_COMPONENT_ID} data-instance="ventas-productos" className="w-full text-left border-collapse">
+                                            <thead>
                                                 <tr>
                                                     <th className="py-4 px-3 md:px-6 whitespace-nowrap">Producto</th>
                                                     <th className="py-4 px-2 md:px-4 text-center whitespace-nowrap">Cant</th>
@@ -990,8 +991,8 @@ export default function VentasPage() {
                                 </div>
                             ) : (
                                 <div className="w-full bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden print-table-ventas">
-                                    <table className="w-full text-left border-collapse">
-                                        <thead className="bg-[#36606F] text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em] border-b border-[#36606F]">
+                                    <table data-component={TABLE_COMPONENT_ID} data-instance="ventas-horas" className="w-full text-left border-collapse">
+                                        <thead>
                                             <tr>
                                                 <th className="py-4 px-3 md:px-6 whitespace-nowrap">Horas</th>
                                                 <th className="py-4 px-2 md:px-4 text-center whitespace-nowrap">Cant</th>

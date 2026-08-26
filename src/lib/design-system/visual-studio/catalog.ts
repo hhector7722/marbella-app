@@ -489,9 +489,14 @@ export const STUDIO_ELEMENTS: StudioElement[] = [
         label: 'Table / T8',
         group: 'piezas',
         status: 'BORRADOR / PROPUESTA',
-        summary: 'Composición, no Table.tsx. Thead de marca y tabular-nums siguen abiertos.',
+        summary: 'Composición, no Table.tsx. Thead de marca: un cambio pinta todas las tablas operativas.',
         blueprintNeedle: '| Table / T8 |',
-        sourceFiles: [],
+        sourceFiles: [
+            'src/lib/design-system/table.ts',
+            'src/app/globals.css',
+            'src/app/dashboard/ventas/page.tsx',
+            'src/components/ledger/ManagerLedgerView.tsx',
+        ],
         impactPatterns: ['<table', '<thead'],
         applyKind: 'blueprint-only',
         properties: [

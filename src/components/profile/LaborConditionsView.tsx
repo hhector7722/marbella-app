@@ -259,9 +259,10 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
   const cardHeader = (title: string, opts?: { withBack?: boolean }) => (
     <div
       className={cn(
-        'flex shrink-0 items-center gap-1 bg-[#36606F] px-2 py-2 text-white',
+        'flex shrink-0 items-center gap-1 px-2 py-2',
         !opts?.withBack && 'px-4 py-3',
       )}
+      data-element="block-header"
     >
       {opts?.withBack ? (
         <button
@@ -331,17 +332,17 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
                     Sin condiciones vigentes. Puedes definirlas ahora.
                   </p>
                 )}
-                <button
+                <div className="mt-4">
+                <Button
                   type="button"
+                  variant="primary"
+                  instance="labor-conditions-definir"
                   onClick={startEditVigente}
-                  className={cn(
-                    'mt-4 flex w-full min-h-12 shrink-0 items-center justify-center rounded-xl',
-                    'bg-[#36606F] px-4 text-[10px] font-black uppercase tracking-widest text-white',
-                    'active:scale-[0.98]',
-                  )}
+                  layout="fill"
                 >
                   {vigente ? 'Editar condiciones vigentes' : 'Definir condiciones'}
-                </button>
+                </Button>
+                </div>
                 {vigente ? (
                   <div className="mt-2">
                     <Button
@@ -362,8 +363,8 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
               {hostedInPageScreen ? (
                 <h2 className="px-1 pb-2 text-sm font-semibold text-zinc-900">Histórico contractual</h2>
               ) : (
-                <div className="bg-[#36606F] px-4 py-3">
-                  <h2 className="text-sm font-semibold text-white">Histórico contractual</h2>
+                <div data-element="block-header">
+                  <h2 data-element="title">Histórico contractual</h2>
                 </div>
               )}
               <div className="p-4">

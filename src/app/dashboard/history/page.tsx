@@ -36,6 +36,7 @@ import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import { Button } from '@/components/ui/button';
 import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import {
     formatMonthYear,
@@ -1781,8 +1782,8 @@ export default function HistoryPage() {
                                                 <p className="text-[10px] font-black uppercase tracking-widest">Sin actividad</p>
                                             </div>
                                         ) : (
-                                            <table className="w-full text-left border-collapse table-fixed md:table-auto">
-                                                <thead className="bg-[#36606F] text-white text-[7px] md:text-[8.5px] font-black uppercase tracking-wide md:tracking-tight border-b border-[#36606F]">
+                                            <table data-component={TABLE_COMPONENT_ID} data-instance="cierres-tabla" className="w-full text-left border-collapse table-fixed md:table-auto">
+                                                <thead>
                                                     <tr>
                                                         <th className="py-1.5 px-0.5 md:px-1 whitespace-nowrap">Fecha</th>
                                                         <th className="py-1.5 px-0.5 md:px-1 text-right whitespace-nowrap">Ventas €</th>

@@ -607,10 +607,6 @@ type LegendItem = {
   swatchOutline?: boolean
 }
 
-/** Misma altura visual que cabeceras de sección (p. ej. Margen producto). */
-const SECTION_HEADER_CLASS =
-  'bg-[#36606F] px-3 md:px-4 py-2.5 flex h-10 min-h-10 max-h-10 items-center justify-between gap-2 shrink-0'
-
 function SectionTitleRow({
   title,
   legend,
@@ -621,8 +617,8 @@ function SectionTitleRow({
   actions?: ReactNode
 }) {
   return (
-    <div className={SECTION_HEADER_CLASS}>
-      <h2 className="text-[10px] lg:text-sm font-black uppercase tracking-wider text-white leading-tight shrink-0">
+    <div data-element="block-header" className="h-10 min-h-10 max-h-10 justify-between">
+      <h2 data-element="title" className="lg:text-sm leading-tight shrink-0">
         {title}
       </h2>
       {(actions || (legend && legend.length > 0)) && (
@@ -1494,12 +1490,14 @@ export default function InsightsClient({
                     <p className="text-[10px] lg:text-sm font-semibold text-zinc-600 leading-tight">
                       Mapea recetas con coste en /recipes
                     </p>
-                    <Link
-                      href="/recipes"
-                      className="inline-flex min-h-10 lg:min-h-12 items-center justify-center rounded-xl bg-[#36606F] px-4 lg:px-6 text-[10px] lg:text-sm font-black uppercase tracking-wide text-white active:scale-95"
+                    <Button
+                      type="button"
+                      variant="primary"
+                      instance="insights-ir-recetas"
+                      onClick={() => router.push('/recipes')}
                     >
                       Ir a recetas
-                    </Link>
+                    </Button>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-1 min-w-0">

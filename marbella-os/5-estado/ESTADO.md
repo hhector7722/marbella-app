@@ -27,7 +27,7 @@ El producto está en producción y sostiene la operación diaria del negocio. El
 
 ## Funciona y se usa a diario
 
-- **Fichaje y asistencia.** Fichaje, historial propio, vista de equipo y edición por día. La vista de asistencia se unificó: una sola pantalla con estética única para persona y para equipo.
+- **Fichaje y asistencia.** Fichaje, historial propio, vista de equipo y edición por día. La tarjeta de una persona es la misma en Asistencia, mosaico Staff y horas extras. La vista de plantilla (equipo) es otra tarjeta.
 - **Venta y sala.** Radar de sala en vivo y análisis de ventas. Los documentos que no son venta se excluyen correctamente de ventas, pendientes y cierre.
 - **Cocina.** Pantalla de cocina con tandas, color por tiempo de espera y cierre manual.
 - **Caja y tesorería.** Cierre diario con recuento por denominación, historial de cierres, movimientos, arqueo, cambio entre cajas y libro mayor con saldo acumulado.

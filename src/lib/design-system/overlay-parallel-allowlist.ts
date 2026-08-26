@@ -23,7 +23,6 @@ export const LEGACY_PARALLEL_OVERLAY_ALLOWLIST = [
     'src/app/not-found.tsx',
     'src/app/playground/studio/components/ValidationPanel.tsx',
     'src/app/playground/studio/page.tsx',
-    'src/app/recipes/page.tsx',
     'src/app/reporte/page.tsx',
     'src/app/staff/history/page.tsx',
     'src/components/dashboards/StaffDashboardView.tsx',

@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { Surface } from '@/components/ui/Surface';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import {
   formatLocalIsoDateLabel,
   formatTipInt,
@@ -544,9 +545,9 @@ export default function TipsDashboardView({
                 </div>
               )}
               <div className="isolate overflow-x-hidden touch-pan-y overscroll-y-auto md:overflow-x-visible">
-                <table className="w-full border-collapse table-fixed">
+                <table data-component={TABLE_COMPONENT_ID} data-instance="propinas-reparto" className="w-full border-collapse table-fixed">
                   <thead>
-                    <tr className="align-middle bg-ds-marca text-white">
+                    <tr className="align-middle">
                       <th
                         style={{ width: colWidths.name }}
                         className={tipNameThClass}

@@ -126,12 +126,9 @@ export function UsageFilters({ filters, users }: UsageFiltersProps) {
           {userFilterLabel}
         </button>
 
-        <button
-          type="submit"
-          className="inline-flex h-12 shrink-0 items-center justify-center rounded-xl bg-[#36606F] px-4 text-xs font-semibold text-white"
-        >
+        <Button type="submit" variant="primary" instance="usage-filters-ok">
           OK
-        </button>
+        </Button>
 
         <Link
           href="/dashboard/uso"

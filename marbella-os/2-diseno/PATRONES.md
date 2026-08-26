@@ -112,11 +112,12 @@ Para revisar y comparar: registros, albaranes, precios, movimientos, líneas de 
 
 El patrón propio del dominio de horas: una semana de negocio como unidad visual.
 
-**Anatomía**: cabecera de días de lunes a domingo, siete celdas de día con las magnitudes del día, y un pie de resumen con las magnitudes de la semana: horas, pendientes, extras e importe.
+**Anatomía**: cabecera de días de lunes a domingo, siete celdas de día con las magnitudes del día, y —en la tarjeta de una persona— un pie de resumen con las magnitudes de la semana: horas, pendientes, extras e importe. La vista de plantilla omite el pie.
 
 **Reglas**:
 - La cabecera de días aparece una sola vez, en la primera semana de la lista.
-- **La estética es idéntica en la vista de una persona y en la vista de todo el equipo.** Solo cambia el contenido de la celda: una persona con sus magnitudes, o varias personas con sus fichajes. Nunca el diseño.
+- **La tarjeta de una persona es una.** Asistencia de un trabajador, el mosaico Staff y el historial al pulsar un trabajador en horas extras pintan la misma pieza: cabecera LUN–DOM, celdas de día y pie Horas / Pendiente / Extras / Importe.
+- **La vista de plantilla (todos los trabajadores) es otra tarjeta.** Iniciales y fichajes por día, sin pie de resumen. No se unifica con la de una persona.
 - Las celdas tienen alto mínimo fijo y no crecen con el contenido; el exceso se trunca con contador.
 - El pie de resumen mantiene su altura aunque no tenga contenido, para no romper el ritmo vertical de la lista.
 - Los controles de decisión de la semana (modo bolsa o pago, contrato, aplicar) viven en el pie, no en un modo aparte.

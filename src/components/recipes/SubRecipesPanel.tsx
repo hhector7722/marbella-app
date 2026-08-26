@@ -128,9 +128,9 @@ export function SubRecipesPanel({ recipeId }: { recipeId: string }) {
         'md:col-span-2'
       )}
     >
-      <div className="bg-[#36606F] px-4 py-2 shrink-0 flex items-center gap-2">
+      <div data-element="block-header">
         <UtensilsCrossed className="w-3.5 h-3.5 text-white/80" />
-        <h2 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Sub-recetas del menú</h2>
+        <h2 data-element="title">Sub-recetas del menú</h2>
       </div>
       <div className="p-4 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_minmax(120px,140px)] gap-3 items-end">

@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { namedEntitySummary } from '@/lib/usage/modal-apply';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 
 interface LedgerRow {
     id: string;
@@ -390,8 +391,8 @@ export default function ManagerLedgerView() {
                         <div className="p-3 bg-white">
                             <div className="rounded-[1.5rem] overflow-hidden border border-zinc-100 shadow-xl">
                                 <div className="w-full">
-                                    <table className="w-full text-left font-sans">
-                                        <thead className="bg-[#36606F] text-white">
+                                    <table data-component={TABLE_COMPONENT_ID} data-instance="libro-mayor" className="w-full text-left font-sans">
+                                        <thead>
                                             <tr className="text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em]">
                                                 <th className="px-3 md:px-6 py-4 w-[22%]">FECHA</th>
                                                 <th className="px-2 md:px-6 py-4 w-[38%]">CONCEPTO</th>
@@ -577,9 +578,16 @@ export default function ManagerLedgerView() {
                                 </div>
                             </div>
                             <div className="mt-8">
-                                <button type="submit" disabled={isSaving} className={`w-full h-14 rounded-2xl text-white font-black uppercase tracking-widest text-[10px] active:scale-95 transition-all shadow-xl ${type === 'entrada' ? 'bg-emerald-500 shadow-emerald-200' : 'bg-[#36606F] shadow-blue-200'} disabled:opacity-50 flex items-center justify-center gap-2`}>
-                                    {isSaving ? 'Guardando...' : 'Confirmar'}
-                                </button>
+                                <Button
+                                    type="submit"
+                                    variant="primary"
+                                    instance="ledger-confirmar-apunte"
+                                    disabled={isSaving}
+                                    loading={isSaving}
+                                    loadingLabel="Guardando..."
+                                >
+                                    Confirmar
+                                </Button>
                             </div>
                         </form>
             </Modal>
