@@ -12,6 +12,10 @@ export function DenominationStepper({
     stockIssue = false,
     ariaMinus,
     ariaPlus,
+    className,
+    inputClassName,
+    minusClassName,
+    plusClassName,
 }: {
     value: number;
     onAdjust: (delta: number) => void;
@@ -19,6 +23,10 @@ export function DenominationStepper({
     stockIssue?: boolean;
     ariaMinus?: string;
     ariaPlus?: string;
+    className?: string;
+    inputClassName?: string;
+    minusClassName?: string;
+    plusClassName?: string;
 }) {
     return (
         <div
@@ -26,14 +34,18 @@ export function DenominationStepper({
                 'mx-auto flex h-8 w-[86%] items-center justify-between overflow-hidden rounded-lg border bg-white shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1',
                 stockIssue
                     ? 'border-rose-300 focus-within:border-rose-400 focus-within:ring-rose-200'
-                    : 'border-zinc-200 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20'
+                    : 'border-zinc-200 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20',
+                className
             )}
         >
             <button
                 type="button"
                 onClick={() => onAdjust(-1)}
                 aria-label={ariaMinus}
-                className="flex h-full w-5 shrink-0 items-center justify-center text-zinc-400 transition-colors hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100"
+                className={cn(
+                    'flex h-full w-5 shrink-0 items-center justify-center text-zinc-400 transition-colors hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100',
+                    minusClassName
+                )}
             >
                 <Minus size={12} strokeWidth={3} />
             </button>
@@ -43,13 +55,19 @@ export function DenominationStepper({
                 value={value || ''}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder=""
-                className="h-full w-0 min-w-0 flex-1 bg-transparent p-0 text-center text-[9px] font-black tabular-nums tracking-tighter text-zinc-700 outline-none transition-colors focus:bg-blue-50/20"
+                className={cn(
+                    'h-full w-0 min-w-0 flex-1 bg-transparent p-0 text-center text-[9px] font-black tabular-nums tracking-tighter text-zinc-700 outline-none transition-colors focus:bg-blue-50/20',
+                    inputClassName
+                )}
             />
             <button
                 type="button"
                 onClick={() => onAdjust(1)}
                 aria-label={ariaPlus}
-                className="flex h-full w-5 shrink-0 items-center justify-center text-zinc-400 transition-colors hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100"
+                className={cn(
+                    'flex h-full w-5 shrink-0 items-center justify-center text-zinc-400 transition-colors hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100',
+                    plusClassName
+                )}
             >
                 <Plus size={12} strokeWidth={3} />
             </button>

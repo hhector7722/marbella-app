@@ -446,6 +446,7 @@ function assertFooterButtonsHaveNoIcon(rel: string, chunk: string): void {
         );
         searchFrom = idx + 7;
     }
+    if (/<CashCountFooter\b/.test(chunk)) return;
     assert.ok(found > 0, `${rel} footer debe usar <Button>`);
 }
 
@@ -516,10 +517,9 @@ describe('Piloto Button en footers oficiales', () => {
             join(REPO_ROOT, 'src/components/CashClosingModal.tsx'),
             'utf8'
         );
-        assert.equal((cashChange.match(/layout="fill"/g) || []).length, 2);
+        assert.equal((cashChange.match(/layout="fill"/g) || []).length, 0);
         assert.equal((cashClosing.match(/layout="fill"/g) || []).length, 0);
         for (const rel of PILOT_FOOTER_HOSTS) {
-            if (rel.includes('CashChange')) continue;
             const source = readFileSync(join(REPO_ROOT, rel), 'utf8');
             assert.equal(
                 source.includes('layout="fill"'),

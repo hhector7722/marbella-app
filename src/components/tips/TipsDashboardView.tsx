@@ -17,6 +17,7 @@ import {
   type TimeFilterValue,
 } from '@/components/time/time-filter-types';
 import { CashDenominationForm, TIP_POOL_CASH_FORM_ID } from '@/components/CashDenominationForm';
+import { CashCountFooter } from '@/components/cash/CashCountFooter';
 import { TipOverrideModal, type TipOverrideDraft } from '@/components/tips/TipOverrideModal';
 import { TipConfirmDistributionModal } from '@/components/tips/TipConfirmDistributionModal';
 import { TipDistributionHistorySection } from '@/components/tips/TipDistributionHistorySection';
@@ -927,33 +928,16 @@ export default function TipsDashboardView({
             cashModal.poolType === 'weekday' ? 'Bote propina entre semana' : 'Bote propina fin de semana'
           }
           footer={
-            <div className="flex w-full flex-wrap items-center justify-end gap-2">
-              <div className="mr-auto flex items-center gap-2 shrink-0">
-                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Total</span>
-                <span className="text-base font-black tabular-nums text-zinc-800">
-                  {cashModalTotal > 0.005 ? `${cashModalTotal.toFixed(2)}€` : ' '}
-                </span>
-              </div>
-              <Button
-                type="button"
-                variant="secondary"
-                instance={`tips-cash-${cashModal.poolType}-cancel`}
-                onClick={() => {
-                  setCashModal(null);
-                  setCashModalTotal(0);
-                }}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                variant="primary"
-                instance={`tips-cash-${cashModal.poolType}-submit`}
-                form={TIP_POOL_CASH_FORM_ID}
-              >
-                Guardar
-              </Button>
-            </div>
+            <CashCountFooter
+              total={cashModalTotal}
+              instancePrefix={`tips-cash-${cashModal.poolType}`}
+              onCancel={() => {
+                setCashModal(null);
+                setCashModalTotal(0);
+              }}
+              saveType="submit"
+              saveForm={TIP_POOL_CASH_FORM_ID}
+            />
           }
         >
           <CashDenominationForm

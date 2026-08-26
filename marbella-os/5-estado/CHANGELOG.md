@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-26
 
+- **Todos los recuentos de efectivo pintan igual.** Propinas, entradas, retiradas, arqueos, cierre, cambio, compra y el desglose de un movimiento: total abajo, Cancelar y Guardar en el pie. La fecha, cuando toca, va en la cabecera. Las cajas de cantidad se estrechan un poco para que las columnas respiren.
+
 - **Siguiente de cerrar caja deja de ser pastilla.** El avance del cierre (y Ver resumen del arqueo) es el mismo botón compacto a la derecha, no una barra verde a todo el ancho.
 
 - **El periodo va en la cabecera, con el mismo filtro a la derecha.** Flechas y fecha en la franja petróleo; el icono de filtro no se convierte en una cruz. Tablas y calendarios empiezan más arriba. Los botones dejan de parecer pastilla. La tabla de ventas cabe entera, más compacta, sin scroll horizontal.

@@ -1,67 +1,63 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Save, ShoppingCart, ArrowRightLeft, ArrowRight, Minus, Plus, Wand2, Loader2 } from 'lucide-react';
-import Image from 'next/image';
+import { Wand2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
+import { DENOMINATIONS } from '@/lib/constants';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { DenominationZoomModal } from '@/components/ui/DenominationZoomModal';
 import { getBoxInventoryForAutofill } from '@/app/actions/cash-box-inventory';
 import { greedyCashBreakdown, hasAnyInventoryStock } from '@/lib/greedy-cash-breakdown';
+import { DenominationCountGrid } from '@/components/cash/DenominationCountGrid';
+import { formatCashCountDateInput } from '@/components/cash/CashCountDateButton';
 
 interface CashDenominationFormProps {
     type: 'in' | 'out' | 'audit';
     boxName: string;
-    /** Caja operativa / cambio — inventario para autorrelleno */
     boxId?: string;
-    onSubmit: (total: number, breakdown: any, notes: string, date?: string) => void; // Updated signature
+    onSubmit: (total: number, breakdown: Record<number, number>, notes: string, date?: string) => void;
     onCancel: () => void;
-    initialCounts?: any;
+    initialCounts?: Record<number, number>;
     availableStock?: Record<number, number>;
     initialNotes?: string;
-    initialDate?: string; // New prop
+    initialDate?: string;
     submitLabel?: string;
-    isEditing?: boolean; // New prop
-    forcePurchaseMode?: boolean; // New prop
-    /** Modal botes propinas / host con chrome Modal: solo contenido funcional. */
+    isEditing?: boolean;
+    forcePurchaseMode?: boolean;
     variant?: 'default' | 'tipPool' | 'embedded';
-    /** Solo tipPool: notifica el total en vivo al host (p. ej. footer del Modal). */
     onTotalChange?: (total: number) => void;
+    formId?: string;
+    selectedDate?: string;
+    onSelectedDateChange?: (next: string) => void;
 }
 
 export const TIP_POOL_CASH_FORM_ID = 'tips-cash-denomination-form';
+export const CASH_COUNT_FORM_ID = 'cash-denomination-form';
 
 function inventoryFromStockMap(stock: Record<number, number>) {
     return DENOMINATIONS.map((d) => ({ denomination: d, quantity: stock[d] || 0 })).filter((r) => r.quantity > 0);
 }
 
-const ENTRADA_SALIDA_BTN_BASE =
-    'shrink-0 inline-flex items-center justify-center min-h-12 rounded-xl font-black uppercase tracking-widest transition-all active:scale-95';
-
 export const CashDenominationForm = ({
     type,
-    boxName,
     boxId,
     onSubmit,
-    onCancel,
     initialCounts = {},
     availableStock = {},
     initialNotes = '',
     initialDate,
-    submitLabel,
     isEditing = false,
     forcePurchaseMode = false,
     variant = 'default',
     onTotalChange,
+    formId = CASH_COUNT_FORM_ID,
+    selectedDate: selectedDateProp,
+    onSelectedDateChange,
 }: CashDenominationFormProps) => {
     const [counts, setCounts] = useState<Record<number, number>>(initialCounts);
     const countsSyncKeyRef = useRef('');
 
-    // Sync counts when initialCounts changes (important for Arqueos).
-    // Comparación por contenido: evita reset al re-renderizar el host con nueva referencia.
     useEffect(() => {
         const key = JSON.stringify(initialCounts ?? {});
         if (key === countsSyncKeyRef.current) return;
@@ -72,21 +68,11 @@ export const CashDenominationForm = ({
     }, [initialCounts]);
 
     const [notes, setNotes] = useState(initialNotes);
-    // Initialize date state. If initialDate is provided, use it, otherwise default to now (though usually for new movements we rely on DB default, but here we can be explicit if needed, or just leave undefined for new).
-    // For editing, initialDate will be present.
-    // datetime-local input expects YYYY-MM-DDThh:mm
-    const formatForInput = (dateStr?: string) => {
-        if (!dateStr) return '';
-        const d = new Date(dateStr);
-        return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-    };
+    const nowStr = formatCashCountDateInput();
+    const [internalDate, setInternalDate] = useState(initialDate ? formatCashCountDateInput(new Date(initialDate)) : nowStr);
+    const selectedDate = selectedDateProp ?? internalDate;
+    const setSelectedDate = onSelectedDateChange ?? setInternalDate;
 
-    // If strict editing is required, we manage state. 
-    // Default to NOW if no initialDate provided
-    const nowStr = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-    const [selectedDate, setSelectedDate] = useState(initialDate ? formatForInput(initialDate) : nowStr);
-
-    // 5. PURCHASE MODE STATES
     const [isPurchaseMode, setIsPurchaseMode] = useState(forcePurchaseMode || false);
     const [purchasePrice, setPurchasePrice] = useState<number | ''>('');
     const [receivedCounts, setReceivedCounts] = useState<Record<number, number>>({});
@@ -96,22 +82,12 @@ export const CashDenominationForm = ({
     const [outTargetAmount, setOutTargetAmount] = useState<number | ''>('');
     const [autofillLoading, setAutofillLoading] = useState(false);
 
-    const calculateTotal = (c: Record<number, number>) => DENOMINATIONS.reduce((acc, val) => acc + (val * (c[val] || 0)), 0);
+    const calculateTotal = (c: Record<number, number>) =>
+        DENOMINATIONS.reduce((acc, val) => acc + val * (c[val] || 0), 0);
     const isAudit = type === 'audit';
     const isTipPool = variant === 'tipPool';
-    const isEmbedded = variant === 'embedded';
-    const suppressChromeHeader = isTipPool || isEmbedded;
-
-    const showOutAutofill =
-        type === 'out' && !isAudit && variant === 'default' && !isEditing;
-
-    /** Entrada / salida / arqueo (caja inicial / movimientos) */
-    const isInEntradaLayout = type === 'in' && !isAudit && variant === 'default';
-    const isOutSalidaLayout = type === 'out' && !isAudit && variant === 'default';
-    const isEntradaSalidaFlow = isInEntradaLayout || isOutSalidaLayout;
-    const isAuditLayout = isAudit && variant === 'default';
-    const isSimplifiedHeader = isInEntradaLayout || isOutSalidaLayout || isAuditLayout;
-    const isFloatingDateInput = isInEntradaLayout || isAuditLayout;
+    const showOutAutofill = type === 'out' && !isAudit && !isEditing;
+    const isOutSalidaLayout = type === 'out' && !isAudit;
 
     const autofillTargetAmount = isPurchaseMode
         ? (typeof purchasePrice === 'number' ? purchasePrice : 0)
@@ -171,290 +147,185 @@ export const CashDenominationForm = ({
         }
     };
 
-    const renderAutofillButton = (className?: string, iconOnly = false) => (
-        <button
-            type="button"
-            onClick={() => void handleAutofillBreakdown()}
-            disabled={autofillDisabled}
-            aria-label="Autorrellenar desglose"
-            title="Autorrellenar"
-            className={cn(
-                'min-h-10 shrink-0 inline-flex items-center justify-center rounded-xl text-white transition-all active:scale-95',
-                iconOnly ? 'min-w-10 w-10 px-0' : 'gap-1.5 px-3 text-[10px] font-black uppercase tracking-widest',
-                autofillDisabled
-                    ? 'bg-[#36606F]/40 opacity-50 cursor-not-allowed'
-                    : 'bg-[#36606F] hover:brightness-110 shadow-sm',
-                className,
-            )}
-        >
-            {autofillLoading ? (
-                <Loader2 size={14} className="animate-spin" aria-hidden />
-            ) : (
-                <Wand2 size={14} strokeWidth={2.5} aria-hidden />
-            )}
-            {!iconOnly && 'Autorrellenar'}
-        </button>
-    );
-
     const handleCountChange = (val: number, qty: string) => {
         const numQty = parseInt(qty) || 0;
         if (isPurchaseMode && purchaseTab === 'received') {
-            setReceivedCounts(prev => ({ ...prev, [val]: numQty }));
+            setReceivedCounts((prev) => ({ ...prev, [val]: numQty }));
         } else {
-            setCounts(prev => ({ ...prev, [val]: numQty }));
+            setCounts((prev) => ({ ...prev, [val]: numQty }));
         }
     };
 
     const handleAdjust = (val: number, delta: number) => {
         if (isPurchaseMode && purchaseTab === 'received') {
-            setReceivedCounts(prev => ({ ...prev, [val]: (prev[val] || 0) + delta }));
+            setReceivedCounts((prev) => ({ ...prev, [val]: Math.max(0, (prev[val] || 0) + delta) }));
         } else {
-            setCounts(prev => ({ ...prev, [val]: (prev[val] || 0) + delta }));
+            setCounts((prev) => ({ ...prev, [val]: Math.max(0, (prev[val] || 0) + delta) }));
         }
     };
 
-
     const totalGiven = calculateTotal(counts);
     const totalReceived = calculateTotal(receivedCounts);
-    const total = isPurchaseMode ? (purchasePrice || 0) : totalGiven;
-
-    useEffect(() => {
-        if (isTipPool && onTotalChange) {
-            onTotalChange(totalGiven);
-        }
-    }, [isTipPool, onTotalChange, totalGiven]);
-
     const netDifference = totalGiven - totalReceived;
     const isMathCorrect = Math.abs(netDifference - (purchasePrice || 0)) < 0.01;
-    // check stock issue for OUTs
-    const hasStockIssue = ((type === 'out' && !isPurchaseMode) || (isPurchaseMode && purchaseTab === 'given')) && DENOMINATIONS.some(d => (counts[d] || 0) > (availableStock[d] || 0));
-    // canSubmitPurchase allows submission if Math is Correct, OR if they are just doing a simple exit of money (given = price) without expecting change
     const canSubmitPurchase = isMathCorrect && (purchasePrice || 0) > 0 && totalGiven >= (purchasePrice || 0);
 
-    // Solo se llama al pulsar el botón Guardar/Confirmar; nunca en onChange, onBlur ni al cerrar.
+    useEffect(() => {
+        onTotalChange?.(isPurchaseMode ? (typeof purchasePrice === 'number' ? purchasePrice : 0) : totalGiven);
+    }, [isPurchaseMode, onTotalChange, purchasePrice, totalGiven]);
+
     const handleConfirm = () => {
         if (isPurchaseMode) {
-            const netBreakdown: any = {};
-            DENOMINATIONS.forEach(d => {
+            const netBreakdown: Record<number, number> = {};
+            DENOMINATIONS.forEach((d) => {
                 const net = (counts[d] || 0) - (receivedCounts[d] || 0);
                 if (net !== 0) netBreakdown[d] = net;
             });
-            onSubmit((purchasePrice || 0), netBreakdown, notes || 'Compra', selectedDate ? new Date(selectedDate).toISOString() : undefined);
+            onSubmit(
+                purchasePrice || 0,
+                netBreakdown,
+                notes || 'Compra',
+                selectedDate ? new Date(selectedDate).toISOString() : undefined,
+            );
         } else {
             onSubmit(totalGiven, counts, notes, selectedDate ? new Date(selectedDate).toISOString() : undefined);
         }
     };
 
-    const entradaSalidaGuardarDisabled = isPurchaseMode ? !canSubmitPurchase : totalGiven === 0;
-    const entradaSalidaGuardarClass = isPurchaseMode
-        ? (canSubmitPurchase ? 'bg-emerald-500 hover:brightness-110' : 'bg-zinc-300 opacity-50 cursor-not-allowed')
-        : (totalGiven === 0 ? 'bg-gray-300 opacity-50 cursor-not-allowed' : 'bg-emerald-500 hover:brightness-110');
+    const activeCounts = isPurchaseMode && purchaseTab === 'received' ? receivedCounts : counts;
+    const showStock = ((!isPurchaseMode && type === 'out') || (isPurchaseMode && purchaseTab === 'given')) &&
+        Object.values(availableStock).some((n) => n > 0);
 
-    const bgClass = isAudit ? 'bg-orange-400' : (type === 'in' ? 'bg-emerald-400' : 'bg-rose-400');
-
-    const tree = (
-        <div className={cn(
-            'relative flex flex-col bg-white',
-            isTipPool || isEmbedded ? 'min-h-0' : 'h-full overflow-hidden rounded-2xl',
-        )}>
-            {!suppressChromeHeader ? (
-            <div className="bg-[#36606F] px-6 py-2.5 flex items-center gap-3 text-white shrink-0">
-                <div className="flex items-center gap-3 min-w-0 flex-1">
-                    {!isSimplifiedHeader && (
-                        <div className={cn(
-                            "w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shrink-0",
-                            isPurchaseMode ? "bg-orange-500" : (type === 'in' ? "bg-emerald-500" : "bg-rose-500")
-                        )}>
-                            {isPurchaseMode ? <ShoppingCart size={20} className="text-white" /> : (type === 'in' ? <ArrowRightLeft size={20} /> : <ArrowRight size={20} />)}
-                        </div>
-                    )}
-                    <div className="min-w-0">
-                        <h3 className="text-lg font-black uppercase tracking-wider truncate">
-                            {isPurchaseMode ? 'Compra' : (isAudit ? 'Arqueo' : (type === 'in' ? 'Entrada' : 'Salida'))}
-                        </h3>
-                        {!isTipPool && !isSimplifiedHeader && (
-                            <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em] truncate">{boxName}</p>
-                        )}
-                    </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0 min-w-0">
-                    {!isSimplifiedHeader && (
-                        <div className="text-right">
-                            <span className="block text-[8px] uppercase tracking-widest opacity-50 font-black leading-none mb-0.5">
-                                {isPurchaseMode ? 'Precio Final' : 'Total Acumulado'}
-                            </span>
-                            <div className="flex items-baseline justify-end gap-0.5">
-                                <span className="text-xl font-black tabular-nums">{total > 0.005 ? total.toFixed(2) : " "}</span>
-                                <span className="text-xs font-black opacity-50">€</span>
-                            </div>
-                        </div>
-                    )}
-
-                    {isOutSalidaLayout && !isEditing && !forcePurchaseMode && (
-                        <div className="flex items-center gap-2">
-                            <span className="text-[9px] font-black uppercase opacity-70 tracking-widest">Compra</span>
-                            <button
-                                type="button"
-                                onClick={() => setIsPurchaseMode(!isPurchaseMode)}
-                                className={cn(
-                                    "w-10 h-5 rounded-full transition-all relative outline-none shrink-0",
-                                    isPurchaseMode ? "bg-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.4)]" : "bg-white/20"
-                                )}
-                                aria-pressed={isPurchaseMode}
-                                aria-label="Modo compra"
-                            >
-                                <div className={cn(
-                                    "absolute w-3 h-3 bg-white rounded-full top-1 transition-all shadow-sm",
-                                    isPurchaseMode ? "left-6" : "left-1"
-                                )} />
-                            </button>
-                        </div>
-                    )}
-
-                    {type === 'out' && !isEditing && !forcePurchaseMode && !isOutSalidaLayout && (
-                        <div className="flex flex-col items-center gap-1 pr-1 border-l border-white/10 pl-4 h-10 justify-center">
-                            <span className="text-[7px] font-black uppercase opacity-50 tracking-widest">Compra</span>
-                            <button
-                                type="button"
-                                onClick={() => setIsPurchaseMode(!isPurchaseMode)}
-                                className={cn(
-                                    "w-10 h-5 rounded-full transition-all relative outline-none",
-                                    isPurchaseMode ? "bg-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.4)]" : "bg-white/20"
-                                )}
-                            >
-                                <div className={cn(
-                                    "absolute w-3 h-3 bg-white rounded-full top-1 transition-all shadow-sm",
-                                    isPurchaseMode ? "left-6" : "left-1"
-                                )} />
-                            </button>
-                        </div>
-                    )}
-
-                    {isEntradaSalidaFlow && (
-                        <div className="text-right min-h-[48px] flex flex-col items-end justify-center shrink-0">
-                            <span className="text-[8px] font-black uppercase tracking-widest text-white/80 leading-none">Total</span>
-                            <span className="text-[12px] font-black tabular-nums text-white leading-none mt-0.5">
-                                {totalGiven > 0.005 ? `${totalGiven.toFixed(2)}€` : ' '}
-                            </span>
-                        </div>
-                    )}
-
-                    {!isEntradaSalidaFlow && (
-                        <span className="w-10 h-10 min-h-[48px] min-w-[48px]" aria-hidden />
-                    )}
-                </div>
-            </div>
-            ) : null}
-            <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
-            <FloatingCalculatorFab
-                isOpen={calculatorOpen}
-                onToggle={() => setCalculatorOpen(true)}
-                className="bottom-20 right-4 sm:bottom-24 sm:right-6"
-            />
-            {zoomDenom !== null && (
-                <DenominationZoomModal
-                    isOpen={true}
-                    onClose={() => setZoomDenom(null)}
-                    denomination={zoomDenom}
-                    value={(isPurchaseMode && purchaseTab === 'received' ? receivedCounts[zoomDenom] : counts[zoomDenom]) || 0}
-                    onValueChange={(v) => handleCountChange(zoomDenom, String(v))}
-                    availableStock={((type === 'out' && !isPurchaseMode) || (isPurchaseMode && purchaseTab === 'given')) ? (availableStock[zoomDenom] || 0) : undefined}
+    return (
+        <form
+            id={formId}
+            className="min-h-0"
+            onSubmit={(e) => {
+                e.preventDefault();
+                handleConfirm();
+            }}
+        >
+            <div className="relative flex min-h-0 flex-col bg-white">
+                <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
+                <FloatingCalculatorFab
+                    isOpen={calculatorOpen}
+                    onToggle={() => setCalculatorOpen(true)}
+                    className="bottom-20 right-4 sm:bottom-24 sm:right-6"
                 />
-            )}
-            <div className={cn(
-                isTipPool ? 'min-h-0 space-y-1.5 p-2' : 'flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4',
-            )}>
+                {zoomDenom !== null && (
+                    <DenominationZoomModal
+                        isOpen
+                        onClose={() => setZoomDenom(null)}
+                        denomination={zoomDenom}
+                        value={activeCounts[zoomDenom] || 0}
+                        onValueChange={(v) => handleCountChange(zoomDenom, String(v))}
+                        availableStock={
+                            (type === 'out' && !isPurchaseMode) || (isPurchaseMode && purchaseTab === 'given')
+                                ? availableStock[zoomDenom] || 0
+                                : undefined
+                        }
+                    />
+                )}
 
-                {/* DATE & NOTES & PRICE ROW (oculto en variant tipPool) */}
-                {!isTipPool && isPurchaseMode ? (
-                    <div className="flex flex-col gap-2 px-1">
-                        {/* ROW 1: Fecha y Concepto */}
-                        <div className="grid grid-cols-2 gap-2">
-                            <div className="flex flex-col justify-center bg-blue-500 p-2 rounded-xl border border-white/10 shadow-sm transition-all">
-                                <input
-                                    type="datetime-local"
-                                    value={selectedDate}
-                                    onChange={(e) => setSelectedDate(e.target.value)}
-                                    className="w-full bg-transparent border-none p-0 text-white text-[10px] font-black uppercase tracking-widest outline-none focus:ring-0 cursor-pointer text-center"
-                                />
-                            </div>
-                            <div className="flex flex-col p-2 bg-white rounded-xl border border-zinc-200/50 shadow-sm">
-                                <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Concepto</label>
+                <div className="min-h-0 space-y-1.5 p-2">
+                    {!isTipPool && isPurchaseMode ? (
+                        <div className="flex flex-col gap-2 px-1">
+                            <div className="flex flex-col p-2 bg-white rounded-lg border border-zinc-200/50 shadow-sm">
+                                <label className="mb-1 ml-1 block text-[8px] font-black uppercase tracking-widest text-gray-400">
+                                    Concepto
+                                </label>
                                 <input
                                     type="text"
                                     value={notes}
                                     onChange={(e) => setNotes(e.target.value)}
                                     placeholder="Motivo..."
-                                    className="w-full bg-transparent border-none p-0 text-zinc-600 font-bold outline-none text-xs"
+                                    className="w-full border-none bg-transparent p-0 text-xs font-bold text-zinc-600 outline-none"
                                 />
                             </div>
-                        </div>
-
-                        {/* ROW 2: Precio (+ autorrelleno), Entregado, Cambio */}
-                        <div className="grid grid-cols-3 gap-2">
-                            {/* PRECIO + autorrelleno desglose entregado */}
-                            <div className="col-span-3 sm:col-span-1 flex flex-col gap-2 sm:gap-1.5">
-                                <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
-                                    <div className="flex flex-col flex-1 p-1.5 bg-orange-50/50 rounded-xl border border-orange-100 shadow-sm justify-center min-h-10">
-                                        <label className="block text-[8px] font-black text-orange-400 uppercase tracking-widest mb-1 text-center sm:text-left sm:ml-1">
-                                            Importe total
-                                        </label>
-                                        <div className="flex items-center relative flex-1 sm:max-w-none max-w-[120px] justify-center sm:justify-start mx-auto sm:mx-0 sm:pl-1">
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                min="0"
-                                                value={purchasePrice}
-                                                onChange={(e) => {
-                                                    const val = e.target.value;
-                                                    setPurchasePrice(val === '' ? '' : parseFloat(val));
-                                                }}
-                                                placeholder="0.00"
-                                                className="w-full bg-transparent border-none p-0 text-orange-600 text-sm font-black outline-none focus:ring-0 text-center sm:text-left flex-1 min-w-0 min-h-10 tabular-nums"
-                                            />
-                                            <span className="text-orange-400 font-black sm:static absolute right-0 text-[10px] pointer-events-none opacity-50 sm:ml-0.5">€</span>
+                            <div className="grid grid-cols-3 gap-2">
+                                <div className="col-span-3 flex flex-col gap-2 sm:col-span-1 sm:gap-1.5">
+                                    <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                                        <div className="flex min-h-10 flex-1 flex-col justify-center rounded-lg border border-orange-100 bg-orange-50/50 p-1.5 shadow-sm">
+                                            <label className="mb-1 block text-center text-[8px] font-black uppercase tracking-widest text-orange-400 sm:ml-1 sm:text-left">
+                                                Importe total
+                                            </label>
+                                            <div className="relative mx-auto flex max-w-[120px] flex-1 items-center justify-center sm:mx-0 sm:max-w-none sm:justify-start sm:pl-1">
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0"
+                                                    value={purchasePrice}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        setPurchasePrice(val === '' ? '' : parseFloat(val));
+                                                    }}
+                                                    placeholder="0.00"
+                                                    className="min-h-10 w-full flex-1 min-w-0 border-none bg-transparent p-0 text-center text-sm font-black tabular-nums text-orange-600 outline-none focus:ring-0 sm:text-left"
+                                                />
+                                                <span className="pointer-events-none absolute right-0 text-[10px] font-black text-orange-400 opacity-50 sm:static sm:ml-0.5">
+                                                    €
+                                                </span>
+                                            </div>
                                         </div>
+                                        {showOutAutofill ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => void handleAutofillBreakdown()}
+                                                disabled={autofillDisabled}
+                                                aria-label="Autorrellenar desglose"
+                                                className={cn(
+                                                    'inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-95 sm:w-auto',
+                                                    autofillDisabled
+                                                        ? 'cursor-not-allowed bg-[#36606F]/40 opacity-50'
+                                                        : 'bg-[#36606F] shadow-sm hover:brightness-110',
+                                                )}
+                                            >
+                                                {autofillLoading ? (
+                                                    <Loader2 size={14} className="animate-spin" aria-hidden />
+                                                ) : (
+                                                    <Wand2 size={14} strokeWidth={2.5} aria-hidden />
+                                                )}
+                                                Autorrellenar
+                                            </button>
+                                        ) : null}
                                     </div>
-                                    {showOutAutofill && renderAutofillButton('w-full sm:w-auto shrink-0')}
                                 </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setPurchaseTab('given')}
+                                    className={cn(
+                                        'flex flex-1 flex-col items-center justify-center rounded-lg py-1.5 text-[10px] font-black uppercase tracking-widest transition-all',
+                                        purchaseTab === 'given'
+                                            ? 'scale-[1.02] border border-rose-100 bg-white text-rose-500 shadow-md'
+                                            : 'border border-transparent bg-zinc-100 text-zinc-400 hover:text-zinc-600',
+                                    )}
+                                >
+                                    <span className="text-[8px] uppercase tracking-widest opacity-80">Entregado</span>
+                                    <span className="mt-0.5 text-xs">
+                                        {totalGiven > 0.005 ? `${totalGiven.toFixed(2)}€` : ' '}
+                                    </span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setPurchaseTab('received')}
+                                    className={cn(
+                                        'flex flex-1 flex-col items-center justify-center rounded-lg py-1.5 text-[10px] font-black uppercase tracking-widest transition-all',
+                                        purchaseTab === 'received'
+                                            ? 'scale-[1.02] border border-emerald-100 bg-white text-emerald-500 shadow-md'
+                                            : 'border border-transparent bg-zinc-100 text-zinc-400 hover:text-zinc-600',
+                                    )}
+                                >
+                                    <span className="text-[8px] uppercase tracking-widest opacity-80">Cambio</span>
+                                    <span className="mt-0.5 text-xs">
+                                        {totalReceived > 0.005 ? `${totalReceived.toFixed(2)}€` : ' '}
+                                    </span>
+                                </button>
                             </div>
-
-                            {/* LO QUE DAS / ENTREGADO */}
-                            <button
-                                onClick={() => setPurchaseTab('given')}
-                                className={cn(
-                                    "flex-1 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex flex-col items-center justify-center",
-                                    purchaseTab === 'given' ? "bg-white text-rose-500 shadow-md border border-rose-100 scale-[1.02]" : "bg-zinc-100 text-zinc-400 hover:text-zinc-600 border border-transparent"
-                                )}
-                            >
-                                <span className="text-[8px] opacity-80 uppercase tracking-widest">Entregado</span>
-                                <span className="text-xs mt-0.5">{totalGiven > 0.005 ? `${totalGiven.toFixed(2)}€` : " "}</span>
-                            </button>
-
-                            {/* TU CAMBIO / CAMBIO */}
-                            <button
-                                onClick={() => setPurchaseTab('received')}
-                                className={cn(
-                                    "flex-1 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex flex-col items-center justify-center",
-                                    purchaseTab === 'received' ? "bg-white text-emerald-500 shadow-md border border-emerald-100 scale-[1.02]" : "bg-zinc-100 text-zinc-400 hover:text-zinc-600 border border-transparent"
-                                )}
-                            >
-                                <span className="text-[8px] opacity-80 uppercase tracking-widest">Cambio</span>
-                                <span className="text-xs mt-0.5">{totalReceived > 0.005 ? `${totalReceived.toFixed(2)}€` : " "}</span>
-                            </button>
                         </div>
-                    </div>
-                ) : !isTipPool ? (
-                    isOutSalidaLayout && !isPurchaseMode ? (
+                    ) : !isTipPool && isOutSalidaLayout && !isPurchaseMode ? (
                         <div className="flex flex-col gap-2 px-1">
-                            <div className="flex items-center gap-2 min-h-12">
-                                <input
-                                    type="datetime-local"
-                                    value={selectedDate}
-                                    onChange={(e) => setSelectedDate(e.target.value)}
-                                    className="shrink-0 bg-transparent border-none p-0 text-zinc-700 text-[10px] font-black uppercase tracking-widest outline-none focus:ring-0 cursor-pointer min-h-10"
-                                />
-                                <div className="flex flex-1 items-center min-h-10 min-w-0">
+                            <div className="flex min-h-12 items-center gap-2">
+                                <div className="flex min-h-10 min-w-0 flex-1 items-center">
                                     <input
                                         type="number"
                                         step="0.01"
@@ -466,329 +337,79 @@ export const CashDenominationForm = ({
                                         }}
                                         placeholder="0.00"
                                         aria-label="Importe total"
-                                        className="w-full bg-transparent border-none p-0 text-zinc-800 text-sm font-black outline-none focus:ring-0 tabular-nums min-h-10 text-center"
+                                        className="min-h-10 w-full border-none bg-transparent p-0 text-center text-sm font-black tabular-nums text-zinc-800 outline-none focus:ring-0"
                                     />
-                                    <span className="text-zinc-400 font-black text-[10px] shrink-0 pointer-events-none">€</span>
+                                    <span className="pointer-events-none shrink-0 text-[10px] font-black text-zinc-400">€</span>
                                 </div>
-                                {showOutAutofill && renderAutofillButton(undefined, true)}
+                                {showOutAutofill ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => void handleAutofillBreakdown()}
+                                        disabled={autofillDisabled}
+                                        aria-label="Autorrellenar desglose"
+                                        title="Autorrellenar"
+                                        className={cn(
+                                            'inline-flex h-10 w-10 min-h-10 min-w-10 shrink-0 items-center justify-center rounded-lg text-white transition-all active:scale-95',
+                                            autofillDisabled
+                                                ? 'cursor-not-allowed bg-[#36606F]/40 opacity-50'
+                                                : 'bg-[#36606F] shadow-sm hover:brightness-110',
+                                        )}
+                                    >
+                                        {autofillLoading ? (
+                                            <Loader2 size={14} className="animate-spin" aria-hidden />
+                                        ) : (
+                                            <Wand2 size={14} strokeWidth={2.5} aria-hidden />
+                                        )}
+                                    </button>
+                                ) : null}
+                                {!isEditing && !forcePurchaseMode ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsPurchaseMode(true)}
+                                        className="shrink-0 text-[9px] font-black uppercase tracking-widest text-zinc-500"
+                                    >
+                                        Compra
+                                    </button>
+                                ) : null}
                             </div>
-                            <div className="flex flex-col min-h-10 justify-center">
-                                <input
-                                    type="text"
-                                    value={notes}
-                                    onChange={(e) => setNotes(e.target.value)}
-                                    placeholder="Concepto / motivo..."
-                                    aria-label="Concepto"
-                                    className="w-full bg-transparent border-none p-0 text-zinc-600 font-bold outline-none text-xs min-h-10"
-                                />
-                            </div>
-                        </div>
-                    ) : (
-                    <div className="flex flex-col gap-2 px-1">
-                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                        {isFloatingDateInput ? (
                             <input
-                                type="datetime-local"
-                                value={selectedDate}
-                                onChange={(e) => setSelectedDate(e.target.value)}
-                                className={cn(
-                                    "bg-transparent border-none p-0 text-zinc-700 text-[10px] font-black uppercase tracking-widest outline-none focus:ring-0 cursor-pointer min-h-10",
-                                    isAuditLayout ? "w-full" : "shrink-0",
-                                )}
-                            />
-                        ) : (
-                        <div className={cn(
-                            "flex flex-col justify-center bg-blue-500 p-2 rounded-xl border border-white/10 shadow-sm transition-all",
-                            isAudit && "col-span-full"
-                        )}>
-                            <input
-                                type="datetime-local"
-                                value={selectedDate}
-                                onChange={(e) => setSelectedDate(e.target.value)}
-                                className="w-full bg-transparent border-none p-0 text-white text-[10px] font-black uppercase tracking-widest outline-none focus:ring-0 cursor-pointer text-center"
+                                type="text"
+                                value={notes}
+                                onChange={(e) => setNotes(e.target.value)}
+                                placeholder="Concepto / motivo..."
+                                aria-label="Concepto"
+                                className="min-h-10 w-full border-none bg-transparent p-0 text-xs font-bold text-zinc-600 outline-none"
                             />
                         </div>
-                        )}
-
-                        {!isAudit && (
-                            <div className="flex flex-col p-2 bg-white rounded-xl border border-zinc-200/50 shadow-sm">
-                                <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Concepto / Motivo</label>
-                                <input
-                                    type="text"
-                                    value={notes}
-                                    onChange={(e) => setNotes(e.target.value)}
-                                    placeholder="Ej. Cambio banco, Pago proveedor..."
-                                    className="w-full bg-transparent border-none p-0 text-zinc-600 font-bold outline-none text-xs"
-                                />
-                            </div>
-                        )}
-                    </div>
-                    {showOutAutofill && (
-                        <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
-                            <div className="flex flex-col flex-1 p-2 bg-white rounded-xl border border-zinc-200/50 shadow-sm min-h-12 justify-center">
-                                <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">
-                                    Importe total (€)
-                                </label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    value={outTargetAmount}
-                                    onChange={(e) => {
-                                        const val = e.target.value;
-                                        setOutTargetAmount(val === '' ? '' : parseFloat(val));
-                                    }}
-                                    placeholder="0.00"
-                                    className="w-full bg-transparent border-none p-0 text-zinc-800 text-sm font-black outline-none focus:ring-0 tabular-nums min-h-10"
-                                />
-                            </div>
-                            {renderAutofillButton('w-full sm:w-auto')}
-                        </div>
-                    )}
-                    </div>
-                    )
-                ) : null}
-
-                <div className={cn(
-                    'grid p-0.5',
-                    isTipPool ? 'grid-cols-3 sm:grid-cols-5 gap-y-1 gap-x-1' : 'grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5',
-                )}>
-                    {DENOMINATIONS.map(denom => {
-                        const hasStockIssue = ((type === 'out' && !isPurchaseMode) || (isPurchaseMode && purchaseTab === 'given')) && (counts[denom] || 0) > (availableStock[denom] || 0);
-                        const currentCounts = isPurchaseMode && purchaseTab === 'received' ? receivedCounts : counts;
-                        return (
-                            <div key={denom} className={cn('flex flex-col items-center group transition-all', isTipPool ? 'gap-0.5' : 'gap-1')}>
-                                <div
-                                    role="button"
-                                    tabIndex={0}
-                                    onClick={() => setZoomDenom(denom)}
-                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setZoomDenom(denom); }}
-                                    className={cn(
-                                        'w-full flex items-center justify-center transition-transform group-hover:scale-110 cursor-pointer rounded-lg hover:bg-white/60 focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]/40 focus:ring-offset-1',
-                                        isTipPool ? 'h-8 sm:h-9 min-h-[36px]' : 'h-11 sm:h-14 min-h-[48px]',
-                                    )}
-                                    aria-label={`Editar cantidad de ${denom >= 1 ? `${denom} euros` : `${(denom * 100).toFixed(0)} céntimos`}`}
-                                >
-                                    <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={140} height={140} className="h-full w-auto object-contain drop-shadow-lg pointer-events-none" />
-                                </div>
-                                <div className="text-center w-full">
-                                    <span className={cn(
-                                        'font-black text-gray-500 uppercase tracking-widest block',
-                                        isTipPool ? 'text-[7px] mb-0' : 'text-[9px] mb-0.5',
-                                    )}>
-                                        {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
-                                    </span>
-                                    <div className={cn(
-                                        'flex items-center justify-between w-full bg-white border rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1',
-                                        isTipPool ? 'h-8' : 'h-10',
-                                        hasStockIssue
-                                            ? "border-rose-300 focus-within:border-rose-400 focus-within:ring-rose-200"
-                                            : "border-zinc-200 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20"
-                                    )}>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleAdjust(denom, -1)}
-                                            className={cn(
-                                                'h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0',
-                                                isTipPool ? 'w-5' : 'w-6',
-                                            )}
-                                        >
-                                            <Minus size={isTipPool ? 12 : 14} strokeWidth={3} />
-                                        </button>
-                                        <input
-                                            type="number"
-                                            value={(isPurchaseMode && purchaseTab === 'received' ? receivedCounts[denom] : counts[denom]) || ''}
-                                            onChange={(e) => handleCountChange(denom, e.target.value)}
-                                            placeholder=""
-                                            className={cn(
-                                                'flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 tracking-tighter tabular-nums focus:bg-blue-50/20 transition-colors',
-                                                isTipPool ? 'text-[9px]' : 'text-[10px]',
-                                            )}
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => handleAdjust(denom, 1)}
-                                            className={cn(
-                                                'h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0',
-                                                isTipPool ? 'w-5' : 'w-6',
-                                            )}
-                                        >
-                                            <Plus size={isTipPool ? 12 : 14} strokeWidth={3} />
-                                        </button>
-                                    </div>
-                                    {((!isPurchaseMode && type === 'out') || (isPurchaseMode && purchaseTab === 'given')) && (availableStock[denom] || 0) > 0 && (
-                                        <span className="text-[7px] font-bold text-gray-400 uppercase mt-1 block">Disp: {availableStock[denom]}</span>
-                                    )}
-                                </div>
-                            </div>
-                        );
-                    })}
-
-                    {!isTipPool ? (
-                    <div className={cn(
-                        "col-span-3 sm:hidden flex items-end justify-end gap-1.5 h-full pt-4",
-                        (((!isPurchaseMode && type === 'out') || (isPurchaseMode && purchaseTab === 'given')) && (availableStock[0.01] || 0) > 0)
-                            ? "pb-[16px]" // Offset to align with h-10 input instead of the Disp: label
-                            : "pb-1"
-                    )}>
-                        {isEntradaSalidaFlow ? (
-                            <>
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    instance="cash-denom-mobile-exit"
-                                    onClick={onCancel}
-                                >
-                                    Salir
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="primary"
-                                    instance="cash-denom-mobile-save"
-                                    onClick={handleConfirm}
-                                    disabled={entradaSalidaGuardarDisabled}
-                                >
-                                    Guardar
-                                    {isPurchaseMode && !canSubmitPurchase && (purchasePrice || 0) > 0 && (
-                                        <span className="text-[7px] leading-none font-bold tracking-tight normal-case">
-                                            {totalGiven < (purchasePrice || 0) ? `Falta ${Math.abs((purchasePrice || 0) - totalGiven) > 0.005 ? ((purchasePrice || 0) - totalGiven).toFixed(2) : " "}€` : `Da cambio: ${Math.abs(totalGiven - (purchasePrice || 0) - totalReceived) > 0.005 ? (totalGiven - (purchasePrice || 0) - totalReceived).toFixed(2) : " "}€`}
-                                        </span>
-                                    )}
-                                </Button>
-                            </>
-                        ) : (
-                            <>
-                                <button
-                                    onClick={handleConfirm}
-                                    disabled={isPurchaseMode ? !canSubmitPurchase : (isTipPool ? false : (totalGiven === 0))}
-                                    className={cn(
-                                        "flex-[2] h-10 text-white font-black uppercase tracking-widest text-[11px] rounded-xl shadow-md flex justify-center gap-1.5 transition-all active:scale-95 flex-col items-center",
-                                        isPurchaseMode
-                                            ? (canSubmitPurchase ? "bg-orange-500 shadow-orange-200" : "bg-zinc-300 opacity-50 cursor-not-allowed")
-                                            : (isTipPool
-                                                ? "bg-emerald-500 shadow-emerald-200"
-                                                : ((totalGiven === 0)
-                                                    ? "bg-gray-300 opacity-50 shadow-none cursor-not-allowed"
-                                                    : "bg-emerald-500 shadow-emerald-200"))
-                                    )}
-                                >
-                                    <div className="flex items-center gap-1.5">
-                                        <Save size={16} strokeWidth={3} />
-                                        {hasStockIssue ? 'STOCK INSUFICIENTE' : 'GUARDAR'}
-                                    </div>
-                                    {isPurchaseMode && !canSubmitPurchase && (purchasePrice || 0) > 0 && (
-                                        <span className="text-[7px] leading-none -mt-1 mb-0.5 font-bold tracking-tight">
-                                            {totalGiven < (purchasePrice || 0) ? `Falta ${Math.abs((purchasePrice || 0) - totalGiven) > 0.005 ? ((purchasePrice || 0) - totalGiven).toFixed(2) : " "}€` : `Da cambio: ${Math.abs(totalGiven - (purchasePrice || 0) - totalReceived) > 0.005 ? (totalGiven - (purchasePrice || 0) - totalReceived).toFixed(2) : " "}€`}
-                                        </span>
-                                    )}
-                                </button>
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    instance="cash-denom-mobile-exit-alt"
-                                    onClick={onCancel}
-                                    className="flex-1"
-                                    layout="fill"
-                                >
-                                    Salir
-                                </Button>
-                            </>
-                        )}
-                    </div>
+                    ) : !isTipPool && !isAudit ? (
+                        <input
+                            type="text"
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            placeholder="Ej. Cambio banco, Pago proveedor..."
+                            aria-label="Concepto"
+                            className="min-h-10 w-full border-none bg-transparent p-0 text-xs font-bold text-zinc-600 outline-none"
+                        />
                     ) : null}
+
+                    {isPurchaseMode && !canSubmitPurchase && (purchasePrice || 0) > 0 ? (
+                        <p className="px-1 text-center text-[10px] font-bold text-rose-500">
+                            {totalGiven < (purchasePrice || 0)
+                                ? `Falta ${Math.abs((purchasePrice || 0) - totalGiven) > 0.005 ? ((purchasePrice || 0) - totalGiven).toFixed(2) : ' '}€`
+                                : `Da cambio: ${Math.abs(totalGiven - (purchasePrice || 0) - totalReceived) > 0.005 ? (totalGiven - (purchasePrice || 0) - totalReceived).toFixed(2) : ' '}€`}
+                        </p>
+                    ) : null}
+
+                    <DenominationCountGrid
+                        counts={activeCounts}
+                        onAdjust={handleAdjust}
+                        onChange={handleCountChange}
+                        availableStock={showStock ? availableStock : undefined}
+                        onZoom={setZoomDenom}
+                        showAvailable={showStock}
+                    />
                 </div>
             </div>
-            {/* DESKTOP FOOTER */}
-            {!isTipPool ? (
-            <div className={cn(
-                'hidden sm:flex p-3 bg-white border-t gap-2 shrink-0',
-                isEntradaSalidaFlow && 'justify-end',
-            )}>
-                {isEntradaSalidaFlow ? (
-                    <>
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            instance="cash-denom-desktop-exit"
-                            onClick={onCancel}
-                        >
-                            Salir
-                        </Button>
-                        <button
-                            type="button"
-                            onClick={handleConfirm}
-                            disabled={entradaSalidaGuardarDisabled}
-                            className={cn(
-                                ENTRADA_SALIDA_BTN_BASE,
-                                'px-4 text-[9px] text-white flex-col gap-0.5',
-                                entradaSalidaGuardarClass,
-                            )}
-                        >
-                            {submitLabel || 'Guardar'}
-                            {isPurchaseMode && !canSubmitPurchase && (purchasePrice || 0) > 0 && (
-                                <span className="text-[7px] opacity-80 normal-case">
-                                    {totalGiven < (purchasePrice || 0) ? `Falta ${Math.abs((purchasePrice || 0) - totalGiven) > 0.005 ? ((purchasePrice || 0) - totalGiven).toFixed(2) : " "}€` : `Da cambio: ${Math.abs(totalGiven - (purchasePrice || 0) - totalReceived) > 0.005 ? (totalGiven - (purchasePrice || 0) - totalReceived).toFixed(2) : " "}€`}
-                                </span>
-                            )}
-                        </button>
-                    </>
-                ) : (
-                    <>
-                        <button
-                            onClick={handleConfirm}
-                            disabled={isPurchaseMode ? !canSubmitPurchase : (isTipPool ? false : (totalGiven === 0))}
-                            className={cn(
-                                "flex-1 py-3 text-white font-black uppercase tracking-widest text-[9px] rounded-xl shadow-lg flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95",
-                                isPurchaseMode
-                                    ? (canSubmitPurchase ? "bg-orange-500 shadow-orange-200 hover:brightness-110" : "bg-zinc-300 opacity-50 cursor-not-allowed")
-                                    : (isTipPool
-                                        ? "bg-emerald-500 hover:brightness-110 shadow-emerald-200"
-                                        : ((totalGiven === 0)
-                                            ? "bg-gray-300 opacity-50 cursor-not-allowed shadow-none"
-                                            : "bg-emerald-500 hover:brightness-110 shadow-emerald-200"))
-                            )}
-                        >
-                            <div className="flex items-center gap-2">
-                                <Save size={16} strokeWidth={3} />
-                                {submitLabel || (isAudit ? 'Ajustar Arqueo' : 'Confirmar Operación')}
-                            </div>
-                            {isPurchaseMode && !canSubmitPurchase && (purchasePrice || 0) > 0 && (
-                                <span className="text-[7px] opacity-80">
-                                    {totalGiven < (purchasePrice || 0) ? `Falta ${Math.abs((purchasePrice || 0) - totalGiven) > 0.005 ? ((purchasePrice || 0) - totalGiven).toFixed(2) : " "}€` : `Da cambio: ${Math.abs(totalGiven - (purchasePrice || 0) - totalReceived) > 0.005 ? (totalGiven - (purchasePrice || 0) - totalReceived).toFixed(2) : " "}€`}
-                                </span>
-                            )}
-                        </button>
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            instance="cash-denom-desktop-exit-alt"
-                            onClick={onCancel}
-                            className="flex-1"
-                            layout="fill"
-                        >
-                            Salir
-                        </Button>
-                    </>
-                )}
-            </div>
-            ) : null}
-        </div>
-    );
-
-    if (!isTipPool) {
-        return tree;
-    }
-
-    return (
-        <form
-            id={TIP_POOL_CASH_FORM_ID}
-            className="min-h-0"
-            onSubmit={(e) => {
-                e.preventDefault();
-                handleConfirm();
-            }}
-        >
-            {tree}
         </form>
     );
 };

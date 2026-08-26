@@ -226,6 +226,23 @@ La composición por defecto de listado, detalle y formulario de gestión. No es 
 
 ---
 
+## P14 · Recuento monetario
+
+Contar billetes y monedas: propinas, entradas y salidas, arqueo, cierre, cambio entre cajas, compra, desglose de un movimiento.
+
+**Anatomía**: Modal, rejilla de denominaciones, total en el pie, **Cancelar** y **Guardar**. Fecha en la cabecera cuando el recuento tiene fecha.
+
+**Reglas**:
+- Toda pantalla que cuente efectivo usa esta composición. No se inventa otra rejilla ni otro pie.
+- El total vive **abajo**, a la izquierda del pie. Cancelar y Guardar a la derecha. No hay pastilla a todo el ancho.
+- La caja `- valor +` es más estrecha que la columna, para que las columnas respiren. El número de dígitos visibles no cambia.
+- La fecha, si hace falta, va en la cabecera, no en el cuerpo.
+- Un botón propio de la función (Atrás, Ver resumen, Siguiente, Esperado) cabe en el pie; no sustituye el esqueleto.
+
+**Cuándo no**: inventario de caja en solo lectura, zoom de una denominación, calculadora.
+
+---
+
 ## Cómo se añade un patrón
 
 Un patrón entra aquí cuando la misma composición aparece en tres pantallas o cuando resolverla mal en una rompe un [recorrido crítico](../1-producto/RECORRIDOS.md). Antes de eso es una pantalla, no un patrón.

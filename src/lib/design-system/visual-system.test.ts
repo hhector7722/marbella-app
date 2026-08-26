@@ -417,4 +417,48 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         }
         assert.deepEqual(offenders, [], `Radio ilegítimo:\n${offenders.join('\n')}`);
     });
+
+    it('los recuentos monetarios usan la misma rejilla y el mismo pie', () => {
+        const stepper = readFileSync(join(SRC_ROOT, 'components/cash/DenominationCountGrid.tsx'), 'utf8');
+        assert.match(stepper, /w-\[86%\]/, 'la caja - valor + es más estrecha que la columna');
+        assert.match(stepper, /text-\[9px\].*tabular-nums/, 'los dígitos no cambian de tamaño');
+        assert.match(stepper, /grid-cols-3 gap-x-2\.5/, 'las columnas respiran');
+
+        const footer = readFileSync(join(SRC_ROOT, 'components/cash/CashCountFooter.tsx'), 'utf8');
+        assert.match(footer, /cancelLabel = 'Cancelar'/);
+        assert.match(footer, /saveLabel = 'Guardar'/);
+        assert.match(footer, /Total/);
+
+        const form = readFileSync(join(SRC_ROOT, 'components/CashDenominationForm.tsx'), 'utf8');
+        assert.match(form, /DenominationCountGrid/);
+        assert.doesNotMatch(form, /CashCountFooter/, 'el form no pinta el pie; lo pinta el Modal');
+        assert.doesNotMatch(form, /bg-\[#36606F\].*px-4 py-2/, 'el form no pinta cabecera petróleo propia');
+
+        const hosts = [
+            'components/tips/TipsDashboardView.tsx',
+            'app/dashboard/movements/page.tsx',
+            'components/dashboards/AdminDashboardView.tsx',
+            'components/dashboards/StaffDashboardView.tsx',
+            'components/dashboards/MasterDashboardView.tsx',
+            'components/MovementDetailModal.tsx',
+            'components/CashClosingModal.tsx',
+            'components/CashChangeModal.tsx',
+            'components/staff/StaffCajaCambioModal.tsx',
+            'components/PurchaseMultiSourceForm.tsx',
+            'app/dashboard/history/page.tsx',
+        ];
+        for (const rel of hosts) {
+            const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
+            assert.match(
+                source,
+                /CashCountFooter/,
+                `${rel} debe usar el pie de recuento`
+            );
+            assert.match(
+                source,
+                /DenominationCountGrid|CashDenominationForm/,
+                `${rel} debe usar la rejilla de recuento`
+            );
+        }
+    });
 });

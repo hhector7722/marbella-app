@@ -2,11 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import { X, Calendar, Minus, Plus, Check } from 'lucide-react';
+import { X, Calendar, Check } from 'lucide-react';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
-import Image from 'next/image';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { sendClosingNotification } from '@/app/actions/notifications';
@@ -18,6 +16,8 @@ import {
 } from '@/lib/cash-closing-weather';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { DenominationCountGrid } from '@/components/cash/DenominationCountGrid';
+import { CashCountFooter } from '@/components/cash/CashCountFooter';
 import {
     ClosingStepRow,
     ClosingSummaryRow,
@@ -31,6 +31,7 @@ import {
 // export const FIXED_CASH_FUND = 100; // ELIMINADO: Se simplifica la lógica sin fondo fijo
 export const BILLS = [100, 50, 20, 10, 5];
 export const COINS = [2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
+const CLOSING_DENOMS = [...BILLS, ...COINS];
 
 function parseDateTimeLocal(value: string): Date {
     // TIMEZONE IMMUNITY: no Date('YYYY-MM-DD...') parsing.
@@ -51,22 +52,6 @@ function formatDateTimeLocalInput(d: Date): string {
     const pad = (n: number) => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
-
-const CURRENCY_IMAGES: Record<number, string> = {
-    100: '/currency/100e-Photoroom.png',
-    50: '/currency/50e-Photoroom.png',
-    20: '/currency/20-Photoroom.png',
-    10: '/currency/10e-Photoroom.png',
-    5: '/currency/5eur-Photoroom.png',
-    2: '/currency/2eur-Photoroom.png',
-    1: '/currency/1eur-Photoroom.png',
-    0.50: '/currency/50ct-Photoroom.png',
-    0.20: '/currency/20ct-Photoroom.png',
-    0.10: '/currency/10ct-Photoroom.png',
-    0.05: '/currency/5ct-Photoroom.png',
-    0.02: '/currency/2ct-Photoroom.png',
-    0.01: '/currency/1ct-Photoroom.png',
-};
 
 type ClosingStep = 'tpv_data' | 'count' | 'summary';
 
@@ -331,7 +316,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
     const handleAdjustCount = (value: number, delta: number) => {
         setCounts(prev => ({
             ...prev,
-            [value]: (prev[value] || 0) + delta
+            [value]: Math.max(0, (prev[value] || 0) + delta)
         }));
     };
 
@@ -530,37 +515,6 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
         }
     };
 
-    const renderDenominationItem = (value: number) => (
-        <div key={value} className="flex flex-col items-center gap-1.5 group transition-all">
-            <div className="h-11 sm:h-14 w-full flex items-center justify-center transition-transform group-hover:scale-110">
-                <Image
-                    src={CURRENCY_IMAGES[value]}
-                    alt={value + "€"}
-                    width={140}
-                    height={140}
-                    className={cn(
-                        "h-full w-auto object-contain",
-                        value >= 1 ? "drop-shadow-lg" : "drop-shadow-md",
-                    )}
-                />
-            </div>
-            <div className="text-center w-full">
-                <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">
-                    {value < 1 ? (value * 100).toFixed(0) + "c" : value + "€"}
-                </span>
-                <div className="flex items-center justify-between w-full h-10 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20">
-                    <button type="button" onClick={() => handleAdjustCount(value, -1)} className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"><Minus size={14} strokeWidth={3} /></button>
-                    <input type="number" placeholder=""
-                        className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-[10px] tracking-tighter tabular-nums focus:bg-blue-50/20 transition-colors"
-                        value={counts[value] || ''} onChange={(e) => updateCount(value, e.target.value)} />
-                    <button type="button" onClick={() => handleAdjustCount(value, 1)} className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"><Plus size={14} strokeWidth={3} /></button>
-                </div>
-            </div>
-        </div>
-    );
-
-    const lastCoin = COINS[COINS.length - 1];
-
     const instructionOpen = Boolean(isOpen && instructionModal?.isOpen);
     const instructionTitle = instructionModal?.type === 'tpv'
         ? 'Cómo fotografiar el TPV'
@@ -611,31 +565,52 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                     <span className={step === 'summary' ? 'text-white' : 'text-white/40'}>3. Resumen</span>
                 </div>
             }
-            footer={step !== 'count' ? (
-                <>
-                    {step === 'summary' && (
+            footer={
+                step === 'count' ? (
+                    <CashCountFooter
+                        total={totalCounted}
+                        instancePrefix="cash-closing-count"
+                        cancelLabel="Atrás"
+                        saveLabel="Ver Resumen"
+                        onCancel={() => setStep('tpv_data')}
+                        onSave={handleAdvanceStep}
+                        saveDisabled={loading}
+                        saveLoading={loading}
+                        extra={
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Esperado</span>
+                                <span className="text-sm font-bold tabular-nums text-zinc-500">
+                                    {expectedCash > 0.005 ? `${expectedCash.toFixed(2)}€` : ' '}
+                                </span>
+                            </div>
+                        }
+                    />
+                ) : (
+                    <>
+                        {step === 'summary' && (
+                            <Button
+                                type="button"
+                                variant="tertiary"
+                                layout="hug"
+                                instance="cash-closing-back"
+                                onClick={() => setStep('count')}
+                            >
+                                Atrás
+                            </Button>
+                        )}
                         <Button
                             type="button"
-                            variant="tertiary"
-                            layout="hug"
-                            instance="cash-closing-back"
-                            onClick={() => setStep('count')}
+                            variant="primary"
+                            instance="cash-closing-advance"
+                            onClick={handleAdvanceStep}
+                            disabled={loading || (step === 'summary' && !photosReady)}
+                            loading={loading}
                         >
-                            Atrás
+                            {step === 'summary' ? 'Confirmar Cierre' : 'Siguiente'}
                         </Button>
-                    )}
-                    <Button
-                        type="button"
-                        variant="primary"
-                        instance="cash-closing-advance"
-                        onClick={handleAdvanceStep}
-                        disabled={loading || (step === 'summary' && !photosReady)}
-                        loading={loading}
-                    >
-                        {step === 'summary' ? 'Confirmar Cierre' : 'Siguiente'}
-                    </Button>
-                </>
-            ) : undefined}
+                    </>
+                )
+            }
         >
                 <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
                 {(step === 'tpv_data' || step === 'count') && (
@@ -719,45 +694,12 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
 
                     {/* STEP 2: COUNT */}
                     {step === 'count' && (
-                        <div className="flex flex-col h-full overflow-hidden">
-                            <div className="py-4 sm:py-6 bg-gray-50 border-b flex justify-between items-center shrink-0">
-                                <div>
-                                    <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Arqueo en Caja</h3>
-                                    <span className="text-3xl font-black text-[#5B8FB9]">{totalCounted.toFixed(2)}€</span>
-                                </div>
-                                <div className="text-right">
-                                    <span className="text-[10px] font-black text-gray-400 uppercase">Esperado</span>
-                                    <div className="text-lg font-bold text-gray-500">{expectedCash > 0.005 ? `${expectedCash.toFixed(2)}€` : " "}</div>
-                                </div>
-                            </div>
-                            <div className="flex flex-col gap-4 pt-3 sm:pt-4 pb-4">
-                                <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-y-5 sm:gap-y-6 gap-x-3 sm:gap-x-4">
-                                    {BILLS.map((bill) => renderDenominationItem(bill))}
-                                    {COINS.slice(0, -1).map((coin) => renderDenominationItem(coin))}
-                                    {renderDenominationItem(lastCoin)}
-                                    <div className="col-span-3 sm:col-span-5 lg:col-span-7 flex items-end justify-end gap-2 self-end pb-0.5">
-                                        <Button
-                                            type="button"
-                                            variant="tertiary"
-                                            instance="cash-closing-count-back"
-                                            onClick={() => setStep('tpv_data')}
-                                        >
-                                            Atrás
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="primary"
-                                            instance="cash-closing-count-summary"
-                                            onClick={handleAdvanceStep}
-                                            disabled={loading}
-                                            loading={loading}
-                                        >
-                                            Ver Resumen
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <DenominationCountGrid
+                            counts={counts}
+                            onAdjust={handleAdjustCount}
+                            onChange={updateCount}
+                            denominations={CLOSING_DENOMS}
+                        />
                     )}
 
                     {/* STEP 3: SUMMARY */}

@@ -10,9 +10,11 @@ import Image from 'next/image';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 import { createClient } from "@/utils/supabase/client";
 import { toast } from 'sonner';
-import { CashDenominationForm } from './CashDenominationForm';
+import { CashDenominationForm, CASH_COUNT_FORM_ID } from './CashDenominationForm';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { CashCountFooter } from '@/components/cash/CashCountFooter';
+import { CashCountDateButton, formatCashCountDateInput } from '@/components/cash/CashCountDateButton';
 
 interface MovementDetailModalProps {
     movement: any;
@@ -25,12 +27,17 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
     const [isEditing, setIsEditing] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [calculatorOpen, setCalculatorOpen] = useState(false);
+    const [editTotal, setEditTotal] = useState(0);
+    const [editDate, setEditDate] = useState(formatCashCountDateInput);
 
     useEffect(() => {
         setIsEditing(false);
         setIsDeleting(false);
         setCalculatorOpen(false);
-    }, [movement?.id]);
+        const d = movement?.created_at ? new Date(movement.created_at) : new Date();
+        setEditDate(Number.isNaN(d.getTime()) ? formatCashCountDateInput() : formatCashCountDateInput(d));
+        setEditTotal(Number(movement?.amount ?? 0));
+    }, [movement?.id, movement?.created_at, movement?.amount]);
 
     if (!movement) return null;
 
@@ -127,6 +134,16 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                 headerTone="petroleum"
                 title="Editar movimiento"
                 ariaLabel="Editar movimiento"
+                headerTrailing={<CashCountDateButton value={editDate} onChange={setEditDate} />}
+                footer={
+                    <CashCountFooter
+                        total={editTotal}
+                        instancePrefix="treasury-movement-edit"
+                        onCancel={() => setIsEditing(false)}
+                        saveType="submit"
+                        saveForm={CASH_COUNT_FORM_ID}
+                    />
+                }
             >
                     <CashDenominationForm
                         variant="embedded"
@@ -140,6 +157,9 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                         onCancel={() => setIsEditing(false)}
                         isEditing={true}
                         availableStock={{}}
+                        onTotalChange={setEditTotal}
+                        selectedDate={editDate}
+                        onSelectedDateChange={setEditDate}
                     />
             </Modal>
         );

@@ -29,7 +29,7 @@ import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { CashDenominationForm } from '@/components/CashDenominationForm';
+import { CashDenominationForm, CASH_COUNT_FORM_ID } from '@/components/CashDenominationForm';
 import { BoxInventoryView } from '@/components/BoxInventoryView';
 import { MovementDetailModal } from '@/components/MovementDetailModal';
 import CashClosingModal from '@/components/CashClosingModal';
@@ -39,6 +39,8 @@ import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import { CashCountFooter } from '@/components/cash/CashCountFooter';
+import { CashCountDateButton, formatCashCountDateInput } from '@/components/cash/CashCountDateButton';
 import * as XLSX from 'xlsx';
 
 interface Movement {
@@ -148,6 +150,8 @@ export default function MovementsPage() {
     const [movements, setMovements] = useState<Movement[]>([]);
     const [boxData, setBoxData] = useState<any>(null);
     const [cashModalMode, setCashModalMode] = useState<'none' | 'in' | 'out' | 'audit' | 'inventory'>('none');
+    const [cashCountTotal, setCashCountTotal] = useState(0);
+    const [cashOpDate, setCashOpDate] = useState(formatCashCountDateInput);
     const [boxInventoryMap, setBoxInventoryMap] = useState<Record<number, number>>({});
     const [boxInventory, setBoxInventory] = useState<any[]>([]);
     const [periodSummary, setPeriodSummary] = useState({
@@ -1075,12 +1079,28 @@ export default function MovementsPage() {
                     : 'Tesorería'
                 }
                 subtitle={cashModalMode === 'inventory' ? (boxData?.name || 'Caja') : (boxData?.name || undefined)}
+                headerTrailing={
+                    cashModalMode !== 'none' && cashModalMode !== 'inventory' ? (
+                        <CashCountDateButton value={cashOpDate} onChange={setCashOpDate} />
+                    ) : null
+                }
                 ariaLabel={
                     cashModalMode === 'in' ? 'Entrada de caja'
                     : cashModalMode === 'out' ? 'Salida de caja'
                     : cashModalMode === 'audit' ? 'Arqueo de caja'
                     : cashModalMode === 'inventory' ? 'Inventario de caja'
                     : 'Tesorería'
+                }
+                footer={
+                    cashModalMode !== 'none' && cashModalMode !== 'inventory' ? (
+                        <CashCountFooter
+                            total={cashCountTotal}
+                            instancePrefix={`treasury-${cashModalMode}`}
+                            onCancel={() => setCashModalMode('none')}
+                            saveType="submit"
+                            saveForm={CASH_COUNT_FORM_ID}
+                        />
+                    ) : undefined
                 }
             >
                 {cashModalMode === 'inventory' ? (
@@ -1094,6 +1114,9 @@ export default function MovementsPage() {
                         boxId={boxData?.id}
                         onSubmit={handleCashTransaction}
                         onCancel={() => setCashModalMode('none')}
+                        onTotalChange={setCashCountTotal}
+                        selectedDate={cashOpDate}
+                        onSelectedDateChange={setCashOpDate}
                         initialCounts={cashModalMode === 'audit' ? boxInventoryMap : {}}
                         availableStock={boxInventoryMap}
                     />

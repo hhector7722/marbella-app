@@ -10,8 +10,10 @@ import DashboardVentasSection from '@/components/dashboards/DashboardVentasSecti
 import MasterShortcutGrid from '@/components/dashboards/MasterShortcutGrid';
 import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal, type BoxOption } from '@/components/CashChangeModal';
-import { CashDenominationForm } from '@/components/CashDenominationForm';
+import { CashDenominationForm, CASH_COUNT_FORM_ID } from '@/components/CashDenominationForm';
 import { Modal } from '@/components/ui/modal';
+import { CashCountFooter } from '@/components/cash/CashCountFooter';
+import { CashCountDateButton, formatCashCountDateInput } from '@/components/cash/CashCountDateButton';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { updateProfile } from '@/app/actions/profile';
 import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
@@ -44,6 +46,8 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
     const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
     const [auditBox, setAuditBox] = useState<any>(null);
+    const [cashCountTotal, setCashCountTotal] = useState(0);
+    const [cashOpDate, setCashOpDate] = useState(formatCashCountDateInput);
     const [boxInventoryMap, setBoxInventoryMap] = useState<Record<number, number>>({});
 
     const [closingSalesSummary, setClosingSalesSummary] = useState(
@@ -425,6 +429,16 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                 title="Arqueo de caja"
                 subtitle={auditBox?.name || 'Caja cambio'}
                 ariaLabel="Arqueo de caja"
+                headerTrailing={<CashCountDateButton value={cashOpDate} onChange={setCashOpDate} />}
+                footer={
+                    <CashCountFooter
+                        total={cashCountTotal}
+                        instancePrefix="master-cash-audit"
+                        onCancel={() => setAuditBox(null)}
+                        saveType="submit"
+                        saveForm={CASH_COUNT_FORM_ID}
+                    />
+                }
             >
                 {auditBox ? (
                     <CashDenominationForm
@@ -436,6 +450,9 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                         availableStock={boxInventoryMap}
                         onCancel={() => setAuditBox(null)}
                         onSubmit={handleAuditSubmit}
+                        onTotalChange={setCashCountTotal}
+                        selectedDate={cashOpDate}
+                        onSelectedDateChange={setCashOpDate}
                     />
                 ) : null}
             </Modal>

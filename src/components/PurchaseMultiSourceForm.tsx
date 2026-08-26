@@ -1,14 +1,15 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { X, Save, Plus, Minus, ArrowLeft, ArrowRight } from 'lucide-react';
-import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
+import { DENOMINATIONS } from '@/lib/constants';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { DenominationZoomModal } from '@/components/ui/DenominationZoomModal';
 import { ScannerClient } from '@/app/dashboard/scanner/ScannerClient';
 import { ClosingPetrolInput, ClosingStepRow } from '@/components/cash-closing/ClosingStep1Parts';
+import { DenominationCountGrid } from '@/components/cash/DenominationCountGrid';
+import { CashCountFooter } from '@/components/cash/CashCountFooter';
+import { formatCashCountDateInput } from '@/components/cash/CashCountDateButton';
 
 export interface PaymentSourceOption {
     id: string;
@@ -41,6 +42,8 @@ interface PurchaseMultiSourceFormProps {
     onCancel: () => void;
     /** Host Modal aporta título/cierre; oculta cabecera petróleo duplicada. */
     embedded?: boolean;
+    selectedDate?: string;
+    onSelectedDateChange?: (next: string) => void;
 }
 
 type PurchaseStep = 'details' | 'payment' | 'change' | 'scanner' | 'summary';
@@ -60,12 +63,7 @@ function parseDateTimeLocal(value: string): Date {
     return new Date(y, m - 1, d, Number.isFinite(hh) ? hh : 0, Number.isFinite(mm) ? mm : 0);
 }
 
-function formatDateTimeLocalInput(d: Date): string {
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-const nowStr = () => formatDateTimeLocalInput(new Date());
+const nowStr = () => formatCashCountDateInput();
 
 const calculateTotal = (c: Record<number, number>) =>
     DENOMINATIONS.reduce((acc, val) => acc + (val * (c[val] || 0)), 0);
@@ -76,11 +74,15 @@ export function PurchaseMultiSourceForm({
     onSubmit,
     onCancel,
     embedded = false,
+    selectedDate: selectedDateProp,
+    onSelectedDateChange,
 }: PurchaseMultiSourceFormProps) {
     const [step, setStep] = useState<PurchaseStep>('details');
     const [price, setPrice] = useState<number | ''>('');
     const [notes, setNotes] = useState('');
-    const [selectedDate, setSelectedDate] = useState(nowStr());
+    const [internalDate, setInternalDate] = useState(nowStr());
+    const selectedDate = selectedDateProp ?? internalDate;
+    const setSelectedDate = onSelectedDateChange ?? setInternalDate;
     const [sources, setSources] = useState<SourceEntry[]>([]);
     const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
     const [changeDestinationBoxId, setChangeDestinationBoxId] = useState<string | null>(null);
@@ -181,6 +183,39 @@ export function PurchaseMultiSourceForm({
         });
     };
 
+    const footerTotal =
+        step === 'payment' ? totalFromSources
+        : step === 'change' ? changeTotal
+        : priceNum;
+
+    const handleFooterBack = () => {
+        if (step === 'details') onCancel();
+        else if (step === 'payment') setStep('details');
+        else if (step === 'change') setStep('payment');
+        else if (step === 'scanner') {
+            if (needsChangeStep) goToChangeStep();
+            else setStep('payment');
+        }
+        else if (step === 'summary') goToScannerStep();
+    };
+
+    const handleFooterAdvance = () => {
+        if (step === 'details') setStep('payment');
+        else if (step === 'payment') {
+            if (needsChangeStep) goToChangeStep();
+            else goToScannerStep();
+        } else if (step === 'change') goToScannerStep();
+        else if (step === 'scanner') setStep('summary');
+        else handleConfirm();
+    };
+
+    const footerAdvanceDisabled =
+        (step === 'details' && !canGoPayment) ||
+        (step === 'payment' && !canAdvanceFromPayment) ||
+        (step === 'change' && needsChangeStep && !canAdvanceFromChange) ||
+        (step === 'scanner' && !canAdvanceFromScanner) ||
+        (step === 'summary' && !canSubmit);
+
     return (
         <div className={cn(
             'relative flex flex-col h-full overflow-hidden bg-white',
@@ -195,35 +230,8 @@ export function PurchaseMultiSourceForm({
                     onChange={e => setSelectedDate(e.target.value)}
                     className="bg-transparent border-none p-0 text-white text-[10px] font-black uppercase tracking-widest outline-none text-center cursor-pointer [color-scheme:dark] min-h-[48px]"
                 />
-                <div className="flex items-center justify-end w-[120px] shrink-0">
-                    {step === 'payment' && (
-                        <div className="text-right min-h-[48px] flex flex-col items-end justify-center">
-                            <span className="text-[8px] font-black uppercase tracking-widest text-white/80 leading-none">Total</span>
-                            <span className="text-[12px] font-black tabular-nums text-white leading-none mt-0.5">
-                                {totalFromSources > 0.005 ? `${totalFromSources.toFixed(2)}€` : ' '}
-                            </span>
-                        </div>
-                    )}
-                </div>
             </div>
-            ) : (
-            <div className="flex shrink-0 items-center justify-between gap-2 border-b border-zinc-100 bg-[#36606F]/5 px-4 py-2">
-                <input
-                    type="datetime-local"
-                    value={selectedDate}
-                    onChange={e => setSelectedDate(e.target.value)}
-                    className="min-h-10 flex-1 bg-transparent border-none p-0 text-[10px] font-black uppercase tracking-widest text-[#36606F] outline-none text-center cursor-pointer [color-scheme:light]"
-                />
-                {step === 'payment' ? (
-                    <div className="shrink-0 text-right">
-                        <span className="block text-[8px] font-black uppercase tracking-widest text-zinc-500 leading-none">Total</span>
-                        <span className="text-[12px] font-black tabular-nums text-[#36606F] leading-none">
-                            {totalFromSources > 0.005 ? `${totalFromSources.toFixed(2)}€` : ' '}
-                        </span>
-                    </div>
-                ) : null}
-            </div>
-            )}
+            ) : null}
 
             <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
             <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
@@ -315,86 +323,28 @@ export function PurchaseMultiSourceForm({
 
                 {selectedSource && (
                     <div className="bg-white rounded-xl border border-zinc-200 shadow-sm p-3">
-                        <div className="flex items-start justify-between gap-3 mb-2">
-                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
-                                Desglose desde {selectedSource.shortLabel}
-                            </p>
-                            <div className="text-right shrink-0">
-                                <div className="text-[8px] font-black uppercase tracking-widest text-zinc-400 leading-none">Total</div>
-                                <div className="text-[12px] font-black tabular-nums text-zinc-800 leading-none mt-0.5">
-                                    {totalFromSources > 0.005 ? `${totalFromSources.toFixed(2)}€` : ' '}
-                                </div>
-                            </div>
-                        </div>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">
+                            Desglose desde {selectedSource.shortLabel}
+                        </p>
                         {selectedSource.hasInventory ? (
-                            <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5 p-0.5">
-                                {DENOMINATIONS.map(denom => {
+                            <DenominationCountGrid
+                                counts={getSourceEntry(selectedSource.id).breakdown}
+                                onAdjust={(denom, delta) => {
                                     const entry = getSourceEntry(selectedSource.id);
-                                    const qty = entry.breakdown[denom] ?? 0;
-                                    const stock = inventoriesByBoxId[selectedSource.id] ?? {};
-                                    const avail = stock[denom] ?? 0;
-                                    const hasStockIssue = qty > avail;
-                                    return (
-                                        <div key={denom} className="flex flex-col items-center gap-1 group transition-all">
-                                            <div
-                                                role="button"
-                                                tabIndex={0}
-                                                onClick={() => { setZoomDenom(denom); setZoomContext(selectedSource.id); }}
-                                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setZoomDenom(denom); setZoomContext(selectedSource.id); } }}
-                                                className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110 cursor-pointer rounded-lg hover:bg-white/60 focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]/40 focus:ring-offset-1 min-h-[48px]"
-                                                aria-label={`Editar cantidad de ${denom >= 1 ? `${denom} euros` : `${(denom * 100).toFixed(0)} céntimos`}`}
-                                            >
-                                                <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={140} height={140} className="h-full w-auto object-contain drop-shadow-lg pointer-events-none" />
-                                            </div>
-                                            <div className="text-center w-full">
-                                                <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">
-                                                    {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
-                                                </span>
-                                                <div className={cn(
-                                                    "flex items-center justify-between w-full h-10 bg-white border rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1",
-                                                    hasStockIssue
-                                                        ? "border-rose-300 focus-within:border-rose-400 focus-within:ring-rose-200"
-                                                        : "border-zinc-200 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20"
-                                                )}>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            const next = { ...entry.breakdown, [denom]: Math.max(0, (entry.breakdown[denom] ?? 0) - 1) };
-                                                            if (next[denom] === 0) delete next[denom];
-                                                            setSourceBreakdown(selectedSource.id, next);
-                                                        }}
-                                                        className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
-                                                    >
-                                                        <Minus size={14} strokeWidth={3} />
-                                                    </button>
-                                                    <input
-                                                        type="number"
-                                                        value={qty || ''}
-                                                        onChange={e => {
-                                                            const v = parseInt(e.target.value, 10) || 0;
-                                                            const next = { ...entry.breakdown, [denom]: v };
-                                                            if (v === 0) delete next[denom];
-                                                            setSourceBreakdown(selectedSource.id, next);
-                                                        }}
-                                                        placeholder=""
-                                                        className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-[10px] tracking-tighter tabular-nums focus:bg-blue-50/20 transition-colors"
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setSourceBreakdown(selectedSource.id, { ...entry.breakdown, [denom]: (entry.breakdown[denom] ?? 0) + 1 })}
-                                                        className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
-                                                    >
-                                                        <Plus size={14} strokeWidth={3} />
-                                                    </button>
-                                                </div>
-                                                {avail > 0 && (
-                                                    <span className="text-[7px] font-bold text-gray-400 uppercase mt-1 block">Disp: {avail}</span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                                    const next = { ...entry.breakdown, [denom]: Math.max(0, (entry.breakdown[denom] ?? 0) + delta) };
+                                    if (next[denom] === 0) delete next[denom];
+                                    setSourceBreakdown(selectedSource.id, next);
+                                }}
+                                onChange={(denom, raw) => {
+                                    const v = parseInt(raw, 10) || 0;
+                                    const next = { ...getSourceEntry(selectedSource.id).breakdown, [denom]: v };
+                                    if (v === 0) delete next[denom];
+                                    setSourceBreakdown(selectedSource.id, next);
+                                }}
+                                availableStock={inventoriesByBoxId[selectedSource.id]}
+                                onZoom={(denom) => { setZoomDenom(denom); setZoomContext(selectedSource.id); }}
+                                showAvailable
+                            />
                         ) : (
                             <div className="flex flex-col gap-1">
                                 <label className="text-[8px] font-black text-gray-500 uppercase">Importe (€)</label>
@@ -424,16 +374,6 @@ export function PurchaseMultiSourceForm({
                             <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Sin cambio</p>
                         ) : (
                             <div className="space-y-3">
-                                <div className="flex items-center justify-between gap-3">
-                                    <h4 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Cambio</h4>
-                                    <div className="text-right">
-                                        <div className="text-[8px] font-black uppercase tracking-widest text-zinc-400 leading-none">A devolver</div>
-                                        <div className="text-2xl font-black tabular-nums text-zinc-800 leading-none mt-0.5">
-                                            {changeAmount.toFixed(2)}€
-                                        </div>
-                                    </div>
-                                </div>
-
                                 <div>
                                     <label className="block text-[8px] font-black text-gray-500 uppercase mb-1">Destino del cambio</label>
                                     <select
@@ -456,64 +396,23 @@ export function PurchaseMultiSourceForm({
 
                                 <div>
                                     <p className="text-[8px] font-black text-gray-500 uppercase mb-1.5">Desglose del cambio</p>
-                                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-y-2 gap-x-1.5 p-0.5">
-                                        {DENOMINATIONS.map(denom => {
-                                            const qty = changeBreakdown[denom] ?? 0;
-                                            return (
-                                                <div key={denom} className="flex flex-col items-center gap-1 group transition-all">
-                                                    <div
-                                                        role="button"
-                                                        tabIndex={0}
-                                                        onClick={() => { setZoomDenom(denom); setZoomContext('change'); }}
-                                                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setZoomDenom(denom); setZoomContext('change'); } }}
-                                                        className="w-full h-11 sm:h-14 flex items-center justify-center transition-transform group-hover:scale-110 cursor-pointer rounded-lg hover:bg-white/60 focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]/40 focus:ring-offset-1 min-h-[48px]"
-                                                        aria-label={`Editar cantidad de ${denom >= 1 ? `${denom} euros` : `${(denom * 100).toFixed(0)} céntimos`}`}
-                                                    >
-                                                        <Image src={CURRENCY_IMAGES[denom]} alt={`${denom}€`} width={140} height={140} className="h-full w-auto object-contain drop-shadow-lg pointer-events-none" />
-                                                    </div>
-                                                    <div className="text-center w-full">
-                                                        <span className="font-black text-gray-500 text-[9px] uppercase tracking-widest block mb-0.5">
-                                                            {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
-                                                        </span>
-                                                        <div className="flex items-center justify-between w-full h-10 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-offset-1 focus-within:border-[#5B8FB9]/40 focus-within:ring-[#5B8FB9]/20">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setChangeBreakdown(prev => {
-                                                                    const next = { ...prev, [denom]: Math.max(0, (prev[denom] ?? 0) - 1) };
-                                                                    if (next[denom] === 0) delete next[denom];
-                                                                    return next;
-                                                                })}
-                                                                className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
-                                                            >
-                                                                <Minus size={14} strokeWidth={3} />
-                                                            </button>
-                                                            <input
-                                                                type="number"
-                                                                value={qty || ''}
-                                                                onChange={e => {
-                                                                    const v = parseInt(e.target.value, 10) || 0;
-                                                                    setChangeBreakdown(prev => {
-                                                                        const next = { ...prev, [denom]: v };
-                                                                        if (v === 0) delete next[denom];
-                                                                        return next;
-                                                                    });
-                                                                }}
-                                                                placeholder=""
-                                                                className="flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 text-[10px] tracking-tighter tabular-nums focus:bg-blue-50/20 transition-colors"
-                                                            />
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setChangeBreakdown(prev => ({ ...prev, [denom]: (prev[denom] ?? 0) + 1 }))}
-                                                                className="w-6 h-full flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
-                                                            >
-                                                                <Plus size={14} strokeWidth={3} />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
+                                    <DenominationCountGrid
+                                        counts={changeBreakdown}
+                                        onAdjust={(denom, delta) => setChangeBreakdown(prev => {
+                                            const next = { ...prev, [denom]: Math.max(0, (prev[denom] ?? 0) + delta) };
+                                            if (next[denom] === 0) delete next[denom];
+                                            return next;
                                         })}
-                                    </div>
+                                        onChange={(denom, raw) => {
+                                            const v = parseInt(raw, 10) || 0;
+                                            setChangeBreakdown(prev => {
+                                                const next = { ...prev, [denom]: v };
+                                                if (v === 0) delete next[denom];
+                                                return next;
+                                            });
+                                        }}
+                                        onZoom={(denom) => { setZoomDenom(denom); setZoomContext('change'); }}
+                                    />
                                     {!changeOk && (
                                         <p className="text-[9px] font-black text-rose-600 mt-1 uppercase tracking-widest">
                                             El desglose debe sumar {changeAmount.toFixed(2)}€
@@ -612,61 +511,24 @@ export function PurchaseMultiSourceForm({
                 )}
             </div>
 
-            <div className="flex p-3 bg-white border-t gap-2 shrink-0">
-                <button
-                    type="button"
-                    onClick={() => {
-                        if (step === 'details') onCancel();
-                        else if (step === 'payment') setStep('details');
-                        else if (step === 'change') setStep('payment');
-                        else if (step === 'scanner') {
-                            if (needsChangeStep) goToChangeStep();
-                            else setStep('payment');
-                        }
-                        else if (step === 'summary') goToScannerStep();
-                    }}
-                    className={cn(
-                        "flex-1 py-3 font-black uppercase tracking-widest text-[9px] rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md min-h-[48px]",
-                        step === 'details'
-                            ? "text-white bg-rose-500 hover:bg-rose-600 shadow-rose-200"
-                            : "text-gray-500 bg-zinc-100 hover:bg-zinc-200 shadow-zinc-200/40"
-                    )}
-                >
-                    {step === 'details' ? <X size={14} strokeWidth={3} /> : <ArrowLeft size={14} strokeWidth={3} />}
-                    {step === 'details' ? 'Salir' : 'Atrás'}
-                </button>
-                <button
-                    type="button"
-                    onClick={() => {
-                        if (step === 'details') setStep('payment');
-                        else if (step === 'payment') {
-                            if (needsChangeStep) goToChangeStep();
-                            else goToScannerStep();
-                        } else if (step === 'change') goToScannerStep();
-                        else if (step === 'scanner') setStep('summary');
-                        else handleConfirm();
-                    }}
-                    disabled={
-                        (step === 'details' && !canGoPayment) ||
-                        (step === 'payment' && !canAdvanceFromPayment) ||
-                        (step === 'change' && needsChangeStep && !canAdvanceFromChange) ||
-                        (step === 'scanner' && !canAdvanceFromScanner) ||
-                        (step === 'summary' && !canSubmit)
+            <div className="shrink-0 border-t border-ds-borde bg-ds-superficie py-ds-3 px-1">
+                <CashCountFooter
+                    total={footerTotal}
+                    instancePrefix="purchase-multi-source"
+                    cancelLabel={step === 'details' ? 'Salir' : 'Atrás'}
+                    saveLabel={step === 'summary' ? 'Guardar compra' : 'Siguiente'}
+                    onCancel={handleFooterBack}
+                    onSave={handleFooterAdvance}
+                    saveDisabled={footerAdvanceDisabled}
+                    extra={
+                        step === 'change' && changeAmount >= 0.01 ? (
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">A devolver</span>
+                                <span className="text-sm font-bold tabular-nums text-zinc-500">{changeAmount.toFixed(2)}€</span>
+                            </div>
+                        ) : null
                     }
-                    className={cn(
-                        "flex-1 py-3 text-white font-black uppercase tracking-widest text-[9px] rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 min-h-[48px]",
-                        ((step === 'details' && canGoPayment) ||
-                            (step === 'payment' && canAdvanceFromPayment) ||
-                            (step === 'change' && (!needsChangeStep || canAdvanceFromChange)) ||
-                            (step === 'scanner' && canAdvanceFromScanner) ||
-                            (step === 'summary' && canSubmit))
-                            ? (step === 'summary' ? "bg-orange-500 shadow-orange-200 hover:brightness-110" : "bg-[#5B8FB9] shadow-blue-900/20 hover:brightness-110")
-                            : "bg-zinc-300 opacity-50 cursor-not-allowed"
-                    )}
-                >
-                    {step === 'summary' ? <Save size={16} strokeWidth={3} /> : <ArrowRight size={16} strokeWidth={3} />}
-                    {step === 'summary' ? 'Guardar compra' : 'Siguiente'}
-                </button>
+                />
             </div>
         </div>
     );

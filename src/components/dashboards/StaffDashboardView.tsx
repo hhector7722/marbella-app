@@ -17,7 +17,9 @@ import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionMod
 import { StaffProductModal } from '@/components/modals/StaffProductModal';
 import { AttendanceDetailModal } from '@/components/modals/AttendanceDetailModal';
 import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
-import { CashDenominationForm } from '@/components/CashDenominationForm';
+import { CashDenominationForm, CASH_COUNT_FORM_ID } from '@/components/CashDenominationForm';
+import { CashCountFooter } from '@/components/cash/CashCountFooter';
+import { CashCountDateButton, formatCashCountDateInput } from '@/components/cash/CashCountDateButton';
 import { PurchaseMultiSourceForm, type PaymentSourceOption, type PurchaseMultiSourcePayload } from '@/components/PurchaseMultiSourceForm';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -167,6 +169,9 @@ export default function StaffDashboardView() {
     const [cashOptionsCalculatorOpen, setCashOptionsCalculatorOpen] = useState(false);
     const [selectedBox, setSelectedBox] = useState<any>(null);
     const [cashModalMode, setCashModalMode] = useState<'none' | 'out'>('none');
+    const [cashCountTotal, setCashCountTotal] = useState(0);
+    const [cashOpDate, setCashOpDate] = useState(formatCashCountDateInput);
+    const [purchaseDate, setPurchaseDate] = useState(formatCashCountDateInput);
     const [boxInventory, setBoxInventory] = useState<any[]>([]);
     const [boxInventoryMap, setBoxInventoryMap] = useState<Record<number, number>>({});
     const [showPurchaseMultiSourceModal, setShowPurchaseMultiSourceModal] = useState(false);
@@ -1269,11 +1274,14 @@ export default function StaffDashboardView() {
                 title="Compra"
                 ariaLabel="Compra"
                 headerTone="petroleum"
+                headerTrailing={<CashCountDateButton value={purchaseDate} onChange={setPurchaseDate} />}
             >
                 <PurchaseMultiSourceForm
                     embedded
                     paymentSources={buildPaymentSources()}
                     inventoriesByBoxId={purchaseInventoriesByBoxId}
+                    selectedDate={purchaseDate}
+                    onSelectedDateChange={setPurchaseDate}
                     onSubmit={handlePurchaseMultiSourceSubmit}
                     onCancel={() => { setShowPurchaseMultiSourceModal(false); setPurchaseInventoriesByBoxId({}); }}
                 />
@@ -1290,6 +1298,16 @@ export default function StaffDashboardView() {
                 title="Compra"
                 subtitle={selectedBox?.name || 'Caja'}
                 headerTone="petroleum"
+                headerTrailing={<CashCountDateButton value={cashOpDate} onChange={setCashOpDate} />}
+                footer={
+                    <CashCountFooter
+                        total={cashCountTotal}
+                        instancePrefix="staff-treasury-out"
+                        onCancel={() => setCashModalMode('none')}
+                        saveType="submit"
+                        saveForm={CASH_COUNT_FORM_ID}
+                    />
+                }
             >
                 <CashDenominationForm
                     key={'out' + (selectedBox?.id || '')}
@@ -1302,6 +1320,9 @@ export default function StaffDashboardView() {
                     onCancel={() => setCashModalMode('none')}
                     onSubmit={handleCashTransaction}
                     forcePurchaseMode={true}
+                    onTotalChange={setCashCountTotal}
+                    selectedDate={cashOpDate}
+                    onSelectedDateChange={setCashOpDate}
                 />
             </Modal>
 

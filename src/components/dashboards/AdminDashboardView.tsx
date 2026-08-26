@@ -32,8 +32,10 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import WorkerWeeklyHistoryModal from '@/components/WorkerWeeklyHistoryModal';
 import { getDashboardData } from '@/app/actions/get-dashboard-data';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
-import { CashDenominationForm } from '@/components/CashDenominationForm';
+import { CashDenominationForm, CASH_COUNT_FORM_ID } from '@/components/CashDenominationForm';
 import { BoxInventoryView } from '@/components/BoxInventoryView';
+import { CashCountFooter } from '@/components/cash/CashCountFooter';
+import { CashCountDateButton, formatCashCountDateInput } from '@/components/cash/CashCountDateButton';
 import { PurchaseMultiSourceForm, type PaymentSourceOption, type PurchaseMultiSourcePayload } from '@/components/PurchaseMultiSourceForm';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
@@ -185,6 +187,9 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const [allEmployeesIncludingInactive, setAllEmployeesIncludingInactive] = useState<any[] | null>(null);
     const [showAllEmployeesInPlantilla, setShowAllEmployeesInPlantilla] = useState(false);
     const [cashModalMode, setCashModalMode] = useState<CashModalMode>('none');
+    const [cashCountTotal, setCashCountTotal] = useState(0);
+    const [cashOpDate, setCashOpDate] = useState(formatCashCountDateInput);
+    const [purchaseDate, setPurchaseDate] = useState(formatCashCountDateInput);
     const [selectedBox, setSelectedBox] = useState<any>(null);
     const [boxInventory, setBoxInventory] = useState<any[]>([]);
     const [boxInventoryMap, setBoxInventoryMap] = useState<Record<number, number>>({});
@@ -911,11 +916,27 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     ? (selectedBox?.name || 'Caja')
                                     : (selectedBox?.name || undefined)
                             }
+                            headerTrailing={
+                                cashModalMode !== 'inventory' ? (
+                                    <CashCountDateButton value={cashOpDate} onChange={setCashOpDate} />
+                                ) : null
+                            }
                             ariaLabel={
                                 cashModalMode === 'in' ? 'Entrada de caja'
                                 : cashModalMode === 'out' ? 'Salida de caja'
                                 : cashModalMode === 'audit' ? 'Arqueo de caja'
                                 : 'Inventario de caja'
+                            }
+                            footer={
+                                cashModalMode !== 'inventory' ? (
+                                    <CashCountFooter
+                                        total={cashCountTotal}
+                                        instancePrefix={`admin-${cashModalMode}`}
+                                        onCancel={() => setCashModalMode('none')}
+                                        saveType="submit"
+                                        saveForm={CASH_COUNT_FORM_ID}
+                                    />
+                                ) : undefined
                             }
                         >
                                 {(cashModalMode === 'in' || cashModalMode === 'out' || cashModalMode === 'audit') && (
@@ -929,6 +950,9 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         availableStock={boxInventoryMap}
                                         onCancel={() => setCashModalMode('none')}
                                         onSubmit={handleCashTransaction}
+                                        onTotalChange={setCashCountTotal}
+                                        selectedDate={cashOpDate}
+                                        onSelectedDateChange={setCashOpDate}
                                     />
                                 )}
                                 {cashModalMode === 'inventory' && (
@@ -962,11 +986,14 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     title="Compra"
                     ariaLabel="Compra"
                     headerTone="petroleum"
+                    headerTrailing={<CashCountDateButton value={purchaseDate} onChange={setPurchaseDate} />}
                 >
                     <PurchaseMultiSourceForm
                         embedded
                         paymentSources={buildPaymentSources()}
                         inventoriesByBoxId={purchaseInventoriesByBoxId}
+                        selectedDate={purchaseDate}
+                        onSelectedDateChange={setPurchaseDate}
                         onSubmit={handlePurchaseMultiSourceSubmit}
                         onCancel={() => { setShowPurchaseMultiSourceModal(false); setPurchaseInventoriesByBoxId({}); }}
                     />

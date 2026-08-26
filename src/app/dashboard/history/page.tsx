@@ -14,8 +14,6 @@ import {
     Trash2,
     ChevronRight as ChevronRightIcon,
     Banknote,
-    Minus,
-    Plus,
     Printer,
     Share,
 } from 'lucide-react';
@@ -28,7 +26,7 @@ import { format, startOfMonth, endOfMonth, isSameDay, addDays, subMonths, isSame
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import CashClosingModal, { BILLS, COINS } from '@/components/CashClosingModal';
+import CashClosingModal from '@/components/CashClosingModal';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { PeriodNav, PeriodFilterButton } from '@/components/time/PeriodNav';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
@@ -46,7 +44,9 @@ import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import * as XLSX from 'xlsx';
 import { deleteCashClosingPhotosAction, getCashClosingPhotoUrlsAction } from '@/app/actions/cash-closing-photos';
 import { CLOSING_WEATHER_OPTIONS, weatherIdFromLabel } from '@/lib/cash-closing-weather';
-import { CURRENCY_IMAGES } from '@/lib/constants';
+import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
+import { DenominationCountGrid } from '@/components/cash/DenominationCountGrid';
+import { CashCountFooter } from '@/components/cash/CashCountFooter';
 
 // --- TYPES & CONSTANTS ---
 type MetricType = 'net_sales' | 'tpv_sales' | 'avg_ticket' | 'tickets_count' | 'cash_counted';
@@ -429,8 +429,7 @@ const CashBreakdownModal = ({
     const [calculatorOpen, setCalculatorOpen] = useState(false);
 
     const displayBreakdown = isEditing ? {
-        ...BILLS.reduce((acc, b) => ({ ...acc, [b.toString()]: 0 }), {}),
-        ...COINS.reduce((acc, c) => ({ ...acc, [c.toString()]: 0 }), {}),
+        ...DENOMINATIONS.reduce((acc, d) => ({ ...acc, [d.toString()]: 0 }), {} as Record<string, number>),
         ...breakdown
     } : breakdown;
 
@@ -439,21 +438,47 @@ const CashBreakdownModal = ({
         return isNaN(d.getTime()) ? "Fecha Inválida" : format(d, 'eeee d MMM', { locale: es });
     })();
 
+    const editCounts = Object.fromEntries(
+        DENOMINATIONS.map((d) => [d, Number(displayBreakdown?.[String(d)] ?? displayBreakdown?.[d] ?? 0)])
+    ) as Record<number, number>;
+
     return (
         <Modal
             open={isOpen}
             onClose={onClose}
-            variant="compact"
+            variant={isEditing ? "amplify" : "compact"}
             layer="derived"
             instance="history-cash-breakdown"
             parentInstance="history-closing-detail"
             title={titleDate}
             subtitle="Arqueo de Efectivo"
             headerTone="petroleum"
-            scrollContent={false}
+            scrollContent={!isEditing}
+            footer={
+                isEditing ? (
+                    <CashCountFooter
+                        total={total}
+                        instancePrefix="history-cash-breakdown"
+                        onCancel={onClose}
+                        onSave={onSave}
+                        saveLoading={saving}
+                        saveLabel="Guardar"
+                    />
+                ) : undefined
+            }
         >
                 <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
                 <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
+                {isEditing ? (
+                    <DenominationCountGrid
+                        counts={editCounts}
+                        onAdjust={(denom, delta) => {
+                            const current = Number(displayBreakdown?.[String(denom)] ?? displayBreakdown?.[denom] ?? 0);
+                            onUpdate?.(String(denom), Math.max(0, current + delta));
+                        }}
+                        onChange={(denom, raw) => onUpdate?.(String(denom), parseInt(raw, 10) || 0)}
+                    />
+                ) : (
                 <div className="flex min-h-0 flex-1 flex-col">
                     <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar p-6">
                     <div className="space-y-2">
@@ -481,37 +506,9 @@ const CashBreakdownModal = ({
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-3 shrink-0">
-                                    {isEditing ? (
-                                        <div className="flex items-center h-12 min-h-[48px] bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm">
-                                            <button
-                                                type="button"
-                                                onClick={() => onUpdate?.(den, Math.max(0, qtyNum - 1))}
-                                                className="w-11 min-h-[48px] flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors shrink-0"
-                                                aria-label={`Restar ${den}`}
-                                            >
-                                                <Minus size={14} strokeWidth={3} />
-                                            </button>
-                                            <input
-                                                type="number"
-                                                inputMode="numeric"
-                                                className="w-12 min-h-[48px] bg-transparent text-sm font-black text-[#36606F] text-center outline-none"
-                                                value={qtyNum || ''}
-                                                onChange={e => onUpdate?.(den, parseInt(e.target.value, 10) || 0)}
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => onUpdate?.(den, qtyNum + 1)}
-                                                className="w-11 min-h-[48px] flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors shrink-0"
-                                                aria-label={`Sumar ${den}`}
-                                            >
-                                                <Plus size={14} strokeWidth={3} />
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <span className="text-xs font-black text-gray-400">
-                                            {qtyNum > 0 ? `x${qtyNum}` : ' '}
-                                        </span>
-                                    )}
+                                    <span className="text-xs font-black text-gray-400">
+                                        {qtyNum > 0 ? `x${qtyNum}` : ' '}
+                                    </span>
                                     <span className="text-sm font-black text-[#36606F] min-w-[50px] text-right">
                                         {lineTotal > 0.005 ? formatCurrencySpanish(lineTotal) : ' '}
                                     </span>
@@ -526,21 +523,6 @@ const CashBreakdownModal = ({
                     </div>
                     </div>
                 </div>
-                {isEditing && (
-                    <div className="p-6 bg-gray-50/50 border-t border-gray-100 shrink-0">
-                        <button
-                            type="button"
-                            onClick={onSave}
-                            disabled={saving}
-                            className={cn(
-                                "w-full min-h-[48px] h-12 bg-[#36606F] text-white rounded-lg font-black uppercase tracking-widest text-xs shadow-lg transition-all",
-                                "hover:scale-[1.02] active:scale-[0.98]",
-                                saving ? "opacity-70 pointer-events-none" : ""
-                            )}
-                        >
-                            {saving ? 'Guardando…' : 'Guardar desglose'}
-                        </button>
-                    </div>
                 )}
         </Modal>
     );
