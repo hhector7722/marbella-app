@@ -545,6 +545,7 @@
   width: 100%;
   max-width: 100%;
   table-layout: fixed;
+  border-collapse: collapse;
 }
 [data-component='Table'] thead {
   background-color: var(--color-marca);
@@ -553,20 +554,21 @@
 [data-component='Table'] thead th {
   color: var(--color-texto-invertido);
   font-weight: 900;
-  font-size: 9px;
-  line-height: 1.2;
+  font-size: 8px;
+  line-height: 1.15;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding-block: 6px;
-  padding-inline: 6px;
+  letter-spacing: 0.03em;
+  padding-block: 4px;
+  padding-inline: 4px;
   overflow: hidden;
-  text-overflow: ellipsis;
+  text-overflow: clip;
+  white-space: nowrap;
 }
 [data-component='Table'] td {
-  font-size: 11px;
-  line-height: 1.25;
-  padding-block: 6px;
-  padding-inline: 6px;
+  font-size: 10px;
+  line-height: 1.2;
+  padding-block: 4px;
+  padding-inline: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
   vertical-align: middle;
@@ -1356,9 +1358,9 @@
       min-height: 0 !important;
       overflow: hidden !important;
       flex-shrink: 1 !important;
-      padding-top: 0.35rem !important;
-      padding-bottom: 0.25rem !important;
-      gap: 0.15rem !important;
+      padding-top: 0 !important;
+      padding-bottom: 0.15rem !important;
+      gap: 0.1rem !important;
     }
 
     .month-cal-kpi {

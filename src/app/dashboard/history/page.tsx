@@ -533,7 +533,7 @@ const CashBreakdownModal = ({
                             onClick={onSave}
                             disabled={saving}
                             className={cn(
-                                "w-full min-h-[48px] h-12 bg-[#36606F] text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg transition-all",
+                                "w-full min-h-[48px] h-12 bg-[#36606F] text-white rounded-lg font-black uppercase tracking-widest text-xs shadow-lg transition-all",
                                 "hover:scale-[1.02] active:scale-[0.98]",
                                 saving ? "opacity-70 pointer-events-none" : ""
                             )}
@@ -1626,7 +1626,7 @@ export default function HistoryPage() {
                             />
 
                             {shareMenuOpen ? (
-                                <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden z-20">
+                                <div className="absolute right-0 mt-2 w-56 rounded-lg bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden z-20">
                                     <Button
                                         type="button"
                                         variant="secondary"
@@ -1652,7 +1652,7 @@ export default function HistoryPage() {
                 </div>
             }
         >
-            <div className="px-3 pt-1 pb-1 shrink-0 print:hidden">
+            <div className="px-2 pt-0.5 pb-0.5 shrink-0 print:hidden">
                 <PetroleumSegmented
                     instance="history-vista"
                     density="compact"
@@ -1727,8 +1727,8 @@ export default function HistoryPage() {
                             viewMode === 'calendar' && 'flex-1 min-h-0 flex flex-col'
                         )}>
                             {viewMode === 'table' ? (
-                                <div className="py-2 bg-zinc-50/50 flex flex-col gap-1 shrink-0 min-w-0">
-                                    <div className="mx-auto w-[97%] min-w-0 rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white overflow-x-auto overflow-y-visible custom-scrollbar print:overflow-visible print:bg-white print-table-cierres">
+                                <div className="py-1 bg-zinc-50/50 flex flex-col gap-1 shrink-0 min-w-0">
+                                    <div className="mx-auto w-[97%] min-w-0 rounded-lg border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-x-hidden bg-white print:overflow-visible print:bg-white print-table-cierres">
                                         <div className="hidden print:block text-lg font-black text-zinc-800 p-4 pb-2">Cierres — Historial</div>
                                         {loading ? (
                                             <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -1740,7 +1740,7 @@ export default function HistoryPage() {
                                                 <p className="text-[10px] font-black uppercase tracking-widest">Sin actividad</p>
                                             </div>
                                         ) : (
-                                            <table data-component={TABLE_COMPONENT_ID} data-instance="cierres-tabla" className="w-full text-left border-collapse table-fixed md:table-auto">
+                                            <table data-component={TABLE_COMPONENT_ID} data-instance="cierres-tabla" className="w-full text-left border-collapse table-fixed">
                                                 <thead>
                                                     <tr>
                                                         <th className="py-1.5 px-0.5 md:px-1 whitespace-nowrap">Fecha</th>
@@ -2457,7 +2457,7 @@ export default function HistoryPage() {
                             <div className="flex items-center justify-between mb-6 px-2">
                                 <button
                                     onClick={() => setCalendarBaseDate(subMonths(calendarBaseDate, 1))}
-                                    className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"
+                                    className="p-3 hover:bg-zinc-50 rounded-lg transition-colors"
                                     aria-label="Mes anterior"
                                 >
                                     <ChevronLeft size={20} className="text-zinc-400" />
@@ -2465,7 +2465,7 @@ export default function HistoryPage() {
                                 <span className="font-black text-zinc-900 text-xs uppercase tracking-tight">{format(calendarBaseDate, 'MMMM yyyy', { locale: es })}</span>
                                 <button
                                     onClick={() => setCalendarBaseDate(addDays(endOfMonth(calendarBaseDate), 1))}
-                                    className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"
+                                    className="p-3 hover:bg-zinc-50 rounded-lg transition-colors"
                                     aria-label="Mes siguiente"
                                 >
                                     <ChevronRight size={20} className="text-zinc-400" />
@@ -2487,7 +2487,7 @@ export default function HistoryPage() {
                                             key={i}
                                             onClick={() => handleDateSelect(day)}
                                             className={cn(
-                                                "aspect-square flex items-center justify-center rounded-2xl text-[11px] font-black transition-all",
+                                                "aspect-square flex items-center justify-center rounded-lg text-[11px] font-black transition-all",
                                                 isSelected ? "bg-zinc-900 text-white shadow-xl scale-110" : isInRange ? "bg-blue-50 text-[#5B8FB9]" : "hover:bg-zinc-50 text-zinc-600"
                                             )}
                                         >
@@ -2517,7 +2517,7 @@ export default function HistoryPage() {
                             <div className="flex items-center justify-between mb-8 px-2">
                                 <button
                                     onClick={() => setPickerYear(pickerYear - 1)}
-                                    className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"
+                                    className="p-3 hover:bg-zinc-50 rounded-lg transition-colors"
                                     aria-label="Año anterior"
                                 >
                                     <ChevronLeft size={20} className="text-zinc-400" />
@@ -2525,7 +2525,7 @@ export default function HistoryPage() {
                                 <span className="font-black text-xl text-zinc-900 tracking-tighter">{pickerYear}</span>
                                 <button
                                     onClick={() => setPickerYear(pickerYear + 1)}
-                                    className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors"
+                                    className="p-3 hover:bg-zinc-50 rounded-lg transition-colors"
                                     aria-label="Año siguiente"
                                 >
                                     <ChevronRight size={20} className="text-zinc-400" />
@@ -2550,7 +2550,7 @@ export default function HistoryPage() {
                                                 trackHistoryMonthPicker(formatMonthYear(pickerYear, i));
                                             }}
                                             className={cn(
-                                                "py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2",
+                                                "py-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border-2",
                                                 isSelected
                                                     ? "bg-zinc-900 border-zinc-900 text-white shadow-lg scale-105"
                                                     : "bg-zinc-50 border-transparent text-zinc-400 hover:border-zinc-200 hover:text-zinc-900"
@@ -2591,7 +2591,7 @@ export default function HistoryPage() {
                                 <button
                                     type="button"
                                     onClick={() => setExportPickerYear((y) => y - 1)}
-                                    className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors min-h-12 min-w-12 flex items-center justify-center"
+                                    className="p-3 hover:bg-zinc-50 rounded-lg transition-colors min-h-12 min-w-12 flex items-center justify-center"
                                     aria-label="Año anterior"
                                 >
                                     <ChevronLeft size={20} className="text-zinc-400" />
@@ -2600,7 +2600,7 @@ export default function HistoryPage() {
                                 <button
                                     type="button"
                                     onClick={() => setExportPickerYear((y) => y + 1)}
-                                    className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors min-h-12 min-w-12 flex items-center justify-center"
+                                    className="p-3 hover:bg-zinc-50 rounded-lg transition-colors min-h-12 min-w-12 flex items-center justify-center"
                                     aria-label="Año siguiente"
                                 >
                                     <ChevronRight size={20} className="text-zinc-400" />
@@ -2619,7 +2619,7 @@ export default function HistoryPage() {
                                             type="button"
                                             onClick={() => toggleExportMonth(key)}
                                             className={cn(
-                                                'py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 min-h-12',
+                                                'py-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border-2 min-h-12',
                                                 isSelected
                                                     ? 'bg-[#36606F] border-[#36606F] text-white shadow-lg scale-105'
                                                     : 'bg-zinc-50 border-transparent text-zinc-400 hover:border-zinc-200 hover:text-zinc-900'
@@ -2662,7 +2662,7 @@ export default function HistoryPage() {
                                 onClick={() => void confirmExport()}
                                 disabled={!!shareBusy || exportSelectedMonths.size === 0}
                                 className={cn(
-                                    'flex-1 min-h-12 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-colors',
+                                    'flex-1 min-h-12 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors',
                                     'bg-zinc-900 text-white hover:bg-zinc-800',
                                     (!!shareBusy || exportSelectedMonths.size === 0) && 'opacity-50 pointer-events-none'
                                 )}

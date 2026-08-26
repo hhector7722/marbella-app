@@ -54,7 +54,7 @@ const StaffOvertimeRow = memo(({
     onTogglePaid: (e: React.MouseEvent, weekId: string, staffId: string, status: boolean) => void;
     onClick: () => void;
 }) => (
-    <div onClick={onClick} className="flex items-center justify-between p-3 bg-white/60 rounded-2xl border border-purple-100/30 cursor-pointer hover:bg-white transition-colors group">
+    <div onClick={onClick} className="flex items-center justify-between p-3 bg-white/60 rounded-lg border border-purple-100/30 cursor-pointer hover:bg-white transition-colors group">
         <span className="text-xs font-bold text-gray-700 capitalize group-hover:text-purple-700 transition-colors leading-none">
             {staff.name}
         </span>

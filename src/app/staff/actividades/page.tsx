@@ -289,7 +289,7 @@ export default function ActividadesPage() {
             </div>
           ) : (
             <div 
-              className="flex flex-col gap-1 bg-zinc-50/50 px-[1.5%] pt-2 pb-1 touch-pan-y month-cal-body"
+              className="flex flex-col gap-0.5 bg-zinc-50/50 px-[1%] pt-0.5 pb-1 touch-pan-y month-cal-body"
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}

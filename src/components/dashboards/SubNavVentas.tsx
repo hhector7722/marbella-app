@@ -129,7 +129,7 @@ export function SubNavVentas({ activeTab, onTabChange, showPrint = false, onExpo
   };
 
   return (
-    <div className="flex shrink-0 border-b border-zinc-100 px-4 py-2 justify-center items-center relative print:hidden">
+    <div className="flex shrink-0 border-b border-zinc-100 px-2 py-1 justify-center items-center relative print:hidden">
       <PetroleumSegmented
         instance="ventas-subnav"
         density="compact"

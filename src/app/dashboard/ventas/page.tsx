@@ -634,7 +634,7 @@ export default function VentasPage() {
             }
         >
                     {/* SECCIÓN DE KPIs */}
-                    <div className="pt-1 pb-1 px-3 grid grid-cols-3 border-b border-zinc-50 print:hidden">
+                    <div className="pt-0.5 pb-0.5 px-2 grid grid-cols-3 border-b border-zinc-50 print:hidden">
                         <div className="flex flex-col items-center justify-center text-center">
                             <span className="text-lg md:text-2xl font-black tabular-nums leading-none text-emerald-500">
                                 {summary.totalSales > 0 ? `${summary.totalSales.toFixed(2)}€` : " "}
@@ -754,7 +754,7 @@ export default function VentasPage() {
                     />
 
                     {/* TABLAS */}
-                    <div className="p-4 md:p-6 bg-zinc-50/50 print:bg-white print:p-4">
+                    <div className="px-1.5 py-1 md:px-2 md:py-1.5 bg-zinc-50/50 print:bg-white print:p-2 min-w-0">
                         <div className="hidden print:block text-lg font-black text-zinc-800 mb-2">
                             Ventas — {activeTab === 'VENTAS' ? 'Ventas' : activeTab === 'PRODUCTOS' ? 'Productos' : 'Horas'}
                         </div>
@@ -769,7 +769,7 @@ export default function VentasPage() {
                                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Sin ventas en este periodo</span>
                                     </div>
                                 ) : (
-                                    <div className="w-full bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden print-table-ventas">
+                                    <div className="w-full min-w-0 bg-white rounded-lg shadow-sm border border-zinc-200 overflow-x-hidden print-table-ventas">
                                         <table data-component={TABLE_COMPONENT_ID} data-instance="ventas-tickets" className="w-full text-left border-collapse">
                                             <thead>
                                                 <tr>
@@ -795,7 +795,7 @@ export default function VentasPage() {
                                                                     expandedTicket === ticket.numero_documento && "bg-zinc-50 border-transparent"
                                                                 )}
                                                             >
-                                                                <td className="whitespace-nowrap text-zinc-500 font-mono tabular-nums">
+                                                                <td className="text-zinc-500 font-mono tabular-nums">
                                                                     {formatTicketTimeMadrid(ticket.hora_cierre, ticket.fecha)}
                                                                 </td>
                                                                 <td className="font-mono text-zinc-700">
@@ -805,7 +805,7 @@ export default function VentasPage() {
                                                                     {(!ticket.mesa || ticket.mesa === 0) ? 'Barra' : ticket.mesa}
                                                                 </td>
                                                                 <td className={cn(
-                                                                    "text-right font-black tabular-nums whitespace-nowrap",
+                                                                    "text-right font-black tabular-nums",
                                                                     (ticket.total_documento || 0) > 0 ? "text-emerald-500" : "text-zinc-600"
                                                                 )}>
                                                                     {(ticket.total_documento || 0) !== 0 ? `${Number(ticket.total_documento).toFixed(2)}€` : ' '}
@@ -814,7 +814,7 @@ export default function VentasPage() {
                                                             {expandedTicket === ticket.numero_documento && (
                                                                 <tr className="bg-zinc-50/30 print:hidden">
                                                                     <td colSpan={4} className="px-1 py-2 md:p-4">
-                                                                        <div className="bg-[#fcfcfc] rounded-2xl p-2 md:p-4 animate-in slide-in-from-top-2 duration-200">
+                                                                        <div className="bg-[#fcfcfc] rounded-lg p-2 md:p-3 animate-in slide-in-from-top-2 duration-200">
                                                                             {loadingLines ? (
                                                                                 <div className="flex justify-center py-6">
                                                                                     <LoadingSpinner size="sm" className="text-[#36606F]/50" />
@@ -907,7 +907,7 @@ export default function VentasPage() {
                                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Sin productos en este periodo</span>
                                     </div>
                                 ) : (
-                                    <div className="w-full bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden print-table-ventas">
+                                    <div className="w-full min-w-0 bg-white rounded-lg shadow-sm border border-zinc-200 overflow-x-hidden print-table-ventas">
                                         <table data-component={TABLE_COMPONENT_ID} data-instance="ventas-productos" className="w-full text-left border-collapse">
                                             <thead>
                                                 <tr>
@@ -930,10 +930,10 @@ export default function VentasPage() {
                                                         <td className="text-center text-zinc-500 tabular-nums">
                                                             {Number(prod.cantidad_total).toFixed(0)}
                                                         </td>
-                                                        <td className="text-center text-zinc-400 tabular-nums whitespace-nowrap">
+                                                        <td className="text-center text-zinc-400 tabular-nums">
                                                             {Number(prod.precio_medio).toFixed(2)}€
                                                         </td>
-                                                        <td className="text-right font-black tabular-nums whitespace-nowrap text-emerald-500">
+                                                        <td className="text-right font-black tabular-nums text-emerald-500">
                                                             {Number(prod.total_ingresos).toFixed(2)}€
                                                         </td>
                                                     </tr>
@@ -947,7 +947,7 @@ export default function VentasPage() {
                                     <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Sin datos por hora en este periodo</span>
                                 </div>
                             ) : (
-                                <div className="w-full bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden print-table-ventas">
+                                <div className="w-full min-w-0 bg-white rounded-lg shadow-sm border border-zinc-200 overflow-x-hidden print-table-ventas">
                                     <table data-component={TABLE_COMPONENT_ID} data-instance="ventas-horas" className="w-full text-left border-collapse">
                                         <thead>
                                             <tr>
@@ -963,7 +963,7 @@ export default function VentasPage() {
                                                     key={row.label}
                                                     className="group hover:bg-zinc-50/80 transition-colors"
                                                 >
-                                                    <td className="whitespace-nowrap font-mono font-bold text-zinc-900 tabular-nums">
+                                                    <td className="font-mono font-bold text-zinc-900 tabular-nums">
                                                         {row.label}
                                                     </td>
                                                     <td className="text-center text-zinc-500 tabular-nums">
@@ -972,7 +972,7 @@ export default function VentasPage() {
                                                     <td className="text-center text-zinc-400 tabular-nums">
                                                         {row.media !== 0 ? `${row.media.toFixed(2)}€` : ' '}
                                                     </td>
-                                                    <td className="text-right font-black tabular-nums whitespace-nowrap text-emerald-500">
+                                                    <td className="text-right font-black tabular-nums text-emerald-500">
                                                         {row.total !== 0 ? `${row.total.toFixed(2)}€` : ' '}
                                                     </td>
                                                 </tr>

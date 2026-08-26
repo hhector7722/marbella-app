@@ -334,7 +334,7 @@ export default function ManagerLedgerView() {
             >
                     {/* CUERPO: resumen 3 columnas (Ingresos, Gastos, Saldo) sin Arqueo ni Diferencia */}
                     <div className="bg-white">
-                        <div className="py-4 px-2 grid grid-cols-3 border-b border-zinc-50">
+                        <div className="py-1.5 px-2 grid grid-cols-3 border-b border-zinc-50">
                             <div className="flex flex-col items-center justify-center text-center px-1">
                                 <span className="text-[13px] md:text-2xl font-black text-emerald-500 line-clamp-1">{periodSummary.income > 0.005 ? `+${periodSummary.income.toFixed(2)}€` : " "}</span>
                                 <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">INGRESOS</span>
@@ -350,16 +350,16 @@ export default function ManagerLedgerView() {
                         </div>
 
                         {/* TABLA (Fecha, Concepto, Importe, Saldo) como movements */}
-                        <div className="p-3 bg-white">
-                            <div className="rounded-[1.5rem] overflow-hidden border border-zinc-100 shadow-xl">
-                                <div className="w-full">
+                        <div className="p-1.5 bg-white">
+                            <div className="rounded-lg overflow-hidden border border-zinc-100 shadow-sm">
+                                <div className="w-full min-w-0 overflow-x-hidden">
                                     <table data-component={TABLE_COMPONENT_ID} data-instance="libro-mayor" className="w-full text-left font-sans">
                                         <thead>
-                                            <tr className="text-[9px] md:text-[10px] font-black uppercase tracking-wider md:tracking-[0.15em]">
-                                                <th className="px-3 md:px-6 py-4 w-[22%]">FECHA</th>
-                                                <th className="px-2 md:px-6 py-4 w-[38%]">CONCEPTO</th>
-                                                <th className="px-2 md:px-6 py-4 text-center w-[20%]">IMPORTE</th>
-                                                <th className="px-3 md:px-8 py-4 text-right w-[20%]">SALDO</th>
+                                            <tr>
+                                                <th className="w-[22%]">FECHA</th>
+                                                <th className="w-[38%]">CONCEPTO</th>
+                                                <th className="w-[20%] text-center">IMPORTE</th>
+                                                <th className="w-[20%] text-right">SALDO</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-zinc-50/50">
@@ -395,8 +395,8 @@ export default function ManagerLedgerView() {
                                                         : '--:--';
                                                     return (
                                                         <tr key={mov.id} className="group hover:bg-zinc-50/80 transition-colors">
-                                                            <td className="px-3 md:px-6 py-3">
-                                                                <div className="flex flex-col">
+                                                            <td>
+                                                                <div className="flex flex-col min-w-0">
                                                                     <span className="text-[10px] md:text-[13px] font-black text-zinc-900 italic">
                                                                         {!ok ? (
                                                                             <span className="text-rose-500 text-[10px]">Fecha Inválida</span>
@@ -412,33 +412,33 @@ export default function ManagerLedgerView() {
                                                                     </span>
                                                                 </div>
                                                             </td>
-                                                            <td className="px-2 md:px-6 py-3">
-                                                                <div className="flex items-center gap-1.5 md:gap-3">
+                                                            <td>
+                                                                <div className="flex items-center gap-1.5 min-w-0">
                                                                     <div className={cn(
                                                                         "w-5 h-5 md:w-8 md:h-8 rounded-md md:rounded-lg flex items-center justify-center shrink-0 shadow-sm",
                                                                         mov.movement_type === 'entrada' ? "bg-emerald-50 text-emerald-500" : "bg-rose-50 text-rose-500"
                                                                     )}>
                                                                         {mov.movement_type === 'entrada' ? <Plus size={10} className="md:size-[16px]" strokeWidth={3} /> : <ArrowUp size={10} className="md:size-[16px]" strokeWidth={3} />}
                                                                     </div>
-                                                                    <span className="text-[9px] md:text-[12px] font-bold text-zinc-500 uppercase tracking-tight truncate max-w-[60px] md:max-w-[200px]">{mov.concept}</span>
+                                                                    <span className="text-[9px] md:text-[11px] font-bold text-zinc-500 uppercase tracking-tight truncate min-w-0">{mov.concept}</span>
                                                                 </div>
                                                             </td>
-                                                            <td className="px-2 md:px-6 py-3 text-center">
+                                                            <td className="text-center">
                                                                 <span className={cn(
-                                                                    "text-[10px] md:text-[15px] font-black tabular-nums",
+                                                                    "text-[10px] md:text-[13px] font-black tabular-nums",
                                                                     mov.movement_type === 'entrada' ? "text-emerald-500" : "text-rose-500"
                                                                 )}>
                                                                     {mov.movement_type === 'entrada' ? '+' : '-'}{mov.amount.toFixed(2)}€
                                                                 </span>
                                                             </td>
-                                                            <td className="px-3 md:px-8 py-3 text-right">
+                                                            <td className="text-right">
                                                                 <div className="flex items-center justify-end gap-1">
                                                                     <span className="text-[10px] md:text-[15px] font-black text-zinc-900 tabular-nums">{formatMoney(mov.running_balance)}</span>
                                                                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                        <button onClick={() => openEditModal(mov)} className="p-1.5 md:p-2 bg-zinc-50 hover:bg-blue-50 text-zinc-400 hover:text-blue-500 rounded-xl transition-all border border-zinc-100 hover:border-blue-200 shadow-sm active:scale-95">
+                                                                        <button onClick={() => openEditModal(mov)} className="p-1.5 md:p-2 bg-zinc-50 hover:bg-blue-50 text-zinc-400 hover:text-blue-500 rounded-lg transition-all border border-zinc-100 hover:border-blue-200 shadow-sm active:scale-95">
                                                                             <Pencil size={14} />
                                                                         </button>
-                                                                        <button onClick={() => openDeleteModal(mov)} className="p-1.5 md:p-2 bg-zinc-50 hover:bg-rose-50 text-zinc-400 hover:text-rose-500 rounded-xl transition-all border border-zinc-100 hover:border-rose-200 shadow-sm active:scale-95">
+                                                                        <button onClick={() => openDeleteModal(mov)} className="p-1.5 md:p-2 bg-zinc-50 hover:bg-rose-50 text-zinc-400 hover:text-rose-500 rounded-lg transition-all border border-zinc-100 hover:border-rose-200 shadow-sm active:scale-95">
                                                                             <Trash2 size={14} />
                                                                         </button>
                                                                     </div>
@@ -513,8 +513,8 @@ export default function ManagerLedgerView() {
             >
                         <form onSubmit={editModalOpen ? handleEdit : handleCreate}>
                             <div className="grid grid-cols-2 gap-2 mb-4 bg-zinc-100 p-1.5 rounded-2xl">
-                                <button type="button" onClick={() => setType('entrada')} className={`py-2 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${type === 'entrada' ? 'bg-emerald-500 text-white shadow-md' : 'text-zinc-400 hover:text-zinc-600'}`}>Entrada</button>
-                                <button type="button" onClick={() => setType('salida')} className={`py-2 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${type === 'salida' ? 'bg-white text-zinc-900 shadow-md' : 'text-zinc-400 hover:text-zinc-600'}`}>Salida</button>
+                                <button type="button" onClick={() => setType('entrada')} className={`py-2 px-4 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${type === 'entrada' ? 'bg-emerald-500 text-white shadow-md' : 'text-zinc-400 hover:text-zinc-600'}`}>Entrada</button>
+                                <button type="button" onClick={() => setType('salida')} className={`py-2 px-4 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${type === 'salida' ? 'bg-white text-zinc-900 shadow-md' : 'text-zinc-400 hover:text-zinc-600'}`}>Salida</button>
                             </div>
                             <div className="flex flex-col justify-center bg-blue-500 p-3 rounded-2xl border border-white/10 shadow-sm min-h-[48px] shrink-0 mb-4">
                                 <label className="text-[8px] font-black text-white/70 uppercase tracking-widest mb-1">Fecha del apunte</label>

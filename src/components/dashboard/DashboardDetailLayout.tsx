@@ -113,7 +113,7 @@ export function PageScreen({
           </div>
           <div
             data-element="body"
-            className={cn('px-3 pt-2 pb-3 md:px-4 md:pt-2 md:pb-4 flex-1 flex flex-col min-h-0', contentClassName)}
+            className={cn('px-3 pt-1 pb-2 md:px-4 md:pt-1 md:pb-3 flex-1 flex flex-col min-h-0', contentClassName)}
           >
             {children}
           </div>

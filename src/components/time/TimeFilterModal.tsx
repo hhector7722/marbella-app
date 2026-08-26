@@ -147,7 +147,7 @@ export function TimeFilterModal({
       type="button"
       onClick={() => setActiveKind(kind)}
       className={cn(
-        "flex-1 min-h-[36px] px-1 rounded-xl",
+        "flex-1 min-h-[36px] px-1 rounded-lg",
         "text-[9px] font-black uppercase tracking-widest transition-all",
         activeKind === kind ? "text-white bg-ds-marca" : "text-ds-marca"
       )}
@@ -218,7 +218,7 @@ export function TimeFilterModal({
           }
         }}
         className={cn(
-          "aspect-square flex items-center justify-center text-[11px] font-black transition-all rounded-2xl",
+          "aspect-square flex items-center justify-center text-[11px] font-black transition-all rounded-lg",
           isMuted ? "opacity-20" : "opacity-100",
           // Semana: bloque completo
           inWeek
@@ -259,7 +259,7 @@ export function TimeFilterModal({
           {activeKind === "hours" && allowedKinds.includes("hours") && (
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
-                <div className="bg-zinc-50 rounded-2xl border border-zinc-100 p-3">
+                <div className="bg-zinc-50 rounded-lg border border-zinc-100 p-3">
                   <div className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Desde</div>
                   <input
                     type="time"
@@ -268,7 +268,7 @@ export function TimeFilterModal({
                     className="mt-2 w-full bg-transparent text-zinc-900 font-black outline-none text-sm min-h-[48px]"
                   />
                 </div>
-                <div className="bg-zinc-50 rounded-2xl border border-zinc-100 p-3">
+                <div className="bg-zinc-50 rounded-lg border border-zinc-100 p-3">
                   <div className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Hasta</div>
                   <input
                     type="time"
@@ -297,7 +297,7 @@ export function TimeFilterModal({
                 <button
                   type="button"
                   onClick={() => setCalendarBaseDate(subMonths(calendarBaseDate, 1))}
-                  className="p-2 hover:bg-zinc-50 rounded-2xl transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
+                  className="p-2 hover:bg-zinc-50 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
                   aria-label="Mes anterior"
                 >
                   <ChevronLeft size={20} className="text-zinc-400" />
@@ -308,7 +308,7 @@ export function TimeFilterModal({
                 <button
                   type="button"
                   onClick={() => setCalendarBaseDate(addMonths(calendarBaseDate, 1))}
-                  className="p-2 hover:bg-zinc-50 rounded-2xl transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
+                  className="p-2 hover:bg-zinc-50 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
                   aria-label="Mes siguiente"
                 >
                   <ChevronRight size={20} className="text-zinc-400" />
@@ -340,7 +340,7 @@ export function TimeFilterModal({
                 <button
                   type="button"
                   onClick={() => setPickerYear((y) => y - 1)}
-                  className="p-2 hover:bg-zinc-50 rounded-2xl transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
+                  className="p-2 hover:bg-zinc-50 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
                   aria-label="Año anterior"
                 >
                   <ChevronLeft size={20} className="text-zinc-400" />
@@ -349,7 +349,7 @@ export function TimeFilterModal({
                 <button
                   type="button"
                   onClick={() => setPickerYear((y) => y + 1)}
-                  className="p-2 hover:bg-zinc-50 rounded-2xl transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
+                  className="p-2 hover:bg-zinc-50 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
                   aria-label="Año siguiente"
                 >
                   <ChevronRight size={20} className="text-zinc-400" />
@@ -368,7 +368,7 @@ export function TimeFilterModal({
                       type="button"
                       onClick={() => applyAndClose({ kind: "month", year: pickerYear, month: i + 1 })}
                       className={cn(
-                        "py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 min-h-[48px]",
+                        "py-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border-2 min-h-[48px]",
                         isSelected ? "bg-zinc-900 border-zinc-900 text-white shadow-lg" : "bg-zinc-50 border-transparent text-zinc-400 hover:border-zinc-200 hover:text-zinc-900"
                       )}
                     >
@@ -393,7 +393,7 @@ export function TimeFilterModal({
                       type="button"
                       onClick={() => applyAndClose({ kind: "year", year: y })}
                       className={cn(
-                        "min-h-[48px] rounded-2xl text-[11px] font-black tracking-tight border-2 transition-all",
+                        "min-h-[48px] rounded-lg text-[11px] font-black tracking-tight border-2 transition-all",
                         isSelected ? "bg-zinc-900 border-zinc-900 text-white shadow-lg" : "bg-zinc-50 border-transparent text-zinc-500 hover:border-zinc-200 hover:text-zinc-900"
                       )}
                     >
@@ -406,14 +406,14 @@ export function TimeFilterModal({
                 <button
                   type="button"
                   onClick={() => setPickerYear((y) => y - 6)}
-                  className="min-h-[48px] px-4 rounded-2xl bg-zinc-50 text-zinc-500 font-black text-[10px] uppercase tracking-widest hover:bg-zinc-100 transition-colors"
+                  className="min-h-[48px] px-4 rounded-lg bg-zinc-50 text-zinc-500 font-black text-[10px] uppercase tracking-widest hover:bg-zinc-100 transition-colors"
                 >
                   -6
                 </button>
                 <button
                   type="button"
                   onClick={() => setPickerYear((y) => y + 6)}
-                  className="min-h-[48px] px-4 rounded-2xl bg-zinc-50 text-zinc-500 font-black text-[10px] uppercase tracking-widest hover:bg-zinc-100 transition-colors"
+                  className="min-h-[48px] px-4 rounded-lg bg-zinc-50 text-zinc-500 font-black text-[10px] uppercase tracking-widest hover:bg-zinc-100 transition-colors"
                 >
                   +6
                 </button>

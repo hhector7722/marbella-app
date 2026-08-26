@@ -297,11 +297,6 @@ export default function LaborHistoryPage() {
         return eachDayOfInterval({ start: startVisible, end: endVisible });
     }, [viewMonth]);
 
-    const filterActive = useMemo(() => {
-        const cur = defaultFullMonthPeriod();
-        return periodStart !== cur.start || periodEnd !== cur.end;
-    }, [periodStart, periodEnd]);
-
     const laborPctOfPeriod = useMemo(() => {
         if (!summary || periodNetSales === null) return null;
         if (periodNetSales <= 0) return null;
@@ -459,15 +454,6 @@ export default function LaborHistoryPage() {
         }
     };
 
-    const clearTimeFilter = () => {
-        const cur = defaultFullMonthPeriod();
-        const n = new Date();
-        setViewMonth(startOfMonth(n));
-        setPeriodStart(cur.start);
-        setPeriodEnd(cur.end);
-        setAppliedFilter({ kind: 'month', year: n.getFullYear(), month: n.getMonth() + 1 });
-    };
-
     const [includeAllContracted, setIncludeAllContracted] = useState(false);
 
     const openDayDetail = useCallback(
@@ -571,8 +557,8 @@ export default function LaborHistoryPage() {
                     </div>
                 }
             >
-                    <div className="px-3 pt-1 pb-3 md:px-4 md:pt-2 flex flex-col month-cal-body min-h-0">
-                        <div className="grid grid-cols-4 gap-0.5 sm:gap-1 mb-3 py-2 shrink-0 min-w-0">
+                    <div className="px-2 pt-0 pb-2 md:px-3 md:pt-0 flex flex-col month-cal-body min-h-0">
+                        <div className="grid grid-cols-4 gap-0.5 sm:gap-1 mb-1 py-1 shrink-0 min-w-0">
                             <div className="flex min-w-0 flex-col items-center justify-center px-0.5 text-center">
                                 <span className="text-[6px] font-black uppercase leading-tight text-gray-400 sm:text-[7px]">
                                     Coste
@@ -605,7 +591,7 @@ export default function LaborHistoryPage() {
                             </div>
                         </div>
 
-                        <div className="mb-4 shrink-0">
+                        <div className="mb-1 shrink-0">
                             <ReconciliationBadge reconciliation={summary?.reconciliation} />
                         </div>
 

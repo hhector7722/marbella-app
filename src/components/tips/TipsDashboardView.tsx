@@ -463,7 +463,7 @@ export default function TipsDashboardView({
       showBackButton={false}
       maxWidthClass="max-w-6xl"
       template="list"
-      contentClassName="space-y-3 min-w-0"
+      contentClassName="space-y-1.5 min-w-0"
       periodSlot={
         <PeriodNav
           label={rangeLabel}

@@ -1043,9 +1043,9 @@ export default function HistoryPage() {
             >
                 <div>
                     <div className="flex items-center justify-between mb-6 px-2">
-                        <button type="button" onClick={() => setPickerYear(pickerYear - 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"><ChevronLeft size={20} className="text-zinc-400" /></button>
+                        <button type="button" onClick={() => setPickerYear(pickerYear - 1)} className="p-3 hover:bg-zinc-50 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"><ChevronLeft size={20} className="text-zinc-400" /></button>
                         <span className="font-black text-xl text-zinc-900 tracking-tighter">{pickerYear}</span>
-                        <button type="button" onClick={() => setPickerYear(pickerYear + 1)} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"><ChevronRight size={20} className="text-zinc-400" /></button>
+                        <button type="button" onClick={() => setPickerYear(pickerYear + 1)} className="p-3 hover:bg-zinc-50 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"><ChevronRight size={20} className="text-zinc-400" /></button>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                         {Array.from({ length: 12 }).map((_, i) => {
@@ -1067,7 +1067,7 @@ export default function HistoryPage() {
                                         );
                                     }}
                                     className={cn(
-                                        "py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 min-h-[48px]",
+                                        "py-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border-2 min-h-[48px]",
                                         isSelected ? "bg-[#36606F] border-[#36606F] text-white shadow-lg" : "bg-zinc-50 border-transparent text-zinc-400 hover:border-[#36606F]/20 hover:text-zinc-900 hover:bg-[#36606F]/5"
                                     )}
                                 >

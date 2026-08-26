@@ -65,6 +65,16 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(css, /\[data-component='Notice'\]\[data-variant='negative'\]/);
         assert.match(css, /\[data-component='KpiStat'\]/);
         assert.match(css, /\[data-component='Table'\] thead/);
+        assert.match(
+            css,
+            /\[data-component='Table'\] \{[\s\S]*?table-layout:\s*fixed/,
+            'tablas operativas caben en el ancho sin scroll'
+        );
+        assert.match(
+            css,
+            /\[data-component='Table'\] thead th \{[\s\S]*?font-size:\s*8px/,
+            'cabecera de tabla compacta'
+        );
         assert.match(css, /\[data-element='block-header'\]/);
         assert.match(css, /min-height:\s*var\(--tactil-minimo\)/);
         assert.match(css, /--espacio-8/);
@@ -348,6 +358,18 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
                 `${rel} no debe clonar thead petróleo`
             );
         }
+        const ventas = readFileSync(join(SRC_ROOT, 'app/dashboard/ventas/page.tsx'), 'utf8');
+        assert.doesNotMatch(
+            ventas,
+            /p-4 md:p-6 bg-zinc-50/,
+            'Ventas no deja un hueco gordo encima de la tabla'
+        );
+        const timeFilter = readFileSync(join(SRC_ROOT, 'components/time/TimeFilterModal.tsx'), 'utf8');
+        assert.doesNotMatch(
+            timeFilter,
+            /rounded-2xl/,
+            'el selector de periodo no pinta botones pastilla'
+        );
     });
 
     it('recetas, ingredientes y proveedores montan la misma celda de catálogo a 4 columnas', () => {

@@ -1140,7 +1140,7 @@ export default function ReservasClient() {
             </a>
       }
     >
-          <div className="flex flex-col gap-1 month-cal-body">
+          <div className="flex flex-col gap-0.5 month-cal-body">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4 px-2 sm:px-3 flex-1">
                 <LoadingSpinner size="lg" className="text-ds-marca" />

@@ -375,7 +375,7 @@ export default function HorarioPage() {
         </div>
       }
     >
-          <div className="px-3 pt-1 pb-1 shrink-0">
+          <div className="px-2 pt-0.5 pb-0.5 shrink-0">
             <PetroleumSegmented
               instance="horario-vista"
               density="compact"
@@ -396,7 +396,7 @@ export default function HorarioPage() {
             </div>
           ) : (
             <div
-              className="flex flex-col gap-1 bg-zinc-50/50 px-[1.5%] pt-2 pb-1 touch-pan-y month-cal-body"
+              className="flex flex-col gap-0.5 bg-zinc-50/50 px-[1%] pt-0.5 pb-1 touch-pan-y month-cal-body"
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}

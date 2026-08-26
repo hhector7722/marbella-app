@@ -493,8 +493,8 @@ export default function ConsumoPersonalDashboardPage() {
         </div>
       }
     >
-          <div className="px-3 pt-1 pb-3 md:px-4 md:pt-2 flex flex-col month-cal-body min-h-0">
-            <div className="grid grid-cols-2 gap-0.5 sm:gap-1 mb-4 py-2 shrink-0 min-w-0">
+          <div className="px-2 pt-0 pb-2 md:px-3 md:pt-0 flex flex-col month-cal-body min-h-0">
+            <div className="grid grid-cols-2 gap-0.5 sm:gap-1 mb-1 py-1 shrink-0 min-w-0">
               <div className="flex min-w-0 flex-col items-center justify-center px-0.5 text-center">
                 <span className="text-[6px] font-black uppercase leading-tight text-gray-400 sm:text-[7px]">
                   Importe

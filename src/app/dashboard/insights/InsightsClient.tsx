@@ -1105,7 +1105,7 @@ export default function InsightsClient({
         <PeriodFilterButton instance="insights-period-filter" onClick={() => setIsTimeFilterOpen(true)} />
       }
     >
-          <div className="p-2 md:p-4 space-y-3 md:space-y-5">
+          <div className="p-1.5 md:p-2 space-y-2 md:space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-3 lg:gap-5">
               {/* Sección 1 — Resultado del periodo */}
               <section className={cn(

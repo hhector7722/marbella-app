@@ -755,7 +755,7 @@ export default function MovementsPage() {
                         />
 
                         {shareMenuOpen ? (
-                            <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden z-20">
+                            <div className="absolute right-0 mt-2 w-56 rounded-lg bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden z-20">
                                 <Button
                                     type="button"
                                     variant="secondary"
@@ -780,7 +780,7 @@ export default function MovementsPage() {
                 </div>
             }
         >
-            <div className="px-3 pt-1 pb-1 shrink-0">
+            <div className="px-2 pt-0.5 pb-0.5 shrink-0">
                 <div className="flex items-center justify-center gap-3">
                     <button
                         type="button"
@@ -821,7 +821,7 @@ export default function MovementsPage() {
                     {/* CUERPO BLANCO (RESUMEN + TABLA) */}
                     <div className="bg-white">
                         {/* RESUMEN: Grid 4x1 en móvil y escritorio */}
-                        <div className="py-2 px-2 grid grid-cols-4 border-b border-zinc-50">
+                        <div className="py-1 px-2 grid grid-cols-4 border-b border-zinc-50">
                             <div className="flex flex-col items-center justify-center text-center px-1">
                                 <span className="text-[13px] md:text-2xl font-black text-emerald-500 line-clamp-1">{periodSummary.income > 0.005 ? `+${periodSummary.income.toFixed(2)}€` : " "}</span>
                                 <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">INGRESOS</span>
@@ -863,13 +863,13 @@ export default function MovementsPage() {
                         </div>
 
                         {/* LISTADO DE MOVIMIENTOS INTEGRADO */}
-                        <div className="p-3 bg-white">
-                            <div className="rounded-t-lg rounded-b-[1.5rem] overflow-hidden border border-zinc-100 shadow-xl">
-                                <div className="w-full">
+                        <div className="p-1.5 bg-white">
+                            <div className="rounded-lg overflow-hidden border border-zinc-100 shadow-sm">
+                                <div className="w-full min-w-0 overflow-x-hidden">
                                     <table ref={tableRef} data-component={TABLE_COMPONENT_ID} data-instance="tesoreria-movimientos" className="w-full text-left font-sans">
                                         <thead>
-                                            <tr className="text-[8px] md:text-[9px] font-black uppercase tracking-wider md:tracking-[0.15em] leading-none">
-                                                <th className="px-1 md:px-4 py-1 md:py-2 w-[24%] md:w-[22%] text-center">
+                                            <tr>
+                                                <th className="w-[24%] md:w-[22%] text-center">
                                                     <button
                                                         type="button"
                                                         onClick={(e) => {
@@ -894,9 +894,9 @@ export default function MovementsPage() {
                                                         )}
                                                     </button>
                                                 </th>
-                                                <th className="px-0.5 md:px-3 py-1 md:py-2 w-[26%] md:w-[28%] text-center">CONCEPTO</th>
-                                                <th className="px-0.5 md:px-4 py-1 md:py-2 text-center w-[25%] md:w-[25%]">IMPORTE</th>
-                                                <th className="px-0.5 md:px-5 py-1 md:py-2 text-center w-[25%] md:w-[25%]">SALDO</th>
+                                                <th className="text-center w-[26%] md:w-[28%]">CONCEPTO</th>
+                                                <th className="text-center w-[25%]">IMPORTE</th>
+                                                <th className="text-center w-[25%]">SALDO</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-zinc-50/50">
@@ -959,7 +959,7 @@ export default function MovementsPage() {
                                                                             mov.type === 'expense' ? <ArrowUp size={8} className="md:size-[16px]" strokeWidth={3} /> :
                                                                                 <RefreshCw size={8} className="md:size-[14px]" strokeWidth={3} />}
                                                                     </div>
-                                                                    <span className="text-[9px] md:text-[11px] font-bold text-zinc-500 uppercase tracking-tight truncate min-w-0 max-w-[100px] sm:max-w-[120px] md:max-w-[150px]">
+                                                                    <span className="text-[9px] md:text-[11px] font-bold text-zinc-500 uppercase tracking-tight truncate min-w-0">
                                                                         {mov.notes || (mov.type === 'income' ? 'Entrada manual' : mov.type === 'expense' ? 'Salida manual' : 'Arqueo de caja')}
                                                                     </span>
                                                                 </div>
