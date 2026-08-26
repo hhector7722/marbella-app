@@ -58,21 +58,22 @@ export function PageScreen({
       data-component={PAGE_SCREEN_COMPONENT_ID}
       data-template={template}
       className={cn(
-        fillViewport ? 'flex flex-col overflow-x-hidden' : null,
+        'w-full min-w-0',
+        fillViewport ? 'flex flex-col' : null,
         className
       )}
     >
       <div
         className={cn(
-          'mx-auto flex w-full min-h-0',
+          'mx-auto flex w-full min-h-0 min-w-0 flex-col',
           maxWidthClass,
-          fillViewport ? 'min-h-0 flex-col gap-3' : null
+          fillViewport ? 'gap-3' : null
         )}
       >
         <Surface
           variant="page"
           instance={`page-${template}`}
-          className={cn('flex flex-col min-h-0 overflow-hidden', cardClassName)}
+          className={cn('flex w-full min-h-0 min-w-0 flex-col overflow-hidden', cardClassName)}
         >
           <div
             data-element="header"

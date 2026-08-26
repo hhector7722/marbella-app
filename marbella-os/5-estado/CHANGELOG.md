@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-26
 
+- **PageScreen deja el mismo aire a ambos lados en el teléfono.** La tarjeta usa casi todo el ancho y el fondo se ve a izquierda y derecha; el contenido ya no se pega al borde derecho.
+
 - **Recetas, Ingredientes y Proveedores pintan el mismo catálogo.** Cuatro columnas, sin tarjeta: foto y pie forman un cuadrado; la foto se encoge y el nombre o el precio se leen enteros.
 
 - **Pantallas de gestión más bajas y más anchas en el móvil.** La franja de título mide lo mismo que la de una ventana. En el teléfono la tarjeta usa casi todo el ancho, deja ver un poco de fondo a los lados y se acaba donde acaba el contenido. El calendario cabe un poco más estrecho que esa tarjeta. Los botones de la franja van sin marco; el relleno de todos los botones abraza el texto o el icono.

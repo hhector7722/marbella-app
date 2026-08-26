@@ -447,6 +447,10 @@
  */
 [data-component='PageScreen'] {
   box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
   padding-inline: var(--espacio-1);
   padding-top: var(--espacio-1);
   padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));

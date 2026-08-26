@@ -50,6 +50,16 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(css, /\[data-component='Surface'\]\[data-variant='page'\]/);
         assert.match(css, /--elevacion-pagina/);
         assert.match(css, /\[data-component='PageScreen'\] \[data-element='header'\]/);
+        assert.match(
+            css,
+            /\[data-component='PageScreen'\] \{[\s\S]*?width:\s*100%;[\s\S]*?padding-inline:\s*var\(--espacio-1\);/,
+            'PageScreen móvil: ancho del dispositivo y el mismo margen a ambos lados'
+        );
+        assert.match(
+            css,
+            /\[data-component='PageScreen'\] \{[\s\S]*?overflow-x:\s*clip;/,
+            'el contenido no empuja la tarjeta fuera del margen derecho'
+        );
         assert.match(css, /\[data-component='Field'\]/);
         assert.match(css, /\[data-component='EmptyState'\]/);
         assert.match(css, /\[data-component='Notice'\]\[data-variant='negative'\]/);

@@ -263,7 +263,7 @@ Piezas transversales con comportamiento propio y contrato estricto. **Estas sí 
 - La card es `Surface` variante `page`. El consumidor no pinta `bg-white rounded-2xl shadow-2xl` ni `bg-[#36606F]` de cabecera.
 - Las acciones de cabecera (`rightSlot`) sobre petróleo: `Button` invertido, **sin relleno ni marco**. No es una quinta variante. El chrome de recarga nativo blanco (Albaranes) sigue siendo chrome, no Button.
 - Cabecera: misma altura que el Modal (`estructura.cabecera-modal`). El título, el subtítulo y los iconos se reducen en proporción. No se recortan ni se abrevian con puntos.
-- En smartphone el ancho de la plantilla es el del dispositivo menos un margen mínimo (`espacio.1`) donde se ve el fondo. La altura de la tarjeta sigue al contenido.
+- En smartphone el ancho de la plantilla es el del dispositivo menos un margen mínimo (`espacio.1`) a **ambos** lados, donde se ve el fondo. El contenido no puede empujar la tarjeta contra un borde. La altura de la tarjeta sigue al contenido.
 - En smartphone el calendario mensual es más estrecho que la plantilla (`espacio.2` de diferencia).
 
 **Estado**: existe. Migrados: Labor, Albaranes, Reservas, Propinas, Carta, inventario, Recetas, Ingredientes, Ventas, Tesorería, Asistencia, Perfil, Insights, Precios desde albarán, catálogo de actividades e Importación. T1 (dashboard mosaico) no usa PageScreen: es otra anatomía.
