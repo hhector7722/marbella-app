@@ -82,14 +82,67 @@ describe('Taxonomía de cabeceras', () => {
         assert.match(blueprintMatrixRow(pointer), /Table \/ T8/);
     });
 
-    it('modal-header es CANON CERRADO con 36 px documentados', () => {
+    it('modal-header es CANON CERRADO con palanca CSS', () => {
         const element = getStudioElement('modal-header');
         assert.ok(element);
         assert.equal(element.status, 'CANON CERRADO');
-        assert.equal(element.applyKind, 'locked');
+        assert.equal(element.applyKind, 'css-contract');
         assert.ok(element.facts?.some((fact) => fact.value.includes('36 px')));
+        assert.equal(
+            element.properties.some((item) => item.id === 'height' && item.actualId === 'estructura.cabecera-modal'),
+            true
+        );
         const gate = gateCanonDecision(element, {});
         assert.equal(gate.ok, false);
+    });
+
+    it('modal-header escribe la altura en el token existente y pinta todos los Modal', () => {
+        const element = getStudioElement('modal-header');
+        assert.ok(element);
+        const dir = mkdtempSync(join(tmpdir(), 'ds-modal-header-css-'));
+        mkdirSync(join(dir, 'src/app'), { recursive: true });
+        cpSync(join(process.cwd(), 'src/app/globals.css'), join(dir, 'src/app/globals.css'));
+        try {
+            const patched = applyCssContract(
+                element,
+                { ...actualValues(element), height: 'tactil.minimo' },
+                dir
+            );
+            assert.equal(patched.ok, true);
+            const css = readFileSync(join(dir, 'src/app/globals.css'), 'utf8');
+            assert.match(css, /--modal-header-height:\s*var\(--tactil-minimo\)/);
+            assert.match(css, /\[data-component='Modal'\] \[data-element='header'\]/);
+            assert.doesNotMatch(css, /--modal-header-height:\s*var\(--modal-header-height\)/);
+        } finally {
+            rmSync(dir, { recursive: true, force: true });
+        }
+    });
+
+    it('button puede cambiar el color de Guardar sin partir el componente', () => {
+        const element = getStudioElement('button');
+        assert.ok(element);
+        assert.equal(
+            element.properties.some((item) => item.id === 'fill-primary' && item.actualId === 'color.positivo'),
+            true
+        );
+        const dir = mkdtempSync(join(tmpdir(), 'ds-button-fill-css-'));
+        mkdirSync(join(dir, 'src/app'), { recursive: true });
+        cpSync(join(process.cwd(), 'src/app/globals.css'), join(dir, 'src/app/globals.css'));
+        try {
+            const patched = applyCssContract(
+                element,
+                { ...actualValues(element), 'fill-primary': 'color.marca' },
+                dir
+            );
+            assert.equal(patched.ok, true);
+            const css = readFileSync(join(dir, 'src/app/globals.css'), 'utf8');
+            assert.match(
+                css,
+                /\[data-component='Button'\]\[data-variant='primary'\]::before \{[\s\S]*?background-color:\s*var\(--color-marca\)/
+            );
+        } finally {
+            rmSync(dir, { recursive: true, force: true });
+        }
     });
 
     it('derived hereda modal-header y no es un segundo contrato visual', () => {

@@ -36,6 +36,15 @@ export function previewStyle(element: StudioElement, values: PropertyValues): CS
         if (property.id === 'align-x') {
             style['--studio-text-align'] = option.id === 'center' ? 'center' : 'left';
         }
+        if (property.id.startsWith('fill-')) {
+            style[`--btn-${property.id}`] = css;
+        }
+        if (element.id === 'modal-header' && property.id === 'height') {
+            style['--modal-header-height'] = css === 'var(--modal-header-height)' ? option.value : css;
+        }
+        if (element.id === 'modal-header' && property.id === 'inset') {
+            style['--modal-header-inset'] = css;
+        }
     }
     return style as CSSProperties;
 }

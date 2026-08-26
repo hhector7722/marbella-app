@@ -3,9 +3,8 @@ import type { PropertyValues, StudioElement } from './types.ts';
 import { humanTitle } from './ux-copy.ts';
 import { UX_HEADER_TYPES } from './ux-nav.ts';
 
+export type { StudioScreen } from './ux-styles.ts';
 export type StudioSceneId = 'list' | 'detail' | 'form' | 'modal' | 'table';
-
-export type StudioScreen = 'scene' | 'sheet' | 'essays' | 'look' | 'confirm' | 'done';
 
 export type StudioSceneDef = {
     id: StudioSceneId;

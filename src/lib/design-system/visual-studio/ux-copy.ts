@@ -8,9 +8,9 @@ const HUMAN_TITLES: Record<string, string> = {
     modal: 'Modal',
     surface: 'Tarjeta / bloque',
     table: 'Tabla',
-    'page-header': 'Cabecera de página',
+    'page-header': 'Cabecera de pantalla',
     'block-header': 'Cabecera de tarjeta',
-    'modal-header': 'Cabecera de modal',
+    'modal-header': 'Cabecera de ventana',
     'table-header': 'Cabecera de tabla',
     'derived-modal-header': 'Cabecera de ventana interna',
     'petroleum-segmented': 'Selector de opciones',
@@ -49,9 +49,9 @@ const HUMAN_SUMMARIES: Record<string, string> = {
     modal: 'Ventanas que se abren encima de una pantalla.',
     surface: 'La tarjeta o el bloque que envuelve un contenido.',
     table: 'Columnas, filas e importes.',
-    'page-header': 'La franja de título de una pantalla.',
+    'page-header': 'La franja de título de una pantalla de gestión.',
     'block-header': 'El título de una tarjeta dentro de una pantalla.',
-    'modal-header': 'La franja de título de una ventana.',
+    'modal-header': 'La franja de título de una ventana. No es la de las pantallas.',
     'table-header': 'Los nombres de las columnas.',
     'derived-modal-header': 'Las ventanas internas usan la misma cabecera que el modal.',
     'petroleum-segmented': 'Elegir una opción entre pocas.',
@@ -274,8 +274,18 @@ export function humanImpactLead(element: StudioElement, impact: ImpactReport | n
     if (!impact || impact.undetermined) {
         return 'No se puede saber con certeza cuántas pantallas usan esto.';
     }
+    const sites = `Ahora mismo: ${impact.consumers} sitios.`;
+    if (element.id === 'page-header') {
+        return `Esto cambia todas las pantallas que usan la plantilla. Las que aún están clonadas no cambian hasta migrarlas. ${sites}`;
+    }
+    if (element.id === 'modal-header') {
+        return `Esto cambia todos los modales de Marbella. ${sites}`;
+    }
+    if (element.id === 'button') {
+        return `Esto cambia todos los botones del contrato (guardar, cancelar, filtro y eliminar). El selector de opciones y el cierre del modal no son botones. ${sites}`;
+    }
     if (element.applyKind === 'css-contract') {
-        return `Esto llegará solo a las pantallas que ya usan esta pieza. Ahora mismo: ${impact.consumers} sitios.`;
+        return `Esto llegará solo a las pantallas que ya usan esta pieza. ${sites}`;
     }
     return `Este cambio puede verse en ${impact.consumers} sitios y ${impact.routes} pantallas.`;
 }

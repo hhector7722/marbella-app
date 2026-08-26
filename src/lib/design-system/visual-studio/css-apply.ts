@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { cssVarFn, tokenById } from './allowed-values.ts';
+import { cssVarFn, findOption, MODAL_HEADER_HEIGHT_OPTIONS, tokenById } from './allowed-values.ts';
 import type { StudioElement } from './types.ts';
 
 const CSS_REL = 'src/app/globals.css';
@@ -158,6 +158,108 @@ function patchButton(css: string, values: Record<string, string>): string | null
     );
     if (before) next = before;
 
+    const fills: Array<{
+        key: string;
+        variant: 'primary' | 'secondary' | 'tertiary' | 'destructive';
+    }> = [
+        { key: 'fill-primary', variant: 'primary' },
+        { key: 'fill-secondary', variant: 'secondary' },
+        { key: 'fill-tertiary', variant: 'tertiary' },
+        { key: 'fill-destructive', variant: 'destructive' },
+    ];
+    for (const { key, variant } of fills) {
+        const fill = cssVarFn(values[key] ?? '');
+        if (!fill) continue;
+        const patched = patchButtonVariantFill(next, variant, fill);
+        if (patched) next = patched;
+    }
+
+    return next;
+}
+
+function patchButtonVariantFill(
+    css: string,
+    variant: 'primary' | 'secondary' | 'tertiary' | 'destructive',
+    fill: string
+): string | null {
+    let next = css;
+    if (variant === 'tertiary') {
+        const color = replaceRule(next, "[data-component='Button'][data-variant='tertiary'] {", (body) =>
+            setDecl(body, 'color', fill)
+        );
+        if (color) next = color;
+        const before = replaceRule(
+            next,
+            "[data-component='Button'][data-variant='tertiary']::before {",
+            (body) => {
+                let out = setDecl(body, 'background-color', 'transparent');
+                out = setDecl(out, 'border-color', `color-mix(in srgb, ${fill} 20%, transparent)`);
+                return out;
+            }
+        );
+        if (before) next = before;
+        const hover = replaceRule(
+            next,
+            "[data-component='Button'][data-variant='tertiary']:hover:not(:disabled)::before {",
+            (body) => setDecl(body, 'background-color', `color-mix(in srgb, ${fill} 10%, transparent)`)
+        );
+        if (hover) next = hover;
+        return next;
+    }
+
+    const before = replaceRule(
+        next,
+        `[data-component='Button'][data-variant='${variant}']::before {`,
+        (body) => {
+            let out = setDecl(body, 'background-color', fill);
+            out = setDecl(out, 'border-color', fill);
+            return out;
+        }
+    );
+    if (before) next = before;
+    const hover = replaceRule(
+        next,
+        `[data-component='Button'][data-variant='${variant}']:hover:not(:disabled)::before {`,
+        (body) => {
+            const mixed = `color-mix(in srgb, ${fill} 82%, var(--color-texto-fuerte))`;
+            let out = setDecl(body, 'background-color', mixed);
+            out = setDecl(out, 'border-color', mixed);
+            return out;
+        }
+    );
+    if (hover) next = hover;
+    return next;
+}
+
+function setCssVarDecl(css: string, varName: string, value: string): string | null {
+    const escaped = varName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(`(${escaped}:\\s*)[^;]+`);
+    if (!re.test(css)) return null;
+    return css.replace(re, `$1${value}`);
+}
+
+function modalHeightCss(id: string): string | null {
+    const option = findOption(MODAL_HEADER_HEIGHT_OPTIONS, id);
+    if (!option) return null;
+    if (option.cssVar) return `var(${option.cssVar})`;
+    return option.value;
+}
+
+function patchModalHeader(css: string, values: Record<string, string>): string | null {
+    const height = modalHeightCss(values.height ?? 'estructura.cabecera-modal');
+    const inset = cssVarFn(values.inset ?? 'espacio.4');
+    const alignX = values['align-x'] ?? 'left';
+    if (!height || !inset) return null;
+
+    let next = setCssVarDecl(css, '--modal-header-height', height);
+    if (next === null) return null;
+    const inseted = setCssVarDecl(next, '--modal-header-inset', inset);
+    if (inseted) next = inseted;
+
+    const heading = replaceRule(next, "[data-component='Modal'] [data-element='heading'] {", (body) =>
+        setDecl(body, 'justify-content', justifyFromAlignX(alignX === 'edges' ? 'left' : alignX))
+    );
+    if (heading) next = heading;
     return next;
 }
 
@@ -242,6 +344,7 @@ export function applyCssContract(
     else if (element.id === 'empty-state') next = patchEmpty(css, values);
     else if (element.id === 'button') next = patchButton(css, values);
     else if (element.id === 'page-header') next = patchPageHeader(css, values);
+    else if (element.id === 'modal-header') next = patchModalHeader(css, values);
     else {
         return { ok: false, reason: `No hay escritor CSS para «${element.label}».` };
     }

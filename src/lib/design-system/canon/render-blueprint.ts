@@ -53,9 +53,6 @@ export function renderBlueprint(registry: CanonRegistry): string {
                 const option = findOption(property.options, property.actualId);
                 return `- ${property.label}: ${option?.label ?? property.actualId}`;
             });
-            if (item.id === 'modal-header') {
-                lines.unshift('- Altura: 36 px · estructura.cabecera-modal');
-            }
             return `### ${item.label}\n\n${lines.join('\n')}`;
         })
         .join('\n\n');

@@ -125,6 +125,19 @@ export const PAGE_HEADER_HEIGHT_OPTIONS: TokenOption[] = [
     }),
 ];
 
+/** Altura de cabecera de modal. Tokens ya existentes. No se inventa un valor. */
+export const MODAL_HEADER_HEIGHT_OPTIONS: TokenOption[] = [
+    opt('estructura.cabecera-modal', '36px', 'adopted', {
+        label: '36 px · cabecera de modal',
+        note: 'El contrato actual. El cierre no es un botón.',
+    }),
+    opt('tactil.minimo', '48px', 'adopted', {
+        cssVar: '--tactil-minimo',
+        label: '48 px · táctil mínimo',
+        note: 'La barra mide lo mismo que el toque mínimo. El cierre sigue siendo chrome, no Button.',
+    }),
+];
+
 export const SPACE_OPTIONS: TokenOption[] = [
     opt('espacio.1', '4px', 'adopted', { cssVar: '--espacio-1' }),
     opt('espacio.2', '8px', 'adopted', { cssVar: '--espacio-2' }),
@@ -200,6 +213,7 @@ const TOKEN_TABLES: TokenOption[][] = [
     RADIUS_OPTIONS,
     HEIGHT_OPTIONS,
     PAGE_HEADER_HEIGHT_OPTIONS,
+    MODAL_HEADER_HEIGHT_OPTIONS,
     SPACE_OPTIONS,
     TYPE_SIZE_OPTIONS,
     ALIGN_X_OPTIONS,
