@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-25
+revisado: 2026-08-26
 caducidad: 6 meses
 supersede: —
 ---
@@ -262,7 +262,7 @@ Piezas transversales con comportamiento propio y contrato estricto. **Estas sí 
 - La card es `Surface` variante `page`. El consumidor no pinta `bg-white rounded-2xl shadow-2xl` ni `bg-[#36606F]` de cabecera.
 - Las acciones de cabecera (`rightSlot`) sobre petróleo: `Button` `tertiary` se pinta invertido por CSS de esta plantilla (icono blanco). No es una quinta variante de Button. El chrome de recarga nativo blanco (Albaranes) sigue siendo chrome, no Button.
 
-**Estado**: existe. Migrados: Labor, Albaranes, Reservas, Propinas, Carta e inventario que ya lo usaba. T1 (dashboard mosaico) no usa PageScreen: es otra anatomía.
+**Estado**: existe. Migrados: Labor, Albaranes, Reservas, Propinas, Carta, inventario, Recetas, Ingredientes, Ventas, Tesorería, Asistencia, Perfil, Insights, Precios desde albarán, catálogo de actividades e Importación. T1 (dashboard mosaico) no usa PageScreen: es otra anatomía.
 
 ### Navegación inferior
 
@@ -399,7 +399,7 @@ La jerarquía visual canónica está decidida ([ADR-0010](../4-decisiones/ADR-00
 Hoy existen: Button, Modal, Surface, Field, EmptyState, Notice, KpiStat, PageScreen, DocumentListRow, PetroleumSegmented, DashboardShortcut. La insignia de estado sigue sin pieza (D27 chips). En Caja/Tesorería, `QuickCalculatorModal` y `DenominationZoomModal` permanecen legacy a propósito: el contrato no admite un tercer nivel sobre `base → derived`.
 
 Consecuencias observables:
-- Las pantallas principales de gestión (Labor, Albaranes, Reservas, Propinas, Carta) usan `PageScreen`.
+- Las pantallas principales de gestión (Labor, Albaranes, Reservas, Propinas, Carta, Recetas, Ingredientes, Ventas, Tesorería, Asistencia, Perfil) usan `PageScreen`.
 - Sala LIVE no usa PageScreen: es `Surface` `page` + `block` (radar de mesas). Prohibido `rounded-[2.5rem]` e italic de título.
 - El resto de pantallas y los literales `#36606F` / `rounded-xl` fuera de esas piezas son [D28](../5-estado/DEUDA.md): deuda de migración, no permiso para clonar cabeceras.
 - La navegación inferior sigue implementada dos veces.

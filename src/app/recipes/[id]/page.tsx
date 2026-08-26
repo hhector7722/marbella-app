@@ -2,9 +2,8 @@
 
 import { useState, useEffect, Suspense, useRef, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { createClient } from "@/utils/supabase/client";
-import { ArrowLeft, Trash2, Users, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, ChevronDown, Import, Pencil, Check, PlayCircle, AlertCircle } from 'lucide-react';
+import { Trash2, Users, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, ChevronDown, Import, Pencil, Check, PlayCircle, AlertCircle } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -24,6 +23,7 @@ import { IngredientEditModal, type Ingredient } from '@/components/ingredients/I
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { namedEntitySummary } from '@/lib/usage/modal-apply';
@@ -871,7 +871,7 @@ function RecipeDetailContent() {
     if (!recipe) return <div className="min-h-screen flex items-center justify-center text-white">No encontrada</div>;
 
     return (
-        <div className="min-h-screen p-4 md:p-6 flex flex-col overflow-y-auto pb-8">
+        <>
             <Toaster position="top-right" />
             <ImageLightbox
                 open={isPhotoLightboxOpen}
@@ -880,58 +880,42 @@ function RecipeDetailContent() {
                 onClose={() => setIsPhotoLightboxOpen(false)}
             />
 
-            {/* CONTENEDOR GRANDE: cabecera petróleo + fondo blanco roto */}
-            <div className="max-w-6xl mx-auto w-full flex flex-col bg-white rounded-[20px] shadow-xl overflow-hidden">
-                {/* CABECERA COLOR PETRÓLEO - COMPACTA */}
-                <div className="relative flex shrink-0 flex-col items-stretch justify-center bg-[#36606F] px-3 py-2 md:px-5">
-                    {/* Fila superior: tres columnas iguales → título centrado en todo el ancho de la cabecera */}
-                    <div className="grid min-h-[48px] w-full grid-cols-3 items-center gap-1">
-                        <div className="flex shrink-0 justify-start">
-                            <Link
-                                href={recipesListHref}
-                                aria-label="Volver a recetas"
-                                className={cn(
-                                    'flex h-12 w-12 shrink-0 items-center justify-center',
-                                    'text-white/70 transition hover:text-white active:scale-95',
-                                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
-                                )}
-                            >
-                                <ArrowLeft className="h-6 w-6" />
-                            </Link>
-                        </div>
-                        <div className="flex min-w-0 justify-center px-1">
-                            <h1 className="max-w-full text-center text-[13px] font-black leading-tight text-white md:text-[15px]">
-                                <span className="line-clamp-2 break-words">{recipe.name}</span>
-                            </h1>
-                        </div>
-                        <div className="flex shrink-0 items-center justify-end gap-2">
-                            {!isRestricted && (
-                                <Button
-                                    type="button"
-                                    variant="tertiary"
-                                    instance="recipe-editar-nombre-imagen"
-                                    onClick={() => setRecipeMetaModalOpen(true)}
-                                    aria-label="Editar nombre e imagen"
-                                    icon={<Pencil className="h-5 w-5" strokeWidth={2.2} />}
-                                    className="shrink-0"
-                                />
-                            )}
-                            {canImportRecipe && (
-                                <Button
-                                    type="button"
-                                    variant="tertiary"
-                                    instance="recipe-importar"
-                                    onClick={handleImportIconClick}
-                                    disabled={importingRecipe}
-                                    loading={importingRecipe}
-                                    aria-label="Importar (sobrescribe esta receta)"
-                                    icon={<Import className="h-5 w-5" />}
-                                    className="shrink-0"
-                                />
-                            )}
-                        </div>
+            <DashboardDetailLayout
+                title={recipe.name}
+                showBackButton
+                backHref={recipesListHref}
+                template="detail"
+                maxWidthClass="max-w-6xl"
+                contentClassName="p-0 flex flex-col min-h-0"
+                rightSlot={
+                    <div className="flex shrink-0 items-center justify-end gap-2">
+                        {!isRestricted && (
+                            <Button
+                                type="button"
+                                variant="tertiary"
+                                instance="recipe-editar-nombre-imagen"
+                                onClick={() => setRecipeMetaModalOpen(true)}
+                                aria-label="Editar nombre e imagen"
+                                icon={<Pencil className="h-5 w-5" strokeWidth={2.2} />}
+                                className="shrink-0"
+                            />
+                        )}
+                        {canImportRecipe && (
+                            <Button
+                                type="button"
+                                variant="tertiary"
+                                instance="recipe-importar"
+                                onClick={handleImportIconClick}
+                                disabled={importingRecipe}
+                                loading={importingRecipe}
+                                aria-label="Importar (sobrescribe esta receta)"
+                                icon={<Import className="h-5 w-5" />}
+                                className="shrink-0"
+                            />
+                        )}
                     </div>
-
+                }
+            >
                     {canImportRecipe && (
                         <input
                             ref={importInputRef}
@@ -942,33 +926,33 @@ function RecipeDetailContent() {
                         />
                     )}
 
-                    {/* Foto centrada en todo el ancho de la cabecera; flechas ancladas a los lados del bloque */}
-                    <div className="relative mt-1 flex w-full shrink-0 items-center justify-center py-0.5">
+                    <div className="relative mt-1 flex w-full shrink-0 items-center justify-center py-2">
                         <button
                             type="button"
                             onClick={handlePreviousRecipe}
                             disabled={currentRecipeIndex <= 0}
-                            className="absolute left-0 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center text-white/50 transition hover:text-white disabled:pointer-events-none disabled:opacity-0 md:left-1"
+                            className="absolute left-2 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center text-ds-marca/50 transition hover:text-ds-marca disabled:pointer-events-none disabled:opacity-0"
+                            aria-label="Receta anterior"
                         >
                             <ChevronLeft className="h-8 w-8" />
                         </button>
 
                         <div className="bg-white rounded-xl p-0.5 shadow-sm">
-                            <div className="group relative flex h-14 w-24 items-center justify-center overflow-hidden rounded-lg border border-gray-100/50 bg-white">
+                            <div className="group relative flex h-20 w-32 items-center justify-center overflow-hidden rounded-lg border border-gray-100/50 bg-white">
                                 {recipe.photo_url ? (
                                     <button
                                         type="button"
                                         onClick={() => setIsPhotoLightboxOpen(true)}
                                         className={cn(
                                             'absolute inset-0 h-full w-full cursor-zoom-in',
-                                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#36606F]',
+                                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ds-marca/40',
                                         )}
                                         aria-label="Ver foto ampliada"
                                     >
                                         <img src={recipe.photo_url} alt={recipe.name} className="h-full w-full object-contain" />
                                     </button>
                                 ) : (
-                                    <Camera className="h-5 w-5 text-gray-300" />
+                                    <Camera className="h-6 w-6 text-gray-300" />
                                 )}
                             </div>
                         </div>
@@ -977,17 +961,18 @@ function RecipeDetailContent() {
                             type="button"
                             onClick={handleNextRecipe}
                             disabled={currentRecipeIndex >= allRecipes.length - 1}
-                            className="absolute right-0 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center text-white/50 transition hover:text-white disabled:pointer-events-none disabled:opacity-0 md:right-1"
+                            className="absolute right-2 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center text-ds-marca/50 transition hover:text-ds-marca disabled:pointer-events-none disabled:opacity-0"
+                            aria-label="Receta siguiente"
                         >
                             <ChevronRight className="h-8 w-8" />
                         </button>
                     </div>
 
-                    <div className="flex items-center justify-center gap-4 mt-2 text-white/90">
+                    <div className="flex items-center justify-center gap-4 mt-1 mb-2 text-zinc-600">
                         {isRestricted ? (
-                            <span className="px-2 py-0.5 bg-white/20 rounded-full font-medium uppercase tracking-wider text-[9px]">{recipeCategoryLabel}</span>
+                            <span className="px-2 py-0.5 bg-zinc-100 rounded-full font-medium uppercase tracking-wider text-[9px]">{recipeCategoryLabel}</span>
                         ) : (
-                            <button onClick={() => setShowCategoryModal(true)} className="px-2 py-0.5 bg-white/20 hover:bg-white/30 rounded-full font-medium uppercase tracking-wider text-[9px] transition-colors">{recipeCategoryLabel}</button>
+                            <button onClick={() => setShowCategoryModal(true)} className="px-2 py-0.5 bg-zinc-100 hover:bg-zinc-200 rounded-full font-medium uppercase tracking-wider text-[9px] transition-colors min-h-12">{recipeCategoryLabel}</button>
                         )}
                         <div className="flex items-center gap-1.5 text-[9px] font-bold">
                             <Users className="w-3.5 h-3.5" />
@@ -1004,7 +989,6 @@ function RecipeDetailContent() {
                             </Button>
                         )}
                     </div>
-                </div>
 
                 {/* CUERPO: fondo blanco roto */}
                 <div className="bg-[#fafafa] p-4 md:p-5 grid grid-cols-1 md:grid-cols-2 gap-4 content-start">
@@ -1612,7 +1596,7 @@ function RecipeDetailContent() {
                         <SubRecipesPanel recipeId={recipeId} />
                     )}
                 </div>
-            </div>
+            </DashboardDetailLayout>
 
             {/* MODALES */}
             <Modal
@@ -1747,7 +1731,7 @@ function RecipeDetailContent() {
                     setRecipeMetaModalOpen(false);
                 }}
             />
-        </div>
+        </>
     );
 }
 

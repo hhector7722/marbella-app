@@ -10,6 +10,7 @@ import {
 } from 'react'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import Link from 'next/link'
 
 import { useRouter } from 'next/navigation'
@@ -1103,16 +1104,14 @@ export default function InsightsClient({
   }, [weekday.data, dateFrom, dateTo])
 
   return (
-    <div className="min-h-screen p-2 md:p-6 pb-24 text-zinc-900">
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-          <div className="sticky top-0 z-20 shadow-sm">
-            <div className="bg-[#36606F] px-3 md:px-5 py-3">
-              <h1 className="text-sm md:text-lg font-black text-white uppercase tracking-wider">
-                Rentabilidad
-              </h1>
-            </div>
-            <div className="bg-white border-b border-zinc-100 px-3 md:px-5 py-2 overflow-x-auto">
+    <DashboardDetailLayout
+      title="Insights"
+      showBackButton={false}
+      template="list"
+      maxWidthClass="max-w-6xl"
+      contentClassName="p-0 flex flex-col min-h-0"
+    >
+          <div className="sticky top-0 z-20 shrink-0 overflow-x-auto border-b border-zinc-100 bg-white px-3 py-2 md:px-5">
               <InsightsMainDateFilter
                 mode={filterMode}
                 openPicker={openPicker}
@@ -1128,7 +1127,6 @@ export default function InsightsClient({
                 onSelectDay={handleSelectDay}
                 onApplyPeriod={handleApplyPeriod}
               />
-            </div>
           </div>
 
           <div className="p-2 md:p-6 space-y-3 md:space-y-5">
@@ -1671,8 +1669,6 @@ export default function InsightsClient({
 
           </div>
           </div>
-        </div>
-      </div>
-    </div>
+    </DashboardDetailLayout>
   )
 }

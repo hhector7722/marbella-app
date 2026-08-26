@@ -1,11 +1,12 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import Link from 'next/link'
-import { ArrowLeft, Camera, Loader2, Upload, X } from 'lucide-react'
+import { Camera, Loader2, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
+import { Surface } from '@/components/ui/Surface'
 import {
   applyAlbaranPriceUpdatesAction,
   extractAlbaranPricesFromImageAction,
@@ -228,71 +229,53 @@ export default function AlbaranesPreciosClient({
   }
 
   return (
-    <div className="min-h-screen w-full pb-24">
-      <div className="max-w-4xl mx-auto px-4 md:px-6 pt-6 space-y-6">
-        <div className="bg-[#36606F] rounded-2xl px-4 md:px-6 py-4 md:py-5 shadow-sm">
-          <div className="flex items-start gap-4">
-            <Link
-              href="/dashboard"
-              className={cn(
-                'shrink-0 inline-flex items-center justify-center min-h-12 min-w-12 rounded-xl border border-white/20 bg-white/10 shadow-sm',
-                'text-white hover:bg-white/20'
-              )}
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-xl md:text-2xl font-black tracking-tight text-white uppercase tracking-widest">
-                Precios desde albarán
-              </h1>
-              <p className="text-white/85 text-sm mt-1">
-                Sube una foto del albarán. La IA propone líneas; confirma ingrediente y precio con el mismo
-                asistente que en Ingredientes.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div
-          className={cn(
-            'rounded-2xl border border-zinc-100 bg-white shadow-sm p-6',
-            'flex flex-col items-center justify-center gap-4 min-h-[160px]'
-          )}
+    <DashboardDetailLayout
+      title="Precios desde albarán"
+      subtitle="Sube una foto del albarán. La IA propone líneas; confirma ingrediente y precio con el mismo asistente que en Ingredientes."
+      backHref="/dashboard"
+      template="form"
+      maxWidthClass="max-w-4xl"
+    >
+      <div className="space-y-6">
+        <Surface
+          variant="block"
+          instance="albaranes-precios-upload"
+          className="flex min-h-[160px] flex-col items-center justify-center gap-4 p-6"
         >
-          <div className="w-14 h-14 rounded-full bg-zinc-50 flex items-center justify-center">
-            <Camera className="w-7 h-7 text-zinc-400" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-zinc-50">
+            <Camera className="h-7 w-7 text-zinc-400" />
           </div>
-          <div className="text-center space-y-1">
+          <div className="space-y-1 text-center">
             <p className="font-semibold text-zinc-800">Imagen (JPG, PNG, WebP)</p>
             <p className="text-xs text-zinc-500">Máximo 10 MB</p>
           </div>
           <label
             className={cn(
-              'inline-flex items-center justify-center gap-2 min-h-12 px-6 rounded-xl font-medium cursor-pointer',
-              'bg-[#36606F] text-white hover:bg-[#2A4C58] shadow-sm shrink-0',
-              extracting && 'opacity-60 pointer-events-none'
+              'inline-flex min-h-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl px-6 font-medium',
+              'bg-ds-marca text-white hover:bg-ds-marca/90',
+              extracting && 'pointer-events-none opacity-60'
             )}
           >
-            {extracting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
+            {extracting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
             {extracting ? 'Interpretando…' : 'Seleccionar imagen'}
             <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onFile} />
           </label>
           {statusLine ? (
             <p
               className={cn(
-                'text-sm text-center max-w-md',
+                'max-w-md text-center text-sm',
                 statusLine.includes('interpretaron') ? 'text-emerald-800' : 'text-zinc-700'
               )}
             >
               {statusLine}
             </p>
           ) : null}
-        </div>
+        </Surface>
 
         {rows.length > 0 && (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-lg font-black text-white uppercase tracking-widest">Líneas propuestas</h2>
+              <h2 className="text-lg font-black uppercase tracking-widest text-zinc-900">Líneas propuestas</h2>
               <Button
                 type="button"
                 variant="primary"
@@ -695,6 +678,6 @@ export default function AlbaranesPreciosClient({
           </div>
         )}
       </div>
-    </div>
+    </DashboardDetailLayout>
   )
 }

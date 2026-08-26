@@ -40,6 +40,7 @@ import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import * as XLSX from 'xlsx';
 
 interface Movement {
@@ -722,153 +723,143 @@ export default function MovementsPage() {
     };
 
     return (
-        <div className="min-h-screen p-4 md:p-8 pb-24 text-zinc-900">
-            <div className="max-w-4xl mx-auto space-y-6">
+        <>
+        <DashboardDetailLayout
+            title="Tesorería"
+            showBackButton={false}
+            template="list"
+            maxWidthClass="max-w-4xl"
+            contentClassName="p-0 flex flex-col min-h-0"
+            rightSlot={
+                <div className="flex items-center gap-1 shrink-0 text-white" data-movements-share-root="true">
+                    <div className="relative shrink-0" data-movements-share-root="true">
+                        <Button
+                            type="button"
+                            variant="tertiary"
+                            instance="movements-compartir"
+                            onClick={() => setShareMenuOpen(v => !v)}
+                            disabled={!!shareBusy}
+                            aria-label="Compartir"
+                            icon={<Share size={16} />}
+                        />
 
-                {/* TARJETA GLOBAL INTEGRADA (TODO EN UN BLOQUE) */}
-                <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden">
-
-                    {/* CABECERA COMPACTA (misma altura que /dashboard/history) */}
-                    <div className="bg-[#36606F] px-1.5 py-1 md:px-2 md:py-1.5 relative shrink-0">
-                        <div className="relative flex items-center justify-between gap-1 min-w-0">
-                            {/* ACCIONES CAJA (izquierda; centro Y = centro del mes) */}
-                            <div className="flex items-center gap-0.5 shrink-0 z-10 self-center">
+                        {shareMenuOpen ? (
+                            <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden z-20">
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    instance="movements-export-excel"
+                                    onClick={exportFilteredTableToExcel}
+                                    className="w-full"
+                                >
+                                    Exportar Excel
+                                </Button>
+                                <div className="h-px bg-zinc-100" />
                                 <button
                                     type="button"
-                                    onClick={() => setCashModalMode('in')}
-                                    aria-label="Entrada"
-                                    title="Entrada"
-                                    className="shrink-0 px-1 py-0.5 rounded-lg hover:bg-white/10 transition-colors min-h-10 min-w-[40px] flex flex-col items-center justify-center gap-1 active:scale-95"
+                                    onClick={printFilteredTable}
+                                    className="w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors"
                                 >
-                                    <div className="w-5 h-5 flex items-center justify-center bg-emerald-500 rounded-full shadow-sm">
-                                        <Plus className="w-3 h-3 text-white" strokeWidth={3} />
-                                    </div>
-                                    <span className="text-[6px] font-black uppercase tracking-widest text-white leading-none">Entrada</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={openOut}
-                                    aria-label="Salida"
-                                    title="Salida"
-                                    className="shrink-0 -ml-1.5 px-1 py-0.5 rounded-lg hover:bg-white/10 transition-colors min-h-10 min-w-[40px] flex flex-col items-center justify-center gap-1 active:scale-95"
-                                >
-                                    <div className="w-5 h-5 flex items-center justify-center bg-rose-500 rounded-full shadow-sm">
-                                        <Minus className="w-3 h-3 text-white" strokeWidth={3} />
-                                    </div>
-                                    <span className="text-[6px] font-black uppercase tracking-widest text-white leading-none">Salida</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={openAudit}
-                                    aria-label="Arqueo"
-                                    title="Arqueo"
-                                    className="shrink-0 -ml-1.5 px-1 py-0.5 rounded-lg hover:bg-white/10 transition-colors min-h-10 min-w-[40px] flex flex-col items-center justify-center gap-1 active:scale-95"
-                                >
-                                    <div className="w-5 h-5 flex items-center justify-center bg-orange-500 rounded-full shadow-sm">
-                                        <RefreshCw className="w-2.5 h-2.5 text-white" strokeWidth={4} />
-                                    </div>
-                                    <span className="text-[6px] font-black uppercase tracking-widest text-white leading-none">Arqueo</span>
+                                    <span className="text-[11px] font-black uppercase tracking-widest">Imprimir</span>
+                                    <Printer className="w-4 h-4 text-zinc-500" />
                                 </button>
                             </div>
-
-                            {/* NAVEGADOR MENSUAL (centrado; ancho = texto del mes) */}
-                            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 inline-flex w-fit max-w-[calc(100%-9rem)] items-center">
-                                <button
-                                    type="button"
-                                    onClick={handlePrevMonth}
-                                    className="shrink-0 rounded-lg hover:bg-white/10 transition-colors min-h-10 pl-1.5 pr-0.5 flex items-center justify-center text-white"
-                                    aria-label="Mes anterior"
-                                >
-                                    <ChevronLeft size={18} />
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsTimeFilterOpen(true)}
-                                    className="text-[10px] sm:text-xs md:text-sm font-black text-white capitalize text-center px-0.5 whitespace-nowrap hover:text-white/80 transition-colors"
-                                >
-                                    {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(new Date(rangeStart), new Date(rangeEnd))
-                                        ? format(new Date(rangeStart), 'MMMM yyyy', { locale: es })
-                                        : 'Seleccionar mes'}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleNextMonth}
-                                    className="shrink-0 rounded-lg hover:bg-white/10 transition-colors min-h-10 pl-0.5 pr-1.5 flex items-center justify-center text-white"
-                                    aria-label="Mes siguiente"
-                                >
-                                    <ChevronRight size={18} />
-                                </button>
-                            </div>
-
-                            {/* COMPARTIR + FILTRO (derecha) */}
-                            <div className="flex items-center gap-1 shrink-0 text-white ml-auto z-10" data-movements-share-root="true">
-                                <div className="relative shrink-0" data-movements-share-root="true">
-                                    <button
-                                        type="button"
-                                        onClick={() => setShareMenuOpen(v => !v)}
-                                        aria-label="Compartir"
-                                        title="Compartir"
-                                        className={cn(
-                                            'p-2 rounded-xl text-white/90 hover:bg-white/10 hover:text-white transition-colors outline-none',
-                                            'min-h-[40px] min-w-[40px] flex items-center justify-center',
-                                            shareBusy ? 'opacity-60 pointer-events-none' : ''
-                                        )}
-                                    >
-                                        <Share size={16} />
-                                    </button>
-
-                                    {shareMenuOpen ? (
-                                        <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden z-20">
-                                            <Button
-                                                type="button"
-                                                variant="secondary"
-                                                instance="movements-export-excel"
-                                                onClick={exportFilteredTableToExcel}
-                                                className="w-full"
-                                            >
-                                                Exportar Excel
-                                            </Button>
-                                            <div className="h-px bg-zinc-100" />
-                                            <button
-                                                type="button"
-                                                onClick={printFilteredTable}
-                                                className="w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors"
-                                            >
-                                                <span className="text-[11px] font-black uppercase tracking-widest">Imprimir</span>
-                                                <Printer className="w-4 h-4 text-zinc-500" />
-                                            </button>
-                                        </div>
-                                    ) : null}
-                                </div>
-
-                                <TimeFilterButton
-                                    onClick={() => setIsTimeFilterOpen(true)}
-                                    showLabel={false}
-                                    icon={Filter}
-                                    buttonClassName={cn(
-                                        "min-h-10 min-w-10 px-0 py-0",
-                                        "rounded-xl border-0 bg-transparent hover:bg-white/10",
-                                        "text-white/90 hover:text-white"
-                                    )}
-                                    hasActiveFilter={(() => {
-                                        const d = new Date();
-                                        const defS = format(startOfMonth(d), 'yyyy-MM-dd');
-                                        const defE = format(endOfMonth(d), 'yyyy-MM-dd');
-                                        const isDefault = filterMode === 'range' && rangeStart === defS && rangeEnd === defE;
-                                        return !isDefault;
-                                    })()}
-                                    onClear={() => {
-                                        const d = new Date();
-                                        const s = startOfMonth(d);
-                                        const e = endOfMonth(d);
-                                        setFilterMode('range');
-                                        setRangeStart(format(s, 'yyyy-MM-dd'));
-                                        setRangeEnd(format(e, 'yyyy-MM-dd'));
-                                    }}
-                                />
-                            </div>
-                        </div>
+                        ) : null}
                     </div>
+                    <TimeFilterButton
+                        onClick={() => setIsTimeFilterOpen(true)}
+                        showLabel={false}
+                        icon={Filter}
+                        buttonClassName={cn(
+                            "min-h-10 min-w-10 px-0 py-0",
+                            "rounded-xl border-0 bg-transparent hover:bg-white/10",
+                            "text-white/90 hover:text-white"
+                        )}
+                        hasActiveFilter={(() => {
+                            const d = new Date();
+                            const defS = format(startOfMonth(d), 'yyyy-MM-dd');
+                            const defE = format(endOfMonth(d), 'yyyy-MM-dd');
+                            const isDefault = filterMode === 'range' && rangeStart === defS && rangeEnd === defE;
+                            return !isDefault;
+                        })()}
+                        onClear={() => {
+                            const d = new Date();
+                            const s = startOfMonth(d);
+                            const e = endOfMonth(d);
+                            setFilterMode('range');
+                            setRangeStart(format(s, 'yyyy-MM-dd'));
+                            setRangeEnd(format(e, 'yyyy-MM-dd'));
+                        }}
+                    />
+                </div>
+            }
+        >
+            <div className="px-4 md:px-8 pt-3 pb-2 shrink-0 space-y-ds-2">
+                <div className="flex items-center justify-center gap-3">
+                    <button
+                        type="button"
+                        onClick={() => setCashModalMode('in')}
+                        aria-label="Entrada"
+                        className="shrink-0 min-h-[48px] min-w-[48px] px-2 rounded-xl hover:bg-zinc-100 transition-colors flex flex-col items-center justify-center gap-1 active:scale-95"
+                    >
+                        <div className="w-5 h-5 flex items-center justify-center bg-emerald-500 rounded-full shadow-sm">
+                            <Plus className="w-3 h-3 text-white" strokeWidth={3} />
+                        </div>
+                        <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500 leading-none">Entrada</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={openOut}
+                        aria-label="Salida"
+                        className="shrink-0 min-h-[48px] min-w-[48px] px-2 rounded-xl hover:bg-zinc-100 transition-colors flex flex-col items-center justify-center gap-1 active:scale-95"
+                    >
+                        <div className="w-5 h-5 flex items-center justify-center bg-rose-500 rounded-full shadow-sm">
+                            <Minus className="w-3 h-3 text-white" strokeWidth={3} />
+                        </div>
+                        <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500 leading-none">Salida</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={openAudit}
+                        aria-label="Arqueo"
+                        className="shrink-0 min-h-[48px] min-w-[48px] px-2 rounded-xl hover:bg-zinc-100 transition-colors flex flex-col items-center justify-center gap-1 active:scale-95"
+                    >
+                        <div className="w-5 h-5 flex items-center justify-center bg-orange-500 rounded-full shadow-sm">
+                            <RefreshCw className="w-2.5 h-2.5 text-white" strokeWidth={4} />
+                        </div>
+                        <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500 leading-none">Arqueo</span>
+                    </button>
+                </div>
+                <div className="flex justify-center w-full">
+                    <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
+                        <button
+                            type="button"
+                            onClick={handlePrevMonth}
+                            className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
+                            aria-label="Mes anterior"
+                        >
+                            <ChevronLeft size={22} />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setIsTimeFilterOpen(true)}
+                            className="text-base md:text-lg font-black text-ds-marca capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,14rem)] sm:max-w-none hover:opacity-80"
+                        >
+                            {filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(parseLocalSafe(rangeStart), parseLocalSafe(rangeEnd))
+                                ? format(parseLocalSafe(rangeStart), 'MMMM yyyy', { locale: es })
+                                : 'Seleccionar mes'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleNextMonth}
+                            className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
+                            aria-label="Mes siguiente"
+                        >
+                            <ChevronRight size={22} />
+                        </button>
+                    </div>
+                </div>
+            </div>
 
                     {/* CUERPO BLANCO (RESUMEN + TABLA) */}
                     <div className="bg-white">
@@ -1060,8 +1051,7 @@ export default function MovementsPage() {
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
+        </DashboardDetailLayout>
 
             {/* MODALES EXTERNOS */}
             <TimeFilterModal
@@ -1171,6 +1161,6 @@ export default function MovementsPage() {
                     toast.success("Cierre realizado correctamente");
                 }}
             />
-        </div>
+        </>
     );
 }

@@ -90,6 +90,17 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'app/staff/actividades/page.tsx',
             'app/dashboard/consumo-personal/page.tsx',
             'app/dashboard/history/page.tsx',
+            'app/recipes/page.tsx',
+            'app/ingredients/page.tsx',
+            'app/recipes/[id]/page.tsx',
+            'app/dashboard/ventas/page.tsx',
+            'app/dashboard/movements/page.tsx',
+            'app/staff/history/page.tsx',
+            'app/profile/page.tsx',
+            'app/dashboard/insights/InsightsClient.tsx',
+            'app/dashboard/albaranes-precios/AlbaranesPreciosClient.tsx',
+            'app/staff/actividades/gestion/page.tsx',
+            'app/dashboard/import/page.tsx',
         ];
         for (const rel of pilots) {
             const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
@@ -112,7 +123,6 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'app/staff/reservas/ReservasClient.tsx',
             'app/horario/page.tsx',
             'app/staff/actividades/page.tsx',
-            'app/dashboard/overtime/page.tsx',
             'app/dashboard/consumo-personal/page.tsx',
             'app/dashboard/history/page.tsx',
         ];
@@ -217,6 +227,19 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(radar, /<EmptyState/);
         assert.doesNotMatch(radar, /bg-\[#36606F\]/);
         assert.doesNotMatch(radar, /rounded-\[2\.5rem\]/);
+    });
+
+    it('recetas e ingredientes montan catálogo a 4 columnas dentro de PageScreen', () => {
+        for (const rel of ['app/recipes/page.tsx', 'app/ingredients/page.tsx']) {
+            const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
+            assert.match(source, /DashboardDetailLayout|PageScreen/, `${rel} debe usar PageScreen`);
+            assert.match(source, /grid-cols-4/, `${rel} debe mostrar 4 ítems por fila`);
+            assert.doesNotMatch(
+                source,
+                /rounded-\[2\.5rem\]/,
+                `${rel} no debe usar radio ilegítimo 2.5rem`
+            );
+        }
     });
 
     it('ningún piloto prioritario reintroduce rounded-[2.5rem]', () => {

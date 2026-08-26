@@ -38,6 +38,10 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-26
 
+- **Oleada PageScreen de gestión.** Recetas, Ingredientes, Ventas, Tesorería, Asistencia, Perfil, detalle de receta, Insights, Precios desde albarán, catálogo de actividades e Importación entran por `PageScreen`. Recetas e Ingredientes muestran 4 ítems por fila. Asistencia conserva tarjetas semanales (P6), no el calendario P3. Sin ADR nueva.
+
+- **Horas extras recupera el mini-calendario.** `/dashboard/overtime` deja la rejilla mensual P3 y vuelve a días en círculos + filas de semana (importe y pagado). Sigue en PageScreen. No es un calendario mensual.
+
 - **Calendarios mensuales del mismo tipo, dentro de PageScreen.** Horario, Actividades, Horas extras, Consumo staff y Cierres entran por `PageScreen`. Labor y Consumo dejan las tarjetas de día sueltas: todos los calendarios mensuales de gestión usan la misma rejilla continua (P3). Horas extras deja el mini-calendario y muestra el mes completo. Sin ADR nueva.
 
 ## 2026-08-25

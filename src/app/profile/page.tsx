@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef, useLayoutEffect, Suspense } from 'react';
+import { useEffect, useState, useCallback, useRef, Suspense } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -9,6 +9,7 @@ import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { CreditCard, ChevronLeft } from 'lucide-react';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
 import NominasModal from '@/components/NominasModal';
@@ -101,10 +102,7 @@ function ProfileContent() {
         ? `${profile.first_name} ${profile.last_name || ''}`.trim().toUpperCase()
         : '';
 
-    const profileTitleContainerRef = useRef<HTMLDivElement>(null);
-    const profileNameHeadingRef = useRef<HTMLHeadingElement>(null);
     const handledRecoveryRef = useRef(false);
-    const [profileNameFontPx, setProfileNameFontPx] = useState(16);
 
     const clearRecoveryUrl = useCallback(() => {
         if (typeof window === 'undefined') return;
@@ -152,49 +150,6 @@ function ProfileContent() {
             clearRecoveryUrl();
         }
     }, [clearRecoveryUrl]);
-
-    useLayoutEffect(() => {
-        if (!fullName) return;
-        const wrap = profileTitleContainerRef.current;
-        const h1 = profileNameHeadingRef.current;
-        if (!wrap || !h1) return;
-
-        const maxFont = 16;
-        const minFont = 10;
-        const step = 0.25;
-
-        const fit = () => {
-            const available = wrap.clientWidth;
-            if (available < 8) return;
-
-            let size = maxFont;
-            h1.style.fontSize = `${size}px`;
-
-            while (size > minFont && h1.scrollWidth > available) {
-                size -= step;
-                h1.style.fontSize = `${size}px`;
-            }
-
-            while (size < maxFont) {
-                const next = Math.min(maxFont, size + step);
-                h1.style.fontSize = `${next}px`;
-                if (h1.scrollWidth > available) {
-                    h1.style.fontSize = `${size}px`;
-                    break;
-                }
-                size = next;
-            }
-
-            setProfileNameFontPx(size);
-        };
-
-        fit();
-        const ro = new ResizeObserver(() => {
-            requestAnimationFrame(fit);
-        });
-        ro.observe(wrap);
-        return () => ro.disconnect();
-    }, [fullName]);
 
     useEffect(() => {
         fetchInitialData();
@@ -447,124 +402,95 @@ function ProfileContent() {
 
     if (!profile) {
         return (
-            <div className="min-h-screen flex items-center justify-center p-6">
-                <div className="bg-white rounded-[2.5rem] p-10 text-center shadow-2xl max-w-sm w-full">
+            <DashboardDetailLayout
+                title="Perfil"
+                showBackButton
+                template="detail"
+                maxWidthClass="max-w-2xl"
+            >
+                <div className="flex flex-col items-center justify-center py-16 text-center">
                     <p className="text-gray-500 font-black uppercase tracking-widest text-xs">Perfil no encontrado</p>
                     <Button
                         type="button"
                         variant="secondary"
                         instance="profile-not-found-back"
                         onClick={() => router.back()}
-                        layout="fill"
                         className="mt-6"
                     >
                         Volver
                     </Button>
                 </div>
-            </div>
+            </DashboardDetailLayout>
         );
     }
 
     return (
-        <div className="min-h-screen pb-24 p-4">
-            <div className="max-w-2xl mx-auto">
-                {/* Un solo contenedor: esquinas redondeadas, cabecera petróleo + contenido */}
-                <div className="bg-white rounded-[1.5rem] shadow-xl overflow-hidden min-h-[60vh] flex flex-col">
-                    {/* Cabecera petróleo (compacta) */}
-                    <div className="bg-[#36606F] text-white relative overflow-hidden shrink-0 py-2.5 px-3">
-                        <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl pointer-events-none" />
-
-                        <div className="relative z-10 grid grid-cols-[auto_1fr_auto] items-center gap-2 min-h-0">
-                            <div className="shrink-0 flex items-center gap-0.5">
-                                {isManager ? (
-                                    <Button
-                                        type="button"
-                                        variant="tertiary"
-                                        instance="profile-open-plantilla"
-                                        onClick={() => void openPlantillaFromProfile()}
-                                        aria-label="Abrir plantilla"
-                                        icon={<ChevronLeft className="size-5 shrink-0" strokeWidth={2.25} />}
-                                    />
-                                ) : null}
-                                <div className="flex flex-col items-center gap-1">
-                                    <Avatar
-                                        src={profile.avatar_url}
-                                        alt={fullName}
-                                        size="md"
-                                        className="shadow-md bg-white ring-1 ring-white"
-                                    />
-                                    {showAccountSection && (
-                                        <label
-                                            className={cn(
-                                                'shrink-0 inline-flex items-center justify-center self-center text-center',
-                                                'px-1 py-0.5',
-                                                'rounded-lg border border-white/80',
-                                                'text-white text-[9px] font-black uppercase tracking-widest leading-none',
-                                                'hover:border-white hover:bg-white/5 transition-colors cursor-pointer active:scale-95'
-                                            )}
-                                        >
-                                            <input
-                                                type="file"
-                                                accept="image/jpeg,image/png,image/webp,image/gif"
-                                                onChange={handleAvatarFileSelect}
-                                                disabled={avatarUploading}
-                                                className="hidden"
-                                            />
-                                            {avatarUploading ? 'Subiendo…' : 'Editar'}
-                                        </label>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="min-w-0 flex flex-col items-center justify-center self-stretch pt-0.5 pb-0.5">
-                                <div
-                                    ref={profileTitleContainerRef}
-                                    className="w-full min-w-0 max-w-full px-1 box-border"
-                                >
-                                    <h1
-                                        ref={profileNameHeadingRef}
-                                        className="w-full text-center font-black uppercase tracking-tight leading-none whitespace-nowrap overflow-hidden text-ellipsis"
-                                        style={{ fontSize: `${profileNameFontPx}px` }}
-                                        title={fullName}
-                                    >
-                                        {fullName}
-                                    </h1>
-                                </div>
-                                {viewMode === 'staff' && (
-                                    <p className="text-[10px] text-white/70 uppercase tracking-widest mt-1">Mi cuenta</p>
-                                )}
-                                {viewMode === 'manager-employee' && (
-                                    <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full mt-1">
-                                        {profile.role === 'manager' ? 'Manager' : profile.role === 'supervisor' ? 'Supervisor' : 'Staff'}
-                                    </span>
-                                )}
-                            </div>
-
-                            <div className="shrink-0 flex items-start justify-end min-w-12">
-                                {showPersonalPurchasesAccountsButton ? (
-                                    <button
-                                        type="button"
-                                        onClick={() => router.push('/dashboard/ledger')}
-                                        className={cn(
-                                            'shrink-0',
-                                            'min-h-12 min-w-12',
-                                            'inline-flex items-center justify-center',
-                                            'border-0 bg-transparent shadow-none',
-                                            'text-white/90 hover:text-white',
-                                            'active:opacity-70 transition-opacity'
-                                        )}
-                                        aria-label="Cuentas de compras personales"
-                                        title="Compras personales"
-                                    >
-                                        <CreditCard size={20} strokeWidth={2.25} className="shrink-0" />
-                                    </button>
-                                ) : null}
-                            </div>
-                        </div>
+        <>
+            <DashboardDetailLayout
+                title={fullName}
+                subtitle={
+                    viewMode === 'staff'
+                        ? 'Mi cuenta'
+                        : viewMode === 'manager-employee'
+                          ? (profile.role === 'manager' ? 'Manager' : profile.role === 'supervisor' ? 'Supervisor' : 'Staff')
+                          : undefined
+                }
+                showBackButton={false}
+                template="detail"
+                maxWidthClass="max-w-2xl"
+                rightSlot={
+                    <div className="flex items-center gap-1">
+                        {isManager ? (
+                            <Button
+                                type="button"
+                                variant="tertiary"
+                                instance="profile-open-plantilla"
+                                onClick={() => void openPlantillaFromProfile()}
+                                aria-label="Abrir plantilla"
+                                icon={<ChevronLeft className="size-5 shrink-0" strokeWidth={2.25} />}
+                            />
+                        ) : null}
+                        {showPersonalPurchasesAccountsButton ? (
+                            <Button
+                                type="button"
+                                variant="tertiary"
+                                instance="profile-cuentas-personales"
+                                onClick={() => router.push('/dashboard/ledger')}
+                                aria-label="Cuentas de compras personales"
+                                icon={<CreditCard size={20} strokeWidth={2.25} />}
+                            />
+                        ) : null}
                     </div>
-
-                    {/* Contenido: iconos flotando sin marco ni fondo */}
-                    <div className="flex-1 bg-white px-4 pt-6 pb-8">
+                }
+            >
+                        <div className="flex flex-col items-center gap-2 pb-4">
+                            <Avatar
+                                src={profile.avatar_url}
+                                alt={fullName}
+                                size="md"
+                                className="shadow-md bg-white ring-1 ring-zinc-200"
+                            />
+                            {showAccountSection && (
+                                <label
+                                    className={cn(
+                                        'shrink-0 inline-flex items-center justify-center self-center text-center',
+                                        'px-2 py-1 min-h-12',
+                                        'rounded-lg border border-zinc-200',
+                                        'text-zinc-700 text-[9px] font-black uppercase tracking-widest leading-none',
+                                        'hover:bg-zinc-50 transition-colors cursor-pointer active:scale-95'
+                                    )}
+                                >
+                                    <input
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/webp,image/gif"
+                                        onChange={handleAvatarFileSelect}
+                                        disabled={avatarUploading}
+                                        className="hidden"
+                                    />
+                                    {avatarUploading ? 'Subiendo…' : 'Editar'}
+                                </label>
+                            )}
+                        </div>
                         <div className="grid grid-cols-2 gap-6">
                             {gridItems.map((item) => (
                                 <button
@@ -651,9 +577,7 @@ function ProfileContent() {
                                 ) : null}
                             </div>
                         )}
-                    </div>
-                </div>
-            </div>
+            </DashboardDetailLayout>
 
             {/* Modales */}
             <DatosPersonalesModal
@@ -751,7 +675,7 @@ function ProfileContent() {
             >
                 <p className="px-6 pb-4 text-sm text-zinc-500">¿Seguro que quieres cerrar sesión?</p>
             </Modal>
-        </div>
+        </>
     );
 }
 

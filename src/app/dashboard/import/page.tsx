@@ -6,6 +6,7 @@ import * as XLSX from 'xlsx'
 import { Upload, FileUp, CheckCircle, AlertCircle, ArrowRight, Save, Database } from 'lucide-react'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Button } from '@/components/ui/button'
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { getImportRuns, getLatestImportRuns, importSuppliers, importProducts, importRecipes, importLogs, importInitialMovements, ImportResult, ImportStep } from '@/app/actions/import-legacy'
 import { cn } from '@/lib/utils'
 
@@ -301,12 +302,14 @@ export default function ImportPage() {
     }
 
     return (
-        <div className="container max-w-4xl mx-auto py-8 space-y-8">
-            <div className="flex flex-col space-y-2">
-                <h1 className="text-3xl font-bold tracking-tight text-[#36606F]">Asistente de Migración Legacy</h1>
-                <p className="text-muted-foreground">Importa tus datos históricos paso a paso asegurando la integridad de la base de datos.</p>
-            </div>
-
+        <DashboardDetailLayout
+            title="Importación"
+            subtitle="Importa tus datos históricos paso a paso asegurando la integridad de la base de datos."
+            backHref="/dashboard"
+            template="form"
+            maxWidthClass="max-w-4xl"
+        >
+            <div className="space-y-8">
             {/* Progress Stepper */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                 {steps.map((step, index) => {
@@ -664,6 +667,7 @@ export default function ImportPage() {
                     )}
                 </div>
             </div>
-        </div>
+            </div>
+        </DashboardDetailLayout>
     )
 }

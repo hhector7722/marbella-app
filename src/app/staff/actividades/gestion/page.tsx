@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { getGestionActivitiesAction, updateActivityAction, mergeActivitiesAction } from './actions';
 
 interface GestionActivity {
@@ -156,11 +157,20 @@ export default function GestionActividadesPage() {
 
   const visibleActivities = activities.filter(act => filter === 'all' || act.is_pista);
 
-  if (loading) return <div className="p-8 text-slate-700">Cargando catálogo...</div>;
-  if (error) return <div className="p-8 text-red-500">{error}</div>;
-
   return (
-    <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-4">
+    <>
+    <DashboardDetailLayout
+      title="Catálogo"
+      backHref="/staff/actividades"
+      template="list"
+      maxWidthClass="max-w-4xl"
+    >
+      {loading ? (
+        <p className="text-slate-700">Cargando catálogo...</p>
+      ) : error ? (
+        <p className="text-red-500">{error}</p>
+      ) : (
+      <div className="space-y-4">
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
@@ -191,7 +201,7 @@ export default function GestionActividadesPage() {
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value as 'pistas' | 'all')}
-          className="bg-white border border-gray-200 text-slate-700 text-sm px-3 py-2 rounded-lg outline-none focus:ring-2 focus:ring-[#36606F]/50 shadow-sm cursor-pointer"
+          className="min-h-12 cursor-pointer rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm outline-none focus:ring-2 focus:ring-ds-marca/50"
         >
           <option value="pistas">Solo Pistas (P1-P4)</option>
           <option value="all">Todas las actividades</option>
@@ -249,9 +259,10 @@ export default function GestionActividadesPage() {
                       Editar
                     </Button>
                     <button
+                      type="button"
                       onClick={() => handleToggleActive(act)}
                       disabled={savingId === act.id}
-                      className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-semibold transition-colors disabled:opacity-50 ${act.active ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}
+                      className={`min-h-12 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-semibold transition-colors disabled:opacity-50 ${act.active ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}
                     >
                       {act.active ? 'Quitar' : 'Activar'}
                     </button>
@@ -262,6 +273,9 @@ export default function GestionActividadesPage() {
           </tbody>
         </table>
       </div>
+      </div>
+      )}
+    </DashboardDetailLayout>
 
       <Modal
         open={merging}
@@ -438,6 +452,6 @@ export default function GestionActividadesPage() {
           )}
         </div>
       </Modal>
-    </div>
+    </>
   );
 }

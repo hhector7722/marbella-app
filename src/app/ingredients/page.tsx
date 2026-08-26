@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { cn } from '@/lib/utils';
-import { Search, Package, Plus, Trash2, Upload, Camera, X, ChevronDown, Settings } from 'lucide-react';
+import { Search, Package, Plus, Upload, X, ChevronDown, Settings } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard';
@@ -14,6 +14,7 @@ import { RECIPE_UNIT_OPTIONS, resolveIngredientRecipeUnit } from '@/lib/recipe-c
 import { resolveSupplierPickerItems } from '@/lib/supplier-seed';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 
 // Unidades canónicas (sin duplicados tipo lt/l o u/ud)
 const STANDARD_UNITS = ['kg', 'g', 'l', 'ml', 'ud', 'cl'];
@@ -210,10 +211,33 @@ export default function IngredientsPage() {
     });
 
     return (
-        <div className="p-4 md:p-6 w-full min-h-screen pb-24">
+        <>
             <Toaster position="top-right" />
 
-            <div className="max-w-7xl mx-auto">
+            <DashboardDetailLayout
+                title="Ingredientes"
+                showBackButton={false}
+                template="list"
+                maxWidthClass="max-w-7xl"
+                rightSlot={
+                    <Button
+                        type="button"
+                        variant="tertiary"
+                        instance="ingredients-crear"
+                        aria-label="Nuevo ingrediente"
+                        icon={<Plus className="h-5 w-5 md:h-6 md:w-6" />}
+                        onClick={() => {
+                            setCreateMode('wizard');
+                            setCreateSettingsOpen(false);
+                            setIsCustomSupplier(false);
+                            setIsCustomSupplier2(false);
+                            setCustomSupplierName('');
+                            setCustomSupplier2Name('');
+                            setShowCreateModal(true);
+                        }}
+                    />
+                }
+            >
                 <div className="flex flex-row items-center gap-2">
                     <div className="relative min-w-0 flex-1">
                         <Search className="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400 md:left-4 md:h-4 md:w-4" />
@@ -234,7 +258,7 @@ export default function IngredientsPage() {
                                 <button
                                     type="button"
                                     onClick={() => setShowSupplierPopup(!showSupplierPopup)}
-                                    className="flex items-center gap-1 rounded-xl border border-white/50 bg-white/90 px-2.5 py-2 font-black text-[9px] uppercase tracking-widest text-zinc-800 shadow-sm transition-all hover:bg-white md:gap-2 md:rounded-2xl md:px-5 md:py-2.5 md:text-[10px]"
+                                    className="flex min-h-12 items-center gap-1 rounded-xl border border-white/50 bg-white/90 px-2.5 py-2 font-black text-[9px] uppercase tracking-widest text-zinc-800 shadow-sm transition-all hover:bg-white md:gap-2 md:rounded-2xl md:px-5 md:py-2.5 md:text-[10px]"
                                 >
                                     <span className="hidden sm:inline">Proveedor</span>
                                     <span className="sm:hidden">Prov.</span>
@@ -295,41 +319,26 @@ export default function IngredientsPage() {
                                 </button>
                             </div>
                         )}
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setCreateMode('wizard');
-                                setCreateSettingsOpen(false);
-                                setIsCustomSupplier(false);
-                                setIsCustomSupplier2(false);
-                                setCustomSupplierName('');
-                                setCustomSupplier2Name('');
-                                setShowCreateModal(true);
-                            }}
-                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-lg transition-all hover:scale-105 hover:bg-emerald-700 active:scale-95 md:h-12 md:w-12 md:rounded-2xl"
-                        >
-                            <Plus className="h-5 w-5 md:h-6 md:w-6" />
-                        </button>
                     </div>
                 </div>
 
                 {!loading && (
                     <div className="pt-4 md:pt-6">
-                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-6">
+                        <div className="grid grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                             {filteredIngredients.map(ing => (
                                 <div key={ing.id} className="relative group">
                                     <div
                                         onClick={() => setEditingIngredient(ing)}
-                                        className="bg-white rounded-2xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col"
+                                        className="bg-white rounded-2xl p-2 md:p-3 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col"
                                     >
                                 {/* IMAGEN PEQUEÑA SIN BORDE */}
-                                <div className="h-14 w-full bg-white rounded-lg flex items-center justify-center mb-1 overflow-hidden relative">
-                                    {ing.image_url ? <img src={ing.image_url} className="w-full h-full object-contain" /> : <Package className="text-gray-200 w-6 h-6" />}
+                                <div className="h-24 sm:h-28 md:h-32 w-full bg-white rounded-xl flex items-center justify-center mb-2 overflow-hidden relative">
+                                    {ing.image_url ? <img src={ing.image_url} className="w-full h-full object-contain" /> : <Package className="text-gray-200 w-8 h-8 md:w-10 md:h-10" />}
                                 </div>
                                 {/* TEXTO */}
                                 <div className="flex justify-between items-center mt-auto px-0.5 gap-1">
-                                    <span className="font-bold text-gray-700 text-[10px] leading-tight truncate" title={ing.name}>{ing.name}</span>
-                                    <span className="font-black text-[#5E35B1] text-[10px] shrink-0 flex items-center gap-0.5">
+                                    <span className="font-bold text-gray-700 text-[11px] sm:text-xs md:text-sm leading-tight truncate" title={ing.name}>{ing.name}</span>
+                                    <span className="font-black text-[#5E35B1] text-[11px] sm:text-xs md:text-sm shrink-0 flex items-center gap-0.5">
                                         {ing.current_price?.toFixed(2)}€
                                         {ing.price_locked ? (
                                             <span className="rounded bg-zinc-200 px-1 text-[8px] font-black uppercase text-zinc-600" title="Precio fijo">
@@ -344,7 +353,7 @@ export default function IngredientsPage() {
                         </div>
                     </div>
                 )}
-            </div>
+    </DashboardDetailLayout>
 
             {/* MODALES */}
             {editingIngredient && (
@@ -716,6 +725,6 @@ export default function IngredientsPage() {
                             )}
                 </div>
             </Modal>
-        </div>
+        </>
     );
 }

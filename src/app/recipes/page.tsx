@@ -3,12 +3,13 @@
 import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
-import { ChefHat, Search, Plus, Trash2, X, ChevronDown, Users, Camera, Edit2, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChefHat, Search, Plus, X, ChevronDown, Users, Camera, Edit2, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import CreateModal from '@/components/CreateRecipeModal';
 import { useRouter } from 'next/navigation';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { cn } from '@/lib/utils';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import {
@@ -391,7 +392,7 @@ function RecipesContent() {
     };
 
     return (
-        <div className="p-4 md:p-6 w-full min-h-screen pb-24">
+        <>
             <Toaster position="top-right" />
             <ImageLightbox
                 open={isPhotoLightboxOpen}
@@ -399,7 +400,34 @@ function RecipesContent() {
                 alt={fullRecipeData?.name}
                 onClose={() => setIsPhotoLightboxOpen(false)}
             />
-            <div className="max-w-7xl mx-auto">
+            <DashboardDetailLayout
+                title="Recetas"
+                showBackButton={false}
+                template="list"
+                maxWidthClass="max-w-7xl"
+                rightSlot={
+                    !isRestricted ? (
+                        <Button
+                            type="button"
+                            variant="tertiary"
+                            instance="recipes-crear"
+                            aria-label="Nueva receta"
+                            icon={<Plus className="h-5 w-5 md:h-6 md:w-6" />}
+                            onClick={() => {
+                                const tap = menuCategoryRows.find((r) => r.slug === 'tapas');
+                                setNewRecipe({
+                                    name: '',
+                                    menu_category_id: tap?.id ?? '',
+                                    category: tap ? denormalizedRecipeCategoryName(tap) : '',
+                                    sale_price: 0,
+                                    ingredients: [],
+                                });
+                                setShowCreateModal(true);
+                            }}
+                        />
+                    ) : null
+                }
+            >
                 <div className="flex flex-row items-center gap-2">
                     <div className="relative min-w-0 flex-1">
                         <Search className="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400 md:left-4 md:h-4 md:w-4" />
@@ -545,30 +573,11 @@ function RecipesContent() {
                                     <button type="button" onClick={() => setCategoryAndUrl(null)} className="shrink-0 rounded-xl p-1 transition-colors hover:bg-zinc-100 md:p-1.5"><X size={12} className="text-rose-500 md:w-3.5 md:h-3.5" strokeWidth={4} /></button>
                                 </div>
                             )}
-                        {!isRestricted && (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    const tap = menuCategoryRows.find((r) => r.slug === 'tapas');
-                                    setNewRecipe({
-                                        name: '',
-                                        menu_category_id: tap?.id ?? '',
-                                        category: tap ? denormalizedRecipeCategoryName(tap) : '',
-                                        sale_price: 0,
-                                        ingredients: [],
-                                    });
-                                    setShowCreateModal(true);
-                                }}
-                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-lg transition-all hover:scale-105 hover:bg-emerald-700 active:scale-95 md:h-12 md:w-12 md:rounded-2xl"
-                            >
-                                <Plus className="h-5 w-5 md:h-6 md:w-6" />
-                            </button>
-                        )}
                     </div>
                 </div>
                 {!loading && (
                     <div className="pt-4 md:pt-6">
-                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-6">
+                        <div className="grid grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                             {filteredRecipes.map((recipe) => (
                                 <div key={recipe.id} className="group relative overflow-hidden">
                                     <div
@@ -579,14 +588,14 @@ function RecipesContent() {
                                                 router.push(buildRecipesHref(recipe.id));
                                             }
                                         }}
-                                        className="bg-white rounded-2xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col active:scale-95"
+                                        className="bg-white rounded-2xl p-2 md:p-3 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col active:scale-95"
                                     >
-                                <div className="h-14 w-full bg-white rounded-lg flex items-center justify-center mb-1 overflow-hidden relative">
-                                    {recipe.photo_url ? <img src={recipe.photo_url} alt="" className="h-full w-full object-contain" /> : <ChefHat className="w-5 h-5 text-gray-200" />}
+                                <div className="h-24 sm:h-28 md:h-32 w-full bg-white rounded-xl flex items-center justify-center mb-2 overflow-hidden relative">
+                                    {recipe.photo_url ? <img src={recipe.photo_url} alt="" className="h-full w-full object-contain" /> : <ChefHat className="w-8 h-8 md:w-10 md:h-10 text-gray-200" />}
                                 </div>
                                 <div className="flex justify-between items-center mt-auto px-0.5 gap-1">
-                                    <span className="font-bold text-gray-700 text-[10px] leading-tight truncate" title={recipe.name}>{recipe.name}</span>
-                                    {!isRestricted && <span className={`font-black text-[10px] shrink-0 ${getRecipeHealthColor(recipe)}`}>{recipe.sale_price?.toFixed(1)}€</span>}
+                                    <span className="font-bold text-gray-700 text-[11px] sm:text-xs md:text-sm leading-tight truncate" title={recipe.name}>{recipe.name}</span>
+                                    {!isRestricted && <span className={`font-black text-[11px] sm:text-xs md:text-sm shrink-0 ${getRecipeHealthColor(recipe)}`}>{recipe.sale_price?.toFixed(1)}€</span>}
                                 </div>
                             </div>
                         </div>
@@ -594,7 +603,7 @@ function RecipesContent() {
                         </div>
                     </div>
                 )}
-            </div>
+    </DashboardDetailLayout>
 
             {/* MODAL DE DETALLE (PARA STAFF): misma composición visual que `/recipes/[id]` en modo restringido */}
             {selectedRecipeId && (
@@ -837,7 +846,7 @@ function RecipesContent() {
                     setNewRecipe({ ...newRecipe, ingredients: updated })
                 }}
             />
-        </div>
+        </>
     );
 }
 

@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-25
+revisado: 2026-08-26
 caducidad: 6 meses
 supersede: docs/PLAN_ASISTENCIA_UNIFICADA.md
 ---
@@ -74,7 +74,7 @@ Patrón de navegación temporal para todo lo que se organiza por fechas: horario
 - Los indicadores de una celda se truncan con un contador de resto; nunca deforman la celda.
 - El día se construye en tiempo local del negocio. Un desplazamiento de zona horaria en este patrón produce un error de un día completo en toda la vista.
 - Pulsar un día abre P4.
-- **Un solo cromo.** Labor, Reservas, Horario, Actividades, Horas extras, Consumo staff y Cierres muestran el mismo tipo de calendario. Cambia el contenido de la celda, no la rejilla.
+- **Un solo cromo.** Labor, Reservas, Horario, Actividades, Consumo staff y Cierres muestran el mismo tipo de calendario. Cambia el contenido de la celda, no la rejilla. Horas extras no es P3: es mini-calendario de días + filas de semana.
 
 ---
 
@@ -211,7 +211,9 @@ La composición por defecto de listado, detalle y formulario de gestión. No es 
 - Una pantalla nueva de gestión usa esta composición. No se clona una cabecera petróleo.
 - El filtro temporal y las acciones de alcance viven en `rightSlot`.
 - `Button` `tertiary` dentro de la cabecera se pinta invertido (icono blanco). No es una quinta variante de Button.
-- Labor, Reservas, Horario, Actividades, Horas extras, Consumo staff y Cierres montan el calendario mensual (P3) **dentro** de esta plantilla; no sustituyen la cabecera. La rejilla es una.
+- Labor, Reservas, Horario, Actividades, Consumo staff y Cierres montan el calendario mensual (P3) **dentro** de esta plantilla; no sustituyen la cabecera. La rejilla es una. Horas extras también entra por PageScreen, pero su interior es vista semanal (mini-calendario + filas), no P3.
+- Recetas e Ingredientes montan la rejilla de catálogo a **4 columnas** dentro de esta plantilla.
+- Asistencia (historial) monta tarjetas semanales (P6) dentro de esta plantilla, no el calendario P3.
 
 **Cuándo no**: mosaico Admin/Staff (T1), Sala LIVE, pantalla de cocina, carta de cliente, overlay (P2).
 

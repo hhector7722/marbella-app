@@ -6,6 +6,7 @@ import { createClient } from "@/utils/supabase/client";
 import { ChevronLeft, ChevronRight, ChartLine, Filter } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { format, startOfMonth, endOfMonth, isSameDay, addDays, subDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths } from 'date-fns';
@@ -573,99 +574,102 @@ export default function VentasPage() {
     };
 
     return (
-        <div className="min-h-screen p-1 md:p-3 pb-20 text-zinc-900 print:bg-white print:p-0 print:pb-0">
-            <div className="max-w-5xl mx-auto print:max-w-none">
-                <div className="bg-white rounded-2xl shadow-2xl overflow-hidden print:rounded-none print:shadow-none">
-
-                    {/* CABECERA Y FILTROS (formato alineado con /dashboard/history) */}
-                    <div className="bg-[#36606F] p-1.5 md:p-3 relative rounded-t-2xl print:hidden">
-                        <div className="relative flex items-center justify-between gap-1 min-w-0">
-                            <div className="flex items-center gap-1.5 md:gap-2 shrink-0 min-w-0">
-                                <h1 className="text-xs md:text-sm font-black text-white uppercase tracking-tight italic text-nowrap shrink-0">Ventas</h1>
-                            </div>
-
-                            <div className="flex items-center gap-0.5 md:gap-1 shrink-0 min-w-0 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        if (filterMode === 'single') {
-                                            const prev = subDays(parseLocalSafe(selectedDate), 1);
-                                            setSelectedDate(format(prev, 'yyyy-MM-dd'));
-                                        } else {
-                                            handlePrevMonth();
-                                        }
-                                    }}
-                                    className="p-1 hover:bg-white/10 rounded-lg text-white transition-all outline-none shrink-0"
-                                >
-                                    <ChevronLeft size={16} />
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsTimeFilterOpen(true)}
-                                    className="py-0.5 px-1 text-[9px] sm:text-[10px] md:text-[11px] font-black text-white uppercase tracking-widest text-center outline-none max-w-[min(calc(100vw-5.5rem),24rem)] leading-tight"
-                                >
-                                    {filterMode === 'single'
-                                        ? format(parseLocalSafe(selectedDate), "EEEE d 'de' MMMM", { locale: es })
-                                        : (rangeStart && rangeEnd && isSameMonth(parseLocalSafe(rangeStart), parseLocalSafe(rangeEnd))
-                                            ? format(parseLocalSafe(rangeStart), "MMMM 'de' yyyy", { locale: es })
-                                            : 'Periodo')}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        if (filterMode === 'single') {
-                                            const next = addDays(parseLocalSafe(selectedDate), 1);
-                                            setSelectedDate(format(next, 'yyyy-MM-dd'));
-                                        } else {
-                                            handleNextMonth();
-                                        }
-                                    }}
-                                    className="p-1 hover:bg-white/10 rounded-lg text-white transition-all outline-none shrink-0"
-                                >
-                                    <ChevronRight size={16} />
-                                </button>
-                            </div>
-
-                            <div className="flex items-center gap-1 shrink-0 text-white">
-                                {canAccessInsights ? (
-                                    <Button
-                                        type="button"
-                                        variant="tertiary"
-                                        instance="ventas-open-insights"
-                                        onClick={() => {
-                                             if (!navigateInsideSandbox('/dashboard/insights')) router.push('/dashboard/insights');
-                                         }}
-                                        icon={<ChartLine className="w-[18px] h-[18px]" strokeWidth={2} fill="none" />}
-                                        aria-label="Abrir insights"
-                                        className="shrink-0"
-                                    />
-                                ) : null}
-
-                                <TimeFilterButton
-                                    onClick={() => setIsTimeFilterOpen(true)}
-                                    showLabel={false}
-                                    icon={Filter}
-                                    buttonClassName={cn(
-                                        "min-h-10 min-w-10 px-0 py-0",
-                                        "rounded-xl border-0 bg-transparent hover:bg-white/10",
-                                        "text-white/90 hover:text-white"
-                                    )}
-                                    hasActiveFilter={(() => {
-                                        const today = new Date().toISOString().split('T')[0];
-                                        const isDefault = filterMode === 'single' && selectedDate === today && !hourFilter;
-                                        return !isDefault;
-                                    })()}
-                                    onClear={() => {
-                                        const today = new Date().toISOString().split('T')[0];
-                                        setHourFilter(null);
-                                        setFilterMode('single');
-                                        setSelectedDate(today);
-                                    }}
-                                    className="text-white"
-                                />
-                            </div>
-                        </div>
+        <>
+        <DashboardDetailLayout
+            title="Ventas"
+            showBackButton={false}
+            template="list"
+            maxWidthClass="max-w-5xl"
+            className="print:bg-white print:p-0 print:pb-0"
+            cardClassName="print:rounded-none print:shadow-none"
+            contentClassName="p-0 flex flex-col min-h-0"
+            rightSlot={
+                <div className="flex items-center gap-1 shrink-0 text-white">
+                    {canAccessInsights ? (
+                        <Button
+                            type="button"
+                            variant="tertiary"
+                            instance="ventas-open-insights"
+                            onClick={() => {
+                                 if (!navigateInsideSandbox('/dashboard/insights')) router.push('/dashboard/insights');
+                             }}
+                            icon={<ChartLine className="w-[18px] h-[18px]" strokeWidth={2} fill="none" />}
+                            aria-label="Abrir insights"
+                            className="shrink-0"
+                        />
+                    ) : null}
+                    <TimeFilterButton
+                        onClick={() => setIsTimeFilterOpen(true)}
+                        showLabel={false}
+                        icon={Filter}
+                        buttonClassName={cn(
+                            "min-h-10 min-w-10 px-0 py-0",
+                            "rounded-xl border-0 bg-transparent hover:bg-white/10",
+                            "text-white/90 hover:text-white"
+                        )}
+                        hasActiveFilter={(() => {
+                            const today = new Date().toISOString().split('T')[0];
+                            const isDefault = filterMode === 'single' && selectedDate === today && !hourFilter;
+                            return !isDefault;
+                        })()}
+                        onClear={() => {
+                            const today = new Date().toISOString().split('T')[0];
+                            setHourFilter(null);
+                            setFilterMode('single');
+                            setSelectedDate(today);
+                        }}
+                        className="text-white"
+                    />
+                </div>
+            }
+        >
+            <div className="px-4 md:px-8 pt-3 pb-2 shrink-0 print:hidden">
+                <div className="flex justify-center w-full">
+                    <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (filterMode === 'single') {
+                                    const prev = subDays(parseLocalSafe(selectedDate), 1);
+                                    setSelectedDate(format(prev, 'yyyy-MM-dd'));
+                                } else {
+                                    handlePrevMonth();
+                                }
+                            }}
+                            className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
+                            aria-label="Periodo anterior"
+                        >
+                            <ChevronLeft size={22} />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setIsTimeFilterOpen(true)}
+                            className="text-base md:text-lg font-black text-ds-marca capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,18rem)] sm:max-w-none hover:opacity-80"
+                        >
+                            {filterMode === 'single'
+                                ? format(parseLocalSafe(selectedDate), "EEEE d 'de' MMMM", { locale: es })
+                                : (rangeStart && rangeEnd && isSameMonth(parseLocalSafe(rangeStart), parseLocalSafe(rangeEnd))
+                                    ? format(parseLocalSafe(rangeStart), "MMMM 'de' yyyy", { locale: es })
+                                    : 'Periodo')}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (filterMode === 'single') {
+                                    const next = addDays(parseLocalSafe(selectedDate), 1);
+                                    setSelectedDate(format(next, 'yyyy-MM-dd'));
+                                } else {
+                                    handleNextMonth();
+                                }
+                            }}
+                            className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
+                            aria-label="Periodo siguiente"
+                        >
+                            <ChevronRight size={22} />
+                        </button>
                     </div>
+                </div>
+            </div>
 
                     {/* SECCIÓN DE KPIs */}
                     <div className="pt-4 md:pt-5 pb-1 md:pb-1.5 px-4 grid grid-cols-3 border-b border-zinc-50 print:hidden">
@@ -1022,8 +1026,7 @@ export default function VentasPage() {
                         </div>
                     </div>
 
-                </div>
-            </div>
+        </DashboardDetailLayout>
 
             {/* MODALES REUTILIZADOS DE HISTORY PAGE */}
             <Modal
@@ -1190,6 +1193,6 @@ export default function VentasPage() {
                     }
                 }}
             />
-        </div>
+        </>
     );
 }

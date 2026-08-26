@@ -30,6 +30,7 @@ import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { trackUsageModalApply } from '@/lib/usage/client';
@@ -739,43 +740,16 @@ export default function HistoryPage() {
     };
 
     return (
-        <div className="pb-10">
-            <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-4">
-
-
-
-                {/* ── CONTENIDO PRINCIPAL DEL CALENDARIO UNIFICADO ── */}
-                <div className="bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto">
-
-                    {/* CABECERA AZUL MES/AÑO (NAVEGACIÓN) */}
-                    <div className="bg-[#36606F] rounded-t-2xl px-4 py-0.5 flex items-center justify-between">
-                        {/* Izquierda: Mes y Flechas (Agrupado y Cercano) */}
-                        <div className="flex items-center gap-1">
-                            <button onClick={prevMonth} className="text-white hover:text-white/70 transition-colors p-1.5 active:scale-90 opacity-80 hover:opacity-100">
-                                <span className="text-lg font-bold font-mono">{'<'}</span>
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setPickerYear(filterYear);
-                                    setShowMonthPicker(true);
-                                }}
-                                className="text-[13px] md:text-sm font-black text-white uppercase tracking-widest whitespace-nowrap cursor-pointer hover:text-white/80 transition-colors select-none"
-                            >
-                                {getMonthLabel(filterYear, filterMonth)}
-                            </button>
-
-                            <button onClick={nextMonth} className="text-white hover:text-white/70 transition-colors p-1.5 active:scale-90 opacity-80 hover:opacity-100">
-                                <span className="text-lg font-bold font-mono">{'>'}</span>
-                            </button>
-                        </div>
-
-                        {/* Derecha: Botón exportar + Selector de Personal */}
-                        <div className="flex items-center gap-2 justify-end">
-
-                            {/* Botón exportar — individual siempre; plantilla solo master con datos */}
-                            {showExportButton && (
+        <>
+            <DashboardDetailLayout
+                title="Asistencia"
+                showBackButton={false}
+                template="list"
+                maxWidthClass="max-w-4xl"
+                contentClassName="p-0 flex flex-col min-h-0"
+                rightSlot={
+                    <div className="flex items-center gap-2 justify-end">
+                        {showExportButton && (
                                 <div className="relative">
                                     <Button
                                         type="button"
@@ -914,12 +888,45 @@ export default function HistoryPage() {
                                     )}
                                 </div>
                             )}
-                        </div>
                     </div>
+                }
+            >
+            <div className="px-4 md:px-8 pt-3 pb-2 shrink-0">
+                <div className="flex justify-center w-full">
+                    <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
+                        <button
+                            type="button"
+                            onClick={prevMonth}
+                            className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
+                            aria-label="Mes anterior"
+                        >
+                            <ChevronLeft size={22} />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setPickerYear(filterYear);
+                                setShowMonthPicker(true);
+                            }}
+                            className="text-base md:text-lg font-black text-ds-marca capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,14rem)] sm:max-w-none hover:opacity-80"
+                        >
+                            {getMonthLabel(filterYear, filterMonth)}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={nextMonth}
+                            className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
+                            aria-label="Mes siguiente"
+                        >
+                            <ChevronRight size={22} />
+                        </button>
+                    </div>
+                </div>
+            </div>
 
                     {loading ? (
                         <div className="py-20 flex justify-center">
-                            <LoadingSpinner size="md" className="text-[#36606F]" />
+                            <LoadingSpinner size="md" className="text-ds-marca" />
                         </div>
                     ) : isPlantilla ? (
                         plantillaWeeksData.length === 0 ? (
@@ -979,7 +986,7 @@ export default function HistoryPage() {
                             ))}
                         </div>
                     )}
-                </div>
+            </DashboardDetailLayout>
 
                 <DaySummaryModal
                     isOpen={isSummaryModalOpen}
@@ -1010,8 +1017,6 @@ export default function HistoryPage() {
                     initialYear={filterYear}
                     initialMonth={filterMonth}
                 />
-
-            </div>
 
             <StaffSelectionModal
                 isOpen={showEmployeeDropdown}
@@ -1087,6 +1092,6 @@ export default function HistoryPage() {
                     </div>
                 </div>
             </Modal>
-        </div >
+        </>
     );
 }
