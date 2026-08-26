@@ -18,7 +18,6 @@ export const OFFICIAL_OVERLAY_HOSTS = [
  */
 export const LEGACY_PARALLEL_OVERLAY_ALLOWLIST = [
     'src/app/error.tsx',
-    'src/app/ingredients/page.tsx',
     'src/app/loading.tsx',
     'src/app/not-found.tsx',
     'src/app/playground/studio/components/ValidationPanel.tsx',

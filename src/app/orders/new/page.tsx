@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Search, ChevronDown, Check, ArrowRight } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { createClient } from "@/utils/supabase/client";
 import { OrderProductCard } from "@/components/orders/OrderProductCard";
 import { toast, Toaster } from 'sonner';
@@ -46,7 +47,6 @@ export default function NewOrderPage() {
     const initialSupplier = searchParams.get('supplier');
 
     const [selectedSupplier, setSelectedSupplier] = useState<string | null>(initialSupplier);
-    const [showSupplierPopup, setShowSupplierPopup] = useState(false);
     const [dbSuppliers, setDbSuppliers] = useState<{ id: string, name: string, phone: string | null }[]>([]);
 
     // UI Modals
@@ -58,6 +58,7 @@ export default function NewOrderPage() {
     const [generatedBlob, setGeneratedBlob] = useState<Blob | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [supplierPhoneForSuccess, setSupplierPhoneForSuccess] = useState<string | null>(null);
+    const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
     // supplierId for drafts (drafts are shared per supplier)
     const supplierId = selectedSupplier ? dbSuppliers.find(s => s.name === selectedSupplier)?.id ?? null : null;
@@ -161,9 +162,7 @@ export default function NewOrderPage() {
 
     const handleNewOrder = async () => {
         if (!supplierId || !selectedSupplier) return;
-        const confirms = window.confirm(`¿Reiniciar cantidades del borrador de "${selectedSupplier}"? Solo se pondrán a 0 las cantidades de este proveedor.`);
-        if (!confirms) return;
-
+        setResetConfirmOpen(false);
         setIsProcessing(true);
         try {
             const { error } = await supabase.from('order_drafts').delete().eq('supplier_id', supplierId);
@@ -342,7 +341,10 @@ export default function NewOrderPage() {
                                     instance="order-new-reset"
                                     layout="fill"
                                     className="flex-1"
-                                    onClick={handleNewOrder}
+                                    onClick={() => {
+                                        if (!supplierId || !selectedSupplier) return;
+                                        setResetConfirmOpen(true);
+                                    }}
                                 >
                                     Pedido Nuevo
                                 </Button>
@@ -402,6 +404,20 @@ export default function NewOrderPage() {
                     // Persistent quantities: no router.refresh() or reset needed
                 }}
             />
+
+            <ConfirmModal
+                open={resetConfirmOpen}
+                onClose={() => { if (!isProcessing) setResetConfirmOpen(false); }}
+                title="Reiniciar borrador"
+                confirmLabel="Reiniciar"
+                confirmVariant="primary"
+                instance="order-new-reset-confirm"
+                usageLabel="Confirmar reiniciar borrador de pedido"
+                confirming={isProcessing}
+                onConfirm={() => void handleNewOrder()}
+            >
+                {`¿Reiniciar cantidades del borrador de "${selectedSupplier ?? ''}"? Solo se pondrán a 0 las cantidades de este proveedor.`}
+            </ConfirmModal>
         </DashboardDetailLayout>
     );
 }

@@ -5,12 +5,17 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Clock, RefreshCw } from 'lucide-react';
-import { TimeFilterButton } from '@/components/time/TimeFilterButton';
+import { PeriodNav } from '@/components/time/PeriodNav';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
-import type { TimeFilterValue } from '@/components/time/time-filter-types';
+import {
+  formatTimeFilterPeriodLabel,
+  shiftTimeFilterValue,
+  timeFilterBounds,
+  type TimeFilterValue,
+} from '@/components/time/time-filter-types';
 import { CashDenominationForm, TIP_POOL_CASH_FORM_ID } from '@/components/CashDenominationForm';
 import { TipOverrideModal, type TipOverrideDraft } from '@/components/tips/TipOverrideModal';
 import { TipConfirmDistributionModal } from '@/components/tips/TipConfirmDistributionModal';
@@ -187,6 +192,11 @@ export default function TipsDashboardView({
   const [preview, setPreview] = useState<TipPreview | null>(null);
   const [startDate, setStartDate] = useState(initialStartDate);
   const [endDate, setEndDate] = useState(initialEndDate);
+  const [filterValue, setFilterValue] = useState<TimeFilterValue>({
+    kind: 'range',
+    startDate: initialStartDate,
+    endDate: initialEndDate,
+  });
   const [historyRefreshToken, setHistoryRefreshToken] = useState(0);
 
   const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
@@ -242,15 +252,15 @@ export default function TipsDashboardView({
     preview?.pools?.weekend?.cashBreakdown,
   ]);
 
-  const rangeLabel = useMemo(() => {
-    try {
-      const s = new Date(startDate + 'T00:00:00');
-      const e = new Date(endDate + 'T00:00:00');
-      return `${format(s, 'd MMM', { locale: es })} - ${format(e, 'd MMM yyyy', { locale: es })}`;
-    } catch {
-      return `${startDate} - ${endDate}`;
-    }
-  }, [startDate, endDate]);
+  const applyTimeFilter = useCallback((v: TimeFilterValue) => {
+    const bounds = timeFilterBounds(v);
+    if (!bounds) return;
+    setFilterValue(v);
+    setStartDate(bounds.startDate);
+    setEndDate(bounds.endDate);
+  }, []);
+
+  const rangeLabel = useMemo(() => formatTimeFilterPeriodLabel(filterValue), [filterValue]);
 
   const defaultFilterActive = useMemo(
     () => startDate === initialStartDate && endDate === initialEndDate,
@@ -450,21 +460,12 @@ export default function TipsDashboardView({
     <>
     <DashboardDetailLayout
       title="Propinas"
-      subtitle={`Rango manual • ${rangeLabel}`}
       showBackButton={false}
       maxWidthClass="max-w-6xl"
       template="list"
       contentClassName="space-y-4 min-w-0"
       rightSlot={
               <div className="flex items-center gap-1.5 md:gap-2 shrink-0 text-white">
-                <TimeFilterButton
-                  onClick={() => setIsTimeFilterOpen(true)}
-                  hasActiveFilter={!defaultFilterActive}
-                  onClear={() => {
-                    setStartDate(initialStartDate);
-                    setEndDate(initialEndDate);
-                  }}
-                />
                 <Button
                   type="button"
                   variant="tertiary"
@@ -477,6 +478,25 @@ export default function TipsDashboardView({
               </div>
       }
     >
+            <div className="-mx-4 px-4 md:-mx-6 md:px-6">
+              <PeriodNav
+                label={rangeLabel}
+                onPrev={() => applyTimeFilter(shiftTimeFilterValue(filterValue, -1))}
+                onNext={() => applyTimeFilter(shiftTimeFilterValue(filterValue, 1))}
+                onLabelClick={() => setIsTimeFilterOpen(true)}
+                prevAriaLabel="Periodo anterior"
+                nextAriaLabel="Periodo siguiente"
+                hasActiveFilter={!defaultFilterActive}
+                onClear={() => {
+                  applyTimeFilter({
+                    kind: 'range',
+                    startDate: initialStartDate,
+                    endDate: initialEndDate,
+                  });
+                }}
+              />
+            </div>
+
             {lastDistBanner}
 
             <div className="-mx-4 md:-mx-6">
@@ -1006,29 +1026,9 @@ export default function TipsDashboardView({
         isOpen={isTimeFilterOpen}
         onClose={() => setIsTimeFilterOpen(false)}
         allowedKinds={['date', 'range', 'week', 'month', 'year']}
-        initialValue={{ kind: 'range', startDate, endDate } satisfies TimeFilterValue}
+        initialValue={filterValue}
         onApply={(v) => {
-          if (v.kind === 'date') {
-            setStartDate(v.date);
-            setEndDate(v.date);
-            return;
-          }
-          if (v.kind === 'range' || v.kind === 'week') {
-            setStartDate(v.startDate);
-            setEndDate(v.endDate);
-            return;
-          }
-          if (v.kind === 'month') {
-            const s = startOfMonth(new Date(v.year, v.month - 1, 1));
-            const e = endOfMonth(new Date(v.year, v.month - 1, 1));
-            setStartDate(format(s, 'yyyy-MM-dd'));
-            setEndDate(format(e, 'yyyy-MM-dd'));
-            return;
-          }
-          if (v.kind === 'year') {
-            setStartDate(format(new Date(v.year, 0, 1), 'yyyy-MM-dd'));
-            setEndDate(format(new Date(v.year, 11, 31), 'yyyy-MM-dd'));
-          }
+          applyTimeFilter(v);
         }}
       />
     </>

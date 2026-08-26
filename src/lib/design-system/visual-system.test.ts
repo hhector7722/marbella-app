@@ -111,7 +111,6 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'app/dashboard/uso/page.tsx',
             'app/dashboard/web/page.tsx',
             'app/admin/import/page.tsx',
-            'app/admin/mapeo/page.tsx',
             'app/staff/actividades/revision/page.tsx',
             'app/schedule/page.tsx',
             'app/recipes/import/page.tsx',
@@ -250,6 +249,8 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'app/dashboard/ventas/page.tsx',
             'app/dashboard/movements/page.tsx',
             'components/ledger/ManagerLedgerView.tsx',
+            'components/tips/TipsDashboardView.tsx',
+            'app/dashboard/insights/InsightsClient.tsx',
         ];
         const clone = /text-base md:text-lg font-black text-ds-marca capitalize/;
         for (const rel of hosts) {

@@ -238,13 +238,14 @@ Piezas transversales con comportamiento propio y contrato estricto. **Estas sí 
 - `onBack` permanece para usos que no son esta navegación. No es el historial padre→hijo.
 - Cero scroll horizontal en Modal, Header, Body, Footer y tablas internas.
 - Cerrar con cambios sin guardar pide confirmación. El consumidor usa `layer="system"`, no un segundo modal de tarea.
+- Las confirmaciones de acción (eliminar, reiniciar, salir de un flujo) usan `compact` + `layer="system"` + footer Button (`secondary` cancelar + `destructive` o `primary`). Composición: `src/components/ui/ConfirmModal.tsx`. No hay variante `confirm`.
 - **Declara identidad estable** (`data-component="Modal"`, `data-variant`, `data-instance`, `data-parent-instance`, `data-layer`). `data-instance` es el id de negocio; la prop `instance` lo emite. `data-parent-instance` es la identidad semántica del padre de navegación, no una capa. `usageId` es un alias de implementación para telemetría, no una vía para overlays propios.
 - **Portal, Escape, bloqueo de desplazamiento y backdrop los posee este componente.** El consumidor no monta otro `createPortal` de overlay, no pinta `fixed inset-0` de modal, no elige z-index numérico y no inventa un fondo.
 - Si el contrato no cubre el comportamiento pedido, se para y se pregunta. No se abre un overlay paralelo.
 
 **Excepción**: `ConsumptionBottomSheet` — hoja inferior de consumo; comparte portal/capas/Escape/scroll; no es Modal centrado ni vía libre de overlays nuevos.
 
-**Código**: `src/components/ui/modal.tsx`, `src/components/ui/ConsumptionBottomSheet.tsx`, `src/lib/design-system/modal-*.ts`.
+**Código**: `src/components/ui/modal.tsx`, `src/components/ui/ConfirmModal.tsx`, `src/components/ui/ConsumptionBottomSheet.tsx`, `src/lib/design-system/modal-*.ts`.
 
 **Estado**: contrato oficial + enforcement de capas, historial, filtro de `className` del panel, gates de footer/`zIndexClass`/`backdropClassName`/padding raíz. Consumidores en allowlists temporales pendientes de migración (Block 1). Overlays paralelos legacy: `LEGACY_PARALLEL_OVERLAY_ALLOWLIST` (cerrada). El contrato puede evolucionar; el cambio pasa por este documento, las ADR si la decisión es estructural, y después el código.
 

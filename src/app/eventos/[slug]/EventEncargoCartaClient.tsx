@@ -507,7 +507,7 @@ export default function EventEncargoCartaClient({
       isPending={isPending}
       saveLabel={isClientToken ? 'Enviar pedido' : 'Guardar'}
       requireConfirm={isClientToken}
-      confirmTitle="¿Enviar pedido?"
+      confirmTitle="Enviar pedido"
       confirmBody="¿Seguro que quieres enviar el pedido? Después no podrás modificarlo desde este enlace."
       confirmActionLabel="Sí, enviar"
     />

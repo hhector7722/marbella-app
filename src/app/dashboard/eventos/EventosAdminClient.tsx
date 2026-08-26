@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { Surface } from '@/components/ui/Surface'
 import { Field } from '@/components/ui/Field'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -51,6 +52,7 @@ export default function EventosAdminClient({
   canManage?: boolean
 }) {
   const [createOpen, setCreateOpen] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState<AdminEventRow | null>(null)
 
   useModalUsageTracking({
     open: createOpen,
@@ -151,14 +153,7 @@ export default function EventosAdminClient({
                         variant="destructive"
                         instance={`eventos-admin-eliminar-${e.id}`}
                         disabled={isPending}
-                        onClick={() => {
-                          if (!window.confirm(`¿Eliminar el encargo de «${e.name}»?`)) return
-                          startTransition(async () => {
-                            const res = await deleteEventAction({ eventId: e.id })
-                            if (!res.success) toast.error(res.message)
-                            else toast.success('Encargo eliminado')
-                          })
-                        }}
+                        onClick={() => setPendingDelete(e)}
                       >
                         Eliminar
                       </Button>
@@ -259,6 +254,27 @@ export default function EventosAdminClient({
           </Field>
         </div>
       </Modal>
+      <ConfirmModal
+        open={pendingDelete != null}
+        onClose={() => { if (!isPending) setPendingDelete(null) }}
+        title="Eliminar encargo"
+        confirmLabel="Eliminar"
+        instance="eventos-admin-delete-confirm"
+        usageLabel="Confirmar eliminar encargo"
+        confirming={isPending}
+        onConfirm={() => {
+          const target = pendingDelete
+          setPendingDelete(null)
+          if (!target) return
+          startTransition(async () => {
+            const res = await deleteEventAction({ eventId: target.id })
+            if (!res.success) toast.error(res.message)
+            else toast.success('Encargo eliminado')
+          })
+        }}
+      >
+        {`¿Eliminar el encargo de «${pendingDelete?.name ?? ''}»?`}
+      </ConfirmModal>
     </div>
   )
 }

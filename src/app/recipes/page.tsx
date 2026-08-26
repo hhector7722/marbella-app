@@ -466,106 +466,15 @@ function RecipesContent() {
                                 </div>
                             ) : null}
                             {!categoryFromUrl ? (
-                                <div className="relative">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            if (showCategoryPopup) closeCategoryPopup();
-                                            else setShowCategoryPopup(true);
-                                        }}
-                                        className="px-2.5 md:px-5 py-2 md:py-2.5 bg-white/90 hover:bg-white rounded-xl md:rounded-2xl font-black text-[9px] md:text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-1 md:gap-2 border border-white/50 min-h-12"
-                                    >
-                                        <span className="hidden sm:inline">Categoría</span>
-                                        <span className="sm:hidden">Cat.</span>
-                                        <ChevronDown size={12} className="text-zinc-400 md:w-3.5 md:h-3.5" />
-                                    </button>
-                                    {showCategoryPopup && (
-                                        <>
-                                            <div className="fixed inset-0 z-30" onClick={closeCategoryPopup} />
-                                            <div className="absolute top-full right-0 z-40 mt-2 max-h-[min(70vh,28rem)] w-[min(92vw,20rem)] overflow-y-auto rounded-2xl border border-gray-100 bg-white py-2 shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
-                                                <div className="px-4 py-2 border-b border-gray-50 mb-1">
-                                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Seleccionar</span>
-                                                </div>
-                                                {!isRestricted && (
-                                                    <div className="border-b border-gray-50 mb-1 pb-1">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setShowFoodCostSubfilter((v) => !v)}
-                                                            className="flex w-full min-h-12 items-center justify-between gap-2 px-4 py-2.5 text-left text-xs font-bold tracking-wider text-[#36606F] uppercase transition-colors hover:bg-zinc-50"
-                                                            aria-expanded={showFoodCostSubfilter}
-                                                        >
-                                                            <span>Filtrar Food Cost</span>
-                                                            <ChevronDown
-                                                                size={14}
-                                                                className={cn(
-                                                                    'shrink-0 text-zinc-400 transition-transform',
-                                                                    showFoodCostSubfilter && 'rotate-180',
-                                                                )}
-                                                            />
-                                                        </button>
-                                                        {showFoodCostSubfilter && (
-                                                            <div className="divide-y divide-zinc-100 bg-zinc-50/80">
-                                                                {FOOD_COST_FILTER_OPTIONS.map((opt) => (
-                                                                    <button
-                                                                        type="button"
-                                                                        key={opt.status}
-                                                                        onClick={() => applyFoodCostFilter(opt.status)}
-                                                                        className={cn(
-                                                                            'flex w-full min-h-12 items-center gap-2 px-6 py-2.5 text-left text-xs font-bold uppercase tracking-wider transition-colors hover:bg-zinc-100',
-                                                                            opt.colorClass,
-                                                                            foodCostFilter === opt.status && 'bg-zinc-100',
-                                                                        )}
-                                                                    >
-                                                                        <span aria-hidden>●</span>
-                                                                        {opt.label}
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setCategoryAndUrl(null);
-                                                        closeCategoryPopup();
-                                                    }}
-                                                    className="w-full min-h-12 px-4 py-2.5 text-left text-xs font-bold tracking-wider text-gray-700 uppercase transition-colors hover:bg-zinc-50"
-                                                >
-                                                    Todas
-                                                </button>
-                                                {showUncategorizedMenuFilter && (
-                                                    <button
-                                                        type="button"
-                                                        key="__none__"
-                                                        onClick={() => {
-                                                            setCategoryAndUrl('__none__');
-                                                            closeCategoryPopup();
-                                                        }}
-                                                        className="w-full min-h-12 px-4 py-2.5 text-left text-xs font-bold tracking-wider text-amber-800 uppercase transition-colors hover:bg-zinc-50"
-                                                    >
-                                                        Sin categoría menú
-                                                    </button>
-                                                )}
-                                                {menuCategoryOptions.map((opt) => (
-                                                    <button
-                                                        type="button"
-                                                        key={opt.id}
-                                                        onClick={() => {
-                                                            const row = menuCategoryRows.find((r) => r.id === opt.id);
-                                                            const param = row ? menuCategoryToUrlParam(row) : opt.id;
-                                                            setCategoryAndUrl(param);
-                                                            closeCategoryPopup();
-                                                        }}
-                                                        className="w-full min-h-12 px-4 py-2.5 text-left text-xs font-bold text-gray-700 transition-colors hover:bg-zinc-50"
-                                                    >
-                                                        {opt.label}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCategoryPopup(true)}
+                                    className="px-2.5 md:px-5 py-2 md:py-2.5 bg-white/90 hover:bg-white rounded-xl md:rounded-2xl font-black text-[9px] md:text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-1 md:gap-2 border border-white/50 min-h-12"
+                                >
+                                    <span className="hidden sm:inline">Categoría</span>
+                                    <span className="sm:hidden">Cat.</span>
+                                    <ChevronDown size={12} className="text-zinc-400 md:w-3.5 md:h-3.5" />
+                                </button>
                             ) : (
                                 <div className="flex max-w-[100px] items-center gap-1 rounded-xl border border-white bg-white py-1 pl-2.5 pr-1 shadow-md md:max-w-md md:rounded-2xl md:py-1.5 md:pl-4 md:pr-1.5">
                                     <span className="truncate text-[9px] font-black uppercase tracking-widest text-zinc-800 md:text-[10px]" title={selectedCategoryFilterLabel}>
@@ -605,6 +514,95 @@ function RecipesContent() {
                     </div>
                 )}
     </DashboardDetailLayout>
+
+            <Modal
+                open={showCategoryPopup}
+                onClose={closeCategoryPopup}
+                title="Categoría"
+                variant="compact"
+                layer="base"
+                instance="recipes-category-filter"
+                usageId="recipes-category-filter"
+                usageLabel="Filtro categoría recetas"
+            >
+                <div className="max-h-[min(70vh,28rem)] overflow-y-auto">
+                    {!isRestricted ? (
+                        <div className="border-b border-zinc-100 pb-1 mb-1">
+                            <button
+                                type="button"
+                                onClick={() => setShowFoodCostSubfilter((v) => !v)}
+                                className="flex w-full min-h-12 items-center justify-between gap-2 py-2.5 text-left text-xs font-bold tracking-wider text-ds-marca uppercase transition-colors hover:bg-zinc-50"
+                                aria-expanded={showFoodCostSubfilter}
+                            >
+                                <span>Filtrar Food Cost</span>
+                                <ChevronDown
+                                    size={14}
+                                    className={cn(
+                                        'shrink-0 text-zinc-400 transition-transform',
+                                        showFoodCostSubfilter && 'rotate-180',
+                                    )}
+                                />
+                            </button>
+                            {showFoodCostSubfilter ? (
+                                <div className="divide-y divide-zinc-100 bg-zinc-50/80">
+                                    {FOOD_COST_FILTER_OPTIONS.map((opt) => (
+                                        <button
+                                            type="button"
+                                            key={opt.status}
+                                            onClick={() => applyFoodCostFilter(opt.status)}
+                                            className={cn(
+                                                'flex w-full min-h-12 items-center gap-2 py-2.5 pl-3 text-left text-xs font-bold uppercase tracking-wider transition-colors hover:bg-zinc-100',
+                                                opt.colorClass,
+                                                foodCostFilter === opt.status && 'bg-zinc-100',
+                                            )}
+                                        >
+                                            <span aria-hidden>●</span>
+                                            {opt.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            ) : null}
+                        </div>
+                    ) : null}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setCategoryAndUrl(null);
+                            closeCategoryPopup();
+                        }}
+                        className="w-full min-h-12 py-2.5 text-left text-xs font-bold tracking-wider text-zinc-700 uppercase transition-colors hover:bg-zinc-50"
+                    >
+                        Todas
+                    </button>
+                    {showUncategorizedMenuFilter ? (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setCategoryAndUrl('__none__');
+                                closeCategoryPopup();
+                            }}
+                            className="w-full min-h-12 py-2.5 text-left text-xs font-bold tracking-wider text-amber-800 uppercase transition-colors hover:bg-zinc-50"
+                        >
+                            Sin categoría menú
+                        </button>
+                    ) : null}
+                    {menuCategoryOptions.map((opt) => (
+                        <button
+                            type="button"
+                            key={opt.id}
+                            onClick={() => {
+                                const row = menuCategoryRows.find((r) => r.id === opt.id);
+                                const param = row ? menuCategoryToUrlParam(row) : opt.id;
+                                setCategoryAndUrl(param);
+                                closeCategoryPopup();
+                            }}
+                            className="w-full min-h-12 py-2.5 text-left text-xs font-bold text-zinc-700 transition-colors hover:bg-zinc-50"
+                        >
+                            {opt.label}
+                        </button>
+                    ))}
+                </div>
+            </Modal>
 
             {/* MODAL DE DETALLE (PARA STAFF): misma composición visual que `/recipes/[id]` en modo restringido */}
             <Modal

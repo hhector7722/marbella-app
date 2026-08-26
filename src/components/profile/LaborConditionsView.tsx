@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import {
   deleteLaborTerm,
   getEmployeeLaborConditions,
@@ -57,6 +58,7 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editMode, setEditMode] = useState<EditMode>('change');
   /** Inicio original del tramo (para detectar movimiento de fecha). */
@@ -212,17 +214,18 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
     }
   };
 
-  const handleDelete = async () => {
+  const requestDelete = () => {
     if (!editingTermOriginalFrom) return;
     if (terms.length <= 1) {
       toast.error('No se puede eliminar el único tramo. Edítalo o crea otro antes.');
       return;
     }
-    const ok = window.confirm(
-      `¿Eliminar el tramo que empieza el ${formatYmdEs(editingTermOriginalFrom)}?\n\nEl tramo anterior absorberá esas fechas. Se recalcularán horas y costes.`,
-    );
-    if (!ok) return;
+    setDeleteConfirmOpen(true);
+  };
 
+  const handleDelete = async () => {
+    if (!editingTermOriginalFrom) return;
+    setDeleteConfirmOpen(false);
     setDeleting(true);
     try {
       const res = await deleteLaborTerm(employeeId, editingTermOriginalFrom);
@@ -678,7 +681,7 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
                     disabled={saving || deleting}
                     loading={deleting}
                     loadingLabel="Eliminando…"
-                    onClick={() => void handleDelete()}
+                    onClick={requestDelete}
                   >
                     Eliminar este tramo
                   </Button>
@@ -688,6 +691,24 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
           </section>
         )}
       </div>
+
+      <ConfirmModal
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        title="Eliminar tramo"
+        confirmLabel="Eliminar"
+        instance="labor-conditions-delete-confirm"
+        usageLabel="Confirmar eliminar tramo laboral"
+        confirming={deleting}
+        onConfirm={() => void handleDelete()}
+      >
+        <p className="text-sm text-zinc-500">
+          ¿Eliminar el tramo que empieza el {editingTermOriginalFrom ? formatYmdEs(editingTermOriginalFrom) : ''}?
+        </p>
+        <p className="mt-2 text-sm text-zinc-500">
+          El tramo anterior absorberá esas fechas. Se recalcularán horas y costes.
+        </p>
+      </ConfirmModal>
     </div>
   );
 }

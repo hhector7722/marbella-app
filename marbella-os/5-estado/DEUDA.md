@@ -6,7 +6,7 @@ capa: estado
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-25
+revisado: 2026-08-26
 caducidad: 3 meses
 supersede: —
 ---
@@ -59,9 +59,17 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 
 **Pago parcial (2026-08-20, Block 1B/1C Button consumers):** CTAs de negocio claros migrados a `Button` (~155). Gate de regresión: cero CTAs claros nativos (`button-native-business-scan`). Block 1C: «Vista plantilla» en `StaffSelectionModal` pasa a `Button`; el grid de avatares, filas `text-left`, tabs/chips, composer de chat, steppers ±, badges 18px, celdas de escandallo y «Ver foto» se mantienen como controles especializados — ver D27.
 
-**Pago parcial (2026-08-26, overlays):** `ImageLightbox` (recetas, fotos de cierre), `AvatarCropModal` y el selector de categorías de Reporte adoptan `Modal`. Salen de la allowlist de overlay paralelo. Quedan: calculadora, vídeo de fichaje, popover de ingredientes, dismiss de exportar historial, spinner de horarios, KDS, playground y pantallas de error/carga.
+**Pago parcial (2026-08-26, overlays):** `ImageLightbox` (recetas, fotos de cierre), `AvatarCropModal` y el selector de categorías de Reporte adoptan `Modal`. Salen de la allowlist de overlay paralelo. Quedan: calculadora, vídeo de fichaje, dismiss de exportar historial, spinner de horarios, KDS, playground y pantallas de error/carga.
 
-**Coste residual**: deriva visual continua fuera de los pilotos; overlays legacy con z-index ad hoc hasta migrar. En Caja/Tesorería quedan deliberadamente legacy `QuickCalculatorModal` y `DenominationZoomModal` por el techo `base → derived` ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)). En Propinas, la calculadora anidada en ajuste de propina y en el form de bote sigue el mismo residual. En Pedidos, la calculadora del resumen, el popup de categoría de proveedores y el `window.confirm` de Pedido Nuevo quedan fuera a propósito. El zoom de `OrderProductCard` usa `hideHeader` porque la tarjeta trae su propio cromo. En Consumo personal, `StaffSelectionModal` queda residual compartido; la ración Entero/Medio es inline en `ConsumptionBottomSheet`. En Staff/Admin, la cadena Info/Manuales no cabe en una sola `derived`; el vídeo de fichaje y el spinner de `StaffScheduleModal` siguen en allowlist. En overtime, `QuickCalculatorModal` permanece residual. El dismiss del menú de exportación de `/staff/history` no es Modal; el fichero sigue en allowlist porque la huella de archivo aún dispara. Los `window.confirm` nativos (albaranes, proveedores, encargos, Insights, mapeo, condiciones laborales) siguen fuera.
+**Pago (2026-08-26, filtros de lista):** los desplegables de categoría (Recetas, Proveedores), proveedor (Ingredientes) y modo de creación de ingrediente pasan a `Modal`. Ingredientes sale de la allowlist de overlay paralelo.
+
+**Pago (2026-08-26, confirms):** los `window.confirm` de gestión (Pedido Nuevo, proveedores, albaranes, encargos, Insights, mapeo TPV, condiciones laborales y playground) pasan a `Modal` `compact`/`system` vía composición `ConfirmModal`. Sin variante nueva.
+
+**Pago (2026-08-26, mapeo TPV único):** `/admin/mapeo` redirige a `/dashboard/recetas-tpv`. Se retiran `MapeoClient` y sus actions. Una sola pantalla de mapeo.
+
+**Pago (2026-08-26, envío de encargo):** el aviso de enviar pedido por enlace y los CTAs Guardar/Enviar del pie de carta de encargo pasan a `ConfirmModal` + `Button`. La carta pública sigue con anatomía propia.
+
+**Coste residual**: deriva visual continua fuera de los pilotos; overlays legacy con z-index ad hoc hasta migrar. En Caja/Tesorería quedan deliberadamente legacy `QuickCalculatorModal` y `DenominationZoomModal` por el techo `base → derived` ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)). En Propinas, la calculadora anidada en ajuste de propina y en el form de bote sigue el mismo residual. En Pedidos, la calculadora del resumen queda fuera a propósito. El zoom de `OrderProductCard` usa `hideHeader` porque la tarjeta trae su propio cromo. En Consumo personal, `StaffSelectionModal` queda residual compartido; la ración Entero/Medio es inline en `ConsumptionBottomSheet`. En Staff/Admin, la cadena Info/Manuales no cabe en una sola `derived`; el vídeo de fichaje y el spinner de `StaffScheduleModal` siguen en allowlist. En overtime, `QuickCalculatorModal` permanece residual. El dismiss del menú de exportación de `/staff/history` no es Modal; el fichero sigue en allowlist porque la huella de archivo aún dispara.
 
 **Disparador de pago**: continuar tras D1 parcial. Contrato en [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 
@@ -352,7 +360,7 @@ Bloqueo normativo: [SISTEMA-DE-COMPONENTES §4.7](../2-diseno/SISTEMA-DE-COMPONE
 Hallazgos clave:
 - `TabBar` (`src/components/pavilion/TabBar.tsx`): existe, **cero imports** (código muerto o preparado). Mencionado en SISTEMA solo como «no es Button». Sin contrato, sin consumers, anatomía underline petróleo ≠ resto de tabs.
 - *Segmented borde petróleo* (`inline-flex rounded-lg border border-[#36606F]`): 3 módulos (`SubNavVentas`, `WasteClient`, `recipes/[id]` ×2). Anatomía cercana pero densidades distintas (8px vs 10px; con/sin `min-h-48`) y semántica mixta (navegación de rutas en Ventas vs toggle de contenido). Unificar hoy exigiría variantes de densidad + polimorfismo de navegación → **no crear todavía**; disparador = cerrar anatomía canónica (altura, tipo, selected) y decidir si Ventas entra o queda fuera.
-- *Segmented track zinc* (`bg-zinc-100` + pill blanca): `InventoryClient`, `MapeoClient` (cercanos); `ManagerLedgerView` (selected coloreado distinto). **No unificar** con el borde petróleo.
+- *Segmented track zinc* (`bg-zinc-100` + pill blanca): `InventoryClient`; `ManagerLedgerView` (selected coloreado distinto). `MapeoClient` se retiró (2026-08-26). **No unificar** con el borde petróleo.
 - *Tabs underline / FilterButton*: solo `MappingClient` (local). `QuickCalculatorModal` segmented en chrome de modal legacy (1 sitio).
 - *Chips*: `PavilionVenueChip` (badge no interactivo); `FinancialKpiChip` (KPI/botón, no filtro); food-cost dismiss en recipes (filtro activo + X); `CartaLangPicker` (toggle texto `aria-pressed`, no chip). Familias distintas.
 - *Selectores*: `ClosingWeatherPicker` (icon ring); `DashboardSwitcher` dots `role=tab`; `PlatoMarbellaPlateVisual` SVG tabs; listbox departamentos Mapping. Dominio/local.
@@ -364,6 +372,8 @@ Hallazgos clave:
 
 **Auditoría Block 2F (2026-08-20) — Segmented zinc:** se revisaron `InventoryClient`, `MapeoClient` y `ManagerLedgerView`. **Decisión: mantener local. No crear componente. No absorber en PetroleumSegmented.**
 
+**Pago (2026-08-26):** `MapeoClient` ya no existe. El zinc vivo queda en Inventory, Ledger y `StaffCartaEditor`. No se crea pieza.
+
 Comparación:
 - *Inventory*: track `bg-zinc-100 p-1 rounded-xl min-h-48`; selected pill blanca + texto marca; unselected zinc-500 + hover bg; `font-black` uppercase; opciones `flex-1` sin badge.
 - *Mapeo*: track similar + `shadow-inner p-1.5`; selected pill blanca + texto **zinc-900** (no marca); `font-semibold` sin uppercase; altura fija 38px; **badges de conteo** en cada opción (estructura distinta).
@@ -373,7 +383,7 @@ También existe un track zinc cercano en `StaffCartaEditor` (Activos/Desactivado
 
 Vs PetroleumSegmented: shell borde+fill marca ≠ track+pill. Son dos familias visuales (opción B/C). Unificar exigiría booleanos de badge, color de selected y selected semántico.
 
-**Disparador de pago (segmented zinc):** solo si Inventory + Mapeo (y opcionalmente StaffCarta) convergen a una anatomía canónica sin badges de dominio ni selected asimétrico — entonces sí pieza propia, nunca variante de PetroleumSegmented.
+**Disparador de pago (segmented zinc):** solo si Inventory + StaffCarta convergen a una anatomía canónica sin badges de dominio ni selected asimétrico — entonces sí pieza propia, nunca variante de PetroleumSegmented. Ledger sigue fuera (selected asimétrico).
 
 **Disparador de pago (resto D27):** inventariar la siguiente familia (p. ej. SelectionOption grid) en SISTEMA-DE-COMPONENTES antes de codificar.
 

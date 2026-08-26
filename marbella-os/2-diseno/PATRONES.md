@@ -137,7 +137,7 @@ Toda vista con dimensión temporal usa el mismo control, en el mismo sitio y con
 - El periodo se conserva al navegar a un detalle y volver.
 - Cambiar de periodo no reinicia los demás filtros.
 
-Propinas e Insights todavía tienen picker propio.
+Una sola pieza: `PeriodNav`. Pulsar la etiqueta abre `TimeFilterModal` cuando la vista admite más de un tipo de periodo.
 
 ---
 

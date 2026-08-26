@@ -29,6 +29,7 @@ import {
 import { cn } from '@/lib/utils'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { createClient } from '@/utils/supabase/client'
 
@@ -510,6 +511,7 @@ export function EncargoProductEditor({
   const [browseParent, setBrowseParent] = useState<string | null>(null)
   const [browseChild, setBrowseChild] = useState<string | null>(null)
   const [cartModalOpen, setCartModalOpen] = useState(false)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
 
   useEffect(() => {
     const seed: EditorLine[] = initialItems.map((it) => ({
@@ -781,9 +783,8 @@ export function EncargoProductEditor({
   }, [eventId, onClose, onDeleted])
 
   const handleDeleteRequest = useCallback(() => {
-    if (!window.confirm('¿Eliminar este encargo? Esta acción no se puede deshacer.')) return
-    handleDelete()
-  }, [handleDelete])
+    setDeleteConfirmOpen(true)
+  }, [])
 
   const subcategoryTitle =
     activeChildGroup && activeChildGroup.label.trim()
@@ -994,6 +995,22 @@ export function EncargoProductEditor({
           onRemoveLine={removeLine}
         />
       ) : null}
+
+      <ConfirmModal
+        open={deleteConfirmOpen}
+        onClose={() => { if (!isPending) setDeleteConfirmOpen(false) }}
+        title="Eliminar encargo"
+        confirmLabel="Eliminar"
+        instance="encargo-delete-confirm"
+        usageLabel="Confirmar eliminar encargo"
+        confirming={isPending}
+        onConfirm={() => {
+          setDeleteConfirmOpen(false)
+          handleDelete()
+        }}
+      >
+        ¿Eliminar este encargo? Esta acción no se puede deshacer.
+      </ConfirmModal>
     </>
   )
 

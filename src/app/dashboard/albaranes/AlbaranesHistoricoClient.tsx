@@ -38,6 +38,7 @@ import {
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Field } from '@/components/ui/Field'
 import { Notice } from '@/components/ui/Notice'
@@ -178,6 +179,11 @@ export default function AlbaranesHistoricoClient({
   const [autoMapError, setAutoMapError] = useState<string | null>(null)
   const [deletingInvoice, setDeletingInvoice] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [destructiveConfirm, setDestructiveConfirm] = useState<
+    | { kind: 'removeMapping'; lineId: string }
+    | { kind: 'deleteInvoice'; invoiceId: string }
+    | null
+  >(null)
   const appendSheetInputRef = useRef<HTMLInputElement>(null)
   const replaceImageInputRef = useRef<HTMLInputElement>(null)
   const [appendSheetBusy, setAppendSheetBusy] = useState(false)
@@ -1115,12 +1121,6 @@ export default function AlbaranesHistoricoClient({
   // "Eliminar match": deshace el mapeo y borra también la entrada del
   // diccionario para que el sistema no vuelva a aplicar el mismo error.
   async function removeMapping(lineId: string) {
-    const ok = typeof window === 'undefined'
-      ? false
-      : window.confirm(
-          'Vas a eliminar este match: se revertirá el stock aplicado de esta línea y se borrará el aprendizaje. ¿Continuar?'
-        )
-    if (!ok) return
     setLineActionBusy(true)
     try {
       const res = await unmapInvoiceLineAction({ lineId, removeFromDictionary: true })
@@ -1185,12 +1185,6 @@ export default function AlbaranesHistoricoClient({
   async function deleteInvoice(invoiceId: string) {
     if (!isManager) return
     if (deletingInvoice) return
-    const ok = typeof window === 'undefined'
-      ? false
-      : window.confirm(
-          'Vas a eliminar este albarán y revertir todo el stock que aplicó (también las rectificaciones). Esta acción no se puede deshacer. ¿Continuar?'
-        )
-    if (!ok) return
     setDeleteError(null)
     setDeletingInvoice(true)
     try {
@@ -1545,7 +1539,7 @@ export default function AlbaranesHistoricoClient({
                     {isManager && detail?.id ? (
                       <button
                         type="button"
-                        onClick={() => void deleteInvoice(detail.id)}
+                        onClick={() => setDestructiveConfirm({ kind: 'deleteInvoice', invoiceId: detail.id })}
                         disabled={deletingInvoice}
                         className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                         aria-label="Eliminar albarán"
@@ -1911,7 +1905,9 @@ export default function AlbaranesHistoricoClient({
                     if (lineForMappingModal) void editMapping(lineForMappingModal.id)
                   }}
                   onRemoveMapping={() => {
-                    if (lineForMappingModal) void removeMapping(lineForMappingModal.id)
+                    if (lineForMappingModal) {
+                      setDestructiveConfirm({ kind: 'removeMapping', lineId: lineForMappingModal.id })
+                    }
                   }}
                 />
 
@@ -2292,6 +2288,37 @@ export default function AlbaranesHistoricoClient({
           {filterSuppliersLoading ? <p className="mt-2 text-xs font-bold text-zinc-500">Cargando proveedores…</p> : null}
         </div>
       </Modal>
+      <ConfirmModal
+        open={destructiveConfirm != null}
+        onClose={() => {
+          if (lineActionBusy || deletingInvoice) return
+          setDestructiveConfirm(null)
+        }}
+        title={destructiveConfirm?.kind === 'deleteInvoice' ? 'Eliminar albarán' : 'Eliminar match'}
+        confirmLabel="Eliminar"
+        instance={
+          destructiveConfirm?.kind === 'deleteInvoice'
+            ? 'albaran-delete-confirm'
+            : 'albaran-remove-mapping-confirm'
+        }
+        usageLabel={
+          destructiveConfirm?.kind === 'deleteInvoice'
+            ? 'Confirmar eliminar albarán'
+            : 'Confirmar eliminar match de albarán'
+        }
+        confirming={lineActionBusy || deletingInvoice}
+        onConfirm={() => {
+          const pending = destructiveConfirm
+          setDestructiveConfirm(null)
+          if (!pending) return
+          if (pending.kind === 'removeMapping') void removeMapping(pending.lineId)
+          else void deleteInvoice(pending.invoiceId)
+        }}
+      >
+        {destructiveConfirm?.kind === 'deleteInvoice'
+          ? 'Vas a eliminar este albarán y revertir todo el stock que aplicó (también las rectificaciones). Esta acción no se puede deshacer. ¿Continuar?'
+          : 'Vas a eliminar este match: se revertirá el stock aplicado de esta línea y se borrará el aprendizaje. ¿Continuar?'}
+      </ConfirmModal>
     </div>
     </DashboardDetailLayout>
   )

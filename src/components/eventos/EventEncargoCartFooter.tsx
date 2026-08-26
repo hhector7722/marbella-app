@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { Minus, Plus, Loader2 } from 'lucide-react'
+import { Minus, Plus } from 'lucide-react'
 
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { formatCartaPrice } from '@/lib/carta-price-display'
 import { cn } from '@/lib/utils'
 
@@ -47,7 +48,7 @@ export function EventEncargoCartFooter({
   isPending = false,
   saveLabel = 'Guardar',
   requireConfirm = false,
-  confirmTitle = '¿Enviar pedido?',
+  confirmTitle = 'Enviar pedido',
   confirmBody = '¿Seguro que quieres enviar el pedido? Después no podrás modificarlo desde este enlace.',
   confirmActionLabel = 'Sí, enviar',
 }: {
@@ -109,21 +110,17 @@ export function EventEncargoCartFooter({
             {hasLines && units > 0 ? <UnitsBadge count={units} /> : null}
           </Button>
 
-          <button
+          <Button
             type="button"
-            className={cn(
-              'flex h-10 min-h-10 flex-1 items-center justify-center rounded-xl px-3',
-              'text-sm font-bold whitespace-nowrap text-white shadow-md transition-all',
-              hasLines
-                ? 'bg-[#36606F] hover:bg-[#2a4a56] active:scale-[0.99]'
-                : 'bg-zinc-200 text-zinc-600 shadow-none',
-              'disabled:cursor-not-allowed disabled:opacity-70'
-            )}
+            variant="primary"
+            instance="event-encargo-send"
+            className="flex-1"
             disabled={saveBlocked}
+            loading={isPending}
             onClick={requestSave}
           >
-            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : saveLabel}
-          </button>
+            {saveLabel}
+          </Button>
         </div>
       </div>
 
@@ -135,6 +132,28 @@ export function EventEncargoCartFooter({
         usageId="event-encargo-cart"
         usageLabel="Ver pedido encargo"
         variant="compact"
+        footer={
+          <div className="flex w-full flex-wrap items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              instance="event-encargo-cart-continue"
+              onClick={() => setCartOpen(false)}
+            >
+              Seguir eligiendo
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              instance="event-encargo-cart-send"
+              disabled={saveBlocked}
+              loading={isPending}
+              onClick={requestSave}
+            >
+              {saveLabel}
+            </Button>
+          </div>
+        }
       >
         <div className="space-y-3">
           {lines.length === 0 ? (
@@ -200,72 +219,26 @@ export function EventEncargoCartFooter({
               </p>
             </div>
           ) : null}
-
-          <div className="mt-4 flex flex-col gap-2">
-            <button
-              type="button"
-              className={cn(
-                'flex min-h-12 w-full items-center justify-center rounded-xl py-2.5 text-sm font-bold text-white shadow-md transition-all',
-                hasLines
-                  ? 'bg-[#36606F] hover:bg-[#2a4a56] active:scale-[0.99]'
-                  : 'bg-zinc-200 text-zinc-600 shadow-none',
-                'disabled:cursor-not-allowed disabled:opacity-70'
-              )}
-              disabled={saveBlocked}
-              onClick={requestSave}
-            >
-              {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : saveLabel}
-            </button>
-            <button
-              type="button"
-              className="flex min-h-12 w-full items-center justify-center rounded-xl bg-zinc-100 text-sm font-bold text-zinc-800 active:bg-zinc-200"
-              onClick={() => setCartOpen(false)}
-            >
-              Seguir eligiendo
-            </button>
-          </div>
         </div>
       </Modal>
 
-      <Modal
+      <ConfirmModal
         open={confirmOpen}
-        onClose={() => !isPending && setConfirmOpen(false)}
+        onClose={() => setConfirmOpen(false)}
         title={confirmTitle}
-        usageId="event-encargo-send-confirm"
+        confirmLabel={confirmActionLabel}
+        confirmVariant="primary"
+        instance="event-encargo-send-confirm"
         usageLabel="Confirmar envío pedido"
-        variant="compact"
+        parentInstance={cartOpen ? 'event-encargo-cart' : undefined}
+        confirming={isPending}
+        onConfirm={() => {
+          setConfirmOpen(false)
+          onSave()
+        }}
       >
-        <div className="space-y-5">
-          <p className="text-sm font-semibold leading-relaxed text-zinc-700">{confirmBody}</p>
-          <div className="flex flex-col gap-2">
-            <button
-              type="button"
-              className={cn(
-                'flex min-h-12 w-full items-center justify-center rounded-xl py-2.5 text-sm font-bold text-white',
-                'bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99]',
-                'disabled:cursor-not-allowed disabled:opacity-70'
-              )}
-              disabled={isPending}
-              onClick={() => {
-                setConfirmOpen(false)
-                onSave()
-              }}
-            >
-              {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : confirmActionLabel}
-            </button>
-            <Button
-              type="button"
-              variant="secondary"
-              instance="event-encargo-cart-cancel"
-              className="w-full"
-              disabled={isPending}
-              onClick={() => setConfirmOpen(false)}
-            >
-              Cancelar
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        {confirmBody}
+      </ConfirmModal>
     </>
   )
 }

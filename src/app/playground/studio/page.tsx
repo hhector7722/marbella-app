@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { toast, Toaster } from 'sonner';
 import { SANDBOX_ROUTES, START_REAL_ROUTE, useSandboxStore } from './store';
 import { SandboxView, RutaBadge } from './components/SandboxView';
@@ -66,6 +67,7 @@ export default function StudioPage() {
     const [secondaryView, setSecondaryView] = React.useState<SecondaryView>(null);
     const [comparisonId, setComparisonId] = React.useState('est-editorial-v1');
     const [diagnosticVisible, setDiagnosticVisible] = React.useState(false);
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
     const [fonts, setFonts] = React.useState<StudioFontOption[]>([]);
 
     // Si el historial no pertenece a la estética activa (cambio de estética),
@@ -263,12 +265,15 @@ export default function StudioPage() {
 
     const deleteActive = () => {
         if (activeEstetica.isOriginal || activeEstetica.isSystem) return;
-        if (window.confirm(`¿Eliminar «${activeEstetica.name}»?`)) {
-            deleteEstetica(activeEstetica.id);
-            const next = useSandboxStore.getState().esteticas.find(e => e.id === useSandboxStore.getState().activeEsteticaId);
-            if (next) setHistory(resetHistory(snapshotFromEstetica(next)));
-            toast.success('Estética eliminada');
-        }
+        setDeleteConfirmOpen(true);
+    };
+
+    const confirmDeleteActive = () => {
+        setDeleteConfirmOpen(false);
+        deleteEstetica(activeEstetica.id);
+        const next = useSandboxStore.getState().esteticas.find(e => e.id === useSandboxStore.getState().activeEsteticaId);
+        if (next) setHistory(resetHistory(snapshotFromEstetica(next)));
+        toast.success('Estética eliminada');
     };
 
     const undoEnabled = canUndo(history) && history.present.id === activeEstetica.id;
@@ -420,6 +425,18 @@ export default function StudioPage() {
             )}
 
             {diagnosticVisible && <ValidationPanel onClose={() => setDiagnosticVisible(false)} />}
+
+            <ConfirmModal
+                open={deleteConfirmOpen}
+                onClose={() => setDeleteConfirmOpen(false)}
+                title="Eliminar estética"
+                confirmLabel="Eliminar"
+                instance="playground-delete-estetica-confirm"
+                usageLabel="Confirmar eliminar estética"
+                onConfirm={confirmDeleteActive}
+            >
+                {`¿Eliminar «${activeEstetica.name}»?`}
+            </ConfirmModal>
         </div>
     );
 }

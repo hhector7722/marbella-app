@@ -38,6 +38,16 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-26
 
+- **Filtros de lista usan el mismo panel.** Categoría en Recetas y Proveedores, proveedor en Ingredientes y el modo al crear un ingrediente dejan el desplegable suelto. Pedido nuevo no tenía ese selector.
+
+- **Un solo mapeo TPV.** Vincular artículos del terminal con recetas se hace en Recetas TPV. La pantalla antigua de administración lleva ahí.
+
+- **Enviar un encargo usa el mismo aviso.** El aviso al enviar por enlace y los botones Guardar/Enviar del pie usan el panel y el botón del sistema.
+
+- **Propinas e Insights usan el mismo periodo.** Flechas y etiqueta visibles; pulsar el mes abre el selector. Sale el icono «Filtrar» de Propinas y los chips Sem/Mes/Día de Insights. [PATRONES P7](../2-diseno/PATRONES.md#p7--filtro-temporal).
+
+- **Confirmaciones nativas pasan a Modal.** Eliminar proveedor, albarán, match, encargo, tramo laboral, ingrediente de receta, estética del playground, reiniciar borrador de pedido y abrir receta desde Insights usan el mismo panel compacto que Cerrar sesión. El diálogo nativo del navegador sale de esas pantallas.
+
 - **Foto, recorte y categorías de reporte pasan a Modal.** Ampliar una imagen (recetas, cierres), recortar el avatar y elegir categorías en Reporte usan el mismo panel que el resto de la app. La calculadora y el vídeo de fichaje siguen aparte.
 
 - **Un solo control de periodo.** Labor, Horario, Actividades, Reservas, Consumo, Horas extras, Asistencia, Cierres, Ventas, Tesorería y Libro Mayor usan el mismo `← periodo →`. Se retira el icono «Filtrar» duplicado: pulsar el mes abre el selector. Propinas e Insights siguen con picker propio. [PATRONES P7](../2-diseno/PATRONES.md#p7--filtro-temporal).

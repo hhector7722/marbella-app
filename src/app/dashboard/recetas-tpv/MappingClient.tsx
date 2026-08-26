@@ -8,6 +8,7 @@ import { Check, Filter, Search, Trash2, ChevronDown, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
 import { namedEntitySummary } from '@/lib/usage/modal-apply'
 import type { AlbaranLearnedName, MappingRow, Recipe, RecipeIngredientMatchRow, TpvArticle } from './page'
@@ -537,6 +538,7 @@ function IngredientEscandalloModal({
   const [addByIng, setAddByIng] = useState<Record<string, { supplierId: string; text: string; factor: string }>>({})
   const [linkIngredientId, setLinkIngredientId] = useState('')
   const [linkUnit, setLinkUnit] = useState('kg')
+  const [pendingRemoveIngredientId, setPendingRemoveIngredientId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open) return
@@ -621,7 +623,13 @@ function IngredientEscandalloModal({
   }
 
   const removeIngredientFromRecipe = (ingredientId: string) => {
-    if (!window.confirm('¿Quitar este ingrediente de la receta en la base de datos?')) return
+    setPendingRemoveIngredientId(ingredientId)
+  }
+
+  const confirmRemoveIngredient = () => {
+    const ingredientId = pendingRemoveIngredientId
+    setPendingRemoveIngredientId(null)
+    if (!ingredientId) return
     void runAsync(() => deleteRecipeIngredientLineAction({ recipe_id: recipeId, ingredient_id: ingredientId }))
   }
 
@@ -641,6 +649,7 @@ function IngredientEscandalloModal({
       : articuloNombre || recipeName
 
   return (
+    <>
     <Modal
       open={open}
       onClose={onClose}
@@ -783,6 +792,19 @@ function IngredientEscandalloModal({
           )}
         </div>
     </Modal>
+    <ConfirmModal
+      open={pendingRemoveIngredientId != null}
+      onClose={() => { if (!pending) setPendingRemoveIngredientId(null) }}
+      title="Quitar ingrediente"
+      confirmLabel="Quitar"
+      instance="recetas-tpv-remove-ingredient-confirm"
+      usageLabel="Confirmar quitar ingrediente de receta"
+      confirming={pending}
+      onConfirm={confirmRemoveIngredient}
+    >
+      ¿Quitar este ingrediente de la receta en la base de datos?
+    </ConfirmModal>
+    </>
   )
 }
 

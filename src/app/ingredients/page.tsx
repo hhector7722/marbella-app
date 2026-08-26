@@ -254,57 +254,15 @@ export default function IngredientsPage() {
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5 md:gap-2">
                         {!selectedSupplier ? (
-                            <div className="relative">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowSupplierPopup(!showSupplierPopup)}
-                                    className="flex min-h-12 items-center gap-1 rounded-xl border border-white/50 bg-white/90 px-2.5 py-2 font-black text-[9px] uppercase tracking-widest text-zinc-800 shadow-sm transition-all hover:bg-white md:gap-2 md:rounded-2xl md:px-5 md:py-2.5 md:text-[10px]"
-                                >
-                                    <span className="hidden sm:inline">Proveedor</span>
-                                    <span className="sm:hidden">Prov.</span>
-                                    <ChevronDown size={12} className="text-zinc-400 md:h-3.5 md:w-3.5" />
-                                </button>
-
-                                {showSupplierPopup && (
-                                    <>
-                                        <div className="fixed inset-0 z-30" onClick={() => setShowSupplierPopup(false)} />
-                                        <div className="absolute right-0 top-full z-40 mt-2 w-40 animate-in fade-in slide-in-from-top-2 rounded-2xl border border-gray-100 bg-white py-2 shadow-xl duration-200 md:w-48 pointer-events-auto">
-                                            <div className="mb-1 border-b border-gray-50 px-4 py-2">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Seleccionar</span>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setSelectedSupplier(null);
-                                                    setShowSupplierPopup(false);
-                                                }}
-                                                className="w-full px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-zinc-50"
-                                            >
-                                                Todos
-                                            </button>
-                                            {allSuppliers.length === 0 ? (
-                                                <p className="px-4 py-2.5 text-xs font-medium text-gray-400">
-                                                    No hay proveedores en la base de datos
-                                                </p>
-                                            ) : (
-                                                allSuppliers.map((sup) => (
-                                                    <button
-                                                        key={sup.id}
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setSelectedSupplier(sup.name);
-                                                            setShowSupplierPopup(false);
-                                                        }}
-                                                        className="w-full px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-zinc-50"
-                                                    >
-                                                        {sup.name}
-                                                    </button>
-                                                ))
-                                            )}
-                                        </div>
-                                    </>
-                                )}
-                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setShowSupplierPopup(true)}
+                                className="flex min-h-12 items-center gap-1 rounded-xl border border-white/50 bg-white/90 px-2.5 py-2 font-black text-[9px] uppercase tracking-widest text-zinc-800 shadow-sm transition-all hover:bg-white md:gap-2 md:rounded-2xl md:px-5 md:py-2.5 md:text-[10px]"
+                            >
+                                <span className="hidden sm:inline">Proveedor</span>
+                                <span className="sm:hidden">Prov.</span>
+                                <ChevronDown size={12} className="text-zinc-400 md:h-3.5 md:w-3.5" />
+                            </button>
                         ) : (
                             <div className="flex max-w-[100px] items-center gap-1 rounded-xl border border-white bg-white py-1 pl-2.5 pr-1 shadow-md md:max-w-none md:rounded-2xl md:py-1.5 md:pl-4 md:pr-1.5">
                                 <span className="truncate font-black text-[9px] uppercase tracking-widest text-zinc-800 md:text-[10px]">
@@ -368,7 +326,10 @@ export default function IngredientsPage() {
 
             <Modal
                 open={showCreateModal}
-                onClose={() => setShowCreateModal(false)}
+                onClose={() => {
+                    setCreateSettingsOpen(false);
+                    setShowCreateModal(false);
+                }}
                 variant="amplify"
                 layer="base"
                 instance="ingredient-create"
@@ -378,53 +339,17 @@ export default function IngredientsPage() {
                 headerTone="petroleum"
                 scrollContent
                 headerTrailing={
-                    <div className="relative shrink-0">
-                        <button
-                            type="button"
-                            aria-label="Ajustes"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setCreateSettingsOpen((v) => !v);
-                            }}
-                            className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none transition-opacity hover:opacity-100 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
-                        >
-                            <Settings className="h-[clamp(0.875rem,2.8vw,1rem)] w-[clamp(0.875rem,2.8vw,1rem)]" strokeWidth={1.75} />
-                        </button>
-                        {createSettingsOpen && (
-                            <>
-                                <div className="fixed inset-0 z-[70]" onClick={() => setCreateSettingsOpen(false)} />
-                                <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl bg-white shadow-xl border border-zinc-100 p-3 z-[80] text-left">
-                                    <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400 px-1">Modo de creación</div>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setCreateMode('wizard');
-                                            setCreateSettingsOpen(false);
-                                        }}
-                                        className={cn(
-                                            'mt-2 w-full text-left min-h-12 rounded-xl px-3 text-sm font-black',
-                                            createMode === 'wizard' ? 'bg-[#36606F]/10 text-[#36606F]' : 'hover:bg-zinc-50 text-zinc-800'
-                                        )}
-                                    >
-                                        Asistente
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setCreateMode('expert');
-                                            setCreateSettingsOpen(false);
-                                        }}
-                                        className={cn(
-                                            'mt-1 w-full text-left min-h-12 rounded-xl px-3 text-sm font-black',
-                                            createMode === 'expert' ? 'bg-[#36606F]/10 text-[#36606F]' : 'hover:bg-zinc-50 text-zinc-800'
-                                        )}
-                                    >
-                                        Modo experto
-                                    </button>
-                                </div>
-                            </>
-                        )}
-                    </div>
+                    <button
+                        type="button"
+                        aria-label="Ajustes"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setCreateSettingsOpen(true);
+                        }}
+                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none transition-opacity hover:opacity-100 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+                    >
+                        <Settings className="h-[clamp(0.875rem,2.8vw,1rem)] w-[clamp(0.875rem,2.8vw,1rem)]" strokeWidth={1.75} />
+                    </button>
                 }
             >
                 <div className="space-y-4 bg-[#fafafa]">
@@ -723,6 +648,88 @@ export default function IngredientsPage() {
                             </Button>
                             </div>
                             )}
+                </div>
+            </Modal>
+            <Modal
+                open={showSupplierPopup}
+                onClose={() => setShowSupplierPopup(false)}
+                title="Proveedor"
+                variant="compact"
+                layer="base"
+                instance="ingredients-supplier-filter"
+                usageId="ingredients-supplier-filter"
+                usageLabel="Filtro proveedor ingredientes"
+            >
+                <div className="max-h-[min(70vh,28rem)] overflow-y-auto">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setSelectedSupplier(null);
+                            setShowSupplierPopup(false);
+                        }}
+                        className="w-full min-h-12 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-zinc-700 transition-colors hover:bg-zinc-50"
+                    >
+                        Todos
+                    </button>
+                    {allSuppliers.length === 0 ? (
+                        <p className="py-2.5 text-xs font-medium text-zinc-400">
+                            No hay proveedores en la base de datos
+                        </p>
+                    ) : (
+                        allSuppliers.map((sup) => (
+                            <button
+                                key={sup.id}
+                                type="button"
+                                onClick={() => {
+                                    setSelectedSupplier(sup.name);
+                                    setShowSupplierPopup(false);
+                                }}
+                                className="w-full min-h-12 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-zinc-700 transition-colors hover:bg-zinc-50"
+                            >
+                                {sup.name}
+                            </button>
+                        ))
+                    )}
+                </div>
+            </Modal>
+            <Modal
+                open={createSettingsOpen}
+                onClose={() => setCreateSettingsOpen(false)}
+                title="Modo de creación"
+                variant="compact"
+                layer="derived"
+                instance="ingredient-create-settings"
+                parentInstance="ingredient-create"
+                usageId="ingredient-create-settings"
+                usageLabel="Modo de creación ingrediente"
+            >
+                <div>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setCreateMode('wizard');
+                            setCreateSettingsOpen(false);
+                        }}
+                        className={cn(
+                            'w-full min-h-12 text-left text-sm font-black',
+                            createMode === 'wizard' ? 'text-ds-marca' : 'text-zinc-800 hover:bg-zinc-50'
+                        )}
+                    >
+                        Asistente
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setCreateMode('expert');
+                            setCreateSettingsOpen(false);
+                        }}
+                        className={cn(
+                            'w-full min-h-12 text-left text-sm font-black',
+                            createMode === 'expert' ? 'text-ds-marca' : 'text-zinc-800 hover:bg-zinc-50'
+                        )}
+                    >
+                        Modo experto
+                    </button>
                 </div>
             </Modal>
         </>

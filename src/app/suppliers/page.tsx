@@ -12,6 +12,7 @@ import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { namedEntitySummary } from '@/lib/usage/modal-apply';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { EmptyState } from '@/components/ui/EmptyState';
 
@@ -251,6 +252,7 @@ export default function SuppliersPage() {
     const [editEmailDomainsText, setEditEmailDomainsText] = useState<string>('');
     const [isSavingEdit, setIsSavingEdit] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
     const trackSupplierCategory = useTrackModalApply('suppliers-category-filter', 'Filtro categoría proveedores');
     const trackSupplierDetail = useTrackModalApply('supplier-detail', 'Detalle proveedor');
@@ -463,9 +465,7 @@ export default function SuppliersPage() {
             return;
         }
 
-        const ok = window.confirm(`¿Seguro que quieres eliminar "${s.name}"? Esta acción no se puede deshacer.`);
-        if (!ok) return;
-
+        setDeleteConfirmOpen(false);
         try {
             setIsDeleting(true);
             const { error } = await supabase
@@ -527,39 +527,13 @@ export default function SuppliersPage() {
                 </div>
                 <div className="flex gap-1.5 md:gap-2 items-center shrink-0">
                     {!selectedCategory ? (
-                        <div className="relative">
-                            <button
-                                onClick={() => setShowCategoryPopup(!showCategoryPopup)}
-                                className="px-2.5 md:px-5 py-2 md:py-3 bg-white hover:bg-zinc-50 rounded-xl md:rounded-2xl font-black text-[9px] md:text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-1 md:gap-2 border border-zinc-100 min-h-12"
-                            >
-                                <span className="hidden sm:inline">Categoría</span><span className="sm:hidden">Cat.</span> <ChevronDown size={12} className="text-zinc-400 md:w-3.5 md:h-3.5" />
-                            </button>
-                            {showCategoryPopup && (
-                                <>
-                                    <div className="fixed inset-0 z-30" onClick={() => setShowCategoryPopup(false)}></div>
-                                    <div className="absolute top-full right-0 mt-2 w-40 md:w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-40 animate-in fade-in slide-in-from-top-2 duration-200 pointer-events-auto">
-                                        <div className="px-4 py-2 border-b border-gray-50 mb-1">
-                                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Seleccionar</span>
-                                        </div>
-                                        <button
-                                            onClick={() => { trackSupplierCategory('Todas'); setSelectedCategory(null); setShowCategoryPopup(false); }}
-                                            className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider"
-                                        >
-                                            Todas
-                                        </button>
-                                        {CATEGORIES.map(cat => (
-                                            <button
-                                                key={cat}
-                                                onClick={() => { trackSupplierCategory(cat); setSelectedCategory(cat); setShowCategoryPopup(false); }}
-                                                className="w-full text-left px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-zinc-50 transition-colors uppercase tracking-wider"
-                                            >
-                                                {cat}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </>
-                            )}
-                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setShowCategoryPopup(true)}
+                            className="px-2.5 md:px-5 py-2 md:py-3 bg-white hover:bg-zinc-50 rounded-xl md:rounded-2xl font-black text-[9px] md:text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-1 md:gap-2 border border-zinc-100 min-h-12"
+                        >
+                            <span className="hidden sm:inline">Categoría</span><span className="sm:hidden">Cat.</span> <ChevronDown size={12} className="text-zinc-400 md:w-3.5 md:h-3.5" />
+                        </button>
                     ) : (
                         <div className="flex items-center gap-1 bg-white rounded-xl md:rounded-2xl pl-2.5 md:pl-4 pr-1 md:pr-1.5 py-1 md:py-1.5 shadow-md border border-white max-w-[100px] md:max-w-none">
                             <span className="text-zinc-800 font-black text-[9px] md:text-[10px] uppercase tracking-widest truncate">{selectedCategory}</span>
@@ -630,6 +604,37 @@ export default function SuppliersPage() {
             </DashboardDetailLayout>
 
             <Modal
+                open={showCategoryPopup}
+                onClose={() => setShowCategoryPopup(false)}
+                title="Categoría"
+                variant="compact"
+                layer="base"
+                instance="suppliers-category-filter"
+                usageId="suppliers-category-filter"
+                usageLabel="Filtro categoría proveedores"
+            >
+                <div>
+                    <button
+                        type="button"
+                        onClick={() => { trackSupplierCategory('Todas'); setSelectedCategory(null); setShowCategoryPopup(false); }}
+                        className="w-full min-h-12 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-zinc-700 transition-colors hover:bg-zinc-50"
+                    >
+                        Todas
+                    </button>
+                    {CATEGORIES.map((cat) => (
+                        <button
+                            key={cat}
+                            type="button"
+                            onClick={() => { trackSupplierCategory(cat); setSelectedCategory(cat); setShowCategoryPopup(false); }}
+                            className="w-full min-h-12 py-2.5 text-left text-xs font-bold uppercase tracking-wider text-zinc-700 transition-colors hover:bg-zinc-50"
+                        >
+                            {cat}
+                        </button>
+                    ))}
+                </div>
+            </Modal>
+
+            <Modal
                 open={!!detailSupplier}
                 onClose={() => setDetailSupplier(null)}
                 title={detailSupplier?.name ?? 'Proveedor'}
@@ -661,7 +666,7 @@ export default function SuppliersPage() {
                                 disabled={!canEditOrDelete || isDeleting}
                                 loading={isDeleting}
                                 loadingLabel="Eliminando…"
-                                onClick={() => void handleDeleteSupplier(detailSupplier)}
+                                onClick={() => setDeleteConfirmOpen(true)}
                             >
                                 Eliminar
                             </Button>
@@ -704,6 +709,21 @@ export default function SuppliersPage() {
                     </div>
                 ) : null}
             </Modal>
+
+            <ConfirmModal
+                open={deleteConfirmOpen && !!detailSupplier}
+                onClose={() => { if (!isDeleting) setDeleteConfirmOpen(false); }}
+                title="Eliminar proveedor"
+                confirmLabel="Eliminar"
+                instance="supplier-delete-confirm"
+                usageLabel="Confirmar eliminar proveedor"
+                confirming={isDeleting}
+                onConfirm={() => {
+                    if (detailSupplier) void handleDeleteSupplier(detailSupplier);
+                }}
+            >
+                {`¿Seguro que quieres eliminar "${detailSupplier?.name ?? ''}"? Esta acción no se puede deshacer.`}
+            </ConfirmModal>
 
             <Modal
                 open={!!editSupplier}

@@ -767,3 +767,27 @@ describe('Modal escape hatches: zIndexClass y backdropClassName', () => {
         assert.match(modalSource, /@deprecated[\s\S]*backdropClassName/);
     });
 });
+
+describe('Confirmaciones: Modal compact + system, no window.confirm', () => {
+    it('ConfirmModal es composición compact/system, no portal propio', () => {
+        const source = readFileSync(
+            join(process.cwd(), 'src/components/ui/ConfirmModal.tsx'),
+            'utf8'
+        );
+        assert.match(source, /from ['"]@\/components\/ui\/modal['"]/);
+        assert.match(source, /variant=["']compact["']/);
+        assert.match(source, /layer=["']system["']/);
+        assert.doesNotMatch(source, /createPortal/);
+        assert.doesNotMatch(source, /window\.confirm/);
+    });
+
+    it('cero window.confirm en src', () => {
+        const offenders: string[] = [];
+        for (const full of listTsxFiles(join(process.cwd(), 'src'))) {
+            const rel = toPosix(full.slice(process.cwd().length + 1));
+            const source = readFileSync(full, 'utf8');
+            if (/\bwindow\.confirm\s*\(/.test(source)) offenders.push(rel);
+        }
+        assert.deepEqual(offenders, []);
+    });
+});

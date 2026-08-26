@@ -10,6 +10,15 @@ import {
 } from 'react'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import { PeriodNav } from '@/components/time/PeriodNav'
+import { TimeFilterModal } from '@/components/time/TimeFilterModal'
+import {
+  formatTimeFilterPeriodLabel,
+  shiftTimeFilterValue,
+  timeFilterBounds,
+  type TimeFilterValue,
+} from '@/components/time/time-filter-types'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import Link from 'next/link'
 
@@ -41,14 +50,9 @@ import type {
   ProductMarginRow,
 } from './schemas'
 import {
-  InsightsMainDateFilter,
-} from './insights-date-filter'
-import {
-  mondayOfWeekContaining,
   monthBounds,
   type InsightsFilterMode,
   type InsightsMonth,
-  weekBoundsFromMonday,
 } from './insights-date-utils'
 
 type SectionKey = 'hourly' | 'weekday' | 'products' | 'financial'
@@ -669,15 +673,12 @@ export default function InsightsClient({
 }: InsightsClientProps) {
   const [dateFrom, setDateFrom] = useState(initialDateFrom)
   const [dateTo, setDateTo] = useState(initialDateTo)
-  const [filterMode, setFilterMode] = useState<InsightsFilterMode>('mes')
-  const [openPicker, setOpenPicker] = useState<InsightsFilterMode | null>(null)
-  const [selectedWeekMonday, setSelectedWeekMonday] = useState(() =>
-    mondayOfWeekContaining(initialDateFrom)
-  )
-  const [selectedMonths, setSelectedMonths] = useState<InsightsMonth[]>([initialFinancialMonth])
-  const [selectedDay, setSelectedDay] = useState(initialDateTo)
-  const [periodFrom, setPeriodFrom] = useState(initialDateFrom)
-  const [periodTo, setPeriodTo] = useState(initialDateTo)
+  const [filterValue, setFilterValue] = useState<TimeFilterValue>({
+    kind: 'month',
+    year: initialFinancialMonth.year,
+    month: initialFinancialMonth.month,
+  })
+  const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false)
 
   const [hourly, setHourly] = useState<SectionState<HourlyProfitabilityRow[]>>({
     data: initialHourly,
@@ -707,6 +708,7 @@ export default function InsightsClient({
   })
   const [selectedProductIdx, setSelectedProductIdx] = useState<number | null>(null)
   const [selectedWeekdayIdx, setSelectedWeekdayIdx] = useState<number | null>(null)
+  const [recipeConfirm, setRecipeConfirm] = useState<{ recipeId: string; productName: string } | null>(null)
   const isLgDesktop = useIsLgDesktop()
   const [financialModal, setFinancialModal] = useState<FinancialModalKind | null>(null)
   const router = useRouter()
@@ -767,59 +769,39 @@ export default function InsightsClient({
     [fetchHourly, fetchWeekday, fetchProducts]
   )
 
-  const handleOpenPicker = useCallback((m: InsightsFilterMode) => {
-    setOpenPicker((prev) => (prev === m ? null : m))
-  }, [])
-
-  const handleSelectWeek = useCallback(
-    (monday: string) => {
-      const { from, to } = weekBoundsFromMonday(monday)
-      setSelectedWeekMonday(monday)
-      setFilterMode('sem')
-      setOpenPicker(null)
-      refetchAnalytics(from, to)
-    },
-    [refetchAnalytics]
-  )
-
-  const handleSelectMonths = useCallback(
-    (months: InsightsMonth[]) => {
-      if (months.length === 0) return
-      setSelectedMonths(months)
-      setFilterMode('mes')
-      setOpenPicker(null)
-      const froms = months.map(m => monthBounds(m).from).sort()
-      const tos = months.map(m => monthBounds(m).to).sort()
-      const from = froms[0]
-      const to = tos[tos.length - 1]
-      refetchAnalytics(from, to)
-      void fetchFinancial(from, to)
+  const applyTimeFilter = useCallback(
+    (v: TimeFilterValue) => {
+      const bounds = timeFilterBounds(v)
+      if (!bounds) return
+      setFilterValue(v)
+      refetchAnalytics(bounds.startDate, bounds.endDate)
+      if (v.kind === 'month') {
+        void fetchFinancial(bounds.startDate, bounds.endDate)
+      }
     },
     [refetchAnalytics, fetchFinancial]
   )
 
-  const handleSelectDay = useCallback(
-    (ymd: string) => {
-      setSelectedDay(ymd)
-      setFilterMode('dia')
-      setOpenPicker(null)
-      refetchAnalytics(ymd, ymd)
-    },
-    [refetchAnalytics]
-  )
+  const filterMode: InsightsFilterMode =
+    filterValue.kind === 'month'
+      ? 'mes'
+      : filterValue.kind === 'week'
+        ? 'sem'
+        : filterValue.kind === 'date'
+          ? 'dia'
+          : 'periodo'
 
-  const handleApplyPeriod = useCallback(
-    (from: string, to: string) => {
-      if (!from || !to) return
-      const [f, t] = from <= to ? [from, to] : [to, from]
-      setPeriodFrom(f)
-      setPeriodTo(t)
-      setFilterMode('periodo')
-      setOpenPicker(null)
-      refetchAnalytics(f, t)
-    },
-    [refetchAnalytics]
-  )
+  const selectedMonths: InsightsMonth[] =
+    filterValue.kind === 'month'
+      ? [{ year: filterValue.year, month: filterValue.month }]
+      : []
+
+  const defaultFilterActive =
+    filterValue.kind === 'month' &&
+    filterValue.year === initialFinancialMonth.year &&
+    filterValue.month === initialFinancialMonth.month
+
+  const periodLabel = formatTimeFilterPeriodLabel(filterValue)
 
   const hourlyChartData = useMemo(() => {
     const byHour = new Map(hourly.data.map((r) => [r.hour, r]))
@@ -957,16 +939,18 @@ export default function InsightsClient({
   const handleOpenRecipe = useCallback(
     (recipeId: string | null | undefined, productName: string) => {
       if (!recipeId) return
-      const ok = window.confirm(
-        `¿Abrir la receta de «${productName}»? Saldrás de Insights.`
-      )
-      if (ok) {
-        if (sandboxNavigate) sandboxNavigate(`/recipes/${recipeId}`)
-        else if (!navigateInsideSandbox(`/recipes/${recipeId}`)) router.push(`/recipes/${recipeId}`)
-      }
+      setRecipeConfirm({ recipeId, productName })
     },
-    [router, sandboxNavigate]
+    []
   )
+
+  const confirmOpenRecipe = useCallback(() => {
+    if (!recipeConfirm) return
+    const { recipeId } = recipeConfirm
+    setRecipeConfirm(null)
+    if (sandboxNavigate) sandboxNavigate(`/recipes/${recipeId}`)
+    else if (!navigateInsideSandbox(`/recipes/${recipeId}`)) router.push(`/recipes/${recipeId}`)
+  }, [recipeConfirm, router, sandboxNavigate])
 
   const financialKpis = useMemo(() => {
     if (!financial.data) return null
@@ -1100,6 +1084,7 @@ export default function InsightsClient({
   }, [weekday.data, dateFrom, dateTo])
 
   return (
+    <>
     <DashboardDetailLayout
       title="Insights"
       showBackButton={false}
@@ -1107,21 +1092,22 @@ export default function InsightsClient({
       maxWidthClass="max-w-6xl"
       contentClassName="p-0 flex flex-col min-h-0"
     >
-          <div className="sticky top-0 z-20 shrink-0 overflow-x-auto border-b border-zinc-100 bg-white px-3 py-2 md:px-5">
-              <InsightsMainDateFilter
-                mode={filterMode}
-                openPicker={openPicker}
-                onOpenPicker={handleOpenPicker}
-                onClosePicker={() => setOpenPicker(null)}
-                selectedWeekMonday={selectedWeekMonday}
-                selectedMonths={selectedMonths}
-                selectedDay={selectedDay}
-                periodFrom={periodFrom}
-                periodTo={periodTo}
-                onSelectWeek={handleSelectWeek}
-                onSelectMonths={handleSelectMonths}
-                onSelectDay={handleSelectDay}
-                onApplyPeriod={handleApplyPeriod}
+          <div className="px-4 md:px-8 pt-3 pb-2 shrink-0">
+              <PeriodNav
+                label={periodLabel}
+                onPrev={() => applyTimeFilter(shiftTimeFilterValue(filterValue, -1))}
+                onNext={() => applyTimeFilter(shiftTimeFilterValue(filterValue, 1))}
+                onLabelClick={() => setIsTimeFilterOpen(true)}
+                prevAriaLabel="Periodo anterior"
+                nextAriaLabel="Periodo siguiente"
+                hasActiveFilter={!defaultFilterActive}
+                onClear={() => {
+                  applyTimeFilter({
+                    kind: 'month',
+                    year: initialFinancialMonth.year,
+                    month: initialFinancialMonth.month,
+                  })
+                }}
               />
           </div>
 
@@ -1668,5 +1654,25 @@ export default function InsightsClient({
           </div>
           </div>
     </DashboardDetailLayout>
+    <ConfirmModal
+      open={recipeConfirm != null}
+      onClose={() => setRecipeConfirm(null)}
+      title="Abrir receta"
+      confirmLabel="Abrir"
+      confirmVariant="primary"
+      instance="insights-open-recipe-confirm"
+      usageLabel="Confirmar abrir receta desde Insights"
+      onConfirm={confirmOpenRecipe}
+    >
+      {`¿Abrir la receta de «${recipeConfirm?.productName ?? ''}»? Saldrás de Insights.`}
+    </ConfirmModal>
+    <TimeFilterModal
+      isOpen={isTimeFilterOpen}
+      onClose={() => setIsTimeFilterOpen(false)}
+      allowedKinds={['date', 'range', 'week', 'month', 'year']}
+      initialValue={filterValue}
+      onApply={applyTimeFilter}
+    />
+    </>
   )
 }
