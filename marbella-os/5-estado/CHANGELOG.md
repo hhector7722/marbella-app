@@ -38,6 +38,10 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-26
 
+- **El periodo va en la cabecera, con el mismo filtro a la derecha.** Flechas y fecha en la franja petróleo; el icono de filtro no se convierte en una cruz. Tablas y calendarios empiezan más arriba. Los botones dejan de parecer pastilla. La tabla de ventas cabe entera, más compacta, sin scroll horizontal.
+
+- **El catálogo respira y el pie cabe en una línea.** Recetas, Ingredientes y Proveedores separan más las celdas. Las fotos de proveedor bajan al tamaño de las otras dos. Nombre y precio van en una sola fila.
+
 - **PageScreen deja el mismo aire a ambos lados en el teléfono.** La tarjeta usa casi todo el ancho y el fondo se ve a izquierda y derecha; el contenido ya no se pega al borde derecho.
 
 - **Recetas, Ingredientes y Proveedores pintan el mismo catálogo.** Cuatro columnas, sin tarjeta: foto y pie forman un cuadrado; la foto se encoge y el nombre o el precio se leen enteros.

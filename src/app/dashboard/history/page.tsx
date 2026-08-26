@@ -30,7 +30,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import CashClosingModal, { BILLS, COINS } from '@/components/CashClosingModal';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
-import { PeriodNav } from '@/components/time/PeriodNav';
+import { PeriodNav, PeriodFilterButton } from '@/components/time/PeriodNav';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import { Button } from '@/components/ui/button';
 import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
@@ -1602,8 +1602,17 @@ export default function HistoryPage() {
             className={cn('print:bg-white print:p-0 print:pb-0', viewMode === 'calendar' && 'month-cal-shell')}
             cardClassName={cn('print:rounded-none print:shadow-none', viewMode === 'calendar' && 'month-cal-card')}
             contentClassName={cn('p-0 flex flex-col min-h-0', viewMode === 'calendar' && 'month-cal-body')}
+            periodSlot={
+                <PeriodNav
+                    label={monthNavLabel}
+                    onPrev={handlePrevMonth}
+                    onNext={handleNextMonth}
+                    onLabelClick={() => setIsTimeFilterOpen(true)}
+                />
+            }
             rightSlot={
                 <div className="flex items-center gap-1 shrink-0 text-white">
+                    <PeriodFilterButton instance="history-period-filter" onClick={() => setIsTimeFilterOpen(true)} />
                     {viewMode === 'table' ? (
                         <div className="relative" data-history-share-root="true">
                             <Button
@@ -1643,7 +1652,7 @@ export default function HistoryPage() {
                 </div>
             }
         >
-            <div className="px-4 md:px-8 pt-3 pb-2 shrink-0 space-y-ds-2 print:hidden">
+            <div className="px-3 pt-1 pb-1 shrink-0 print:hidden">
                 <PetroleumSegmented
                     instance="history-vista"
                     density="compact"
@@ -1655,29 +1664,11 @@ export default function HistoryPage() {
                         { value: 'table', label: 'Tabla' },
                     ]}
                 />
-                <PeriodNav
-                    label={monthNavLabel}
-                    onPrev={handlePrevMonth}
-                    onNext={handleNextMonth}
-                    onLabelClick={() => setIsTimeFilterOpen(true)}
-                    hasActiveFilter={(() => {
-                        const now = new Date();
-                        const defS = format(startOfMonth(now), 'yyyy-MM-dd');
-                        const defE = format(endOfMonth(now), 'yyyy-MM-dd');
-                        return !(filterMode === 'range' && rangeStart === defS && rangeEnd === defE);
-                    })()}
-                    onClear={() => {
-                        const now = new Date();
-                        setFilterMode('range');
-                        setRangeStart(format(startOfMonth(now), 'yyyy-MM-dd'));
-                        setRangeEnd(format(endOfMonth(now), 'yyyy-MM-dd'));
-                    }}
-                />
             </div>
 
                     <div className="bg-white flex-1 min-h-0 flex flex-col">
                         <div className={cn(
-                            'pt-5 md:pt-6 pb-0.5 px-2 grid grid-cols-3 print:hidden shrink-0',
+                            'pt-2 pb-0.5 px-2 grid grid-cols-3 print:hidden shrink-0',
                             viewMode === 'calendar' && 'month-cal-kpi lg:pt-2 lg:pb-0'
                         )}>
                             <div className="flex flex-col items-center justify-center text-center">

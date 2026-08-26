@@ -253,6 +253,13 @@ export default function ActividadesPage() {
       className="month-cal-shell"
       cardClassName="month-cal-card"
       contentClassName="p-0 flex flex-col min-h-0"
+      periodSlot={
+        <PeriodNav
+          label={getMonthLabel(viewMonth)}
+          onPrev={() => setViewMonth((m) => subMonths(m, 1))}
+          onNext={() => setViewMonth((m) => addMonths(m, 1))}
+        />
+      }
       rightSlot={
         <div className="flex items-center justify-end gap-2">
           {isMaster ? (
@@ -275,14 +282,6 @@ export default function ActividadesPage() {
         </div>
       }
     >
-          <div className="px-4 md:px-8 pt-3 pb-2 shrink-0">
-            <PeriodNav
-              label={getMonthLabel(viewMonth)}
-              onPrev={() => setViewMonth((m) => subMonths(m, 1))}
-              onNext={() => setViewMonth((m) => addMonths(m, 1))}
-            />
-          </div>
-
           {/* ── Calendar ── */}
           {loading ? (
             <div className="flex flex-col items-center justify-center gap-4 py-20 month-cal-body">

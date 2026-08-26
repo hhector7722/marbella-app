@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
-import { PeriodNav } from '@/components/time/PeriodNav';
+import { PeriodNav, PeriodFilterButton } from '@/components/time/PeriodNav';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { Modal } from '@/components/ui/modal';
@@ -446,8 +446,17 @@ export default function ConsumoPersonalDashboardPage() {
       className="month-cal-shell"
       cardClassName="month-cal-card"
       contentClassName="flex flex-col min-h-0 p-0"
+      periodSlot={
+        <PeriodNav
+          label={format(viewMonth, 'MMMM yyyy', { locale: es })}
+          onPrev={handlePrevMonth}
+          onNext={handleNextMonth}
+          onLabelClick={() => setIsTimeFilterOpen(true)}
+        />
+      }
       rightSlot={
         <div className="flex items-center gap-0.5 md:gap-1.5 shrink-0 text-white">
+          <PeriodFilterButton instance="consumo-period-filter" onClick={() => setIsTimeFilterOpen(true)} />
           {canEditConsumptionOrder ? (
             <Button
               type="button"
@@ -484,18 +493,7 @@ export default function ConsumoPersonalDashboardPage() {
         </div>
       }
     >
-          <div className="px-4 md:px-8 pt-3 pb-3 shrink-0">
-            <PeriodNav
-              label={format(viewMonth, 'MMMM yyyy', { locale: es })}
-              onPrev={handlePrevMonth}
-              onNext={handleNextMonth}
-              onLabelClick={() => setIsTimeFilterOpen(true)}
-              hasActiveFilter={filterActive}
-              onClear={clearTimeFilter}
-            />
-          </div>
-
-          <div className="p-4 md:p-8 flex flex-col month-cal-body min-h-0">
+          <div className="px-3 pt-1 pb-3 md:px-4 md:pt-2 flex flex-col month-cal-body min-h-0">
             <div className="grid grid-cols-2 gap-0.5 sm:gap-1 mb-4 py-2 shrink-0 min-w-0">
               <div className="flex min-w-0 flex-col items-center justify-center px-0.5 text-center">
                 <span className="text-[6px] font-black uppercase leading-tight text-gray-400 sm:text-[7px]">

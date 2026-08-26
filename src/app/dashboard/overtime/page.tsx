@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import WorkerWeeklyHistoryModal from '@/components/WorkerWeeklyHistoryModal';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { PeriodNav } from '@/components/time/PeriodNav';
+import { PeriodNav, PeriodFilterButton } from '@/components/time/PeriodNav';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
@@ -170,18 +170,18 @@ export default function OvertimePage() {
                 showBackButton={false}
                 template="list"
                 contentClassName="flex flex-col min-h-0"
-            >
-                <div className="pb-3 shrink-0">
+                periodSlot={
                     <PeriodNav
                         label={format(viewMonth, 'MMMM yyyy', { locale: es })}
                         onPrev={() => setViewMonth((prev) => subMonths(prev, 1))}
                         onNext={() => setViewMonth((prev) => addMonths(prev, 1))}
                         onLabelClick={() => setIsTimeFilterOpen(true)}
-                        hasActiveFilter={!isSameMonth(viewMonth, new Date()) || viewMonth.getFullYear() !== new Date().getFullYear()}
-                        onClear={() => setViewMonth(startOfMonth(new Date()))}
                     />
-                </div>
-
+                }
+                rightSlot={
+                    <PeriodFilterButton instance="overtime-period-filter" onClick={() => setIsTimeFilterOpen(true)} />
+                }
+            >
                 <div className="flex flex-col min-h-0">
                     {loading ? (
                         <div className="flex items-center justify-center py-20">

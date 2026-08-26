@@ -1122,6 +1122,13 @@ export default function ReservasClient() {
       className="month-cal-shell"
       cardClassName="month-cal-card"
       contentClassName="p-0 flex flex-col min-h-0"
+      periodSlot={
+        <PeriodNav
+          label={format(viewMonth, 'MMMM yyyy', { locale: es })}
+          onPrev={handlePrevMonth}
+          onNext={handleNextMonth}
+        />
+      }
       rightSlot={
             <a
               href="https://marbella-web.vercel.app/reservas-interno"
@@ -1133,15 +1140,7 @@ export default function ReservasClient() {
             </a>
       }
     >
-          <div className="flex flex-col gap-2 month-cal-body">
-            <div className="px-4 md:px-8 pt-3 pb-3 shrink-0">
-              <PeriodNav
-                label={format(viewMonth, 'MMMM yyyy', { locale: es })}
-                onPrev={handlePrevMonth}
-                onNext={handleNextMonth}
-              />
-            </div>
-
+          <div className="flex flex-col gap-1 month-cal-body">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4 px-2 sm:px-3 flex-1">
                 <LoadingSpinner size="lg" className="text-ds-marca" />

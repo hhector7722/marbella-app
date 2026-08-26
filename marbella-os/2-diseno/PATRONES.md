@@ -129,15 +129,16 @@ El patrón propio del dominio de horas: una semana de negocio como unidad visual
 Toda vista con dimensión temporal usa el mismo control, en el mismo sitio y con el mismo comportamiento.
 
 **Reglas**:
-- El control es uno: flechas y periodo visible. No hay un segundo icono «Filtrar» para la misma pregunta.
+- El control es uno: flechas y periodo visible **en la cabecera** de PageScreen, cuando la pantalla navega fechas.
 - El periodo activo se ve siempre, sin abrir nada.
-- Pulsar el periodo abre el selector cuando la vista lo admite.
-- Ofrece navegación al periodo anterior y siguiente, y salto al actual.
-- Vive encima del contenido, no dentro de la rejilla. La cabecera petróleo guarda acciones de alcance (trabajador, exportar).
+- A la derecha de la cabecera hay **siempre el mismo** icono de filtro. Abre el selector. No se convierte en una cruz al cambiar de fecha.
+- Las flechas cambian al periodo anterior y siguiente.
+- Pulsar el periodo también puede abrir el selector.
+- Las acciones de alcance (trabajador, exportar) conviven con el filtro en `rightSlot`.
 - El periodo se conserva al navegar a un detalle y volver.
 - Cambiar de periodo no reinicia los demás filtros.
 
-Una sola pieza: `PeriodNav`. Pulsar la etiqueta abre `TimeFilterModal` cuando la vista admite más de un tipo de periodo.
+Una sola pieza: `PeriodNav` en `periodSlot`. El icono de filtro es `PeriodFilterButton`. El selector es `TimeFilterModal` cuando la vista admite más de un tipo de periodo.
 
 ---
 
@@ -214,10 +215,11 @@ La composición por defecto de listado, detalle y formulario de gestión. No es 
 
 **Reglas**:
 - Una pantalla nueva de gestión usa esta composición. No se clona una cabecera petróleo.
-- El periodo (P7) vive encima del contenido, no duplicado como icono en `rightSlot`. Las acciones de alcance (trabajador, exportar) sí viven en `rightSlot`.
+- El periodo (P7) vive **en la cabecera** (`periodSlot`). El icono de filtro es siempre el mismo, a la derecha. Las acciones de alcance (trabajador, exportar) también van en `rightSlot`.
+- El cuerpo empieza pegado al contenido: no se deja un hueco vacío entre la cabecera y la tabla o el calendario.
 - `Button` en la cabecera se pinta invertido, sin relleno ni marco. No es una quinta variante de Button.
 - Labor, Reservas, Horario, Actividades, Consumo staff y Cierres montan el calendario mensual (P3) **dentro** de esta plantilla; no sustituyen la cabecera. La rejilla es una. Horas extras también entra por PageScreen, pero su interior es vista semanal (mini-calendario + filas), no P3.
-- Recetas, Ingredientes y Proveedores montan la misma rejilla de catálogo a **4 columnas** dentro de esta plantilla. Cada celda es un cuadrado (imagen + pie), sin tarjeta; la imagen se reduce y el pie no se recorta.
+- Recetas, Ingredientes y Proveedores montan la misma rejilla de catálogo a **4 columnas** dentro de esta plantilla. Cada celda es un cuadrado (imagen + pie), sin tarjeta, con aire entre celdas. La imagen se reduce al mismo tamaño en las tres; el pie es una sola fila.
 - Asistencia (historial) monta tarjetas semanales (P6) dentro de esta plantilla, no el calendario P3.
 
 **Cuándo no**: mosaico Admin/Staff (T1), Sala LIVE, pantalla de cocina, carta de cliente, overlay (P2).

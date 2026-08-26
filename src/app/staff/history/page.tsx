@@ -31,7 +31,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
-import { PeriodNav } from '@/components/time/PeriodNav';
+import { PeriodNav, PeriodFilterButton } from '@/components/time/PeriodNav';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { trackUsageModalApply } from '@/lib/usage/client';
@@ -748,8 +748,26 @@ export default function HistoryPage() {
                 template="list"
                 maxWidthClass="max-w-4xl"
                 contentClassName="p-0 flex flex-col min-h-0"
+                periodSlot={
+                    <PeriodNav
+                        label={getMonthLabel(filterYear, filterMonth)}
+                        onPrev={prevMonth}
+                        onNext={nextMonth}
+                        onLabelClick={() => {
+                            setPickerYear(filterYear);
+                            setShowMonthPicker(true);
+                        }}
+                    />
+                }
                 rightSlot={
-                    <div className="flex items-center gap-2 justify-end">
+                    <div className="flex items-center gap-1 justify-end">
+                        <PeriodFilterButton
+                            instance="staff-history-period-filter"
+                            onClick={() => {
+                                setPickerYear(filterYear);
+                                setShowMonthPicker(true);
+                            }}
+                        />
                         {showExportButton && (
                                 <div className="relative">
                                     <Button
@@ -892,18 +910,6 @@ export default function HistoryPage() {
                     </div>
                 }
             >
-            <div className="px-4 md:px-8 pt-3 pb-2 shrink-0">
-                <PeriodNav
-                    label={getMonthLabel(filterYear, filterMonth)}
-                    onPrev={prevMonth}
-                    onNext={nextMonth}
-                    onLabelClick={() => {
-                        setPickerYear(filterYear);
-                        setShowMonthPicker(true);
-                    }}
-                />
-            </div>
-
                     {loading ? (
                         <div className="py-20 flex justify-center">
                             <LoadingSpinner size="md" className="text-ds-marca" />
@@ -915,7 +921,7 @@ export default function HistoryPage() {
                                 <p className="text-sm font-bold">No hay registros este mes</p>
                             </div>
                         ) : (
-                            <div className="px-4 pt-8 pb-8 bg-zinc-50/50">
+                            <div className="px-3 pt-2 pb-4 bg-zinc-50/50">
                                 {plantillaWeeksData.map((week, idx) => (
                                     <PlantillaWeekCard
                                         key={week.weekNumber}

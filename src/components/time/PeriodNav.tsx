@@ -1,11 +1,12 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 /**
- * Control de periodo (P7): el mes/rango se lee sin abrir nada;
- * las flechas cambian; pulsar la etiqueta abre el selector cuando existe.
+ * Control de periodo (P7): vive en la cabecera de PageScreen.
+ * Flechas cambian el periodo; el filtro de la cabecera abre el selector.
  */
 export function PeriodNav({
     label,
@@ -14,9 +15,6 @@ export function PeriodNav({
     onLabelClick,
     prevAriaLabel = 'Mes anterior',
     nextAriaLabel = 'Mes siguiente',
-    hasActiveFilter,
-    onClear,
-    labelClassName,
     className,
 }: {
     label: string;
@@ -25,65 +23,59 @@ export function PeriodNav({
     onLabelClick?: () => void;
     prevAriaLabel?: string;
     nextAriaLabel?: string;
-    hasActiveFilter?: boolean;
-    onClear?: () => void;
-    labelClassName?: string;
     className?: string;
 }) {
-    const labelClass = cn(
-        'text-base md:text-lg font-black text-ds-marca capitalize text-center px-1 sm:px-2 min-w-0 max-w-[min(100%,14rem)] sm:max-w-none',
-        onLabelClick && 'hover:opacity-80 min-h-12',
-        labelClassName
-    );
+    const labelClass =
+        'min-w-0 max-w-[9.5rem] truncate text-center text-[11px] font-black capitalize leading-none text-white sm:max-w-[14rem] sm:text-xs md:text-sm';
 
     return (
-        <div className={cn('flex justify-center w-full', className)}>
-            <div className="inline-flex items-center justify-center gap-1 sm:gap-2 max-w-full">
+        <div className={cn('flex w-full min-w-0 items-center justify-center', className)}>
+            <div className="inline-flex max-w-full min-w-0 items-center justify-center gap-0.5">
                 <button
                     type="button"
                     onClick={onPrev}
-                    className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white hover:bg-white/10"
                     aria-label={prevAriaLabel}
                 >
-                    <ChevronLeft size={22} />
+                    <ChevronLeft size={18} />
                 </button>
-                <div className="relative min-w-0">
-                    {onLabelClick ? (
-                        <button type="button" onClick={onLabelClick} className={labelClass}>
-                            {label}
-                        </button>
-                    ) : (
-                        <span className={labelClass}>{label}</span>
-                    )}
-                    {hasActiveFilter && onClear ? (
-                        <button
-                            type="button"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onClear();
-                            }}
-                            aria-label="Restablecer periodo"
-                            className={cn(
-                                'absolute -top-1.5 -right-1.5',
-                                'w-5 h-5 md:w-6 md:h-6 rounded-full',
-                                'bg-rose-500 hover:bg-rose-600 text-white shadow-lg',
-                                'flex items-center justify-center transition-all active:scale-95',
-                                'border-2 border-white'
-                            )}
-                        >
-                            <X size={10} strokeWidth={4} className="md:size-3" />
-                        </button>
-                    ) : null}
-                </div>
+                {onLabelClick ? (
+                    <button type="button" onClick={onLabelClick} className={cn(labelClass, 'hover:opacity-80')}>
+                        {label}
+                    </button>
+                ) : (
+                    <span className={labelClass}>{label}</span>
+                )}
                 <button
                     type="button"
                     onClick={onNext}
-                    className="shrink-0 p-2 rounded-xl hover:bg-zinc-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-ds-marca"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white hover:bg-white/10"
                     aria-label={nextAriaLabel}
                 >
-                    <ChevronRight size={22} />
+                    <ChevronRight size={18} />
                 </button>
             </div>
         </div>
+    );
+}
+
+/** Icono de filtro de periodo: siempre el mismo, a la derecha de la cabecera. */
+export function PeriodFilterButton({
+    onClick,
+    instance = 'period-filter',
+}: {
+    onClick: () => void;
+    instance?: string;
+}) {
+    return (
+        <Button
+            type="button"
+            variant="tertiary"
+            instance={instance}
+            aria-label="Filtrar"
+            icon={<Calendar size={20} strokeWidth={2.25} />}
+            onClick={onClick}
+            className="shrink-0"
+        />
     );
 }

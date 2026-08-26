@@ -335,6 +335,13 @@ export default function HorarioPage() {
       className="month-cal-shell"
       cardClassName="month-cal-card"
       contentClassName="p-0 flex flex-col min-h-0"
+      periodSlot={
+        <PeriodNav
+          label={getMonthLabel(viewMonth)}
+          onPrev={() => setViewMonth((m) => subMonths(m, 1))}
+          onNext={() => setViewMonth((m) => addMonths(m, 1))}
+        />
+      }
       rightSlot={
         <div className="flex items-center justify-end gap-2">
           {isMaster ? (
@@ -368,7 +375,7 @@ export default function HorarioPage() {
         </div>
       }
     >
-          <div className="px-4 md:px-8 pt-3 pb-2 shrink-0 space-y-ds-2">
+          <div className="px-3 pt-1 pb-1 shrink-0">
             <PetroleumSegmented
               instance="horario-vista"
               density="compact"
@@ -379,11 +386,6 @@ export default function HorarioPage() {
                 { value: 'horarios', label: 'Horarios' },
                 { value: 'actividades', label: 'Actividades' },
               ]}
-            />
-            <PeriodNav
-              label={getMonthLabel(viewMonth)}
-              onPrev={() => setViewMonth((m) => subMonths(m, 1))}
-              onNext={() => setViewMonth((m) => addMonths(m, 1))}
             />
           </div>
 

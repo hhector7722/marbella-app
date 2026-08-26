@@ -246,7 +246,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.doesNotMatch(plantilla, /Pendiente|Importe/);
     });
 
-    it('el periodo temporal es PeriodNav; no se clona ← mes → ni un segundo Filtrar', () => {
+    it('el periodo temporal es PeriodNav en cabecera; filtro fijo, sin cruz', () => {
         const hosts = [
             'app/dashboard/labor/page.tsx',
             'app/horario/page.tsx',
@@ -265,14 +265,23 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         const clone = /text-base md:text-lg font-black text-ds-marca capitalize/;
         for (const rel of hosts) {
             const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
+            assert.match(source, /periodSlot/, `${rel} monta el periodo en la cabecera`);
             assert.match(source, /<PeriodNav/, `${rel} debe usar PeriodNav`);
             assert.doesNotMatch(source, clone, `${rel} no debe clonar la anatomía de PeriodNav`);
             assert.doesNotMatch(
                 source,
                 /TimeFilterButton/,
-                `${rel} no duplica Filtrar cuando ya hay PeriodNav`
+                `${rel} no usa TimeFilterButton`
+            );
+            assert.doesNotMatch(
+                source,
+                /hasActiveFilter/,
+                `${rel} no pinta cruz de quitar filtro de periodo`
             );
         }
+        const nav = readFileSync(join(SRC_ROOT, 'components/time/PeriodNav.tsx'), 'utf8');
+        assert.match(nav, /PeriodFilterButton/, 'el filtro de cabecera es siempre el mismo icono');
+        assert.doesNotMatch(nav, /hasActiveFilter/, 'PeriodNav no tiene cruz de dismiss');
     });
 
     it('eventos, inventario y recetas usan primitivas canónicas', () => {
@@ -367,9 +376,11 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         const tile = readFileSync(join(SRC_ROOT, 'components/catalog/CatalogTile.tsx'), 'utf8');
         assert.match(tile, /aspect-square/, 'la celda imagen+pie es un cuadrado');
         assert.match(tile, /grid-cols-4/, 'la rejilla es de 4 columnas');
+        assert.match(tile, /gap-5/, 'hay aire entre celdas');
         assert.match(tile, /object-contain/, 'la imagen se reduce para caber');
-        assert.match(tile, /break-words/, 'el pie no se recorta');
-        assert.doesNotMatch(tile, /truncate/, 'el pie no usa truncate');
+        assert.match(tile, /h-5/, 'el pie reserva una sola fila en las tres páginas');
+        assert.match(tile, /truncate/, 'el pie cabe en una fila');
+        assert.doesNotMatch(tile, /break-words/, 'el pie no pasa a segunda fila');
         assert.doesNotMatch(tile, /bg-white/, 'la celda no tiene card blanca');
         assert.doesNotMatch(tile, /shadow-md/, 'la celda no tiene sombra de card');
     });

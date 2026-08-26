@@ -33,7 +33,7 @@ import { CashDenominationForm } from '@/components/CashDenominationForm';
 import { BoxInventoryView } from '@/components/BoxInventoryView';
 import { MovementDetailModal } from '@/components/MovementDetailModal';
 import CashClosingModal from '@/components/CashClosingModal';
-import { PeriodNav } from '@/components/time/PeriodNav';
+import { PeriodNav, PeriodFilterButton } from '@/components/time/PeriodNav';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { Modal } from '@/components/ui/modal';
@@ -728,8 +728,21 @@ export default function MovementsPage() {
             template="list"
             maxWidthClass="max-w-4xl"
             contentClassName="p-0 flex flex-col min-h-0"
+            periodSlot={
+                <PeriodNav
+                    label={
+                        filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(parseLocalSafe(rangeStart), parseLocalSafe(rangeEnd))
+                            ? format(parseLocalSafe(rangeStart), 'MMMM yyyy', { locale: es })
+                            : 'Periodo'
+                    }
+                    onPrev={handlePrevMonth}
+                    onNext={handleNextMonth}
+                    onLabelClick={() => setIsTimeFilterOpen(true)}
+                />
+            }
             rightSlot={
                 <div className="flex items-center gap-1 shrink-0 text-white" data-movements-share-root="true">
+                    <PeriodFilterButton instance="movements-period-filter" onClick={() => setIsTimeFilterOpen(true)} />
                     <div className="relative shrink-0" data-movements-share-root="true">
                         <Button
                             type="button"
@@ -767,13 +780,13 @@ export default function MovementsPage() {
                 </div>
             }
         >
-            <div className="px-4 md:px-8 pt-3 pb-2 shrink-0 space-y-ds-2">
+            <div className="px-3 pt-1 pb-1 shrink-0">
                 <div className="flex items-center justify-center gap-3">
                     <button
                         type="button"
                         onClick={() => setCashModalMode('in')}
                         aria-label="Entrada"
-                        className="shrink-0 min-h-[48px] min-w-[48px] px-2 rounded-xl hover:bg-zinc-100 transition-colors flex flex-col items-center justify-center gap-1 active:scale-95"
+                        className="shrink-0 min-h-[48px] min-w-[48px] px-2 rounded-lg hover:bg-zinc-100 transition-colors flex flex-col items-center justify-center gap-1 active:scale-95"
                     >
                         <div className="w-5 h-5 flex items-center justify-center bg-emerald-500 rounded-full shadow-sm">
                             <Plus className="w-3 h-3 text-white" strokeWidth={3} />
@@ -784,7 +797,7 @@ export default function MovementsPage() {
                         type="button"
                         onClick={openOut}
                         aria-label="Salida"
-                        className="shrink-0 min-h-[48px] min-w-[48px] px-2 rounded-xl hover:bg-zinc-100 transition-colors flex flex-col items-center justify-center gap-1 active:scale-95"
+                        className="shrink-0 min-h-[48px] min-w-[48px] px-2 rounded-lg hover:bg-zinc-100 transition-colors flex flex-col items-center justify-center gap-1 active:scale-95"
                     >
                         <div className="w-5 h-5 flex items-center justify-center bg-rose-500 rounded-full shadow-sm">
                             <Minus className="w-3 h-3 text-white" strokeWidth={3} />
@@ -795,7 +808,7 @@ export default function MovementsPage() {
                         type="button"
                         onClick={openAudit}
                         aria-label="Arqueo"
-                        className="shrink-0 min-h-[48px] min-w-[48px] px-2 rounded-xl hover:bg-zinc-100 transition-colors flex flex-col items-center justify-center gap-1 active:scale-95"
+                        className="shrink-0 min-h-[48px] min-w-[48px] px-2 rounded-lg hover:bg-zinc-100 transition-colors flex flex-col items-center justify-center gap-1 active:scale-95"
                     >
                         <div className="w-5 h-5 flex items-center justify-center bg-orange-500 rounded-full shadow-sm">
                             <RefreshCw className="w-2.5 h-2.5 text-white" strokeWidth={4} />
@@ -803,36 +816,12 @@ export default function MovementsPage() {
                         <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500 leading-none">Arqueo</span>
                     </button>
                 </div>
-                <PeriodNav
-                    label={
-                        filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(parseLocalSafe(rangeStart), parseLocalSafe(rangeEnd))
-                            ? format(parseLocalSafe(rangeStart), 'MMMM yyyy', { locale: es })
-                            : 'Seleccionar mes'
-                    }
-                    onPrev={handlePrevMonth}
-                    onNext={handleNextMonth}
-                    onLabelClick={() => setIsTimeFilterOpen(true)}
-                    hasActiveFilter={(() => {
-                        const d = new Date();
-                        const defS = format(startOfMonth(d), 'yyyy-MM-dd');
-                        const defE = format(endOfMonth(d), 'yyyy-MM-dd');
-                        return !(filterMode === 'range' && rangeStart === defS && rangeEnd === defE);
-                    })()}
-                    onClear={() => {
-                        const d = new Date();
-                        const s = startOfMonth(d);
-                        const e = endOfMonth(d);
-                        setFilterMode('range');
-                        setRangeStart(format(s, 'yyyy-MM-dd'));
-                        setRangeEnd(format(e, 'yyyy-MM-dd'));
-                    }}
-                />
             </div>
 
                     {/* CUERPO BLANCO (RESUMEN + TABLA) */}
                     <div className="bg-white">
                         {/* RESUMEN: Grid 4x1 en móvil y escritorio */}
-                        <div className="py-4 px-2 grid grid-cols-4 border-b border-zinc-50">
+                        <div className="py-2 px-2 grid grid-cols-4 border-b border-zinc-50">
                             <div className="flex flex-col items-center justify-center text-center px-1">
                                 <span className="text-[13px] md:text-2xl font-black text-emerald-500 line-clamp-1">{periodSummary.income > 0.005 ? `+${periodSummary.income.toFixed(2)}€` : " "}</span>
                                 <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">INGRESOS</span>

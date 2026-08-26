@@ -25,6 +25,8 @@ export type PageScreenProps = {
   contentClassName?: string
   /** Clases de layout del host de Surface page (p. ej. month-cal-card). */
   cardClassName?: string
+  /** Periodo ← fecha → en la cabecera, cuando la pantalla navega fechas. */
+  periodSlot?: ReactNode
   /** Identidad de plantilla T2/T3/T4. Default list. */
   template?: PageScreenTemplate
   children: ReactNode
@@ -47,6 +49,7 @@ export function PageScreen({
   className,
   contentClassName,
   cardClassName,
+  periodSlot,
   template = 'list',
   children,
 }: PageScreenProps) {
@@ -78,9 +81,9 @@ export function PageScreen({
           <div
             data-element="header"
             data-compact={compactHeader ? 'true' : undefined}
-            className="flex gap-3 shrink-0"
+            className="flex gap-2 shrink-0"
           >
-            <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div className={cn('flex min-w-0 items-center gap-2', periodSlot ? 'max-w-[38%] shrink' : 'flex-1')}>
               {showBackButton ? (
                 <Button
                   type="button"
@@ -97,15 +100,20 @@ export function PageScreen({
                 {subtitle ? <p data-element="subtitle">{subtitle}</p> : null}
               </div>
             </div>
+            {periodSlot ? (
+              <div data-element="period" className="flex min-w-0 flex-1 items-center justify-center">
+                {periodSlot}
+              </div>
+            ) : null}
             {rightSlot ? (
-              <div data-element="actions" className="shrink-0 flex items-center justify-end gap-2">
+              <div data-element="actions" className="flex shrink-0 items-center justify-end gap-1">
                 {rightSlot}
               </div>
             ) : null}
           </div>
           <div
             data-element="body"
-            className={cn('p-4 md:p-6 flex-1 flex flex-col min-h-0', contentClassName)}
+            className={cn('px-3 pt-2 pb-3 md:px-4 md:pt-2 md:pb-4 flex-1 flex flex-col min-h-0', contentClassName)}
           >
             {children}
           </div>

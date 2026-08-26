@@ -494,7 +494,8 @@
 [data-component='Surface'][data-variant='page'] > [data-element='header'] [data-element='title'] {
   margin: 0;
   min-width: 0;
-  overflow: visible;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-weight: 900;
   font-size: calc(1.125rem * var(--page-header-scale, 1));
   line-height: 1.25;
@@ -529,10 +530,22 @@
   color: var(--color-texto-invertido);
 }
 
+[data-component='PageScreen'] [data-element='period'] {
+  min-width: 0;
+}
+[data-component='PageScreen'] [data-element='actions'] {
+  max-width: 42%;
+}
+
 /*
  * Table / T8 — thead de marca. Composición, no componente de columnas.
  * Un cambio aquí pinta Ventas, Tesorería, Libro Mayor, Cierres, Catálogo y Propinas.
  */
+[data-component='Table'] {
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+}
 [data-component='Table'] thead {
   background-color: var(--color-marca);
   color: var(--color-texto-invertido);
@@ -540,8 +553,23 @@
 [data-component='Table'] thead th {
   color: var(--color-texto-invertido);
   font-weight: 900;
+  font-size: 9px;
+  line-height: 1.2;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
+  padding-block: 6px;
+  padding-inline: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+[data-component='Table'] td {
+  font-size: 11px;
+  line-height: 1.25;
+  padding-block: 6px;
+  padding-inline: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
 }
 
 /*

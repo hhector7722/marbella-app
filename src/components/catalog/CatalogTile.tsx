@@ -6,10 +6,12 @@ import type { ReactNode } from 'react';
  * Celda de catálogo (Recetas, Ingredientes, Proveedores).
  * Pieza local de dominio: no es primitiva del sistema.
  *
- * El conjunto imagen + pie es un cuadrado. La imagen se encoge; el pie no se recorta.
+ * El conjunto imagen + pie es un cuadrado. La imagen se encoge dentro
+ * del hueco; el pie es una sola fila. El hueco del pie se reserva siempre
+ * para que proveedores, recetas e ingredientes pinten la foto al mismo tamaño.
  */
 export function CatalogGrid({ children }: { children: ReactNode }) {
-    return <div className="grid grid-cols-4 items-start gap-2 sm:gap-3 md:gap-4">{children}</div>;
+    return <div className="grid grid-cols-4 items-start gap-5 sm:gap-6 md:gap-8">{children}</div>;
 }
 
 export function CatalogTile({
@@ -35,27 +37,25 @@ export function CatalogTile({
             className="aspect-square w-full min-w-0 cursor-pointer border-0 bg-transparent p-0 text-left shadow-none"
         >
             <div className="flex h-full w-full min-h-0 flex-col">
-                <div className="relative min-h-0 flex-1 overflow-hidden">
+                <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-2 sm:p-3">
                     {imageSrc ? (
                         <img
                             src={imageSrc}
                             alt={imageAlt}
-                            className="absolute inset-0 m-auto max-h-full max-w-full object-contain"
+                            className="max-h-full max-w-full object-contain"
                         />
                     ) : (
-                        <div className="absolute inset-0 flex items-center justify-center text-gray-200">
-                            {fallback}
-                        </div>
+                        <span className="text-gray-200">{fallback}</span>
                     )}
                 </div>
-                <div className="w-full shrink-0 pt-1 text-center">
-                    <div className="break-words text-[11px] font-bold leading-tight text-gray-700 sm:text-xs md:text-sm">
+                <div className="flex h-5 w-full shrink-0 items-center justify-center gap-1 overflow-hidden sm:h-6">
+                    <span className="min-w-0 truncate text-[11px] font-bold leading-none text-gray-700 sm:text-xs md:text-sm">
                         {title}
-                    </div>
+                    </span>
                     {subtitle ? (
-                        <div className="mt-0.5 break-words text-[11px] font-black leading-tight sm:text-xs md:text-sm">
+                        <span className="shrink-0 text-[11px] font-black leading-none sm:text-xs md:text-sm">
                             {subtitle}
-                        </div>
+                        </span>
                     ) : null}
                 </div>
             </div>

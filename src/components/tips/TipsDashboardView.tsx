@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Clock, RefreshCw } from 'lucide-react';
-import { PeriodNav } from '@/components/time/PeriodNav';
+import { PeriodNav, PeriodFilterButton } from '@/components/time/PeriodNav';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import {
   formatTimeFilterPeriodLabel,
@@ -463,9 +463,20 @@ export default function TipsDashboardView({
       showBackButton={false}
       maxWidthClass="max-w-6xl"
       template="list"
-      contentClassName="space-y-4 min-w-0"
+      contentClassName="space-y-3 min-w-0"
+      periodSlot={
+        <PeriodNav
+          label={rangeLabel}
+          onPrev={() => applyTimeFilter(shiftTimeFilterValue(filterValue, -1))}
+          onNext={() => applyTimeFilter(shiftTimeFilterValue(filterValue, 1))}
+          onLabelClick={() => setIsTimeFilterOpen(true)}
+          prevAriaLabel="Periodo anterior"
+          nextAriaLabel="Periodo siguiente"
+        />
+      }
       rightSlot={
               <div className="flex items-center gap-1.5 md:gap-2 shrink-0 text-white">
+                <PeriodFilterButton instance="tips-period-filter" onClick={() => setIsTimeFilterOpen(true)} />
                 <Button
                   type="button"
                   variant="tertiary"
@@ -478,25 +489,6 @@ export default function TipsDashboardView({
               </div>
       }
     >
-            <div className="-mx-4 px-4 md:-mx-6 md:px-6">
-              <PeriodNav
-                label={rangeLabel}
-                onPrev={() => applyTimeFilter(shiftTimeFilterValue(filterValue, -1))}
-                onNext={() => applyTimeFilter(shiftTimeFilterValue(filterValue, 1))}
-                onLabelClick={() => setIsTimeFilterOpen(true)}
-                prevAriaLabel="Periodo anterior"
-                nextAriaLabel="Periodo siguiente"
-                hasActiveFilter={!defaultFilterActive}
-                onClear={() => {
-                  applyTimeFilter({
-                    kind: 'range',
-                    startDate: initialStartDate,
-                    endDate: initialEndDate,
-                  });
-                }}
-              />
-            </div>
-
             {lastDistBanner}
 
             <div className="-mx-4 md:-mx-6">

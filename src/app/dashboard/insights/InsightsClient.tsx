@@ -11,7 +11,7 @@ import {
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
-import { PeriodNav } from '@/components/time/PeriodNav'
+import { PeriodNav, PeriodFilterButton } from '@/components/time/PeriodNav'
 import { TimeFilterModal } from '@/components/time/TimeFilterModal'
 import {
   formatTimeFilterPeriodLabel,
@@ -1091,27 +1091,21 @@ export default function InsightsClient({
       template="list"
       maxWidthClass="max-w-6xl"
       contentClassName="p-0 flex flex-col min-h-0"
+      periodSlot={
+        <PeriodNav
+          label={periodLabel}
+          onPrev={() => applyTimeFilter(shiftTimeFilterValue(filterValue, -1))}
+          onNext={() => applyTimeFilter(shiftTimeFilterValue(filterValue, 1))}
+          onLabelClick={() => setIsTimeFilterOpen(true)}
+          prevAriaLabel="Periodo anterior"
+          nextAriaLabel="Periodo siguiente"
+        />
+      }
+      rightSlot={
+        <PeriodFilterButton instance="insights-period-filter" onClick={() => setIsTimeFilterOpen(true)} />
+      }
     >
-          <div className="px-4 md:px-8 pt-3 pb-2 shrink-0">
-              <PeriodNav
-                label={periodLabel}
-                onPrev={() => applyTimeFilter(shiftTimeFilterValue(filterValue, -1))}
-                onNext={() => applyTimeFilter(shiftTimeFilterValue(filterValue, 1))}
-                onLabelClick={() => setIsTimeFilterOpen(true)}
-                prevAriaLabel="Periodo anterior"
-                nextAriaLabel="Periodo siguiente"
-                hasActiveFilter={!defaultFilterActive}
-                onClear={() => {
-                  applyTimeFilter({
-                    kind: 'month',
-                    year: initialFinancialMonth.year,
-                    month: initialFinancialMonth.month,
-                  })
-                }}
-              />
-          </div>
-
-          <div className="p-2 md:p-6 space-y-3 md:space-y-5">
+          <div className="p-2 md:p-4 space-y-3 md:space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-3 lg:gap-5">
               {/* Sección 1 — Resultado del periodo */}
               <section className={cn(

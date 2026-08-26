@@ -16,7 +16,7 @@ import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { formatTicketTimeMadrid } from '@/utils/date-utils';
 import { toast } from 'sonner';
 import { BUSINESS_HOURS } from '@/lib/constants';
-import { PeriodNav } from '@/components/time/PeriodNav';
+import { PeriodNav, PeriodFilterButton } from '@/components/time/PeriodNav';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatMonthYear, formatYmdShort, periodRangeSummary } from '@/lib/usage/modal-apply';
@@ -584,31 +584,13 @@ export default function VentasPage() {
             className="print:bg-white print:p-0 print:pb-0"
             cardClassName="print:rounded-none print:shadow-none"
             contentClassName="p-0 flex flex-col min-h-0"
-            rightSlot={
-                <div className="flex items-center gap-1 shrink-0 text-white">
-                    {canAccessInsights ? (
-                        <Button
-                            type="button"
-                            variant="tertiary"
-                            instance="ventas-open-insights"
-                            onClick={() => {
-                                 if (!navigateInsideSandbox('/dashboard/insights')) router.push('/dashboard/insights');
-                             }}
-                            icon={<ChartLine className="w-[18px] h-[18px]" strokeWidth={2} fill="none" />}
-                            aria-label="Abrir insights"
-                            className="shrink-0"
-                        />
-                    ) : null}
-                </div>
-            }
-        >
-            <div className="px-4 md:px-8 pt-3 pb-2 shrink-0 print:hidden">
+            periodSlot={
                 <PeriodNav
                     label={
                         filterMode === 'single'
-                            ? format(parseLocalSafe(selectedDate), "EEEE d 'de' MMMM", { locale: es })
+                            ? format(parseLocalSafe(selectedDate), "EEE d MMM", { locale: es })
                             : (rangeStart && rangeEnd && isSameMonth(parseLocalSafe(rangeStart), parseLocalSafe(rangeEnd))
-                                ? format(parseLocalSafe(rangeStart), "MMMM 'de' yyyy", { locale: es })
+                                ? format(parseLocalSafe(rangeStart), "MMM yyyy", { locale: es })
                                 : 'Periodo')
                     }
                     onPrev={() => {
@@ -630,22 +612,29 @@ export default function VentasPage() {
                     onLabelClick={() => setIsTimeFilterOpen(true)}
                     prevAriaLabel="Periodo anterior"
                     nextAriaLabel="Periodo siguiente"
-                    hasActiveFilter={(() => {
-                        const today = new Date().toISOString().split('T')[0];
-                        return !(filterMode === 'single' && selectedDate === today && !hourFilter);
-                    })()}
-                    onClear={() => {
-                        const today = new Date().toISOString().split('T')[0];
-                        setHourFilter(null);
-                        setFilterMode('single');
-                        setSelectedDate(today);
-                    }}
-                    labelClassName="sm:max-w-[18rem] max-w-[min(100%,18rem)]"
                 />
-            </div>
-
+            }
+            rightSlot={
+                <div className="flex items-center gap-1 shrink-0 text-white">
+                    <PeriodFilterButton instance="ventas-period-filter" onClick={() => setIsTimeFilterOpen(true)} />
+                    {canAccessInsights ? (
+                        <Button
+                            type="button"
+                            variant="tertiary"
+                            instance="ventas-open-insights"
+                            onClick={() => {
+                                 if (!navigateInsideSandbox('/dashboard/insights')) router.push('/dashboard/insights');
+                             }}
+                            icon={<ChartLine className="w-[18px] h-[18px]" strokeWidth={2} fill="none" />}
+                            aria-label="Abrir insights"
+                            className="shrink-0"
+                        />
+                    ) : null}
+                </div>
+            }
+        >
                     {/* SECCIÓN DE KPIs */}
-                    <div className="pt-4 md:pt-5 pb-1 md:pb-1.5 px-4 grid grid-cols-3 border-b border-zinc-50 print:hidden">
+                    <div className="pt-1 pb-1 px-3 grid grid-cols-3 border-b border-zinc-50 print:hidden">
                         <div className="flex flex-col items-center justify-center text-center">
                             <span className="text-lg md:text-2xl font-black tabular-nums leading-none text-emerald-500">
                                 {summary.totalSales > 0 ? `${summary.totalSales.toFixed(2)}€` : " "}
@@ -784,13 +773,13 @@ export default function VentasPage() {
                                         <table data-component={TABLE_COMPONENT_ID} data-instance="ventas-tickets" className="w-full text-left border-collapse">
                                             <thead>
                                                 <tr>
-                                                    <th className="py-4 px-3 md:px-6 whitespace-nowrap">Hora</th>
-                                                    <th className="py-4 px-3 md:px-6 whitespace-nowrap">Documento</th>
-                                                    <th className="py-4 px-3 md:px-6 whitespace-nowrap">Mesa</th>
-                                                    <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap">Total</th>
+                                                    <th className="w-[22%]">Hora</th>
+                                                    <th className="w-[38%]">Documento</th>
+                                                    <th className="w-[18%]">Mesa</th>
+                                                    <th className="w-[22%] text-right">Total</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="text-xs font-bold text-zinc-600 bg-white">
+                                            <tbody className="font-bold text-zinc-600 bg-white">
                                                 {tickets.map((ticket, idx) => {
                                                     // Limpiamos los "0" al principio de "2TB0000X"
                                                     const cleanDocNumber = ticket.numero_documento
@@ -806,17 +795,17 @@ export default function VentasPage() {
                                                                     expandedTicket === ticket.numero_documento && "bg-zinc-50 border-transparent"
                                                                 )}
                                                             >
-                                                                <td className="py-3 px-2 md:px-4 whitespace-nowrap text-zinc-500 font-mono text-[10px] md:text-xs">
+                                                                <td className="whitespace-nowrap text-zinc-500 font-mono tabular-nums">
                                                                     {formatTicketTimeMadrid(ticket.hora_cierre, ticket.fecha)}
                                                                 </td>
-                                                                <td className="py-3 px-2 md:px-4 font-mono text-[10px] md:text-xs text-zinc-700">
+                                                                <td className="font-mono text-zinc-700">
                                                                     {cleanDocNumber}
                                                                 </td>
-                                                                <td className="py-3 px-2 md:px-4 font-mono text-[10px] md:text-xs text-zinc-500">
+                                                                <td className="font-mono text-zinc-500">
                                                                     {(!ticket.mesa || ticket.mesa === 0) ? 'Barra' : ticket.mesa}
                                                                 </td>
                                                                 <td className={cn(
-                                                                    "py-3 px-2 md:px-4 text-right font-black tabular-nums whitespace-nowrap text-[11px] md:text-sm",
+                                                                    "text-right font-black tabular-nums whitespace-nowrap",
                                                                     (ticket.total_documento || 0) > 0 ? "text-emerald-500" : "text-zinc-600"
                                                                 )}>
                                                                     {(ticket.total_documento || 0) !== 0 ? `${Number(ticket.total_documento).toFixed(2)}€` : ' '}
@@ -889,7 +878,7 @@ export default function VentasPage() {
                                                     onClick={() => setPageOffset((v) => Math.max(0, v - pageSize))}
                                                     disabled={pageOffset <= 0}
                                                     className={cn(
-                                                        "min-h-12 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors shrink-0",
+                                                        "min-h-12 px-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors shrink-0",
                                                         pageOffset <= 0 ? "bg-zinc-100 text-zinc-300" : "bg-white text-[#36606F] hover:bg-zinc-50 border border-zinc-200"
                                                     )}
                                                 >
@@ -900,7 +889,7 @@ export default function VentasPage() {
                                                     onClick={() => setPageOffset((v) => v + pageSize)}
                                                     disabled={(pageOffset + pageSize) >= summary.count}
                                                     className={cn(
-                                                        "min-h-12 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors shrink-0",
+                                                        "min-h-12 px-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors shrink-0",
                                                         (pageOffset + pageSize) >= summary.count
                                                             ? "bg-zinc-100 text-zinc-300"
                                                             : "bg-white text-[#36606F] hover:bg-zinc-50 border border-zinc-200"
@@ -922,33 +911,29 @@ export default function VentasPage() {
                                         <table data-component={TABLE_COMPONENT_ID} data-instance="ventas-productos" className="w-full text-left border-collapse">
                                             <thead>
                                                 <tr>
-                                                    <th className="py-4 px-3 md:px-6 whitespace-nowrap">Producto</th>
-                                                    <th className="py-4 px-2 md:px-4 text-center whitespace-nowrap">Cant</th>
-                                                    <th className="py-4 px-2 md:px-4 text-center whitespace-nowrap">Media</th>
-                                                    <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap">Total</th>
+                                                    <th className="w-[46%]">Producto</th>
+                                                    <th className="w-[16%] text-center">Cant</th>
+                                                    <th className="w-[18%] text-center">Media</th>
+                                                    <th className="w-[20%] text-right">Total</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="text-xs font-bold text-zinc-600 bg-white">
+                                            <tbody className="font-bold text-zinc-600 bg-white">
                                                 {products.map((prod, idx) => (
                                                     <tr
                                                         key={idx}
                                                         className="group hover:bg-zinc-50/80 transition-colors"
                                                     >
-                                                        <td className="py-3 px-2 md:px-4 whitespace-nowrap flex items-center gap-1.5 md:gap-3">
-                                                            <span className="text-[9px] md:text-[10px] font-black text-zinc-300 tabular-nums w-3 md:w-4 text-right">
-                                                                {prod.rank}
-                                                            </span>
-                                                            <span className="text-zinc-900 font-bold max-w-[100px] sm:max-w-[200px] truncate text-[10px] md:text-xs">
-                                                                {prod.nombre_articulo}
-                                                            </span>
+                                                        <td className="text-zinc-900">
+                                                            <span className="text-zinc-300 tabular-nums">{prod.rank} </span>
+                                                            {prod.nombre_articulo}
                                                         </td>
-                                                        <td className="py-3 px-1 md:px-4 text-center text-[10px] md:text-xs text-zinc-500">
+                                                        <td className="text-center text-zinc-500 tabular-nums">
                                                             {Number(prod.cantidad_total).toFixed(0)}
                                                         </td>
-                                                        <td className="py-3 px-1 md:px-4 text-center text-[10px] md:text-xs text-zinc-400">
+                                                        <td className="text-center text-zinc-400 tabular-nums whitespace-nowrap">
                                                             {Number(prod.precio_medio).toFixed(2)}€
                                                         </td>
-                                                        <td className="py-3 px-2 md:px-4 text-right font-black tabular-nums whitespace-nowrap text-emerald-500 text-[11px] md:text-sm">
+                                                        <td className="text-right font-black tabular-nums whitespace-nowrap text-emerald-500">
                                                             {Number(prod.total_ingresos).toFixed(2)}€
                                                         </td>
                                                     </tr>
@@ -966,28 +951,28 @@ export default function VentasPage() {
                                     <table data-component={TABLE_COMPONENT_ID} data-instance="ventas-horas" className="w-full text-left border-collapse">
                                         <thead>
                                             <tr>
-                                                <th className="py-4 px-3 md:px-6 whitespace-nowrap">Horas</th>
-                                                <th className="py-4 px-2 md:px-4 text-center whitespace-nowrap">Cant</th>
-                                                <th className="py-4 px-2 md:px-4 text-center whitespace-nowrap">Media</th>
-                                                <th className="py-4 px-3 md:px-6 text-right whitespace-nowrap">Total</th>
+                                                <th className="w-[28%]">Horas</th>
+                                                <th className="w-[18%] text-center">Cant</th>
+                                                <th className="w-[26%] text-center">Media</th>
+                                                <th className="w-[28%] text-right">Total</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="text-xs font-bold text-zinc-600 bg-white">
+                                        <tbody className="font-bold text-zinc-600 bg-white">
                                             {hourSlotsRows.map((row) => (
                                                 <tr
                                                     key={row.label}
                                                     className="group hover:bg-zinc-50/80 transition-colors"
                                                 >
-                                                    <td className="py-3 px-2 md:px-4 whitespace-nowrap font-mono text-[10px] md:text-xs font-bold text-zinc-900 tabular-nums">
+                                                    <td className="whitespace-nowrap font-mono font-bold text-zinc-900 tabular-nums">
                                                         {row.label}
                                                     </td>
-                                                    <td className="py-3 px-1 md:px-4 text-center text-[10px] md:text-xs text-zinc-500 tabular-nums">
+                                                    <td className="text-center text-zinc-500 tabular-nums">
                                                         {row.cant !== 0 ? row.cant : ' '}
                                                     </td>
-                                                    <td className="py-3 px-1 md:px-4 text-center text-[10px] md:text-xs text-zinc-400 tabular-nums">
+                                                    <td className="text-center text-zinc-400 tabular-nums">
                                                         {row.media !== 0 ? `${row.media.toFixed(2)}€` : ' '}
                                                     </td>
-                                                    <td className="py-3 px-2 md:px-4 text-right font-black tabular-nums whitespace-nowrap text-emerald-500 text-[11px] md:text-sm">
+                                                    <td className="text-right font-black tabular-nums whitespace-nowrap text-emerald-500">
                                                         {row.total !== 0 ? `${row.total.toFixed(2)}€` : ' '}
                                                     </td>
                                                 </tr>
@@ -1016,7 +1001,7 @@ export default function VentasPage() {
                             type="button"
                             onClick={() => setCalendarBaseDate(subMonths(calendarBaseDate, 1))}
                             aria-label="Mes anterior"
-                            className="min-h-12 min-w-12 inline-flex items-center justify-center hover:bg-zinc-50 rounded-2xl transition-colors"
+                            className="min-h-12 min-w-12 inline-flex items-center justify-center hover:bg-zinc-50 rounded-lg transition-colors"
                         >
                             <ChevronLeft size={20} className="text-zinc-400" />
                         </button>
@@ -1025,7 +1010,7 @@ export default function VentasPage() {
                             type="button"
                             onClick={() => setCalendarBaseDate(addDays(endOfMonth(calendarBaseDate), 1))}
                             aria-label="Mes siguiente"
-                            className="min-h-12 min-w-12 inline-flex items-center justify-center hover:bg-zinc-50 rounded-2xl transition-colors"
+                            className="min-h-12 min-w-12 inline-flex items-center justify-center hover:bg-zinc-50 rounded-lg transition-colors"
                         >
                             <ChevronRight size={20} className="text-zinc-400" />
                         </button>
@@ -1046,7 +1031,7 @@ export default function VentasPage() {
                                     key={i}
                                     onClick={() => handleDateSelect(day)}
                                     className={cn(
-                                        "aspect-square flex items-center justify-center rounded-2xl text-[11px] font-black transition-all min-h-[44px]",
+                                        "aspect-square flex items-center justify-center rounded-lg text-[11px] font-black transition-all min-h-[44px]",
                                         isSelected ? "bg-zinc-900 text-white shadow-xl scale-110" : isInRange ? "bg-blue-50 text-[#5B8FB9]" : "hover:bg-zinc-50 text-zinc-600"
                                     )}
                                 >
@@ -1072,7 +1057,7 @@ export default function VentasPage() {
                             type="button"
                             onClick={() => setPickerYear(pickerYear - 1)}
                             aria-label="Año anterior"
-                            className="min-h-12 min-w-12 inline-flex items-center justify-center hover:bg-zinc-50 rounded-2xl transition-colors"
+                            className="min-h-12 min-w-12 inline-flex items-center justify-center hover:bg-zinc-50 rounded-lg transition-colors"
                         >
                             <ChevronLeft size={20} className="text-zinc-400" />
                         </button>
@@ -1081,7 +1066,7 @@ export default function VentasPage() {
                             type="button"
                             onClick={() => setPickerYear(pickerYear + 1)}
                             aria-label="Año siguiente"
-                            className="min-h-12 min-w-12 inline-flex items-center justify-center hover:bg-zinc-50 rounded-2xl transition-colors"
+                            className="min-h-12 min-w-12 inline-flex items-center justify-center hover:bg-zinc-50 rounded-lg transition-colors"
                         >
                             <ChevronRight size={20} className="text-zinc-400" />
                         </button>
@@ -1105,7 +1090,7 @@ export default function VentasPage() {
                                         trackVentasMonthPicker(formatMonthYear(pickerYear, i));
                                     }}
                                     className={cn(
-                                        "min-h-12 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2",
+                                        "min-h-12 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border-2",
                                         isSelected
                                             ? "bg-zinc-900 border-zinc-900 text-white shadow-lg scale-105"
                                             : "bg-zinc-50 border-transparent text-zinc-400 hover:border-zinc-200 hover:text-zinc-900"

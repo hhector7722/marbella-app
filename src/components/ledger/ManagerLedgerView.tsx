@@ -14,7 +14,7 @@ import { format, startOfMonth, endOfMonth, isSameMonth, subMonths, addMonths } f
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { PeriodNav } from '@/components/time/PeriodNav';
+import { PeriodNav, PeriodFilterButton } from '@/components/time/PeriodNav';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { Modal } from '@/components/ui/modal';
@@ -306,8 +306,21 @@ export default function ManagerLedgerView() {
                 template="list"
                 maxWidthClass="max-w-4xl"
                 contentClassName="p-0 flex flex-col min-h-0"
+                periodSlot={
+                    <PeriodNav
+                        label={
+                            filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(parseLocalSafe(rangeStart), parseLocalSafe(rangeEnd))
+                                ? format(parseLocalSafe(rangeStart), 'MMMM yyyy', { locale: es })
+                                : 'Periodo'
+                        }
+                        onPrev={handlePrevMonth}
+                        onNext={handleNextMonth}
+                        onLabelClick={() => setIsTimeFilterOpen(true)}
+                    />
+                }
                 rightSlot={
                     <div className="flex items-center gap-1 md:gap-2 shrink-0 text-white">
+                        <PeriodFilterButton instance="ledger-period-filter" onClick={() => setIsTimeFilterOpen(true)} />
                         <Button
                             type="button"
                             variant="tertiary"
@@ -319,33 +332,6 @@ export default function ManagerLedgerView() {
                     </div>
                 }
             >
-                    <div className="px-2 pt-3">
-                        <PeriodNav
-                            label={
-                                filterMode === 'range' && rangeStart && rangeEnd && isSameMonth(parseLocalSafe(rangeStart), parseLocalSafe(rangeEnd))
-                                    ? format(parseLocalSafe(rangeStart), 'MMMM yyyy', { locale: es })
-                                    : 'Seleccionar mes'
-                            }
-                            onPrev={handlePrevMonth}
-                            onNext={handleNextMonth}
-                            onLabelClick={() => setIsTimeFilterOpen(true)}
-                            hasActiveFilter={(() => {
-                                const d = new Date();
-                                const defS = format(startOfMonth(d), 'yyyy-MM-dd');
-                                const defE = format(endOfMonth(d), 'yyyy-MM-dd');
-                                return !(filterMode === 'range' && rangeStart === defS && rangeEnd === defE);
-                            })()}
-                            onClear={() => {
-                                const d = new Date();
-                                const s = startOfMonth(d);
-                                const e = endOfMonth(d);
-                                setFilterMode('range');
-                                setRangeStart(format(s, 'yyyy-MM-dd'));
-                                setRangeEnd(format(e, 'yyyy-MM-dd'));
-                            }}
-                        />
-                    </div>
-
                     {/* CUERPO: resumen 3 columnas (Ingresos, Gastos, Saldo) sin Arqueo ni Diferencia */}
                     <div className="bg-white">
                         <div className="py-4 px-2 grid grid-cols-3 border-b border-zinc-50">
