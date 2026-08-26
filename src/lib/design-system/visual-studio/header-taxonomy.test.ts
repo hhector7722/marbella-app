@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { mkdtempSync, mkdirSync, rmSync } from 'node:fs';
+import { cpSync, mkdtempSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { loadRegistry, writeRegistry, emptyRegistry } from '../canon/io.ts';
@@ -11,7 +11,9 @@ import {
     HEADER_SPECIALIZED_IDS,
     isIndependentVisualCanon,
     STUDIO_ELEMENTS,
+    actualValues,
 } from './catalog.ts';
+import { applyCssContract } from './css-apply.ts';
 import { freezeableElement, gateCanonDecision } from './decision.ts';
 
 describe('Taxonomía de cabeceras', () => {
@@ -22,7 +24,40 @@ describe('Taxonomía de cabeceras', () => {
         assert.equal(element.properties.find((item) => item.id === 'title-size')?.actualId, 'tipo.titulo-pantalla');
         assert.equal(element.properties.find((item) => item.id === 'px')?.actualId, 'espacio.4');
         assert.equal(element.properties.find((item) => item.id === 'py')?.actualId, 'espacio.4');
+        assert.equal(element.properties.find((item) => item.id === 'height')?.actualId, 'auto');
+        assert.equal(
+            element.properties.find((item) => item.id === 'height')?.options.some((option) => option.id === 'estructura.cabecera-modal' && option.value === '36px'),
+            true
+        );
         assert.match(element.warning ?? '', /T1/);
+    });
+
+    it('page-header puede ensayar la altura del modal sin inventar token', () => {
+        const element = getStudioElement('page-header');
+        assert.ok(element);
+        const height = element.properties.find((item) => item.id === 'height');
+        assert.ok(height);
+        const modal = height.options.find((option) => option.id === 'estructura.cabecera-modal');
+        assert.ok(modal);
+        assert.equal(modal.value, '36px');
+        assert.equal(modal.requiresNewToken, undefined);
+        const dir = mkdtempSync(join(tmpdir(), 'ds-header-css-'));
+        mkdirSync(join(dir, 'src/app'), { recursive: true });
+        cpSync(join(process.cwd(), 'src/app/globals.css'), join(dir, 'src/app/globals.css'));
+        try {
+            const patched = applyCssContract(
+                element,
+                { ...actualValues(element), height: 'estructura.cabecera-modal' },
+                dir
+            );
+            assert.equal(patched.ok, true);
+            const css = readFileSync(join(dir, 'src/app/globals.css'), 'utf8');
+            assert.match(css, /\[data-component='PageScreen'\] \[data-element='header'\][\s\S]*?height:\s*var\(--modal-header-height\)/);
+            assert.match(css, /--page-header-scale:\s*calc\(var\(--page-header-height\) \/ var\(--tactil-minimo\)\)/);
+            assert.match(css, /padding-block:\s*0/);
+        } finally {
+            rmSync(dir, { recursive: true, force: true });
+        }
     });
 
     it('block-header permanece SIN CANON y no es congelable', () => {

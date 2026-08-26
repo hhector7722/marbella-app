@@ -28,7 +28,7 @@ describe('Design System Studio — escenas', () => {
             true
         );
         assert.equal(
-            LOOK_SHORTCUTS.some((item) => item.elementId === 'page-header' && item.propertyId === 'py'),
+            LOOK_SHORTCUTS.some((item) => item.elementId === 'page-header' && item.propertyId === 'height'),
             true
         );
         assert.equal(

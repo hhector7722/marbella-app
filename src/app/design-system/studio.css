@@ -17,6 +17,30 @@
   align-items: flex-end;
 }
 
+[data-studio-preview='header'] [data-component='Button'] {
+  height: calc(var(--tactil-minimo) * var(--page-header-scale, 1));
+  min-height: calc(var(--tactil-minimo) * var(--page-header-scale, 1));
+  max-height: calc(var(--tactil-minimo) * var(--page-header-scale, 1));
+  font-size: calc(12px * var(--page-header-scale, 1));
+}
+[data-studio-preview='header'] [data-component='Button'][data-icon-only='true'] {
+  width: calc(var(--tactil-minimo) * var(--page-header-scale, 1));
+  min-width: calc(var(--tactil-minimo) * var(--page-header-scale, 1));
+}
+[data-studio-preview='header'] [data-component='Button'] [data-element='icon'] svg {
+  width: calc(20px * var(--page-header-scale, 1));
+  height: calc(20px * var(--page-header-scale, 1));
+}
+[data-studio-preview='header'] [data-component='Button']::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--tactil-minimo);
+  height: var(--tactil-minimo);
+  transform: translate(-50%, -50%);
+}
+
 [data-studio-preview='button'] [data-component='Button'] {
   height: var(--studio-height, var(--tactil-minimo));
   min-height: var(--studio-height, var(--tactil-minimo));

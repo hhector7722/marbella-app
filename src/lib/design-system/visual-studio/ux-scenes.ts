@@ -110,11 +110,11 @@ export const LOOK_SHORTCUTS: readonly LookShortcut[] = [
         blurb: 'Más redondos o más cuadrados.',
     },
     {
-        id: 'page-header-py',
+        id: 'page-header-height',
         elementId: 'page-header',
-        propertyId: 'py',
+        propertyId: 'height',
         title: 'Cabeceras de página',
-        blurb: 'Más aire o más bajas.',
+        blurb: 'Más bajas, hasta la del modal.',
     },
     {
         id: 'segmented-density',

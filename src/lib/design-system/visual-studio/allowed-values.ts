@@ -103,6 +103,28 @@ export const HEIGHT_OPTIONS: TokenOption[] = [
     },
 ];
 
+/** Altura de cabecera de PageScreen. El suelo es la cabecera de modal (36 px). */
+export const PAGE_HEADER_HEIGHT_OPTIONS: TokenOption[] = [
+    {
+        id: 'auto',
+        label: 'La marcan el padding y el botón',
+        token: '—',
+        value: 'auto',
+        kind: 'declared',
+        note: 'Sin altura fija. Es el contrato actual.',
+    },
+    opt('tactil.minimo', '48px', 'adopted', {
+        cssVar: '--tactil-minimo',
+        label: '48 px · táctil mínimo',
+        note: 'La barra mide lo mismo que el toque mínimo.',
+    }),
+    opt('estructura.cabecera-modal', '36px', 'adopted', {
+        cssVar: '--modal-header-height',
+        label: '36 px · cabecera de modal',
+        note: 'Misma altura que el modal. El Button de atrás sigue midiendo 48 px de toque; en el modal el chrome no es Button.',
+    }),
+];
+
 export const SPACE_OPTIONS: TokenOption[] = [
     opt('espacio.1', '4px', 'adopted', { cssVar: '--espacio-1' }),
     opt('espacio.2', '8px', 'adopted', { cssVar: '--espacio-2' }),
@@ -177,6 +199,7 @@ const TOKEN_TABLES: TokenOption[][] = [
     COLOR_OPTIONS,
     RADIUS_OPTIONS,
     HEIGHT_OPTIONS,
+    PAGE_HEADER_HEIGHT_OPTIONS,
     SPACE_OPTIONS,
     TYPE_SIZE_OPTIONS,
     ALIGN_X_OPTIONS,

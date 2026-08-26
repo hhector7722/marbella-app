@@ -161,13 +161,20 @@ function patchButton(css: string, values: Record<string, string>): string | null
     return next;
 }
 
+function removeDecl(body: string, property: string): string {
+    return body.replace(new RegExp(`\\s*${property}:\\s*[^;]+;`, 'g'), '');
+}
+
 function patchPageHeader(css: string, values: Record<string, string>): string | null {
     const px = cssVarFn(values.px ?? '');
     const py = cssVarFn(values.py ?? '');
     const alignX = values['align-x'];
     const alignY = values['align-y'];
     const title = tokenById(values['title-size'] ?? '');
+    const heightId = values.height ?? 'auto';
+    const height = heightId === 'auto' ? null : cssVarFn(heightId);
     if (!px || !py || !alignX || !alignY) return null;
+    if (heightId !== 'auto' && !height) return null;
 
     let next = replaceRule(
         css,
@@ -181,7 +188,27 @@ function patchPageHeader(css: string, values: Record<string, string>): string | 
                 out = setDecl(out, 'gap', 'var(--espacio-3)');
             }
             out = setDecl(out, 'padding-inline', px);
-            out = setDecl(out, 'padding-block', py);
+            if (height) {
+                out = setDecl(out, 'box-sizing', 'border-box');
+                out = setDecl(out, '--page-header-height', height);
+                out = setDecl(
+                    out,
+                    '--page-header-scale',
+                    'calc(var(--page-header-height) / var(--tactil-minimo))'
+                );
+                out = setDecl(out, 'height', height);
+                out = setDecl(out, 'min-height', height);
+                out = setDecl(out, 'max-height', height);
+                out = setDecl(out, 'padding-block', '0');
+            } else {
+                out = removeDecl(out, 'box-sizing');
+                out = removeDecl(out, '--page-header-height');
+                out = setDecl(out, '--page-header-scale', '1');
+                out = removeDecl(out, 'height');
+                out = removeDecl(out, 'min-height');
+                out = removeDecl(out, 'max-height');
+                out = setDecl(out, 'padding-block', py);
+            }
             return out;
         }
     );

@@ -13,7 +13,7 @@ import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
 import { Surface } from '@/components/ui/Surface';
 import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
 import { DocumentListRow } from '@/components/ui/DocumentListRow';
-import { COLOR_OPTIONS, SPACE_OPTIONS, TYPE_SIZE_OPTIONS, findOption } from '@/lib/design-system/visual-studio/allowed-values';
+import { COLOR_OPTIONS, SPACE_OPTIONS, TYPE_SIZE_OPTIONS, PAGE_HEADER_HEIGHT_OPTIONS, findOption } from '@/lib/design-system/visual-studio/allowed-values';
 import type { PropertyValues, StudioElement } from '@/lib/design-system/visual-studio/types';
 import { humanSummary } from '@/lib/design-system/visual-studio/ux-copy';
 import { SampleLabel } from './catalog-kit';
@@ -58,16 +58,32 @@ export function StudioHeaderFrame({
     const padX = findOption(SPACE_OPTIONS, values.px ?? 'espacio.4');
     const padY = findOption(SPACE_OPTIONS, values.py ?? 'espacio.4');
     const titleSize = findOption(TYPE_SIZE_OPTIONS, values['title-size'] ?? 'tipo.titulo-pantalla');
+    const height = findOption(PAGE_HEADER_HEIGHT_OPTIONS, values.height ?? 'auto');
+    const fixedHeight = Boolean(height && height.id !== 'auto');
+    const heightCss = height?.cssVar ? `var(${height.cssVar})` : height?.value;
     return (
         <div
             data-studio-preview="header"
             data-element="header"
             data-align-x={alignX}
             data-align-y={alignY}
-            className={`flex gap-ds-2 min-h-ds-tactil ${petroleum ? 'bg-ds-marca text-ds-texto-invertido' : 'bg-ds-superficie border-b border-ds-borde'}`}
+            data-fixed-height={fixedHeight ? 'true' : undefined}
+            className={`flex gap-ds-2 ${fixedHeight ? '' : 'min-h-ds-tactil '} ${petroleum ? 'bg-ds-marca text-ds-texto-invertido' : 'bg-ds-superficie border-b border-ds-borde'}`}
             style={{
                 paddingInline: padX?.cssVar ? `var(${padX.cssVar})` : padX?.value,
-                paddingBlock: padY?.cssVar ? `var(${padY.cssVar})` : padY?.value,
+                paddingBlock: fixedHeight ? 0 : padY?.cssVar ? `var(${padY.cssVar})` : padY?.value,
+                ...(fixedHeight && heightCss
+                    ? {
+                          ['--page-header-height' as string]: heightCss,
+                          ['--page-header-scale' as string]:
+                              'calc(var(--page-header-height) / var(--tactil-minimo))',
+                          ['--studio-height' as string]: heightCss,
+                          height: heightCss,
+                          minHeight: heightCss,
+                          maxHeight: heightCss,
+                          boxSizing: 'border-box',
+                      }
+                    : { ['--page-header-scale' as string]: '1' }),
             }}
         >
             <div className="flex items-center gap-ds-2 min-w-0">
@@ -80,8 +96,9 @@ export function StudioHeaderFrame({
                     />
                 ) : null}
                 <p
+                    data-element="title"
                     className="m-0 font-black uppercase tracking-wider truncate"
-                    style={{ fontSize: titleSize?.value ?? '18px' }}
+                    style={{ fontSize: `calc(${titleSize?.value ?? '18px'} * var(--page-header-scale, 1))` }}
                 >
                     {title}
                 </p>

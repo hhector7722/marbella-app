@@ -441,13 +441,16 @@
 /*
  * Cabecera petróleo canónica: PageScreen y Surface page (primer hijo).
  * Padding, color y título los fija el sistema; compactHeader no encoge el tipo.
+ * --page-header-scale: 1 es el contrato actual. Una altura fija (ensayo → oficial)
+ * lo calcula como alto / tactil.minimo; el contenido se reduce en proporción.
  */
 [data-component='PageScreen'] [data-element='header'],
 [data-component='Surface'][data-variant='page'] > [data-element='header'] {
+  --page-header-scale: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--espacio-3);
+  gap: calc(var(--espacio-3) * var(--page-header-scale));
   background-color: var(--color-marca);
   color: var(--color-texto-invertido);
   padding-inline: var(--espacio-4);
@@ -467,7 +470,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-weight: 900;
-  font-size: 1.125rem;
+  font-size: calc(1.125rem * var(--page-header-scale, 1));
   line-height: 1.25;
   color: var(--color-texto-invertido);
   text-transform: uppercase;
@@ -476,7 +479,7 @@
 @media (min-width: 768px) {
   [data-component='PageScreen'] [data-element='title'],
   [data-component='Surface'][data-variant='page'] > [data-element='header'] [data-element='title'] {
-    font-size: 1.25rem;
+    font-size: calc(1.25rem * var(--page-header-scale, 1));
   }
 }
 [data-component='Surface'][data-variant='block'] > [data-element='header'] {
@@ -510,9 +513,40 @@
 [data-component='Surface'][data-variant='page'] > [data-element='header'] [data-component='Button'][data-variant='tertiary']:hover:not(:disabled)::before {
   background-color: color-mix(in srgb, var(--color-texto-invertido) 15%, transparent);
 }
+[data-component='PageScreen'] [data-element='header'] [data-component='Button'],
+[data-component='Surface'][data-variant='page'] > [data-element='header'] [data-component='Button'] {
+  height: calc(var(--tactil-minimo) * var(--page-header-scale, 1));
+  min-height: calc(var(--tactil-minimo) * var(--page-header-scale, 1));
+  max-height: calc(var(--tactil-minimo) * var(--page-header-scale, 1));
+  font-size: calc(12px * var(--page-header-scale, 1));
+}
+[data-component='PageScreen'] [data-element='header'] [data-component='Button'][data-icon-only='true'],
+[data-component='Surface'][data-variant='page'] > [data-element='header'] [data-component='Button'][data-icon-only='true'] {
+  width: calc(var(--tactil-minimo) * var(--page-header-scale, 1));
+  min-width: calc(var(--tactil-minimo) * var(--page-header-scale, 1));
+}
+[data-component='PageScreen'] [data-element='header'] [data-component='Button'] [data-element='icon'] svg,
+[data-component='Surface'][data-variant='page'] > [data-element='header'] [data-component='Button'] [data-element='icon'] svg {
+  width: calc(20px * var(--page-header-scale, 1));
+  height: calc(20px * var(--page-header-scale, 1));
+}
+[data-component='PageScreen'] [data-element='header'] [data-component='Button']::after,
+[data-component='Surface'][data-variant='page'] > [data-element='header'] [data-component='Button']::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--tactil-minimo);
+  height: var(--tactil-minimo);
+  transform: translate(-50%, -50%);
+}
+[data-component='PageScreen'] [data-element='header'] [data-element='actions'],
+[data-component='Surface'][data-variant='page'] > [data-element='header'] [data-element='actions'] {
+  max-height: 100%;
+}
 [data-component='PageScreen'] [data-element='subtitle'] {
-  margin: 0.25rem 0 0;
-  font-size: 10px;
+  margin: calc(0.25rem * var(--page-header-scale, 1)) 0 0;
+  font-size: calc(10px * var(--page-header-scale, 1));
   font-weight: 700;
   line-height: 1.3;
   color: color-mix(in srgb, var(--color-texto-invertido) 60%, transparent);

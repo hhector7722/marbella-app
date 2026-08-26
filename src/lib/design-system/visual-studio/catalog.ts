@@ -4,6 +4,7 @@ import {
     DENSITY_OPTIONS,
     FOCUS_OPTIONS,
     HEIGHT_OPTIONS,
+    PAGE_HEADER_HEIGHT_OPTIONS,
     RADIUS_OPTIONS,
     SPACE_OPTIONS,
     TYPE_SIZE_OPTIONS,
@@ -124,7 +125,7 @@ export const STUDIO_ELEMENTS: StudioElement[] = [
         warning:
             'Este contrato también comparte chrome con determinadas superficies T1. Cambiarlo puede afectar a esas superficies.',
         facts: [
-            { label: 'Geometría', value: 'Sin min-height fijo. La altura la fijan padding + título + Button 48 px.' },
+            { label: 'Geometría', value: 'Sin min-height fijo de canon. Se puede ensayar 48 px (táctil) o 36 px (estructura.cabecera-modal). El contenido se escala respecto a 48 px; el toque de Button sigue siendo 48 px.' },
             { label: 'Padding', value: 'espacio.4 horizontal y vertical (canon). En md el CSS sube el horizontal; eso no está congelado.' },
             { label: 'Alineación horizontal', value: 'Extremos' },
             { label: 'Alineación vertical', value: 'Centro' },
@@ -134,6 +135,7 @@ export const STUDIO_ELEMENTS: StudioElement[] = [
             { label: 'Impacto', value: 'PageScreen T2/T3/T4. El selector CSS también pinta Surface page > header (T1).' },
         ],
         properties: [
+            prop('height', 'Altura', 'auto', PAGE_HEADER_HEIGHT_OPTIONS, 'choice'),
             prop('align-x', 'Alineación', 'edges', ALIGN_X_OPTIONS, 'alignment-x'),
             prop('align-y', 'Vertical', 'center', ALIGN_Y_OPTIONS, 'alignment-y'),
             prop('px', 'Padding horizontal', 'espacio.4', SPACE_OPTIONS),
