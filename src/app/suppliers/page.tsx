@@ -14,6 +14,7 @@ import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import { CatalogGrid, CatalogTile } from '@/components/catalog/CatalogTile';
 import { EmptyState } from '@/components/ui/EmptyState';
 
 interface Supplier {
@@ -555,37 +556,18 @@ export default function SuppliersPage() {
                 </div>
             ) : (
                 <>
-                <div className="grid grid-cols-3 gap-6 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8">
+                <CatalogGrid>
                     {filteredSuppliers.map((supplier) => (
-                        <div key={supplier.id} className="relative group">
-                            <div
-                                onClick={() => {
-                                    trackSupplierDetail(namedEntitySummary(supplier.name));
-                                    setDetailSupplier(supplier);
-                                }}
-                                className="bg-white rounded-2xl p-1.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col active:scale-95"
-                            >
-                                <div className="h-14 w-full bg-white rounded-lg flex items-center justify-center mb-1 overflow-hidden relative">
-                                    {getSupplierLogo(supplier.image_url, supplier.name) ? (
-                                        <img
-                                            src={getSupplierLogo(supplier.image_url, supplier.name) || ''}
-                                            alt=""
-                                            className="w-full h-full object-contain"
-                                        />
-                                    ) : (
-                                        <Truck className="w-6 h-6 text-gray-200" />
-                                    )}
-                                </div>
-                                <div className="flex justify-between items-center mt-auto px-0.5 gap-1">
-                                    <span
-                                        className="font-bold text-gray-700 text-[10px] leading-tight truncate"
-                                        title={supplier.name}
-                                    >
-                                        {supplier.name}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
+                        <CatalogTile
+                            key={supplier.id}
+                            title={supplier.name}
+                            imageSrc={getSupplierLogo(supplier.image_url, supplier.name)}
+                            fallback={<Truck className="h-8 w-8 md:h-10 md:w-10" />}
+                            onClick={() => {
+                                trackSupplierDetail(namedEntitySummary(supplier.name));
+                                setDetailSupplier(supplier);
+                            }}
+                        />
                     ))}
                     {filteredSuppliers.length === 0 && !loading && (
                         <div className="col-span-full py-20">
@@ -596,7 +578,7 @@ export default function SuppliersPage() {
                             />
                         </div>
                     )}
-                </div>
+                </CatalogGrid>
                 <div className="scroll-end-touch" aria-hidden />
                 </>
             )}

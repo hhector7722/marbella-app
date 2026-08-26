@@ -237,8 +237,8 @@
 /*
  * Contrato Button. La especificidad del atributo impide que utilidades
  * Tailwind de altura, color, radio o tipo escapen del contrato.
- * Hit-area 48px transparente. Fondo visual compacto ~28px.
- * Radio contractual = espacio.2 (8px). Distinto de radio.superficie del Modal.
+ * Hit-area 48px transparente. El relleno visual abraza el texto/icono
+ * (12px tipo + espacio.1×2 = 20px). Radio 8px < 10px: esquinas, no cápsula.
  */
 [data-component='Button'] {
   box-sizing: border-box;
@@ -252,7 +252,7 @@
   height: var(--tactil-minimo);
   min-height: var(--tactil-minimo);
   max-height: var(--tactil-minimo);
-  padding-inline: var(--espacio-2);
+  padding-inline: var(--espacio-1);
   padding-block: 0;
   border-width: 0;
   border-style: solid;
@@ -282,8 +282,7 @@
   pointer-events: none;
   inset-inline: 0;
   top: 50%;
-  /* 12px tipo + espacio.2×2 = 28px. Radio 8px < 14px: esquinas, no cápsula. */
-  height: calc(12px + var(--espacio-2) * 2);
+  height: calc(12px + var(--espacio-1) * 2);
   transform: translateY(-50%);
   box-sizing: border-box;
   border-width: 1px;
@@ -308,10 +307,12 @@
 }
 
 [data-component='Button'][data-icon-only='true']::before {
-  inset: 0;
-  top: 0;
-  height: auto;
-  transform: none;
+  inset: auto;
+  top: 50%;
+  left: 50%;
+  width: calc(1.25rem + var(--espacio-1) * 2);
+  height: calc(1.25rem + var(--espacio-1) * 2);
+  transform: translate(-50%, -50%);
 }
 
 [data-component='Button'][data-variant='primary'] {
@@ -440,21 +441,44 @@
 
 /*
  * Cabecera petróleo canónica: PageScreen y Surface page (primer hijo).
- * Padding, color y título los fija el sistema; compactHeader no encoge el tipo.
- * --page-header-scale: 1 es el contrato actual. Una altura fija (ensayo → oficial)
- * lo calcula como alto / tactil.minimo; el contenido se reduce en proporción.
+ * Altura = cabecera de modal (estructura.cabecera-modal). El contenido se
+ * escala respecto a tactil.minimo para caber sin recorte ni ellipsis.
+ * compactHeader no encoge el tipo por su cuenta.
  */
+[data-component='PageScreen'] {
+  box-sizing: border-box;
+  padding-inline: var(--espacio-1);
+  padding-top: var(--espacio-1);
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 768px) {
+  [data-component='PageScreen'] {
+    padding-inline: var(--espacio-4);
+    padding-top: var(--espacio-4);
+  }
+}
+[data-component='PageScreen'] [data-component='Surface'][data-variant='page'] {
+  height: auto;
+  min-height: 0;
+  flex: none;
+}
 [data-component='PageScreen'] [data-element='header'],
 [data-component='Surface'][data-variant='page'] > [data-element='header'] {
-  --page-header-scale: 1;
+  --page-header-height: var(--modal-header-height);
+  --page-header-scale: calc(var(--page-header-height) / var(--tactil-minimo));
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: calc(var(--espacio-3) * var(--page-header-scale));
+  height: var(--page-header-height);
+  min-height: var(--page-header-height);
+  max-height: var(--page-header-height);
+  overflow: hidden;
   background-color: var(--color-marca);
   color: var(--color-texto-invertido);
   padding-inline: var(--espacio-4);
-  padding-block: var(--espacio-4);
+  padding-block: 0;
 }
 @media (min-width: 768px) {
   [data-component='PageScreen'] [data-element='header'],
@@ -466,15 +490,14 @@
 [data-component='Surface'][data-variant='page'] > [data-element='header'] [data-element='title'] {
   margin: 0;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
   font-weight: 900;
   font-size: calc(1.125rem * var(--page-header-scale, 1));
   line-height: 1.25;
   color: var(--color-texto-invertido);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 @media (min-width: 768px) {
   [data-component='PageScreen'] [data-element='title'],
@@ -545,16 +568,22 @@
   color: var(--color-texto-invertido);
 }
 [data-component='PageScreen'] [data-element='header'] [data-component='Button'][data-variant='tertiary'],
-[data-component='Surface'][data-variant='page'] > [data-element='header'] [data-component='Button'][data-variant='tertiary'] {
+[data-component='Surface'][data-variant='page'] > [data-element='header'] [data-component='Button'][data-variant='tertiary'],
+[data-component='PageScreen'] [data-element='header'] [data-component='Button'][data-variant='secondary'],
+[data-component='Surface'][data-variant='page'] > [data-element='header'] [data-component='Button'][data-variant='secondary'],
+[data-component='PageScreen'] [data-element='header'] [data-component='Button'][data-variant='primary'],
+[data-component='Surface'][data-variant='page'] > [data-element='header'] [data-component='Button'][data-variant='primary'] {
   color: var(--color-texto-invertido);
 }
-[data-component='PageScreen'] [data-element='header'] [data-component='Button'][data-variant='tertiary']::before,
-[data-component='Surface'][data-variant='page'] > [data-element='header'] [data-component='Button'][data-variant='tertiary']::before {
-  border-color: color-mix(in srgb, var(--color-texto-invertido) 28%, transparent);
+[data-component='PageScreen'] [data-element='header'] [data-component='Button']::before,
+[data-component='Surface'][data-variant='page'] > [data-element='header'] [data-component='Button']::before {
+  background-color: transparent;
+  border-color: transparent;
 }
-[data-component='PageScreen'] [data-element='header'] [data-component='Button'][data-variant='tertiary']:hover:not(:disabled)::before,
-[data-component='Surface'][data-variant='page'] > [data-element='header'] [data-component='Button'][data-variant='tertiary']:hover:not(:disabled)::before {
-  background-color: color-mix(in srgb, var(--color-texto-invertido) 15%, transparent);
+[data-component='PageScreen'] [data-element='header'] [data-component='Button']:hover:not(:disabled)::before,
+[data-component='Surface'][data-variant='page'] > [data-element='header'] [data-component='Button']:hover:not(:disabled)::before {
+  background-color: transparent;
+  border-color: transparent;
 }
 [data-component='PageScreen'] [data-element='header'] [data-component='Button'],
 [data-component='Surface'][data-variant='page'] > [data-element='header'] [data-component='Button'] {
@@ -595,10 +624,8 @@
   color: color-mix(in srgb, var(--color-texto-invertido) 60%, transparent);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  overflow: visible;
+  white-space: nowrap;
 }
 
 /*
@@ -1245,8 +1272,18 @@
   /**
    * Calendario mensual a 1 viewport en escritorio (≥1024px).
    * Filas de igual altura (minmax(0,1fr) + min-height:0 en celdas).
-   * Smartphone/tablet: sin cambios (media query).
+   * Smartphone: el grid usa el ancho útil, siempre menor que la PageScreen.
    */
+  @media (max-width: 1023px) {
+    [data-component='PageScreen'].month-cal-shell .month-cal-grid-wrap,
+    [data-component='PageScreen'].month-cal-shell .month-cal-days,
+    [data-component='PageScreen'].month-cal-shell .month-cal-weeks {
+      width: calc(100% - var(--espacio-2));
+      max-width: calc(100% - var(--espacio-2));
+      margin-inline: auto;
+    }
+  }
+
   @media (min-width: 1024px) {
     .month-cal-shell {
       --marbella-cal-header: calc(3.5rem + env(safe-area-inset-top, 0px));

@@ -52,7 +52,7 @@ Button
 | `tertiary` | `color.marca` | Menor jerarquía. El petróleo no pinta `primary` |
 | `destructive` | `color.negativo` | Eliminar, destruir, acción irreversible |
 
-Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`** (ancho = contenido + padding horizontal). `fill` / ancho completo solo cuando el consumidor lo declara. El host táctil mide `tactil.minimo` (48 px): área de toque transparente; no obliga al fondo visual. El fondo visual compacto es independiente: 12 px de tipo + `espacio.2` arriba y abajo = 28 px. Padding horizontal compacto: `espacio.2`. Radio contractual del Button: 8 px (`espacio.2`), estrictamente menor que la mitad del alto visual (14 px) para dejar tramo recto, no píldora. No usa `radio.superficie` (16 px), que permanece en Modal. Icon-only conserva superficie visual 48×48. El Footer de Modal usa Button de texto, sin iconos, hug.
+Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`** (ancho = contenido + padding horizontal). `fill` / ancho completo solo cuando el consumidor lo declara. El host táctil mide `tactil.minimo` (48 px): área de toque transparente; no obliga al fondo visual. El relleno visual abraza el texto o el icono: 12 px de tipo + `espacio.1` arriba y abajo = 20 px. Padding horizontal compacto: `espacio.1`. Radio contractual del Button: 8 px (`espacio.2`), estrictamente menor que la mitad del alto visual (10 px) para dejar tramo recto, no píldora. No usa `radio.superficie` (16 px), que permanece en Modal. Icon-only conserva toque 48×48; el relleno visual abraza el icono. El Footer de Modal usa Button de texto, sin iconos, hug.
 
 **Estados**: reposo, hover (sin scale-up), pulsado (`scale(0.95)`), foco visible (anillo de marca), en curso (equivale a deshabilitado + spinner a la izquierda), deshabilitado (opacity 50). El estado visual de error no se implementa en v1: el error vive en el campo o el aviso.
 
@@ -261,7 +261,10 @@ Piezas transversales con comportamiento propio y contrato estricto. **Estas sí 
 - El periodo (P7) vive encima del contenido. `rightSlot` guarda acciones de alcance, no un segundo «Filtrar».
 - Identidad: `data-component="PageScreen"`, `data-template` = `list` | `detail` | `form`.
 - La card es `Surface` variante `page`. El consumidor no pinta `bg-white rounded-2xl shadow-2xl` ni `bg-[#36606F]` de cabecera.
-- Las acciones de cabecera (`rightSlot`) sobre petróleo: `Button` `tertiary` se pinta invertido por CSS de esta plantilla (icono blanco). No es una quinta variante de Button. El chrome de recarga nativo blanco (Albaranes) sigue siendo chrome, no Button.
+- Las acciones de cabecera (`rightSlot`) sobre petróleo: `Button` invertido, **sin relleno ni marco**. No es una quinta variante. El chrome de recarga nativo blanco (Albaranes) sigue siendo chrome, no Button.
+- Cabecera: misma altura que el Modal (`estructura.cabecera-modal`). El título, el subtítulo y los iconos se reducen en proporción. No se recortan ni se abrevian con puntos.
+- En smartphone el ancho de la plantilla es el del dispositivo menos un margen mínimo (`espacio.1`) donde se ve el fondo. La altura de la tarjeta sigue al contenido.
+- En smartphone el calendario mensual es más estrecho que la plantilla (`espacio.2` de diferencia).
 
 **Estado**: existe. Migrados: Labor, Albaranes, Reservas, Propinas, Carta, inventario, Recetas, Ingredientes, Ventas, Tesorería, Asistencia, Perfil, Insights, Precios desde albarán, catálogo de actividades e Importación. T1 (dashboard mosaico) no usa PageScreen: es otra anatomía.
 

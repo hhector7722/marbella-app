@@ -38,6 +38,10 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-26
 
+- **Recetas, Ingredientes y Proveedores pintan el mismo catálogo.** Cuatro columnas, sin tarjeta: foto y pie forman un cuadrado; la foto se encoge y el nombre o el precio se leen enteros.
+
+- **Pantallas de gestión más bajas y más anchas en el móvil.** La franja de título mide lo mismo que la de una ventana. En el teléfono la tarjeta usa casi todo el ancho, deja ver un poco de fondo a los lados y se acaba donde acaba el contenido. El calendario cabe un poco más estrecho que esa tarjeta. Los botones de la franja van sin marco; el relleno de todos los botones abraza el texto o el icono.
+
 - **Filtros de lista usan el mismo panel.** Categoría en Recetas y Proveedores, proveedor en Ingredientes y el modo al crear un ingrediente dejan el desplegable suelto. Pedido nuevo no tenía ese selector.
 
 - **Un solo mapeo TPV.** Vincular artículos del terminal con recetas se hace en Recetas TPV. La pantalla antigua de administración lleva ahí.

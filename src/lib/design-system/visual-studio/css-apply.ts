@@ -153,9 +153,11 @@ function patchButton(css: string, values: Record<string, string>): string | null
     });
     if (icon) next = icon;
 
-    const before = replaceRule(next, "[data-component='Button']::before {", (body) =>
-        setDecl(body, 'border-radius', radius)
-    );
+    const before = replaceRule(next, "[data-component='Button']::before {", (body) => {
+        let out = setDecl(body, 'border-radius', radius);
+        out = setDecl(out, 'height', `calc(12px + ${px} * 2)`);
+        return out;
+    });
     if (before) next = before;
 
     const fills: Array<{

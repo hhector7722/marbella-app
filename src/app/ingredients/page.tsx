@@ -15,6 +15,7 @@ import { resolveSupplierPickerItems } from '@/lib/supplier-seed';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import { CatalogGrid, CatalogTile } from '@/components/catalog/CatalogTile';
 
 // Unidades canónicas (sin duplicados tipo lt/l o u/ud)
 const STANDARD_UNITS = ['kg', 'g', 'l', 'ml', 'ud', 'cl'];
@@ -282,33 +283,27 @@ export default function IngredientsPage() {
 
                 {!loading && (
                     <div className="pt-4 md:pt-6">
-                        <div className="grid grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+                        <CatalogGrid>
                             {filteredIngredients.map(ing => (
-                                <div key={ing.id} className="relative group">
-                                    <div
-                                        onClick={() => setEditingIngredient(ing)}
-                                        className="bg-white rounded-2xl p-2 md:p-3 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col"
-                                    >
-                                {/* IMAGEN PEQUEÑA SIN BORDE */}
-                                <div className="h-24 sm:h-28 md:h-32 w-full bg-white rounded-xl flex items-center justify-center mb-2 overflow-hidden relative">
-                                    {ing.image_url ? <img src={ing.image_url} className="w-full h-full object-contain" /> : <Package className="text-gray-200 w-8 h-8 md:w-10 md:h-10" />}
-                                </div>
-                                {/* TEXTO */}
-                                <div className="flex justify-between items-center mt-auto px-0.5 gap-1">
-                                    <span className="font-bold text-gray-700 text-[11px] sm:text-xs md:text-sm leading-tight truncate" title={ing.name}>{ing.name}</span>
-                                    <span className="font-black text-[#5E35B1] text-[11px] sm:text-xs md:text-sm shrink-0 flex items-center gap-0.5">
-                                        {ing.current_price?.toFixed(2)}€
-                                        {ing.price_locked ? (
-                                            <span className="rounded bg-zinc-200 px-1 text-[8px] font-black uppercase text-zinc-600" title="Precio fijo">
-                                                Fijo
-                                            </span>
-                                        ) : null}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                        </div>
+                                <CatalogTile
+                                    key={ing.id}
+                                    title={ing.name}
+                                    imageSrc={ing.image_url}
+                                    fallback={<Package className="h-8 w-8 md:h-10 md:w-10" />}
+                                    subtitle={
+                                        <span className="text-[#5E35B1]">
+                                            {ing.current_price?.toFixed(2)}€
+                                            {ing.price_locked ? (
+                                                <span className="ml-0.5 rounded bg-zinc-200 px-1 text-[8px] font-black uppercase text-zinc-600" title="Precio fijo">
+                                                    Fijo
+                                                </span>
+                                            ) : null}
+                                        </span>
+                                    }
+                                    onClick={() => setEditingIngredient(ing)}
+                                />
+                            ))}
+                        </CatalogGrid>
                     </div>
                 )}
     </DashboardDetailLayout>

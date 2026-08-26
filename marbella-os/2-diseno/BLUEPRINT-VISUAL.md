@@ -117,6 +117,7 @@ Pregunta de cada fila: **¿ya hemos decidido cómo debe ser?**
 
 - Alineación: Extremos
 - Vertical: Centro
+- Altura: 36 px · estructura.cabecera-modal
 - Padding horizontal: 16 px · espacio.4
 - Padding vertical: 16 px · espacio.4
 - Título: 18 px · título PageScreen
@@ -130,7 +131,7 @@ Pregunta de cada fila: **¿ya hemos decidido cómo debe ser?**
 
 - Hit: 48 px · táctil mínimo
 - Radio: 8 px · Button / espacio.2
-- Padding horizontal: 8 px · espacio.2
+- Padding horizontal: 4 px · espacio.1
 - Foco: Marca
 - Alineación del contenido: Centro
 

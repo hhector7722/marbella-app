@@ -107,9 +107,9 @@ describe('Button identidad y variantes', () => {
         assert.notEqual(BUTTON_CONTRACT.radius, DS_SCREEN_TOKENS.radioControl);
         assert.equal(DS_SCREEN_TOKENS.radioSuperficie, '16px');
         assert.equal(DS_SCREEN_TOKENS.radioControl, '12px');
-        assert.equal(BUTTON_CONTRACT.paddingInline, DS_SCREEN_TOKENS.espacio2);
-        assert.equal(BUTTON_CONTRACT.visualPaddingBlock, DS_SCREEN_TOKENS.espacio2);
-        assert.equal(BUTTON_CONTRACT.visualHeight, '28px');
+        assert.equal(BUTTON_CONTRACT.paddingInline, DS_SCREEN_TOKENS.espacio1);
+        assert.equal(BUTTON_CONTRACT.visualPaddingBlock, DS_SCREEN_TOKENS.espacio1);
+        assert.equal(BUTTON_CONTRACT.visualHeight, '20px');
         assert.notEqual(BUTTON_CONTRACT.visualHeight, '36px');
         assert.equal(BUTTON_CONTRACT.defaultLayout, 'hug');
         assert.equal(BUTTON_CONTRACT.fontSize, '12px');
@@ -136,7 +136,7 @@ describe('Button identidad y variantes', () => {
             'radio compacto < mitad del alto visual: no píldora'
         );
         assert.ok(radiusPx < 14);
-        assert.equal(visualPx, 28);
+        assert.equal(visualPx, 20);
     });
 });
 
@@ -267,18 +267,18 @@ describe('Button className no escapa del contrato visual', () => {
         assert.equal(kept.includes('px-8'), false);
     });
 
-    it('el CSS del contrato fija hit-area 48px, fondo ~28px, radio compacto 8px, hug/fill y estados', () => {
+    it('el CSS del contrato fija hit-area 48px, fondo ajustado al contenido, radio compacto 8px, hug/fill y estados', () => {
         const css = readFileSync(GLOBALS_CSS, 'utf8');
         assert.match(css, /\[data-component='Button'\]/);
         assert.match(css, /height:\s*var\(--tactil-minimo\)/);
         assert.match(css, /min-height:\s*var\(--tactil-minimo\)/);
-        assert.match(css, /padding-inline:\s*var\(--espacio-2\)/);
+        assert.match(css, /padding-inline:\s*var\(--espacio-1\)/);
         assert.match(css, /\[data-component='Button'\]::before/);
         const compactBefore = css.match(
             /\[data-component='Button'\]::before \{([^}]+)\}/
         );
         assert.ok(compactBefore, 'debe existir la receta ::before compacta');
-        assert.match(compactBefore[1], /height:\s*calc\(12px \+ var\(--espacio-2\) \* 2\)/);
+        assert.match(compactBefore[1], /height:\s*calc\(12px \+ var\(--espacio-1\) \* 2\)/);
         assert.equal(compactBefore[1].includes('36px'), false);
         assert.equal(
             /height:\s*calc\(12px \+ var\(--espacio-3\) \* 2\)/.test(compactBefore[1]),
@@ -286,7 +286,7 @@ describe('Button className no escapa del contrato visual', () => {
         );
         assert.match(
             css,
-            /\[data-component='Button'\]\[data-icon-only='true'\]::before \{[\s\S]*?inset:\s*0/
+            /\[data-component='Button'\]\[data-icon-only='true'\]::before \{[\s\S]*?width:\s*calc\(1\.25rem \+ var\(--espacio-1\) \* 2\)/
         );
         assert.match(css, /\[data-layout='hug'\]/);
         assert.match(css, /width:\s*fit-content/);

@@ -127,7 +127,7 @@ export const STUDIO_ELEMENTS: StudioElement[] = [
         warning:
             'Este contrato también comparte chrome con determinadas superficies T1. Cambiarlo puede afectar a esas superficies.',
         facts: [
-            { label: 'Geometría', value: 'Sin min-height fijo de canon. Se puede ensayar 48 px (táctil) o 36 px (estructura.cabecera-modal). El contenido se escala respecto a 48 px; el toque de Button sigue siendo 48 px.' },
+            { label: 'Geometría', value: 'Altura = estructura.cabecera-modal (36 px). El contenido se escala (36/48) para caber sin recorte ni ellipsis. El toque de Button sigue siendo 48 px.' },
             { label: 'Padding', value: 'espacio.4 horizontal y vertical (canon). En md el CSS sube el horizontal; eso no está congelado.' },
             { label: 'Alineación horizontal', value: 'Extremos' },
             { label: 'Alineación vertical', value: 'Centro' },
@@ -137,7 +137,7 @@ export const STUDIO_ELEMENTS: StudioElement[] = [
             { label: 'Impacto', value: 'PageScreen T2/T3/T4. El selector CSS también pinta Surface page > header (T1).' },
         ],
         properties: [
-            prop('height', 'Altura', 'auto', PAGE_HEADER_HEIGHT_OPTIONS, 'choice'),
+            prop('height', 'Altura', 'estructura.cabecera-modal', PAGE_HEADER_HEIGHT_OPTIONS, 'choice'),
             prop('align-x', 'Alineación', 'edges', ALIGN_X_OPTIONS, 'alignment-x'),
             prop('align-y', 'Vertical', 'center', ALIGN_Y_OPTIONS, 'alignment-y'),
             prop('px', 'Padding horizontal', 'espacio.4', SPACE_OPTIONS),
@@ -364,7 +364,7 @@ export const STUDIO_ELEMENTS: StudioElement[] = [
         label: 'Button',
         group: 'piezas',
         status: 'CANON CERRADO',
-        summary: 'Cuatro variantes. XOR texto/icono. Hit 48 / visual 28 / radio 8. Contrato obligatorio.',
+        summary: 'Cuatro variantes. XOR texto/icono. Hit 48 / visual abraza el contenido / radio 8. Contrato obligatorio.',
         blueprintNeedle: '| Button |',
         sourceFiles: ['src/components/ui/button.tsx', 'src/lib/design-system/button-contract.ts'],
         impactPatterns: ['<Button', 'data-component="Button"', "data-component='Button'"],
@@ -372,7 +372,7 @@ export const STUDIO_ELEMENTS: StudioElement[] = [
         properties: [
             prop('height', 'Hit', 'tactil.minimo', HEIGHT_OPTIONS),
             prop('radius', 'Radio', 'espacio.2', RADIUS_OPTIONS),
-            prop('px', 'Padding horizontal', 'espacio.2', SPACE_OPTIONS),
+            prop('px', 'Padding horizontal', 'espacio.1', SPACE_OPTIONS),
             prop('focus', 'Foco', 'color.marca', FOCUS_OPTIONS),
             prop('align-x', 'Alineación del contenido', 'center', ALIGN_X_OPTIONS, 'alignment-x'),
             prop('fill-primary', 'Color de guardar', 'color.positivo', COLOR_OPTIONS),

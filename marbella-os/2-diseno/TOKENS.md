@@ -120,8 +120,8 @@ Escala de cuatro píxeles. **No existen valores intermedios.**
 
 | Token | Valor | Uso típico |
 |---|---|---|
-| `espacio.1` | 4 px | Separación entre elementos pegados |
-| `espacio.2` | 8 px | Separación interna mínima. **También** padding horizontal y padding-block del fondo visual compacto de Button, y radio contractual del Button (8 px; no es `radio.superficie`) |
+| `espacio.1` | 4 px | Separación entre elementos pegados. **También** padding del relleno visual de Button (abraza el texto/icono) |
+| `espacio.2` | 8 px | Separación interna mínima. **También** radio contractual del Button (8 px; no es `radio.superficie`) |
 | `espacio.3` | 12 px | Relleno de controles compactos. **También** separación contractual Header → Body del Modal (ref. detalle Albaranes; solo `padding-top` del Body vía `--modal-body-start-gap`) |
 | `espacio.4` | 16 px | Relleno estándar de tarjeta, separación entre bloques. **También** inset horizontal único de cabecera Modal |
 | `espacio.6` | 24 px | Separación entre secciones |
@@ -170,7 +170,7 @@ Norma en [EXPERIENCIA §1](EXPERIENCIA.md#1-táctil).
 | `estructura.fin-de-lista` | 96 px + área segura | Hueco al final de listas táctiles | adoptado |
 | `estructura.fin-de-lista.tarjetas` | 240 px + área segura | Hueco al final de listas con barra de cantidad | adoptado |
 | `estructura.alto-modal` | `min(68dvh, 100dvh − safe − 2.5rem)` en contrato Modal (ref. Albaranes); otros shells pueden conservar 94% documentado históricamente | Alto máximo de un modal de tarea | adoptado (`--modal-max-height`) |
-| `estructura.cabecera-modal` | 36 px | Alto fijo de cabecera de Modal (norma global; el contenido se adapta tipográficamente) | adoptado (`--modal-header-height`) |
+| `estructura.cabecera-modal` | 36 px | Alto fijo de cabecera de Modal y de PageScreen (norma global; el contenido se escala para caber) | adoptado (`--modal-header-height`) |
 | `estructura.modal-cabecera-inset` | 16 px (= `espacio.4`) | Inset horizontal único de cabecera Modal (ref. Albaranes). Título y subtítulo empiezan aquí | adoptado (`--modal-header-inset`) |
 | `estructura.modal-cuerpo-inicio` | 12 px (= `espacio.3`) | Separación vertical mínima Header → primer contenido del Body. No es inset completo del Body | adoptado (`--modal-body-start-gap`) |
 | `estructura.modal-subordinado-blur` | 4 px | Blur del panel Modal cubierto bajo `derived`/`system` ([ADR-0009](../4-decisiones/ADR-0009-modal-subordinacion.md)) | adoptado (`--modal-subordinate-blur`) |

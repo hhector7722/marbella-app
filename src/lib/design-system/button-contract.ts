@@ -149,21 +149,21 @@ export const BUTTON_CONTRACT = {
     /**
      * Radio contractual del Button = `espacio.2` (8px).
      * No usa `radio.superficie` (16px, Modal) ni `radio.control` (12px):
-     * ambos son ≥ o cercanos a la mitad de 28px y producen píldora.
-     * 8px < 14px (mitad del alto visual): deja tramo recto.
+     * ambos son ≥ o cercanos a la mitad de 20px y producen píldora.
+     * 8px < 10px (mitad del alto visual): deja tramo recto.
      */
     radius: '8px',
     /**
      * Alto del fondo compacto (`::before`), no del host táctil.
-     * 12px de tipo + `espacio.2` arriba y abajo = 28px.
+     * 12px de tipo + `espacio.1` arriba y abajo = 20px.
      * El radio contractual debe ser estrictamente menor que la mitad
      * de este alto para no producir cápsula.
      */
-    visualHeight: '28px',
-    /** Padding-block del fondo compacto (`espacio.2`). */
-    visualPaddingBlock: '8px',
-    /** Padding horizontal compacto (`espacio.2`); el fondo visual se ajusta al contenido. */
-    paddingInline: '8px',
+    visualHeight: '20px',
+    /** Padding-block del fondo compacto (`espacio.1`). */
+    visualPaddingBlock: '4px',
+    /** Padding horizontal compacto (`espacio.1`); el fondo visual se ajusta al contenido. */
+    paddingInline: '4px',
     fontSize: '12px',
     fontWeight: '800',
     textTransform: 'uppercase',

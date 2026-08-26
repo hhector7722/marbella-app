@@ -331,17 +331,37 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         }
     });
 
-    it('recetas e ingredientes montan catálogo a 4 columnas dentro de PageScreen', () => {
-        for (const rel of ['app/recipes/page.tsx', 'app/ingredients/page.tsx']) {
+    it('recetas, ingredientes y proveedores montan la misma celda de catálogo a 4 columnas', () => {
+        const pages = ['app/recipes/page.tsx', 'app/ingredients/page.tsx', 'app/suppliers/page.tsx'];
+        for (const rel of pages) {
             const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
             assert.match(source, /DashboardDetailLayout|PageScreen/, `${rel} debe usar PageScreen`);
-            assert.match(source, /grid-cols-4/, `${rel} debe mostrar 4 ítems por fila`);
+            assert.match(source, /CatalogGrid/, `${rel} debe usar CatalogGrid`);
+            assert.match(source, /CatalogTile/, `${rel} debe usar CatalogTile`);
             assert.doesNotMatch(
                 source,
                 /rounded-\[2\.5rem\]/,
                 `${rel} no debe usar radio ilegítimo 2.5rem`
             );
+            assert.doesNotMatch(
+                source,
+                /bg-white rounded-2xl p-/,
+                `${rel} no debe pintar card propia en la celda`
+            );
+            assert.doesNotMatch(
+                source,
+                /from ['"]@\/components\/ui\/RecipeCard['"]/,
+                `${rel} no usa RecipeCard`
+            );
         }
+        const tile = readFileSync(join(SRC_ROOT, 'components/catalog/CatalogTile.tsx'), 'utf8');
+        assert.match(tile, /aspect-square/, 'la celda imagen+pie es un cuadrado');
+        assert.match(tile, /grid-cols-4/, 'la rejilla es de 4 columnas');
+        assert.match(tile, /object-contain/, 'la imagen se reduce para caber');
+        assert.match(tile, /break-words/, 'el pie no se recorta');
+        assert.doesNotMatch(tile, /truncate/, 'el pie no usa truncate');
+        assert.doesNotMatch(tile, /bg-white/, 'la celda no tiene card blanca');
+        assert.doesNotMatch(tile, /shadow-md/, 'la celda no tiene sombra de card');
     });
 
     it('ningún piloto prioritario reintroduce rounded-[2.5rem]', () => {

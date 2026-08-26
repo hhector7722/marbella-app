@@ -215,9 +215,9 @@ La composición por defecto de listado, detalle y formulario de gestión. No es 
 **Reglas**:
 - Una pantalla nueva de gestión usa esta composición. No se clona una cabecera petróleo.
 - El periodo (P7) vive encima del contenido, no duplicado como icono en `rightSlot`. Las acciones de alcance (trabajador, exportar) sí viven en `rightSlot`.
-- `Button` `tertiary` dentro de la cabecera se pinta invertido (icono blanco). No es una quinta variante de Button.
+- `Button` en la cabecera se pinta invertido, sin relleno ni marco. No es una quinta variante de Button.
 - Labor, Reservas, Horario, Actividades, Consumo staff y Cierres montan el calendario mensual (P3) **dentro** de esta plantilla; no sustituyen la cabecera. La rejilla es una. Horas extras también entra por PageScreen, pero su interior es vista semanal (mini-calendario + filas), no P3.
-- Recetas e Ingredientes montan la rejilla de catálogo a **4 columnas** dentro de esta plantilla.
+- Recetas, Ingredientes y Proveedores montan la misma rejilla de catálogo a **4 columnas** dentro de esta plantilla. Cada celda es un cuadrado (imagen + pie), sin tarjeta; la imagen se reduce y el pie no se recorta.
 - Asistencia (historial) monta tarjetas semanales (P6) dentro de esta plantilla, no el calendario P3.
 
 **Cuándo no**: mosaico Admin/Staff (T1), Sala LIVE, pantalla de cocina, carta de cliente, overlay (P2).

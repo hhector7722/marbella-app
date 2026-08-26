@@ -58,9 +58,7 @@ export function PageScreen({
       data-component={PAGE_SCREEN_COMPONENT_ID}
       data-template={template}
       className={cn(
-        fillViewport
-          ? 'flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden p-4 md:p-6 pb-24'
-          : 'min-h-screen p-4 md:p-6 pb-24',
+        fillViewport ? 'flex flex-col overflow-x-hidden' : null,
         className
       )}
     >
@@ -68,17 +66,13 @@ export function PageScreen({
         className={cn(
           'mx-auto flex w-full min-h-0',
           maxWidthClass,
-          fillViewport ? 'min-h-0 flex-1 flex-col gap-3' : null
+          fillViewport ? 'min-h-0 flex-col gap-3' : null
         )}
       >
         <Surface
           variant="page"
           instance={`page-${template}`}
-          className={cn(
-            'flex flex-col min-h-0 overflow-hidden',
-            fillViewport ? 'min-h-0 flex-1 basis-0' : 'min-h-[85vh]',
-            cardClassName
-          )}
+          className={cn('flex flex-col min-h-0 overflow-hidden', cardClassName)}
         >
           <div
             data-element="header"

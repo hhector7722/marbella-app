@@ -39,10 +39,11 @@
     },
     "page-header": {
       "status": "CANON CERRADO",
-      "version": 1,
+      "version": 2,
       "properties": {
         "align-x": "edges",
         "align-y": "center",
+        "height": "estructura.cabecera-modal",
         "px": "espacio.4",
         "py": "espacio.4",
         "title-size": "tipo.titulo-pantalla"
@@ -81,11 +82,11 @@
     },
     "button": {
       "status": "CANON CERRADO",
-      "version": 1,
+      "version": 2,
       "properties": {
         "height": "tactil.minimo",
         "radius": "espacio.2",
-        "px": "espacio.2",
+        "px": "espacio.1",
         "focus": "color.marca",
         "align-x": "center"
       }

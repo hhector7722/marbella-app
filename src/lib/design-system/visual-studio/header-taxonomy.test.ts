@@ -24,7 +24,7 @@ describe('Taxonomía de cabeceras', () => {
         assert.equal(element.properties.find((item) => item.id === 'title-size')?.actualId, 'tipo.titulo-pantalla');
         assert.equal(element.properties.find((item) => item.id === 'px')?.actualId, 'espacio.4');
         assert.equal(element.properties.find((item) => item.id === 'py')?.actualId, 'espacio.4');
-        assert.equal(element.properties.find((item) => item.id === 'height')?.actualId, 'auto');
+        assert.equal(element.properties.find((item) => item.id === 'height')?.actualId, 'estructura.cabecera-modal');
         assert.equal(
             element.properties.find((item) => item.id === 'height')?.options.some((option) => option.id === 'estructura.cabecera-modal' && option.value === '36px'),
             true

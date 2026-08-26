@@ -11,6 +11,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import { CatalogGrid, CatalogTile } from '@/components/catalog/CatalogTile';
 import { cn } from '@/lib/utils';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import {
@@ -487,30 +488,30 @@ function RecipesContent() {
                 </div>
                 {!loading && (
                     <div className="pt-4 md:pt-6">
-                        <div className="grid grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+                        <CatalogGrid>
                             {filteredRecipes.map((recipe) => (
-                                <div key={recipe.id} className="group relative overflow-hidden">
-                                    <div
-                                        onClick={() => {
-                                            if (isStaffView) {
-                                                setSelectedRecipeId(recipe.id);
-                                            } else {
-                                                router.push(buildRecipesHref(recipe.id));
-                                            }
-                                        }}
-                                        className="bg-white rounded-2xl p-2 md:p-3 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer h-full flex flex-col active:scale-95"
-                                    >
-                                <div className="h-24 sm:h-28 md:h-32 w-full bg-white rounded-xl flex items-center justify-center mb-2 overflow-hidden relative">
-                                    {recipe.photo_url ? <img src={recipe.photo_url} alt="" className="h-full w-full object-contain" /> : <ChefHat className="w-8 h-8 md:w-10 md:h-10 text-gray-200" />}
-                                </div>
-                                <div className="flex justify-between items-center mt-auto px-0.5 gap-1">
-                                    <span className="font-bold text-gray-700 text-[11px] sm:text-xs md:text-sm leading-tight truncate" title={recipe.name}>{recipe.name}</span>
-                                    {!isRestricted && <span className={`font-black text-[11px] sm:text-xs md:text-sm shrink-0 ${getRecipeHealthColor(recipe)}`}>{recipe.sale_price?.toFixed(1)}€</span>}
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                        </div>
+                                <CatalogTile
+                                    key={recipe.id}
+                                    title={recipe.name}
+                                    imageSrc={recipe.photo_url}
+                                    fallback={<ChefHat className="h-8 w-8 md:h-10 md:w-10" />}
+                                    subtitle={
+                                        !isRestricted ? (
+                                            <span className={getRecipeHealthColor(recipe)}>
+                                                {recipe.sale_price?.toFixed(1)}€
+                                            </span>
+                                        ) : undefined
+                                    }
+                                    onClick={() => {
+                                        if (isStaffView) {
+                                            setSelectedRecipeId(recipe.id);
+                                        } else {
+                                            router.push(buildRecipesHref(recipe.id));
+                                        }
+                                    }}
+                                />
+                            ))}
+                        </CatalogGrid>
                     </div>
                 )}
     </DashboardDetailLayout>
