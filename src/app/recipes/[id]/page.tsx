@@ -25,7 +25,6 @@ import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { SearchField } from '@/components/ui/SearchField';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
-import { CatalogFilterChip } from '@/components/catalog/CatalogFilterChip';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
@@ -93,7 +92,6 @@ function RecipeDetailContent() {
     const [forceAddIngredientUnit, setForceAddIngredientUnit] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [showCategoryModal, setShowCategoryModal] = useState(false);
     const [userRole, setUserRole] = useState<string | null>(null);
     const [importingRecipe, setImportingRecipe] = useState(false);
     const [isEditingPrice, setIsEditingPrice] = useState(false);
@@ -164,14 +162,6 @@ function RecipeDetailContent() {
         () => menuCategoryRows.find((r) => r.slug === 'menus-packs')?.id ?? null,
         [menuCategoryRows],
     );
-
-    const recipeCategoryLabel = useMemo(() => {
-        if (!recipe) return '';
-        if (!recipe.menu_category_id) return String(recipe.category ?? '').trim();
-        const row = menuCategoryRows.find((x: MenuCategoryRow) => x.id === recipe.menu_category_id);
-        if (!row) return String(recipe.category ?? '').trim();
-        return labelMenuCategoryForRecipesEs(row, sortedMenuCategoryRows, mcoEsByCategoryId);
-    }, [recipe, menuCategoryRows, sortedMenuCategoryRows, mcoEsByCategoryId]);
 
     const isMenuRecipe = useMemo(
         () => isMenusPackCategory(recipe ?? {}, menusPackCategoryId),
@@ -719,7 +709,6 @@ function RecipeDetailContent() {
         }
         setRecipe({ ...recipe, menu_category_id: menuCat.id, category: categoryDb });
         trackRecipeCategory(namedEntitySummary(labelMenuCategoryForRecipesEs(menuCat, sortedMenuCategoryRows, mcoEsByCategoryId)));
-        setShowCategoryModal(false);
         toast.success('Guardado');
         void fetchAllRecipes();
     };
@@ -1005,19 +994,6 @@ function RecipeDetailContent() {
                         />
                     </div>
 
-                    <div className="mb-2 mt-1 flex items-center justify-center gap-4 text-zinc-600">
-                        {isRestricted ? (
-                            <CatalogFilterChip label="CAT" value={recipeCategoryLabel} />
-                        ) : (
-                            <CatalogFilterChip
-                                label="CAT"
-                                value={recipeCategoryLabel || 'CAT'}
-                                onOpen={() => setShowCategoryModal(true)}
-                                title={recipeCategoryLabel || 'Categoría'}
-                            />
-                        )}
-                    </div>
-
                 {/* CUERPO: fondo blanco roto */}
                 <div className="bg-[#fafafa] p-4 md:p-5 grid grid-cols-1 md:grid-cols-2 gap-4 content-start">
                     {!isRestricted && (
@@ -1063,81 +1039,74 @@ function RecipeDetailContent() {
                                         />
                                     </div>
 
-                                    <div className="my-2 flex items-end gap-1 shrink-0 md:flex-col md:items-stretch md:gap-2">
-                                        <div className="flex min-w-0 flex-1 flex-col items-center justify-end md:flex-none">
-                                            <div className="flex items-center justify-center gap-0.5 md:gap-1">
-                                                <span className="text-sm font-bold text-gray-800 md:text-lg">€</span>
-                                                {!isEditingPrice ? (
-                                                    <div className="flex items-center gap-1 md:gap-2">
-                                                        <div className="text-lg font-black text-center text-gray-800 tabular-nums md:text-3xl">
-                                                            {(currentPrice || 0).toFixed(2)}
-                                                        </div>
-                                                        <Button
-                                                            type="button"
-                                                            variant="tertiary"
-                                                            instance="recipe-editar-precio"
-                                                            onClick={startEditPrice}
-                                                            aria-label="Editar precio"
-                                                            icon={<Pencil className="w-4 h-4" />}
-                                                            className="shrink-0"
-                                                        />
+                                    <div className="my-2 flex items-start gap-1 shrink-0">
+                                        <div className="min-w-0 flex-1 text-center">
+                                            {!isEditingPrice ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={startEditPrice}
+                                                    aria-label="Editar precio"
+                                                    className="w-full"
+                                                >
+                                                    <div className="text-lg font-black tabular-nums text-gray-800 md:text-xl">
+                                                        {(currentPrice || 0).toFixed(2)}€
                                                     </div>
-                                                ) : (
-                                                    <div className="flex items-center gap-1 md:gap-2">
-                                                        <input
-                                                            type="text"
-                                                            inputMode="decimal"
-                                                            value={priceDraft}
-                                                            onChange={(e) => setPriceDraft(e.target.value)}
-                                                            onKeyDown={(e) => {
-                                                                if (e.key === 'Enter') confirmEditPrice();
-                                                                if (e.key === 'Escape') cancelEditPrice();
-                                                            }}
-                                                            autoFocus
-                                                            placeholder="0"
-                                                            className={cn(
-                                                                "text-lg font-black text-center text-gray-800 border-b-2 outline-none w-20 bg-transparent tabular-nums md:text-3xl md:w-28",
-                                                                themeColors.border
-                                                            )}
-                                                        />
-                                                        <Button
-                                                            type="button"
-                                                            variant="primary"
-                                                            instance="recipe-confirmar-precio"
-                                                            onClick={confirmEditPrice}
-                                                            disabled={savingPrice}
-                                                            loading={savingPrice}
-                                                            aria-label="Confirmar"
-                                                            icon={<Check className="w-5 h-5" />}
-                                                            className="shrink-0"
-                                                        />
-                                                        <Button
-                                                            type="button"
-                                                            variant="secondary"
-                                                            instance="recipe-cancelar-precio"
-                                                            onClick={cancelEditPrice}
-                                                            disabled={savingPrice}
-                                                            aria-label="Cancelar"
-                                                            icon={<X className="w-5 h-5" />}
-                                                            className="shrink-0"
-                                                        />
-                                                    </div>
-                                                )}
-                                            </div>
+                                                </button>
+                                            ) : (
+                                                <div className="flex items-center justify-center gap-1">
+                                                    <input
+                                                        type="text"
+                                                        inputMode="decimal"
+                                                        value={priceDraft}
+                                                        onChange={(e) => setPriceDraft(e.target.value)}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') confirmEditPrice();
+                                                            if (e.key === 'Escape') cancelEditPrice();
+                                                        }}
+                                                        autoFocus
+                                                        placeholder="0"
+                                                        className={cn(
+                                                            "w-16 bg-transparent text-center text-lg font-black tabular-nums text-gray-800 outline-none border-b-2 md:text-xl",
+                                                            themeColors.border
+                                                        )}
+                                                    />
+                                                    <span className="text-lg font-black text-gray-800 md:text-xl">€</span>
+                                                    <Button
+                                                        type="button"
+                                                        variant="primary"
+                                                        instance="recipe-confirmar-precio"
+                                                        onClick={confirmEditPrice}
+                                                        disabled={savingPrice}
+                                                        loading={savingPrice}
+                                                        aria-label="Confirmar"
+                                                        icon={<Check className="w-5 h-5" />}
+                                                        className="shrink-0"
+                                                    />
+                                                    <Button
+                                                        type="button"
+                                                        variant="secondary"
+                                                        instance="recipe-cancelar-precio"
+                                                        onClick={cancelEditPrice}
+                                                        disabled={savingPrice}
+                                                        aria-label="Cancelar"
+                                                        icon={<X className="w-5 h-5" />}
+                                                        className="shrink-0"
+                                                    />
+                                                </div>
+                                            )}
+                                            <div className="text-[9px] font-bold uppercase tracking-wide text-gray-500">Precio</div>
                                         </div>
-                                        <div className="flex min-w-0 flex-[3] items-end md:grid md:grid-cols-3 md:gap-2">
-                                            <div className="min-w-0 flex-1 text-center">
-                                                <div className="text-[9px] font-bold uppercase tracking-wide text-gray-500 md:text-sm">FC</div>
-                                                <div className={cn('font-black tabular-nums', healthIndicator.color, 'text-sm md:text-xl')}>{(foodCost || 0).toFixed(0)}%</div>
-                                            </div>
-                                            <div className="min-w-0 flex-1 text-center">
-                                                <div className="text-[9px] font-bold uppercase tracking-wide text-gray-500 md:text-sm">Base</div>
-                                                <div className="text-sm font-black tabular-nums text-gray-800 md:text-xl">{(basePrice || 0).toFixed(2)}</div>
-                                            </div>
-                                            <div className="min-w-0 flex-1 text-center">
-                                                <div className="text-[9px] font-bold uppercase tracking-wide text-gray-500 md:text-sm">Margen</div>
-                                                <div className="text-sm font-black tabular-nums text-gray-800 md:text-xl">{(margin || 0).toFixed(2)}</div>
-                                            </div>
+                                        <div className="min-w-0 flex-1 text-center">
+                                            <div className={cn('text-sm font-black tabular-nums', healthIndicator.color)}>{(foodCost || 0).toFixed(0)}%</div>
+                                            <div className="text-[9px] font-bold uppercase tracking-wide text-gray-500">FC</div>
+                                        </div>
+                                        <div className="min-w-0 flex-1 text-center">
+                                            <div className="text-sm font-black tabular-nums text-gray-800">{(basePrice || 0).toFixed(2)}€</div>
+                                            <div className="text-[9px] font-bold uppercase tracking-wide text-gray-500">Base</div>
+                                        </div>
+                                        <div className="min-w-0 flex-1 text-center">
+                                            <div className="text-sm font-black tabular-nums text-gray-800">{(margin || 0).toFixed(2)}€</div>
+                                            <div className="text-[9px] font-bold uppercase tracking-wide text-gray-500">Margen</div>
                                         </div>
                                     </div>
 
@@ -1148,15 +1117,14 @@ function RecipeDetailContent() {
                                         <span className="shrink-0 text-xs font-black tabular-nums text-blue-600">
                                             {(recommendedPrice || 0).toFixed(2)}€
                                         </span>
-                                        <Button
+                                        <button
                                             type="button"
-                                            variant="secondary"
-                                            instance="recipe-simulador"
                                             onClick={() => setSimulatorExpanded((v) => !v)}
-                                            className="ml-auto shrink-0"
+                                            aria-expanded={simulatorExpanded}
+                                            className="ml-auto shrink-0 min-h-12 rounded-lg bg-purple-600 px-3 text-[10px] font-black uppercase tracking-widest text-white hover:bg-purple-500 active:scale-[0.99]"
                                         >
                                             Simulador
-                                        </Button>
+                                        </button>
                                     </div>
                                 </div>
 
@@ -1215,7 +1183,7 @@ function RecipeDetailContent() {
                                                         Base
                                                     </div>
                                                     <div className="text-lg font-black text-white">
-                                                        {(simulatedBasePrice || 0).toFixed(2)}
+                                                        {(simulatedBasePrice || 0).toFixed(2)}€
                                                     </div>
                                                 </div>
                                                 <div>
@@ -1235,10 +1203,22 @@ function RecipeDetailContent() {
                         </div>
                     )}
                     <div className={`bg-white rounded-xl shadow-lg overflow-hidden flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
-                        <div data-element="block-header" className="relative justify-between">
-                            <h2 data-element="title">Ingredientes</h2>
+                        {!isRestricted && recipeIngredientCostIssueCount > 0 && (
+                            <div
+                                className="flex items-start gap-1.5 border-b border-amber-100 bg-amber-50 px-3 py-1.5 text-[9px] font-bold leading-snug text-amber-900"
+                                role="status"
+                            >
+                                <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" aria-hidden />
+                                <span>
+                                    {recipeIngredientCostIssueCount === 1
+                                        ? '1 ingrediente sin coste calculado: pasa el ratón por «—» en Coste o revisa precio y unidades.'
+                                        : `${recipeIngredientCostIssueCount} ingredientes sin coste calculado: revisa precio en el artículo y que la unidad de la línea sea compatible (masa / volumen / ud).`}
+                                </span>
+                            </div>
+                        )}
+                        <div className="custom-scrollbar relative">
                             {!isRestricted && (
-                                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 shrink-0">
+                                <div className="absolute left-2 top-0 z-10 flex h-[calc(var(--espacio-2)+var(--espacio-2)+(11px*1.25))] items-center">
                                     <Button
                                         type="button"
                                         variant="tertiary"
@@ -1251,21 +1231,6 @@ function RecipeDetailContent() {
                                     </Button>
                                 </div>
                             )}
-                        </div>
-                        <div className="custom-scrollbar relative">
-                            {!isRestricted && recipeIngredientCostIssueCount > 0 && (
-                                <div
-                                    className="flex items-start gap-1.5 border-b border-amber-100 bg-amber-50 px-3 py-1.5 text-[9px] font-bold leading-snug text-amber-900"
-                                    role="status"
-                                >
-                                    <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" aria-hidden />
-                                    <span>
-                                        {recipeIngredientCostIssueCount === 1
-                                            ? '1 ingrediente sin coste calculado: pasa el ratón por «—» en Coste o revisa precio y unidades.'
-                                            : `${recipeIngredientCostIssueCount} ingredientes sin coste calculado: revisa precio en el artículo y que la unidad de la línea sea compatible (masa / volumen / ud).`}
-                                    </span>
-                                </div>
-                            )}
                             <table data-component={TABLE_COMPONENT_ID} data-instance="recipe-ingredients" className="w-full text-left">
                                 <colgroup>
                                     <col />
@@ -1276,7 +1241,7 @@ function RecipeDetailContent() {
                                 </colgroup>
                                 <thead>
                                     <tr>
-                                        <th>Ingrediente</th>
+                                        <th scope="col" aria-label="Ingrediente" />
                                         <th className="text-center">Cant</th>
                                         <th className="text-center">Ud</th>
                                         {!isRestricted && <th className="text-right">Coste</th>}
@@ -1377,10 +1342,10 @@ function RecipeDetailContent() {
                                                 <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold italic tracking-normal text-zinc-400">
                                                     Añadir
                                                     <span
-                                                        className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[var(--color-positivo)] text-white"
+                                                        className="inline-flex h-3 w-3 shrink-0 items-center justify-center rounded-full bg-[var(--color-positivo)] text-white"
                                                         aria-hidden
                                                     >
-                                                        <Plus className="h-2.5 w-2.5" strokeWidth={3} />
+                                                        <Plus className="h-2 w-2" strokeWidth={3} />
                                                     </span>
                                                 </span>
                                             </td>
@@ -1743,32 +1708,6 @@ function RecipeDetailContent() {
                     }}
                 />
             </Modal>
-            <Modal
-                open={showCategoryModal}
-                onClose={() => setShowCategoryModal(false)}
-                variant="compact"
-                layer="base"
-                instance="recipe-category"
-                usageId="recipe-category"
-                usageLabel="Categoría receta"
-                title="Categoría"
-            >
-                <div className="grid max-h-[min(60vh,24rem)] grid-cols-2 gap-2 overflow-y-auto">
-                    {sortedMenuCategoryRows.map((row) => (
-                        <button
-                            key={row.id}
-                            type="button"
-                            onClick={() => void handleCategoryUpdate(row)}
-                            className={`rounded-lg py-2 text-xs font-bold ${
-                                recipe.menu_category_id === row.id ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
-                            }`}
-                        >
-                            {labelMenuCategoryForRecipesEs(row, sortedMenuCategoryRows, mcoEsByCategoryId)}
-                        </button>
-                    ))}
-                </div>
-            </Modal>
-
             {recipeIngredientEditTarget && (
                 <IngredientEditModal
                     key={recipeIngredientEditTarget.id}
@@ -1789,6 +1728,15 @@ function RecipeDetailContent() {
                 recipeId={recipeId}
                 initialName={recipe.name}
                 initialPhotoUrl={recipe.photo_url ?? null}
+                categoryId={recipe.menu_category_id ?? ''}
+                categories={sortedMenuCategoryRows.map((row) => ({
+                    id: row.id,
+                    label: labelMenuCategoryForRecipesEs(row, sortedMenuCategoryRows, mcoEsByCategoryId),
+                }))}
+                onCategoryChange={(id) => {
+                    const row = sortedMenuCategoryRows.find((item) => item.id === id);
+                    if (row) void handleCategoryUpdate(row);
+                }}
                 onDelete={() => setDeleteRecipeOpen(true)}
                 onSaved={(payload) => {
                     setRecipe((r: any) => (r ? { ...r, ...payload } : r));

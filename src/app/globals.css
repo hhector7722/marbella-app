@@ -587,6 +587,15 @@
   white-space: normal;
   word-break: break-word;
 }
+[data-component='Table'][data-instance='recipe-ingredients'] thead th {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  line-height: 1.25;
+  padding-block: var(--espacio-2);
+  padding-inline: var(--espacio-4);
+  vertical-align: middle;
+}
 
 /*
  * Cabecera de bloque interior (título de tarjeta dentro de una pantalla).

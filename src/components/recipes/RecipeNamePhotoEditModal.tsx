@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { Field } from '@/components/ui/Field';
 import { uploadNormalizedRecipePhoto } from '@/app/dashboard/carta/photo-actions';
 
 export type RecipeNamePhotoSaved = { name: string; photo_url: string | null };
@@ -19,6 +20,9 @@ type Props = {
     initialPhotoUrl: string | null;
     onSaved: (payload: RecipeNamePhotoSaved) => void;
     onDelete?: () => void;
+    categoryId?: string;
+    categories?: Array<{ id: string; label: string }>;
+    onCategoryChange?: (categoryId: string) => void;
 };
 
 export function RecipeNamePhotoEditModal({
@@ -29,6 +33,9 @@ export function RecipeNamePhotoEditModal({
     initialPhotoUrl,
     onSaved,
     onDelete,
+    categoryId = '',
+    categories = [],
+    onCategoryChange,
 }: Props) {
     const supabase = createClient();
     const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -170,20 +177,33 @@ export function RecipeNamePhotoEditModal({
             }
         >
             <div className="flex flex-col gap-4">
-                <label className="block">
-                    <span className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-zinc-400">Nombre</span>
+                <Field instance="recipe-edit-name" label="Nombre" htmlFor="recipe-edit-name">
                     <input
+                        id="recipe-edit-name"
                         type="text"
                         value={nameDraft}
                         onChange={(e) => setNameDraft(e.target.value)}
-                        className={cn(
-                            'min-h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 py-3 text-sm font-semibold text-zinc-800',
-                            'outline-none focus:border-[#36606F] focus:ring-2 focus:ring-[#36606F]/20',
-                        )}
                         autoComplete="off"
                         placeholder="Nombre de la receta"
                     />
-                </label>
+                </Field>
+
+                {onCategoryChange && categories.length > 0 ? (
+                    <Field instance="recipe-edit-category" label="Categoría" htmlFor="recipe-edit-category">
+                        <select
+                            id="recipe-edit-category"
+                            value={categoryId}
+                            onChange={(e) => onCategoryChange(e.target.value)}
+                        >
+                            <option value="">Sin categoría</option>
+                            {categories.map((c) => (
+                                <option key={c.id} value={c.id}>
+                                    {c.label}
+                                </option>
+                            ))}
+                        </select>
+                    </Field>
+                ) : null}
 
                 <div className="flex flex-col gap-2">
                     <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Imagen</span>

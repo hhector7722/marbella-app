@@ -417,8 +417,10 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(recipes, /buildRecipesHref/, 'pulsar una receta abre la ficha');
         assert.doesNotMatch(recipes, /recipes-staff-preview/, 'staff no abre un modal distinto');
         const recipeDetail = readFileSync(join(SRC_ROOT, 'app/recipes/[id]/page.tsx'), 'utf8');
-        assert.match(recipeDetail, /CatalogFilterChip/, 'la ficha usa CAT flotante');
+        assert.doesNotMatch(recipeDetail, /CatalogFilterChip/, 'la ficha no muestra la categoría');
         assert.match(recipeDetail, /ConfirmModal/, 'eliminar receta usa ConfirmModal');
+        const recipeEditModal = readFileSync(join(SRC_ROOT, 'components/recipes/RecipeNamePhotoEditModal.tsx'), 'utf8');
+        assert.match(recipeEditModal, /<Field instance="recipe-edit-category"/, 'la categoría se elige al editar la receta');
         assert.match(ingredients, /columns=\{3\}/, 'ingredientes: 3 columnas');
         assert.doesNotMatch(suppliers, /columns=\{3\}/, 'proveedores: 4 columnas');
         assert.match(pedido, /CatalogGrid/, 'el pedido monta la misma rejilla');
@@ -560,6 +562,11 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(recipe, /data-element="photo-nav"/, 'las flechas de receta flotan');
         assert.doesNotMatch(recipe, /instance="recipe-eliminar"/, 'eliminar receta no está en la ficha');
         assert.doesNotMatch(recipe, /Ingredientes <span/, 'la cabecera de ingredientes no lleva el recuento');
+        assert.doesNotMatch(
+            recipe,
+            /<h2 data-element="title">Ingredientes/,
+            'la tabla de ingredientes no duplica la palabra Ingredientes'
+        );
         assert.match(recipe, /openAddIngredientModal/, 'se añade ingrediente desde la tabla');
         const recipeCss = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
         assert.match(
@@ -617,6 +624,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'components/ingredients/IngredientEditModal.tsx',
             'components/carta/MenuItemEditModal.tsx',
             'components/carta/MenuCategoryEditModal.tsx',
+            'components/recipes/RecipeNamePhotoEditModal.tsx',
             'app/suppliers/page.tsx',
         ];
         for (const rel of hosts) {
