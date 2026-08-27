@@ -3,6 +3,8 @@
 import { formatLocalIsoDateLabel } from '@/lib/tip-distribution-display';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { WorkerListSummary, WorkerPersonRow } from '@/components/staff/WorkerPersonRow';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { periodRangeSummary } from '@/lib/usage/modal-apply';
 
@@ -29,6 +31,10 @@ type Props = {
 
 const fmtMoney = (val: number) => (Math.abs(val) < 0.005 ? ' ' : `${val.toFixed(2)} €`);
 
+function firstName(name: string): string {
+  return name.trim().split(/\s+/)[0] || name;
+}
+
 export function TipConfirmDistributionModal({
   isOpen,
   onClose,
@@ -51,6 +57,7 @@ export function TipConfirmDistributionModal({
       open={isOpen}
       onClose={onClose}
       title="Confirmar reparto"
+      subtitle={`${formatLocalIsoDateLabel(startDate, 'd MMM yyyy')} → ${formatLocalIsoDateLabel(endDate, 'd MMM yyyy')}`}
       variant="standard"
       layer="base"
       instance="tip-confirm-distribution"
@@ -90,49 +97,37 @@ export function TipConfirmDistributionModal({
         </div>
       }
     >
-      <div className="space-y-4">
-        <div className="space-y-2 rounded-2xl border border-zinc-100 bg-zinc-50 p-3 text-sm">
-          <p className="font-black text-zinc-800">
-            Período: {formatLocalIsoDateLabel(startDate, 'd MMM yyyy')} →{' '}
-            {formatLocalIsoDateLabel(endDate, 'd MMM yyyy')}
-          </p>
-          <p className="text-zinc-600">
-            Lun–Vie: <span className="font-black tabular-nums">{weekdayTotal.toFixed(2)} €</span>
-          </p>
-          <p className="text-zinc-600">
-            Sáb–Dom: <span className="font-black tabular-nums">{weekendTotal.toFixed(2)} €</span>
-          </p>
-          <p className="font-black text-emerald-700">
-            Total botes: <span className="tabular-nums">{grandTotal.toFixed(2)} €</span>
-          </p>
-        </div>
+      <div>
+        <WorkerListSummary
+          metrics={[
+            { label: 'Lun–Vie', value: fmtMoney(weekdayTotal) },
+            { label: 'Sáb–Dom', value: fmtMoney(weekendTotal) },
+          ]}
+          total={fmtMoney(grandTotal)}
+        />
 
-        <div>
-          <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-zinc-400">
-            Empleados ({staffWithPayout.length})
-          </p>
-          <ul className="max-h-48 space-y-1.5 overflow-y-auto">
-            {staffWithPayout.length === 0 ? (
-              <li className="py-4 text-center text-sm font-bold text-zinc-400">Sin importes a repartir</li>
-            ) : (
-              staffWithPayout.map((s) => (
-                <li
-                  key={s.id}
-                  className="flex min-h-[44px] items-center justify-between gap-2 rounded-xl border border-zinc-100 px-3 py-2"
-                >
-                  <span className="truncate text-sm font-black text-zinc-800">
-                    {(s.name || '').trim().split(/\s+/)[0] || s.name}
-                  </span>
-                  <span className="shrink-0 text-sm font-black tabular-nums text-emerald-600">
-                    {fmtMoney(s.totalAmount)}
-                  </span>
-                </li>
-              ))
-            )}
-          </ul>
-        </div>
+        {staffWithPayout.length === 0 ? (
+          <EmptyState instance="tip-confirm-none" variant="none" title="Sin importes a repartir" />
+        ) : (
+          <div>
+            {staffWithPayout.map((s) => (
+              <WorkerPersonRow
+                key={s.id}
+                name={firstName(s.name)}
+                subtitle={
+                  <>
+                    <span>LV {fmtMoney(s.weekdayAmount)}</span>
+                    <span className="text-zinc-300">·</span>
+                    <span>SD {fmtMoney(s.weekendAmount)}</span>
+                  </>
+                }
+                value={fmtMoney(s.totalAmount)}
+              />
+            ))}
+          </div>
+        )}
 
-        <p className="text-[11px] font-bold leading-snug text-zinc-500">
+        <p className="mt-4 text-[11px] leading-relaxed text-zinc-400">
           Se guardará un snapshot en el historial. Los botes actuales no se modifican.
         </p>
       </div>

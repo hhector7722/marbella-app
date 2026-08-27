@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import WorkerWeeklyHistoryModal from '@/components/WorkerWeeklyHistoryModal';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { WorkerListSummary, WorkerPersonRow } from '@/components/staff/WorkerPersonRow';
 import { PeriodNav, PeriodFilterButton } from '@/components/time/PeriodNav';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
@@ -55,33 +56,30 @@ const StaffOvertimeRow = memo(({
     onTogglePaid: (e: React.MouseEvent, weekId: string, staffId: string, status: boolean) => void;
     onClick: () => void;
 }) => (
-    <div onClick={onClick} className="flex items-center justify-between p-3 bg-white/60 rounded-lg border border-purple-100/30 cursor-pointer hover:bg-white transition-colors group">
-        <span className="text-xs font-bold text-gray-700 capitalize group-hover:text-purple-700 transition-colors leading-none">
-            {staff.name}
-        </span>
-        <div className="flex items-center gap-3">
-            <span className="text-xs font-black text-gray-800">
-                {staff.amount > 0.05 ? `${staff.amount.toFixed(0)}€` : " "}
-            </span>
-            <div className="flex items-center bg-gray-100/50 rounded-full h-8 px-1 gap-1">
-                <button
-                    onClick={(e) => onTogglePaid(e, weekId, staff.id, !isPaid)}
-                    className={cn(
-                        "flex items-center justify-center transition-all active:scale-90 p-0.5",
-                        isPaid ? "" : "text-gray-300 hover:text-gray-400"
-                    )}
-                >
-                    {isPaid ? (
-                        <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm">
-                            <Check className="w-3.5 h-3.5 text-white" strokeWidth={4} />
-                        </div>
-                    ) : (
-                        <Circle className="w-5 h-5" />
-                    )}
-                </button>
-            </div>
-        </div>
-    </div>
+    <WorkerPersonRow
+        name={staff.name}
+        value={staff.amount > 0.05 ? `${staff.amount.toFixed(0)}€` : ' '}
+        onClick={onClick}
+        trailing={
+            <button
+                type="button"
+                onClick={(e) => onTogglePaid(e, weekId, staff.id, !isPaid)}
+                className={cn(
+                    'flex h-8 w-8 items-center justify-center',
+                    isPaid ? '' : 'text-zinc-300 hover:text-zinc-400',
+                )}
+                aria-label={isPaid ? 'Marcar no pagado' : 'Marcar pagado'}
+            >
+                {isPaid ? (
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500">
+                        <Check className="h-3.5 w-3.5 text-white" strokeWidth={4} />
+                    </span>
+                ) : (
+                    <Circle className="h-5 w-5" />
+                )}
+            </button>
+        }
+    />
 ));
 StaffOvertimeRow.displayName = 'StaffOvertimeRow';
 
@@ -294,13 +292,14 @@ export default function OvertimePage() {
                         title={`Semana ${weekNum}`}
                         subtitle={periodStr}
                     >
-                        <div className="space-y-3">
-                            <span className="text-base font-black text-zinc-900 leading-none">
-                                {weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}
-                            </span>
+                        <div>
+                            <WorkerListSummary
+                                metrics={[]}
+                                total={weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}
+                            />
                             <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
                             <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
-                            <div className="space-y-2">
+                            <div>
                                 {weekStaff.map((s: any) => (
                                     <StaffOvertimeRow
                                         key={s.id}

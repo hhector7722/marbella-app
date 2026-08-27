@@ -1259,11 +1259,9 @@ export default function AlbaranesHistoricoClient({
       maxWidthClass="max-w-5xl"
       showBackButton={false}
       rightSlot={headerActions}
-      fillViewport
       template="list"
-      contentClassName="flex flex-col min-h-0 overflow-hidden"
     >
-    <div className="flex min-h-0 flex-1 flex-col gap-2">
+    <div className="flex flex-col gap-2">
       <ScannerClient
         onSuccess={refresh}
         compactTrigger
@@ -1379,9 +1377,7 @@ export default function AlbaranesHistoricoClient({
         </div>
       ) : null}
 
-      {/* Lista con scroll interno; buscador permanece fijo arriba */}
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-          <div className="px-1.5 py-1">
+      <div className="px-1.5 py-1">
             {filtered.length === 0 ? (
               <EmptyState
                 instance="albaranes-list-empty"
@@ -1479,7 +1475,6 @@ export default function AlbaranesHistoricoClient({
               </div>
             ) : null}
           </div>
-      </div>
 
       <Modal
         open={Boolean(selectedId)}

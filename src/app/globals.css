@@ -461,17 +461,25 @@
   overflow-x: clip;
   padding-inline: var(--espacio-1);
   padding-top: var(--espacio-1);
-  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: var(--espacio-1);
 }
 @media (min-width: 768px) {
   [data-component='PageScreen'] {
     padding-inline: var(--espacio-4);
     padding-top: var(--espacio-4);
+    padding-bottom: var(--espacio-4);
   }
+}
+/* Editores a viewport: el main no reserva el pie; aquí sí. */
+[data-component='PageScreen'][data-fill-viewport='true'] {
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
 }
 [data-component='PageScreen'] [data-component='Surface'][data-variant='page'] {
   height: auto;
   min-height: 0;
+  flex: none;
+}
+[data-component='PageScreen'] [data-element='body'] {
   flex: none;
 }
 [data-component='PageScreen'] [data-element='header'],

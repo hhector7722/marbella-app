@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Clock, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { createManagerFichaje } from '@/app/actions/overtime';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { WorkerPersonRow } from '@/components/staff/WorkerPersonRow';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 
 export type EmployeeOption = { id: string; first_name: string; last_name: string };
@@ -108,51 +110,37 @@ export function DaySummaryModal({ isOpen, onClose, date, logs, onSelectLog, empl
                     </Button>
                 }
             >
-                <div className="">
+                <div>
                     {logs.length === 0 ? (
-                        <div className="py-12 flex flex-col items-center justify-center gap-3">
-                            <div className="w-12 h-12 bg-zinc-50 rounded-2xl flex items-center justify-center border border-zinc-100">
-                                <Clock className="text-zinc-300" size={24} />
-                            </div>
-                            <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest text-center">
-                                No hay fichajes registrados
-                            </p>
-                        </div>
+                        <EmptyState instance="attendance-day-summary-none" variant="none" title="No hay fichajes registrados" />
                     ) : (
-                        <div className="space-y-2">
+                        <div>
                             {logs.map((log) => {
                                 const firstName = log.first_name || log.employee_name || '?';
                                 const lastName = log.last_name || '';
+                                const name = `${firstName} ${lastName}`.trim() || '?';
+                                const outLabel = log.clock_out_show_no_registrada
+                                    ? 'Salida no registrada'
+                                    : (log.out_time || '--:--');
 
                                 return (
-                                    <button
+                                    <WorkerPersonRow
                                         key={log.id}
+                                        name={name}
+                                        subtitle={
+                                            <>
+                                                <span>{log.in_time || '--:--'}</span>
+                                                <span className="text-zinc-300">·</span>
+                                                <span className={log.clock_out_show_no_registrada ? 'text-rose-600' : undefined}>
+                                                    {outLabel}
+                                                </span>
+                                            </>
+                                        }
                                         onClick={() => {
-                                            const summary = `${firstName} ${lastName}`.trim() || '?';
-                                            trackDaySummary(summary, { selectedUserId: log.user_id });
+                                            trackDaySummary(name, { selectedUserId: log.user_id });
                                             onSelectLog(log.user_id);
                                         }}
-                                        className="w-full bg-zinc-50 hover:bg-zinc-100/80 active:scale-[0.98] transition-all px-3 py-2 rounded-2xl border border-zinc-100 flex items-center gap-2 group min-h-[48px]"
-                                    >
-                                        <span className="text-[11px] font-black text-zinc-800 uppercase tracking-tight truncate flex-1 min-w-0 text-left">
-                                            {firstName} {lastName}
-                                        </span>
-                                        <div className="flex items-center gap-1.5 shrink-0">
-                                            <div className="flex items-center gap-0.5">
-                                                <div className="w-1 h-1 rounded-full bg-emerald-500" />
-                                                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">
-                                                    {log.in_time || '--:--'}
-                                                </span>
-                                            </div>
-                                            <span className="text-zinc-300 text-[8px]">-</span>
-                                            <div className="flex items-center gap-0.5" title={log.clock_out_show_no_registrada ? 'Salida no registrada (olvidó fichar)' : undefined}>
-                                                <div className="w-1 h-1 rounded-full bg-rose-500" />
-                                                <span className={log.clock_out_show_no_registrada ? 'text-rose-600 font-bold text-[10px] uppercase' : 'text-[10px] font-mono font-bold text-zinc-500 uppercase'}>
-                                                    {log.clock_out_show_no_registrada ? 'No registrada' : (log.out_time || '--:--')}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </button>
+                                    />
                                 );
                             })}
                         </div>

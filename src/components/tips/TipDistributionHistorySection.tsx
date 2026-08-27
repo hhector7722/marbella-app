@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronDown, RefreshCw } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { cn } from '@/lib/utils';
-import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -12,6 +11,7 @@ import {
   formatLocalIsoDateLabel,
   type TipDistributionHistoryRow,
 } from '@/lib/tip-distribution-display';
+import { WorkerPersonRow } from '@/components/staff/WorkerPersonRow';
 
 type DistributionLine = {
   id: string;
@@ -194,41 +194,43 @@ export function TipDistributionHistorySection({ refreshToken = 0 }: Props) {
                   </button>
 
                   {isExpanded && (
-                    <div className="border-t border-zinc-100 bg-zinc-50/50 overflow-x-auto">
+                    <div className="border-t border-zinc-100 bg-white px-2">
                       {lines.length === 0 ? (
-                        <p className="px-3 py-4 text-[11px] text-zinc-400 font-bold">Cargando detalle…</p>
+                        <p className="px-1 py-4 text-[12px] text-zinc-400">Cargando detalle…</p>
                       ) : (
-                        <table data-component={TABLE_COMPONENT_ID} data-instance="tips-distribution-lines" className="w-full min-w-[520px]">
-                          <thead>
-                            <tr>
-                              <th className="text-left">Staff</th>
-                              <th className="text-center">TJI</th>
-                              <th className="text-center">Pen</th>
-                              <th className="text-right">Total</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {lines.map((l) => (
-                              <tr key={l.id} className="border-t border-zinc-100/80">
-                                <td className="px-2 py-2 font-black text-zinc-800 truncate max-w-[120px]">
-                                  {(nameByUserId[l.user_id] ?? '—').split(/\s+/)[0]}
-                                  {l.is_sanctioned ? (
-                                    <span className="text-rose-500 ml-1">SIN</span>
-                                  ) : null}
-                                </td>
-                                <td className="text-center px-1 py-2 tabular-nums">
-                                  {Number(l.tji_pct).toFixed(0)}%
-                                </td>
-                                <td className="text-center px-1 py-2 tabular-nums text-rose-600">
-                                  {l.penalizacion_pct > 0 ? `-${l.penalizacion_pct}%` : '—'}
-                                </td>
-                                <td className="text-right px-2 py-2 font-black tabular-nums text-emerald-700">
-                                  {fmtMoney(Number(l.total_amount))}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                        <div>
+                          {lines.map((l) => {
+                            const fullName = nameByUserId[l.user_id] ?? '—';
+                            const name = fullName.trim().split(/\s+/)[0] || fullName;
+                            const tji = Number(l.tji_pct);
+                            const pen = Number(l.penalizacion_pct);
+                            return (
+                              <WorkerPersonRow
+                                key={l.id}
+                                name={name}
+                                muted={l.is_sanctioned}
+                                subtitle={
+                                  <>
+                                    <span>TJI {tji.toFixed(0)}%</span>
+                                    {pen > 0 ? (
+                                      <>
+                                        <span className="text-zinc-300">·</span>
+                                        <span>Pen −{pen}%</span>
+                                      </>
+                                    ) : null}
+                                    {l.is_sanctioned ? (
+                                      <>
+                                        <span className="text-zinc-300">·</span>
+                                        <span>Sin propina</span>
+                                      </>
+                                    ) : null}
+                                  </>
+                                }
+                                value={fmtMoney(Number(l.total_amount))}
+                              />
+                            );
+                          })}
+                        </div>
                       )}
                     </div>
                   )}

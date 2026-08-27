@@ -38,6 +38,10 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-27
 
+- **La tarjeta de gestión se acaba con el contenido.** En proveedores y el resto de pantallas unificadas ya no queda un hueco blanco al final: el aire bajo la tarjeta es el de los lados, como en la ventana de elegir proveedor.
+
+- **Las listas de personas pintan igual.** Al abrir un día de consumo, de asistencia o de coste laboral, una semana de extras o el reparto de propinas, cada trabajador es la misma fila: inicial, nombre y dato. Arriba, un resumen discreto (Fijo · Extras · Ventas y el total), sin título duplicado ni cifra enorme.
+
 - **Cuando no hay nada que mostrar, el aviso no grita.** Gris, más pequeño y en minúsculas.
 
 - **Los buscadores bajan de protagonismo.** Miden 32 px, con letra de 12. CAT y PROV se alinean. En la ficha de receta la foto es más pequeña.

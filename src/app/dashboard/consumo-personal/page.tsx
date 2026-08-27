@@ -30,6 +30,7 @@ import { Modal } from '@/components/ui/modal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import { WorkerListSummary, WorkerPersonRow } from '@/components/staff/WorkerPersonRow';
 import {
     filterVisiblePlantillaEmployees,
     PLANTILLA_EMPLOYEE_SELECT,
@@ -657,21 +658,10 @@ export default function ConsumoPersonalDashboardPage() {
           </div>
         ) : dayDetail ? (
           <>
-            <div data-element="block-header" className="mb-4 rounded-[1.25rem] flex-col p-3">
-              <p data-element="title" className="mb-2 text-center tracking-[0.2em] w-full">
-                Resumen del día
-              </p>
-              <div className="grid grid-cols-1 gap-1 sm:gap-2">
-                <div className="flex flex-col items-center justify-center rounded-xl bg-white p-2 text-center">
-                  <span className="mb-0.5 block text-[7px] font-black uppercase tracking-wider text-zinc-500">
-                    Importe total
-                  </span>
-                  <span className="text-[12px] font-black leading-none tabular-nums text-emerald-700">
-                    {formatEuroRead(dayDetail.totalAmount)}
-                  </span>
-                </div>
-              </div>
-            </div>
+            <WorkerListSummary
+              metrics={[]}
+              total={formatEuroRead(dayDetail.totalAmount)}
+            />
 
             {dayDetail.workers.length === 0 ? (
               <EmptyState
@@ -680,56 +670,59 @@ export default function ConsumoPersonalDashboardPage() {
                 title={workerFilterId ? 'Sin consumo para este trabajador este día' : 'Sin consumo este día'}
               />
             ) : (
-              <div className="flex flex-col gap-3 pb-2">
+              <div>
                 {dayDetail.workers.map((w) => (
-                  <div key={w.id} className="overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm">
-                    <div className="flex items-center justify-between gap-2 bg-zinc-50 px-3 py-2">
-                      <div className="min-w-0 flex-1 truncate text-[13px] font-black text-zinc-800">
-                        {firstNameOnly(w.name)}
-                      </div>
-                      <div className="shrink-0 text-[12px] font-black tabular-nums text-emerald-700">
-                        {formatEuroRead(w.total)}
-                      </div>
-                    </div>
-                    <div className="px-3 py-2">
-                      <div className="flex flex-col gap-1">
+                  <div key={w.id}>
+                    <WorkerPersonRow
+                      name={firstNameOnly(w.name)}
+                      subtitle={
+                        w.items.length > 0
+                          ? `${w.items.length} ${w.items.length === 1 ? 'artículo' : 'artículos'}`
+                          : undefined
+                      }
+                      value={formatEuroRead(w.total)}
+                    />
+                    {w.items.length > 0 ? (
+                      <div className="mb-1 ml-[3.25rem] pb-2">
                         {w.items.map((it, idx) => (
                           <div
                             key={`${it.name}-${idx}`}
-                            className="flex items-center justify-between gap-2 border-b border-zinc-100 py-1 last:border-0"
+                            className="flex items-center justify-between gap-2 py-1 text-[12px]"
                           >
-                            <p className="min-w-0 flex-1 truncate text-[12px] font-bold text-zinc-700">
-                              {it.quantity > 1 ? `${consumptionProductDisplayName(it.name)} ×${it.quantity}` : consumptionProductDisplayName(it.name)}
+                            <p className="min-w-0 flex-1 truncate text-zinc-500">
+                              {it.quantity > 1
+                                ? `${consumptionProductDisplayName(it.name)} ×${it.quantity}`
+                                : consumptionProductDisplayName(it.name)}
                             </p>
-                            <span className="shrink-0 text-[12px] font-normal tabular-nums text-zinc-700">
+                            <span className="shrink-0 tabular-nums text-zinc-500">
                               {formatEuroRead(it.amount)}
                             </span>
                           </div>
                         ))}
                       </div>
-                      {w.errors.length > 0 ? (
-                        <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-2.5">
-                          <p className="mb-2 text-[10px] font-black uppercase tracking-wider text-amber-800">
-                            Errores al registrar (sin stock)
-                          </p>
-                          <div className="flex flex-col gap-2">
-                            {w.errors.map((err, idx) => (
-                              <div key={`${err.name}-err-${idx}`} className="text-left">
-                                <p className="text-[12px] font-bold text-amber-950">
-                                  {err.quantity > 1
-                                    ? `${consumptionProductDisplayName(err.name)} ×${err.quantity}${err.is_half ? ' (Mitad)' : ''}`
-                                    : `${consumptionProductDisplayName(err.name)}${err.is_half ? ' (Mitad)' : ''}`}
-                                  {err.is_drink ? ' · bebida' : ' · comida'}
-                                </p>
-                                <p className="mt-0.5 text-[11px] font-medium leading-snug text-amber-900/90">
-                                  {err.error_message}
-                                </p>
-                              </div>
-                            ))}
-                          </div>
+                    ) : null}
+                    {w.errors.length > 0 ? (
+                      <div className="mb-3 ml-[3.25rem] rounded-xl border border-amber-200 bg-amber-50 p-2.5">
+                        <p className="mb-2 text-[11px] font-medium text-amber-800">
+                          Errores al registrar (sin stock)
+                        </p>
+                        <div className="flex flex-col gap-2">
+                          {w.errors.map((err, idx) => (
+                            <div key={`${err.name}-err-${idx}`} className="text-left">
+                              <p className="text-[12px] font-medium text-amber-950">
+                                {err.quantity > 1
+                                  ? `${consumptionProductDisplayName(err.name)} ×${err.quantity}${err.is_half ? ' (Mitad)' : ''}`
+                                  : `${consumptionProductDisplayName(err.name)}${err.is_half ? ' (Mitad)' : ''}`}
+                                {err.is_drink ? ' · bebida' : ' · comida'}
+                              </p>
+                              <p className="mt-0.5 text-[11px] font-medium leading-snug text-amber-900/90">
+                                {err.error_message}
+                              </p>
+                            </div>
+                          ))}
                         </div>
-                      ) : null}
-                    </div>
+                      </div>
+                    ) : null}
                   </div>
                 ))}
               </div>

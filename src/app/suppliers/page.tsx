@@ -504,8 +504,6 @@ export default function SuppliersPage() {
                 showBackButton={false}
                 template="list"
                 maxWidthClass="max-w-7xl"
-                fillViewport
-                contentClassName="p-4 md:p-6 flex flex-col min-h-0"
                 rightSlot={
                     <Button
                         type="button"
@@ -518,8 +516,8 @@ export default function SuppliersPage() {
                     />
                 }
             >
-            <div className="flex flex-row items-center gap-2 shrink-0">
-                <div className="flex-1 min-w-0">
+            <div className="flex flex-row items-center gap-2">
+                <div className="min-w-0 flex-1">
                     <SearchField
                         instance="suppliers-search"
                         placeholder="Buscar..."
@@ -543,13 +541,8 @@ export default function SuppliersPage() {
                 </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y">
-            {loading ? (
-                <div className="flex w-full items-center justify-center py-20">
-                    <LoadingSpinner size="xl" className="text-ds-marca" />
-                </div>
-            ) : (
-                <>
+            {!loading && (
+                <div className="pt-4 md:pt-6">
                 <CatalogGrid>
                     {filteredSuppliers.map((supplier) => (
                         <CatalogTile
@@ -563,20 +556,23 @@ export default function SuppliersPage() {
                             }}
                         />
                     ))}
-                    {filteredSuppliers.length === 0 && !loading && (
-                        <div className="col-span-full py-20">
+                    {filteredSuppliers.length === 0 ? (
+                        <div className="col-span-full">
                             <EmptyState
                                 instance="suppliers-empty"
                                 variant="mismatch"
                                 title="No se encontraron proveedores"
                             />
                         </div>
-                    )}
+                    ) : null}
                 </CatalogGrid>
-                <div className="scroll-end-touch" aria-hidden />
-                </>
+                </div>
             )}
-            </div>
+            {loading ? (
+                <div className="flex w-full items-center justify-center py-20">
+                    <LoadingSpinner size="xl" className="text-ds-marca" />
+                </div>
+            ) : null}
             </DashboardDetailLayout>
 
             <Modal

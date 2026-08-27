@@ -40,6 +40,7 @@ import { PurchaseMultiSourceForm, type PaymentSourceOption, type PurchaseMultiSo
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { namedEntitySummary } from '@/lib/usage/modal-apply';
+import { WorkerListSummary, WorkerPersonRow } from '@/components/staff/WorkerPersonRow';
 
 // Sub-components
 const StaffOvertimeRow = memo(({
@@ -47,45 +48,38 @@ const StaffOvertimeRow = memo(({
     weekId,
     isPaid,
     onTogglePaid,
-    onTogglePreferStock,
     onClick
 }: {
     staff: any,
     weekId: string,
     isPaid: boolean,
     onTogglePaid: (e: React.MouseEvent, weekId: string, staffId: string, status: boolean) => void,
-    onTogglePreferStock: (e: React.MouseEvent, weekId: string, staffId: string, currentStatus: boolean) => void,
     onClick: () => void
 }) => (
-    <div onClick={onClick} className="flex items-center justify-between p-3 bg-white/60 rounded-2xl border border-purple-100/30 cursor-pointer hover:bg-white transition-colors group">
-        <div className="flex items-center gap-3">
-            <span className="text-xs font-bold text-gray-700 capitalize group-hover:text-purple-700 transition-colors leading-none">
-                {staff.name}
-            </span>
-        </div>
-        <div className="flex items-center gap-3">
-            <span className="text-xs font-black text-gray-800">
-                {staff.amount > 0.05 ? `${staff.amount.toFixed(0)}€` : " "}
-            </span>
-            <div className="flex items-center bg-gray-100/50 rounded-full h-8 px-1 gap-1">
-                <button
-                    onClick={(e) => onTogglePaid(e, weekId, staff.id, !isPaid)}
-                    className={cn(
-                        "flex items-center justify-center transition-all active:scale-90 p-0.5",
-                        isPaid ? "" : "text-gray-300 hover:text-gray-400"
-                    )}
-                >
-                    {isPaid ? (
-                        <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm">
-                            <Check className="w-3.5 h-3.5 text-white" strokeWidth={4} />
-                        </div>
-                    ) : (
-                        <Circle className="w-5 h-5" />
-                    )}
-                </button>
-            </div>
-        </div>
-    </div>
+    <WorkerPersonRow
+        name={staff.name}
+        value={staff.amount > 0.05 ? `${staff.amount.toFixed(0)}€` : ' '}
+        onClick={onClick}
+        trailing={
+            <button
+                type="button"
+                onClick={(e) => onTogglePaid(e, weekId, staff.id, !isPaid)}
+                className={cn(
+                    'flex h-8 w-8 items-center justify-center',
+                    isPaid ? '' : 'text-zinc-300 hover:text-zinc-400',
+                )}
+                aria-label={isPaid ? 'Marcar no pagado' : 'Marcar pagado'}
+            >
+                {isPaid ? (
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500">
+                        <Check className="h-3.5 w-3.5 text-white" strokeWidth={4} />
+                    </span>
+                ) : (
+                    <Circle className="h-5 w-5" />
+                )}
+            </button>
+        }
+    />
 ));
 StaffOvertimeRow.displayName = 'StaffOvertimeRow';
 
@@ -144,7 +138,6 @@ const WeekOvertimeCard = memo(({
                             weekId={week.weekId}
                             isPaid={!!paidStatus[`${week.weekId}-${s.id}`]}
                             onTogglePaid={onTogglePaid}
-                            onTogglePreferStock={onTogglePreferStock}
                             onClick={() => onSelectHistory(s.id, week.weekId)}
                         />
                     ))}
@@ -1065,43 +1058,38 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     title={`Semana ${weekNum}`}
                     subtitle={periodStr}
                 >
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between gap-2">
-                            <div className="flex flex-col items-start gap-1 shrink-0">
-                                <span className="text-base font-black text-zinc-900 leading-none">
-                                    {weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}
-                                </span>
-                                {paidTotal > 0.05 ? (
-                                    <span
-                                        className="bg-emerald-500 text-white text-[10px] font-black px-2 py-1 rounded-md shadow-md leading-none"
-                                        title="Total pagado"
-                                    >
-                                        {paidTotal.toFixed(0)}€ pagado
-                                    </span>
-                                ) : null}
-                            </div>
+                    <div>
+                        <WorkerListSummary
+                            metrics={
+                                paidTotal > 0.05
+                                    ? [{ label: 'Pagado', value: `${paidTotal.toFixed(0)}€` }]
+                                    : []
+                            }
+                            total={weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}
+                        />
+                        <div className="mb-1 flex justify-end">
                             <div className="inline-flex items-center gap-1.5">
                                 <button
                                     type="button"
                                     onClick={() => { if (prevWeek) setWeekDetailModal({ week: prevWeek }); }}
                                     disabled={!prevWeek}
-                                    className="p-1.5 rounded-lg hover:bg-zinc-100 transition-colors text-zinc-700 shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none"
+                                    className="flex h-12 w-12 items-center justify-center rounded-lg text-zinc-700 hover:bg-zinc-100 disabled:pointer-events-none disabled:opacity-30"
                                     aria-label="Semana anterior"
                                 >
-                                    <ChevronLeft className="w-5 h-5" />
+                                    <ChevronLeft className="h-5 w-5" />
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => { if (nextWeek) setWeekDetailModal({ week: nextWeek }); }}
                                     disabled={!nextWeek}
-                                    className="p-1.5 rounded-lg hover:bg-zinc-100 transition-colors text-zinc-700 shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none"
+                                    className="flex h-12 w-12 items-center justify-center rounded-lg text-zinc-700 hover:bg-zinc-100 disabled:pointer-events-none disabled:opacity-30"
                                     aria-label="Semana siguiente"
                                 >
-                                    <ChevronRight className="w-5 h-5" />
+                                    <ChevronRight className="h-5 w-5" />
                                 </button>
                             </div>
                         </div>
-                        <div className="space-y-2">
+                        <div>
                             {weekStaff.map((s: any) => (
                                 <StaffOvertimeRow
                                     key={s.id}
@@ -1109,7 +1097,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                     weekId={weekDetailModal.week.weekId}
                                     isPaid={paidStatus[`${weekDetailModal.week.weekId}-${s.id}`] ?? !!s.isPaid}
                                     onTogglePaid={togglePaid}
-                                    onTogglePreferStock={togglePreferStock}
                                     onClick={() => {
                                         trackAdminOvertimeWorker(namedEntitySummary(s.name?.split?.(' ')[0] ?? s.name ?? ''), {
                                             workerId: s.id,

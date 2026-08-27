@@ -62,6 +62,16 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             /\[data-component='PageScreen'\] \{[\s\S]*?overflow-x:\s*clip;/,
             'el contenido no empuja la tarjeta fuera del margen derecho'
         );
+        assert.match(
+            css,
+            /\[data-component='PageScreen'\] \{[\s\S]*?padding-bottom:\s*var\(--espacio-1\)/,
+            'PageScreen abraza el contenido: el aire inferior es el de los lados, no un hueco de pie'
+        );
+        assert.match(
+            css,
+            /\[data-component='PageScreen'\]\[data-fill-viewport='true'\] \{[\s\S]*?padding-bottom:\s*calc\(5\.5rem/,
+            'solo los editores a viewport reservan el pie de navegación'
+        );
         assert.match(css, /\[data-component='Field'\]/);
         assert.match(css, /\[data-component='SearchField'\]/);
         assert.match(css, /\[data-component='EmptyState'\]/);
@@ -108,6 +118,33 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.doesNotMatch(source, /bg-\[#36606F\]/);
         assert.doesNotMatch(source, /shadow-2xl/);
         assert.doesNotMatch(source, /rounded-2xl/);
+        assert.doesNotMatch(
+            source,
+            /data-element="body"[\s\S]*?flex-1 flex flex-col min-h-0/,
+            'el cuerpo de PageScreen no se estira: la tarjeta acaba con el contenido'
+        );
+        assert.match(source, /data-fill-viewport=\{fillViewport \? 'true' : undefined\}/);
+    });
+
+    it('listas de varios trabajadores usan WorkerPersonRow', () => {
+        const hosts = [
+            'app/dashboard/labor/page.tsx',
+            'app/dashboard/consumo-personal/page.tsx',
+            'app/dashboard/overtime/page.tsx',
+            'components/modals/DaySummaryModal.tsx',
+            'components/dashboards/AdminDashboardView.tsx',
+            'components/tips/TipConfirmDistributionModal.tsx',
+            'components/tips/TipDistributionHistorySection.tsx',
+        ];
+        for (const rel of hosts) {
+            const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
+            assert.match(source, /WorkerPersonRow/, `${rel} pinta la fila de persona`);
+        }
+        const row = readFileSync(join(SRC_ROOT, 'components/staff/WorkerPersonRow.tsx'), 'utf8');
+        assert.match(row, /rounded-full/, 'la fila lleva inicial circular');
+        assert.match(row, /text-\[15px\]/, 'nombre e importe a 15px');
+        assert.match(row, /text-\[12px\]/, 'el subtítulo es 12px gris');
+        assert.doesNotMatch(row, /text-4xl|text-3xl/, 'sin cifra gigante en la cabecera');
     });
 
     it('pilotos de página usan PageScreen / DashboardDetailLayout', () => {
@@ -557,7 +594,6 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'app/dashboard/inventory/ledger/LedgerClient.tsx',
             'components/orders/OrderSummaryModal.tsx',
             'components/eventos/EventOrdersProductMatrix.tsx',
-            'components/tips/TipDistributionHistorySection.tsx',
         ];
         for (const rel of tables) {
             const source = readFileSync(join(SRC_ROOT, rel), 'utf8');

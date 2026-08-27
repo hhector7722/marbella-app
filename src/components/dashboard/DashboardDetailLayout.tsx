@@ -60,6 +60,7 @@ export function PageScreen({
     <div
       data-component={PAGE_SCREEN_COMPONENT_ID}
       data-template={template}
+      data-fill-viewport={fillViewport ? 'true' : undefined}
       className={cn(
         'w-full min-w-0',
         fillViewport ? 'flex flex-col' : null,
@@ -113,7 +114,7 @@ export function PageScreen({
           </div>
           <div
             data-element="body"
-            className={cn('px-3 pt-1 pb-2 md:px-4 md:pt-1 md:pb-3 flex-1 flex flex-col min-h-0', contentClassName)}
+            className={cn('px-3 pt-1 pb-2 md:px-4 md:pt-1 md:pb-3 flex flex-col', contentClassName)}
           >
             {children}
           </div>
