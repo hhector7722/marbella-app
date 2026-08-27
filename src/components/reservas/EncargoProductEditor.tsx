@@ -6,7 +6,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
-  Search,
   ShoppingBag,
   Trash2,
   X,
@@ -28,6 +27,8 @@ import {
 import { cn } from '@/lib/utils'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { SearchField } from '@/components/ui/SearchField'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { createClient } from '@/utils/supabase/client'
@@ -372,7 +373,7 @@ function EncargoCartModal({
     >
       <div className="flex-1 overflow-y-auto min-h-0 py-1.5">
           {lines.length === 0 ? (
-            <p className="py-8 text-center text-xs font-semibold text-zinc-500">Sin productos aún.</p>
+            <EmptyState instance="encargo-lines-none" variant="none" title="Sin productos aún." />
           ) : (
             <div className="divide-y divide-zinc-100">
               {lines.map((line) => {
@@ -896,15 +897,12 @@ export function EncargoProductEditor({
     <>
       <div className="flex-1 min-h-0 flex flex-col bg-white overflow-hidden">
         <div className="shrink-0 px-3 py-2 border-b border-zinc-100 bg-white">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar producto…"
-              className="min-h-10 w-full rounded-xl border border-zinc-200 bg-white pl-9 pr-3 text-sm font-semibold focus:border-[#36606F]/40 focus:outline-none focus:ring-2 focus:ring-[#36606F]/15"
-            />
-          </div>
+          <SearchField
+            instance="encargo-product-search"
+            value={search}
+            onChange={setSearch}
+            placeholder="Buscar producto…"
+          />
         </div>
 
         <div className="flex-1 min-h-0 px-3 py-2 overflow-hidden bg-white">
@@ -922,7 +920,7 @@ export function EncargoProductEditor({
                     showCategory
                   />
                 ) : (
-                  <p className="text-center text-xs font-semibold text-zinc-500 py-6">Sin resultados.</p>
+                  <EmptyState instance="encargo-search-mismatch" variant="mismatch" title="Sin resultados." />
                 )}
               </div>
             </div>

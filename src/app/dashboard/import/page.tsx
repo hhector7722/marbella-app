@@ -5,6 +5,7 @@ import Link from 'next/link'
 import * as XLSX from 'xlsx'
 import { Upload, FileUp, CheckCircle, AlertCircle, Database } from 'lucide-react'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { Button } from '@/components/ui/button'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { TABLE_COMPONENT_ID } from '@/lib/design-system'
@@ -403,7 +404,11 @@ export default function ImportPage() {
                                                 Cargando historial...
                                             </div>
                                         ) : historyRows.length === 0 ? (
-                                            <div className="text-xs text-blue-800 px-2 py-2">No hay importaciones registradas para este apartado.</div>
+                                            <EmptyState
+                                                instance="import-history-none"
+                                                variant="none"
+                                                title="No hay importaciones registradas para este apartado."
+                                            />
                                         ) : (
                                             <div className="max-h-[260px] overflow-auto">
                                                 {historyRows.map((r, idx) => (

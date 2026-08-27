@@ -1120,7 +1120,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                 />
                             ))}
                             {weekStaff.length === 0 && (
-                                <p className="text-center text-zinc-400 text-xs font-bold uppercase tracking-widest py-4">Sin importes esta semana</p>
+                                <EmptyState instance="admin-overtime-week-none" variant="none" title="Sin importes esta semana" />
                             )}
                         </div>
                     </div>

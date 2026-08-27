@@ -23,6 +23,7 @@ import { IngredientEditModal, type Ingredient } from '@/components/ingredients/I
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { SearchField } from '@/components/ui/SearchField';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
@@ -1625,7 +1626,15 @@ function RecipeDetailContent() {
                         </select>
                     </div>
                     <p className="text-[10px] text-gray-400 mb-2 leading-snug">Por defecto se usa la unidad configurada en cada ingrediente. Puedes cambiarla después en la tabla.</p>
-                    <input type="text" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full p-2 border rounded text-xs mb-2" autoFocus />
+                    <div className="mb-2">
+                    <SearchField
+                        instance="recipe-add-ingredient-search"
+                        placeholder="Buscar..."
+                        value={searchTerm}
+                        onChange={setSearchTerm}
+                        autoFocus
+                    />
+                    </div>
                     <div className="max-h-[min(50vh,20rem)] overflow-y-auto space-y-1">
                         {filteredIngredients.map(ing => {
                             const purchaseUnit = ing.purchase_unit || 'ud';

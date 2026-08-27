@@ -1,10 +1,11 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Check, Loader2, Search } from 'lucide-react'
+import { Check, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
+import { SearchField } from '@/components/ui/SearchField'
 import {
   ALBARAN_LINE_CONTENT_UNITS,
   billingMassVolumeNormForAuto,
@@ -559,13 +560,12 @@ export function LineMappingModal({
                 </p>
 
                 <div className="flex gap-1.5 px-1">
-                  <div className="relative min-h-12 flex-1">
-                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-                    <input
+                  <div className="min-h-12 flex-1">
+                    <SearchField
+                      instance="albaran-line-mapping-search"
                       value={searchQuery}
-                      onChange={(e) => void runSearch(e.target.value)}
+                      onChange={(v) => void runSearch(v)}
                       placeholder="Buscar en catálogo…"
-                      className="w-full min-h-12 rounded-lg border border-zinc-200 bg-white pl-9 pr-2 text-xs font-medium text-zinc-900 outline-none focus:border-[#36606F]/50"
                     />
                   </div>
                   {onOpenWizardNew && !ingredientId && (

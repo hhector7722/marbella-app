@@ -3,8 +3,9 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { submitPersonalConsumption, getConsumptionRecipes } from './actions';
 import { toast } from 'sonner';
-import { Search, Loader2, Package } from 'lucide-react';
+import { Loader2, Package } from 'lucide-react';
 import { QuantityStepper } from '@/components/ui/QuantityStepper';
+import { SearchField } from '@/components/ui/SearchField';
 import { cn } from '@/lib/utils';
 import {
   isDrinkConsumptionRecipe,
@@ -305,14 +306,12 @@ export function ConsumptionModal({
           </div>
         ) : (
           <div className="flex min-h-0 flex-1 flex-col space-y-5 p-4 md:p-5">
-            <div className="relative shrink-0">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input
-                type="search"
+            <div className="shrink-0">
+              <SearchField
+                instance="staff-consumption-search"
                 placeholder={step === 'drinks' ? 'Buscar bebidas...' : 'Buscar comida...'}
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-10 w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-3 text-sm shadow-sm focus:ring-2 focus:ring-[#36606F]/40"
+                onChange={setSearch}
               />
             </div>
 

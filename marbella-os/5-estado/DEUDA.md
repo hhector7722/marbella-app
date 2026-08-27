@@ -328,11 +328,14 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 | Menú icono + label (Staff) | **Auditado 2C — no crear aún** | Ver pago diferido 2C abajo | Segundo uso fuera de StaffDashboard o unificación local |
 | Composer ChatMarbella (+/mic/teléfono) | Mantener | Chrome de composer; teléfono emerald y menú icono+texto no caben en Button | Composer chrome documentado |
 | Quantity steppers ± | **Pago parcial 2026-08-27** | Recuento de efectivo sigue en `DenominationStepper`. El resto de menos / número / más usa `QuantityStepper`. | Denominaciones (siguen aparte, a propósito) |
+| Barras de búsqueda compactas | **Pago parcial 2026-08-27** | `SearchField` (lupa + input). No es Field. | — |
 | Badges 18px | Mantener | Presentación / dismiss compacto, no hit-area 48px de Button | Badge / dismiss chip |
 | Celdas escandallo TPV | Mantener | Celda de tabla que abre detalle | Patrón celda interactiva |
 | «Ver foto» sobre imagen | Mantener | Presentación interactiva (lightbox), no CTA | Media control / lightbox trigger |
 
 **Pago parcial (2026-08-27) — QuantityStepper:** se creó `src/components/ui/QuantityStepper.tsx` y se cableó en inventario, merma, carta, tickets de cierre, encargo, pedido, consumo y carrito de evento. El recuento de efectivo sigue en `DenominationStepper` (anatomía distinta, a propósito).
+
+**Pago parcial (2026-08-27) — SearchField:** se creó `src/components/ui/SearchField.tsx` (lupa + input, `tactil.minimo`, no es Field) y se cableó en catálogos, inventario, merma, mapeo, carta, pedido, encargo, scanner y exportes.
 
 **Auditoría Block 2A (2026-08-20) — SelectionOption / ListRow:** se inventariaron las variantes reales antes de crear componente. **Decisión: C (no crear ListRow/SelectionOption genéricos).**
 

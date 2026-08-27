@@ -798,25 +798,23 @@ export default function HistoryPage() {
                                             >
                                                 {isPlantilla && isMaster ? (
                                                     <>
-                                                        <Button
+                                                        <button
                                                             type="button"
-                                                            variant="secondary"
-                                                            instance="staff-history-export-all-pdf"
+                                                            role="menuitem"
                                                             onClick={() => { setShowExportMenu(false); setExportFormat('pdf'); setShowExportEmployeeModal(true); }}
-                                                            layout="fill"
+                                                            className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
                                                         >
                                                             Exportar todos (PDF)
-                                                        </Button>
+                                                        </button>
                                                         <div className="h-px bg-zinc-100 mx-3" />
-                                                        <Button
+                                                        <button
                                                             type="button"
-                                                            variant="secondary"
-                                                            instance="staff-history-export-all-xlsx"
+                                                            role="menuitem"
                                                             onClick={() => { setShowExportMenu(false); setExportFormat('xlsx'); setShowExportEmployeeModal(true); }}
-                                                            layout="fill"
+                                                            className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
                                                         >
                                                             Exportar todos (Excel)
-                                                        </Button>
+                                                        </button>
                                                         <div className="h-px bg-zinc-100 mx-3" />
                                                         <button
                                                             type="button"

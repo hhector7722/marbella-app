@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { SearchField } from '@/components/ui/SearchField';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -182,16 +183,12 @@ export function MultiEmployeeExportModal({
 
                 {/* ── SELECCIÓN DE EMPLEADOS ── */}
                 <div className="shrink-0 px-4 pt-3 pb-2 space-y-2">
-                    <div className="relative">
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-                        <input
-                            type="text"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Buscar empleado..."
-                            className="w-full h-9 pl-8 pr-3 rounded-xl bg-zinc-100 text-xs font-medium text-zinc-700 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#36606F]/30"
-                        />
-                    </div>
+                    <SearchField
+                        instance="multi-employee-search"
+                        value={search}
+                        onChange={setSearch}
+                        placeholder="Buscar empleado..."
+                    />
                     <div className="flex items-center justify-between">
                         <button
                             type="button"

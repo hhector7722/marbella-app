@@ -18,6 +18,7 @@ import { formatTicketTimeMadrid } from '@/utils/date-utils';
 import { toast } from 'sonner';
 import { BUSINESS_HOURS } from '@/lib/constants';
 import { PeriodNav, PeriodFilterButton } from '@/components/time/PeriodNav';
+import { MiniMonthCalendar } from '@/components/time/MiniMonthCalendar';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatMonthYear, formatYmdShort, periodRangeSummary } from '@/lib/usage/modal-apply';
@@ -336,20 +337,8 @@ export default function VentasPage() {
         }
     }
 
-    const generateCalendarDays = () => {
-        const year = calendarBaseDate.getFullYear();
-        const month = calendarBaseDate.getMonth();
-        const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
-        const days: (number | null)[] = [];
-        const startDay = (firstDay.getDay() + 6) % 7;
-        for (let i = 0; i < startDay; i++) days.push(null);
-        for (let d = 1; d <= lastDay.getDate(); d++) days.push(d);
-        return days;
-    };
-
-    const handleDateSelect = (day: number) => {
-        const dateStr = `${calendarBaseDate.getFullYear()}-${String(calendarBaseDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const handleDateSelect = (picked: Date) => {
+        const dateStr = format(picked, 'yyyy-MM-dd');
         if (showCalendar === 'single') {
             setSelectedDate(dateStr);
             setFilterMode('single');
@@ -823,9 +812,11 @@ export default function VentasPage() {
                                                                                     <LoadingSpinner size="sm" className="text-[#36606F]/50" />
                                                                                 </div>
                                                                             ) : ticketLines.length === 0 ? (
-                                                                                <div className="text-center py-4 text-[10px] font-black uppercase tracking-widest text-zinc-300">
-                                                                                    No hay detalles para este ticket
-                                                                                </div>
+                                                                                <EmptyState
+                                                                                    instance="ventas-ticket-none"
+                                                                                    variant="none"
+                                                                                    title="No hay detalles para este ticket"
+                                                                                />
                                                                             ) : (
                                                                                 <table className="w-full text-left border-collapse table-fixed">
                                                                                     <thead>
@@ -1002,52 +993,27 @@ export default function VentasPage() {
                 layer="base"
                 instance={showCalendar === 'single' ? 'ventas-date-single' : 'ventas-date-range'}
             >
-                <div>
-                    <div className="flex items-center justify-between mb-6 px-2">
-                        <button
-                            type="button"
-                            onClick={() => setCalendarBaseDate(subMonths(calendarBaseDate, 1))}
-                            aria-label="Mes anterior"
-                            className="min-h-12 min-w-12 inline-flex items-center justify-center hover:bg-zinc-50 rounded-lg transition-colors"
-                        >
-                            <ChevronLeft size={20} className="text-zinc-400" />
-                        </button>
-                        <span className="font-black text-zinc-900 text-xs uppercase tracking-tight">{format(calendarBaseDate, 'MMMM yyyy', { locale: es })}</span>
-                        <button
-                            type="button"
-                            onClick={() => setCalendarBaseDate(addDays(endOfMonth(calendarBaseDate), 1))}
-                            aria-label="Mes siguiente"
-                            className="min-h-12 min-w-12 inline-flex items-center justify-center hover:bg-zinc-50 rounded-lg transition-colors"
-                        >
-                            <ChevronRight size={20} className="text-zinc-400" />
-                        </button>
-                    </div>
-
-                    <div className="grid grid-cols-7 gap-1">
-                        {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
-                            <div key={d} className="text-center text-[9px] font-black text-zinc-300 py-2">{d}</div>
-                        ))}
-                        {generateCalendarDays().map((day, i) => {
-                            if (!day) return <div key={i} />;
-                            const dStr = `${calendarBaseDate.getFullYear()}-${String(calendarBaseDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                            const isSelected = showCalendar === 'single' ? selectedDate === dStr : (rangeStart === dStr || rangeEnd === dStr);
-                            const isInRange = showCalendar === 'range' && rangeStart && rangeEnd && new Date(dStr) > new Date(rangeStart) && new Date(dStr) < new Date(rangeEnd);
-
-                            return (
-                                <button
-                                    key={i}
-                                    onClick={() => handleDateSelect(day)}
-                                    className={cn(
-                                        "aspect-square flex items-center justify-center rounded-lg text-[11px] font-black transition-all min-h-[44px]",
-                                        isSelected ? "bg-zinc-900 text-white shadow-xl scale-110" : isInRange ? "bg-blue-50 text-[#5B8FB9]" : "hover:bg-zinc-50 text-zinc-600"
-                                    )}
-                                >
-                                    {day}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
+                <MiniMonthCalendar
+                    month={calendarBaseDate}
+                    onMonthChange={setCalendarBaseDate}
+                    onSelectDay={handleDateSelect}
+                    isSelected={(day) => {
+                        const dStr = format(day, 'yyyy-MM-dd');
+                        return showCalendar === 'single'
+                            ? selectedDate === dStr
+                            : rangeStart === dStr || rangeEnd === dStr;
+                    }}
+                    isInRange={(day) => {
+                        const dStr = format(day, 'yyyy-MM-dd');
+                        return Boolean(
+                            showCalendar === 'range' &&
+                                rangeStart &&
+                                rangeEnd &&
+                                new Date(dStr) > new Date(rangeStart) &&
+                                new Date(dStr) < new Date(rangeEnd),
+                        );
+                    }}
+                />
             </Modal>
 
             <Modal

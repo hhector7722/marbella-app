@@ -727,6 +727,127 @@
 }
 
 /*
+ * SearchField — buscador compacto. No es Field (sin etiqueta).
+ * Altura bloqueada: todos los buscadores miden exactamente tactil.minimo.
+ */
+[data-component='SearchField'] {
+  position: relative;
+  display: block;
+  min-width: 0;
+  width: 100%;
+  height: var(--tactil-minimo);
+  min-height: var(--tactil-minimo);
+  max-height: var(--tactil-minimo);
+  flex-shrink: 0;
+  align-self: center;
+}
+[data-component='SearchField'] [data-element='icon'] {
+  position: absolute;
+  left: var(--espacio-3);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--color-texto-tenue);
+  pointer-events: none;
+}
+[data-component='SearchField'] input {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  height: var(--tactil-minimo);
+  min-height: var(--tactil-minimo);
+  max-height: var(--tactil-minimo);
+  margin: 0;
+  padding-block: 0;
+  padding-inline-start: calc(var(--espacio-3) + 16px + var(--espacio-2));
+  padding-inline-end: var(--espacio-3);
+  border-radius: var(--radio-control);
+  border: 1px solid var(--color-borde-marcado);
+  background-color: var(--color-superficie);
+  color: var(--color-texto);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: var(--tactil-minimo);
+  appearance: none;
+  -webkit-appearance: none;
+}
+[data-component='SearchField'] input:focus {
+  outline: 2px solid color-mix(in srgb, var(--color-marca) 25%, transparent);
+  outline-offset: 0;
+  border-color: var(--color-marca);
+}
+[data-component='SearchField'] input::placeholder {
+  color: var(--color-texto-tenue);
+  font-weight: 500;
+}
+[data-component='SearchField'] input::-webkit-search-decoration,
+[data-component='SearchField'] input::-webkit-search-cancel-button,
+[data-component='SearchField'] input::-webkit-search-results-button,
+[data-component='SearchField'] input::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+}
+
+/*
+ * CatalogFilter — CAT / PROV / FC. Flota sobre el fondo, sin mini-card.
+ */
+[data-element='catalog-filter'] {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-1);
+  height: var(--tactil-minimo);
+  min-height: var(--tactil-minimo);
+  max-height: var(--tactil-minimo);
+  max-width: 100px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--color-texto);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+  appearance: none;
+  -webkit-appearance: none;
+}
+button[data-element='catalog-filter'] {
+  cursor: pointer;
+}
+@media (min-width: 768px) {
+  [data-element='catalog-filter'] {
+    max-width: none;
+  }
+}
+[data-element='catalog-filter'] [data-element='label'] {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+[data-element='catalog-filter'] [data-element='chevron'] {
+  flex-shrink: 0;
+  color: var(--color-texto-tenue);
+}
+[data-element='catalog-filter'] [data-element='clear'] {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  height: var(--tactil-minimo);
+  min-width: calc(var(--espacio-4) + 12px);
+  padding-inline: var(--espacio-2);
+  border: 0;
+  background: transparent;
+  color: var(--color-negativo);
+  cursor: pointer;
+}
+
+/*
  * EmptyState — tres variantes distinguibles (EXPERIENCIA §7).
  */
 [data-component='EmptyState'] {

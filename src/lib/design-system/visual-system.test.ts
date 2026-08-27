@@ -8,6 +8,7 @@ import {
 } from './page-screen.ts';
 import { SURFACE_COMPONENT_ID } from './surface.ts';
 import { FIELD_COMPONENT_ID } from './field.ts';
+import { SEARCH_FIELD_COMPONENT_ID } from './search-field.ts';
 import { EMPTY_STATE_COMPONENT_ID } from './empty-state.ts';
 import { NOTICE_COMPONENT_ID } from './notice.ts';
 import { KPI_STAT_COMPONENT_ID } from './kpi-stat.ts';
@@ -38,6 +39,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.equal(PAGE_SCREEN_COMPONENT_ID, 'PageScreen');
         assert.equal(SURFACE_COMPONENT_ID, 'Surface');
         assert.equal(FIELD_COMPONENT_ID, 'Field');
+        assert.equal(SEARCH_FIELD_COMPONENT_ID, 'SearchField');
         assert.equal(EMPTY_STATE_COMPONENT_ID, 'EmptyState');
         assert.equal(NOTICE_COMPONENT_ID, 'Notice');
         assert.equal(KPI_STAT_COMPONENT_ID, 'KpiStat');
@@ -61,6 +63,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'el contenido no empuja la tarjeta fuera del margen derecho'
         );
         assert.match(css, /\[data-component='Field'\]/);
+        assert.match(css, /\[data-component='SearchField'\]/);
         assert.match(css, /\[data-component='EmptyState'\]/);
         assert.match(css, /\[data-component='Notice'\]\[data-variant='negative'\]/);
         assert.match(css, /\[data-component='KpiStat'\]/);
@@ -372,10 +375,16 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
     });
 
-    it('recetas, ingredientes y proveedores montan la misma celda de catálogo a 4 columnas', () => {
-        const pages = ['app/recipes/page.tsx', 'app/ingredients/page.tsx', 'app/suppliers/page.tsx'];
-        for (const rel of pages) {
-            const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
+    it('recetas e ingredientes van a 3 columnas; proveedores a 4', () => {
+        const recipes = readFileSync(join(SRC_ROOT, 'app/recipes/page.tsx'), 'utf8');
+        const ingredients = readFileSync(join(SRC_ROOT, 'app/ingredients/page.tsx'), 'utf8');
+        const suppliers = readFileSync(join(SRC_ROOT, 'app/suppliers/page.tsx'), 'utf8');
+        const pedido = readFileSync(join(SRC_ROOT, 'components/orders/SupplierSelectionModal.tsx'), 'utf8');
+        for (const [rel, source] of [
+            ['app/recipes/page.tsx', recipes],
+            ['app/ingredients/page.tsx', ingredients],
+            ['app/suppliers/page.tsx', suppliers],
+        ] as const) {
             assert.match(source, /DashboardDetailLayout|PageScreen/, `${rel} debe usar PageScreen`);
             assert.match(source, /CatalogGrid/, `${rel} debe usar CatalogGrid`);
             assert.match(source, /CatalogTile/, `${rel} debe usar CatalogTile`);
@@ -395,9 +404,16 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
                 `${rel} no usa RecipeCard`
             );
         }
+        assert.match(recipes, /columns=\{3\}/, 'recetas: 3 columnas');
+        assert.match(ingredients, /columns=\{3\}/, 'ingredientes: 3 columnas');
+        assert.doesNotMatch(suppliers, /columns=\{3\}/, 'proveedores: 4 columnas');
+        assert.match(pedido, /CatalogGrid/, 'el pedido monta la misma rejilla');
+        assert.match(pedido, /CatalogTile/, 'el pedido monta la misma celda');
+        assert.match(pedido, /columns=\{4\}/, 'el pedido es de 4 columnas');
         const tile = readFileSync(join(SRC_ROOT, 'components/catalog/CatalogTile.tsx'), 'utf8');
         assert.match(tile, /aspect-square/, 'la celda imagen+pie es un cuadrado');
-        assert.match(tile, /grid-cols-4/, 'la rejilla es de 4 columnas');
+        assert.match(tile, /grid-cols-3/, 'la rejilla admite 3 columnas');
+        assert.match(tile, /grid-cols-4/, 'la rejilla admite 4 columnas');
         assert.match(tile, /gap-5/, 'hay aire entre celdas');
         assert.match(tile, /object-contain/, 'la imagen se reduce para caber');
         assert.match(tile, /h-5/, 'el pie reserva una sola fila en las tres páginas');
@@ -497,6 +513,8 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'components/time/TimeFilterModal.tsx',
             'app/dashboard/history/page.tsx',
             'components/schedule/ScheduleDayEditor.tsx',
+            'components/dashboards/DashboardVentasSection.tsx',
+            'app/dashboard/ventas/page.tsx',
         ];
         for (const rel of hosts) {
             const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
@@ -504,9 +522,11 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         }
         const history = readFileSync(join(SRC_ROOT, 'app/dashboard/history/page.tsx'), 'utf8');
         assert.doesNotMatch(history, /bg-zinc-900 text-white shadow-xl scale-110/);
+        const ventas = readFileSync(join(SRC_ROOT, 'app/dashboard/ventas/page.tsx'), 'utf8');
+        assert.doesNotMatch(ventas, /bg-zinc-900 text-white shadow-xl scale-110/);
     });
 
-    it('receta, mapeo, encargo e import usan thead de sistema', () => {
+    it('receta, mapeo, encargo, import, ledger, pedido y propinas usan thead de sistema', () => {
         const tables = [
             'app/recipes/[id]/page.tsx',
             'app/recipes/page.tsx',
@@ -514,10 +534,69 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'app/dashboard/import/page.tsx',
             'app/admin/import/page.tsx',
             'app/dashboard/recetas-tpv/MappingClient.tsx',
+            'app/dashboard/inventory/ledger/LedgerClient.tsx',
+            'components/orders/OrderSummaryModal.tsx',
+            'components/eventos/EventOrdersProductMatrix.tsx',
+            'components/tips/TipDistributionHistorySection.tsx',
         ];
         for (const rel of tables) {
             const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
             assert.match(source, /TABLE_COMPONENT_ID/, `${rel} debe usar Table`);
+        }
+    });
+
+    it('inventario y merma usan EmptyState y SearchField', () => {
+        const inventory = readFileSync(join(SRC_ROOT, 'app/dashboard/inventory/InventoryClient.tsx'), 'utf8');
+        const waste = readFileSync(join(SRC_ROOT, 'app/dashboard/inventory/waste/WasteClient.tsx'), 'utf8');
+        assert.match(inventory, /<EmptyState/);
+        assert.match(inventory, /SearchField/);
+        assert.match(waste, /<EmptyState/);
+        assert.match(waste, /SearchField/);
+    });
+
+    it('los catálogos usan SearchField y CAT flota sin tarjeta', () => {
+        const hosts = [
+            'app/recipes/page.tsx',
+            'app/ingredients/page.tsx',
+            'app/suppliers/page.tsx',
+        ];
+        for (const rel of hosts) {
+            const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
+            assert.match(source, /SearchField/, `${rel} debe usar SearchField`);
+            assert.match(source, /CatalogFilterChip/, `${rel} debe usar el filtro flotante`);
+            assert.doesNotMatch(source, /Cat\./, `${rel} dice CAT, no Cat.`);
+            assert.doesNotMatch(source, /Prov\./, `${rel} dice PROV, no Prov.`);
+        }
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        assert.match(
+            css,
+            /\[data-element='catalog-filter'\] \{[\s\S]*?background:\s*transparent/,
+            'CAT flota sin mini-card'
+        );
+        assert.match(
+            css,
+            /\[data-component='SearchField'\] input \{[\s\S]*?height:\s*var\(--tactil-minimo\);[\s\S]*?min-height:\s*var\(--tactil-minimo\);[\s\S]*?max-height:\s*var\(--tactil-minimo\);/,
+            'todos los buscadores miden la misma altura'
+        );
+        const albaranes = readFileSync(
+            join(SRC_ROOT, 'app/dashboard/albaranes/AlbaranesHistoricoClient.tsx'),
+            'utf8'
+        );
+        const consumption = readFileSync(join(SRC_ROOT, 'app/staff/ConsumptionModal.tsx'), 'utf8');
+        assert.match(albaranes, /SearchField/, 'albaranes usa SearchField');
+        assert.match(consumption, /SearchField/, 'consumo usa SearchField');
+    });
+
+    it('wizard, carta y proveedores recogen datos con Field', () => {
+        const hosts = [
+            'components/ingredients/IngredientWizard.tsx',
+            'components/carta/MenuItemEditModal.tsx',
+            'components/carta/MenuCategoryEditModal.tsx',
+            'app/suppliers/page.tsx',
+        ];
+        for (const rel of hosts) {
+            const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
+            assert.match(source, /<Field/, `${rel} debe usar Field`);
         }
     });
 });

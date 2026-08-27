@@ -2,16 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
+import { SearchField } from '@/components/ui/SearchField';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { createClient } from "@/utils/supabase/client";
 import { OrderProductCard } from "@/components/orders/OrderProductCard";
 import { toast, Toaster } from 'sonner';
-import { cn } from "@/lib/utils";
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import { CatalogFilterChip } from '@/components/catalog/CatalogFilterChip';
 
 interface Ingredient {
     id: string;
@@ -315,20 +315,16 @@ export default function NewOrderPage() {
                 <div className="z-10 shrink-0 pb-4 pt-0">
                     <div className="flex flex-col gap-4">
                         <div className="flex items-center gap-2">
-                            <div className={cn(
-                                "shrink-0 px-4 py-2 bg-white rounded-xl font-black text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm flex items-center justify-center text-center border border-zinc-100 min-h-12",
-                                selectedSupplier && "text-ds-marca ring-1 ring-ds-marca/10 border-ds-marca/20 bg-white"
-                            )}>
-                                {selectedSupplier || "PROVEEDOR"}
-                            </div>
-                            <div className="relative w-full">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                <input
-                                    type="text"
+                            <CatalogFilterChip
+                                label="PROVEEDOR"
+                                value={selectedSupplier || null}
+                            />
+                            <div className="w-full">
+                                <SearchField
+                                    instance="orders-new-search"
                                     placeholder="Buscar ingrediente..."
                                     value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2 bg-white rounded-xl shadow-sm outline-none text-[13px] font-medium text-gray-700 focus:ring-2 focus:ring-ds-marca/25 transition-all border border-zinc-100 min-h-12"
+                                    onChange={setSearchQuery}
                                 />
                             </div>
                         </div>

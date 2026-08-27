@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Upload, Trash2, Image as ImageIcon } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 import { createClient } from "@/utils/supabase/client";
 import { toast } from 'sonner';
@@ -18,6 +18,7 @@ interface CashBoxEditModalProps {
 export function CashBoxEditModal({ box, onClose, onSuccess }: CashBoxEditModalProps) {
     const [uploading, setUploading] = useState(false);
     const [imageUrl, setImageUrl] = useState(box.image_url || '');
+    const fileRef = useRef<HTMLInputElement>(null);
     const supabase = createClient();
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -118,23 +119,35 @@ export function CashBoxEditModal({ box, onClose, onSuccess }: CashBoxEditModalPr
                         )}
                     </div>
 
-                    <div className="flex flex-col w-full gap-2">
-                        <label className="relative flex items-center justify-center gap-2 w-full h-12 bg-[#5B8FB9] text-white rounded-2xl font-black text-xs uppercase tracking-widest cursor-pointer hover:bg-[#4a7a9e] active:scale-[0.98] transition-all shadow-lg shadow-blue-100 disabled:opacity-50">
-                            <Upload size={18} strokeWidth={2.5} />
-                            {imageUrl ? 'Cambiar Imagen' : 'Subir Imagen'}
-                            <input type="file" className="hidden" accept="image/*" onChange={handleUpload} disabled={uploading} />
-                        </label>
-
-                        {imageUrl && (
-                            <button
-                                onClick={handleRemove}
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                        <input
+                            ref={fileRef}
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleUpload}
+                            disabled={uploading}
+                        />
+                        <Button
+                            type="button"
+                            variant="primary"
+                            instance="cash-box-upload"
+                            disabled={uploading}
+                            onClick={() => fileRef.current?.click()}
+                        >
+                            {imageUrl ? 'Cambiar imagen' : 'Subir imagen'}
+                        </Button>
+                        {imageUrl ? (
+                            <Button
+                                type="button"
+                                variant="destructive"
+                                instance="cash-box-remove"
                                 disabled={uploading}
-                                className="flex items-center justify-center gap-2 w-full h-12 bg-white text-rose-500 border-2 border-rose-50 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-rose-50 active:scale-[0.98] transition-all"
+                                onClick={() => void handleRemove()}
                             >
-                                <Trash2 size={18} strokeWidth={2.5} />
-                                Quitar Imagen
-                            </button>
-                        )}
+                                Quitar imagen
+                            </Button>
+                        ) : null}
                     </div>
                 </div>
 

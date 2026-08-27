@@ -15,6 +15,7 @@ import { resolveSupplierPickerItems } from '@/lib/supplier-seed';
 import { OrphanedSupplierAlert } from '@/components/ingredients/OrphanedSupplierAlert';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { Field } from '@/components/ui/Field';
 
 export interface Ingredient {
     id: string;
@@ -1016,11 +1017,11 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                         </div>
                         <div className="flex gap-2">
                             <div className="w-1/2">
-                                <label className="ml-2 text-[10px] font-bold uppercase text-gray-400">Categoría</label>
+                                <Field instance="ingredient-edit-category" label="Categoría" htmlFor="ingredient-edit-category">
                                 <select
+                                    id="ingredient-edit-category"
                                     value={editForm.category}
                                     onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                                    className="w-full rounded-2xl border bg-white p-3"
                                 >
                                     {CATEGORIES.map((c) => (
                                         <option key={c} value={c}>
@@ -1028,23 +1029,25 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                         </option>
                                     ))}
                                 </select>
+                                </Field>
                             </div>
                             <div className="w-1/4">
-                                <label className="ml-2 text-[10px] font-bold uppercase text-gray-400">% Merma</label>
+                                <Field instance="ingredient-edit-waste" label="% Merma" htmlFor="ingredient-edit-waste">
                                 <input
+                                    id="ingredient-edit-waste"
                                     type="number"
                                     step="0.01"
                                     value={editForm.waste_percentage || ''}
                                     onChange={(e) => setEditForm({ ...editForm, waste_percentage: parseFloat(e.target.value) })}
-                                    className="w-full rounded-2xl border p-3 font-bold"
                                 />
+                                </Field>
                             </div>
                             <div className="w-1/4">
-                                <label className="ml-2 text-[10px] font-bold uppercase text-gray-400">U. Pedido</label>
+                                <Field instance="ingredient-edit-order-unit" label="U. Pedido" htmlFor="ingredient-edit-order-unit">
                                 <select
+                                    id="ingredient-edit-order-unit"
                                     value={editForm.order_unit || 'unidad'}
                                     onChange={(e) => setEditForm({ ...editForm, order_unit: e.target.value })}
-                                    className="w-full rounded-2xl border bg-white p-3"
                                 >
                                     {ORDER_UNITS.map((u) => (
                                         <option key={u} value={u}>
@@ -1052,18 +1055,17 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                         </option>
                                     ))}
                                 </select>
+                                </Field>
                             </div>
                             <div className="w-1/4">
-                                <label className="ml-2 text-[10px] font-bold uppercase text-gray-400" title="Unidad al añadir a recetas">
-                                    U. receta
-                                </label>
+                                <Field instance="ingredient-edit-recipe-unit" label="U. receta" htmlFor="ingredient-edit-recipe-unit">
                                 <select
+                                    id="ingredient-edit-recipe-unit"
                                     value={
                                         editForm.recipe_unit ||
                                         resolveIngredientRecipeUnit(null, editForm.purchase_unit ?? 'kg')
                                     }
                                     onChange={(e) => setEditForm({ ...editForm, recipe_unit: e.target.value })}
-                                    className="w-full rounded-2xl border bg-white p-3 font-bold"
                                 >
                                     {RECIPE_UNIT_OPTIONS.map((o) => (
                                         <option key={o.value} value={o.value}>
@@ -1071,21 +1073,21 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                         </option>
                                     ))}
                                 </select>
+                                </Field>
                             </div>
                             <div className="w-1/4">
-                                <label className="ml-2 text-[10px] font-bold uppercase text-gray-400" title="Stock Recomendado">
-                                    Stock Rec.
-                                </label>
+                                <Field instance="ingredient-edit-stock" label="Stock Rec." htmlFor="ingredient-edit-stock">
                                 <input
+                                    id="ingredient-edit-stock"
                                     type="number"
                                     step="1"
                                     value={editForm.recommended_stock || ''}
                                     onChange={(e) =>
                                         setEditForm({ ...editForm, recommended_stock: parseFloat(e.target.value) || null })
                                     }
-                                    className="w-full rounded-2xl border p-3 font-bold"
                                     placeholder="0"
                                 />
+                                </Field>
                             </div>
                         </div>
                         {orphanedSupplier1 ? (

@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { CashDenominationForm, CASH_COUNT_FORM_ID } from './CashDenominationForm';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { CashCountFooter } from '@/components/cash/CashCountFooter';
 import { CashCountDateButton, formatCashCountDateInput } from '@/components/cash/CashCountDateButton';
 
@@ -335,10 +336,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                             )}
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center justify-center py-10 opacity-20 select-none">
-                            <Calculator size={40} strokeWidth={1} />
-                            <p className="text-[10px] font-black uppercase tracking-widest mt-4">Sin desglose disponible</p>
-                        </div>
+                        <EmptyState instance="movement-detail-none" variant="none" title="Sin desglose disponible" />
                     )}
                 </div>
                 <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />

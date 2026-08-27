@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { Field } from '@/components/ui/Field'
 import { pricingAssistantCopy } from '@/lib/ingredient-pricing-assistant-copy'
 import {
   resolveDeclaredPurchaseUnitWithPackContent,
@@ -1088,16 +1089,15 @@ export function IngredientWizard({
       ) : step === 1 ? (
         <div className="space-y-3">
           <PricingStepHeader title={pricingAssistantCopy.name.title} hint={pricingAssistantCopy.name.hint} />
-          <label className="block space-y-2">
-            <span className="sr-only">Nombre</span>
+          <Field instance="ingredient-wizard-name" label="Nombre" htmlFor="ingredient-wizard-name">
             <input
+              id="ingredient-wizard-name"
               value={draft.name}
               onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
               placeholder="Ej. Tomate pera, Aceite 0,4…"
-              className="w-full min-h-12 rounded-xl border border-zinc-200 px-3 text-sm font-bold"
               autoFocus
             />
-          </label>
+          </Field>
           <div className="flex flex-wrap items-center justify-end gap-2">
             <Button
               type="button"

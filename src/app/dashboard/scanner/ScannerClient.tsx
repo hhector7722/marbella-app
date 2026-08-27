@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { ChevronLeft, ChevronRight, Loader2, Search, Truck, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Loader2, Truck, X } from 'lucide-react'
 import { assessScannerImageReadability } from '@/lib/scanner-image-quality'
 import { compressImageFileToDataUri } from '@/lib/scanner-image-compress'
 import { appendScannerPageToInvoiceAction, processScannerImage } from './actions'
@@ -12,6 +12,8 @@ import { useTrackModalApply } from '@/hooks/useTrackModalApply'
 import { namedEntitySummary } from '@/lib/usage/modal-apply'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
+import { SearchField } from '@/components/ui/SearchField'
+import { CatalogGrid, CatalogTile } from '@/components/catalog/CatalogTile'
 
 interface Supplier {
   id: number
@@ -438,30 +440,28 @@ export function ScannerClient({
               </div>
             ) : null}
 
+            <div className="flex flex-wrap items-center justify-end gap-2">
             <Button
               type="button"
               variant="tertiary"
               instance="scanner-add-sheet"
               onClick={triggerAnotherCapture}
               disabled={isProcessing}
-              layout="fill"
-              className="shrink-0"
             >
               Añadir hoja
             </Button>
-
-            <button
+            <Button
               type="button"
+              variant="primary"
+              instance="scanner-save-batch"
               onClick={() => void commitPendingBatch()}
               disabled={isProcessing}
-              className={cn(
-                'min-h-12 w-full shrink-0 rounded-xl px-4 font-black uppercase tracking-widest text-sm',
-                'bg-[#36606F] text-white hover:bg-[#2A4C58] active:scale-[0.99] transition',
-                isProcessing && 'opacity-60 pointer-events-none'
-              )}
+              loading={isProcessing}
+              loadingLabel="Subiendo…"
             >
-              {isProcessing ? 'Subiendo…' : 'Guardar'}
-            </button>
+              Guardar
+            </Button>
+            </div>
           </div>
         )}
 
@@ -503,18 +503,16 @@ export function ScannerClient({
         loading={loadingSuppliers}
       >
         <div className="flex-1 overflow-hidden flex flex-col">
-          <div className="relative mb-4 shrink-0">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
+          <div className="mb-4 shrink-0">
+            <SearchField
+              instance="scanner-supplier-search"
               placeholder="Buscar proveedor..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-12 pl-10 pr-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-[#36606F] focus:border-[#36606F] outline-none transition-all placeholder:text-zinc-300"
+              onChange={setSearchQuery}
             />
           </div>
 
-          <div className="overflow-y-auto grid grid-cols-3 sm:grid-cols-4 gap-5 p-2">
+          <div className="overflow-y-auto p-2">
             {loadingSuppliers ? (
               <div className="col-span-full py-10 flex justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-[#36606F]" />
@@ -524,29 +522,17 @@ export function ScannerClient({
                 <span className="text-sm font-bold text-gray-400">No se encontraron proveedores</span>
               </div>
             ) : (
-              filteredSuppliers.map((s) => {
-                const logo = getSupplierLogo(s.image_url, s.name)
-                return (
-                  <button
+              <CatalogGrid columns={4}>
+                {filteredSuppliers.map((s) => (
+                  <CatalogTile
                     key={s.id}
-                    type="button"
+                    title={s.name}
+                    imageSrc={getSupplierLogo(s.image_url, s.name)}
+                    fallback={<Truck className="h-8 w-8 md:h-10 md:w-10" />}
                     onClick={() => handleSelectSupplier(s.id)}
-                    className="p-2 flex flex-col items-center justify-center gap-1.5 aspect-square transition-all active:scale-95 hover:bg-zinc-50 rounded-xl"
-                  >
-                    <div className="w-11 h-11 flex items-center justify-center overflow-hidden shrink-0">
-                      {logo ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={logo} alt={s.name} className="w-full h-full object-contain" />
-                      ) : (
-                        <Truck className="w-6 h-6 text-gray-300" />
-                      )}
-                    </div>
-                    <span className="text-[9px] font-black uppercase text-gray-800 tracking-wider text-center line-clamp-2 leading-tight px-0.5">
-                      {s.name}
-                    </span>
-                  </button>
-                )
-              })
+                  />
+                ))}
+              </CatalogGrid>
             )}
           </div>
         </div>

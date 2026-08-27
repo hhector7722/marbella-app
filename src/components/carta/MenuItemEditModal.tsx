@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { createClient } from '@/utils/supabase/client'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
+import { Field } from '@/components/ui/Field'
 import { upsertMenuOverride, type PlatoMarbellaSlotValue } from '@/app/dashboard/carta/actions'
 import { uploadNormalizedCartaItemPhoto } from '@/app/dashboard/carta/photo-actions'
 import { PLATO_MARBELLA_CHILD_SLUG } from '@/lib/carta-plato-marbella'
@@ -383,35 +384,20 @@ export function MenuItemEditModal({
               ) : null}
 
               <div className="mt-3 grid grid-cols-1 gap-2">
-                <label className="space-y-1">
-                  <span className="text-[11px] font-black uppercase tracking-widest text-zinc-600">Nombre ES</span>
-                  <input
-                    value={nameEs}
-                    onChange={(e) => setNameEs(e.target.value)}
-                    className="min-h-[48px] w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 outline-none focus:border-[#36606F]"
-                  />
-                </label>
-                <label className="space-y-1">
-                  <span className="text-[11px] font-black uppercase tracking-widest text-zinc-600">Nombre CA</span>
-                  <input
-                    value={nameCa}
-                    onChange={(e) => setNameCa(e.target.value)}
-                    className="min-h-[48px] w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 outline-none focus:border-[#36606F]"
-                  />
-                </label>
-                <label className="space-y-1">
-                  <span className="text-[11px] font-black uppercase tracking-widest text-zinc-600">Nombre EN</span>
-                  <input
-                    value={nameEn}
-                    onChange={(e) => setNameEn(e.target.value)}
-                    className="min-h-[48px] w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 outline-none focus:border-[#36606F]"
-                  />
-                </label>
+                <Field instance="menu-item-name-es" label="Nombre ES" htmlFor="menu-item-name-es">
+                  <input id="menu-item-name-es" value={nameEs} onChange={(e) => setNameEs(e.target.value)} />
+                </Field>
+                <Field instance="menu-item-name-ca" label="Nombre CA" htmlFor="menu-item-name-ca">
+                  <input id="menu-item-name-ca" value={nameCa} onChange={(e) => setNameCa(e.target.value)} />
+                </Field>
+                <Field instance="menu-item-name-en" label="Nombre EN" htmlFor="menu-item-name-en">
+                  <input id="menu-item-name-en" value={nameEn} onChange={(e) => setNameEn(e.target.value)} />
+                </Field>
               </div>
 
-              <label className="mt-3 block space-y-1">
-                <span className="text-[11px] font-black uppercase tracking-widest text-zinc-600">Categoría</span>
+              <Field instance="menu-item-category" label="Categoría" htmlFor="menu-item-category">
                 <select
+                  id="menu-item-category"
                   value={categoryId}
                   onChange={(e) => {
                     setCategoryId(e.target.value)
@@ -420,7 +406,6 @@ export function MenuItemEditModal({
                       setPlatoMenuPrice(false)
                     }
                   }}
-                  className="min-h-[48px] w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-bold text-zinc-900 outline-none focus:border-[#36606F]"
                 >
                   {categoryOptions.map((o) => (
                     <option key={o.id || '__none__'} value={o.id}>
@@ -428,7 +413,7 @@ export function MenuItemEditModal({
                     </option>
                   ))}
                 </select>
-              </label>
+              </Field>
 
               {isDualRacionCategory ? (
                 <div className="mt-3 space-y-3 rounded-xl border border-[#36606F]/20 bg-[#36606F]/5 p-3">
@@ -446,32 +431,26 @@ export function MenuItemEditModal({
                   {dualRacionEnabled ? (
                     <>
                       <div className="grid grid-cols-2 gap-2">
-                        <label className="block space-y-1">
-                          <span className="text-[11px] font-black uppercase tracking-widest text-[#36606F]">
-                            Precio {dualUi.racionEntero}
-                          </span>
+                        <Field instance="menu-item-precio-entero" label={`Precio ${dualUi.racionEntero}`} htmlFor="menu-item-precio-entero">
                           <input
+                            id="menu-item-precio-entero"
                             type="text"
                             inputMode="decimal"
                             value={precioEntero}
                             onChange={(e) => setPrecioEntero(e.target.value)}
                             placeholder={tpvPrecioBase ?? '0.00'}
-                            className="min-h-[48px] w-full rounded-xl border border-zinc-200 bg-white px-3 font-mono text-sm font-bold"
                           />
-                        </label>
-                        <label className="block space-y-1">
-                          <span className="text-[11px] font-black uppercase tracking-widest text-[#36606F]">
-                            Precio {dualUi.racionMedio}
-                          </span>
+                        </Field>
+                        <Field instance="menu-item-precio-medio" label={`Precio ${dualUi.racionMedio}`} htmlFor="menu-item-precio-medio">
                           <input
+                            id="menu-item-precio-medio"
                             type="text"
                             inputMode="decimal"
                             value={precioMedio}
                             onChange={(e) => setPrecioMedio(e.target.value)}
                             placeholder="0.00"
-                            className="min-h-[48px] w-full rounded-xl border border-zinc-200 bg-white px-3 font-mono text-sm font-bold"
                           />
-                        </label>
+                        </Field>
                       </div>
                       <p className="text-[11px] font-semibold text-zinc-600">
                         Etiquetas en carta (vacío = texto por defecto del idioma).

@@ -4,10 +4,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation';
 import { processInventoryCounts, saveIngredientsInventoryVisibility } from './actions'
 import { toast } from 'sonner'
-import { AlertCircle, Filter, Package, Search } from 'lucide-react'
+import { AlertCircle, Filter, Package } from 'lucide-react'
 import { FloatingCalculatorFab, QuickCalculatorModal } from '@/components/ui/QuickCalculatorModal'
 import { Button } from '@/components/ui/button'
 import { QuantityStepper } from '@/components/ui/QuantityStepper'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { SearchField } from '@/components/ui/SearchField'
 import { cn } from '@/lib/utils'
 
 type Ingredient = {
@@ -345,14 +347,16 @@ export function InventoryClient({
 
   if (!visibilityEditMode && initialIngredients.length === 0) {
     return (
-      <div className="flex flex-col gap-3 min-h-0 flex-1 items-center justify-center py-12 px-2 text-center">
-        <p className="text-sm font-medium text-zinc-600">No hay artículos visibles en el recuento.</p>
-        {managerEmptyHint ? (
-          <p className="text-xs text-zinc-500 max-w-sm">
-            Pulsa el icono de edición en la cabecera para activar artículos en esta pantalla.
-          </p>
-        ) : null}
-      </div>
+      <EmptyState
+        instance="inventory-no-visible"
+        variant="none"
+        title="No hay artículos visibles en el recuento."
+        description={
+          managerEmptyHint
+            ? 'Pulsa el icono de edición en la cabecera para activar artículos en esta pantalla.'
+            : undefined
+        }
+      />
     )
   }
 
@@ -404,14 +408,12 @@ export function InventoryClient({
             )}
 
             <div className="flex items-center gap-2 w-full shrink-0 relative z-20">
-              <div className="relative flex-1 min-w-0">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
-                <input
-                  type="text"
+              <div className="flex-1 min-w-0">
+                <SearchField
+                  instance="inventory-search"
                   placeholder="Buscar ingrediente…"
                   value={ingredientQuery}
-                  onChange={(e) => setIngredientQuery(e.target.value)}
-                  className="w-full min-h-[48px] pl-10 pr-4 rounded-xl border border-zinc-200 bg-white text-sm font-medium text-zinc-800 shadow-sm outline-none focus:ring-2 focus:ring-[#36606F]/25 focus:border-[#36606F]/40"
+                  onChange={setIngredientQuery}
                 />
               </div>
 
@@ -484,7 +486,11 @@ export function InventoryClient({
           </div>
 
         {Object.keys(grouped).length === 0 ? (
-            <p className="text-sm text-zinc-500 text-center py-8">No hay ingredientes que coincidan.</p>
+            <EmptyState
+              instance="inventory-mismatch"
+              variant="mismatch"
+              title="No hay ingredientes que coincidan."
+            />
           ) : (
             Object.entries(grouped).map(([category, items]) => (
               <section key={category} className="flex flex-col gap-3 shrink-0">

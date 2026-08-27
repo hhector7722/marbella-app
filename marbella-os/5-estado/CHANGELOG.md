@@ -38,6 +38,10 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-27
 
+- **El catálogo se lee en tres columnas; el filtro ya no es una tarjeta.** Recetas e ingredientes pasan a 3 columnas; proveedores (página y pedido) siguen en 4, con la misma celda. Todos los buscadores miden la misma altura. CAT y PROV flotan sobre el fondo, sin mini-card y sin punto.
+
+- **El buscador, el calendario de ventas y los formularios pintan igual.** Buscar es la misma lupa; elegir un día en ventas es el mismo mini-calendario; las tablas de inventario, pedido, encargo y propinas llevan la cabecera de sistema; si no hay nada se dice igual; confirmar ya no se estira; y nombre, fechas y teléfono de proveedor, carta y condiciones van en el mismo campo.
+
 - **Una barra de cantidad, un calendario de día y el mismo vacío en todas partes.** Menos / número / más es la misma pieza; confirmar ya no se estira a todo el ancho; horas extras del Admin coincide con la pantalla; las tablas de receta, mapeo, encargo e import llevan la cabecera de sistema; elegir un día en ventana es el mismo mini-calendario; si no hay nada se dice igual; y el día de uso, web, apunte y encargo vive en la cabecera.
 
 ## 2026-08-26

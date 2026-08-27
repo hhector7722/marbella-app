@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 
 interface Ingredient {
     id: string;
@@ -22,15 +23,6 @@ interface OrderSummaryModalProps {
 
 export function OrderSummaryModal({ isOpen, onClose, items, onConfirm, isProcessing }: OrderSummaryModalProps) {
     const [calculatorOpen, setCalculatorOpen] = useState(false);
-    const [smUp, setSmUp] = useState(false);
-
-    useEffect(() => {
-        const mq = window.matchMedia('(min-width: 640px)');
-        const sync = () => setSmUp(mq.matches);
-        sync();
-        mq.addEventListener('change', sync);
-        return () => mq.removeEventListener('change', sync);
-    }, []);
 
     return (
         <>
@@ -51,7 +43,6 @@ export function OrderSummaryModal({ isOpen, onClose, items, onConfirm, isProcess
                             type="button"
                             variant="primary"
                             instance="order-summary-continue"
-                            layout={smUp ? 'hug' : 'fill'}
                             disabled={isProcessing}
                             loading={isProcessing}
                             loadingLabel="Procesando..."
@@ -62,12 +53,12 @@ export function OrderSummaryModal({ isOpen, onClose, items, onConfirm, isProcess
                     </div>
                 }
             >
-                <table className="w-full text-left border-separate border-spacing-y-1 sm:border-spacing-y-2 table-fixed">
+                <table data-component={TABLE_COMPONENT_ID} data-instance="order-summary-lines" className="w-full text-left table-fixed">
                     <thead>
-                        <tr className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-zinc-100">
-                            <th className="px-2 sm:px-4 py-2 sm:py-4 w-[55%]">Producto</th>
-                            <th className="px-2 sm:px-4 py-2 sm:py-4 text-center w-[20%]">Cant.</th>
-                            <th className="px-2 sm:px-4 py-2 sm:py-4 text-right w-[25%]">U.</th>
+                        <tr>
+                            <th className="w-[55%]">Producto</th>
+                            <th className="text-center w-[20%]">Cant.</th>
+                            <th className="text-right w-[25%]">U.</th>
                         </tr>
                     </thead>
                     <tbody>

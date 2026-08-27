@@ -428,16 +428,16 @@ export function CartaStaffMenuProductCard({
               ) : null}
             </button>
           </div>
+          <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
           <Button
             type="button"
             variant="secondary"
             instance="carta-staff-racion-cancel"
-            layout="fill"
-            className="mt-3"
             onClick={() => setRacionPickerOpen(false)}
           >
             Cancelar
           </Button>
+          </div>
         </div>
       </Modal>
     </div>

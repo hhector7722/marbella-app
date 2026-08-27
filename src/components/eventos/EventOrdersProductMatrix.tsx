@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useMemo } from 'react'
 import { cn } from '@/lib/utils'
+import { TABLE_COMPONENT_ID } from '@/lib/design-system'
 import {
   buildEventOrderProductColumns,
   formatOrderQuantityCell,
@@ -23,15 +24,14 @@ export function EventOrdersProductMatrix({
   const fixedColCount = (showEncargoColumn ? 2 : 0) + 1
   const totalCols = fixedColCount + productColumns.length
 
-  const thClass =
-    'px-3 py-3 text-left text-[11px] font-black uppercase tracking-wider text-zinc-600 whitespace-nowrap'
+  const thClass = 'text-left whitespace-nowrap'
   const tdClass = 'px-3 py-3 text-sm font-bold text-zinc-900 tabular-nums text-center'
 
   return (
     <div className="overflow-auto">
-      <table className="w-full border-collapse">
+      <table data-component={TABLE_COMPONENT_ID} data-instance="event-orders-matrix" className="w-full">
         <thead>
-          <tr className="bg-zinc-50">
+          <tr>
             {showEncargoColumn ? (
               <th className={cn(thClass, 'text-left')}>Encargo</th>
             ) : null}

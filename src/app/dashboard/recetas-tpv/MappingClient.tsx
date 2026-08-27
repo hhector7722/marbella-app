@@ -4,11 +4,13 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation';
 import { useMemo, useRef, useState, useTransition, useEffect } from 'react'
 import { toast } from 'sonner'
-import { Check, Filter, Search, Trash2, ChevronDown, X } from 'lucide-react'
+import { Check, Filter, Trash2, ChevronDown, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { TABLE_COMPONENT_ID } from '@/lib/design-system'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { SearchField } from '@/components/ui/SearchField'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
 import { namedEntitySummary } from '@/lib/usage/modal-apply'
@@ -261,14 +263,13 @@ export default function MappingClient({
   return (
     <div className="space-y-2">
       <div className="flex w-full min-w-0 items-center gap-2">
-        <div className="relative min-h-9 min-w-0 flex-1">
-          <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
-          <input
-            className="h-9 w-full min-w-0 rounded-md border border-zinc-200 bg-white pl-8 pr-2 text-xs text-zinc-900 shadow-sm focus:outline-none focus:ring-1 focus:ring-[#5B8FB9]"
+        <div className="min-w-0 flex-1">
+          <SearchField
+            instance="mapping-search"
             placeholder="Buscar…"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            aria-label="Buscar en mapeos TPV"
+            onChange={setQuery}
+            ariaLabel="Buscar en mapeos TPV"
           />
         </div>
         <div ref={deptMenuRef} className="relative flex shrink-0 items-center gap-1.5">
@@ -457,7 +458,7 @@ export default function MappingClient({
             })}
 
             {sortedRows.length === 0 ? (
-              <div className="px-2 py-8 text-center text-[10px] text-zinc-500">Sin resultados.</div>
+              <EmptyState instance="mapping-rows-mismatch" variant="mismatch" title="Sin resultados." />
             ) : null}
           </div>
         </div>
@@ -998,11 +999,11 @@ function RecipeCombobox({
       {isOpen ? (
         <div className="absolute left-0 right-0 z-50 mt-1 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-xl">
           <div className="border-b border-zinc-100 bg-zinc-50 p-1.5">
-            <input
-              className="h-8 w-full rounded border border-zinc-200 bg-white px-2 text-xs text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
+            <SearchField
+              instance="mapping-recipe-search"
               placeholder="Buscar…"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={setSearch}
               autoFocus
             />
           </div>
@@ -1027,7 +1028,9 @@ function RecipeCombobox({
                 </button>
               </li>
               {filteredRecipes.length === 0 ? (
-                <li className="px-3 py-2 text-center text-xs text-zinc-500">Sin resultados.</li>
+                <li>
+                  <EmptyState instance="mapping-recipe-mismatch" variant="mismatch" title="Sin resultados." />
+                </li>
               ) : (
                 filteredRecipes.map((r) => (
                   <li key={r.id} role="none">

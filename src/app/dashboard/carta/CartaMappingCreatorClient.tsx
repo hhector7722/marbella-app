@@ -2,9 +2,10 @@
 
 import { useMemo, useRef, useState, useTransition, useEffect } from 'react'
 import { toast } from 'sonner'
-import { ChevronDown, Search, X } from 'lucide-react'
+import { ChevronDown, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { SearchField } from '@/components/ui/SearchField'
 import { upsertMapping } from '@/app/dashboard/recetas-tpv/actions'
 import { setArticuloDepartamento } from './actions'
 
@@ -97,13 +98,12 @@ export default function CartaMappingCreatorClient({
       </div>
 
       <div className="p-4 space-y-4">
-        <div className="relative w-full md:max-w-[520px]">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
-          <input
-            className="h-12 w-full rounded-xl border border-zinc-200 bg-white pl-12 pr-4 text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
+        <div className="w-full md:max-w-[520px]">
+          <SearchField
+            instance="carta-mapping-tpv-search"
             placeholder="Buscar artículo TPV por nombre o ID…"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={setQuery}
           />
         </div>
 
@@ -254,11 +254,11 @@ function RecipeCombobox({
       {isOpen ? (
         <div className="absolute z-50 mt-2 w-full rounded-xl border border-zinc-200 bg-white shadow-xl overflow-hidden">
           <div className="p-2 border-b border-zinc-100 bg-zinc-50">
-            <input
-              className="h-10 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
+            <SearchField
+              instance="carta-mapping-recipe-search"
               placeholder="Buscar receta…"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={setSearch}
               autoFocus
             />
           </div>

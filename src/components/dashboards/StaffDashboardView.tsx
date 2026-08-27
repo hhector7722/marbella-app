@@ -36,6 +36,7 @@ import { WeekCard } from '@/app/staff/history/WeekCard';
 import WorkTimer from '@/components/ui/WorkTimer';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Surface } from '@/components/ui/Surface';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
@@ -709,7 +710,7 @@ export default function StaffDashboardView() {
                                         showWeekOverrides={false}
                                     />
                                 ) : !weekLoading ? (
-                                    <p className="text-center text-sm text-zinc-500 py-10">Sin datos</p>
+                                    <EmptyState instance="staff-week-none" variant="none" title="Sin datos" />
                                 ) : null}
                             </div>
                         </Surface>

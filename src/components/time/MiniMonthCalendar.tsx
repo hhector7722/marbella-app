@@ -23,6 +23,7 @@ export function MiniMonthCalendar({
     onSelectDay,
     isSelected,
     isInRange,
+    isDisabled,
     monthInHeader = false,
 }: {
     month: Date;
@@ -30,6 +31,7 @@ export function MiniMonthCalendar({
     onSelectDay: (day: Date) => void;
     isSelected?: (day: Date) => boolean;
     isInRange?: (day: Date) => boolean;
+    isDisabled?: (day: Date) => boolean;
     /** Si la cabecera del mes ya está en el Modal, solo se pinta la rejilla. */
     monthInHeader?: boolean;
 }) {
@@ -73,20 +75,27 @@ export function MiniMonthCalendar({
                     const muted = !isSameMonth(day, month);
                     const selected = Boolean(isSelected?.(day));
                     const inRange = Boolean(isInRange?.(day));
+                    const disabled = Boolean(isDisabled?.(day));
                     return (
                         <button
                             key={day.toISOString()}
                             type="button"
-                            onClick={() => onSelectDay(day)}
+                            onClick={() => {
+                                if (!disabled) onSelectDay(day);
+                            }}
+                            disabled={disabled}
                             aria-label={format(day, 'yyyy-MM-dd')}
                             className={cn(
                                 'flex aspect-square items-center justify-center rounded-lg text-[11px] font-black transition-all',
                                 muted ? 'opacity-20' : 'opacity-100',
+                                disabled && 'cursor-not-allowed text-zinc-300',
                                 selected
                                     ? 'bg-ds-marca text-white'
                                     : inRange
                                       ? 'text-ds-marca'
-                                      : 'text-zinc-600',
+                                      : disabled
+                                        ? 'text-zinc-300'
+                                        : 'text-zinc-600',
                             )}
                         >
                             {format(day, 'd')}

@@ -156,11 +156,11 @@ export default function BulkImportPage() {
                             placeholder="Pega aquí tu array de JSON..."
                             className="flex-1 w-full bg-white text-gray-900 p-4 rounded-xl font-mono text-xs outline-none focus:ring-2 focus:ring-ds-marca/25 border border-zinc-200 min-h-12"
                         />
+                        <div className="flex flex-wrap items-center justify-end gap-2">
                         <Button
                             type="button"
                             variant="primary"
                             instance="recipes-import-run"
-                            layout="fill"
                             onClick={() => void handleImport()}
                             disabled={isProcessing}
                             loading={isProcessing}
@@ -168,6 +168,7 @@ export default function BulkImportPage() {
                         >
                             Importar ahora
                         </Button>
+                        </div>
                     </div>
 
                     <div className="bg-zinc-900 rounded-xl p-4 font-mono text-xs overflow-y-auto border border-zinc-200">

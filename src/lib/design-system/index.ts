@@ -114,6 +114,7 @@ export {
     type SurfaceVariant,
 } from './surface';
 export { FIELD_COMPONENT_ID } from './field';
+export { SEARCH_FIELD_COMPONENT_ID } from './search-field';
 export {
     EMPTY_STATE_COMPONENT_ID,
     EMPTY_STATE_VARIANTS,

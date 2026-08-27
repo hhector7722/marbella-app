@@ -2,9 +2,10 @@
 
 import { useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { Search, Trash2, Eye, EyeOff } from 'lucide-react'
+import { Trash2, Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { SearchField } from '@/components/ui/SearchField'
 import { deleteMenuOverride, upsertMenuOverride } from './actions'
 import type { CartaEditorMappingRow, CartaOverrideRow } from './types'
 
@@ -266,13 +267,12 @@ export default function CartaEditorClient({
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="relative w-full md:w-[520px]">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
-          <input
-            className="h-12 w-full rounded-xl border border-zinc-200 bg-white pl-12 pr-4 text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
+        <div className="w-full md:w-[520px]">
+          <SearchField
+            instance="carta-editor-search"
             placeholder="Buscar por TPV, receta o ID…"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={setQuery}
           />
         </div>
         <div className="text-xs text-zinc-500">

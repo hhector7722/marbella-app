@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { cn } from '@/lib/utils';
-import { Search, Package, Plus, Upload, X, ChevronDown, Settings } from 'lucide-react';
+import { Package, Plus, Upload, Settings } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import { IngredientWizard } from '@/components/ingredients/IngredientWizard';
@@ -14,8 +14,10 @@ import { RECIPE_UNIT_OPTIONS, resolveIngredientRecipeUnit } from '@/lib/recipe-c
 import { resolveSupplierPickerItems } from '@/lib/supplier-seed';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { SearchField } from '@/components/ui/SearchField';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { CatalogGrid, CatalogTile } from '@/components/catalog/CatalogTile';
+import { CatalogFilterChip } from '@/components/catalog/CatalogFilterChip';
 
 // Unidades canónicas (sin duplicados tipo lt/l o u/ud)
 const STANDARD_UNITS = ['kg', 'g', 'l', 'ml', 'ud', 'cl'];
@@ -240,50 +242,33 @@ export default function IngredientsPage() {
                 }
             >
                 <div className="flex flex-row items-center gap-2">
-                    <div className="relative min-w-0 flex-1">
-                        <Search className="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400 md:left-4 md:h-4 md:w-4" />
-                        <input
-                            type="text"
+                    <div className="min-w-0 flex-1">
+                        <SearchField
+                            instance="ingredients-search"
                             placeholder="Buscar ingrediente..."
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className={cn(
-                                'w-full rounded-xl bg-white py-2 pr-2 pl-8 text-xs font-medium text-gray-700 shadow-sm outline-none md:rounded-2xl md:py-2.5 md:pr-4 md:pl-10 md:text-sm',
-                                'focus:ring-2 focus:ring-[#36606F]/25',
-                            )}
+                            onChange={setSearchQuery}
                         />
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5 md:gap-2">
                         {!selectedSupplier ? (
-                            <button
-                                type="button"
-                                onClick={() => setShowSupplierPopup(true)}
-                                className="flex min-h-12 items-center gap-1 rounded-xl border border-white/50 bg-white/90 px-2.5 py-2 font-black text-[9px] uppercase tracking-widest text-zinc-800 shadow-sm transition-all hover:bg-white md:gap-2 md:rounded-2xl md:px-5 md:py-2.5 md:text-[10px]"
-                            >
-                                <span className="hidden sm:inline">Proveedor</span>
-                                <span className="sm:hidden">Prov.</span>
-                                <ChevronDown size={12} className="text-zinc-400 md:h-3.5 md:w-3.5" />
-                            </button>
+                            <CatalogFilterChip
+                                label="PROV"
+                                onOpen={() => setShowSupplierPopup(true)}
+                            />
                         ) : (
-                            <div className="flex max-w-[100px] items-center gap-1 rounded-xl border border-white bg-white py-1 pl-2.5 pr-1 shadow-md md:max-w-none md:rounded-2xl md:py-1.5 md:pl-4 md:pr-1.5">
-                                <span className="truncate font-black text-[9px] uppercase tracking-widest text-zinc-800 md:text-[10px]">
-                                    {selectedSupplier}
-                                </span>
-                                <button
-                                    type="button"
-                                    onClick={() => setSelectedSupplier(null)}
-                                    className="shrink-0 rounded-xl p-1 transition-colors hover:bg-zinc-100 md:p-1.5"
-                                >
-                                    <X size={12} className="text-rose-500 md:h-3.5 md:w-3.5" strokeWidth={4} />
-                                </button>
-                            </div>
+                            <CatalogFilterChip
+                                label="PROV"
+                                value={selectedSupplier}
+                                onClear={() => setSelectedSupplier(null)}
+                            />
                         )}
                     </div>
                 </div>
 
                 {!loading && (
                     <div className="pt-4 md:pt-6">
-                        <CatalogGrid>
+                        <CatalogGrid columns={3}>
                             {filteredIngredients.map(ing => (
                                 <CatalogTile
                                     key={ing.id}

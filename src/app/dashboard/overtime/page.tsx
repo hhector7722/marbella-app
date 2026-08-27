@@ -17,6 +17,7 @@ import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { Modal } from '@/components/ui/modal';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { overtimeWeekDetailUsageLabel } from '@/lib/usage/modal-apply';
 
 // REGLA ZERO-DISPLAY: En vistas de lectura, cualquier valor igual a 0 debe mostrarse como un espacio vacío " ".
@@ -313,7 +314,7 @@ export default function OvertimePage() {
                                     />
                                 ))}
                                 {weekStaff.length === 0 && (
-                                    <p className="text-center text-zinc-400 text-xs font-bold uppercase tracking-widest py-4">Sin importes esta semana</p>
+                                    <EmptyState instance="overtime-week-none" variant="none" title="Sin importes esta semana" />
                                 )}
                             </div>
                         </div>

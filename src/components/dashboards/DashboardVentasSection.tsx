@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
-import { addDays, addMonths, format, isToday, subDays, subMonths } from 'date-fns';
+import { addDays, format, isToday, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { createClient } from '@/utils/supabase/client';
@@ -18,6 +18,7 @@ import LiveClock from '@/components/ui/LiveClock';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { MiniMonthCalendar } from '@/components/time/MiniMonthCalendar';
 import { Surface } from '@/components/ui/Surface';
 import { KpiStat } from '@/components/ui/KpiStat';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
@@ -488,8 +489,12 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                     <tbody className="text-[10px] md:text-xs font-bold text-zinc-600">
                                         {displayTickets.length === 0 && filterHourRange !== null ? (
                                             <tr>
-                                                <td colSpan={3} className="py-4 text-center text-[9px] font-bold text-zinc-400">
-                                                    Ningún ticket entre {String(filterHourRange.start).padStart(2, '0')}:00 y {String(filterHourRange.end).padStart(2, '0')}:00
+                                                <td colSpan={3}>
+                                                    <EmptyState
+                                                        instance="dashboard-ventas-hour-mismatch"
+                                                        variant="mismatch"
+                                                        title={`Ningún ticket entre ${String(filterHourRange.start).padStart(2, '0')}:00 y ${String(filterHourRange.end).padStart(2, '0')}:00`}
+                                                    />
                                                 </td>
                                             </tr>
                                         ) : (
@@ -517,7 +522,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                                                                 <LoadingSpinner size="sm" className="text-ds-marca/50" />
                                                                             </div>
                                                                         ) : ticketLines.length === 0 ? (
-                                                                            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-300 text-center py-2">Sin detalles</p>
+                                                                            <EmptyState instance="dashboard-ventas-ticket-none" variant="none" title="Sin detalles" />
                                                                         ) : (
                                                                             <table className="w-full text-left border-collapse table-fixed">
                                                                                 <thead>
@@ -574,7 +579,6 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                         <Button
                             type="button"
                             variant="primary"
-                            layout="fill"
                             instance="dashboard-ventas-date-today"
                             onClick={() => {
                                 const todayStr = format(new Date(), 'yyyy-MM-dd');
@@ -625,59 +629,18 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                             </select>
                         </div>
                         <div className="px-4 pb-4">
-                            <div className="flex items-center justify-between mb-6 px-2">
-                                <button type="button" onClick={() => setSalesCalendarBaseDate(subMonths(salesCalendarBaseDate, 1))} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center">
-                                    <ChevronLeft size={20} className="text-zinc-400" />
-                                </button>
-                                <span className="font-black text-zinc-900 text-xs uppercase tracking-tight">{format(salesCalendarBaseDate, 'MMMM yyyy', { locale: es })}</span>
-                                <button type="button" onClick={() => setSalesCalendarBaseDate(addMonths(salesCalendarBaseDate, 1))} className="p-3 hover:bg-zinc-50 rounded-2xl transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center">
-                                    <ChevronRight size={20} className="text-zinc-400" />
-                                </button>
-                            </div>
-                            <div className="grid grid-cols-7 gap-1">
-                                {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((d) => (
-                                    <div key={d} className="text-center text-[9px] font-black text-zinc-300 py-2">
-                                        {d}
-                                    </div>
-                                ))}
-                                {(() => {
-                                    const year = salesCalendarBaseDate.getFullYear();
-                                    const month = salesCalendarBaseDate.getMonth();
-                                    const firstDay = new Date(year, month, 1);
-                                    const lastDay = new Date(year, month + 1, 0);
-                                    const days: (number | null)[] = [];
-                                    const startDay = (firstDay.getDay() + 6) % 7;
-                                    for (let i = 0; i < startDay; i++) days.push(null);
-                                    for (let d = 1; d <= lastDay.getDate(); d++) days.push(d);
-                                    return days.map((day, i) => {
-                                        if (!day) return <div key={i} />;
-                                        const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                                        const isSelected = salesViewDate === dStr;
-                                        const today = new Date();
-                                        const isFuture = new Date(year, month, day) > new Date(today.getFullYear(), today.getMonth(), today.getDate());
-                                        return (
-                                            <button
-                                                key={i}
-                                                type="button"
-                                                onClick={() => {
-                                                    if (!isFuture) {
-                                                        trackVentasDate(formatYmdShort(dStr), { selectedDate: dStr });
-                                                        setSalesViewDate(dStr);
-                                                        setIsSalesDateModalOpen(false);
-                                                    }
-                                                }}
-                                                disabled={isFuture}
-                                                className={cn(
-                                                    'aspect-square flex items-center justify-center rounded-2xl text-[11px] font-black transition-all min-h-[48px]',
-                                                    isSelected ? 'bg-ds-marca text-white shadow-xl' : isFuture ? 'text-zinc-300 cursor-not-allowed' : 'hover:bg-zinc-50 text-zinc-600 active:scale-95'
-                                                )}
-                                            >
-                                                {day}
-                                            </button>
-                                        );
-                                    });
-                                })()}
-                            </div>
+                            <MiniMonthCalendar
+                                month={salesCalendarBaseDate}
+                                onMonthChange={setSalesCalendarBaseDate}
+                                onSelectDay={(day) => {
+                                    const dStr = format(day, 'yyyy-MM-dd');
+                                    trackVentasDate(formatYmdShort(dStr), { selectedDate: dStr });
+                                    setSalesViewDate(dStr);
+                                    setIsSalesDateModalOpen(false);
+                                }}
+                                isSelected={(day) => format(day, 'yyyy-MM-dd') === salesViewDate}
+                                isDisabled={(day) => format(day, 'yyyy-MM-dd') > format(new Date(), 'yyyy-MM-dd')}
+                            />
                         </div>
             </Modal>
         </>

@@ -3,7 +3,6 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import {
-    Calendar,
     CloudSun,
     Receipt,
     ChevronLeft,
@@ -21,6 +20,7 @@ import Image from 'next/image';
 import { ImageLightbox, type ImageLightboxSlide } from '@/components/ui/ImageLightbox';
 import { Modal } from '@/components/ui/modal';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { format, startOfMonth, endOfMonth, isSameDay, addDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths, isToday, isBefore, startOfDay, subWeeks, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -1706,10 +1706,11 @@ export default function HistoryPage() {
                                                 <LoadingSpinner size="lg" className="text-ds-marca" />
                                             </div>
                                         ) : closings.length === 0 ? (
-                                            <div className="text-center py-20 opacity-30 flex flex-col items-center gap-3">
-                                                <Calendar size={32} />
-                                                <p className="text-[10px] font-black uppercase tracking-widest">Sin actividad</p>
-                                            </div>
+                                            <EmptyState
+                                                instance="history-cierres-none"
+                                                variant="none"
+                                                title="Sin actividad"
+                                            />
                                         ) : (
                                             <table data-component={TABLE_COMPONENT_ID} data-instance="cierres-tabla" className="w-full text-left border-collapse table-fixed">
                                                 <thead>

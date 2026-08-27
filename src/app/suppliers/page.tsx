@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import { Search, Plus, X, ChevronDown, Phone, Truck, Upload, ImageIcon } from 'lucide-react';
+import { Plus, Phone, Truck, Upload, ImageIcon } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import Image from 'next/image';
@@ -12,9 +12,12 @@ import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { namedEntitySummary } from '@/lib/usage/modal-apply';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { SearchField } from '@/components/ui/SearchField';
+import { Field } from '@/components/ui/Field';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { CatalogGrid, CatalogTile } from '@/components/catalog/CatalogTile';
+import { CatalogFilterChip } from '@/components/catalog/CatalogFilterChip';
 import { EmptyState } from '@/components/ui/EmptyState';
 
 interface Supplier {
@@ -516,35 +519,26 @@ export default function SuppliersPage() {
                 }
             >
             <div className="flex flex-row items-center gap-2 shrink-0">
-                <div className="relative flex-1 min-w-0">
-                    <Search className="absolute left-2.5 md:left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400" />
-                    <input
-                        type="text"
+                <div className="flex-1 min-w-0">
+                    <SearchField
+                        instance="suppliers-search"
                         placeholder="Buscar..."
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-8 md:pl-10 pr-2 md:pr-4 py-2 md:py-3 bg-white rounded-xl md:rounded-2xl shadow-sm outline-none text-xs md:text-sm font-medium text-gray-700 focus:ring-2 focus:ring-ds-marca/25 min-h-12"
+                        onChange={setSearchQuery}
                     />
                 </div>
                 <div className="flex gap-1.5 md:gap-2 items-center shrink-0">
                     {!selectedCategory ? (
-                        <button
-                            type="button"
-                            onClick={() => setShowCategoryPopup(true)}
-                            className="px-2.5 md:px-5 py-2 md:py-3 bg-white hover:bg-zinc-50 rounded-xl md:rounded-2xl font-black text-[9px] md:text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-1 md:gap-2 border border-zinc-100 min-h-12"
-                        >
-                            <span className="hidden sm:inline">Categoría</span><span className="sm:hidden">Cat.</span> <ChevronDown size={12} className="text-zinc-400 md:w-3.5 md:h-3.5" />
-                        </button>
+                        <CatalogFilterChip
+                            label="CAT"
+                            onOpen={() => setShowCategoryPopup(true)}
+                        />
                     ) : (
-                        <div className="flex items-center gap-1 bg-white rounded-xl md:rounded-2xl pl-2.5 md:pl-4 pr-1 md:pr-1.5 py-1 md:py-1.5 shadow-md border border-white max-w-[100px] md:max-w-none">
-                            <span className="text-zinc-800 font-black text-[9px] md:text-[10px] uppercase tracking-widest truncate">{selectedCategory}</span>
-                            <button
-                                onClick={() => setSelectedCategory(null)}
-                                className="p-1 md:p-1.5 hover:bg-zinc-100 rounded-xl transition-colors shrink-0"
-                            >
-                                <X size={12} className="text-rose-500 md:w-3.5 md:h-3.5" strokeWidth={4} />
-                            </button>
-                        </div>
+                        <CatalogFilterChip
+                            label="CAT"
+                            value={selectedCategory}
+                            onClear={() => setSelectedCategory(null)}
+                        />
                     )}
                 </div>
             </div>
@@ -751,23 +745,21 @@ export default function SuppliersPage() {
             >
                 {editSupplier ? (
                     <div className="space-y-4">
-                        <div>
-                            <label className="mb-1.5 ml-1 block text-[9px] font-black uppercase tracking-widest text-gray-400">Nombre</label>
+                        <Field instance="supplier-edit-name" label="Nombre" htmlFor="supplier-edit-name">
                             <input
+                                id="supplier-edit-name"
                                 value={editSupplier.name ?? ''}
                                 onChange={(e) => setEditSupplier({ ...editSupplier, name: e.target.value })}
-                                className="min-h-[48px] w-full rounded-2xl border border-zinc-200 px-3 font-bold outline-none focus:border-[#36606F] focus:ring-2 focus:ring-[#36606F]/20"
                                 placeholder="Ej. Suministros Marbella"
                             />
-                        </div>
+                        </Field>
 
                         <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <label className="mb-1.5 ml-1 block text-[9px] font-black uppercase tracking-widest text-gray-400">Categoría</label>
+                            <Field instance="supplier-edit-category" label="Categoría" htmlFor="supplier-edit-category">
                                 <select
+                                    id="supplier-edit-category"
                                     value={editSupplier.category ?? 'Alimentos'}
                                     onChange={(e) => setEditSupplier({ ...editSupplier, category: e.target.value })}
-                                    className="min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-white px-3 font-bold outline-none focus:border-[#36606F] focus:ring-2 focus:ring-[#36606F]/20"
                                 >
                                     {CATEGORIES.map((cat) => (
                                         <option key={cat} value={cat}>
@@ -775,16 +767,15 @@ export default function SuppliersPage() {
                                         </option>
                                     ))}
                                 </select>
-                            </div>
-                            <div>
-                                <label className="mb-1.5 ml-1 block text-[9px] font-black uppercase tracking-widest text-gray-400">Teléfono</label>
+                            </Field>
+                            <Field instance="supplier-edit-phone" label="Teléfono" htmlFor="supplier-edit-phone">
                                 <input
+                                    id="supplier-edit-phone"
                                     value={editSupplier.phone ?? ''}
                                     onChange={(e) => setEditSupplier({ ...editSupplier, phone: e.target.value })}
-                                    className="min-h-[48px] w-full rounded-2xl border border-zinc-200 px-3 font-bold outline-none focus:border-[#36606F] focus:ring-2 focus:ring-[#36606F]/20"
                                     placeholder="600 000 000"
                                 />
-                            </div>
+                            </Field>
                         </div>
 
                         <div>
@@ -847,25 +838,24 @@ export default function SuppliersPage() {
                             })()}
                         </div>
 
-                        <div>
-                            <label className="mb-1.5 ml-1 block text-[9px] font-black uppercase tracking-widest text-gray-400">Dominios email (separados por coma)</label>
+                        <Field instance="supplier-edit-domains" label="Dominios email (separados por coma)" htmlFor="supplier-edit-domains">
                             <input
+                                id="supplier-edit-domains"
                                 value={editEmailDomainsText}
                                 onChange={(e) => setEditEmailDomainsText(e.target.value)}
-                                className="min-h-[48px] w-full rounded-2xl border border-zinc-200 px-3 font-bold outline-none focus:border-[#36606F] focus:ring-2 focus:ring-[#36606F]/20"
                                 placeholder="proveedor.com, proveedor.es"
                             />
-                        </div>
+                        </Field>
 
-                        <div>
-                            <label className="mb-1.5 ml-1 block text-[9px] font-black uppercase tracking-widest text-gray-400">Notas</label>
+                        <Field instance="supplier-edit-notes" label="Notas" htmlFor="supplier-edit-notes">
                             <textarea
+                                id="supplier-edit-notes"
                                 value={editNotes}
                                 onChange={(e) => setEditNotes(e.target.value)}
-                                className="min-h-[96px] w-full resize-none rounded-2xl border border-zinc-200 px-3 py-3 font-bold outline-none focus:border-[#36606F] focus:ring-2 focus:ring-[#36606F]/20"
                                 placeholder="Observaciones internas…"
+                                rows={4}
                             />
-                        </div>
+                        </Field>
                     </div>
                 ) : null}
             </Modal>
@@ -884,7 +874,6 @@ export default function SuppliersPage() {
                         type="button"
                         variant="primary"
                         instance="supplier-create-submit"
-                        layout="fill"
                         disabled={isCreating}
                         loading={isCreating}
                         loadingLabel="Guardando..."
@@ -895,37 +884,34 @@ export default function SuppliersPage() {
                 }
             >
                 <div className="space-y-4">
-                    <div>
-                        <label className="mb-1.5 ml-1 block text-[9px] font-black uppercase tracking-widest text-gray-400">Nombre Empresa</label>
+                    <Field instance="supplier-create-name" label="Nombre Empresa" htmlFor="supplier-create-name">
                         <input
+                            id="supplier-create-name"
                             autoFocus
                             value={newSupplier.name ?? ''}
                             onChange={e => setNewSupplier({ ...newSupplier, name: e.target.value })}
-                            className="w-full rounded-xl border p-3 font-bold outline-none focus:border-[#5E35B1]"
                             placeholder="Ej. Suministros Marbella"
                         />
-                    </div>
+                    </Field>
 
                     <div className="grid grid-cols-2 gap-3">
-                        <div>
-                            <label className="mb-1.5 ml-1 block text-[9px] font-black uppercase tracking-widest text-gray-400">Categoría</label>
+                        <Field instance="supplier-create-category" label="Categoría" htmlFor="supplier-create-category">
                             <select
+                                id="supplier-create-category"
                                 value={newSupplier.category ?? 'Alimentos'}
                                 onChange={e => setNewSupplier({ ...newSupplier, category: e.target.value })}
-                                className="w-full rounded-xl border bg-white p-3 font-bold outline-none focus:border-[#5E35B1]"
                             >
                                 {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                             </select>
-                        </div>
-                        <div>
-                            <label className="mb-1.5 ml-1 block text-[9px] font-black uppercase tracking-widest text-gray-400">Teléfono</label>
+                        </Field>
+                        <Field instance="supplier-create-phone" label="Teléfono" htmlFor="supplier-create-phone">
                             <input
+                                id="supplier-create-phone"
                                 value={newSupplier.phone ?? ''}
                                 onChange={e => setNewSupplier({ ...newSupplier, phone: e.target.value })}
-                                className="w-full rounded-xl border p-3 font-bold outline-none focus:border-[#5E35B1]"
                                 placeholder="600 000 000"
                             />
-                        </div>
+                        </Field>
                     </div>
                 </div>
             </Modal>

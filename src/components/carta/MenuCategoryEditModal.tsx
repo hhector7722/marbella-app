@@ -1,12 +1,14 @@
 'use client'
 
 import { useEffect, useMemo, useState, useTransition } from 'react'
-import { Loader2, Search, Upload, Camera } from 'lucide-react'
+import { Loader2, Upload, Camera } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { createClient } from '@/utils/supabase/client'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
+import { Field } from '@/components/ui/Field'
+import { SearchField } from '@/components/ui/SearchField'
 import {
   setMenuCategoryCover,
   upsertMenuCategoryOverride,
@@ -142,30 +144,15 @@ export function MenuCategoryEditModal({
             ) : (
               <>
                 <div className="grid grid-cols-1 gap-2">
-                  <label className="space-y-1">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-zinc-600">Nombre ES</span>
-                    <input
-                      value={nameEs}
-                      onChange={(e) => setNameEs(e.target.value)}
-                      className="min-h-[48px] w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 outline-none focus:border-[#36606F]"
-                    />
-                  </label>
-                  <label className="space-y-1">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-zinc-600">Nombre CA</span>
-                    <input
-                      value={nameCa}
-                      onChange={(e) => setNameCa(e.target.value)}
-                      className="min-h-[48px] w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 outline-none focus:border-[#36606F]"
-                    />
-                  </label>
-                  <label className="space-y-1">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-zinc-600">Nombre EN</span>
-                    <input
-                      value={nameEn}
-                      onChange={(e) => setNameEn(e.target.value)}
-                      className="min-h-[48px] w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-900 outline-none focus:border-[#36606F]"
-                    />
-                  </label>
+                  <Field instance="menu-category-name-es" label="Nombre ES" htmlFor="menu-category-name-es">
+                    <input id="menu-category-name-es" value={nameEs} onChange={(e) => setNameEs(e.target.value)} />
+                  </Field>
+                  <Field instance="menu-category-name-ca" label="Nombre CA" htmlFor="menu-category-name-ca">
+                    <input id="menu-category-name-ca" value={nameCa} onChange={(e) => setNameCa(e.target.value)} />
+                  </Field>
+                  <Field instance="menu-category-name-en" label="Nombre EN" htmlFor="menu-category-name-en">
+                    <input id="menu-category-name-en" value={nameEn} onChange={(e) => setNameEn(e.target.value)} />
+                  </Field>
                 </div>
 
                 <div className="space-y-2">
@@ -224,15 +211,12 @@ export function MenuCategoryEditModal({
 
                   {portadaOrigen === 'product' ? (
                     <>
-                      <div className="relative">
-                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-                        <input
-                          value={coverQuery}
-                          onChange={(e) => setCoverQuery(e.target.value)}
-                          placeholder="Buscar artículo…"
-                          className="min-h-[48px] w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-3 text-sm font-semibold text-zinc-900 outline-none focus:border-[#36606F] disabled:bg-zinc-50"
-                        />
-                      </div>
+                      <SearchField
+                        instance="menu-category-cover-search"
+                        value={coverQuery}
+                        onChange={setCoverQuery}
+                        placeholder="Buscar artículo…"
+                      />
                       <div className="max-h-56 overflow-y-auto rounded-xl border border-zinc-100 bg-white">
                         {coverOptions.map((it) => (
                           <button

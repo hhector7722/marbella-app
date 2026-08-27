@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronDown, RefreshCw } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { cn } from '@/lib/utils';
+import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -197,13 +198,13 @@ export function TipDistributionHistorySection({ refreshToken = 0 }: Props) {
                       {lines.length === 0 ? (
                         <p className="px-3 py-4 text-[11px] text-zinc-400 font-bold">Cargando detalle…</p>
                       ) : (
-                        <table className="w-full min-w-[520px] text-[10px] border-collapse">
+                        <table data-component={TABLE_COMPONENT_ID} data-instance="tips-distribution-lines" className="w-full min-w-[520px]">
                           <thead>
-                            <tr className="text-zinc-500 font-black uppercase tracking-wider">
-                              <th className="text-left px-2 py-2">Staff</th>
-                              <th className="text-center px-1">TJI</th>
-                              <th className="text-center px-1">Pen</th>
-                              <th className="text-right px-2">Total</th>
+                            <tr>
+                              <th className="text-left">Staff</th>
+                              <th className="text-center">TJI</th>
+                              <th className="text-center">Pen</th>
+                              <th className="text-right">Total</th>
                             </tr>
                           </thead>
                           <tbody>

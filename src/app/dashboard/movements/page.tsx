@@ -13,7 +13,6 @@ import {
     TrendingUp,
     Wallet,
     TrendingDown,
-    PiggyBank,
     ArrowRightLeft,
     ArrowUp,
     ArrowDown,
@@ -29,6 +28,7 @@ import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { CashDenominationForm, CASH_COUNT_FORM_ID } from '@/components/CashDenominationForm';
 import { BoxInventoryView } from '@/components/BoxInventoryView';
 import { MovementDetailModal } from '@/components/MovementDetailModal';
@@ -914,11 +914,12 @@ export default function MovementsPage() {
                                                 </tr>
                                             ) : movements.length === 0 ? (
                                                 <tr>
-                                                    <td colSpan={4} className="py-20 text-center">
-                                                        <div className="flex flex-col items-center justify-center gap-2 opacity-20">
-                                                            <PiggyBank size={32} />
-                                                            <span className="text-[10px] font-black uppercase tracking-widest">Sin movimientos</span>
-                                                        </div>
+                                                    <td colSpan={4}>
+                                                        <EmptyState
+                                                            instance="movements-none"
+                                                            variant="none"
+                                                            title="Sin movimientos"
+                                                        />
                                                     </td>
                                                 </tr>
                                             ) : (

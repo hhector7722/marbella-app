@@ -27,7 +27,7 @@ Las tres capas del inventario tienen contratos de rigor distinto:
 
 ## 1. Componentes base
 
-Los que sostienen toda pantalla. **Button, Surface, Field, EmptyState y Notice ya existen.** La insignia de estado sigue reconstruyéndose por vocabulario de dominio (D27).
+Los que sostienen toda pantalla. **Button, Surface, Field, SearchField, EmptyState y Notice ya existen.** La insignia de estado sigue reconstruyéndose por vocabulario de dominio (D27).
 
 ### Botón
 
@@ -89,7 +89,23 @@ Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`
 - Los campos numéricos no muestran los controles nativos de incremento.
 - Nada de lo escrito se pierde por navegar o por un fallo de red.
 
-**Estado**: existe. `src/components/ui/Field.tsx`. El aspecto lo fija CSS (`[data-component='Field']`). El consumidor pasa el `input`/`select`/`textarea`. No cubre barras de búsqueda compactas ni steppers de denominación ([D27](../5-estado/DEUDA.md)).
+**Estado**: existe. `src/components/ui/Field.tsx`. El aspecto lo fija CSS (`[data-component='Field']`). El consumidor pasa el `input`/`select`/`textarea`. No cubre barras de búsqueda compactas (`SearchField`) ni steppers de denominación ([D27](../5-estado/DEUDA.md)).
+
+### Buscador compacto (`SearchField`)
+
+**Propósito**: filtrar una lista.
+
+**Anatomía**: lupa a la izquierda e input. Sin etiqueta uppercase.
+
+**Reglas**:
+- No es Field. No lleva etiqueta de formulario.
+- Una sola altura, bloqueada (`height` = `min-height` = `max-height` = táctil mínimo). El ancho lo decide el sitio.
+- Radio de control. Foco de marca.
+- Los filtros CAT / PROV / FC viven al lado, flotando sobre el fondo: sin tarjeta, sin borde, sin punto.
+
+**Código**: `src/components/ui/SearchField.tsx`. El aspecto lo fija CSS (`[data-component='SearchField']`).
+
+**Estado**: existe. Catálogos, inventario, merma, mapeo, carta, pedido, encargo, scanner, albaranes, consumo y exportes.
 
 ### Tarjeta (`Surface`)
 
@@ -400,7 +416,7 @@ Su contrato lo fija la [especificación de su capacidad](../1-producto/capacidad
 
 La jerarquía visual canónica está decidida ([ADR-0010](../4-decisiones/ADR-0010-jerarquia-visual-canonica.md)): tokens → primitivas → plantillas de pantalla → pantallas de negocio. **No se reabren** Modal, Button, PetroleumSegmented, DocumentListRow ni ADR-0007/0008/0009.
 
-Hoy existen: Button, Modal, Surface, Field, EmptyState, Notice, KpiStat, PageScreen, DocumentListRow, PetroleumSegmented, DashboardShortcut. La insignia de estado sigue sin pieza (D27 chips). En Caja/Tesorería, `QuickCalculatorModal` y `DenominationZoomModal` permanecen legacy a propósito: el contrato no admite un tercer nivel sobre `base → derived`.
+Hoy existen: Button, Modal, Surface, Field, SearchField, EmptyState, Notice, KpiStat, PageScreen, DocumentListRow, PetroleumSegmented, DashboardShortcut. La insignia de estado sigue sin pieza (D27 chips). En Caja/Tesorería, `QuickCalculatorModal` y `DenominationZoomModal` permanecen legacy a propósito: el contrato no admite un tercer nivel sobre `base → derived`.
 
 Consecuencias observables:
 - Las pantallas principales de gestión (Labor, Albaranes, Reservas, Propinas, Carta, Recetas, Ingredientes, Ventas, Tesorería, Asistencia, Perfil) usan `PageScreen`.
@@ -423,7 +439,8 @@ Una familia = una implementación + el mínimo de variantes justificadas. «No m
 | Modal | Contrato vigente; contenido de detalle = Labor día | `compact` / `standard` / `work` / `day` / `amplify`; capas `base`/`derived`/`system` | No reabrir ADR-0007/8/9 |
 | Cabecera/pie Modal | Shell Modal | `headerTone` petroleum/white | Chrome ≠ Button |
 | Surface | PageScreen + Labor card | `page` / `block` | Clones `bg-white rounded-2xl shadow-*` migran; `RecipeCard` huérfano no es referencia |
-| Field | Filtro Albaranes (`min-h-12 rounded-xl`) | Una sola densidad de formulario | Búsqueda compacta y steppers: D27 |
+| Field | Filtro Albaranes (`min-h-12 rounded-xl`) | Una sola densidad de formulario | Steppers de denominación: D27 |
+| SearchField | Lupa + input táctil, altura bloqueada | Una sola densidad | No es Field. CAT/PROV flotan al lado, sin tarjeta |
 | Selector | PetroleumSegmented | `comfortable` / `compact` | Zinc, TimeFilter, CartaLangPicker, celdas de calendario: fuera |
 | Tabs | TabBar pabellón (underline) | Anatomía de sección, no radiogroup | No mezclar con PetroleumSegmented |
 | Filas | DocumentListRow (solo documentos) | Ninguna genérica | D27: no ListRow universal |

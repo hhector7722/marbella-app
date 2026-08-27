@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { format, addDays, getDay, subDays } from 'date-fns';
 import { submitReporteAction, ReportePayload } from './actions';
 import { Button } from '@/components/ui/button';
+import { Field } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/modal';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import './premium.css';
@@ -47,10 +48,11 @@ function getNextWeekend() {
   };
 }
 
-function DateInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function DateInput({ id, value, onChange }: { id?: string; value: string; onChange: (v: string) => void }) {
   const ref = useRef<HTMLInputElement>(null);
   return (
     <input
+      id={id}
       ref={ref}
       type="date"
       value={value}
@@ -58,7 +60,6 @@ function DateInput({ value, onChange }: { value: string; onChange: (v: string) =
         onChange(e.target.value);
         ref.current?.blur();
       }}
-      className="form-input w-full rounded-xl px-2 py-1.5 outline-none text-xs"
     />
   );
 }
@@ -420,11 +421,13 @@ export default function ReportePage() {
               )}
               <div className="grid grid-cols-[120px_1fr] gap-x-6 gap-y-1.5 items-start">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1">Data</label>
+                  <Field instance={`reporte-data-${act.id}`} label="Data" htmlFor={`reporte-data-${act.id}`}>
                   <DateInput
+                    id={`reporte-data-${act.id}`}
                     value={act.data}
                     onChange={(v) => handleChange(act.id, 'data', v)}
                   />
+                  </Field>
                 </div>
                 <div className="space-y-1">
                   <label className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider ml-1">Activitat</label>

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Modal } from '@/components/ui/modal'
 import { QuantityStepper } from '@/components/ui/QuantityStepper'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { formatCartaPrice } from '@/lib/carta-price-display'
 import { cn } from '@/lib/utils'
@@ -156,9 +157,7 @@ export function EventEncargoCartFooter({
       >
         <div className="space-y-3">
           {lines.length === 0 ? (
-            <p className="py-6 text-center text-sm font-semibold text-zinc-500">
-              Aún no hay productos.
-            </p>
+            <EmptyState instance="event-encargo-cart-none" variant="none" title="Aún no hay productos." />
           ) : (
             <div className="flex max-h-[min(50vh,22rem)] flex-col gap-1 overflow-y-auto overscroll-contain rounded-xl border border-zinc-100 bg-zinc-50/60 px-1">
               {lines.map((line) => {

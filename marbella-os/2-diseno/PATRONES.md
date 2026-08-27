@@ -219,7 +219,7 @@ La composición por defecto de listado, detalle y formulario de gestión. No es 
 - El cuerpo empieza pegado al contenido: no se deja un hueco vacío entre la cabecera y la tabla o el calendario.
 - `Button` en la cabecera se pinta invertido, sin relleno ni marco. No es una quinta variante de Button.
 - Labor, Reservas, Horario, Actividades, Consumo staff y Cierres montan el calendario mensual (P3) **dentro** de esta plantilla; no sustituyen la cabecera. La rejilla es una. Horas extras también entra por PageScreen, pero su interior es vista semanal (mini-calendario + filas), no P3.
-- Recetas, Ingredientes y Proveedores montan la misma rejilla de catálogo a **4 columnas** dentro de esta plantilla. Cada celda es un cuadrado (imagen + pie), sin tarjeta, con aire entre celdas. La imagen se reduce al mismo tamaño en las tres; el pie es una sola fila.
+- Recetas e Ingredientes montan la rejilla de catálogo a **3 columnas**; Proveedores (página y el modal de Pedido) a **4**. Cada celda es un cuadrado (imagen + pie), sin tarjeta, con aire entre celdas. La imagen se reduce al mismo tamaño; el pie es una sola fila. El disparador **CAT** / **PROV** flota sobre el fondo, sin mini-card y sin punto.
 - Asistencia (historial) monta tarjetas semanales (P6) dentro de esta plantilla, no el calendario P3.
 
 **Cuándo no**: mosaico Admin/Staff (T1), Sala LIVE, pantalla de cocina, carta de cliente, overlay (P2).

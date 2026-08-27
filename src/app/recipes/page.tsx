@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
-import { ChefHat, Search, Plus, X, ChevronDown, Users, Camera, Edit2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChefHat, Plus, X, ChevronDown, Users, Camera, Edit2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import CreateModal from '@/components/CreateRecipeModal';
 import { useRouter } from 'next/navigation';
@@ -13,6 +13,8 @@ import { Modal } from '@/components/ui/modal';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { CatalogGrid, CatalogTile } from '@/components/catalog/CatalogTile';
+import { CatalogFilterChip } from '@/components/catalog/CatalogFilterChip';
+import { SearchField } from '@/components/ui/SearchField';
 import { cn } from '@/lib/utils';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import {
@@ -432,64 +434,45 @@ function RecipesContent() {
                 }
             >
                 <div className="flex flex-row items-center gap-2">
-                    <div className="relative min-w-0 flex-1">
-                        <Search className="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400 md:left-4 md:h-4 md:w-4" />
-                        <input
-                            type="text"
+                    <div className="min-w-0 flex-1">
+                        <SearchField
+                            instance="recipes-search"
                             placeholder="Buscar..."
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className={cn(
-                                'w-full rounded-xl bg-white py-2 pr-2 pl-8 text-xs font-medium text-gray-700 shadow-sm outline-none md:rounded-2xl md:py-2.5 md:pr-4 md:pl-10 md:text-sm',
-                                'focus:ring-2 focus:ring-[#36606F]/25',
-                            )}
+                            onChange={setSearchQuery}
                         />
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5 md:gap-2">
                             {foodCostFilter ? (
-                                <div className="flex max-w-[100px] items-center gap-1 rounded-xl border border-white bg-white py-1 pl-2.5 pr-1 shadow-md md:max-w-md md:rounded-2xl md:py-1.5 md:pl-4 md:pr-1.5">
-                                    <span
-                                        className={cn(
-                                            'truncate text-[9px] font-black uppercase tracking-widest md:text-[10px]',
-                                            FOOD_COST_FILTER_OPTIONS.find((o) => o.status === foodCostFilter)?.colorClass ?? 'text-zinc-800',
-                                        )}
-                                        title={`Food Cost: ${selectedFoodCostFilterLabel}`}
-                                    >
-                                        FC {selectedFoodCostFilterLabel}
-                                    </span>
-                                    <button
-                                        type="button"
-                                        onClick={() => setFoodCostAndUrl(null)}
-                                        className="shrink-0 rounded-xl p-1 transition-colors hover:bg-zinc-100 md:p-1.5"
-                                        aria-label="Quitar filtro food cost"
-                                    >
-                                        <X size={12} className="text-rose-500 md:w-3.5 md:h-3.5" strokeWidth={4} />
-                                    </button>
-                                </div>
+                                <CatalogFilterChip
+                                    label="FC"
+                                    value={`FC ${selectedFoodCostFilterLabel}`}
+                                    onClear={() => setFoodCostAndUrl(null)}
+                                    clearAriaLabel="Quitar filtro food cost"
+                                    title={`Food Cost: ${selectedFoodCostFilterLabel}`}
+                                    valueClassName={
+                                        FOOD_COST_FILTER_OPTIONS.find((o) => o.status === foodCostFilter)?.colorClass
+                                    }
+                                />
                             ) : null}
                             {!categoryFromUrl ? (
-                                <button
-                                    type="button"
-                                    onClick={() => setShowCategoryPopup(true)}
-                                    className="px-2.5 md:px-5 py-2 md:py-2.5 bg-white/90 hover:bg-white rounded-xl md:rounded-2xl font-black text-[9px] md:text-[10px] text-zinc-800 uppercase tracking-widest shadow-sm transition-all flex items-center gap-1 md:gap-2 border border-white/50 min-h-12"
-                                >
-                                    <span className="hidden sm:inline">Categoría</span>
-                                    <span className="sm:hidden">Cat.</span>
-                                    <ChevronDown size={12} className="text-zinc-400 md:w-3.5 md:h-3.5" />
-                                </button>
+                                <CatalogFilterChip
+                                    label="CAT"
+                                    onOpen={() => setShowCategoryPopup(true)}
+                                />
                             ) : (
-                                <div className="flex max-w-[100px] items-center gap-1 rounded-xl border border-white bg-white py-1 pl-2.5 pr-1 shadow-md md:max-w-md md:rounded-2xl md:py-1.5 md:pl-4 md:pr-1.5">
-                                    <span className="truncate text-[9px] font-black uppercase tracking-widest text-zinc-800 md:text-[10px]" title={selectedCategoryFilterLabel}>
-                                        {selectedCategoryFilterLabel}
-                                    </span>
-                                    <button type="button" onClick={() => setCategoryAndUrl(null)} className="shrink-0 rounded-xl p-1 transition-colors hover:bg-zinc-100 md:p-1.5"><X size={12} className="text-rose-500 md:w-3.5 md:h-3.5" strokeWidth={4} /></button>
-                                </div>
+                                <CatalogFilterChip
+                                    label="CAT"
+                                    value={selectedCategoryFilterLabel}
+                                    onClear={() => setCategoryAndUrl(null)}
+                                    title={selectedCategoryFilterLabel}
+                                />
                             )}
                     </div>
                 </div>
                 {!loading && (
                     <div className="pt-4 md:pt-6">
-                        <CatalogGrid>
+                        <CatalogGrid columns={3}>
                             {filteredRecipes.map((recipe) => (
                                 <CatalogTile
                                     key={recipe.id}

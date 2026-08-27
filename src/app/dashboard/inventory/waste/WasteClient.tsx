@@ -2,12 +2,13 @@
 
 import { useMemo, useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { ChefHat, Filter, Package, Search } from 'lucide-react'
+import { ChefHat, Filter, Package } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented'
 import { QuantityStepper } from '@/components/ui/QuantityStepper'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { SearchField } from '@/components/ui/SearchField'
 import { processRecipeWaste, processWasteEntries } from './actions'
 
 type Ingredient = {
@@ -471,14 +472,12 @@ export function WasteClient({
         {mode === 'recipes' ? (
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-2 w-full shrink-0 relative">
-              <div className="relative w-full flex-1 min-w-0">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
-                <input
-                  type="text"
+              <div className="w-full flex-1 min-w-0">
+                <SearchField
+                  instance="waste-search-recipe"
                   placeholder="Buscar receta…"
                   value={recipeQuery}
-                  onChange={(e) => setRecipeQuery(e.target.value)}
-                  className="w-full min-h-[48px] pl-10 pr-4 rounded-xl border border-zinc-200 bg-white text-sm font-medium text-zinc-800 shadow-sm outline-none focus:ring-2 focus:ring-[#36606F]/25 focus:border-[#36606F]/40"
+                  onChange={setRecipeQuery}
                 />
               </div>
 
@@ -517,7 +516,7 @@ export function WasteClient({
                     <div className="h-px bg-zinc-100" />
                     <div className="max-h-72 overflow-auto">
                       {recipeCategories.length === 0 ? (
-                        <div className="px-4 py-3 text-xs font-bold text-zinc-400">Sin categorías</div>
+                        <EmptyState instance="waste-categories-none" variant="none" title="Sin categorías" />
                       ) : (
                         recipeCategories.map((c) => (
                           <button
@@ -574,14 +573,12 @@ export function WasteClient({
         ) : (
           <div className="flex flex-col gap-6">
             <div className="flex items-center gap-2 w-full shrink-0 relative">
-              <div className="relative w-full flex-1 min-w-0">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
-                <input
-                  type="text"
+              <div className="w-full flex-1 min-w-0">
+                <SearchField
+                  instance="waste-search-ingredient"
                   placeholder="Buscar ingrediente…"
                   value={ingredientQuery}
-                  onChange={(e) => setIngredientQuery(e.target.value)}
-                  className="w-full min-h-[48px] pl-10 pr-4 rounded-xl border border-zinc-200 bg-white text-sm font-medium text-zinc-800 shadow-sm outline-none focus:ring-2 focus:ring-[#36606F]/25 focus:border-[#36606F]/40"
+                  onChange={setIngredientQuery}
                 />
               </div>
 

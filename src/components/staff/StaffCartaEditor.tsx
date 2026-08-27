@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { toast } from 'sonner'
-import { Loader2, Pencil, Search, Eye, EyeOff, ImageIcon } from 'lucide-react'
+import { Loader2, Pencil, Eye, EyeOff, ImageIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
+import { SearchField } from '@/components/ui/SearchField'
 import {
   upsertMenuOverride,
   setMenuSectionCoverArticulo,
@@ -320,15 +321,12 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
         }
       >
             <div className="shrink-0 space-y-3 border-b border-zinc-100">
-              <div className="relative w-full">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
-                <input
-                  className="h-12 w-full rounded-xl border border-zinc-200 bg-white pl-12 pr-4 text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
-                  placeholder="Buscar producto…"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                />
-              </div>
+              <SearchField
+                instance="staff-carta-search"
+                placeholder="Buscar producto…"
+                value={query}
+                onChange={setQuery}
+              />
 
               <div className="flex shrink-0 rounded-xl bg-zinc-100 p-1.5 shadow-inner">
                 <TabButton active={tab === 'active'} onClick={() => setTab('active')}>
@@ -467,15 +465,12 @@ export function StaffCartaEditor({ canEdit }: { canEdit: boolean }) {
                   <p className="text-[11px] font-medium leading-snug text-amber-950/80">
                     Elige producto por nombre (mapeado a receta); se guarda por ID TPV.
                   </p>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-                    <input
-                      className="h-11 w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-3 text-sm font-semibold text-zinc-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#5B8FB9]"
-                      placeholder="Filtrar lista de artículos…"
-                      value={coverArticleFilter}
-                      onChange={(e) => setCoverArticleFilter(e.target.value)}
-                    />
-                  </div>
+                  <SearchField
+                    instance="staff-carta-cover-search"
+                    placeholder="Filtrar lista de artículos…"
+                    value={coverArticleFilter}
+                    onChange={setCoverArticleFilter}
+                  />
                   <div className="max-h-[min(40vh,280px)] space-y-2 overflow-y-auto pr-1">
                     {parents.map((p) => (
                       <div

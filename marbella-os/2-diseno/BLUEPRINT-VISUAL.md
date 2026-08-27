@@ -140,9 +140,9 @@ Pregunta de cada fila: **¿ya hemos decidido cómo debe ser?**
 - **Cabecera de bloque** (SIN CANON): Existe implementación visual (Surface block > header), pero todavía no existe una decisión canónica. No es PageScreen.
 - **Layout / alineación** (BORRADOR / PROPUESTA): Decisiones de izquierda / centro / extremos. No se expone justify-content.
 - **Field** (BORRADOR / PROPUESTA): Dirección cerrada: controles nativos dentro de Field. El contrato visual completo sigue abierto.
-- **Search** (BORRADOR / PROPUESTA): Receta de Albaranes. No es Field. No se fabrica Search.tsx hasta cerrar el patrón.
+- **Search** (BORRADOR / PROPUESTA): SearchField existe. No es Field. Lupa + input a una sola altura (táctil mínimo). El contrato visual completo sigue abierto.
 - **Select** (BORRADOR / PROPUESTA): Nativo dentro de Field. No nace primitiva Select de design system.
-- **QuantityStepper** (BORRADOR / PROPUESTA): Candidato: caja de Waste. No se fabrica componente hasta el segundo uso idéntico.
+- **QuantityStepper** (BORRADOR / PROPUESTA): Pieza existe. Recuento de efectivo sigue en DenominationStepper.
 - **Table / T8** (BORRADOR / PROPUESTA): Composición, no Table.tsx. Thead de marca y tabular-nums siguen abiertos.
 - **EmptyState** (BORRADOR / PROPUESTA): Las tres situaciones de producto existen. Cómo se distinguen none y mismatch no está congelado.
 - **LoadingSpinner** (BORRADOR / PROPUESTA): Hay tamaños en código. El contrato (tamaños / currentColor) no está congelado.

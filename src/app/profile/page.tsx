@@ -565,15 +565,16 @@ function ProfileContent() {
                                     </div>
                                 </div>
                                 {viewingOtherProfile ? (
+                                    <div className="flex flex-wrap items-center justify-end gap-2">
                                     <Button
                                         type="button"
                                         variant="primary"
                                         instance="profile-view-records"
                                         onClick={() => router.push(`/staff/history?id=${encodeURIComponent(profile.id)}`)}
-                                        layout="fill"
                                     >
                                         Ver registros
                                     </Button>
+                                    </div>
                                 ) : null}
                             </div>
                         )}

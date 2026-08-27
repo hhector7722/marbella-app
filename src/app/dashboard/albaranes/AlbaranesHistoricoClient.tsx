@@ -12,7 +12,6 @@ import {
   MinusCircle,
   RefreshCw,
   RotateCcw,
-  Search,
   Sparkles,
   Trash2,
   Truck,
@@ -42,6 +41,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Field } from '@/components/ui/Field'
 import { Notice } from '@/components/ui/Notice'
+import { SearchField } from '@/components/ui/SearchField'
 import { IngredientWizard, type IngredientWizardInvoiceContext } from '@/components/ingredients/IngredientWizard'
 import type {
   PurchaseInvoiceDetail,
@@ -1256,14 +1256,16 @@ export default function AlbaranesHistoricoClient({
     >
     <div className="flex min-h-0 flex-1 flex-col gap-2">
       {/* Buscador fijo: no scrollea con la lista */}
-      <div className="flex min-h-12 w-full shrink-0 items-center gap-2 rounded-ds-control border border-ds-borde-marcado bg-ds-superficie px-3">
-        <Search className="h-4 w-4 text-ds-texto-tenue shrink-0" />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="h-full w-full min-h-12 outline-none text-base font-semibold text-ds-texto placeholder:text-ds-texto-tenue"
-          aria-label="Buscar albaranes"
-        />
+      <div className="flex w-full shrink-0 items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <SearchField
+            instance="albaranes-search"
+            placeholder="Buscar..."
+            value={query}
+            onChange={setQuery}
+            ariaLabel="Buscar albaranes"
+          />
+        </div>
         <Button
           type="button"
           variant="tertiary"
@@ -1979,19 +1981,15 @@ export default function AlbaranesHistoricoClient({
                           </Notice>
                         ) : null}
 
-                        <div className="bg-white rounded-xl border border-zinc-200 shadow-sm p-3 flex items-center gap-2 min-h-[56px]">
-                          <Search className="h-5 w-5 text-zinc-400 shrink-0" />
-                          <input
-                            value={supplierQuery}
-                            onChange={(e) => {
-                              const next = e.target.value
-                              setSupplierQuery(next)
-                              void runSupplierSearch(next)
-                            }}
-                            placeholder="Escribe el nombre del proveedor…"
-                            className="w-full outline-none text-sm font-semibold text-zinc-800 placeholder:text-zinc-400 min-h-[48px]"
-                          />
-                        </div>
+                        <SearchField
+                          instance="albaranes-supplier-search"
+                          placeholder="Escribe el nombre del proveedor…"
+                          value={supplierQuery}
+                          onChange={(next) => {
+                            setSupplierQuery(next)
+                            void runSupplierSearch(next)
+                          }}
+                        />
 
                         <div className="flex flex-col gap-2">
                           {supplierLoading ? (

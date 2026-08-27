@@ -7,13 +7,13 @@ import {
     Plus,
     Pencil,
     Trash2,
-    PiggyBank,
     ArrowUp
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, isSameMonth, subMonths, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { PeriodNav, PeriodFilterButton } from '@/components/time/PeriodNav';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
@@ -374,11 +374,12 @@ export default function ManagerLedgerView() {
                                                 </tr>
                                             ) : displayRows.length === 0 ? (
                                                 <tr>
-                                                    <td colSpan={4} className="py-20 text-center">
-                                                        <div className="flex flex-col items-center justify-center gap-2 opacity-20">
-                                                            <PiggyBank size={32} />
-                                                            <span className="text-[10px] font-black uppercase tracking-widest">Sin movimientos</span>
-                                                        </div>
+                                                    <td colSpan={4}>
+                                                        <EmptyState
+                                                            instance="manager-ledger-none"
+                                                            variant="none"
+                                                            title="Sin movimientos"
+                                                        />
                                                     </td>
                                                 </tr>
                                             ) : (

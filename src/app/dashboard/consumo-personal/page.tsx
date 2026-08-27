@@ -27,6 +27,7 @@ import { PeriodNav, PeriodFilterButton } from '@/components/time/PeriodNav';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { Modal } from '@/components/ui/modal';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import {
@@ -673,9 +674,11 @@ export default function ConsumoPersonalDashboardPage() {
             </div>
 
             {dayDetail.workers.length === 0 ? (
-              <p className="py-8 text-center text-sm font-bold text-zinc-400">
-                {workerFilterId ? 'Sin consumo para este trabajador este día' : 'Sin consumo este día'}
-              </p>
+              <EmptyState
+                instance="consumo-personal-day-none"
+                variant="none"
+                title={workerFilterId ? 'Sin consumo para este trabajador este día' : 'Sin consumo este día'}
+              />
             ) : (
               <div className="flex flex-col gap-3 pb-2">
                 {dayDetail.workers.map((w) => (
@@ -733,9 +736,7 @@ export default function ConsumoPersonalDashboardPage() {
             )}
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
-            <p className="text-sm font-black text-zinc-700">Sin datos para mostrar</p>
-          </div>
+          <EmptyState instance="consumo-personal-modal-none" variant="none" title="Sin datos para mostrar" />
         )}
       </Modal>
 

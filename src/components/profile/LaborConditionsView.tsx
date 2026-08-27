@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Field } from '@/components/ui/Field';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import {
   deleteLaborTerm,
@@ -335,25 +336,23 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
                     Sin condiciones vigentes. Puedes definirlas ahora.
                   </p>
                 )}
-                <div className="mt-4">
+                <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
                 <Button
                   type="button"
                   variant="primary"
                   instance="labor-conditions-definir"
                   onClick={startEditVigente}
-                  layout="fill"
                 >
                   {vigente ? 'Editar condiciones vigentes' : 'Definir condiciones'}
                 </Button>
                 </div>
                 {vigente ? (
-                  <div className="mt-2">
+                  <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
                     <Button
                       type="button"
                       variant="secondary"
                       instance="labor-conditions-new-vigencia"
                       onClick={startNewVigencia}
-                      className="w-full shrink-0"
                     >
                       Nueva vigencia desde fecha
                     </Button>
@@ -444,11 +443,13 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
               </p>
 
               <div className="mt-4 space-y-4">
-                <label className="block">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                    {editMode === 'rewrite' ? 'Fecha de inicio' : 'Fecha efectiva'}
-                  </span>
+                <Field
+                  instance="labor-effective-from"
+                  label={editMode === 'rewrite' ? 'Fecha de inicio' : 'Fecha efectiva'}
+                  htmlFor="labor-effective-from"
+                >
                   <input
+                    id="labor-effective-from"
                     type="date"
                     value={form.effectiveFrom ?? ''}
                     max={
@@ -462,21 +463,18 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
                         effectiveFrom: e.target.value,
                       }))
                     }
-                    className={cn(
-                      'mt-1 w-full min-h-12 rounded-xl border border-zinc-200 bg-white px-3',
-                      'text-sm font-bold text-zinc-800',
-                      'focus:outline-none focus:ring-2 focus:ring-[#36606F]/30',
-                    )}
                   />
-                </label>
+                </Field>
 
                 {editMode === 'rewrite' ? (
                   <div>
-                    <label className="block">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                        Fecha de finalización
-                      </span>
+                    <Field
+                      instance="labor-effective-to"
+                      label="Fecha de finalización"
+                      htmlFor="labor-effective-to"
+                    >
                       <input
+                        id="labor-effective-to"
                         type="date"
                         value={form.effectiveTo ?? ''}
                         min={form.effectiveFrom || undefined}
@@ -486,13 +484,8 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
                             effectiveTo: e.target.value === '' ? null : e.target.value,
                           }))
                         }
-                        className={cn(
-                          'mt-1 w-full min-h-12 rounded-xl border border-zinc-200 bg-white px-3',
-                          'text-sm font-bold text-zinc-800',
-                          'focus:outline-none focus:ring-2 focus:ring-[#36606F]/30',
-                        )}
                       />
-                    </label>
+                    </Field>
                     <div className="mt-2 flex min-h-12 shrink-0 items-center justify-between gap-2">
                       <p className="text-xs text-zinc-500">
                         {form.effectiveTo
@@ -516,11 +509,9 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
                   </div>
                 ) : null}
 
-                <label className="block">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                    Horas semanales
-                  </span>
+                <Field instance="labor-weekly-hours" label="Horas semanales" htmlFor="labor-weekly-hours">
                   <input
+                    id="labor-weekly-hours"
                     type="number"
                     min={0}
                     step={1}
@@ -536,15 +527,8 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
                         weeklyHours: Number(e.target.value),
                       }))
                     }
-                    className={cn(
-                      'mt-1 w-full min-h-12 rounded-xl border border-zinc-200 bg-white px-3',
-                      'text-sm font-bold text-zinc-800',
-                      'focus:outline-none focus:ring-2 focus:ring-[#36606F]/30',
-                      (form.regime === 'manager' || form.regime === 'fixed') &&
-                        'bg-zinc-50 text-zinc-400',
-                    )}
                   />
-                </label>
+                </Field>
 
                 <fieldset>
                   <legend className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
@@ -617,11 +601,9 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
                   </div>
                 </fieldset>
 
-                <label className="block">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                    Tarifa horas extra (€/h)
-                  </span>
+                <Field instance="labor-overtime-rate" label="Tarifa horas extra (€/h)" htmlFor="labor-overtime-rate">
                   <input
+                    id="labor-overtime-rate"
                     type="number"
                     min={0}
                     step={0.01}
@@ -633,34 +615,23 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
                         overtimeRatePerHour: raw === '' ? null : Number(raw),
                       }));
                     }}
-                    className={cn(
-                      'mt-1 w-full min-h-12 rounded-xl border border-zinc-200 bg-white px-3',
-                      'text-sm font-bold text-zinc-800',
-                      'focus:outline-none focus:ring-2 focus:ring-[#36606F]/30',
-                    )}
                   />
-                </label>
+                </Field>
               </div>
 
-              <div className="mt-6 flex shrink-0 flex-col gap-2">
-                <div className="flex shrink-0 gap-2">
-                  <div className="min-w-0 flex-1">
+              <div className="mt-6 flex flex-wrap items-center justify-end gap-2">
                     <Button
                       type="button"
                       variant="secondary"
-                      layout="fill"
                       instance="labor-conditions-cancel"
                       disabled={saving || deleting}
                       onClick={closeEditor}
                     >
                       Cancelar
                     </Button>
-                  </div>
-                  <div className="min-w-0 flex-1">
                     <Button
                       type="button"
                       variant="primary"
-                      layout="fill"
                       instance="labor-conditions-save"
                       disabled={saving || deleting}
                       loading={saving}
@@ -669,14 +640,10 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
                     >
                       Guardar
                     </Button>
-                  </div>
-                </div>
-
                 {editMode === 'rewrite' && terms.length > 1 ? (
                   <Button
                     type="button"
                     variant="destructive"
-                    layout="fill"
                     instance="labor-conditions-delete-term"
                     disabled={saving || deleting}
                     loading={deleting}

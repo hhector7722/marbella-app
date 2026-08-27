@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { Package, Search, Truck } from 'lucide-react';
+import { Package, Truck } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
 import { getSupplierLogo } from '@/lib/supplier-logos';
 import { resolveSupplierPickerItems } from '@/lib/supplier-seed';
 import { useRouter, usePathname } from 'next/navigation';
 import { Modal } from '@/components/ui/modal';
+import { SearchField } from '@/components/ui/SearchField';
+import { CatalogGrid, CatalogTile } from '@/components/catalog/CatalogTile';
 import { trackUsageModalApply } from '@/lib/usage/client';
 
 interface Supplier {
@@ -109,52 +111,36 @@ export function SupplierSelectionModal({ isOpen, onClose }: Props) {
             scrollContent={false}
         >
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white p-2.5 sm:p-3">
-                <div className="relative mb-4 shrink-0">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                        type="text"
+                <div className="mb-4 shrink-0">
+                    <SearchField
+                        instance="supplier-selection-search"
                         placeholder="Buscar proveedor..."
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full h-12 pl-10 pr-4 rounded-xl border-2 border-zinc-200 text-sm font-bold text-zinc-700 bg-white focus:ring-2 focus:ring-[#36606F] focus:border-[#36606F] outline-none transition-all placeholder:text-zinc-300"
+                        onChange={setSearchQuery}
                     />
                 </div>
 
-                <div className="overflow-y-auto no-scrollbar grid grid-cols-3 sm:grid-cols-4 gap-5">
+                <div className="overflow-y-auto no-scrollbar">
                     {loading ? (
-                        <div className="col-span-full py-10 flex justify-center">
+                        <div className="py-10 flex justify-center">
                             <span className="text-sm font-bold text-gray-400 animate-pulse">Cargando proveedores...</span>
                         </div>
                     ) : filteredSuppliers.length === 0 ? (
-                        <div className="col-span-full py-10 text-center">
+                        <div className="py-10 text-center">
                             <span className="text-sm font-bold text-gray-400">No se encontraron proveedores</span>
                         </div>
                     ) : (
-                        filteredSuppliers.map(supplier => {
-                            const logo = getLogo(supplier);
-                            return (
-                                <button
+                        <CatalogGrid columns={4}>
+                            {filteredSuppliers.map(supplier => (
+                                <CatalogTile
                                     key={supplier.id}
+                                    title={supplier.name}
+                                    imageSrc={getLogo(supplier)}
+                                    fallback={<Truck className="h-8 w-8 md:h-10 md:w-10" />}
                                     onClick={() => handleSelectSupplier(supplier.name)}
-                                    className="p-2 flex flex-col items-center justify-center gap-1.5 aspect-square transition-all active:scale-95 bg-transparent"
-                                >
-                                    <div className="w-11 h-11 flex items-center justify-center overflow-hidden shrink-0">
-                                        {logo ? (
-                                            <img
-                                                src={logo}
-                                                alt={supplier.name}
-                                                className="w-full h-full object-contain"
-                                            />
-                                        ) : (
-                                            <Truck className="w-6 h-6 text-gray-300" />
-                                        )}
-                                    </div>
-                                    <span className="text-[9px] font-black uppercase text-gray-800 tracking-wider text-center line-clamp-2 leading-tight px-0.5">
-                                        {supplier.name}
-                                    </span>
-                                </button>
-                            );
-                        })
+                                />
+                            ))}
+                        </CatalogGrid>
                     )}
                 </div>
             </div>

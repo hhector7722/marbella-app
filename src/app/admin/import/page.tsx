@@ -15,6 +15,7 @@ import Papa from 'papaparse';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import { Button } from '@/components/ui/button';
 import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { persistOvertimeCostForEmployeesAction } from '@/app/actions/persist-overtime-cost';
 
@@ -402,16 +403,20 @@ export default function BulkImportPage() {
                                     </div>
                                 )}
 
-                                <button
+                                <div className="mt-8 flex flex-wrap items-center justify-end gap-2">
+                                <Button
+                                    type="button"
+                                    variant="primary"
+                                    instance="admin-import-another"
                                     onClick={() => {
                                         setFile(null);
                                         setPreviewData([]);
                                         setResult(null);
                                     }}
-                                    className="mt-8 w-full h-14 bg-gray-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] shadow-xl hover:bg-black transition-all active:scale-95"
                                 >
                                     Realizar otra importación
-                                </button>
+                                </Button>
+                                </div>
                             </div>
                         )}
         </DashboardDetailLayout>

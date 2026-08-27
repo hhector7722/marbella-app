@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import {
-  Search,
   AlertTriangle,
   Scale,
   Receipt,
@@ -16,6 +15,9 @@ import { toast } from 'sonner'
 import { getIngredientMovements } from './actions'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { SearchField } from '@/components/ui/SearchField'
+import { TABLE_COMPONENT_ID } from '@/lib/design-system'
 
 type Ingredient = {
   id: string
@@ -304,14 +306,12 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
     <div className="flex flex-col xl:flex-row gap-4 items-stretch min-h-0 flex-1">
       <div className="w-full xl:w-[min(100%,520px)] xl:max-w-[44%] shrink-0 flex flex-col gap-3 min-h-0">
         <div className="flex items-center gap-2 w-full shrink-0 relative">
-          <div className="relative w-full flex-1 min-w-0">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
-            <input
-              type="text"
+          <div className="w-full flex-1 min-w-0">
+            <SearchField
+              instance="inventory-ledger-search"
               placeholder="Buscar ingrediente…"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full min-h-[48px] pl-10 pr-4 rounded-xl border border-zinc-200 bg-white text-sm font-medium text-zinc-800 shadow-sm outline-none focus:ring-2 focus:ring-[#36606F]/25 focus:border-[#36606F]/40"
+              onChange={setSearch}
             />
           </div>
           <div className="shrink-0 relative" data-ledger-filter-root="true">
@@ -368,7 +368,11 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
 
         <div className="flex-1 min-h-[min(480px,55vh)] max-h-[min(640px,70vh)] overflow-y-auto pr-0.5">
           {Object.keys(grouped).length === 0 ? (
-            <p className="text-sm text-zinc-500 text-center py-8">No hay ingredientes que coincidan.</p>
+            <EmptyState
+              instance="inventory-ledger-mismatch"
+              variant="mismatch"
+              title="No hay ingredientes que coincidan."
+            />
           ) : (
             <div className="flex flex-col gap-6">
               {Object.entries(grouped).map(([cat, items]) => (
@@ -436,18 +440,12 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
               ) : movements.length === 0 ? (
                 <div className="p-10 text-center text-gray-500">No hay movimientos registrados.</div>
               ) : (
-                <table className="w-full text-left border-collapse">
-                  <thead className="bg-zinc-50 sticky top-0 border-b border-zinc-100 z-10">
+                <table data-component={TABLE_COMPONENT_ID} data-instance="inventory-ledger-movements" className="w-full text-left">
+                  <thead className="sticky top-0 z-10">
                     <tr>
-                      <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Fecha / Ref
-                      </th>
-                      <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Tipo
-                      </th>
-                      <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">
-                        Impacto
-                      </th>
+                      <th>Fecha / Ref</th>
+                      <th>Tipo</th>
+                      <th className="text-right">Impacto</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-50">

@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 
 /**
  * Celda de catálogo (Recetas, Ingredientes, Proveedores).
@@ -9,9 +10,25 @@ import type { ReactNode } from 'react';
  * El conjunto imagen + pie es un cuadrado. La imagen se encoge dentro
  * del hueco; el pie es una sola fila. El hueco del pie se reserva siempre
  * para que proveedores, recetas e ingredientes pinten la foto al mismo tamaño.
+ * Recetas e ingredientes: 3 columnas. Proveedores (página y pedido): 4.
  */
-export function CatalogGrid({ children }: { children: ReactNode }) {
-    return <div className="grid grid-cols-4 items-start gap-5 sm:gap-6 md:gap-8">{children}</div>;
+export function CatalogGrid({
+    children,
+    columns = 4,
+}: {
+    children: ReactNode;
+    columns?: 3 | 4;
+}) {
+    return (
+        <div
+            className={cn(
+                'grid items-start gap-5 sm:gap-6 md:gap-8',
+                columns === 3 ? 'grid-cols-3' : 'grid-cols-4',
+            )}
+        >
+            {children}
+        </div>
+    );
 }
 
 export function CatalogTile({

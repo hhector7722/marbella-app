@@ -6,6 +6,7 @@ import { Trash2, Loader2, UtensilsCrossed } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { addComboItem, getComboItems, removeComboItem } from '@/app/dashboard/recipes/actions'
 
 type ComboRow = {
@@ -173,7 +174,7 @@ export function SubRecipesPanel({ recipeId }: { recipeId: string }) {
                     </button>
                   ))}
                 {!searching && results.length === 0 && (
-                  <div className="px-3 py-3 text-xs text-zinc-400">Sin coincidencias</div>
+                  <EmptyState instance="sub-recipes-mismatch" variant="mismatch" title="Sin coincidencias" />
                 )}
               </div>
             )}
