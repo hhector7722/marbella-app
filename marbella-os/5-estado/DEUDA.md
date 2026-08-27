@@ -335,7 +335,7 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 
 **Pago parcial (2026-08-27) — QuantityStepper:** se creó `src/components/ui/QuantityStepper.tsx` y se cableó en inventario, merma, carta, tickets de cierre, encargo, pedido, consumo y carrito de evento. El recuento de efectivo sigue en `DenominationStepper` (anatomía distinta, a propósito).
 
-**Pago parcial (2026-08-27) — SearchField:** se creó `src/components/ui/SearchField.tsx` (lupa + input, 40 px, no es Field) y se cableó en catálogos, inventario, merma, mapeo, carta, pedido, encargo, scanner y exportes.
+**Pago parcial (2026-08-27) — SearchField:** se creó `src/components/ui/SearchField.tsx` (lupa + input compacto, 32 px / 12 px, no es Field) y se cableó en catálogos, inventario, merma, mapeo, carta, pedido, encargo, scanner y exportes.
 
 **Auditoría Block 2A (2026-08-20) — SelectionOption / ListRow:** se inventariaron las variantes reales antes de crear componente. **Decisión: C (no crear ListRow/SelectionOption genéricos).**
 

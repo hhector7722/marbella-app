@@ -965,7 +965,7 @@ function RecipeDetailContent() {
                             onClick={handlePreviousRecipe}
                         />
 
-                        <div className="relative flex h-20 w-32 items-center justify-center overflow-hidden">
+                        <div className="relative flex h-14 w-24 items-center justify-center overflow-hidden">
                             {recipe.photo_url ? (
                                 <button
                                     type="button"

@@ -25,7 +25,7 @@ export function SearchField({
 }: SearchFieldProps) {
     return (
         <div data-component={SEARCH_FIELD_COMPONENT_ID} data-instance={instance}>
-            <Search data-element="icon" size={16} strokeWidth={2.5} aria-hidden />
+            <Search data-element="icon" size={12} strokeWidth={2.5} aria-hidden />
             <input
                 type="search"
                 value={value}

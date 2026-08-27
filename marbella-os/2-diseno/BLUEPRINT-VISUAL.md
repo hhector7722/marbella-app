@@ -140,7 +140,7 @@ Pregunta de cada fila: **¿ya hemos decidido cómo debe ser?**
 - **Cabecera de bloque** (SIN CANON): Existe implementación visual (Surface block > header), pero todavía no existe una decisión canónica. No es PageScreen.
 - **Layout / alineación** (BORRADOR / PROPUESTA): Decisiones de izquierda / centro / extremos. No se expone justify-content.
 - **Field** (BORRADOR / PROPUESTA): Dirección cerrada: controles nativos dentro de Field. El contrato visual completo sigue abierto.
-- **Search** (BORRADOR / PROPUESTA): SearchField existe. No es Field. Lupa + input a una sola altura (40 px). El contrato visual completo sigue abierto.
+- **Search** (BORRADOR / PROPUESTA): SearchField existe. No es Field. Lupa + input compactos (32 px, 12 px). El contrato visual completo sigue abierto.
 - **Select** (BORRADOR / PROPUESTA): Nativo dentro de Field. No nace primitiva Select de design system.
 - **QuantityStepper** (BORRADOR / PROPUESTA): Pieza existe. Recuento de efectivo sigue en DenominationStepper.
 - **Table / T8** (BORRADOR / PROPUESTA): Composición, no Table.tsx. Thead de marca y tabular-nums siguen abiertos.

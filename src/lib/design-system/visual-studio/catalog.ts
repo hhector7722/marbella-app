@@ -441,15 +441,15 @@ export const STUDIO_ELEMENTS: StudioElement[] = [
         label: 'Search',
         group: 'piezas',
         status: 'BORRADOR / PROPUESTA',
-        summary: 'SearchField existe. No es Field. Lupa + input a una sola altura (40 px). El contrato visual completo sigue abierto.',
+        summary: 'SearchField existe. No es Field. Lupa + input compactos (32 px, 12 px). El contrato visual completo sigue abierto.',
         blueprintNeedle: '| Search |',
         sourceFiles: ['src/components/ui/SearchField.tsx', 'src/app/globals.css'],
         impactPatterns: ['<SearchField', 'SEARCH_FIELD_COMPONENT_ID'],
         applyKind: 'blueprint-only',
         properties: [
-            prop('height', 'Altura', 'espacio.10-inexistente', HEIGHT_OPTIONS),
+            prop('height', 'Altura', 'espacio.8', HEIGHT_OPTIONS),
             prop('radius', 'Radio', 'radio.control', RADIUS_OPTIONS),
-            prop('px', 'Padding', 'espacio.4', SPACE_OPTIONS),
+            prop('px', 'Padding', 'espacio.2', SPACE_OPTIONS),
         ],
     },
     {

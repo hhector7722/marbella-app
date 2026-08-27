@@ -99,7 +99,7 @@ Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`
 
 **Reglas**:
 - No es Field. No lleva etiqueta de formulario.
-- Una sola altura, bloqueada (`height` = `min-height` = `max-height` = 40 px). El ancho lo decide el sitio.
+- Una sola altura, bloqueada (`height` = `min-height` = `max-height` = 32 px). Tipo 12 px. El ancho lo decide el sitio.
 - Radio de control. Foco de marca.
 - Los filtros CAT / PROV / FC viven al lado, flotando sobre el fondo: sin tarjeta, sin borde, sin punto.
 
@@ -440,7 +440,7 @@ Una familia = una implementación + el mínimo de variantes justificadas. «No m
 | Cabecera/pie Modal | Shell Modal | `headerTone` petroleum/white | Chrome ≠ Button |
 | Surface | PageScreen + Labor card | `page` / `block` | Clones `bg-white rounded-2xl shadow-*` migran; `RecipeCard` huérfano no es referencia |
 | Field | Filtro Albaranes (`min-h-12 rounded-xl`) | Una sola densidad de formulario | Steppers de denominación: D27 |
-| SearchField | Lupa + input, altura 40 px | Una sola densidad | No es Field. CAT/PROV flotan al lado, sin tarjeta |
+| SearchField | Lupa + input compacto, 32 px / 12 px | Una sola densidad | No es Field. CAT/PROV flotan al lado, sin tarjeta |
 | Selector | PetroleumSegmented | `comfortable` / `compact` | Zinc, TimeFilter, CartaLangPicker, celdas de calendario: fuera |
 | Tabs | TabBar pabellón (underline) | Anatomía de sección, no radiogroup | No mezclar con PetroleumSegmented |
 | Filas | DocumentListRow (solo documentos) | Ninguna genérica | D27: no ListRow universal |

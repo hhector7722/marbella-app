@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-27
 
+- **Los buscadores bajan de protagonismo.** Miden 32 px, con letra de 12. CAT y PROV se alinean. En la ficha de receta la foto es más pequeña.
+
 - **Los buscadores miden 40 px, no 48.** CAT y PROV se alinean a esa misma altura.
 
 - **En la ficha de receta la categoría sale de la pantalla y entra al editar.** Precio, FC, base y margen llevan el nombre debajo y el euro detrás; pulsar el importe abre la edición. La tabla de ingredientes usa una sola cabecera, como Precio y Elaboración.
