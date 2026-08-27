@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-27
 
+- **Cuando no hay nada que mostrar, el aviso no grita.** Gris, más pequeño y en minúsculas.
+
 - **Los buscadores bajan de protagonismo.** Miden 32 px, con letra de 12. CAT y PROV se alinean. En la ficha de receta la foto es más pequeña.
 
 - **Los buscadores miden 40 px, no 48.** CAT y PROV se alinean a esa misma altura.

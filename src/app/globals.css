@@ -873,20 +873,26 @@ button[data-element='catalog-filter'] {
 
 /*
  * EmptyState — tres variantes distinguibles (EXPERIENCIA §7).
+ * Aviso secundario: gris, pequeño, sin mayúsculas. No compite con el contenido.
  */
 [data-component='EmptyState'] {
-  padding: var(--espacio-8) var(--espacio-4);
+  padding: var(--espacio-4) var(--espacio-4);
   text-align: center;
 }
 [data-component='EmptyState'] [data-element='title'] {
   margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-texto-fuerte);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--color-texto-tenue);
 }
 [data-component='EmptyState'] [data-element='description'] {
-  margin: var(--espacio-2) 0 0;
-  font-size: 14px;
+  margin: var(--espacio-1) 0 0;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
   color: var(--color-texto-tenue);
 }
 [data-component='EmptyState'][data-variant='error'] [data-element='title'] {

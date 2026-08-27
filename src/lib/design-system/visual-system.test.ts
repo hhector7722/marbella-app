@@ -65,6 +65,11 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(css, /\[data-component='Field'\]/);
         assert.match(css, /\[data-component='SearchField'\]/);
         assert.match(css, /\[data-component='EmptyState'\]/);
+        assert.match(
+            css,
+            /\[data-component='EmptyState'\] \[data-element='title'\] \{[\s\S]*?font-size:\s*12px;[\s\S]*?text-transform:\s*none;[\s\S]*?color:\s*var\(--color-texto-tenue\)/,
+            'el vacío es gris, pequeño y sin mayúsculas'
+        );
         assert.match(css, /\[data-component='Notice'\]\[data-variant='negative'\]/);
         assert.match(css, /\[data-component='KpiStat'\]/);
         assert.match(css, /\[data-component='Table'\] thead/);

@@ -65,7 +65,7 @@
 }
 
 [data-studio-preview='empty'] [data-component='EmptyState'] {
-  padding-block: var(--studio-pad-y, var(--espacio-8));
+  padding-block: var(--studio-pad-y, var(--espacio-4));
   text-align: var(--studio-text-align, center);
 }
 [data-studio-preview='empty'] [data-component='EmptyState'] [data-element='description'] {

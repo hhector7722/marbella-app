@@ -140,7 +140,7 @@ Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`
 
 **Variantes**: nada todavía, nada que coincida, no se pudo cargar.
 
-**Reglas**: las tres variantes son obligatoriamente distinguibles, según [EXPERIENCIA §7](EXPERIENCIA.md#7-vacío). La tercera se comporta como un error.
+**Reglas**: las tres variantes son obligatoriamente distinguibles, según [EXPERIENCIA §7](EXPERIENCIA.md#7-vacío). La tercera se comporta como un error. El aviso es secundario: gris, 12 px, sin mayúsculas. No compite con el contenido.
 
 **Estado**: existe. `src/components/ui/EmptyState.tsx`. Variantes `none` / `mismatch` / `error`. La de `error` usa `role="alert"`.
 

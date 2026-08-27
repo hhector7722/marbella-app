@@ -1,5 +1,6 @@
 /**
  * Contrato EmptyState — las tres variantes de EXPERIENCIA §7.
+ * Visual: aviso secundario (gris, 12 px, sin mayúsculas).
  */
 
 export const EMPTY_STATE_COMPONENT_ID = 'EmptyState' as const;

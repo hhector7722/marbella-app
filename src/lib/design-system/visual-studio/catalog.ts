@@ -518,8 +518,8 @@ export const STUDIO_ELEMENTS: StudioElement[] = [
         applyKind: 'css-contract',
         properties: [
             prop('align-x', 'Alineación', 'center', ALIGN_X_OPTIONS, 'alignment-x'),
-            prop('pad-y', 'Padding vertical', 'espacio.8', SPACE_OPTIONS),
-            prop('gap', 'Separación título / texto', 'espacio.2', SPACE_OPTIONS),
+            prop('pad-y', 'Padding vertical', 'espacio.4', SPACE_OPTIONS),
+            prop('gap', 'Separación título / texto', 'espacio.1', SPACE_OPTIONS),
         ],
     },
     {
