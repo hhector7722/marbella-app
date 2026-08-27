@@ -2,10 +2,12 @@
 
 import { useMemo, useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { ChefHat, Filter, Minus, Package, Plus, Save, Search } from 'lucide-react'
+import { ChefHat, Filter, Package, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented'
+import { QuantityStepper } from '@/components/ui/QuantityStepper'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { processRecipeWaste, processWasteEntries } from './actions'
 
 type Ingredient = {
@@ -87,14 +89,6 @@ function roundQty(n: number, unit: string): number {
   return Math.max(0, Number(f.toFixed(decimals)))
 }
 
-/** Una sola línea en rejilla: acorta con puntos suspensivos (título muestra el nombre completo). */
-function abbreviateLabel(name: string, maxChars = 22): string {
-  const t = name.replace(/\s+/g, ' ').trim()
-  if (t.length <= maxChars) return t
-  const cut = Math.max(8, maxChars - 1)
-  return `${t.slice(0, cut)}…`
-}
-
 function parseQuantity(raw: string, unit: string): number {
   const t = raw.replace(',', '.').trim()
   if (t === '') return 0
@@ -103,82 +97,12 @@ function parseQuantity(raw: string, unit: string): number {
   return roundQty(n, unit)
 }
 
-function QuantityStepper({
-  unit,
-  value,
-  onChange,
-  raw,
-  onRawChange,
-  onBlur,
-  ariaLabel,
-  hideUnitSuffix,
-}: {
-  unit: string
-  value: number
-  onChange: (n: number) => void
-  raw: string
-  onRawChange: (s: string) => void
-  onBlur: () => void
-  ariaLabel: string
-  hideUnitSuffix?: boolean
-}) {
-  const step = getStep(unit)
-  const count = isCountUnit(unit)
-
-  const adjust = (delta: number) => {
-    const next = roundQty(Math.max(0, value + delta), unit)
-    onChange(next)
-    onRawChange(next === 0 ? '' : String(next))
-  }
-
-  return (
-    <div
-      className={cn(
-        // Caja "cantidad" estilo desglose monetario (cierre de caja)
-        'flex items-stretch justify-between w-full bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm',
-        'min-h-[48px] focus-within:ring-2 focus-within:ring-[#36606F]/25 focus-within:border-[#36606F]/40',
-      )}
-    >
-      <button
-        type="button"
-        onClick={() => adjust(-step)}
-        className="w-7 shrink-0 flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-600 active:bg-rose-100 transition-colors"
-        aria-label={`Menos ${ariaLabel}`}
-      >
-        <Minus className="w-4 h-4" strokeWidth={3} />
-      </button>
-      <input
-        type="text"
-        inputMode={count ? 'numeric' : 'decimal'}
-        value={raw}
-        onChange={(e) => {
-          const nextRaw = e.target.value
-          onRawChange(nextRaw)
-          onChange(parseQuantity(nextRaw, unit))
-        }}
-        onBlur={onBlur}
-        className={cn(
-          'flex-1 w-0 h-full bg-transparent text-center font-black tabular-nums outline-none p-0',
-          'text-[10px] sm:text-[11px] text-zinc-700 tracking-tighter',
-          'focus:bg-blue-50/20 transition-colors',
-        )}
-        aria-label={ariaLabel}
-      />
-      <button
-        type="button"
-        onClick={() => adjust(step)}
-        className="w-7 shrink-0 flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-600 active:bg-emerald-100 transition-colors"
-        aria-label={`Más ${ariaLabel}`}
-      >
-        <Plus className="w-4 h-4" strokeWidth={3} />
-      </button>
-      {!hideUnitSuffix ? (
-        <span className="pr-3 text-[10px] font-black text-zinc-500 w-10 text-center shrink-0 uppercase tracking-wide">
-          {unit}
-        </span>
-      ) : null}
-    </div>
-  )
+/** Una sola línea en rejilla: acorta con puntos suspensivos (título muestra el nombre completo). */
+function abbreviateLabel(name: string, maxChars = 22): string {
+  const t = name.replace(/\s+/g, ' ').trim()
+  if (t.length <= maxChars) return t
+  const cut = Math.max(8, maxChars - 1)
+  return `${t.slice(0, cut)}…`
 }
 
 function WasteUnitSelect({
@@ -259,14 +183,12 @@ function RecipeWasteCard({
       <div className="mt-auto shrink-0 px-2 pb-2 pt-0 flex flex-col items-stretch w-full">
         <label className="sr-only">Cantidad merma {recipe.name}</label>
         <QuantityStepper
-          unit="ud"
           value={value}
           onChange={onChange}
           raw={raw}
           onRawChange={onRawChange}
           onBlur={onBlur}
           ariaLabel={`Unidades ${recipe.name}`}
-          hideUnitSuffix
         />
       </div>
     </div>
@@ -322,14 +244,14 @@ function IngredientWasteCard({
           onChange={onUnitChange}
         />
         <QuantityStepper
-          unit={wasteUnit}
           value={amount}
-          onChange={onAmountChange}
+          onChange={(n) => onAmountChange(roundQty(n, wasteUnit))}
           raw={raw}
           onRawChange={onRawChange}
           onBlur={onBlur}
+          step={getStep(wasteUnit)}
+          inputMode={isCountUnit(wasteUnit) ? 'numeric' : 'decimal'}
           ariaLabel={`Pérdida ${item.name}`}
-          hideUnitSuffix
         />
       </div>
     </div>
@@ -623,7 +545,11 @@ export function WasteClient({
             </div>
 
             {filteredRecipes.length === 0 ? (
-              <p className="text-sm text-zinc-500 text-center py-8">No hay recetas que coincidan.</p>
+              <EmptyState
+                instance="waste-recipes-empty"
+                variant="mismatch"
+                title="No hay recetas que coincidan"
+              />
             ) : (
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6 items-stretch justify-items-stretch">
                 {filteredRecipes.map((r) => (
@@ -716,7 +642,11 @@ export function WasteClient({
             </div>
 
             {Object.keys(grouped).length === 0 ? (
-              <p className="text-sm text-zinc-500 text-center py-8">No hay ingredientes que coincidan.</p>
+              <EmptyState
+                instance="waste-ingredients-empty"
+                variant="mismatch"
+                title="No hay ingredientes que coincidan"
+              />
             ) : (
               Object.entries(grouped).map(([category, items]) => (
                 <section key={category} className="flex flex-col gap-3 shrink-0">
@@ -770,21 +700,19 @@ export function WasteClient({
         )}
       </div>
 
-      <div className="sticky bottom-0 left-0 right-0 shrink-0 bg-white pt-3 border-t border-zinc-100">
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={submitDisabled}
-          className={cn(
-            'w-full min-h-[48px] rounded-xl font-black uppercase tracking-wider text-sm',
-            'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800',
-            'disabled:opacity-45 disabled:cursor-not-allowed transition-colors',
-            'flex items-center justify-center gap-2 shrink-0',
-          )}
-        >
-          <Save className="w-5 h-5 shrink-0" />
-          {isSubmitting ? 'Guardando…' : 'Registrar mermas'}
-        </button>
+      <div className="sticky bottom-0 left-0 right-0 shrink-0 border-t border-zinc-100 bg-white pt-3">
+        <div className="flex justify-end">
+          <Button
+            type="button"
+            variant="primary"
+            instance="waste-save"
+            onClick={handleSubmit}
+            disabled={submitDisabled}
+            loading={isSubmitting}
+          >
+            Registrar mermas
+          </Button>
+        </div>
       </div>
     </div>
   )

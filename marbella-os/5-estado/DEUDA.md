@@ -327,10 +327,12 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 | Tabs / chips / filtros | **2D auditado; 2E pago parcial** | Segmented petróleo → `PetroleumSegmented`; resto local | Ver 2E; zinc/tabs/chips siguen locales |
 | Menú icono + label (Staff) | **Auditado 2C — no crear aún** | Ver pago diferido 2C abajo | Segundo uso fuera de StaffDashboard o unificación local |
 | Composer ChatMarbella (+/mic/teléfono) | Mantener | Chrome de composer; teléfono emerald y menú icono+texto no caben en Button | Composer chrome documentado |
-| Quantity steppers ± | Mantener | Widget compacto duplicado (`WasteClient`, `InventoryClient`, carrito, denominaciones) | Componente `QuantityStepper` oficial |
+| Quantity steppers ± | **Pago parcial 2026-08-27** | Recuento de efectivo sigue en `DenominationStepper`. El resto de menos / número / más usa `QuantityStepper`. | Denominaciones (siguen aparte, a propósito) |
 | Badges 18px | Mantener | Presentación / dismiss compacto, no hit-area 48px de Button | Badge / dismiss chip |
 | Celdas escandallo TPV | Mantener | Celda de tabla que abre detalle | Patrón celda interactiva |
 | «Ver foto» sobre imagen | Mantener | Presentación interactiva (lightbox), no CTA | Media control / lightbox trigger |
+
+**Pago parcial (2026-08-27) — QuantityStepper:** se creó `src/components/ui/QuantityStepper.tsx` y se cableó en inventario, merma, carta, tickets de cierre, encargo, pedido, consumo y carrito de evento. El recuento de efectivo sigue en `DenominationStepper` (anatomía distinta, a propósito).
 
 **Auditoría Block 2A (2026-08-20) — SelectionOption / ListRow:** se inventariaron las variantes reales antes de crear componente. **Decisión: C (no crear ListRow/SelectionOption genéricos).**
 

@@ -11,6 +11,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { CatalogGrid, CatalogTile } from '@/components/catalog/CatalogTile';
 import { cn } from '@/lib/utils';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
@@ -699,10 +700,10 @@ function RecipesContent() {
                                             </h2>
                                         </div>
                                         <div className="custom-scrollbar relative">
-                                            <table className="w-full text-[10px] border-collapse">
-                                                <thead className="sticky top-0 z-10 bg-white shadow-sm">
-                                                    <tr className="text-gray-400 font-black uppercase tracking-widest text-[8px] border-b border-gray-100">
-                                                        <th className="text-left py-2 px-3">Ingrediente</th>
+                                            <table data-component={TABLE_COMPONENT_ID} data-instance="recipe-modal-ingredients" className="w-full text-left">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Ingrediente</th>
                                                         <th className="text-center">Cant</th>
                                                         <th className="text-center">Ud</th>
                                                         <th className="w-8" />

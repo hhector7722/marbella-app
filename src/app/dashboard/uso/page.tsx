@@ -1,11 +1,13 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 import { Globe, Smartphone } from 'lucide-react';
 import { UsageDashboard } from '@/components/usage/UsageDashboard';
 import { canAccessUsageAnalytics } from '@/lib/usage/access';
 import { getUsageDashboardData, parseUsageDashboardFilters } from '@/lib/usage/queries';
 import { createClient } from '@/utils/supabase/server';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import { DayPeriodFilter, DayPeriodNav } from '@/components/time/DayPeriodChrome';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,8 +47,16 @@ export default async function UsoPage({ searchParams }: UsoPageProps) {
       showBackButton={false}
       template="list"
       maxWidthClass="max-w-3xl"
+      periodSlot={
+        <Suspense fallback={null}>
+          <DayPeriodNav day={filters.day} basePath="/dashboard/uso" />
+        </Suspense>
+      }
       rightSlot={
         <div className="flex shrink-0 items-center gap-1">
+          <Suspense fallback={null}>
+            <DayPeriodFilter day={filters.day} basePath="/dashboard/uso" instance="uso-period-filter" />
+          </Suspense>
           <Link
             href="/dashboard/web"
             aria-label="Uso web"

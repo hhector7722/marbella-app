@@ -15,6 +15,7 @@ import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { DenominationCountGrid, DenominationStepper } from '@/components/cash/DenominationCountGrid';
 import { CashCountFooter } from '@/components/cash/CashCountFooter';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 const BILLS = [100, 50, 20, 10, 5];
 const COINS = [2, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01];
@@ -711,7 +712,11 @@ export const CashChangeModal = ({
                             {exchangeHistoryLoading ? (
                                 <p className="text-center text-zinc-500 text-sm">Cargando...</p>
                             ) : exchangeHistoryList.length === 0 ? (
-                                <p className="text-center text-zinc-500 text-sm">No hay intercambios en este mes.</p>
+                                <EmptyState
+                                    instance="cash-change-history-empty"
+                                    variant="none"
+                                    title="No hay intercambios en este mes"
+                                />
                             ) : (
                                 <ul className="space-y-2">
                                     {exchangeHistoryList.map((item) => (

@@ -2,9 +2,10 @@
 
 import { useRef } from 'react';
 import Image from 'next/image';
-import { X, Plus, Minus } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { X } from 'lucide-react';
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button';
+import { QuantityStepper } from '@/components/ui/QuantityStepper';
 import {
   CLOSING_WEATHER_OPTIONS,
   type ClosingWeatherId,
@@ -186,34 +187,19 @@ export function ClosingPetrolInputWithAdjust({
   const parse = parseValue ?? ((raw: string) => parseInt(raw, 10) || 0);
 
   return (
-    <div
-      className={cn(
-        CLOSING_INPUT_HEIGHT,
-        CLOSING_PETROL_BORDER,
-        'flex w-full items-center justify-between overflow-hidden rounded-xl border-[#36606F] bg-white',
-      )}
-    >
-      <button
-        type="button"
-        onClick={() => onAdjust(-1)}
-        className="flex h-full w-9 shrink-0 items-center justify-center text-zinc-400 transition-colors hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100"
-      >
-        <Minus size={16} strokeWidth={3} />
-      </button>
-      <input
-        type="number"
-        className="h-full w-0 flex-1 bg-transparent p-0 text-center text-sm font-black tabular-nums text-zinc-800 outline-none"
-        value={value || ''}
-        onChange={(e) => onChange(parse(e.target.value))}
-      />
-      <button
-        type="button"
-        onClick={() => onAdjust(1)}
-        className="flex h-full w-9 shrink-0 items-center justify-center text-zinc-400 transition-colors hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100"
-      >
-        <Plus size={16} strokeWidth={3} />
-      </button>
-    </div>
+    <QuantityStepper
+      value={value}
+      onChange={(n) => {
+        const next = parse(String(n));
+        const delta = next - value;
+        if (delta === 1 || delta === -1) onAdjust(delta);
+        else onChange(next);
+      }}
+      min={0}
+      inputMode="numeric"
+      ariaLabel="Tickets"
+      className={cn(CLOSING_INPUT_HEIGHT, CLOSING_PETROL_BORDER, 'min-h-9 border-[#36606F]')}
+    />
   );
 }
 

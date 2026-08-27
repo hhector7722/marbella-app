@@ -8,6 +8,7 @@ import { Check, Filter, Search, Trash2, ChevronDown, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
+import { TABLE_COMPONENT_ID } from '@/lib/design-system'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
 import { namedEntitySummary } from '@/lib/usage/modal-apply'
@@ -345,9 +346,11 @@ export default function MappingClient({
 
         <div className="w-full min-w-0">
           <div
+            data-component={TABLE_COMPONENT_ID}
+            data-instance="recetas-tpv-header"
             className={cn(
               TABLE_GRID_COLS,
-              'border-b border-[#2A4B57] bg-[#36606F] text-[10px] font-semibold normal-case leading-tight tracking-normal text-white sm:text-[11px]'
+              'border-b bg-[var(--color-marca)] text-[8px] font-black uppercase tracking-[0.03em] text-[var(--color-texto-invertido)]'
             )}
           >
             <div className="px-1 py-2 text-center">TPV</div>

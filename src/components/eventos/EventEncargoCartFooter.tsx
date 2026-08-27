@@ -1,9 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Minus, Plus } from 'lucide-react'
-
 import { Modal } from '@/components/ui/modal'
+import { QuantityStepper } from '@/components/ui/QuantityStepper'
 import { Button } from '@/components/ui/button'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { formatCartaPrice } from '@/lib/carta-price-display'
@@ -167,44 +166,36 @@ export function EventEncargoCartFooter({
                 return (
                   <div
                     key={line.key}
-                    className="flex min-h-12 items-center gap-1 border-b border-zinc-100 py-1 last:border-b-0"
+                    className="flex min-h-12 items-center gap-2 border-b border-zinc-100 py-1 last:border-b-0"
                   >
-                    <button
-                      type="button"
-                      onClick={() => onDecrement(line.articuloId, line.portion ?? 'entero')}
-                      className={cn(
-                        'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl text-zinc-400',
-                        'transition-colors hover:text-zinc-600 active:scale-[0.98]'
-                      )}
-                      aria-label={`Quitar una unidad de ${line.name}`}
-                    >
-                      <Minus className="h-5 w-5" strokeWidth={2.5} />
-                    </button>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-bold text-zinc-900" title={line.name}>
                         {line.name}
                       </p>
+                      <p
+                        className="tabular-nums text-xs font-bold text-zinc-900"
+                        title={formatCartaPrice(lineTotal).trim() || undefined}
+                      >
+                        {formatCartaPrice(lineTotal)}
+                      </p>
                     </div>
-                    <div className="shrink-0 tabular-nums text-sm font-black text-zinc-700">
-                      ×{line.quantity}
+                    <div className="w-[8.5rem] shrink-0">
+                      <QuantityStepper
+                        value={line.quantity}
+                        onChange={(n) => {
+                          const next = Math.max(0, Math.floor(n))
+                          const delta = next - line.quantity
+                          const portion = line.portion ?? 'entero'
+                          if (delta > 0) {
+                            for (let i = 0; i < delta; i++) onIncrement(line.articuloId, portion)
+                          } else if (delta < 0) {
+                            for (let i = 0; i < -delta; i++) onDecrement(line.articuloId, portion)
+                          }
+                        }}
+                        min={0}
+                        ariaLabel={`Cantidad de ${line.name}`}
+                      />
                     </div>
-                    <div
-                      className="w-[4.25rem] shrink-0 text-right tabular-nums text-sm font-bold text-zinc-900"
-                      title={formatCartaPrice(lineTotal).trim() || undefined}
-                    >
-                      {formatCartaPrice(lineTotal)}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => onIncrement(line.articuloId, line.portion ?? 'entero')}
-                      className={cn(
-                        'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl text-zinc-400',
-                        'transition-colors hover:text-zinc-600 active:scale-[0.98]'
-                      )}
-                      aria-label={`Añadir una unidad de ${line.name}`}
-                    >
-                      <Plus className="h-5 w-5" strokeWidth={2.5} />
-                    </button>
                   </div>
                 )
               })}

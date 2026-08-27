@@ -26,6 +26,8 @@ import {
 } from '@/lib/reservas/print-encargo-document'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { TABLE_COMPONENT_ID } from '@/lib/design-system'
 
 function formatEncargoPrintDate(ymd: string) {
   const parts = ymd.slice(0, 10).split('-').map(Number)
@@ -289,23 +291,19 @@ export function EncargoOrderViewModal({
       >
         <div ref={tableRef} className="flex-1 overflow-y-auto min-h-0 py-3">
           {items.length === 0 ? (
-            <p className="py-10 text-center text-xs font-semibold text-zinc-500">
-              Sin productos en el pedido.
-            </p>
+            <EmptyState
+              instance="encargo-order-empty"
+              variant="none"
+              title="Sin productos en el pedido"
+            />
           ) : (
             <div className="overflow-x-auto border border-zinc-100 rounded-xl">
-              <table className="w-full table-auto text-left text-[12px]">
+              <table data-component={TABLE_COMPONENT_ID} data-instance="encargo-order-items" className="w-full table-auto text-left">
                 <thead>
-                  <tr className="border-b border-zinc-100 bg-zinc-50">
-                    <th className="px-3 py-2.5 font-black uppercase text-[9px] tracking-wider text-zinc-500 whitespace-nowrap">
-                      Producto
-                    </th>
-                    <th className="px-3 py-2.5 text-left whitespace-nowrap" aria-hidden="true">
-                      &nbsp;
-                    </th>
-                    <th className="px-3 py-2.5 font-black uppercase text-[9px] tracking-wider text-zinc-500 w-px text-center whitespace-nowrap">
-                      Cantidad
-                    </th>
+                  <tr>
+                    <th>Producto</th>
+                    <th aria-hidden="true">&nbsp;</th>
+                    <th className="text-center">Cantidad</th>
                   </tr>
                 </thead>
                 <tbody>

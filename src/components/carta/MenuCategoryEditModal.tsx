@@ -313,7 +313,7 @@ export function MenuCategoryEditModal({
                   ) : null}
                 </div>
 
-                <div className="mt-4 grid grid-cols-2 gap-2">
+                <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
                   <Button
                     type="button"
                     variant="secondary"
@@ -323,9 +323,12 @@ export function MenuCategoryEditModal({
                   >
                     Cancelar
                   </Button>
-                  <button
+                  <Button
                     type="button"
+                    variant="primary"
+                    instance="carta-category-edit-save"
                     disabled={isPending}
+                    loading={isPending}
                     onClick={() => {
                       startTransition(async () => {
                         const res = await upsertMenuCategoryOverride({
@@ -391,17 +394,9 @@ export function MenuCategoryEditModal({
                         onClose()
                       })
                     }}
-                    className="min-h-[48px] rounded-xl bg-[#36606F] text-xs font-black uppercase tracking-widest text-white active:bg-[#2c4f5c] disabled:opacity-60"
                   >
-                    {isPending ? (
-                      <span className="inline-flex items-center justify-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Guardando…
-                      </span>
-                    ) : (
-                      'Guardar'
-                    )}
-                  </button>
+                    Guardar
+                  </Button>
                 </div>
               </>
             )}

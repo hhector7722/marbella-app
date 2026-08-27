@@ -6,13 +6,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
-  Minus,
-  Plus,
   Search,
   ShoppingBag,
   Trash2,
   X,
 } from 'lucide-react'
+import { QuantityStepper } from '@/components/ui/QuantityStepper'
 import { toast } from 'sonner'
 
 import {
@@ -254,72 +253,20 @@ function clampEncargoQty(n: number): number {
 function EncargoQtyStepper({
   quantity,
   onQuantityChange,
-  onDecrement,
-  onIncrement,
 }: {
   quantity: number
   onQuantityChange: (qty: number) => void
-  onDecrement: () => void
-  onIncrement: () => void
+  onDecrement?: () => void
+  onIncrement?: () => void
 }) {
-  const [draft, setDraft] = useState('')
-  const [editing, setEditing] = useState(false)
-
-  const displayValue = editing ? draft : quantity > 0 ? String(quantity) : ''
-
   return (
-    <div
-      className={cn(
-        'flex h-8 w-full items-stretch justify-between overflow-hidden rounded-lg border bg-white shadow-sm',
-        quantity > 0 ? 'border-[#36606F]/30 shadow-md' : 'border-zinc-200'
-      )}
-    >
-      <button
-        type="button"
-        onClick={quantity > 0 ? onDecrement : undefined}
-        disabled={quantity <= 0}
-        className={cn(
-          'flex h-8 w-7 shrink-0 items-center justify-center transition-colors',
-          quantity > 0
-            ? 'text-zinc-500 hover:bg-rose-50 hover:text-rose-600 active:bg-rose-100'
-            : 'text-zinc-300'
-        )}
-        aria-label="Quitar uno"
-      >
-        <Minus className="h-3.5 w-3.5" strokeWidth={3} />
-      </button>
-      <input
-        type="text"
-        inputMode="numeric"
-        autoComplete="off"
-        value={quantity > 0 || editing ? displayValue : ' '}
-        onFocus={() => {
-          setEditing(true)
-          setDraft(quantity > 0 ? String(quantity) : '')
-        }}
-        onChange={(e) => {
-          const v = e.target.value.replace(/\D/g, '').slice(0, 3)
-          setDraft(v)
-          if (v === '') return
-          onQuantityChange(clampEncargoQty(parseInt(v, 10)))
-        }}
-        onBlur={() => {
-          setEditing(false)
-          if (draft === '0') onQuantityChange(0)
-          setDraft('')
-        }}
-        className="h-8 min-w-0 flex-1 border-0 bg-transparent p-0 text-center text-[11px] font-black tabular-nums text-zinc-800 focus:outline-none focus:ring-0"
-        aria-label="Cantidad"
-      />
-      <button
-        type="button"
-        onClick={onIncrement}
-        className="flex h-8 w-7 shrink-0 items-center justify-center text-zinc-500 transition-colors hover:bg-emerald-50 hover:text-emerald-600 active:bg-emerald-100"
-        aria-label="Añadir uno"
-      >
-        <Plus className="h-3.5 w-3.5" strokeWidth={3} />
-      </button>
-    </div>
+    <QuantityStepper
+      value={quantity}
+      onChange={(n) => onQuantityChange(clampEncargoQty(n))}
+      min={0}
+      max={999}
+      ariaLabel="Cantidad"
+    />
   )
 }
 

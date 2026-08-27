@@ -558,7 +558,7 @@ export function MenuItemEditModal({
                 </div>
               ) : null}
 
-              <div className="mt-4 grid grid-cols-2 gap-2">
+              <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
                 <Button
                   type="button"
                   variant="secondary"
@@ -568,9 +568,12 @@ export function MenuItemEditModal({
                 >
                   Cancelar
                 </Button>
-                <button
+                <Button
                   type="button"
+                  variant="primary"
+                  instance="menu-item-edit-save"
                   disabled={isPending}
+                  loading={isPending}
                   onClick={() => {
                     startTransition(async () => {
                       let nextOverridePhotoUrl: string | null | undefined = undefined
@@ -680,17 +683,9 @@ export function MenuItemEditModal({
                       onClose()
                     })
                   }}
-                  className="min-h-[48px] rounded-xl bg-[#36606F] text-xs font-black uppercase tracking-widest text-white active:bg-[#2c4f5c] disabled:opacity-60"
                 >
-                  {isPending ? (
-                    <span className="inline-flex items-center justify-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Guardando…
-                    </span>
-                  ) : (
-                    'Guardar'
-                  )}
-                </button>
+                  Guardar
+                </Button>
               </div>
 
               <p className={cn('mt-3 text-[11px] font-semibold text-zinc-500')}>

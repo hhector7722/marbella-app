@@ -6,7 +6,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useSearchParams, usePathname } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import {
-    Calendar, X, ChevronDown, ChevronLeft, ChevronRight, Share2
+    X, ChevronDown, ChevronLeft, ChevronRight, Share2
 } from 'lucide-react';
 import { buildTimesheetPayload, type TimesheetExportPayload, type TimesheetWeekData } from '@/lib/staff/timesheet-export-payload';
 import {
@@ -31,6 +31,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { PeriodNav, PeriodFilterButton } from '@/components/time/PeriodNav';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
@@ -916,10 +917,11 @@ export default function HistoryPage() {
                         </div>
                     ) : isPlantilla ? (
                         plantillaWeeksData.length === 0 ? (
-                            <div className="py-20 text-center text-zinc-400">
-                                <Calendar size={40} className="mx-auto mb-3 opacity-30" />
-                                <p className="text-sm font-bold">No hay registros este mes</p>
-                            </div>
+                            <EmptyState
+                                instance="staff-history-plantilla-empty"
+                                variant="none"
+                                title="No hay registros este mes"
+                            />
                         ) : (
                             <div className="px-3 pt-2 pb-4 bg-zinc-50/50">
                                 {plantillaWeeksData.map((week, idx) => (
@@ -933,10 +935,11 @@ export default function HistoryPage() {
                             </div>
                         )
                     ) : weeksData.length === 0 ? (
-                        <div className="py-20 text-center text-zinc-400">
-                            <Calendar size={40} className="mx-auto mb-3 opacity-30" />
-                            <p className="text-sm font-bold">No hay registros este mes</p>
-                        </div>
+                        <EmptyState
+                            instance="staff-history-empty"
+                            variant="none"
+                            title="No hay registros este mes"
+                        />
                     ) : (
                         <div className="p-4 bg-zinc-50/50">
                             {weeksData.map((week, idx) => (

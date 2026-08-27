@@ -5,22 +5,15 @@ import { usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   addDays,
-  addMonths,
-  eachDayOfInterval,
-  endOfMonth,
-  endOfWeek,
   format,
-  isSameDay,
-  isSameMonth,
-  startOfMonth,
   startOfWeek,
-  subMonths,
 } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import type { TimeFilterKind, TimeFilterValue } from "@/components/time/time-filter-types";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
+import { MiniMonthCalendar } from "@/components/time/MiniMonthCalendar";
 import { trackUsageModalApply } from "@/lib/usage/client";
 import { timeFilterApplySummary } from "@/lib/usage/modal-apply";
 
@@ -116,13 +109,6 @@ export function TimeFilterModal({
     }
   }, [initialKind, initialValue, isOpen]);
 
-  const calendarDays = useMemo(() => {
-    const base = calendarBaseDate;
-    const startVisible = startOfWeek(startOfMonth(base), { weekStartsOn: 1 });
-    const endVisible = endOfWeek(endOfMonth(base), { weekStartsOn: 1 });
-    return eachDayOfInterval({ start: startVisible, end: endVisible });
-  }, [calendarBaseDate]);
-
   const canApplyHours = useMemo(() => {
     if (!startTime || !endTime) return false;
     return startTime < endTime;
@@ -156,83 +142,54 @@ export function TimeFilterModal({
     </button>
   );
 
-  const CalendarCell = ({ day }: { day: Date }) => {
+  const selectCalendarDay = (day: Date) => {
     const dStr = ymd(day);
-    const isWeekMode = activeKind === "week";
-    const selected =
-      activeKind === "date"
-        ? singleDate === dStr
-        : activeKind === "range"
-          ? (rangeStart === dStr || rangeEnd === dStr)
-          : false;
+    if (activeKind === "date") {
+      setSingleDate(dStr);
+      applyAndClose({ kind: "date", date: dStr });
+      return;
+    }
 
-    const inRange =
-      activeKind === "range" &&
-      rangeStart &&
-      rangeEnd &&
-      dStr > rangeStart &&
-      dStr < rangeEnd;
+    if (activeKind === "week") {
+      const ws = startOfWeek(day, { weekStartsOn: 1 });
+      const we = addDays(ws, 6);
+      const s = ymd(ws);
+      const e = ymd(we);
+      setRangeStart(s);
+      setRangeEnd(e);
+      applyAndClose({ kind: "week", startDate: s, endDate: e });
+      return;
+    }
 
-    const inWeek =
-      isWeekMode &&
-      rangeStart &&
-      rangeEnd &&
-      dStr >= rangeStart &&
-      dStr <= rangeEnd;
+    if (activeKind === "range") {
+      if (!rangeStart || (rangeStart && rangeEnd)) {
+        setRangeStart(dStr);
+        setRangeEnd(null);
+        return;
+      }
+      if (dStr < rangeStart) {
+        setRangeStart(dStr);
+        return;
+      }
+      setRangeEnd(dStr);
+      applyAndClose({ kind: "range", startDate: rangeStart, endDate: dStr });
+    }
+  };
 
-    const isMuted = !isSameMonth(day, calendarBaseDate);
+  const calendarSelected = (day: Date) => {
+    const dStr = ymd(day);
+    if (activeKind === "date") return singleDate === dStr;
+    if (activeKind === "range") return rangeStart === dStr || rangeEnd === dStr;
+    if (activeKind === "week") {
+      return Boolean(rangeStart && rangeEnd && dStr >= rangeStart && dStr <= rangeEnd);
+    }
+    return false;
+  };
 
-    return (
-      <button
-        type="button"
-        onClick={() => {
-          if (activeKind === "date") {
-            setSingleDate(dStr);
-            applyAndClose({ kind: "date", date: dStr });
-            return;
-          }
-
-          if (activeKind === "week") {
-            const ws = startOfWeek(day, { weekStartsOn: 1 });
-            const we = addDays(ws, 6);
-            const s = ymd(ws);
-            const e = ymd(we);
-            setRangeStart(s);
-            setRangeEnd(e);
-            applyAndClose({ kind: "week", startDate: s, endDate: e });
-            return;
-          }
-
-          if (activeKind === "range") {
-            if (!rangeStart || (rangeStart && rangeEnd)) {
-              setRangeStart(dStr);
-              setRangeEnd(null);
-              return;
-            }
-            if (dStr < rangeStart) {
-              setRangeStart(dStr);
-              return;
-            }
-            setRangeEnd(dStr);
-            applyAndClose({ kind: "range", startDate: rangeStart, endDate: dStr });
-          }
-        }}
-        className={cn(
-          "aspect-square flex items-center justify-center text-[11px] font-black transition-all rounded-lg",
-          isMuted ? "opacity-20" : "opacity-100",
-          // Semana: bloque completo
-          inWeek
-            ? "bg-ds-marca text-white"
-            : selected
-              ? "bg-ds-marca text-white"
-              : inRange
-                ? "text-ds-marca"
-                : "text-zinc-600"
-        )}
-        aria-label={format(day, "yyyy-MM-dd")}
-      >
-        {format(day, "d")}
-      </button>
+  const calendarInRange = (day: Date) => {
+    const dStr = ymd(day);
+    return Boolean(
+      activeKind === "range" && rangeStart && rangeEnd && dStr > rangeStart && dStr < rangeEnd
     );
   };
 
@@ -278,53 +235,29 @@ export function TimeFilterModal({
                   />
                 </div>
               </div>
+              <div className="flex justify-end">
               <Button
                 type="button"
                 variant="primary"
                 instance="time-filter-apply-hours"
-                layout="fill"
                 disabled={!canApplyHours}
                 onClick={() => applyAndClose({ kind: "hours", startTime, endTime })}
               >
                 Aplicar horas
               </Button>
+              </div>
             </div>
           )}
 
           {(activeKind === "date" || activeKind === "range" || activeKind === "week") && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between px-1">
-                <button
-                  type="button"
-                  onClick={() => setCalendarBaseDate(subMonths(calendarBaseDate, 1))}
-                  className="p-2 hover:bg-zinc-50 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
-                  aria-label="Mes anterior"
-                >
-                  <ChevronLeft size={20} className="text-zinc-400" />
-                </button>
-                <div className="text-xs font-black uppercase tracking-tight text-zinc-900">
-                  {format(calendarBaseDate, "MMMM yyyy", { locale: es })}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setCalendarBaseDate(addMonths(calendarBaseDate, 1))}
-                  className="p-2 hover:bg-zinc-50 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
-                  aria-label="Mes siguiente"
-                >
-                  <ChevronRight size={20} className="text-zinc-400" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-7 gap-1">
-                {["L", "M", "X", "J", "V", "S", "D"].map((d) => (
-                  <div key={d} className="text-center text-[9px] font-black text-zinc-300 py-2">
-                    {d}
-                  </div>
-                ))}
-                {calendarDays.map((day) => (
-                  <CalendarCell key={day.toISOString()} day={day} />
-                ))}
-              </div>
+              <MiniMonthCalendar
+                month={calendarBaseDate}
+                onMonthChange={setCalendarBaseDate}
+                onSelectDay={selectCalendarDay}
+                isSelected={calendarSelected}
+                isInRange={calendarInRange}
+              />
 
               {activeKind === "range" && (
                 <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400 text-center">

@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { usePathname, useRouter } from 'next/navigation'
-import { Bell, Check, Loader2 } from 'lucide-react'
+import { Bell, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { useUnreadNotifications } from '@/contexts/UnreadNotificationsContext'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { cn } from '@/lib/utils'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import {
@@ -50,18 +51,6 @@ function NotificationCountBadge({
     >
       {label}
     </span>
-  )
-}
-
-function NotificationsEmptyState() {
-  return (
-    <div className="flex min-h-[168px] flex-col items-center justify-center px-5 py-10 text-center">
-      <Check className="mb-4 size-9 text-[#2F5D6A]/35" strokeWidth={1.25} aria-hidden />
-      <p className="text-[15px] font-semibold tracking-tight text-[#2F5D6A]">Todo al día</p>
-      <p className="mt-1.5 max-w-[220px] text-[13px] leading-relaxed text-black/55">
-        No hay notificaciones pendientes
-      </p>
-    </div>
   )
 }
 
@@ -313,7 +302,12 @@ export function NotificationsBell() {
                       <p className="text-[12px] text-black/45">Cargando…</p>
                     </div>
                   ) : showEmpty ? (
-                    <NotificationsEmptyState />
+                    <EmptyState
+                        instance="notifications-bell-empty"
+                        variant="none"
+                        title="Todo al día"
+                        description="No hay notificaciones pendientes"
+                    />
                   ) : (
                     <ul className="flex flex-col gap-2.5">
                       {items.map((row) => (

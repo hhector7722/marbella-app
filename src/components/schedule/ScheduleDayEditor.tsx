@@ -4,18 +4,16 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import {
     X,
-    Save,
     Plus,
     Minus,
     ChevronLeft,
     ChevronRight,
-    Send,
-    CheckCircle2,
     Share2,
     Check,
     ArrowLeft
 } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
+import { MiniMonthCalendar } from '@/components/time/MiniMonthCalendar';
 import { Button } from '@/components/ui/button';
 import { format, addDays, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -718,22 +716,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
         fetchData(newDateStr);
     };
 
-    const generateCalendarDays = () => {
-        const year = calendarDate.getFullYear();
-        const month = calendarDate.getMonth();
-        const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
-        const days: (number | null)[] = [];
-        const startDay = (firstDay.getDay() + 6) % 7;
-        for (let i = 0; i < startDay; i++) days.push(null);
-        for (let d = 1; d <= lastDay.getDate(); d++) days.push(d);
-        return days;
-    };
-
-    const handleSelectCalendarDate = async (day: number) => {
-        const year = calendarDate.getFullYear();
-        const month = calendarDate.getMonth();
-        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const handleSelectCalendarDate = async (picked: Date) => {
+        const dateStr = format(picked, 'yyyy-MM-dd');
         if (hasUnsavedChanges) {
             await handleSave(true, isDayPublished);
         }
@@ -1322,14 +1306,13 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 }
                 hideTitle
             >
-                <div>
-                    <div className="grid grid-cols-7 gap-1">
-                        {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => <div key={d} className="text-center text-xs font-bold text-gray-400 py-1">{d}</div>)}
-                        {generateCalendarDays().map((day, i) => (
-                            <button key={i} onClick={() => day && handleSelectCalendarDate(day)} disabled={!day} className={`aspect-square flex items-center justify-center rounded-2xl text-sm font-bold transition-all ${!day ? 'invisible' : 'hover:bg-blue-50 text-gray-700'} ${day === new Date().getDate() && calendarDate.getMonth() === new Date().getMonth() ? 'bg-[#36606F] text-white shadow-md' : ''}`}>{day}</button>
-                        ))}
-                    </div>
-                </div>
+                <MiniMonthCalendar
+                    month={calendarDate}
+                    onMonthChange={setCalendarDate}
+                    monthInHeader
+                    onSelectDay={(day) => { void handleSelectCalendarDate(day); }}
+                    isSelected={(day) => format(day, 'yyyy-MM-dd') === date}
+                />
             </Modal>
 
             <StaffSelectionModal
@@ -1360,19 +1343,31 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                             </span>
                         </div>
                     </div>
-                    <div className="flex flex-col gap-3 mt-2">
-                        <button
+                    <div className="flex flex-wrap items-center justify-end gap-2 mt-2">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            instance="schedule-day-share-cancel"
+                            onClick={() => setShowShareModal(false)}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="primary"
+                            instance="schedule-day-share-save"
                             onClick={async () => {
                                 setShowShareModal(false);
                                 trackScheduleShare(!isDayPublished ? 'Guardar borrador' : 'Sobreescribir publicado');
                                 await handleSave(false, true);
                             }}
-                            className="w-full min-h-12 bg-[#36606F] hover:bg-[#2a4d59] text-white py-3.5 rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95 uppercase flex items-center justify-center gap-2"
                         >
-                            <CheckCircle2 size={18} /> {!isDayPublished ? 'Guardar' : 'Sobreescribir'}
-                        </button>
-
-                        <button
+                            {!isDayPublished ? 'Guardar' : 'Sobreescribir'}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="primary"
+                            instance="schedule-day-share-send"
                             onClick={async () => {
                                 setShowShareModal(false);
                                 trackScheduleShare(!isDaySent ? 'Enviar notificaciones' : 'Reenviar notificaciones');
@@ -1417,20 +1412,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                     }
                                 }
                             }}
-                            className="w-full min-h-12 text-white py-3.5 rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95 uppercase flex items-center justify-center gap-2 bg-[#0FA968] hover:bg-emerald-600"
                         >
-                            <Send size={18} /> {!isDaySent ? 'Enviar' : 'Reenviar'}
-                        </button>
-
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            instance="schedule-day-share-cancel"
-                            layout="fill"
-                            onClick={() => setShowShareModal(false)}
-                            className="mt-1"
-                        >
-                            Cancelar
+                            {!isDaySent ? 'Enviar' : 'Reenviar'}
                         </Button>
                     </div>
                 </div>

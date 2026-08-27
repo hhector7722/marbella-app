@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 import { WebAnalyticsDashboard } from '@/components/web-analytics/WebAnalyticsDashboard';
 import { canAccessWebAnalytics } from '@/lib/web-analytics/access';
 import {
@@ -10,6 +11,7 @@ import {
 import { createClient } from '@/utils/supabase/server';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { Notice } from '@/components/ui/Notice';
+import { DayPeriodFilter, DayPeriodNav } from '@/components/time/DayPeriodChrome';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,15 +59,25 @@ export default async function WebAnalyticsPage({ searchParams }: WebAnalyticsPag
       showBackButton={false}
       template="list"
       maxWidthClass="max-w-3xl"
+      periodSlot={
+        <Suspense fallback={null}>
+          <DayPeriodNav day={filters.day} basePath="/dashboard/web" />
+        </Suspense>
+      }
       rightSlot={
-        <Link
-          href="https://marbella-web.vercel.app"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex min-h-12 shrink-0 items-center px-2 text-xs font-semibold text-white"
-        >
-          Abrir web
-        </Link>
+        <div className="flex shrink-0 items-center gap-1">
+          <Suspense fallback={null}>
+            <DayPeriodFilter day={filters.day} basePath="/dashboard/web" instance="web-period-filter" />
+          </Suspense>
+          <Link
+            href="https://marbella-web.vercel.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex min-h-12 shrink-0 items-center px-2 text-xs font-semibold text-white"
+          >
+            Abrir web
+          </Link>
+        </div>
       }
     >
       {loadError ? (

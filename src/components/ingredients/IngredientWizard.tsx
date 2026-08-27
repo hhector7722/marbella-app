@@ -1098,14 +1098,17 @@ export function IngredientWizard({
               autoFocus
             />
           </label>
-          <button
-            type="button"
-            disabled={saving}
-            onClick={handleConfirmName}
-            className="w-full min-h-12 rounded-xl bg-[#36606F] text-white font-black disabled:opacity-50"
-          >
-            {pricingAssistantCopy.name.continue}
-          </button>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="primary"
+              instance="ingredient-wizard-confirm-name"
+              disabled={saving}
+              onClick={handleConfirmName}
+            >
+              {pricingAssistantCopy.name.continue}
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="min-h-12 rounded-xl border border-zinc-100 bg-zinc-50 px-3 flex items-center shrink-0">
@@ -1148,16 +1151,14 @@ export function IngredientWizard({
               onClick={() => handlePickCategory('Otros')}
             />
           </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={back}
-              className="min-h-12 flex-1 rounded-xl bg-rose-600 text-white font-black hover:bg-rose-700"
-            >
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Button type="button" variant="secondary" instance="ingredient-wizard-back-category" onClick={back}>
               Atrás
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="secondary"
+              instance="ingredient-wizard-skip-category"
               disabled={saving}
               onClick={async () => {
                 // Añadir más tarde: mantenemos categoría por defecto en BD (Alimentos) y avanzamos.
@@ -1168,10 +1169,9 @@ export function IngredientWizard({
                   toast.error(e?.message || 'Error')
                 }
               }}
-              className="min-h-12 flex-1 rounded-xl bg-zinc-200 text-zinc-800 font-black hover:bg-zinc-300 disabled:opacity-50"
             >
               {pricingAssistantCopy.category.skipLater}
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -1278,25 +1278,22 @@ export function IngredientWizard({
               </div>
             )}
 
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={back}
-              className="min-h-12 flex-1 rounded-xl bg-rose-600 text-white font-black hover:bg-rose-700"
-            >
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Button type="button" variant="secondary" instance="ingredient-wizard-back-invoice" onClick={back}>
               Atrás
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="secondary"
+              instance="ingredient-wizard-skip-invoice"
               disabled={saving}
               onClick={async () => {
                 // Añadir más tarde: saltamos directamente al paso de imagen.
                 await skipPricing()
               }}
-              className="min-h-12 flex-1 rounded-xl bg-zinc-200 text-zinc-800 font-black hover:bg-zinc-300 disabled:opacity-50"
             >
               {pricingAssistantCopy.invoiceStyle.skipLater}
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -1522,30 +1519,29 @@ export function IngredientWizard({
             </div>
           )}
 
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={back}
-              className="min-h-12 flex-1 rounded-xl bg-rose-600 text-white font-black hover:bg-rose-700"
-            >
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Button type="button" variant="secondary" instance="ingredient-wizard-back-amounts" onClick={back}>
               Atrás
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="secondary"
+              instance="ingredient-wizard-skip-amounts"
               disabled={saving}
               onClick={skipPricing}
-              className="min-h-12 flex-1 rounded-xl bg-zinc-200 text-zinc-800 font-black hover:bg-zinc-300 disabled:opacity-50"
             >
               {pricingAssistantCopy.amounts.skipLater}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="primary"
+              instance="ingredient-wizard-save-pricing"
               disabled={saving}
+              loading={saving}
               onClick={handleSavePricingAndAdvance}
-              className="min-h-12 flex-1 rounded-xl bg-[#36606F] text-white font-black disabled:opacity-50"
             >
               {pricingAssistantCopy.amounts.save}
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -1791,21 +1787,24 @@ export function IngredientWizard({
                   }`}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={saveOptionalFieldsAndClose}
-            className="w-full min-h-12 rounded-xl bg-emerald-600 text-white font-black"
-          >
-            Terminar
-          </button>
-          <Button
-            type="button"
-            variant="secondary"
-            instance="ingredient-wizard-cerrar-sin-tocar"
-            onClick={closeWithoutSavingOptional}
-          >
-            Cerrar sin tocar
-          </Button>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              instance="ingredient-wizard-cerrar-sin-tocar"
+              onClick={closeWithoutSavingOptional}
+            >
+              Cerrar sin tocar
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              instance="ingredient-wizard-terminar"
+              onClick={saveOptionalFieldsAndClose}
+            >
+              Terminar
+            </Button>
+          </div>
         </div>
       )}
     </div>

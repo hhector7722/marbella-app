@@ -11,6 +11,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { Surface } from '@/components/ui/Surface'
 import { Field } from '@/components/ui/Field'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { ModalDateButton } from '@/components/time/ModalDateButton'
 import { createEventAction, deleteEventAction } from './actions'
 
 export type AdminEventRow = {
@@ -170,10 +171,18 @@ export default function EventosAdminClient({
         open={createOpen}
         onClose={closeCreateModal}
         title="Nuevo encargo"
-        subtitle="Contacto, fecha, hora y número de personas"
+        subtitle="Contacto, hora y número de personas"
         instance="eventos-create"
         variant="standard"
         layer="base"
+        headerTone="petroleum"
+        headerTrailing={
+          <ModalDateButton
+            value={eventDate}
+            onChange={setEventDate}
+            ariaLabel="Fecha del encargo"
+          />
+        }
         footer={
           <div className="flex w-full items-center justify-end gap-2">
             <Button
@@ -224,16 +233,7 @@ export default function EventosAdminClient({
               autoComplete="name"
             />
           </Field>
-          <div className="grid grid-cols-2 gap-2">
-            <Field instance="eventos-create-fecha" label="Fecha" htmlFor="eventos-create-fecha">
-              <input
-                id="eventos-create-fecha"
-                type="date"
-                value={eventDate}
-                onChange={(ev) => setEventDate(ev.target.value)}
-              />
-            </Field>
-            <Field instance="eventos-create-hora" label="Hora" htmlFor="eventos-create-hora">
+          <Field instance="eventos-create-hora" label="Hora" htmlFor="eventos-create-hora">
               <input
                 id="eventos-create-hora"
                 type="time"
@@ -241,7 +241,6 @@ export default function EventosAdminClient({
                 onChange={(ev) => setEventTime(ev.target.value)}
               />
             </Field>
-          </div>
           <Field instance="eventos-create-personas" label="Cantidad de personas" htmlFor="eventos-create-personas">
             <input
               id="eventos-create-personas"

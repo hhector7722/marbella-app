@@ -461,4 +461,63 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             );
         }
     });
+
+    it('las barras de cantidad usan QuantityStepper (P10)', () => {
+        const hosts = [
+            'app/dashboard/inventory/InventoryClient.tsx',
+            'app/dashboard/inventory/waste/WasteClient.tsx',
+            'components/carta/EventCartaOrderControls.tsx',
+            'components/cash-closing/ClosingStep1Parts.tsx',
+            'components/reservas/EncargoProductEditor.tsx',
+            'components/orders/OrderProductCard.tsx',
+            'app/staff/ConsumptionModal.tsx',
+            'components/eventos/EventEncargoCartFooter.tsx',
+        ];
+        for (const rel of hosts) {
+            const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
+            assert.match(source, /QuantityStepper/, `${rel} debe usar QuantityStepper`);
+        }
+        const inventory = readFileSync(join(SRC_ROOT, 'app/dashboard/inventory/InventoryClient.tsx'), 'utf8');
+        assert.doesNotMatch(inventory, /aria-label="Menos cantidad"/);
+        const waste = readFileSync(join(SRC_ROOT, 'app/dashboard/inventory/waste/WasteClient.tsx'), 'utf8');
+        assert.doesNotMatch(waste, /aria-label="Menos cantidad"/);
+    });
+
+    it('horas extras Admin pinta el mismo hoy que la pantalla overtime', () => {
+        const admin = readFileSync(join(SRC_ROOT, 'components/dashboards/AdminDashboardView.tsx'), 'utf8');
+        const overtime = readFileSync(join(SRC_ROOT, 'app/dashboard/overtime/page.tsx'), 'utf8');
+        assert.match(admin, /w-6 h-6 md:w-7 md:h-7/);
+        assert.match(admin, /isToday && 'bg-ds-marca text-white'/);
+        assert.match(overtime, /isToday && 'bg-ds-marca text-white'/);
+        assert.doesNotMatch(admin, /isToday && 'bg-blue-500 text-white'/);
+    });
+
+    it('el calendario de elegir un día usa MiniMonthCalendar', () => {
+        const hosts = [
+            'components/time/TimeFilterModal.tsx',
+            'app/dashboard/history/page.tsx',
+            'components/schedule/ScheduleDayEditor.tsx',
+        ];
+        for (const rel of hosts) {
+            const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
+            assert.match(source, /MiniMonthCalendar/, `${rel} debe usar MiniMonthCalendar`);
+        }
+        const history = readFileSync(join(SRC_ROOT, 'app/dashboard/history/page.tsx'), 'utf8');
+        assert.doesNotMatch(history, /bg-zinc-900 text-white shadow-xl scale-110/);
+    });
+
+    it('receta, mapeo, encargo e import usan thead de sistema', () => {
+        const tables = [
+            'app/recipes/[id]/page.tsx',
+            'app/recipes/page.tsx',
+            'components/reservas/EncargoOrderViewModal.tsx',
+            'app/dashboard/import/page.tsx',
+            'app/admin/import/page.tsx',
+            'app/dashboard/recetas-tpv/MappingClient.tsx',
+        ];
+        for (const rel of tables) {
+            const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
+            assert.match(source, /TABLE_COMPONENT_ID/, `${rel} debe usar Table`);
+        }
+    });
 });

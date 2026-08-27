@@ -7,6 +7,7 @@ import { Upload, FileUp, CheckCircle, AlertCircle, Database } from 'lucide-react
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Button } from '@/components/ui/button'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
+import { TABLE_COMPONENT_ID } from '@/lib/design-system'
 import { getImportRuns, getLatestImportRuns, importSuppliers, importProducts, importRecipes, importLogs, importInitialMovements, ImportResult, ImportStep } from '@/app/actions/import-legacy'
 import { cn } from '@/lib/utils'
 
@@ -588,11 +589,11 @@ export default function ImportPage() {
                                     <div className="p-4">
                                         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Vista Previa (Primeros 5)</h4>
                                         <div className="border rounded-lg overflow-hidden text-xs">
-                                            <table className="w-full text-left">
-                                                <thead className="bg-zinc-50 border-b text-zinc-500">
+                                            <table data-component={TABLE_COMPONENT_ID} data-instance="import-preview" className="w-full text-left">
+                                                <thead>
                                                     <tr>
                                                         {fileData.length > 0 && Object.keys(fileData[0]).slice(0, 4).map(header => (
-                                                            <th key={header} className="p-2 font-medium">{header}</th>
+                                                            <th key={header}>{header}</th>
                                                         ))}
                                                     </tr>
                                                 </thead>

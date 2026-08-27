@@ -15,6 +15,7 @@ import Papa from 'papaparse';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { persistOvertimeCostForEmployeesAction } from '@/app/actions/persist-overtime-cost';
 
 interface CSVRow {
@@ -297,13 +298,13 @@ export default function BulkImportPage() {
                                             <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Previsualización (Primeras 5 filas)</span>
                                         </div>
                                         <div className="bg-gray-50 rounded-2xl overflow-hidden border border-gray-100">
-                                            <table className="w-full text-left border-collapse">
+                                            <table data-component={TABLE_COMPONENT_ID} data-instance="admin-import-preview" className="w-full text-left">
                                                 <thead>
-                                                    <tr className="bg-gray-100/50">
-                                                        <th className="px-4 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Email</th>
-                                                        <th className="px-4 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Fecha</th>
-                                                        <th className="px-4 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Entrada</th>
-                                                        <th className="px-4 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Salida</th>
+                                                    <tr>
+                                                        <th>Email</th>
+                                                        <th>Fecha</th>
+                                                        <th>Entrada</th>
+                                                        <th>Salida</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-gray-100">

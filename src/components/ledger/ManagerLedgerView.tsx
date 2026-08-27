@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { namedEntitySummary } from '@/lib/usage/modal-apply';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import { ModalDateButton } from '@/components/time/ModalDateButton';
 import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 
 interface LedgerRow {
@@ -510,21 +511,18 @@ export default function ManagerLedgerView() {
                 headerTone="petroleum"
                 title={editModalOpen ? 'Editar Apunte' : 'Nuevo Apunte'}
                 subtitle="Transcripción"
+                headerTrailing={
+                    <ModalDateButton
+                        value={editModalOpen ? editDate : entryDate}
+                        onChange={(next) => (editModalOpen ? setEditDate(next) : setEntryDate(next))}
+                        ariaLabel="Fecha del apunte"
+                    />
+                }
             >
                         <form onSubmit={editModalOpen ? handleEdit : handleCreate}>
                             <div className="grid grid-cols-2 gap-2 mb-4 bg-zinc-100 p-1.5 rounded-2xl">
                                 <button type="button" onClick={() => setType('entrada')} className={`py-2 px-4 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${type === 'entrada' ? 'bg-emerald-500 text-white shadow-md' : 'text-zinc-400 hover:text-zinc-600'}`}>Entrada</button>
                                 <button type="button" onClick={() => setType('salida')} className={`py-2 px-4 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${type === 'salida' ? 'bg-white text-zinc-900 shadow-md' : 'text-zinc-400 hover:text-zinc-600'}`}>Salida</button>
-                            </div>
-                            <div className="flex flex-col justify-center bg-blue-500 p-3 rounded-2xl border border-white/10 shadow-sm min-h-[48px] shrink-0 mb-4">
-                                <label className="text-[8px] font-black text-white/70 uppercase tracking-widest mb-1">Fecha del apunte</label>
-                                <input
-                                    type="date"
-                                    value={editModalOpen ? editDate : entryDate}
-                                    onChange={(e) => (editModalOpen ? setEditDate(e.target.value) : setEntryDate(e.target.value))}
-                                    className="w-full bg-transparent border-none p-0 text-white text-[11px] md:text-xs font-black uppercase tracking-widest outline-none focus:ring-0 cursor-pointer min-h-[28px]"
-                                    required
-                                />
                             </div>
                             <div className="space-y-4">
                                 <div className="bg-zinc-50 border border-zinc-100 p-4 rounded-2xl shadow-sm">

@@ -681,13 +681,11 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                                         }}
                                                     />
                                                 </div>
-                                                <div className="flex gap-2">
+                                                <div className="flex flex-wrap items-center justify-end gap-2">
                                                     <Button
                                                         type="button"
                                                         variant="secondary"
                                                         instance="ingredient-pricing-cancel"
-                                                        layout="fill"
-                                                        className="flex-1"
                                                         onClick={() => {
                                                             setEditPricingOpen(false);
                                                             setEditPricingStep(1);
@@ -777,14 +775,15 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                                         }}
                                                     />
                                                 </div>
-                                                <div className="flex gap-2">
-                                                    <button
+                                                <div className="flex flex-wrap items-center justify-end gap-2">
+                                                    <Button
                                                         type="button"
+                                                        variant="secondary"
+                                                        instance="ingredient-pricing-back-base"
                                                         onClick={() => setEditPricingStep(1)}
-                                                        className="min-h-12 flex-1 rounded-xl bg-rose-600 font-black text-white hover:bg-rose-700"
                                                     >
                                                         Atrás
-                                                    </button>
+                                                    </Button>
                                                 </div>
                                             </>
                                         )}
@@ -979,21 +978,25 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                                         />
                                                     </label>
                                                 )}
-                                                <div className="flex gap-2">
-                                                    <button
+                                                <div className="flex flex-wrap items-center justify-end gap-2">
+                                                    <Button
                                                         type="button"
+                                                        variant="secondary"
+                                                        instance="ingredient-pricing-back-amounts"
                                                         onClick={() =>
                                                             setEditPricingStep(
                                                                 packNeedsBaseMeasureStep(editForm.category) ? 2 : 1
                                                             )
                                                         }
-                                                        className="min-h-12 flex-1 rounded-xl bg-rose-600 font-black text-white hover:bg-rose-700"
                                                     >
                                                         Atrás
-                                                    </button>
-                                                    <button
+                                                    </Button>
+                                                    <Button
                                                         type="button"
+                                                        variant="primary"
+                                                        instance="ingredient-pricing-done"
                                                         disabled={saving}
+                                                        loading={saving}
                                                         onClick={async () => {
                                                             const ok = await persistPricingToDb(editForm);
                                                             if (!ok) return;
@@ -1001,10 +1004,9 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                                             setEditPricingStep(1);
                                                             toast.success('Precio guardado');
                                                         }}
-                                                        className="min-h-12 flex-1 rounded-xl bg-[#36606F] font-black text-white hover:bg-[#2d505c] disabled:opacity-50"
                                                     >
                                                         {pricingAssistantCopy.modal.done}
-                                                    </button>
+                                                    </Button>
                                                 </div>
                                             </>
                                         )}

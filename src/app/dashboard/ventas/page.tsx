@@ -13,6 +13,7 @@ import { format, startOfMonth, endOfMonth, isSameDay, addDays, subDays, subMonth
 import { es } from 'date-fns/locale';
 import { cn, getBusinessHourFromTicket } from '@/lib/utils';
 import { TABLE_COMPONENT_ID } from '@/lib/design-system';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { formatTicketTimeMadrid } from '@/utils/date-utils';
 import { toast } from 'sonner';
 import { BUSINESS_HOURS } from '@/lib/constants';
@@ -765,9 +766,11 @@ export default function VentasPage() {
                                 </div>
                             ) : activeTab === 'VENTAS' ? (
                                 tickets.length === 0 ? (
-                                    <div className="text-center py-20 opacity-30 flex flex-col items-center gap-3">
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Sin ventas en este periodo</span>
-                                    </div>
+                                    <EmptyState
+                                        instance="ventas-tickets-empty"
+                                        variant="none"
+                                        title="Sin ventas en este periodo"
+                                    />
                                 ) : (
                                     <div className="w-full min-w-0 bg-white rounded-lg shadow-sm border border-zinc-200 overflow-x-hidden print-table-ventas">
                                         <table data-component={TABLE_COMPONENT_ID} data-instance="ventas-tickets" className="w-full text-left border-collapse">
@@ -903,9 +906,11 @@ export default function VentasPage() {
                                 )
                             ) : activeTab === 'PRODUCTOS' ? (
                                 products.length === 0 ? (
-                                    <div className="text-center py-20 opacity-30 flex flex-col items-center gap-3">
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Sin productos en este periodo</span>
-                                    </div>
+                                    <EmptyState
+                                        instance="ventas-productos-empty"
+                                        variant="none"
+                                        title="Sin productos en este periodo"
+                                    />
                                 ) : (
                                     <div className="w-full min-w-0 bg-white rounded-lg shadow-sm border border-zinc-200 overflow-x-hidden print-table-ventas">
                                         <table data-component={TABLE_COMPONENT_ID} data-instance="ventas-productos" className="w-full text-left border-collapse">
@@ -943,9 +948,11 @@ export default function VentasPage() {
                                     </div>
                                 )
                             ) : hourSlotsRows.length === 0 ? (
-                                <div className="text-center py-20 opacity-30 flex flex-col items-center gap-3">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Sin datos por hora en este periodo</span>
-                                </div>
+                                <EmptyState
+                                    instance="ventas-horas-empty"
+                                    variant="none"
+                                    title="Sin datos por hora en este periodo"
+                                />
                             ) : (
                                 <div className="w-full min-w-0 bg-white rounded-lg shadow-sm border border-zinc-200 overflow-x-hidden print-table-ventas">
                                     <table data-component={TABLE_COMPONENT_ID} data-instance="ventas-horas" className="w-full text-left border-collapse">

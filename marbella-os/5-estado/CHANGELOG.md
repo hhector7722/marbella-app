@@ -6,7 +6,7 @@ capa: estado
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-26
+revisado: 2026-08-27
 caducidad: no aplica
 supersede: PROJECT_STATUS.md (función de historial)
 ---
@@ -35,6 +35,10 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 ## Formato
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
+
+## 2026-08-27
+
+- **Una barra de cantidad, un calendario de día y el mismo vacío en todas partes.** Menos / número / más es la misma pieza; confirmar ya no se estira a todo el ancho; horas extras del Admin coincide con la pantalla; las tablas de receta, mapeo, encargo e import llevan la cabecera de sistema; elegir un día en ventana es el mismo mini-calendario; si no hay nada se dice igual; y el día de uso, web, apunte y encargo vive en la cabecera.
 
 ## 2026-08-26
 

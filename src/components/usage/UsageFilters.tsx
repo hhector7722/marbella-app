@@ -101,19 +101,6 @@ export function UsageFilters({ filters, users }: UsageFiltersProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-2">
       <div className="flex shrink-0 items-center gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <input
-          id="usage-day"
-          name="dia"
-          type="date"
-          aria-label="Día"
-          value={day}
-          onChange={(event) => setDay(event.target.value)}
-          className={cn(
-            'box-border h-12 w-[7rem] max-w-[7rem] shrink-0 rounded-xl border border-zinc-200 bg-white px-2 text-xs text-zinc-800 outline-none',
-            'focus:border-[#36606F] focus:ring-1 focus:ring-[#36606F]/30'
-          )}
-        />
-
         <button
           type="button"
           onClick={() => setUsersOpen((prev) => !prev)}

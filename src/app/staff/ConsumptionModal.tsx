@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { submitPersonalConsumption, getConsumptionRecipes } from './actions';
 import { toast } from 'sonner';
-import { Search, Loader2, Package, Minus, Plus } from 'lucide-react';
+import { Search, Loader2, Package } from 'lucide-react';
+import { QuantityStepper } from '@/components/ui/QuantityStepper';
 import { cn } from '@/lib/utils';
 import {
   isDrinkConsumptionRecipe,
@@ -90,16 +91,13 @@ export function ConsumptionModal({
     });
   }, []);
 
-  const handleDecrement = useCallback((recipeId: string, is_half: boolean) => {
+  const handleSetQuantity = useCallback((recipeId: string, is_half: boolean, qty: number) => {
     setCart((prev) => {
       const existing = prev.find((item) => item.recipe.id === recipeId && item.is_half === is_half);
       if (!existing) return prev;
-      if (existing.quantity > 1) {
-        return prev.map((i) =>
-          i === existing ? { ...i, quantity: i.quantity - 1 } : i,
-        );
-      }
-      return prev.filter((i) => i !== existing);
+      const n = Math.max(0, Math.min(20, Math.floor(qty)));
+      if (n <= 0) return prev.filter((i) => i !== existing);
+      return prev.map((i) => (i === existing ? { ...i, quantity: n } : i));
     });
   }, []);
 
@@ -368,18 +366,6 @@ export function ConsumptionModal({
                   key={`${c.recipe.id}-${c.is_half}-${i}`}
                   className="flex min-h-12 items-center gap-2 rounded-xl px-2"
                 >
-                  <button
-                    type="button"
-                    onClick={() => handleDecrement(c.recipe.id, c.is_half)}
-                    disabled={isSubmitting}
-                    className={cn(
-                      'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl text-zinc-400',
-                      'hover:text-zinc-600 active:scale-[0.98] transition-colors disabled:pointer-events-none disabled:opacity-30',
-                    )}
-                    aria-label={`Quitar una unidad de ${c.recipe.name}`}
-                  >
-                    <Minus className="h-5 w-5" strokeWidth={2.5} />
-                  </button>
                   <div className="min-w-0 flex-1">
                     <p
                       className="truncate text-sm font-bold text-zinc-900"
@@ -389,21 +375,16 @@ export function ConsumptionModal({
                       {c.is_half ? ' (Mitad)' : ''}
                     </p>
                   </div>
-                  <div className="shrink-0 tabular-nums text-sm font-black text-zinc-700">
-                    ×{c.quantity}
+                  <div className="w-[8.5rem] shrink-0">
+                    <QuantityStepper
+                      value={c.quantity}
+                      onChange={(n) => handleSetQuantity(c.recipe.id, c.is_half, n)}
+                      min={0}
+                      max={20}
+                      ariaLabel={`Cantidad de ${c.recipe.name}`}
+                      disabled={isSubmitting}
+                    />
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleAdd(c.recipe, c.is_half)}
-                    disabled={isSubmitting}
-                    className={cn(
-                      'inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-xl text-zinc-400',
-                      'hover:text-zinc-600 active:scale-[0.98] transition-colors disabled:pointer-events-none disabled:opacity-30',
-                    )}
-                    aria-label={`Añadir una unidad de ${c.recipe.name}`}
-                  >
-                    <Plus className="h-5 w-5" strokeWidth={2.5} />
-                  </button>
                 </div>
               ))}
             </div>

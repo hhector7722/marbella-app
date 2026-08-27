@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Minus, Plus, Trash2, Package } from 'lucide-react';
+import { Trash2, Package } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
 import { cn } from "@/lib/utils";
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Modal } from '@/components/ui/modal';
+import { QuantityStepper } from '@/components/ui/QuantityStepper';
 
 interface Ingredient {
     id: string;
@@ -42,8 +43,6 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
     const [customUnit, setCustomUnit] = useState(isStartCustom ? startUnit : '');
     const [isUpdating, setIsUpdating] = useState(false);
     const [showModal, setShowModal] = useState(false);
-    /** Mientras el usuario escribe, guardamos el texto del input; al blur/Enter se parsea y aplica. */
-    const [editingQty, setEditingQty] = useState<string | null>(null);
 
     // This ref tells us if the user is currently interacting and hasn't saved yet
     const isDirtyRef = useRef(false);
@@ -114,19 +113,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
         return () => clearTimeout(timer);
     }, [quantity, unit, isCustomUnit, customUnit, supplierId, ingredient.id, supabase]);
 
-    const handleIncrement = () => updateLocal(quantity + 1, unit, isCustomUnit, customUnit);
-    const handleDecrement = () => updateLocal(Math.max(0, quantity - 1), unit, isCustomUnit, customUnit);
     const handleTrash = () => updateLocal(0, unit, isCustomUnit, customUnit);
-
-    const commitQtyInput = () => {
-        if (editingQty === null) return;
-        const n = parseFloat(editingQty.replace(',', '.'));
-        const final = (!Number.isNaN(n) && n >= 0) ? n : 0;
-        updateLocal(final, unit, isCustomUnit, customUnit);
-        setEditingQty(null);
-    };
-
-    const displayQty = editingQty !== null ? editingQty : (quantity === 0 ? '' : String(quantity));
 
     const renderCard = (isModal: boolean) => (
         <div className={cn(
@@ -222,68 +209,19 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                 </div>
             </div>
 
-            {/* ZONA INFERIOR (Estilo desglose monetario unificado) */}
+            {/* ZONA INFERIOR (barra de cantidad de sistema) */}
             <div className={cn(
                 "shrink-0 w-full flex items-center justify-center bg-white",
                 isModal ? "px-6 py-4" : "px-1.5 pb-1.5"
             )}>
-                <div className={cn(
-                    "flex items-center justify-between w-full bg-white border border-zinc-200 overflow-hidden shadow-sm transition-all focus-within:ring-2 focus-within:ring-[#5B8FB9]/40 focus-within:border-[#5B8FB9]/40",
-                    isModal ? "h-14 rounded-xl" : "h-10 rounded-[10px]"
-                )}>
-                    <button
-                        type="button"
-                        onClick={handleDecrement}
-                        disabled={quantity === 0}
-                        aria-label="Menos cantidad"
-                        className={cn(
-                            "flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-500 active:bg-rose-100 transition-colors h-full shrink-0",
-                            isModal ? "w-14" : "w-10"
-                        )}
-                    >
-                        <Minus
-                            className={isModal ? "h-5 w-5" : "h-[18px] w-[18px]"}
-                            strokeWidth={3}
-                            aria-hidden="true"
-                        />
-                    </button>
-
-                    <input
-                        type="text"
-                        inputMode="decimal"
-                        aria-label="Cantidad"
-                        value={displayQty}
-                        onChange={(e) => {
-                            const v = e.target.value;
-                            if (v === '' || /^\d*[,.]?\d*$/.test(v)) setEditingQty(v);
-                        }}
-                        onFocus={() => setEditingQty(quantity === 0 ? '' : String(quantity))}
-                        onBlur={commitQtyInput}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                        }}
-                        className={cn(
-                            "flex-1 w-0 h-full bg-transparent text-center font-black text-zinc-700 outline-none p-0 tracking-tighter tabular-nums transition-colors",
-                            isModal ? "text-xl" : "text-sm"
-                        )}
-                    />
-
-                    <button
-                        type="button"
-                        onClick={handleIncrement}
-                        aria-label="Más cantidad"
-                        className={cn(
-                            "flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-500 active:bg-emerald-100 transition-colors h-full shrink-0",
-                            isModal ? "w-14" : "w-10"
-                        )}
-                    >
-                        <Plus
-                            className={isModal ? "h-5 w-5" : "h-[18px] w-[18px]"}
-                            strokeWidth={3}
-                            aria-hidden="true"
-                        />
-                    </button>
-                </div>
+                <QuantityStepper
+                    value={quantity}
+                    onChange={(n) => updateLocal(n, unit, isCustomUnit, customUnit)}
+                    min={0}
+                    inputMode="decimal"
+                    ariaLabel="Cantidad"
+                    className={isModal ? 'min-h-14' : 'min-h-10'}
+                />
             </div>
 
             {quantity > 0 && (

@@ -334,13 +334,11 @@ export default function NewOrderPage() {
                         </div>
 
                         {selectedItems.length > 0 && selectedSupplier ? (
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center justify-end gap-2">
                                 <Button
                                     type="button"
                                     variant="secondary"
                                     instance="order-new-reset"
-                                    layout="fill"
-                                    className="flex-1"
                                     onClick={() => {
                                         if (!supplierId || !selectedSupplier) return;
                                         setResetConfirmOpen(true);
@@ -352,8 +350,6 @@ export default function NewOrderPage() {
                                     type="button"
                                     variant="primary"
                                     instance="order-new-tramitar"
-                                    layout="fill"
-                                    className="flex-1"
                                     onClick={() => setIsSummaryOpen(true)}
                                 >
                                     {`Tramitar (${selectedItems.length})`}

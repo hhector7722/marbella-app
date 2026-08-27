@@ -4,9 +4,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation';
 import { processInventoryCounts, saveIngredientsInventoryVisibility } from './actions'
 import { toast } from 'sonner'
-import { AlertCircle, Filter, Minus, Package, Plus, Save, Search } from 'lucide-react'
+import { AlertCircle, Filter, Package, Search } from 'lucide-react'
 import { FloatingCalculatorFab, QuickCalculatorModal } from '@/components/ui/QuickCalculatorModal'
 import { Button } from '@/components/ui/button'
+import { QuantityStepper } from '@/components/ui/QuantityStepper'
 import { cn } from '@/lib/utils'
 
 type Ingredient = {
@@ -77,95 +78,6 @@ function parseQuantity(raw: string, unit: string): number {
   return roundQty(n, unit)
 }
 
-function QuantityStepper({
-  unit,
-  value,
-  onChange,
-  raw,
-  onRawChange,
-  onBlur,
-  ariaLabel,
-  hideUnitSuffix,
-  bottomText,
-}: {
-  unit: string
-  value: number
-  onChange: (n: number) => void
-  raw: string
-  onRawChange: (s: string) => void
-  onBlur: () => void
-  ariaLabel: string
-  hideUnitSuffix?: boolean
-  bottomText?: string
-}) {
-  const step = getStep(unit)
-  const count = isCountUnit(unit)
-
-  const adjust = (delta: number) => {
-    const next = roundQty(Math.max(0, value + delta), unit)
-    onChange(next)
-    onRawChange(next === 0 ? '' : String(next))
-  }
-
-  return (
-    <div
-      className={cn(
-        'flex items-stretch justify-between w-full bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm',
-        'min-h-[48px] focus-within:ring-2 focus-within:ring-[#36606F]/25 focus-within:border-[#36606F]/40',
-      )}
-    >
-      <button
-        type="button"
-        onClick={() => adjust(-step)}
-        className="w-7 shrink-0 flex items-center justify-center text-zinc-400 hover:bg-rose-50 hover:text-rose-600 active:bg-rose-100 transition-colors"
-        aria-label={`Menos ${ariaLabel}`}
-      >
-        <Minus className="w-4 h-4" strokeWidth={3} />
-      </button>
-      <div className="flex-1 flex flex-col items-center justify-center min-w-0">
-        <input
-          type="text"
-          inputMode={count ? 'numeric' : 'decimal'}
-          value={raw}
-          onChange={(e) => {
-            const nextRaw = e.target.value
-            onRawChange(nextRaw)
-            if (nextRaw.trim() !== '') {
-              onChange(parseQuantity(nextRaw, unit))
-            }
-          }}
-          onBlur={onBlur}
-          className={cn(
-            'w-full bg-transparent text-center font-black tabular-nums outline-none p-0',
-            'text-[10px] sm:text-[11px] text-zinc-700 tracking-tighter',
-            'focus:bg-blue-50/20 transition-colors',
-            bottomText ? 'mt-1 mb-0' : 'h-full'
-          )}
-          aria-label={ariaLabel}
-        />
-        {bottomText && (
-          <div className="text-[8px] text-zinc-400 font-normal pb-1 truncate px-1 w-full text-center">
-            {bottomText}
-          </div>
-        )}
-      </div>
-      <button
-        type="button"
-        onClick={() => adjust(step)}
-        className="w-7 shrink-0 flex items-center justify-center text-zinc-400 hover:bg-emerald-50 hover:text-emerald-600 active:bg-emerald-100 transition-colors"
-        aria-label={`Más ${ariaLabel}`}
-      >
-        <Plus className="w-4 h-4" strokeWidth={3} />
-      </button>
-      {!hideUnitSuffix ? (
-        <span className="pr-3 text-[10px] font-black text-zinc-500 w-10 text-center shrink-0 uppercase tracking-wide">
-          {unit}
-        </span>
-      ) : null}
-    </div>
-  )
-}
-
 function InventoryIngredientCard({
   item,
   raw,
@@ -233,14 +145,14 @@ function InventoryIngredientCard({
         <div className="mt-auto shrink-0 px-2 pb-2 pt-0 flex flex-col items-stretch w-full">
           <label className="sr-only">Cantidad contada {item.name}</label>
           <QuantityStepper
-            unit={u}
             value={numeric}
-            onChange={onNumericChange}
+            onChange={(n) => onNumericChange(roundQty(n, u))}
             raw={raw}
             onRawChange={onRawChange}
             onBlur={onBlur}
+            step={getStep(u)}
+            inputMode={isCountUnit(u) ? 'numeric' : 'decimal'}
             ariaLabel={`Cantidad contada ${item.name}`}
-            hideUnitSuffix
             bottomText={totalBothLocations !== undefined ? `Total ${totalBothLocations}` : undefined}
           />
         </div>
@@ -478,20 +390,16 @@ export function InventoryClient({
                   </button>
                 </div>
                 
-                <button
+                <Button
                   type="button"
+                  variant="primary"
+                  instance="inventory-save-count"
                   onClick={handleSubmit}
                   disabled={submitDisabled}
-                  className={cn(
-                    'flex-1 min-h-[48px] rounded-xl font-black uppercase tracking-wider text-[11px] sm:text-sm min-w-0',
-                    'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800',
-                    'disabled:opacity-45 disabled:cursor-not-allowed transition-colors shadow-sm',
-                    'flex items-center justify-center gap-1 sm:gap-2 shrink-0 px-2',
-                  )}
+                  loading={isSubmitting}
                 >
-                  <Save className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                  <span className="truncate">{isSubmitting ? 'Guardando…' : 'Guardar recuento'}</span>
-                </button>
+                  Guardar recuento
+                </Button>
               </div>
             )}
 
@@ -508,20 +416,16 @@ export function InventoryClient({
               </div>
 
               {visibilityEditMode && managerFullList?.length ? (
-                <button
+                <Button
                   type="button"
+                  variant="primary"
+                  instance="inventory-save-visibility"
                   onClick={handleSaveVisibility}
                   disabled={savingVisibility}
-                  className={cn(
-                    'shrink-0 min-h-[48px] px-4 rounded-xl font-black uppercase tracking-wider text-xs sm:text-sm',
-                    'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800',
-                    'disabled:opacity-50 disabled:cursor-not-allowed transition-colors',
-                    'flex items-center justify-center gap-2',
-                  )}
+                  loading={savingVisibility}
                 >
-                  <Save className="w-4 h-4 shrink-0" />
-                  {savingVisibility ? 'Guardando…' : 'Guardar lista'}
-                </button>
+                  Guardar lista
+                </Button>
               ) : null}
 
               <div className="shrink-0 relative" data-inventory-filter-root="true">

@@ -652,10 +652,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                             <div
                                                                 key={day.getTime()}
                                                                 className={cn(
-                                                                    'w-5 h-5 md:w-6 md:h-6 flex items-center justify-center rounded-full text-[9px] md:text-[10px] font-bold',
+                                                                    'w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full text-[9px] md:text-[10px] font-bold',
                                                                     !inMonth && 'text-zinc-300',
                                                                     inMonth && !isToday && 'text-zinc-600',
-                                                                    isToday && 'bg-blue-500 text-white'
+                                                                    isToday && 'bg-ds-marca text-white'
                                                                 )}
                                                             >
                                                                 {format(day, 'd')}
@@ -668,11 +668,11 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         <div className="flex-1 min-w-0 flex flex-col gap-[2px]">
                                             {rowWeekIds.map((weekId) => {
                                                 if (weekId === currentWeekStart) {
-                                                    return <div key={weekId} className="w-5 h-5 md:w-6 md:h-6 flex-shrink-0" aria-hidden />;
+                                                    return <div key={weekId} className="h-6 md:h-7 flex-shrink-0" aria-hidden />;
                                                 }
                                                 const week = overtimeWeeksData.find((w: any) => w.weekId === weekId);
                                                 if (!week) {
-                                                    return <div key={weekId} className="w-5 h-5 md:w-6 md:h-6 flex-shrink-0" aria-hidden />;
+                                                    return <div key={weekId} className="h-6 md:h-7 flex-shrink-0" aria-hidden />;
                                                 }
                                                 const isFullyPaid = week.staff?.every((s: any) => {
                                                     const cost = (s.totalCost ?? s.amount ?? 0);
@@ -688,7 +688,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                             setWeekDetailModal({ week });
                                                         }}
                                                         className={cn(
-                                                            'w-full h-5 md:h-6 flex items-center justify-between gap-2 px-1.5 py-0 rounded-md shadow-sm hover:shadow transition-all text-left flex-shrink-0',
+                                                            'w-full h-6 md:h-7 flex items-center justify-between gap-2 px-1.5 py-0 rounded-md shadow-sm hover:shadow transition-all text-left flex-shrink-0',
                                                             'bg-transparent border-0 hover:bg-purple-50/50'
                                                         )}
                                                     >

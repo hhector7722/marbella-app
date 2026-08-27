@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/client'
 import { Trash2, Loader2, UtensilsCrossed } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import { addComboItem, getComboItems, removeComboItem } from '@/app/dashboard/recipes/actions'
 
 type ComboRow = {
@@ -187,14 +188,16 @@ export function SubRecipesPanel({ recipeId }: { recipeId: string }) {
               className="w-full min-h-12 px-3 rounded-lg border border-zinc-200 text-sm text-center focus:ring-2 focus:ring-[#36606F]/30 outline-none"
             />
           </div>
-          <button
+          <Button
             type="button"
+            variant="primary"
+            instance="sub-recipe-add"
             onClick={handleAdd}
             disabled={pending}
-            className="min-h-12 rounded-xl bg-[#36606F] text-white text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-[#2d4f5c] disabled:opacity-50 transition-colors shrink-0"
+            loading={pending}
           >
-            {pending ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Añadir al menú'}
-          </button>
+            Añadir al menú
+          </Button>
         </div>
 
         <div className="rounded-xl border border-zinc-100 bg-zinc-50/50 p-3">

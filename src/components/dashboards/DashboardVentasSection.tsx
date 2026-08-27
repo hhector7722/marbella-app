@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { createClient } from '@/utils/supabase/client';
 import { cn, getBusinessHourFromTicket } from '@/lib/utils';
 import { TABLE_COMPONENT_ID } from '@/lib/design-system';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { formatTicketTimeMadrid } from '@/utils/date-utils';
 import { BUSINESS_HOURS } from '@/lib/constants';
 import PremiumCountUp from '@/components/ui/PremiumCountUp';
@@ -469,9 +470,11 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                 <LoadingSpinner size="sm" className="text-ds-marca/50" />
                             </div>
                         ) : salesTickets.length === 0 ? (
-                            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-300 italic px-2 py-6 text-center">
-                                {isToday(parseSalesViewDate()) ? 'Sin tickets hoy' : 'Sin tickets este día'}
-                            </p>
+                            <EmptyState
+                                instance="dashboard-ventas-tickets-empty"
+                                variant="none"
+                                title={isToday(parseSalesViewDate()) ? 'Sin tickets hoy' : 'Sin tickets este día'}
+                            />
                         ) : (
                             <div className="bg-white rounded-xl shadow-sm border border-zinc-100 overflow-hidden max-md:[&_table_th]:border-r-0 max-md:[&_table_td]:border-r-0 relative">
                                 <table data-component={TABLE_COMPONENT_ID} data-instance="dashboard-ventas-tickets" className="w-full text-left border-collapse">

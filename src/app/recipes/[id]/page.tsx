@@ -24,6 +24,7 @@ import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { namedEntitySummary } from '@/lib/usage/modal-apply';
@@ -1257,14 +1258,14 @@ function RecipeDetailContent() {
                                     </span>
                                 </div>
                             )}
-                            <table className="w-full text-[10px] border-collapse">
-                                <thead className="sticky top-0 z-10 bg-white shadow-sm">
-                                    <tr className="text-gray-400 font-black uppercase tracking-widest text-[8px] border-b border-gray-100">
-                                        <th className="text-left px-3 py-1.5">Ingrediente</th>
-                                        <th className="text-center px-0.5 py-1.5">Cant</th>
-                                        <th className="text-center px-0.5 py-1.5">Ud</th>
-                                        {!isRestricted && <th className="text-right px-2 py-1.5">Coste</th>}
-                                        <th className="w-7 py-1.5"></th>
+                            <table data-component={TABLE_COMPONENT_ID} data-instance="recipe-ingredients" className="w-full text-left">
+                                <thead>
+                                    <tr>
+                                        <th>Ingrediente</th>
+                                        <th className="text-center">Cant</th>
+                                        <th className="text-center">Ud</th>
+                                        {!isRestricted && <th className="text-right">Coste</th>}
+                                        <th className="w-7"></th>
                                     </tr>
                                 </thead>
                                 <tbody>

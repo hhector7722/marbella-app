@@ -549,14 +549,15 @@ export default function ReportePage() {
             {renderDayGroup('Diumenge')}
           </div>
 
-          <Button
-            type="submit"
-            variant="primary"
-            instance="reporte-enviar"
-            layout="fill"
-          >
-            ENVIAR
-          </Button>
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              variant="primary"
+              instance="reporte-enviar"
+            >
+              ENVIAR
+            </Button>
+          </div>
         </form>
       </div>
 
