@@ -752,16 +752,16 @@
 
 /*
  * SearchField — buscador compacto. No es Field (sin etiqueta).
- * Altura bloqueada: todos los buscadores miden exactamente tactil.minimo.
+ * Altura bloqueada: 40 px (no táctil mínimo). Todos los buscadores miden lo mismo.
  */
 [data-component='SearchField'] {
   position: relative;
   display: block;
   min-width: 0;
   width: 100%;
-  height: var(--tactil-minimo);
-  min-height: var(--tactil-minimo);
-  max-height: var(--tactil-minimo);
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
   flex-shrink: 0;
   align-self: center;
 }
@@ -779,9 +779,9 @@
   box-sizing: border-box;
   display: block;
   width: 100%;
-  height: var(--tactil-minimo);
-  min-height: var(--tactil-minimo);
-  max-height: var(--tactil-minimo);
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
   margin: 0;
   padding-block: 0;
   padding-inline-start: calc(var(--espacio-3) + 16px + var(--espacio-2));
@@ -792,7 +792,7 @@
   color: var(--color-texto);
   font-size: 16px;
   font-weight: 700;
-  line-height: var(--tactil-minimo);
+  line-height: 40px;
   appearance: none;
   -webkit-appearance: none;
 }
@@ -819,9 +819,9 @@
   display: inline-flex;
   align-items: center;
   gap: var(--espacio-1);
-  height: var(--tactil-minimo);
-  min-height: var(--tactil-minimo);
-  max-height: var(--tactil-minimo);
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
   max-width: 100px;
   padding: 0;
   margin: 0;
@@ -862,7 +862,7 @@ button[data-element='catalog-filter'] {
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  height: var(--tactil-minimo);
+  height: 40px;
   min-width: calc(var(--espacio-4) + 12px);
   padding-inline: var(--espacio-2);
   border: 0;

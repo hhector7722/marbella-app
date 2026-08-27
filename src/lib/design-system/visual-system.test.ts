@@ -606,8 +606,8 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
         assert.match(
             css,
-            /\[data-component='SearchField'\] input \{[\s\S]*?height:\s*var\(--tactil-minimo\);[\s\S]*?min-height:\s*var\(--tactil-minimo\);[\s\S]*?max-height:\s*var\(--tactil-minimo\);/,
-            'todos los buscadores miden la misma altura'
+            /\[data-component='SearchField'\] input \{[\s\S]*?height:\s*40px;[\s\S]*?min-height:\s*40px;[\s\S]*?max-height:\s*40px;/,
+            'todos los buscadores miden 40 px'
         );
         const albaranes = readFileSync(
             join(SRC_ROOT, 'app/dashboard/albaranes/AlbaranesHistoricoClient.tsx'),

@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-27
 
+- **Los buscadores miden 40 px, no 48.** CAT y PROV se alinean a esa misma altura.
+
 - **En la ficha de receta la categoría sale de la pantalla y entra al editar.** Precio, FC, base y margen llevan el nombre debajo y el euro detrás; pulsar el importe abre la edición. La tabla de ingredientes usa una sola cabecera, como Precio y Elaboración.
 
 - **La ficha de receta deja de cortar nombres y de cargar la cabecera.** Las flechas flotan, sin tarjeta; Eliminar vive en el pie de editar nombre e imagen; las raciones solo se leen junto al costo total si hay más de una; en el teléfono el precio, el FC, la base y el margen van en una fila; Recomendado y Simulador comparten línea; se añade un ingrediente desde la propia tabla.
