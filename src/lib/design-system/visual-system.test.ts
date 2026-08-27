@@ -556,6 +556,17 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
             assert.match(source, /TABLE_COMPONENT_ID/, `${rel} debe usar Table`);
         }
+        const recipe = readFileSync(join(SRC_ROOT, 'app/recipes/[id]/page.tsx'), 'utf8');
+        assert.match(recipe, /data-element="photo-nav"/, 'las flechas de receta flotan');
+        assert.doesNotMatch(recipe, /instance="recipe-eliminar"/, 'eliminar receta no está en la ficha');
+        assert.doesNotMatch(recipe, /Ingredientes <span/, 'la cabecera de ingredientes no lleva el recuento');
+        assert.match(recipe, /openAddIngredientModal/, 'se añade ingrediente desde la tabla');
+        const recipeCss = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        assert.match(
+            recipeCss,
+            /\[data-element='photo-nav'\] \[data-component='Button'\]::before/,
+            'las flechas de foto no pintan tarjeta'
+        );
     });
 
     it('inventario y merma usan EmptyState y SearchField', () => {

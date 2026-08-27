@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense, useRef, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
-import { Trash2, Users, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, ChevronDown, Import, Pencil, Check, PlayCircle, AlertCircle } from 'lucide-react';
+import { Trash2, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, Import, Pencil, Check, PlayCircle, AlertCircle } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -758,6 +758,12 @@ function RecipeDetailContent() {
         setSearchTerm('');
     };
 
+    const openAddIngredientModal = () => {
+        setForceAddIngredientUnit(false);
+        setAddIngredientUnit('kg');
+        setShowIngredientModal(true);
+    };
+
     const handleAddIngredient = async (ingredientId: string, unit: string, ingredientName?: string) => {
         await supabase.from('recipe_ingredients').insert({
             recipe_id: recipeId,
@@ -866,7 +872,7 @@ function RecipeDetailContent() {
             if (!isNaN(parsed) && parsed >= 0) onSave(parsed);
             else setLocalValue(initialValue.toString());
         };
-        return <input type="text" inputMode="decimal" value={localValue} onChange={(e) => setLocalValue(e.target.value)} onBlur={handleCommit} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} className="w-14 px-1 py-0.5 border rounded text-center text-xs" />;
+        return <input type="text" inputMode="decimal" value={localValue} onChange={(e) => setLocalValue(e.target.value)} onBlur={handleCommit} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} className="w-10 max-w-full px-0.5 py-0.5 border rounded text-center text-[10px] font-bold tabular-nums" />;
     };
 
     const EditablePrice = ({ value, onChange, onBlur, className, ...props }: any) => {
@@ -959,7 +965,7 @@ function RecipeDetailContent() {
                         />
                     )}
 
-                    <div className="mt-1 flex w-full shrink-0 items-center justify-center gap-8 py-2">
+                    <div data-element="photo-nav" className="mt-1 flex w-full shrink-0 items-center justify-center gap-8 py-2">
                         <Button
                             type="button"
                             variant="tertiary"
@@ -1010,20 +1016,6 @@ function RecipeDetailContent() {
                                 title={recipeCategoryLabel || 'Categoría'}
                             />
                         )}
-                        <div className="flex items-center gap-1.5 text-[9px] font-bold">
-                            <Users className="w-3.5 h-3.5" />
-                            <span>{recipe.servings || 1} rac</span>
-                        </div>
-                        {!isRestricted && (
-                            <Button
-                                type="button"
-                                variant="destructive"
-                                instance="recipe-eliminar"
-                                onClick={() => setDeleteRecipeOpen(true)}
-                            >
-                                ELIMINAR
-                            </Button>
-                        )}
                     </div>
 
                 {/* CUERPO: fondo blanco roto */}
@@ -1071,201 +1063,182 @@ function RecipeDetailContent() {
                                         />
                                     </div>
 
-                                    <div className="flex items-center justify-center gap-1 my-2 shrink-0">
-                                        <span className="text-lg font-bold text-gray-800">€</span>
-                                        {!isEditingPrice ? (
-                                            <div className="flex items-center gap-2">
-                                                <div className="text-3xl font-black text-center text-gray-800 tabular-nums">
-                                                    {(currentPrice || 0).toFixed(2)}
-                                                </div>
-                                                <Button
-                                                    type="button"
-                                                    variant="tertiary"
-                                                    instance="recipe-editar-precio"
-                                                    onClick={startEditPrice}
-                                                    aria-label="Editar precio"
-                                                    icon={<Pencil className="w-4 h-4" />}
-                                                    className="shrink-0"
-                                                />
-                                            </div>
-                                        ) : (
-                                            <div className="flex items-center gap-2">
-                                                <input
-                                                    type="text"
-                                                    inputMode="decimal"
-                                                    value={priceDraft}
-                                                    onChange={(e) => setPriceDraft(e.target.value)}
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === 'Enter') confirmEditPrice();
-                                                        if (e.key === 'Escape') cancelEditPrice();
-                                                    }}
-                                                    autoFocus
-                                                    placeholder="0"
-                                                    className={cn(
-                                                        "text-3xl font-black text-center text-gray-800 border-b-2 outline-none w-28 bg-transparent tabular-nums",
-                                                        themeColors.border
-                                                    )}
-                                                />
-                                                <Button
-                                                    type="button"
-                                                    variant="primary"
-                                                    instance="recipe-confirmar-precio"
-                                                    onClick={confirmEditPrice}
-                                                    disabled={savingPrice}
-                                                    loading={savingPrice}
-                                                    aria-label="Confirmar"
-                                                    icon={<Check className="w-5 h-5" />}
-                                                    className="shrink-0"
-                                                />
-                                                <Button
-                                                    type="button"
-                                                    variant="secondary"
-                                                    instance="recipe-cancelar-precio"
-                                                    onClick={cancelEditPrice}
-                                                    disabled={savingPrice}
-                                                    aria-label="Cancelar"
-                                                    icon={<X className="w-5 h-5" />}
-                                                    className="shrink-0"
-                                                />
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="grid grid-cols-3 gap-2 text-center shrink-0">
-                                        <div><div className="text-sm font-bold text-gray-500">FC</div><div className={`text-xl font-black ${healthIndicator.color}`}>{(foodCost || 0).toFixed(0)}%</div></div>
-                                        <div><div className="text-sm font-bold text-gray-500">Base</div><div className="text-xl font-black text-gray-800">{(basePrice || 0).toFixed(2)}</div></div>
-                                        <div><div className="text-sm font-bold text-gray-500">Margen</div><div className="text-xl font-black text-gray-800">{(margin || 0).toFixed(2)}</div></div>
-                                    </div>
-
-                                    <div className="flex justify-between items-center mt-2 px-2 shrink-0">
-                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Recomendado ({activeTargetFC}%)</span>
-                                        <span className="text-xs font-black text-blue-600">{(recommendedPrice || 0).toFixed(2)}€</span>
-                                    </div>
-                                </div>
-
-                                {/* Sección 2: simulador (plegado por defecto) */}
-                                <div className="border-t border-gray-100 p-3 shrink-0">
-                                    <div className="rounded-xl bg-purple-600 text-white overflow-hidden">
-                                        <div
-                                            className={cn(
-                                                'flex items-stretch gap-2 px-3 shrink-0',
-                                                simulatorExpanded && 'border-b border-white/15',
-                                            )}
-                                        >
-                                            <button
-                                                type="button"
-                                                onClick={() => setSimulatorExpanded((v) => !v)}
-                                                aria-expanded={simulatorExpanded}
-                                                className={cn(
-                                                    'flex flex-1 items-center justify-between gap-2 min-h-12 py-3 text-left',
-                                                    'transition-colors hover:bg-white/10 active:bg-white/15',
-                                                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-inset',
+                                    <div className="my-2 flex items-end gap-1 shrink-0 md:flex-col md:items-stretch md:gap-2">
+                                        <div className="flex min-w-0 flex-1 flex-col items-center justify-end md:flex-none">
+                                            <div className="flex items-center justify-center gap-0.5 md:gap-1">
+                                                <span className="text-sm font-bold text-gray-800 md:text-lg">€</span>
+                                                {!isEditingPrice ? (
+                                                    <div className="flex items-center gap-1 md:gap-2">
+                                                        <div className="text-lg font-black text-center text-gray-800 tabular-nums md:text-3xl">
+                                                            {(currentPrice || 0).toFixed(2)}
+                                                        </div>
+                                                        <Button
+                                                            type="button"
+                                                            variant="tertiary"
+                                                            instance="recipe-editar-precio"
+                                                            onClick={startEditPrice}
+                                                            aria-label="Editar precio"
+                                                            icon={<Pencil className="w-4 h-4" />}
+                                                            className="shrink-0"
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-1 md:gap-2">
+                                                        <input
+                                                            type="text"
+                                                            inputMode="decimal"
+                                                            value={priceDraft}
+                                                            onChange={(e) => setPriceDraft(e.target.value)}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') confirmEditPrice();
+                                                                if (e.key === 'Escape') cancelEditPrice();
+                                                            }}
+                                                            autoFocus
+                                                            placeholder="0"
+                                                            className={cn(
+                                                                "text-lg font-black text-center text-gray-800 border-b-2 outline-none w-20 bg-transparent tabular-nums md:text-3xl md:w-28",
+                                                                themeColors.border
+                                                            )}
+                                                        />
+                                                        <Button
+                                                            type="button"
+                                                            variant="primary"
+                                                            instance="recipe-confirmar-precio"
+                                                            onClick={confirmEditPrice}
+                                                            disabled={savingPrice}
+                                                            loading={savingPrice}
+                                                            aria-label="Confirmar"
+                                                            icon={<Check className="w-5 h-5" />}
+                                                            className="shrink-0"
+                                                        />
+                                                        <Button
+                                                            type="button"
+                                                            variant="secondary"
+                                                            instance="recipe-cancelar-precio"
+                                                            onClick={cancelEditPrice}
+                                                            disabled={savingPrice}
+                                                            aria-label="Cancelar"
+                                                            icon={<X className="w-5 h-5" />}
+                                                            className="shrink-0"
+                                                        />
+                                                    </div>
                                                 )}
-                                            >
-                                                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Simulador</span>
-                                                <ChevronDown
-                                                    className={cn(
-                                                        'h-5 w-5 shrink-0 text-white/80 transition-transform duration-200',
-                                                        simulatorExpanded && 'rotate-180',
-                                                    )}
-                                                    aria-hidden
-                                                />
-                                            </button>
-                                            {simulatorExpanded && (
-                                                <Button
-                                                    type="button"
-                                                    variant="primary"
-                                                    instance="recipe-aplicar-precio-simulado"
-                                                    onClick={async () => {
-                                                        try {
-                                                            await applySimulatedPrice();
-                                                        } catch {
-                                                            // applySimulatedPrice ya emite toast en caso de fallo vía updateRecipeField
-                                                        }
-                                                    }}
-                                                    disabled={applyingSimulation || isRestricted}
-                                                    loading={applyingSimulation}
-                                                    loadingLabel="Aplicando…"
-                                                    aria-label="Aplicar precio simulado"
-                                                    className="shrink-0 self-center"
-                                                >
-                                                    Aplicar
-                                                </Button>
-                                            )}
+                                            </div>
                                         </div>
+                                        <div className="flex min-w-0 flex-[3] items-end md:grid md:grid-cols-3 md:gap-2">
+                                            <div className="min-w-0 flex-1 text-center">
+                                                <div className="text-[9px] font-bold uppercase tracking-wide text-gray-500 md:text-sm">FC</div>
+                                                <div className={cn('font-black tabular-nums', healthIndicator.color, 'text-sm md:text-xl')}>{(foodCost || 0).toFixed(0)}%</div>
+                                            </div>
+                                            <div className="min-w-0 flex-1 text-center">
+                                                <div className="text-[9px] font-bold uppercase tracking-wide text-gray-500 md:text-sm">Base</div>
+                                                <div className="text-sm font-black tabular-nums text-gray-800 md:text-xl">{(basePrice || 0).toFixed(2)}</div>
+                                            </div>
+                                            <div className="min-w-0 flex-1 text-center">
+                                                <div className="text-[9px] font-bold uppercase tracking-wide text-gray-500 md:text-sm">Margen</div>
+                                                <div className="text-sm font-black tabular-nums text-gray-800 md:text-xl">{(margin || 0).toFixed(2)}</div>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                        {simulatorExpanded && (
-                                            <div className="flex flex-col gap-4 p-3">
-                                                <div className="px-1 text-center">
-                                                    <span className="text-3xl font-black text-white">
-                                                        {(simulatedPrice || 0).toFixed(2)}€
-                                                    </span>
-                                                </div>
-                                                <input
-                                                    type="range"
-                                                    min={Math.floor(currentPrice * 0.5 * 10) / 10}
-                                                    max={Math.ceil(currentPrice * 2 * 10) / 10 || 20}
-                                                    step={0.1}
-                                                    value={simulatedPrice}
-                                                    onChange={(e) =>
-                                                        setSimulatedPrice(Math.round(parseFloat(e.target.value) * 10) / 10)
+                                    <div className="mt-2 flex items-center gap-2 px-1 shrink-0">
+                                        <span className="min-w-0 text-[10px] font-bold uppercase tracking-wide text-gray-400">
+                                            Recomendado ({activeTargetFC}%)
+                                        </span>
+                                        <span className="shrink-0 text-xs font-black tabular-nums text-blue-600">
+                                            {(recommendedPrice || 0).toFixed(2)}€
+                                        </span>
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                            instance="recipe-simulador"
+                                            onClick={() => setSimulatorExpanded((v) => !v)}
+                                            className="ml-auto shrink-0"
+                                        >
+                                            Simulador
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {simulatorExpanded ? (
+                                <div className="border-t border-gray-100 p-3 shrink-0">
+                                    <div className="overflow-hidden rounded-xl bg-purple-600 text-white">
+                                        <div className="flex justify-end px-3 pt-3">
+                                            <Button
+                                                type="button"
+                                                variant="primary"
+                                                instance="recipe-aplicar-precio-simulado"
+                                                onClick={async () => {
+                                                    try {
+                                                        await applySimulatedPrice();
+                                                    } catch {
+                                                        // applySimulatedPrice ya emite toast en caso de fallo vía updateRecipeField
                                                     }
-                                                    className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-white/25 accent-white"
-                                                />
-                                                <div className="grid grid-cols-3 gap-2 text-center">
-                                                    <div>
-                                                        <div className="text-[9px] font-bold uppercase tracking-widest text-white/80">
-                                                            FC
-                                                        </div>
-                                                        <div className="text-lg font-black text-white">
-                                                            {(simulatedFoodCost || 0).toFixed(0)}%
-                                                        </div>
+                                                }}
+                                                disabled={applyingSimulation || isRestricted}
+                                                loading={applyingSimulation}
+                                                loadingLabel="Aplicando…"
+                                                aria-label="Aplicar precio simulado"
+                                                className="shrink-0"
+                                            >
+                                                Aplicar
+                                            </Button>
+                                        </div>
+                                        <div className="flex flex-col gap-4 p-3">
+                                            <div className="px-1 text-center">
+                                                <span className="text-3xl font-black text-white">
+                                                    {(simulatedPrice || 0).toFixed(2)}€
+                                                </span>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min={Math.floor(currentPrice * 0.5 * 10) / 10}
+                                                max={Math.ceil(currentPrice * 2 * 10) / 10 || 20}
+                                                step={0.1}
+                                                value={simulatedPrice}
+                                                onChange={(e) =>
+                                                    setSimulatedPrice(Math.round(parseFloat(e.target.value) * 10) / 10)
+                                                }
+                                                className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-white/25 accent-white"
+                                            />
+                                            <div className="grid grid-cols-3 gap-2 text-center">
+                                                <div>
+                                                    <div className="text-[9px] font-bold uppercase tracking-widest text-white/80">
+                                                        FC
                                                     </div>
-                                                    <div>
-                                                        <div className="text-[9px] font-bold uppercase tracking-widest text-white/80">
-                                                            Base
-                                                        </div>
-                                                        <div className="text-lg font-black text-white">
-                                                            {(simulatedBasePrice || 0).toFixed(2)}
-                                                        </div>
+                                                    <div className="text-lg font-black text-white">
+                                                        {(simulatedFoodCost || 0).toFixed(0)}%
                                                     </div>
-                                                    <div>
-                                                        <div className="text-[9px] font-bold uppercase tracking-widest text-white/80">
-                                                            Margen
-                                                        </div>
-                                                        <div className="text-lg font-black text-white">
-                                                            {(simulatedMargin || 0).toFixed(2)}€
-                                                        </div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-[9px] font-bold uppercase tracking-widest text-white/80">
+                                                        Base
+                                                    </div>
+                                                    <div className="text-lg font-black text-white">
+                                                        {(simulatedBasePrice || 0).toFixed(2)}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-[9px] font-bold uppercase tracking-widest text-white/80">
+                                                        Margen
+                                                    </div>
+                                                    <div className="text-lg font-black text-white">
+                                                        {(simulatedMargin || 0).toFixed(2)}€
                                                     </div>
                                                 </div>
                                             </div>
-                                        )}
+                                        </div>
                                     </div>
                                 </div>
+                                ) : null}
                             </div>
                         </div>
                     )}
                     <div className={`bg-white rounded-xl shadow-lg overflow-hidden flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
-                        <div data-element="block-header" className="h-9">
-                            <h2 data-element="title" className="min-w-0 flex-1">
-                                Ingredientes <span className="opacity-50">({ingredients.length})</span>
-                            </h2>
+                        <div data-element="block-header" className="relative justify-between">
+                            <h2 data-element="title">Ingredientes</h2>
                             {!isRestricted && (
-                                <div className="flex shrink-0 items-center gap-1.5">
-                                    <Button
-                                        type="button"
-                                        variant="primary"
-                                        instance="recipe-añadir-ingrediente"
-                                        onClick={() => {
-                                            setForceAddIngredientUnit(false);
-                                            setAddIngredientUnit('kg');
-                                            setShowIngredientModal(true);
-                                        }}
-                                        aria-label="Añadir ingrediente"
-                                        className="shrink-0"
-                                    >
-                                        + Añadir
-                                    </Button>
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 shrink-0">
                                     <Button
                                         type="button"
                                         variant="tertiary"
@@ -1274,7 +1247,7 @@ function RecipeDetailContent() {
                                         aria-label="Nuevo ingrediente"
                                         className="shrink-0"
                                     >
-                                        + Nuevo
+                                        Nuevo
                                     </Button>
                                 </div>
                             )}
@@ -1294,6 +1267,13 @@ function RecipeDetailContent() {
                                 </div>
                             )}
                             <table data-component={TABLE_COMPONENT_ID} data-instance="recipe-ingredients" className="w-full text-left">
+                                <colgroup>
+                                    <col />
+                                    <col className="w-11" />
+                                    <col className="w-11" />
+                                    {!isRestricted ? <col className="w-14" /> : null}
+                                    <col className="w-7" />
+                                </colgroup>
                                 <thead>
                                     <tr>
                                         <th>Ingrediente</th>
@@ -1316,13 +1296,13 @@ function RecipeDetailContent() {
                                         const costDisplayOk = costAnalysis.status === 'ok';
                                         return (
                                             <tr key={ing.id} className="transition-colors hover:bg-gray-50/80">
-                                                <td className="max-w-[120px] truncate px-3 py-1">
+                                                <td className="px-2 py-1">
                                                     {!isRestricted && ing.ingredients ? (
                                                         <button
                                                             type="button"
                                                             onClick={() => setRecipeIngredientEditTarget(ing.ingredients as Ingredient)}
                                                             className={cn(
-                                                                'w-full truncate py-0.5 text-left text-[10px] font-bold leading-tight text-[#36606F] underline-offset-2 hover:underline',
+                                                                'w-full py-0.5 text-left text-[10px] font-bold leading-tight text-[#36606F] underline-offset-2 hover:underline',
                                                                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#36606F]/25 focus-visible:ring-offset-1',
                                                             )}
                                                             title="Ver / editar ingrediente"
@@ -1330,7 +1310,7 @@ function RecipeDetailContent() {
                                                             {ing.ingredients?.name}
                                                         </button>
                                                     ) : (
-                                                        <span className="truncate text-[10px] font-bold leading-tight text-gray-800">{ing.ingredients?.name}</span>
+                                                        <span className="text-[10px] font-bold leading-tight text-gray-800">{ing.ingredients?.name}</span>
                                                     )}
                                                 </td>
                                                 <td className="px-0.5 py-1 text-center align-middle">
@@ -1344,7 +1324,7 @@ function RecipeDetailContent() {
                                                     {isRestricted ? (
                                                         <span className="font-bold text-gray-400">{ing.unit}</span>
                                                     ) : (
-                                                        <select value={ing.unit || 'kg'} onChange={e => { const u = e.target.value; supabase.from('recipe_ingredients').update({ unit: u }).eq('id', ing.id).then(() => { setIngredients(prev => prev.map(i => i.id === ing.id ? { ...i, unit: u } : i)); fetchBackendCost(); }); }} className="rounded border border-gray-100 bg-white px-1 py-0.5 text-[10px] font-bold outline-none focus:border-[#36606F]">
+                                                        <select value={ing.unit || 'kg'} onChange={e => { const u = e.target.value; supabase.from('recipe_ingredients').update({ unit: u }).eq('id', ing.id).then(() => { setIngredients(prev => prev.map(i => i.id === ing.id ? { ...i, unit: u } : i)); fetchBackendCost(); }); }} className="max-w-full rounded border border-gray-100 bg-white px-0.5 py-0.5 text-[10px] font-bold outline-none focus:border-[#36606F]">
                                                             {RECIPE_UNIT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                                                         </select>
                                                     )}
@@ -1379,11 +1359,51 @@ function RecipeDetailContent() {
                                         );
                                     })}
                                     {!isRestricted && (
+                                        <>
+                                        <tr
+                                            className="cursor-pointer border-t border-gray-50 hover:bg-zinc-50/80"
+                                            onClick={openAddIngredientModal}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' || e.key === ' ') {
+                                                    e.preventDefault();
+                                                    openAddIngredientModal();
+                                                }
+                                            }}
+                                            tabIndex={0}
+                                            role="button"
+                                            aria-label="Incluir ingrediente"
+                                        >
+                                            <td className="px-2 py-1.5">
+                                                <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold italic tracking-normal text-zinc-400">
+                                                    Añadir
+                                                    <span
+                                                        className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[var(--color-positivo)] text-white"
+                                                        aria-hidden
+                                                    >
+                                                        <Plus className="h-2.5 w-2.5" strokeWidth={3} />
+                                                    </span>
+                                                </span>
+                                            </td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
                                         <tr className="sticky bottom-0 border-t border-gray-100 bg-[#5B8FB9]/5 font-black text-[10px]">
-                                            <td className="px-3 py-1.5 text-gray-800" colSpan={3}>COSTO TOTAL</td>
+                                            <td className="px-2 py-1.5 text-gray-800" colSpan={3}>
+                                                <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0">
+                                                    <span>COSTO TOTAL</span>
+                                                    {Number(recipe.servings) > 1 ? (
+                                                        <span className="text-[9px] font-semibold italic tracking-normal text-zinc-500">
+                                                            {Number(recipe.servings)} raciones
+                                                        </span>
+                                                    ) : null}
+                                                </span>
+                                            </td>
                                             <td className="px-2 py-1.5 text-right text-[#5B8FB9]">{totalCost.toFixed(2)}€</td>
                                             <td></td>
                                         </tr>
+                                        </>
                                     )}
                                 </tbody>
                             </table>
@@ -1769,6 +1789,7 @@ function RecipeDetailContent() {
                 recipeId={recipeId}
                 initialName={recipe.name}
                 initialPhotoUrl={recipe.photo_url ?? null}
+                onDelete={() => setDeleteRecipeOpen(true)}
                 onSaved={(payload) => {
                     setRecipe((r: any) => (r ? { ...r, ...payload } : r));
                     void fetchAllRecipes();

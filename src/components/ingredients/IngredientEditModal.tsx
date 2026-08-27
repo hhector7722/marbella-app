@@ -486,7 +486,7 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
         >
             <div className="space-y-4">
                     <div className="space-y-4">
-                        <div className="flex items-center justify-center gap-8">
+                        <div data-element="photo-nav" className="flex items-center justify-center gap-8">
                             {showNavArrows ? (
                                 <Button
                                     type="button"

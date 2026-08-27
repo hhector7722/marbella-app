@@ -18,6 +18,7 @@ type Props = {
     initialName: string;
     initialPhotoUrl: string | null;
     onSaved: (payload: RecipeNamePhotoSaved) => void;
+    onDelete?: () => void;
 };
 
 export function RecipeNamePhotoEditModal({
@@ -27,6 +28,7 @@ export function RecipeNamePhotoEditModal({
     initialName,
     initialPhotoUrl,
     onSaved,
+    onDelete,
 }: Props) {
     const supabase = createClient();
     const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -133,6 +135,17 @@ export function RecipeNamePhotoEditModal({
             scrollContent
             footer={
                 <>
+                    {onDelete ? (
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            instance="recipe-name-photo-delete"
+                            onClick={onDelete}
+                            disabled={saving}
+                        >
+                            Eliminar
+                        </Button>
+                    ) : null}
                     <Button
                         type="button"
                         variant="secondary"

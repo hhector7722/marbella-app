@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-27
 
+- **La ficha de receta deja de cortar nombres y de cargar la cabecera.** Las flechas flotan, sin tarjeta; Eliminar vive en el pie de editar nombre e imagen; las raciones solo se leen junto al costo total si hay más de una; en el teléfono el precio, el FC, la base y el margen van en una fila; Recomendado y Simulador comparten línea; se añade un ingrediente desde la propia tabla.
+
 - **Albaranes: el filtro va en la cabecera y ESCANEAR, junto al buscador.** El panel de filtrar es compacto y muestra las fechas que realmente se aplican. La lista ya no se corta en silencio a 45 días: al final, Ver más carga 20 albaranes más, del más reciente al más antiguo.
 
 - **Una receta abre la misma ficha desde Staff y desde Admin.** Ya no hay un modal distinto para personal: pulsar una receta entra en la ficha. La categoría flota como CAT; las flechas son el botón de icono; borrar pide el mismo panel de confirmación.

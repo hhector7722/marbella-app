@@ -581,6 +581,12 @@
   text-overflow: ellipsis;
   vertical-align: middle;
 }
+[data-component='Table'][data-instance='recipe-ingredients'] td:first-child {
+  overflow: visible;
+  text-overflow: unset;
+  white-space: normal;
+  word-break: break-word;
+}
 
 /*
  * Cabecera de bloque interior (título de tarjeta dentro de una pantalla).
@@ -624,6 +630,11 @@
 }
 [data-component='PageScreen'] [data-element='header'] [data-component='Button']:hover:not(:disabled)::before,
 [data-component='Surface'][data-variant='page'] > [data-element='header'] [data-component='Button']:hover:not(:disabled)::before {
+  background-color: transparent;
+  border-color: transparent;
+}
+[data-element='photo-nav'] [data-component='Button']::before,
+[data-element='photo-nav'] [data-component='Button']:hover:not(:disabled)::before {
   background-color: transparent;
   border-color: transparent;
 }
