@@ -25,6 +25,22 @@ export function CatalogFilterChip({
     title?: string;
 }) {
     if (value) {
+        if (onOpen && !onClear) {
+            return (
+                <button
+                    type="button"
+                    data-element="catalog-filter"
+                    data-state="idle"
+                    onClick={onOpen}
+                    aria-label={title ?? value}
+                >
+                    <span data-element="label" className={cn(valueClassName)} title={title ?? value}>
+                        {value}
+                    </span>
+                    <ChevronDown data-element="chevron" size={12} aria-hidden />
+                </button>
+            );
+        }
         return (
             <div data-element="catalog-filter" data-state="active">
                 <span data-element="label" className={cn(valueClassName)} title={title ?? value}>

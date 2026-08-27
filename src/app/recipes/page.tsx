@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
-import { ChefHat, Plus, X, ChevronDown, Users, Camera, Edit2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChefHat, Plus, ChevronDown } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import CreateModal from '@/components/CreateRecipeModal';
 import { useRouter } from 'next/navigation';
@@ -11,12 +11,10 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
-import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { CatalogGrid, CatalogTile } from '@/components/catalog/CatalogTile';
 import { CatalogFilterChip } from '@/components/catalog/CatalogFilterChip';
 import { SearchField } from '@/components/ui/SearchField';
 import { cn } from '@/lib/utils';
-import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import {
     type MenuCategoryRow,
     denormalizedRecipeCategoryName,
@@ -33,7 +31,6 @@ import {
     parseFoodCostFilterParam,
     RECIPE_FOOD_COST_SELECT,
 } from '@/lib/recipe-food-cost';
-import { ImageLightbox } from '@/components/ui/ImageLightbox';
 
 interface Recipe {
     id: string;
@@ -62,18 +59,6 @@ function RecipesContent() {
     const [isCreating, setIsCreating] = useState(false);
     const [allIngredients, setAllIngredients] = useState<any[]>([]);
     const [userRole, setUserRole] = useState<string | null>(null);
-    const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
-    const [fullRecipeData, setFullRecipeData] = useState<any>(null);
-    const [loadingDetails, setLoadingDetails] = useState(false);
-    const [isPhotoLightboxOpen, setIsPhotoLightboxOpen] = useState(false);
-    /** Lista para flechas anterior/siguiente (misma regla que `/recipes/[id]`: orden nombre, opcional filtro categoría URL). */
-    const [staffNavRecipes, setStaffNavRecipes] = useState<Array<{ id: string }>>([]);
-
-    useModalUsageTracking({
-        open: !!selectedRecipeId,
-        usageId: 'recipe-detail-overlay',
-        usageLabel: 'Detalle receta (lista)',
-    });
     const [menuCategoryRows, setMenuCategoryRows] = useState<MenuCategoryRow[]>([]);
     const [mcoEsByCategoryId, setMcoEsByCategoryId] = useState<Map<string, string | null>>(() => new Map());
     const router = useRouter();
@@ -86,14 +71,6 @@ function RecipesContent() {
     const buildRecipesHref = (id: string) => {
         const qs = new URLSearchParams(searchParams.toString());
         return qs.toString() ? `/recipes/${id}?${qs.toString()}` : `/recipes/${id}`;
-    };
-
-    /** Ficha completa con edición (quita `view=staff` para no forzar modo restringido en `/recipes/[id]`). */
-    const buildRecipesFullEditHref = (id: string) => {
-        const qs = new URLSearchParams(searchParams.toString());
-        qs.delete('view');
-        const s = qs.toString();
-        return s ? `/recipes/${id}?${s}` : `/recipes/${id}`;
     };
 
     const setCategoryAndUrl = (cat: string | null) => {
@@ -169,13 +146,6 @@ function RecipesContent() {
         return categoryFromUrl;
     }, [categoryFromUrl, menuCategoryRows, sortedMenuCategoryRows, mcoEsByCategoryId]);
 
-    const recipeMenuLabel = (recipe: Recipe) => {
-        if (!recipe.menu_category_id) return (recipe.category || '').trim() || ' ';
-        const row = menuCategoryRows.find((x) => x.id === recipe.menu_category_id);
-        if (!row) return (recipe.category || '').trim() || ' ';
-        return labelMenuCategoryForRecipesEs(row, sortedMenuCategoryRows, mcoEsByCategoryId);
-    };
-
     const selectedFoodCostFilterLabel = useMemo(() => {
         if (!foodCostFilter) return '';
         return FOOD_COST_FILTER_OPTIONS.find((o) => o.status === foodCostFilter)?.label ?? '';
@@ -205,101 +175,7 @@ function RecipesContent() {
         checkRole();
     }, []);
 
-    useEffect(() => {
-        if (selectedRecipeId) {
-            fetchRecipeDetails(selectedRecipeId);
-        } else {
-            setFullRecipeData(null);
-        }
-    }, [selectedRecipeId]);
-
-    useEffect(() => {
-        if (!isStaffView || !selectedRecipeId) return;
-        void (async () => {
-            const cat = categoryFromUrl;
-            // Ramas separadas: un ternario en .select() rompe el parser de tipos de Supabase.
-            if (foodCostFilter) {
-                let q = supabase.from('recipes').select(RECIPE_FOOD_COST_SELECT).order('name');
-                if (cat && cat !== '__none__') {
-                    const row = menuCategoryRows.length ? menuCategoryFromUrlParam(cat, menuCategoryRows) : null;
-                    if (row) q = q.eq('menu_category_id', row.id);
-                    else q = q.eq('category', cat);
-                } else if (cat === '__none__') {
-                    q = q.is('menu_category_id', null);
-                }
-                const { data, error } = await q;
-                if (error || !data) {
-                    setStaffNavRecipes([]);
-                    return;
-                }
-                setStaffNavRecipes(
-                    data
-                        .filter((r) => getRecipeFoodCostStatus(r) === foodCostFilter)
-                        .map((r) => ({ id: r.id })),
-                );
-                return;
-            }
-
-            let q = supabase.from('recipes').select('id').order('name');
-            if (cat && cat !== '__none__') {
-                const row = menuCategoryRows.length ? menuCategoryFromUrlParam(cat, menuCategoryRows) : null;
-                if (row) q = q.eq('menu_category_id', row.id);
-                else q = q.eq('category', cat);
-            } else if (cat === '__none__') {
-                q = q.is('menu_category_id', null);
-            }
-            const { data, error } = await q;
-            if (error || !data) {
-                setStaffNavRecipes([]);
-                return;
-            }
-            setStaffNavRecipes(data.map((r) => ({ id: r.id })));
-        })();
-    }, [isStaffView, selectedRecipeId, categoryFromUrl, foodCostFilter, menuCategoryRows, supabase]);
-
-    const staffNavIndex = staffNavRecipes.findIndex((r) => r.id === selectedRecipeId);
-
-    const modalElaborationSteps = useMemo(() => {
-        const raw = fullRecipeData?.elaboration;
-        if (!raw || typeof raw !== 'string') return [] as string[];
-        const lines = raw.includes('\n') ? raw.split('\n') : [raw];
-        return lines.map((s) => s.trim()).filter(Boolean);
-    }, [fullRecipeData?.elaboration]);
-
-    const modalPresentationSteps = useMemo(() => {
-        const raw = fullRecipeData?.presentation;
-        if (!raw || typeof raw !== 'string') return [] as string[];
-        const lines = raw.includes('\n') ? raw.split('\n') : [raw];
-        return lines.map((s) => s.trim()).filter(Boolean);
-    }, [fullRecipeData?.presentation]);
-
-    const modalSortedIngredients = useMemo(() => {
-        const list = fullRecipeData?.recipe_ingredients ?? [];
-        return [...list].sort((a: any, b: any) =>
-            (a.ingredients?.name || '').localeCompare(b.ingredients?.name || ''),
-        );
-    }, [fullRecipeData?.recipe_ingredients]);
-
     const isRestricted = isStaffView || (userRole !== 'manager' && userRole !== 'supervisor' && userRole !== null);
-    const canEditRecipeFromModal = userRole === 'manager' || userRole === 'supervisor';
-
-    async function fetchRecipeDetails(id: string) {
-        try {
-            setLoadingDetails(true);
-            const { data, error } = await supabase
-                .from('recipes')
-                .select(`*, recipe_ingredients (*, ingredients (*))`)
-                .eq('id', id)
-                .single();
-            if (error) throw error;
-            setFullRecipeData(data);
-        } catch (error) {
-            console.error('Error fetching details:', error);
-            toast.error('Error al cargar detalles');
-        } finally {
-            setLoadingDetails(false);
-        }
-    }
 
     async function fetchRecipes() {
         try {
@@ -399,12 +275,6 @@ function RecipesContent() {
     return (
         <>
             <Toaster position="top-right" />
-            <ImageLightbox
-                open={isPhotoLightboxOpen}
-                src={fullRecipeData?.photo_url}
-                alt={fullRecipeData?.name}
-                onClose={() => setIsPhotoLightboxOpen(false)}
-            />
             <DashboardDetailLayout
                 title="Recetas"
                 showBackButton={false}
@@ -486,13 +356,7 @@ function RecipesContent() {
                                             </span>
                                         ) : undefined
                                     }
-                                    onClick={() => {
-                                        if (isStaffView) {
-                                            setSelectedRecipeId(recipe.id);
-                                        } else {
-                                            router.push(buildRecipesHref(recipe.id));
-                                        }
-                                    }}
+                                    onClick={() => router.push(buildRecipesHref(recipe.id))}
                                 />
                             ))}
                         </CatalogGrid>
@@ -589,182 +453,6 @@ function RecipesContent() {
                 </div>
             </Modal>
 
-            {/* MODAL DE DETALLE (PARA STAFF): misma composición visual que `/recipes/[id]` en modo restringido */}
-            <Modal
-                open={!!selectedRecipeId}
-                onClose={() => setSelectedRecipeId(null)}
-                variant="work"
-                layer="base"
-                instance="recipes-staff-preview"
-                headerTone="petroleum"
-                title={fullRecipeData?.name || (loadingDetails ? 'Cargando…' : '…')}
-                headerTrailing={
-                    canEditRecipeFromModal && selectedRecipeId ? (
-                        <Button
-                            type="button"
-                            variant="tertiary"
-                            instance="recipes-modal-full-edit"
-                            onClick={() => {
-                                const id = selectedRecipeId;
-                                setSelectedRecipeId(null);
-                                router.push(buildRecipesFullEditHref(id));
-                            }}
-                            icon={<Edit2 className="w-5 h-5" strokeWidth={2.5} />}
-                            aria-label="Abrir ficha de edición completa"
-                        />
-                    ) : undefined
-                }
-            >
-                            <div className="flex items-center justify-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        if (staffNavIndex > 0) setSelectedRecipeId(staffNavRecipes[staffNavIndex - 1].id);
-                                    }}
-                                    disabled={staffNavIndex <= 0}
-                                    className="flex h-12 w-12 shrink-0 items-center justify-center transition disabled:opacity-0 text-ds-marca"
-                                    aria-label="Receta anterior"
-                                >
-                                    <ChevronLeft className="w-8 h-8" />
-                                </button>
-                                <div className="rounded-xl bg-white p-0.5 shadow-sm">
-                                    <div className="relative group h-14 w-24 rounded-lg border border-gray-100/50 bg-white flex items-center justify-center overflow-hidden">
-                                        {fullRecipeData?.photo_url ? (
-                                            <button
-                                                type="button"
-                                                onClick={() => setIsPhotoLightboxOpen(true)}
-                                                className="absolute inset-0 h-full w-full cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ds-marca/50"
-                                                aria-label="Ver foto ampliada"
-                                            >
-                                                <img src={fullRecipeData.photo_url} alt="" className="h-full w-full object-contain" />
-                                            </button>
-                                        ) : (
-                                            <Camera className="h-5 w-5 text-gray-300" aria-hidden />
-                                        )}
-                                    </div>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        if (staffNavIndex >= 0 && staffNavIndex < staffNavRecipes.length - 1) {
-                                            setSelectedRecipeId(staffNavRecipes[staffNavIndex + 1].id);
-                                        }
-                                    }}
-                                    disabled={staffNavIndex < 0 || staffNavIndex >= staffNavRecipes.length - 1}
-                                    className="flex h-12 w-12 shrink-0 items-center justify-center transition disabled:opacity-0 text-ds-marca"
-                                    aria-label="Receta siguiente"
-                                >
-                                    <ChevronRight className="w-8 h-8" />
-                                </button>
-                            </div>
-                            <div className="flex items-center justify-center gap-4 mt-2 text-ds-marca">
-                                <span className="px-2 py-0.5 bg-ds-marca/10 rounded-full font-medium uppercase tracking-wider text-[9px]">
-                                    {fullRecipeData ? recipeMenuLabel(fullRecipeData as Recipe) : ' '}
-                                </span>
-                                <div className="flex items-center gap-1.5 text-[9px] font-bold">
-                                    <Users className="w-3.5 h-3.5" />
-                                    <span>{fullRecipeData?.servings || 1} rac</span>
-                                </div>
-                            </div>
-
-                        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar bg-[#fafafa]">
-                            {loadingDetails ? (
-                                <div className="h-64 flex flex-col items-center justify-center text-[#36606F]/60">
-                                    <LoadingSpinner size="lg" className="text-[#36606F] mb-4" />
-                                    <p className="text-[10px] font-black uppercase tracking-widest">Cargando receta...</p>
-                                </div>
-                            ) : (
-                                <div className="p-4 md:p-5 grid grid-cols-1 md:grid-cols-2 gap-4 content-start">
-                                    <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col h-fit">
-                                        <div data-element="block-header" className="justify-between">
-                                            <h2 data-element="title">
-                                                Ingredientes{' '}
-                                                <span className="opacity-50">({modalSortedIngredients.length})</span>
-                                            </h2>
-                                        </div>
-                                        <div className="custom-scrollbar relative">
-                                            <table data-component={TABLE_COMPONENT_ID} data-instance="recipe-modal-ingredients" className="w-full text-left">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Ingrediente</th>
-                                                        <th className="text-center">Cant</th>
-                                                        <th className="text-center">Ud</th>
-                                                        <th className="w-8" />
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-gray-100">
-                                                    {modalSortedIngredients.map((ing: any) => (
-                                                        <tr key={ing.id} className="hover:bg-gray-50 transition-colors">
-                                                            <td className="py-2 px-3 text-gray-800 font-bold truncate max-w-[120px]">
-                                                                {ing.ingredients?.name}
-                                                            </td>
-                                                            <td className="text-center py-2">
-                                                                <span className="text-gray-700 font-bold">{ing.quantity_gross}</span>
-                                                            </td>
-                                                            <td className="text-center py-2">
-                                                                <span className="text-gray-400 font-bold">{ing.unit}</span>
-                                                            </td>
-                                                            <td className="py-2" />
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col h-fit">
-                                        <div data-element="block-header" className="relative justify-between">
-                                            <h2 data-element="title">Elaboración</h2>
-                                        </div>
-                                        <div className="p-3">
-                                            <div className="custom-scrollbar space-y-3">
-                                                <ul className="space-y-2">
-                                                    {modalElaborationSteps.map((s, i) => (
-                                                        <li key={i} className="flex gap-3 text-gray-600 text-[10px] leading-relaxed">
-                                                            <span className="flex-shrink-0 w-4 h-4 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-black text-[8px]">
-                                                                {i + 1}
-                                                            </span>
-                                                            <span>{s}</span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                                {fullRecipeData?.elaboration_video_url && (
-                                                    <video
-                                                        controls
-                                                        preload="metadata"
-                                                        src={fullRecipeData.elaboration_video_url}
-                                                        className="w-full rounded-2xl bg-black"
-                                                    />
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col h-fit">
-                                        <div data-element="block-header" className="relative justify-between">
-                                            <h2 data-element="title">Presentación</h2>
-                                        </div>
-                                        <div className="p-3 bg-zinc-50/30">
-                                            <div className="custom-scrollbar">
-                                                <ul className="space-y-2">
-                                                    {modalPresentationSteps.map((s, i) => (
-                                                        <li key={i} className="flex gap-3 text-gray-600 text-[10px] leading-relaxed">
-                                                            <X
-                                                                className="rotate-45 w-2 h-2 text-emerald-500 mt-1 flex-shrink-0"
-                                                                strokeWidth={5}
-                                                                aria-hidden
-                                                            />
-                                                            <span>{s}</span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-            </Modal>
             <CreateModal
                 showCreateModal={showCreateModal}
                 setShowCreateModal={setShowCreateModal}

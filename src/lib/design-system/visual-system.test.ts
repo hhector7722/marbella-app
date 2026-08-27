@@ -587,9 +587,10 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(consumption, /SearchField/, 'consumo usa SearchField');
     });
 
-    it('wizard, carta y proveedores recogen datos con Field', () => {
+    it('wizard, carta, proveedores e ingredientes recogen datos con Field', () => {
         const hosts = [
             'components/ingredients/IngredientWizard.tsx',
+            'components/ingredients/IngredientEditModal.tsx',
             'components/carta/MenuItemEditModal.tsx',
             'components/carta/MenuCategoryEditModal.tsx',
             'app/suppliers/page.tsx',
@@ -598,5 +599,13 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
             assert.match(source, /<Field/, `${rel} debe usar Field`);
         }
+        const edit = readFileSync(join(SRC_ROOT, 'components/ingredients/IngredientEditModal.tsx'), 'utf8');
+        assert.match(edit, /ConfirmModal/, 'eliminar ingrediente usa ConfirmModal');
+        assert.doesNotMatch(edit, /confirm\(/, 'eliminar ingrediente no usa el diálogo nativo');
+        assert.doesNotMatch(
+            edit,
+            /rounded-2xl border p-3 font-bold/,
+            'el nombre no pinta una caja propia'
+        );
     });
 });

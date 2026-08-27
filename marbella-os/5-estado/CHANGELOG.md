@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-27
 
+- **La ficha de un ingrediente usa los mismos campos que el resto.** Nombre, categoría, merma, unidades, stock y proveedores entran por el campo de sistema; ya no se desbordan en una sola fila. Borrar pide confirmación en el mismo panel que un proveedor. Las flechas anterior/siguiente son el botón de icono, no un círculo suelto.
+
 - **El catálogo se lee en tres columnas; el filtro ya no es una tarjeta.** Recetas e ingredientes pasan a 3 columnas; proveedores (página y pedido) siguen en 4, con la misma celda. Todos los buscadores miden la misma altura. CAT y PROV flotan sobre el fondo, sin mini-card y sin punto.
 
 - **El buscador, el calendario de ventas y los formularios pintan igual.** Buscar es la misma lupa; elegir un día en ventas es el mismo mini-calendario; las tablas de inventario, pedido, encargo y propinas llevan la cabecera de sistema; si no hay nada se dice igual; confirmar ya no se estira; y nombre, fechas y teléfono de proveedor, carta y condiciones van en el mismo campo.

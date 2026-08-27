@@ -16,6 +16,7 @@ import { OrphanedSupplierAlert } from '@/components/ingredients/OrphanedSupplier
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/Field';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 export interface Ingredient {
     id: string;
@@ -155,6 +156,8 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
     const [suppliersLoaded, setSuppliersLoaded] = useState(false);
     const [editPricingOpen, setEditPricingOpen] = useState(false);
     const [editPricingStep, setEditPricingStep] = useState<1 | 2 | 3>(1);
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const supplierNamesFromDb = useMemo(() => buildSupplierNameSet(allSuppliers), [allSuppliers]);
 
@@ -422,12 +425,31 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
         }
     }
 
+    async function handleDeleteIngredient() {
+        const rowId = activeIngredient?.id ?? ingredient?.id;
+        if (!rowId) return;
+        setIsDeleting(true);
+        try {
+            const { error } = await supabase.from('ingredients').delete().eq('id', rowId);
+            if (error) throw error;
+            toast.success('Eliminado');
+            setDeleteConfirmOpen(false);
+            onSaved();
+            onClose();
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            toast.error(msg);
+        } finally {
+            setIsDeleting(false);
+        }
+    }
+
     if (!ingredient) return null;
-    const targetIngredient = activeIngredient ?? ingredient;
     const pricingWizardSteps = displayPricingWizardStep(editPricingStep, editForm.category);
     const packBaseUnit = resolvedPackPurchaseUnit(editForm);
 
     return (
+        <>
         <Modal
             open
             onClose={onClose}
@@ -445,13 +467,7 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                         type="button"
                         variant="destructive"
                         instance="ingredient-edit-delete"
-                        onClick={async () => {
-                            if (!confirm('¿Eliminar este ingrediente?')) return;
-                            await supabase.from('ingredients').delete().eq('id', targetIngredient.id);
-                            toast.success('Eliminado');
-                            onSaved();
-                            onClose();
-                        }}
+                        onClick={() => setDeleteConfirmOpen(true)}
                     >
                         Eliminar
                     </Button>
@@ -468,20 +484,21 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                 </>
             }
         >
-            <div className="space-y-4 bg-[#fafafa]">
+            <div className="space-y-4">
                     <div className="space-y-4">
                         <div className="flex items-center justify-center gap-8">
                             {showNavArrows ? (
-                                <button
+                                <Button
                                     type="button"
+                                    variant="tertiary"
+                                    instance="ingredient-edit-prev"
+                                    icon={<ChevronLeft />}
+                                    aria-label="Ingrediente anterior"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         navigateIngredient(-1);
                                     }}
-                                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-zinc-100 bg-zinc-50 text-zinc-400 shadow-sm transition-colors hover:bg-zinc-100 hover:text-[#5E35B1]"
-                                >
-                                    <ChevronLeft size={24} />
-                                </button>
+                                />
                             ) : (
                                 <div className="h-12 w-12 shrink-0" aria-hidden />
                             )}
@@ -507,25 +524,28 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                             </div>
 
                             {showNavArrows ? (
-                                <button
+                                <Button
                                     type="button"
+                                    variant="tertiary"
+                                    instance="ingredient-edit-next"
+                                    icon={<ChevronRight />}
+                                    aria-label="Ingrediente siguiente"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         navigateIngredient(1);
                                     }}
-                                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-zinc-100 bg-zinc-50 text-zinc-400 shadow-sm transition-colors hover:bg-zinc-100 hover:text-[#5E35B1]"
-                                >
-                                    <ChevronRight size={24} />
-                                </button>
+                                />
                             ) : (
                                 <div className="h-12 w-12 shrink-0" aria-hidden />
                             )}
                         </div>
-                        <input
-                            value={editForm.name ?? ''}
-                            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                            className="w-full rounded-2xl border p-3 font-bold"
-                        />
+                        <Field instance="ingredient-edit-name" label="Nombre" htmlFor="ingredient-edit-name">
+                            <input
+                                id="ingredient-edit-name"
+                                value={editForm.name ?? ''}
+                                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                            />
+                        </Field>
                         <div className="rounded-2xl border border-zinc-100 bg-white p-4">
                             <div className="flex items-center justify-between gap-3">
                                 <div className="min-w-0">
@@ -1015,8 +1035,7 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                 </div>
                             )}
                         </div>
-                        <div className="flex gap-2">
-                            <div className="w-1/2">
+                        <div className="grid grid-cols-2 gap-3">
                                 <Field instance="ingredient-edit-category" label="Categoría" htmlFor="ingredient-edit-category">
                                 <select
                                     id="ingredient-edit-category"
@@ -1030,8 +1049,6 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                     ))}
                                 </select>
                                 </Field>
-                            </div>
-                            <div className="w-1/4">
                                 <Field instance="ingredient-edit-waste" label="% Merma" htmlFor="ingredient-edit-waste">
                                 <input
                                     id="ingredient-edit-waste"
@@ -1041,8 +1058,6 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                     onChange={(e) => setEditForm({ ...editForm, waste_percentage: parseFloat(e.target.value) })}
                                 />
                                 </Field>
-                            </div>
-                            <div className="w-1/4">
                                 <Field instance="ingredient-edit-order-unit" label="U. Pedido" htmlFor="ingredient-edit-order-unit">
                                 <select
                                     id="ingredient-edit-order-unit"
@@ -1056,8 +1071,6 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                     ))}
                                 </select>
                                 </Field>
-                            </div>
-                            <div className="w-1/4">
                                 <Field instance="ingredient-edit-recipe-unit" label="U. receta" htmlFor="ingredient-edit-recipe-unit">
                                 <select
                                     id="ingredient-edit-recipe-unit"
@@ -1074,8 +1087,6 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                     ))}
                                 </select>
                                 </Field>
-                            </div>
-                            <div className="w-1/4">
                                 <Field instance="ingredient-edit-stock" label="Stock Rec." htmlFor="ingredient-edit-stock">
                                 <input
                                     id="ingredient-edit-stock"
@@ -1088,7 +1099,6 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                     placeholder="0"
                                 />
                                 </Field>
-                            </div>
                         </div>
                         {orphanedSupplier1 ? (
                             <OrphanedSupplierAlert
@@ -1098,7 +1108,9 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                             />
                         ) : null}
                         {!isCustomSupplier ? (
+                            <Field instance="ingredient-edit-supplier" label="Proveedor" htmlFor="ingredient-edit-supplier">
                             <select
+                                id="ingredient-edit-supplier"
                                 value={editForm.supplier || ''}
                                 onChange={(e) => {
                                     if (e.target.value === 'custom') {
@@ -1107,7 +1119,6 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                         setEditForm({ ...editForm, supplier: null });
                                     } else setEditForm({ ...editForm, supplier: e.target.value });
                                 }}
-                                className="w-full rounded-2xl border bg-white p-3"
                             >
                                 <option value="">Proveedor...</option>
                                 {allSuppliers.map((s) => (
@@ -1117,28 +1128,34 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                 ))}
                                 <option value="custom">+ Nuevo...</option>
                             </select>
+                            </Field>
                         ) : (
-                            <div className="flex gap-2">
-                                <input
-                                    value={customSupplierName}
-                                    onChange={(e) => {
-                                        setCustomSupplierName(e.target.value);
-                                        setEditForm({ ...editForm, supplier: e.target.value });
-                                    }}
-                                    className="flex-1 rounded-2xl border p-3"
-                                    placeholder="Proveedor"
-                                />
-                                <button
+                            <div className="flex items-end gap-2">
+                                <div className="min-w-0 flex-1">
+                                    <Field instance="ingredient-edit-supplier-custom" label="Proveedor" htmlFor="ingredient-edit-supplier-custom">
+                                    <input
+                                        id="ingredient-edit-supplier-custom"
+                                        value={customSupplierName}
+                                        onChange={(e) => {
+                                            setCustomSupplierName(e.target.value);
+                                            setEditForm({ ...editForm, supplier: e.target.value });
+                                        }}
+                                        placeholder="Proveedor"
+                                    />
+                                    </Field>
+                                </div>
+                                <Button
                                     type="button"
+                                    variant="tertiary"
+                                    instance="ingredient-edit-supplier-cancel"
+                                    icon={<X />}
+                                    aria-label="Cancelar proveedor nuevo"
                                     onClick={() => {
                                         setIsCustomSupplier(false);
                                         setCustomSupplierName('');
                                         setEditForm({ ...editForm, supplier: null });
                                     }}
-                                    className="text-xs font-bold text-red-500"
-                                >
-                                    X
-                                </button>
+                                />
                             </div>
                         )}
 
@@ -1151,7 +1168,9 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                             />
                         ) : null}
                         {!isCustomSupplier2 ? (
+                            <Field instance="ingredient-edit-supplier-2" label="Proveedor 2" htmlFor="ingredient-edit-supplier-2">
                             <select
+                                id="ingredient-edit-supplier-2"
                                 value={editForm.supplier_2 || ''}
                                 onChange={(e) => {
                                     if (e.target.value === 'custom') {
@@ -1162,7 +1181,6 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                         setEditForm({ ...editForm, supplier_2: e.target.value });
                                     }
                                 }}
-                                className="w-full rounded-2xl border bg-white p-3"
                             >
                                 <option value="">Proveedor 2 (opcional)...</option>
                                 {allSuppliers.map((s) => (
@@ -1172,32 +1190,52 @@ export function IngredientEditModal({ ingredient, onClose, onSaved, navigationIn
                                 ))}
                                 <option value="custom">+ Nuevo...</option>
                             </select>
+                            </Field>
                         ) : (
-                            <div className="flex gap-2">
-                                <input
-                                    value={customSupplier2Name}
-                                    onChange={(e) => {
-                                        setCustomSupplier2Name(e.target.value);
-                                        setEditForm({ ...editForm, supplier_2: e.target.value });
-                                    }}
-                                    className="flex-1 rounded-2xl border p-3"
-                                    placeholder="Proveedor 2"
-                                />
-                                <button
+                            <div className="flex items-end gap-2">
+                                <div className="min-w-0 flex-1">
+                                    <Field instance="ingredient-edit-supplier-2-custom" label="Proveedor 2" htmlFor="ingredient-edit-supplier-2-custom">
+                                    <input
+                                        id="ingredient-edit-supplier-2-custom"
+                                        value={customSupplier2Name}
+                                        onChange={(e) => {
+                                            setCustomSupplier2Name(e.target.value);
+                                            setEditForm({ ...editForm, supplier_2: e.target.value });
+                                        }}
+                                        placeholder="Proveedor 2"
+                                    />
+                                    </Field>
+                                </div>
+                                <Button
                                     type="button"
+                                    variant="tertiary"
+                                    instance="ingredient-edit-supplier-2-cancel"
+                                    icon={<X />}
+                                    aria-label="Cancelar proveedor 2 nuevo"
                                     onClick={() => {
                                         setIsCustomSupplier2(false);
                                         setCustomSupplier2Name('');
                                         setEditForm({ ...editForm, supplier_2: null });
                                     }}
-                                    className="text-xs font-bold text-red-500"
-                                >
-                                    X
-                                </button>
+                                />
                             </div>
                         )}
                     </div>
             </div>
         </Modal>
+        <ConfirmModal
+            open={deleteConfirmOpen}
+            onClose={() => { if (!isDeleting) setDeleteConfirmOpen(false); }}
+            title="Eliminar ingrediente"
+            confirmLabel="Eliminar"
+            instance="ingredient-delete-confirm"
+            parentInstance="ingredient-edit"
+            usageLabel="Confirmar eliminar ingrediente"
+            confirming={isDeleting}
+            onConfirm={() => { void handleDeleteIngredient(); }}
+        >
+            {`¿Seguro que quieres eliminar "${editForm.name ?? ''}"? Esta acción no se puede deshacer.`}
+        </ConfirmModal>
+        </>
     );
 }
