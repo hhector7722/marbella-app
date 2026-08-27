@@ -25,6 +25,8 @@ import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { SearchField } from '@/components/ui/SearchField';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import { CatalogFilterChip } from '@/components/catalog/CatalogFilterChip';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
@@ -101,6 +103,10 @@ function RecipeDetailContent() {
     const [simulatorExpanded, setSimulatorExpanded] = useState(false);
     const [recipeMetaModalOpen, setRecipeMetaModalOpen] = useState(false);
     const [recipeIngredientEditTarget, setRecipeIngredientEditTarget] = useState<Ingredient | null>(null);
+    const [deleteRecipeOpen, setDeleteRecipeOpen] = useState(false);
+    const [deletingRecipe, setDeletingRecipe] = useState(false);
+    const [deleteIngredientId, setDeleteIngredientId] = useState<string | null>(null);
+    const [deletingIngredient, setDeletingIngredient] = useState(false);
     const [menuCategoryRows, setMenuCategoryRows] = useState<MenuCategoryRow[]>([]);
     const [mcoEsByCategoryId, setMcoEsByCategoryId] = useState<Map<string, string | null>>(() => new Map());
 
@@ -124,6 +130,13 @@ function RecipeDetailContent() {
         const s = qs.toString();
         return s ? `/recipes?${s}` : '/recipes';
     }, [searchParams]);
+
+    const fullEditHref = useMemo(() => {
+        const qs = new URLSearchParams(searchParams.toString());
+        qs.delete('view');
+        const s = qs.toString();
+        return s ? `/recipes/${recipeId}?${s}` : `/recipes/${recipeId}`;
+    }, [searchParams, recipeId]);
 
     useEffect(() => {
         void (async () => {
@@ -264,6 +277,7 @@ function RecipeDetailContent() {
     }, [recipeId]);
 
     const isRestricted = isStaffView || (userRole !== 'manager' && userRole !== 'supervisor' && userRole !== null);
+    const canOpenFullEdit = isStaffView && (userRole === 'manager' || userRole === 'supervisor');
     const canImportRecipe = !isStaffView && userRole === 'manager';
     const canManageRecipeVideo = !isStaffView && userRole === 'manager';
 
@@ -728,9 +742,14 @@ function RecipeDetailContent() {
     };
 
     const handleDelete = async () => {
-        if (!confirm('¿Eliminar?')) return;
-        await supabase.from('recipes').delete().eq('id', recipeId);
-        router.push(recipesListHref);
+        setDeletingRecipe(true);
+        try {
+            await supabase.from('recipes').delete().eq('id', recipeId);
+            setDeleteRecipeOpen(false);
+            router.push(recipesListHref);
+        } finally {
+            setDeletingRecipe(false);
+        }
     };
 
     const closeAddIngredientModal = () => {
@@ -754,33 +773,34 @@ function RecipeDetailContent() {
     };
 
     const handleDeleteIngredient = async (id: string) => {
-        if (!confirm('¿Eliminar?')) return;
-        
-        // Optimistic update
+        setDeletingIngredient(true);
         setIngredients(prev => prev.filter(ing => ing.id !== id));
-        
-        const { error, count } = await supabase
-            .from('recipe_ingredients')
-            .delete({ count: 'exact' })
-            .eq('id', id);
-        
-        if (error) {
-            console.error('Error al eliminar ingrediente:', error);
-            toast.error('Error al eliminar ingrediente');
-            await fetchRecipe();
-            return;
-        }
+        try {
+            const { error, count } = await supabase
+                .from('recipe_ingredients')
+                .delete({ count: 'exact' })
+                .eq('id', id);
 
-        if (count === 0) {
-            // Supabase no borró nada (RLS silencioso u otro problema)
-            console.warn('DELETE no eliminó ninguna fila. id:', id, '| count:', count);
-            toast.error('No se pudo eliminar el ingrediente');
-            await fetchRecipe();
-            return;
+            if (error) {
+                console.error('Error al eliminar ingrediente:', error);
+                toast.error('Error al eliminar ingrediente');
+                await fetchRecipe();
+                return;
+            }
+
+            if (count === 0) {
+                console.warn('DELETE no eliminó ninguna fila. id:', id, '| count:', count);
+                toast.error('No se pudo eliminar el ingrediente');
+                await fetchRecipe();
+                return;
+            }
+
+            toast.success('Ingrediente eliminado');
+            fetchBackendCost();
+            setDeleteIngredientId(null);
+        } finally {
+            setDeletingIngredient(false);
         }
-        
-        toast.success('Ingrediente eliminado');
-        fetchBackendCost();
     };
 
     const updateTextDB = async (field: 'elaboration' | 'presentation', steps: string[]) => {
@@ -891,6 +911,17 @@ function RecipeDetailContent() {
                 contentClassName="p-0 flex flex-col min-h-0"
                 rightSlot={
                     <div className="flex shrink-0 items-center justify-end gap-2">
+                        {canOpenFullEdit ? (
+                            <Button
+                                type="button"
+                                variant="tertiary"
+                                instance="recipe-full-edit"
+                                onClick={() => router.push(fullEditHref)}
+                                aria-label="Abrir ficha de edición completa"
+                                icon={<Edit2 className="h-5 w-5" strokeWidth={2.5} />}
+                                className="shrink-0"
+                            />
+                        ) : null}
                         {!isRestricted && (
                             <Button
                                 type="button"
@@ -928,53 +959,56 @@ function RecipeDetailContent() {
                         />
                     )}
 
-                    <div className="relative mt-1 flex w-full shrink-0 items-center justify-center py-2">
-                        <button
+                    <div className="mt-1 flex w-full shrink-0 items-center justify-center gap-8 py-2">
+                        <Button
                             type="button"
-                            onClick={handlePreviousRecipe}
-                            disabled={currentRecipeIndex <= 0}
-                            className="absolute left-2 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center text-ds-marca/50 transition hover:text-ds-marca disabled:pointer-events-none disabled:opacity-0"
+                            variant="tertiary"
+                            instance="recipe-prev"
+                            icon={<ChevronLeft />}
                             aria-label="Receta anterior"
-                        >
-                            <ChevronLeft className="h-8 w-8" />
-                        </button>
+                            disabled={currentRecipeIndex <= 0}
+                            onClick={handlePreviousRecipe}
+                        />
 
-                        <div className="bg-white rounded-xl p-0.5 shadow-sm">
-                            <div className="group relative flex h-20 w-32 items-center justify-center overflow-hidden rounded-lg border border-gray-100/50 bg-white">
-                                {recipe.photo_url ? (
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsPhotoLightboxOpen(true)}
-                                        className={cn(
-                                            'absolute inset-0 h-full w-full cursor-zoom-in',
-                                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ds-marca/40',
-                                        )}
-                                        aria-label="Ver foto ampliada"
-                                    >
-                                        <img src={recipe.photo_url} alt={recipe.name} className="h-full w-full object-contain" />
-                                    </button>
-                                ) : (
-                                    <Camera className="h-6 w-6 text-gray-300" />
-                                )}
-                            </div>
+                        <div className="relative flex h-20 w-32 items-center justify-center overflow-hidden">
+                            {recipe.photo_url ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setIsPhotoLightboxOpen(true)}
+                                    className={cn(
+                                        'absolute inset-0 h-full w-full cursor-zoom-in',
+                                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ds-marca/40',
+                                    )}
+                                    aria-label="Ver foto ampliada"
+                                >
+                                    <img src={recipe.photo_url} alt={recipe.name} className="h-full w-full object-contain" />
+                                </button>
+                            ) : (
+                                <Camera className="h-6 w-6 text-gray-300" />
+                            )}
                         </div>
 
-                        <button
+                        <Button
                             type="button"
-                            onClick={handleNextRecipe}
-                            disabled={currentRecipeIndex >= allRecipes.length - 1}
-                            className="absolute right-2 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center text-ds-marca/50 transition hover:text-ds-marca disabled:pointer-events-none disabled:opacity-0"
+                            variant="tertiary"
+                            instance="recipe-next"
+                            icon={<ChevronRight />}
                             aria-label="Receta siguiente"
-                        >
-                            <ChevronRight className="h-8 w-8" />
-                        </button>
+                            disabled={currentRecipeIndex >= allRecipes.length - 1}
+                            onClick={handleNextRecipe}
+                        />
                     </div>
 
-                    <div className="flex items-center justify-center gap-4 mt-1 mb-2 text-zinc-600">
+                    <div className="mb-2 mt-1 flex items-center justify-center gap-4 text-zinc-600">
                         {isRestricted ? (
-                            <span className="px-2 py-0.5 bg-zinc-100 rounded-full font-medium uppercase tracking-wider text-[9px]">{recipeCategoryLabel}</span>
+                            <CatalogFilterChip label="CAT" value={recipeCategoryLabel} />
                         ) : (
-                            <button onClick={() => setShowCategoryModal(true)} className="px-2 py-0.5 bg-zinc-100 hover:bg-zinc-200 rounded-full font-medium uppercase tracking-wider text-[9px] transition-colors min-h-12">{recipeCategoryLabel}</button>
+                            <CatalogFilterChip
+                                label="CAT"
+                                value={recipeCategoryLabel || 'CAT'}
+                                onOpen={() => setShowCategoryModal(true)}
+                                title={recipeCategoryLabel || 'Categoría'}
+                            />
                         )}
                         <div className="flex items-center gap-1.5 text-[9px] font-bold">
                             <Users className="w-3.5 h-3.5" />
@@ -985,7 +1019,7 @@ function RecipeDetailContent() {
                                 type="button"
                                 variant="destructive"
                                 instance="recipe-eliminar"
-                                onClick={handleDelete}
+                                onClick={() => setDeleteRecipeOpen(true)}
                             >
                                 ELIMINAR
                             </Button>
@@ -1336,7 +1370,7 @@ function RecipeDetailContent() {
                                                 )}
                                                 <td className="py-1 text-center align-middle">
                                                     {!isRestricted && (
-                                                        <button type="button" onClick={() => handleDeleteIngredient(ing.id)} className="rounded p-0.5 text-gray-300 transition-colors hover:bg-rose-50 hover:text-rose-500">
+                                                        <button type="button" onClick={() => setDeleteIngredientId(ing.id)} className="rounded p-0.5 text-gray-300 transition-colors hover:bg-rose-50 hover:text-rose-500">
                                                             <Trash2 size={12} strokeWidth={3} />
                                                         </button>
                                                     )}
@@ -1741,6 +1775,32 @@ function RecipeDetailContent() {
                     setRecipeMetaModalOpen(false);
                 }}
             />
+            <ConfirmModal
+                open={deleteRecipeOpen}
+                onClose={() => { if (!deletingRecipe) setDeleteRecipeOpen(false); }}
+                title="Eliminar receta"
+                confirmLabel="Eliminar"
+                instance="recipe-delete-confirm"
+                usageLabel="Confirmar eliminar receta"
+                confirming={deletingRecipe}
+                onConfirm={() => { void handleDelete(); }}
+            >
+                {`¿Seguro que quieres eliminar "${recipe.name}"? Esta acción no se puede deshacer.`}
+            </ConfirmModal>
+            <ConfirmModal
+                open={!!deleteIngredientId}
+                onClose={() => { if (!deletingIngredient) setDeleteIngredientId(null); }}
+                title="Quitar ingrediente"
+                confirmLabel="Quitar"
+                instance="recipe-ingredient-delete-confirm"
+                usageLabel="Confirmar quitar ingrediente de receta"
+                confirming={deletingIngredient}
+                onConfirm={() => {
+                    if (deleteIngredientId) void handleDeleteIngredient(deleteIngredientId);
+                }}
+            >
+                {`¿Quitar "${ingredients.find((ing) => ing.id === deleteIngredientId)?.ingredients?.name ?? 'este ingrediente'}" de la receta?`}
+            </ConfirmModal>
         </>
     );
 }

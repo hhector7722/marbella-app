@@ -405,6 +405,11 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             );
         }
         assert.match(recipes, /columns=\{3\}/, 'recetas: 3 columnas');
+        assert.match(recipes, /buildRecipesHref/, 'pulsar una receta abre la ficha');
+        assert.doesNotMatch(recipes, /recipes-staff-preview/, 'staff no abre un modal distinto');
+        const recipeDetail = readFileSync(join(SRC_ROOT, 'app/recipes/[id]/page.tsx'), 'utf8');
+        assert.match(recipeDetail, /CatalogFilterChip/, 'la ficha usa CAT flotante');
+        assert.match(recipeDetail, /ConfirmModal/, 'eliminar receta usa ConfirmModal');
         assert.match(ingredients, /columns=\{3\}/, 'ingredientes: 3 columnas');
         assert.doesNotMatch(suppliers, /columns=\{3\}/, 'proveedores: 4 columnas');
         assert.match(pedido, /CatalogGrid/, 'el pedido monta la misma rejilla');
@@ -529,7 +534,6 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
     it('receta, mapeo, encargo, import, ledger, pedido y propinas usan thead de sistema', () => {
         const tables = [
             'app/recipes/[id]/page.tsx',
-            'app/recipes/page.tsx',
             'components/reservas/EncargoOrderViewModal.tsx',
             'app/dashboard/import/page.tsx',
             'app/admin/import/page.tsx',

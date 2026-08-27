@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-27
 
+- **Una receta abre la misma ficha desde Staff y desde Admin.** Ya no hay un modal distinto para personal: pulsar una receta entra en la ficha. La categoría flota como CAT; las flechas son el botón de icono; borrar pide el mismo panel de confirmación.
+
 - **La ficha de un ingrediente usa los mismos campos que el resto.** Nombre, categoría, merma, unidades, stock y proveedores entran por el campo de sistema; ya no se desbordan en una sola fila. Borrar pide confirmación en el mismo panel que un proveedor. Las flechas anterior/siguiente son el botón de icono, no un círculo suelto.
 
 - **El catálogo se lee en tres columnas; el filtro ya no es una tarjeta.** Recetas e ingredientes pasan a 3 columnas; proveedores (página y pedido) siguen en 4, con la misma celda. Todos los buscadores miden la misma altura. CAT y PROV flotan sobre el fondo, sin mini-card y sin punto.

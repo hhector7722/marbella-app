@@ -7,7 +7,6 @@ import { ChefHat, Plus, ChevronDown } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import CreateModal from '@/components/CreateRecipeModal';
 import { useRouter } from 'next/navigation';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
@@ -29,7 +28,6 @@ import {
     type FoodCostStatus,
     getRecipeFoodCostStatus,
     parseFoodCostFilterParam,
-    RECIPE_FOOD_COST_SELECT,
 } from '@/lib/recipe-food-cost';
 
 interface Recipe {
