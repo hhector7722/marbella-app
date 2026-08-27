@@ -12,10 +12,7 @@ import {
 } from '@/lib/albaranes-line-status'
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
-import {
-  getDefaultPurchaseInvoicesDateRange,
-  PURCHASE_INVOICES_INITIAL_LIMIT,
-} from '@/lib/albaranes/purchase-invoices-list'
+import { PURCHASE_INVOICES_INITIAL_LIMIT } from '@/lib/albaranes/purchase-invoices-list'
 
 type GateResult =
   | { ok: true; supabase: Awaited<ReturnType<typeof createClient>>; userId: string; role: string | null }
@@ -326,14 +323,6 @@ export async function listPurchaseInvoicesAction(params?: {
   }
 }
 
-async function listPurchaseInvoicesByRange(gate: Extract<GateResult, { ok: true }>, startYmd: string, endYmd: string, limit = 200) {
-  return queryPurchaseInvoicesList(gate, {
-    limit,
-    offset: 0,
-    dateFrom: startYmd,
-    dateTo: endYmd,
-  })
-}
 
 async function enrichInvoicesWithProcessingState(
   supabase: Extract<GateResult, { ok: true }>['supabase'],
@@ -397,35 +386,32 @@ async function enrichInvoicesWithProcessingState(
   })
 }
 
-/** Listado inicial del histórico: últimos 45 días (Madrid), no solo la semana calendario. */
+/** Listado inicial del histórico: más recientes primero, sin tope de fechas. */
 export async function listPurchaseInvoicesDefaultWeekAction(): Promise<
   | {
       success: true
       items: PurchaseInvoiceListItem[]
       hasMore: boolean
       canViewAll: boolean
-      weekStart: string
-      weekEnd: string
     }
   | { success: false; message: string }
 > {
   const gate = await gateAuthenticated()
   if (!gate.ok) return { success: false, message: gate.message }
 
-  const { dateFrom: rangeStart, dateTo: rangeEnd } = getDefaultPurchaseInvoicesDateRange()
-
   try {
-    const cur = await listPurchaseInvoicesByRange(gate, rangeStart, rangeEnd, PURCHASE_INVOICES_INITIAL_LIMIT)
+    const cur = await queryPurchaseInvoicesList(gate, {
+      limit: PURCHASE_INVOICES_INITIAL_LIMIT,
+      offset: 0,
+    })
     return {
       success: true,
       items: cur.items,
       hasMore: cur.hasMore,
       canViewAll: cur.canViewAll,
-      weekStart: rangeStart,
-      weekEnd: rangeEnd,
     }
-  } catch (e: any) {
-    return { success: false, message: e?.message ?? 'Error listando albaranes' }
+  } catch (e: unknown) {
+    return { success: false, message: e instanceof Error ? e.message : 'Error listando albaranes' }
   }
 }
 

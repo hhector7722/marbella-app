@@ -198,6 +198,15 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(source, /<Field/);
         assert.match(source, /<EmptyState/);
         assert.match(source, /<Notice/);
+        assert.match(source, /PeriodFilterButton/, 'el filtro vive en la cabecera');
+        assert.match(source, /renderTrigger/, 'ESCANEAR va a la derecha del buscador');
+        assert.match(source, /albaranes-load-more/, 'la lista tiene Ver más');
+        assert.match(source, /variant="compact"/, 'el modal de filtro es compacto');
+        assert.doesNotMatch(
+            source,
+            /footerSlot=\{<ScannerClient/,
+            'el escáner no vive en el pie'
+        );
     });
 
     it('dashboard caja/ventas y staff usan Surface', () => {

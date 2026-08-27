@@ -1,6 +1,5 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
-import { getDefaultPurchaseInvoicesDateRange } from '@/lib/albaranes/purchase-invoices-list'
 import { listPurchaseInvoicesDefaultWeekAction } from './actions'
 import AlbaranesHistoricoClient from './AlbaranesHistoricoClient'
 
@@ -68,17 +67,13 @@ export default async function AlbaranesHistoricoPage() {
     }
   })()
   const res = await ssrWithTimeout(listGuarded, 8000, listFallback)
-  const defaultRange = getDefaultPurchaseInvoicesDateRange()
 
   // El layout (cabecera "Albaranes" + slot derecho) se monta dentro del cliente
-  // para poder pasar como rightSlot los botones Sparkles/Refresh que dependen
-  // de su estado interno (autoMapLoading, isPending, runAutoMap, refresh).
+  // para poder pasar como rightSlot filtro / Sparkles / Refresh.
   return (
     <AlbaranesHistoricoClient
       initialItems={res.success ? res.items : []}
       initialHasMore={res.success ? res.hasMore : false}
-      defaultDateFrom={res.success ? res.weekStart : defaultRange.dateFrom}
-      defaultDateTo={res.success ? res.weekEnd : defaultRange.dateTo}
       initialError={res.success ? null : res.message}
       isManager={isManager}
     />

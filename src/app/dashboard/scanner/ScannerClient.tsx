@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ChevronLeft, ChevronRight, Loader2, Truck, X } from 'lucide-react'
 import { assessScannerImageReadability } from '@/lib/scanner-image-quality'
 import { compressImageFileToDataUri } from '@/lib/scanner-image-compress'
@@ -33,14 +33,17 @@ export function ScannerClient({
   onInvoiceSaved,
   embedded = false,
   compactTrigger = false,
+  renderTrigger,
 }: {
   onSuccess?: () => void
   /** Se invoca tras guardar la cabecera del albarán (processScannerImage). */
   onInvoiceSaved?: (invoiceId: string) => void
   /** Modo embebido (p. ej. paso del modal de compra): sin márgenes extra. */
   embedded?: boolean
-  /** Botón «Escanear» más compacto (listado histórico). */
+  /** Botón «Escanear» compacto (listado histórico). */
   compactTrigger?: boolean
+  /** Coloca el disparador (p. ej. a la derecha del buscador). El borrador sigue debajo. */
+  renderTrigger?: (trigger: ReactNode) => ReactNode
 }) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [preview, setPreview] = useState<string | null>(null)
@@ -302,13 +305,29 @@ export function ScannerClient({
     fileInputRef.current?.click()
   }
 
+  const hugTrigger = compactTrigger || Boolean(renderTrigger)
+  const triggerButton = !pendingBatch ? (
+    <Button
+      type="button"
+      variant="primary"
+      instance="scanner-escanear"
+      onClick={openModal}
+      disabled={isProcessing}
+      loading={isProcessing}
+      layout={hugTrigger ? 'hug' : 'fill'}
+      className={hugTrigger ? 'shrink-0' : 'w-full'}
+    >
+      {hugTrigger ? 'Escanear' : 'Escanear albarán'}
+    </Button>
+  ) : null
+
   return (
     <div
       className={cn(
         'flex flex-col',
-        embedded || compactTrigger ? 'gap-2' : 'gap-4',
-        compactTrigger && !pendingBatch && 'shrink-0',
-        compactTrigger && pendingBatch && 'w-full min-w-full basis-full'
+        embedded || hugTrigger ? 'gap-2' : 'gap-4',
+        hugTrigger && !pendingBatch && 'shrink-0',
+        hugTrigger && pendingBatch && 'w-full min-w-0'
       )}
     >
       <input
@@ -320,23 +339,10 @@ export function ScannerClient({
         className="hidden"
       />
 
-      <div className={cn('flex flex-col', compactTrigger ? 'gap-2' : 'gap-3')}>
-        {!pendingBatch ? (
-          <button
-            type="button"
-            onClick={openModal}
-            disabled={isProcessing}
-            className={cn(
-              'text-white hover:bg-[#2A4C58] active:scale-[0.99] transition-all',
-              'bg-[#36606F] disabled:opacity-60 disabled:pointer-events-none shrink-0',
-              compactTrigger
-                ? 'inline-flex min-h-12 w-full items-center justify-center rounded-xl px-4 py-0 text-xs font-black uppercase tracking-widest leading-none'
-                : 'min-h-12 w-full rounded-xl px-4 font-black uppercase tracking-widest'
-            )}
-          >
-            {compactTrigger ? 'Escanear' : 'Escanear albarán'}
-          </button>
-        ) : (
+      {renderTrigger ? renderTrigger(triggerButton) : triggerButton}
+
+      <div className={cn('flex flex-col', hugTrigger ? 'gap-2' : 'gap-3')}>
+        {pendingBatch ? (
           <div
             className={cn(
               'flex flex-col rounded-xl bg-white p-2 md:p-3',
@@ -376,7 +382,9 @@ export function ScannerClient({
                 onScroll={onCarouselScroll}
                 className={cn(
                   'touch-pan-x flex w-full snap-x snap-mandatory overflow-x-auto overflow-y-visible bg-transparent',
-                  'min-h-[10rem] h-[calc(100svh-26rem)] md:h-[min(56vh,calc(100vh-16rem))]',
+                  hugTrigger
+                    ? 'min-h-[10rem] h-[min(36dvh,18rem)] md:h-[min(40vh,22rem)]'
+                    : 'min-h-[10rem] h-[calc(100svh-26rem)] md:h-[min(56vh,calc(100vh-16rem))]',
                   '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
                 )}
               >
@@ -392,7 +400,12 @@ export function ScannerClient({
                         <img
                           src={it.dataUri}
                           alt=""
-                          className="block h-auto max-h-[min(48dvh,calc(100svh-30rem))] w-auto max-w-full rounded-xl object-contain md:max-h-[min(52vh,calc(100vh-18rem))]"
+                          className={cn(
+                            'block h-auto w-auto max-w-full rounded-xl object-contain',
+                            hugTrigger
+                              ? 'max-h-[min(28dvh,14rem)] md:max-h-[min(32vh,18rem)]'
+                              : 'max-h-[min(48dvh,calc(100svh-30rem))] md:max-h-[min(52vh,calc(100vh-18rem))]'
+                          )}
                         />
                         <button
                           type="button"
@@ -463,7 +476,7 @@ export function ScannerClient({
             </Button>
             </div>
           </div>
-        )}
+        ) : null}
 
         {preview ? (
           <div className="w-full relative rounded-2xl overflow-hidden border border-zinc-100 bg-white">

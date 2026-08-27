@@ -7,7 +7,6 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
-  Filter,
   Loader2,
   MinusCircle,
   RefreshCw,
@@ -35,6 +34,7 @@ import {
   isInvoiceLineResolved,
 } from '@/lib/albaranes-line-status'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
+import { PeriodFilterButton } from '@/components/time/PeriodNav'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
@@ -107,15 +107,11 @@ function isImagePath(filePath: string | null) {
 export default function AlbaranesHistoricoClient({
   initialItems,
   initialHasMore,
-  defaultDateFrom,
-  defaultDateTo,
   initialError,
   isManager,
 }: {
   initialItems: PurchaseInvoiceListItem[]
   initialHasMore: boolean
-  defaultDateFrom: string
-  defaultDateTo: string
   initialError: string | null
   isManager: boolean
 }) {
@@ -127,8 +123,8 @@ export default function AlbaranesHistoricoClient({
   const [items, setItems] = useState<PurchaseInvoiceListItem[]>(initialItems)
   const [hasMore, setHasMore] = useState(initialHasMore)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [activeDateFrom, setActiveDateFrom] = useState(defaultDateFrom)
-  const [activeDateTo, setActiveDateTo] = useState(defaultDateTo)
+  const [activeDateFrom, setActiveDateFrom] = useState('')
+  const [activeDateTo, setActiveDateTo] = useState('')
   const [activeSupplierId, setActiveSupplierId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(initialError)
   const [query, setQuery] = useState('')
@@ -314,14 +310,27 @@ export default function AlbaranesHistoricoClient({
   }, [items, query])
 
   function resolveDateFilters(from: string, to: string) {
-    const hasCustomFrom = from.trim().length > 0
-    const hasCustomTo = to.trim().length > 0
-    if (!hasCustomFrom && !hasCustomTo) {
-      return { dateFrom: defaultDateFrom, dateTo: defaultDateTo }
-    }
+    const dateFrom = from.trim()
+    const dateTo = to.trim()
     return {
-      dateFrom: hasCustomFrom ? from.trim() : null,
-      dateTo: hasCustomTo ? to.trim() : null,
+      dateFrom: dateFrom.length > 0 ? dateFrom : null,
+      dateTo: dateTo.length > 0 ? dateTo : null,
+    }
+  }
+
+  async function openFilterModal() {
+    setFilterFrom(activeDateFrom)
+    setFilterTo(activeDateTo)
+    setFilterSupplierId(activeSupplierId != null ? String(activeSupplierId) : '')
+    setFilterOpen(true)
+    if (filterSuppliers.length === 0 && !filterSuppliersLoading) {
+      setFilterSuppliersLoading(true)
+      try {
+        const res = await listSuppliersForFilterAction()
+        if (res.success) setFilterSuppliers(res.suppliers)
+      } finally {
+        setFilterSuppliersLoading(false)
+      }
     }
   }
 
@@ -1214,9 +1223,10 @@ export default function AlbaranesHistoricoClient({
 
   // Acciones de la cabecera "Albaranes" (rightSlot del layout): visibles a
   // TODOS los authenticated. Sin contorno ni relleno; sobre fondo petróleo
-  // → iconos blancos.
+  // → iconos blancos. Filtro a la izquierda, mismo icono que el resto (P7).
   const headerActions = (
     <>
+      <PeriodFilterButton instance="albaranes-filter-open" onClick={() => void openFilterModal()} />
       <Button
         type="button"
         variant="tertiary"
@@ -1252,41 +1262,26 @@ export default function AlbaranesHistoricoClient({
       fillViewport
       template="list"
       contentClassName="flex flex-col min-h-0 overflow-hidden"
-      footerSlot={<ScannerClient onSuccess={refresh} compactTrigger />}
     >
     <div className="flex min-h-0 flex-1 flex-col gap-2">
-      {/* Buscador fijo: no scrollea con la lista */}
-      <div className="flex w-full shrink-0 items-center gap-2">
-        <div className="min-w-0 flex-1">
-          <SearchField
-            instance="albaranes-search"
-            placeholder="Buscar..."
-            value={query}
-            onChange={setQuery}
-            ariaLabel="Buscar albaranes"
-          />
-        </div>
-        <Button
-          type="button"
-          variant="tertiary"
-          instance="albaranes-filter-open"
-          onClick={async () => {
-            setFilterOpen(true)
-            if (filterSuppliers.length === 0 && !filterSuppliersLoading) {
-              setFilterSuppliersLoading(true)
-              try {
-                const res = await listSuppliersForFilterAction()
-                if (res.success) setFilterSuppliers(res.suppliers)
-              } finally {
-                setFilterSuppliersLoading(false)
-              }
-            }
-          }}
-          aria-label="Filtrar"
-          className="shrink-0"
-          icon={<Filter className="h-3 w-3" />}
-        />
-      </div>
+      <ScannerClient
+        onSuccess={refresh}
+        compactTrigger
+        renderTrigger={(trigger) => (
+          <div className="flex w-full shrink-0 items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <SearchField
+                instance="albaranes-search"
+                placeholder="Buscar..."
+                value={query}
+                onChange={setQuery}
+                ariaLabel="Buscar albaranes"
+              />
+            </div>
+            {trigger}
+          </div>
+        )}
+      />
 
       {/* Banners fijos bajo el buscador (no scrollean con la lista). */}
       {autoMapError ? (
@@ -1466,24 +1461,23 @@ export default function AlbaranesHistoricoClient({
                     </button>
                   )
                 })}
-                {hasMore ? (
-                  <div className="px-2 py-3">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      instance="albaranes-load-more"
-                      onClick={loadMore}
-                      disabled={isLoadingMore || isPending}
-                      loading={isLoadingMore}
-                      loadingLabel="Cargando"
-                      className="w-full min-h-12"
-                    >
-                      VER MÁS
-                    </Button>
-                  </div>
-                ) : null}
               </div>
             )}
+            {hasMore ? (
+              <div className="flex justify-center px-2 py-3">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  instance="albaranes-load-more"
+                  onClick={loadMore}
+                  disabled={isLoadingMore || isPending}
+                  loading={isLoadingMore}
+                  loadingLabel="Cargando"
+                >
+                  Ver más
+                </Button>
+              </div>
+            ) : null}
           </div>
       </div>
 
@@ -2202,7 +2196,7 @@ export default function AlbaranesHistoricoClient({
       <Modal
         open={filterOpen}
         onClose={() => setFilterOpen(false)}
-        variant="standard"
+        variant="compact"
         layer="base"
         instance="albaranes-filter"
         usageId="albaranes-filter"
@@ -2251,24 +2245,22 @@ export default function AlbaranesHistoricoClient({
         }
       >
         <div className="space-y-3 min-w-0 max-w-full">
-          <div className="grid grid-cols-2 gap-2">
-            <Field instance="albaranes-filter-from" label="Desde" htmlFor="albaranes-filter-from">
-              <input
-                id="albaranes-filter-from"
-                type="date"
-                value={filterFrom}
-                onChange={(e) => setFilterFrom(e.target.value)}
-              />
-            </Field>
-            <Field instance="albaranes-filter-to" label="Hasta" htmlFor="albaranes-filter-to">
-              <input
-                id="albaranes-filter-to"
-                type="date"
-                value={filterTo}
-                onChange={(e) => setFilterTo(e.target.value)}
-              />
-            </Field>
-          </div>
+          <Field instance="albaranes-filter-from" label="Desde" htmlFor="albaranes-filter-from">
+            <input
+              id="albaranes-filter-from"
+              type="date"
+              value={filterFrom}
+              onChange={(e) => setFilterFrom(e.target.value)}
+            />
+          </Field>
+          <Field instance="albaranes-filter-to" label="Hasta" htmlFor="albaranes-filter-to">
+            <input
+              id="albaranes-filter-to"
+              type="date"
+              value={filterTo}
+              onChange={(e) => setFilterTo(e.target.value)}
+            />
+          </Field>
           <Field instance="albaranes-filter-supplier" label="Proveedor" htmlFor="albaranes-filter-supplier">
             <select
               id="albaranes-filter-supplier"

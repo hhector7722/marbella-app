@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-27
 
+- **Albaranes: el filtro va en la cabecera y ESCANEAR, junto al buscador.** El panel de filtrar es compacto y muestra las fechas que realmente se aplican. La lista ya no se corta en silencio a 45 días: al final, Ver más carga 20 albaranes más, del más reciente al más antiguo.
+
 - **Una receta abre la misma ficha desde Staff y desde Admin.** Ya no hay un modal distinto para personal: pulsar una receta entra en la ficha. La categoría flota como CAT; las flechas son el botón de icono; borrar pide el mismo panel de confirmación.
 
 - **La ficha de un ingrediente usa los mismos campos que el resto.** Nombre, categoría, merma, unidades, stock y proveedores entran por el campo de sistema; ya no se desbordan en una sola fila. Borrar pide confirmación en el mismo panel que un proveedor. Las flechas anterior/siguiente son el botón de icono, no un círculo suelto.
