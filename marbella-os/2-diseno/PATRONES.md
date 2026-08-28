@@ -73,7 +73,7 @@ Patrón de navegación temporal para todo lo que se organiza por fechas: horario
 - En móvil se navega también por gesto lateral, con la navegación visible además del gesto.
 - El día se construye en tiempo local del negocio. Un desplazamiento de zona horaria en este patrón produce un error de un día completo en toda la vista.
 - Pulsar un día abre P4.
-- **Un solo cromo.** Labor, Reservas, Horario, Actividades, Consumo, Cierres y Asistencia muestran el mismo tipo de calendario. Cambia el contenido de la celda, no la rejilla. El cromo (franja, tarjeta, cabecera de días) es el de Cierres. Asistencia de una persona añade un pie semanal (P6). Horas extras no es P3: es mini-calendario de días + filas de semana. El selector de un día (ventas, filtro de periodo, editor de horario) es MiniMonthCalendar, no P3.
+- **Un solo cromo.** Labor, Reservas, Horario, Actividades, Consumo, Cierres y Asistencia muestran el mismo tipo de calendario. Cambia el contenido de la celda, no la rejilla. El cromo (franja, tarjeta, cabecera de días) es el de Cierres. Asistencia de una persona añade un pie semanal (P6). Horas extras no es P3: es mini-calendario de días + filas de semana. En el mosaico Admin cada fila es Semana n e importe; las fechas las dice el mini-calendario, no un rango escrito. El selector de un día (ventas, filtro de periodo, editor de horario) es MiniMonthCalendar, no P3.
 
 ---
 

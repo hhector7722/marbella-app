@@ -74,7 +74,7 @@ const STAFF_INFO_MENU = [
 const STAFF_WEB_HREF = 'https://marbella-web.vercel.app';
 
 const STAFF_CLOCK_ACTION =
-    'flex h-12 items-center justify-center gap-2 rounded-xl border border-white shadow-[0_0_0_1px_#18181b] bg-gradient-to-b text-white transition-[filter] duration-75 active:brightness-[0.99] disabled:opacity-70';
+    'flex h-12 items-center justify-center gap-2 rounded-xl border border-white shadow-[0_0_0_1px_rgba(24,24,27,0.14)] bg-gradient-to-b text-white transition-[filter] duration-75 active:brightness-[0.99] disabled:opacity-70';
 
 type WorkStatus = 'idle' | 'working' | 'finished';
 

@@ -18,6 +18,7 @@ import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { DenominationCountGrid } from '@/components/cash/DenominationCountGrid';
 import { CashCountFooter } from '@/components/cash/CashCountFooter';
+import { randomId } from '@/lib/random-id';
 import {
     ClosingStepRow,
     ClosingSummaryRow,
@@ -410,7 +411,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
             const { data: { user } } = await supabase.auth.getUser();
             const chosenDate = parseDateTimeLocal(selectedDateTime);
             const closingDateStr = format(chosenDate, "yyyy-MM-dd");
-            const closingBatchId = crypto.randomUUID();
+            const closingBatchId = randomId();
 
             const uploadOne = async (file: File, kind: 'dataphone' | 'bdp-ticket') => {
                 const formData = new FormData();

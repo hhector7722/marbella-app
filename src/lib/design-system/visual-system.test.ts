@@ -77,6 +77,75 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             /\[data-component='PageScreen'\] \[data-element='body'\] \{[\s\S]*?padding-top:\s*var\(--espacio-2\)/,
             'PageScreen deja un aire ligero entre la cabecera y el contenido'
         );
+        {
+            const titleRule = css.match(
+                /\[data-component='PageScreen'\] \[data-element='title'\],[\s\S]*?\{([^}]+)\}/
+            );
+            assert.ok(titleRule, 'falta la regla del título de PageScreen');
+            assert.doesNotMatch(
+                titleRule[1],
+                /text-overflow:\s*ellipsis/,
+                'el título de cabecera no se abrevia con puntos'
+            );
+            assert.match(titleRule[1], /text-transform:\s*uppercase/, 'el título de pantalla lleva mayúsculas');
+        }
+        assert.match(
+            css,
+            /\[data-component='PageScreen'\] \[data-element='title-block'\] \[data-element='title'\] \{[\s\S]*?font-size:\s*clamp\(/,
+            'el título de cabecera se reduce para caber'
+        );
+        {
+            const greetingRule = css.match(
+                /\.marbella-fixed-topbar \[data-element='greeting'\] \{([^}]+)\}/
+            );
+            assert.ok(greetingRule, 'falta la regla del saludo de la barra de la app');
+            assert.match(greetingRule[1], /text-transform:\s*none/, 'el saludo no va en mayúsculas');
+            assert.doesNotMatch(
+                greetingRule[1],
+                /text-overflow:\s*ellipsis/,
+                'el saludo no se abrevia con puntos'
+            );
+        }
+        assert.match(
+            css,
+            /\.marbella-fixed-topbar \[data-element='greeting-block'\] \[data-element='greeting'\] \{[\s\S]*?font-size:\s*clamp\(/,
+            'el saludo de la barra se reduce para caber'
+        );
+        assert.match(
+            css,
+            /\.marbella-fixed-topbar \{[\s\S]*?--app-navbar-height:\s*var\(--tactil-minimo\)/,
+            'la barra visible mide el táctil mínimo'
+        );
+        assert.match(
+            css,
+            /\.h-header-safe \{[\s\S]*?var\(--tactil-minimo\)/,
+            'el alto visible de la barra usa táctil mínimo'
+        );
+        assert.match(
+            css,
+            /\.pt-header-safe \{[\s\S]*?var\(--estructura-cabecera\)/,
+            'el contenido reserva el hueco de 56 px'
+        );
+        {
+            const navbar = readFileSync(join(SRC_ROOT, 'components/Navbar.tsx'), 'utf8');
+            assert.match(navbar, /data-element="greeting"/, 'el saludo de la barra tiene identidad');
+            assert.match(navbar, /data-element="logo"/, 'el logo de la barra tiene identidad');
+            assert.doesNotMatch(
+                navbar,
+                /Hola,[\s\S]{0,80}uppercase/,
+                'el saludo de la barra no se pinta en mayúsculas'
+            );
+        }
+        assert.match(
+            css,
+            /\[data-component='Field'\] \[data-element='label'\] \{[\s\S]*?text-transform:\s*none/,
+            'las etiquetas de dato no van en mayúsculas'
+        );
+        assert.match(
+            css,
+            /\[data-component='KpiStat'\] \[data-element='label'\] \{[\s\S]*?text-transform:\s*none/,
+            'la etiqueta de KPI no va en mayúsculas'
+        );
         assert.match(css, /\[data-component='SearchField'\]/);
         assert.match(css, /\[data-component='EmptyState'\]/);
         assert.match(
@@ -338,7 +407,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.doesNotMatch(staff, /No has fichado/);
         assert.match(staff, /flex-\[2\]/, 'el cronómetro ocupa dos tercios en turno');
         assert.match(staff, /border-white/, 'Entrada y Salida se recortan del petróleo');
-        assert.match(staff, /0_0_0_1px_#18181b/, 'un negro fino por fuera del blanco');
+        assert.match(staff, /0_0_0_1px_rgba\(24,24,27,0\.14\)/, 'un negro suave por fuera del blanco');
         assert.match(staff, /from-emerald-500/, 'Entrada tiene volumen en el verde');
         assert.match(staff, /from-rose-500/, 'Salida tiene volumen en el rosa');
         assert.match(staff, /formatStaffElapsedHms/, 'el turno cerrado enseña el tiempo real');
@@ -711,6 +780,16 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'el importe de la semana queda entero y a la derecha'
         );
         assert.doesNotMatch(admin, /w-9 md:w-11/, 'el importe no se recorta en un hueco fijo');
+        {
+            const extrasStart = admin.indexOf('dashboard-horas-extras');
+            const extrasEnd = admin.indexOf('dashboardChangeBoxes');
+            const extrasMosaic = admin.slice(extrasStart, extrasEnd > extrasStart ? extrasEnd : extrasStart + 8000);
+            assert.doesNotMatch(
+                extrasMosaic,
+                /format\(new Date\(week\.weekId\), 'd MMM'/,
+                'el mosaico no escribe el rango de fechas; ya está el mini-calendario'
+            );
+        }
     });
 
     it('el calendario de elegir un día usa MiniMonthCalendar', () => {

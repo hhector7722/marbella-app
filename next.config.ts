@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Teléfono en la LAN: sin esto, el login carga y luego Next bloquea el paso a la app.
+  allowedDevOrigins: ["192.168.1.247"],
   // Fotos de albarán pueden superar el límite por defecto (1 MB) de Server Actions
   experimental: {
     optimizePackageImports: ["lucide-react", "date-fns"],

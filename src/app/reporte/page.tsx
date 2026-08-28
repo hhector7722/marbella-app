@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/modal';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import { randomId } from '@/lib/random-id';
 import './premium.css';
 
 interface CategoryEntry {
@@ -210,7 +211,7 @@ export default function ReportePage() {
     const { saturday, sunday } = getNextWeekend();
     setActivities([
       {
-        id: crypto.randomUUID(),
+        id: randomId(),
         data: saturday,
         activitat: '',
         hora_convocatoria: '',
@@ -221,7 +222,7 @@ export default function ReportePage() {
         freeTextMode: false,
       },
       {
-        id: crypto.randomUUID(),
+        id: randomId(),
         data: sunday,
         activitat: '',
         hora_convocatoria: '',
@@ -348,7 +349,7 @@ export default function ReportePage() {
       return [
         ...prev,
         {
-          id: crypto.randomUUID(),
+          id: randomId(),
           data: firstAct?.data || '',
           activitat: '',
           hora_convocatoria: '',

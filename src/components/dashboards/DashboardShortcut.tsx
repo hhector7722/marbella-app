@@ -155,7 +155,7 @@ export default function DashboardShortcut({
                     data-element="text"
                     data-studio-target="text"
                     className={cn(
-                        'text-[9px] md:text-[8px] font-black text-ds-texto-fuerte uppercase tracking-wider text-center line-clamp-2 leading-tight px-0.5 shrink-0',
+                        'text-[9px] md:text-[8px] font-black text-ds-texto-fuerte text-center line-clamp-2 leading-tight px-0.5 shrink-0',
                         labelClassName
                     )}
                 >

@@ -81,31 +81,34 @@ export default function Navbar() {
                     'marbella-fixed-topbar bg-transparent text-white pt-safe fixed top-0 right-0 left-0 z-[100] border-b border-white/15 backdrop-blur-md shadow-sm h-header-safe flex items-center transition-all duration-300 isolate print:hidden'
                 )}
             >
-                <div className="max-w-7xl mx-auto flex items-center justify-between px-1 w-full">
+                <div className="max-w-7xl mx-auto flex items-center justify-between px-1 w-full min-w-0">
 
-                    <div className="flex items-center gap-1">
+                    <div className="flex min-w-0 flex-1 items-center gap-1">
                         {!hideNavbarBack && (
                             <button
                                 onClick={() => {
                                     if (!navigateInsideSandbox(homePath)) router.push(homePath);
                                 }}
                                 className={cn(
-                                    'h-12 w-12 shrink-0 grid place-items-center',
+                                    'shrink-0 grid place-items-center',
                                     'border-0 bg-transparent shadow-none rounded-none',
                                     'active:opacity-70 transition-opacity'
                                 )}
+                                data-element="chrome"
                                 aria-label="Ir a inicio"
                             >
                                 <ChevronLeft size={22} strokeWidth={2.5} />
                             </button>
                         )}
-                        <div className="flex items-center gap-2">
-                            <div className="relative w-8 h-8 md:w-9 md:h-9 shrink-0">
+                        <div className="flex min-w-0 flex-1 items-center gap-2">
+                            <div data-element="logo" className="relative shrink-0">
                                 <Image src="/icons/logo-white.png" alt="Logo" fill className="object-contain" priority />
                             </div>
-                            <span className="text-white text-[8px] md:text-[10px] font-black leading-none uppercase tracking-wider whitespace-nowrap">
-                                {userData ? `Hola, ${userData.name}` : ''}
-                            </span>
+                            <div data-element="greeting-block">
+                                <span data-element="greeting">
+                                    {userData ? `Hola, ${userData.name}` : ''}
+                                </span>
+                            </div>
                             {isMasterDashboardUser(userData?.email) && (
                                 <>
                                     <button
@@ -114,7 +117,8 @@ export default function Navbar() {
                                         aria-haspopup="dialog"
                                         aria-expanded={pgMenuOpen}
                                         onClick={() => setPgMenuOpen(true)}
-                                        className="ml-2 relative flex h-12 min-h-12 min-w-12 shrink-0 items-center justify-center border-0 bg-transparent p-0 shadow-none"
+                                        className="ml-2 flex shrink-0 items-center justify-center border-0 bg-transparent p-0 shadow-none"
+                                        data-element="chrome"
                                     >
                                         <span className="flex items-center px-2 h-5 bg-white/10 hover:bg-white/20 rounded-md transition-all border border-white/20">
                                             <span className="text-[7px] font-black tracking-[0.12em] text-white/70">
@@ -140,7 +144,7 @@ export default function Navbar() {
                                                 className={PG_TOOL_LINK_CLASS}
                                                 onClick={() => setPgMenuOpen(false)}
                                             >
-                                                <span className="font-black text-sm uppercase tracking-wide">
+                                                <span className="font-black text-sm">
                                                     Playground
                                                 </span>
                                                 <span className="text-[12px] font-medium text-ds-texto-tenue">
@@ -152,7 +156,7 @@ export default function Navbar() {
                                                 className={PG_TOOL_LINK_CLASS}
                                                 onClick={() => setPgMenuOpen(false)}
                                             >
-                                                <span className="font-black text-sm uppercase tracking-wide">
+                                                <span className="font-black text-sm">
                                                     Design System
                                                 </span>
                                                 <span className="text-[12px] font-medium text-ds-texto-tenue">
@@ -166,7 +170,7 @@ export default function Navbar() {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 md:gap-2">
+                    <div className="flex shrink-0 items-center gap-2 md:gap-2">
                         <div className="flex items-center -space-x-2">
                             <ReservationsBell />
                             <NotificationsBell />
@@ -176,7 +180,9 @@ export default function Navbar() {
                         <button
                             id="ia-button"
                             onClick={toggleChat}
-                            className="flex items-center px-2.5 h-8 bg-white/10 hover:bg-white/20 rounded-xl transition-all shadow-md border border-white/20 active:scale-95"
+                            className="flex items-center px-2.5 bg-white/10 hover:bg-white/20 rounded-xl transition-all shadow-md border border-white/20 active:scale-95"
+                            data-element="chrome"
+                            data-chrome="ia"
                         >
                             <span className="text-[9px] font-black tracking-[0.15em] text-white">IA</span>
                         </button>

@@ -32,6 +32,7 @@ import { SearchField } from '@/components/ui/SearchField'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { createClient } from '@/utils/supabase/client'
+import { randomId } from '@/lib/random-id'
 
 export type EncargoEditorMenuProduct = {
   product_id: string
@@ -79,7 +80,7 @@ const CART_MODAL_CLASS = cn(
 )
 
 function newLineKey() {
-  return crypto.randomUUID()
+  return randomId()
 }
 
 function displaySubcategoryLabel(parentName: string, childName: string): string {

@@ -14,6 +14,7 @@ import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { SearchField } from '@/components/ui/SearchField'
 import { CatalogGrid, CatalogTile } from '@/components/catalog/CatalogTile'
+import { randomId } from '@/lib/random-id'
 
 interface Supplier {
   id: number
@@ -24,8 +25,7 @@ interface Supplier {
 type PendingItem = { id: string; dataUri: string; filename: string }
 
 function newPendingId() {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+  return randomId()
 }
 
 export function ScannerClient({

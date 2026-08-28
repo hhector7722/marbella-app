@@ -309,6 +309,21 @@ describe('Button className no escapa del contrato visual', () => {
             css,
             /\[data-component='Button'\]::before \{[\s\S]*?border-radius:\s*var\(--espacio-2\)/
         );
+        assert.doesNotMatch(
+            css,
+            /\[data-component='Button'\]::before \{[\s\S]*?border-color:\s*#fff/,
+            'el relleno compacto no lleva doble aro blanco'
+        );
+        assert.match(
+            css,
+            /\[data-variant='secondary'\]::before \{[\s\S]*?box-shadow:\s*0 0 0 1px rgba\(24, 24, 27, 0\.35\)/,
+            'secundario lleva un hilo suave'
+        );
+        assert.match(
+            css,
+            /\[data-variant='tertiary'\]::before \{[\s\S]*?box-shadow:\s*0 0 0 1px rgba\(24, 24, 27, 0\.35\)/,
+            'terciario lleva un hilo suave'
+        );
         assert.equal(
             /\[data-component='Button'\][^{]*\{[^}]*border-radius:\s*var\(--radio-superficie\)/.test(css),
             false
@@ -323,7 +338,11 @@ describe('Button className no escapa del contrato visual', () => {
         );
         assert.match(css, /font-size:\s*12px/);
         assert.match(css, /font-weight:\s*800/);
-        assert.match(css, /text-transform:\s*uppercase/);
+        assert.match(
+            css,
+            /\[data-component='Button'\] \{[\s\S]*?text-transform:\s*none/,
+            'Button va en caja oración; las mayúsculas no son énfasis'
+        );
         assert.match(css, /--color-positivo:\s*#059669/i);
         assert.match(
             css,

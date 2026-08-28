@@ -13,6 +13,7 @@ import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { randomId } from '@/lib/random-id';
 import { DenominationCountGrid, DenominationStepper } from '@/components/cash/DenominationCountGrid';
 import { CashCountFooter } from '@/components/cash/CashCountFooter';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -342,7 +343,7 @@ export const CashChangeModal = ({
 
         try {
             const { data: { user } } = await supabase.auth.getUser();
-            const exchangeGroupId = crypto.randomUUID();
+            const exchangeGroupId = randomId();
             let legsSaved = 0;
 
             const insertExchange = async (fromBox: BoxOption, toBox: BoxOption, counts: Record<number, number>, directionLabel: string) => {

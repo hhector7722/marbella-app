@@ -250,7 +250,7 @@ function ModalPanelShell({
                                 <div
                                     data-element="subtitle"
                                     className={cn(
-                                        'min-w-0 flex-1 overflow-hidden truncate font-medium uppercase tracking-wide',
+                                        'min-w-0 flex-1 overflow-hidden truncate font-medium tracking-wide',
                                         'text-[clamp(0.4375rem,1.8vw,0.5625rem)]',
                                         petroleum ? 'text-white/70' : 'text-zinc-500'
                                     )}

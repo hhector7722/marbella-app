@@ -13,6 +13,7 @@ import { CashChangeModal, type BoxOption } from '@/components/CashChangeModal';
 import { CashDenominationForm, CASH_COUNT_FORM_ID } from '@/components/CashDenominationForm';
 import { Modal } from '@/components/ui/modal';
 import { CashCountFooter } from '@/components/cash/CashCountFooter';
+import { randomId } from '@/lib/random-id';
 import { CashCountDateButton, formatCashCountDateInput } from '@/components/cash/CashCountDateButton';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { updateProfile } from '@/app/actions/profile';
@@ -174,7 +175,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
         void fetchPendingReservationsCount(true);
 
         const channel = supabase
-            .channel(`master:reservations-pending:${crypto.randomUUID()}`)
+            .channel(`master:reservations-pending:${randomId()}`)
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'reservations' },

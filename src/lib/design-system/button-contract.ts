@@ -166,8 +166,8 @@ export const BUTTON_CONTRACT = {
     paddingInline: '4px',
     fontSize: '12px',
     fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: '0.1em',
+    textTransform: 'none',
+    letterSpacing: 'normal',
     iconSlot: 'start',
     /** Default de layout: hug. `fill` solo si el consumidor lo declara. */
     defaultLayout: 'hug',

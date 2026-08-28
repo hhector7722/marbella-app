@@ -38,6 +38,26 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-28
 
+- **Los botones de sistema dejan el doble aro.** Guardar y Eliminar se leen por el color. Cancelar y los menores, un hilo suave. El volumen y el pulso se quedan. Entrada y Salida del mosaico no cambian.
+
+- **Los botones de sistema se pulsan como Entrada y Salida.** Contorno blanco, hilo negro suave y un poco de volumen en el color. El relleno sigue compacto. Entrada y Salida del mosaico Staff no cambian de tamaño.
+
+- **La barra fija se queda a 48 px.** Ni los 56 de antes ni los 36; el hueco hasta el contenido son 8 px.
+
+- **La barra fija de la app baja a 36 px.** El hueco hasta el contenido sigue en 56 px: esos 20 px quedan vacíos. Logo e iconos se reducen; el toque sigue en 48 px.
+
+- **En Horas extras del mosaico, la fila ya no escribe el rango de fechas.** Quedan Semana n y el importe; las fechas las dice el mini-calendario.
+
+- **El saludo de la barra de la app se lee como una frase.** «Hola, …» ya no va en mayúsculas. El nombre se reduce para caber, sin puntos.
+
+- **El título de gestión se lee entero.** En la cabecera ya no se corta con puntos: se reduce para caber.
+
+- **Las mayúsculas quedan en las cabeceras.** Botones, «Ver más» y etiquetas de dato van en caja oración. Las siglas se mantienen.
+
+- **El negro de Entrada y Salida queda en un trazo suave.** Sigue por fuera del blanco, sin dibujar el botón.
+
+- **El mosaico Master deja de romperse en el teléfono en local.** En HTTP, el identificador de ventas ya no exige `crypto.randomUUID`.
+
 - **El negro fino de Entrada y Salida se ve.** Va pegado al blanco, 1 px. Al pulsar, el color casi no cambia.
 
 - **Al pulsar Entrada o Salida, el relleno apenas se oscurece.** Lo justo para notarlo al tocar, no a la vista.

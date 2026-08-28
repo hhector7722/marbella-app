@@ -556,7 +556,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                         Movimientos
                                         <ChevronDown className={cn("w-3 h-3 transition-transform duration-200", isMovementsExpanded && "rotate-180")} />
                                     </button>
-                                    <Link href="/dashboard/movements" className="text-[7px] md:text-[8px] font-black text-[#5B8FB9] bg-zinc-50 px-2 py-1 rounded-full hover:bg-gray-100 transition-all flex items-center gap-0.5 uppercase">
+                                    <Link href="/dashboard/movements" className="text-[7px] md:text-[8px] font-black text-[#5B8FB9] bg-zinc-50 px-2 py-1 rounded-full hover:bg-gray-100 transition-all flex items-center gap-0.5">
                                         Ver más <ArrowRight className="w-2.5 h-2.5" />
                                     </Link>
                                 </div>
@@ -628,7 +628,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                         </div>
                         <Link
                             href="/dashboard/overtime"
-                            className="shrink-0 text-[7px] font-black uppercase tracking-widest text-white/70 hover:text-white"
+                            className="shrink-0 text-[7px] font-black text-white/70 hover:text-white"
                         >
                             Ver más
                         </Link>
@@ -714,9 +714,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                                 )}
                                                             </div>
                                                             <span className="text-[7px] md:text-[8px] font-black text-zinc-500 uppercase shrink-0">Semana {getISOWeek(new Date(week.weekId))}</span>
-                                                            <span className="min-w-0 truncate text-[7px] md:text-[8px] font-bold text-zinc-500 uppercase">
-                                                                {format(new Date(week.weekId), 'd MMM', { locale: es })} - {format(addDays(new Date(week.weekId), 6), 'd MMM', { locale: es })}
-                                                            </span>
                                                         </div>
                                                         <span className="ml-auto shrink-0 text-right tabular-nums whitespace-nowrap text-[9px] md:text-[10px] font-black text-zinc-900">
                                                             {weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}

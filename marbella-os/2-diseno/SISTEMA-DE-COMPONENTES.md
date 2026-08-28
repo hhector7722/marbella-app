@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-26
+revisado: 2026-08-28
 caducidad: 6 meses
 supersede: —
 ---
@@ -52,9 +52,9 @@ Button
 | `tertiary` | `color.marca` | Menor jerarquía. El petróleo no pinta `primary` |
 | `destructive` | `color.negativo` | Eliminar, destruir, acción irreversible |
 
-Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`** (ancho = contenido + padding horizontal). `fill` / ancho completo solo cuando el consumidor lo declara. El host táctil mide `tactil.minimo` (48 px): área de toque transparente; no obliga al fondo visual. El relleno visual abraza el texto o el icono: 12 px de tipo + `espacio.1` arriba y abajo = 20 px. Padding horizontal compacto: `espacio.1`. Radio contractual del Button: 8 px (`espacio.2`), estrictamente menor que la mitad del alto visual (10 px) para dejar tramo recto, no píldora. No usa `radio.superficie` (16 px), que permanece en Modal. Icon-only conserva toque 48×48; el relleno visual abraza el icono. El Footer de Modal usa Button de texto, sin iconos, hug.
+Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`** (ancho = contenido + padding horizontal). `fill` / ancho completo solo cuando el consumidor lo declara. El host táctil mide `tactil.minimo` (48 px): área de toque transparente; no obliga al fondo visual. El relleno visual abraza el texto o el icono: 12 px de tipo + `espacio.1` arriba y abajo = 20 px. Padding horizontal compacto: `espacio.1`. Radio contractual del Button: 8 px (`espacio.2`), estrictamente menor que la mitad del alto visual (10 px) para dejar tramo recto, no píldora. No usa `radio.superficie` (16 px), que permanece en Modal. Icon-only conserva toque 48×48; el relleno visual abraza el icono. El Footer de Modal usa Button de texto, sin iconos, hug. `primary` y `destructive` se reconocen por el color, sin doble aro. `secondary` y `tertiary` llevan un hilo negro suave. El relleno tiene un volumen apenas perceptible; al pulsar, se oscurece lo justo. Entrada y Salida del mosaico Staff no son este Button.
 
-**Estados**: reposo, hover (sin scale-up), pulsado (`scale(0.95)`), foco visible (anillo de marca), en curso (equivale a deshabilitado + spinner a la izquierda), deshabilitado (opacity 50). El estado visual de error no se implementa en v1: el error vive en el campo o el aviso.
+**Estados**: reposo, hover (sin scale-up), pulsado (`scale(0.95)` y un oscurecido apenas perceptible del relleno), foco visible (anillo de marca), en curso (equivale a deshabilitado + spinner a la izquierda), deshabilitado (opacity 50). El estado visual de error no se implementa en v1: el error vive en el campo o el aviso.
 
 **Identidad**: `data-component="Button"`, `data-variant`, `data-instance` (id de negocio). El aspecto lo bloquea CSS por atributo; `className` solo admite composición externa (`flex-1`, `shrink-0`, `self-*`, posicionamiento).
 
@@ -70,6 +70,7 @@ Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`
 - El Footer de Modal usa Button con texto, sin iconos, hug. Icon-only sigue permitido fuera de ese pie.
 - El radio contractual es 8 px (`espacio.2`). No píldora: el radio es menor que la mitad del alto visual. Distinto de `radio.superficie` del Modal. El consumidor no puede sobrescribirlo.
 - `primary` pinta con `color.positivo`. El petróleo no es el fill de Guardar / Confirmar / Crear. No se inventa variante `confirmar` ni color local en el consumidor.
+- La etiqueta va en caja oración. Las mayúsculas no son énfasis de Button; solo van en cabeceras ([LENGUAJE-VISUAL](LENGUAJE-VISUAL.md), [CONTENIDO-Y-TONO](CONTENIDO-Y-TONO.md)).
 
 **Código**: `src/components/ui/button.tsx`, `src/lib/design-system/button-contract.ts`.
 
@@ -161,7 +162,7 @@ host (`<li>`)
 **Contrato**:
 - Semántica de **acción** en `open` (`<button type="button">`), no de navegación fingida ni de Button de sistema.
 - `instance` obligatorio (`data-instance`). Identidad: `data-component="DocumentListRow"`.
-- Título: `tipo.minimo` (11 px), mayúsculas, `color.texto.fuerte`. Subtítulo: metadato 10 px con `color.texto.tenue` (densidad de esta familia; por debajo de `tipo.minimo` solo aquí).
+- Título: `tipo.minimo` (11 px), caja oración, `color.texto.fuerte`. Subtítulo: metadato 10 px con `color.texto.tenue` (densidad de esta familia; por debajo de `tipo.minimo` solo aquí).
 - Alto mínimo de fila 56 px (≥ `tactil.minimo`). Radio `radio.control`. Espaciado `espacio.1/3/4`.
 - `trailing` no conoce negocio: el consumidor pasa chrome (p. ej. compartir) y/o `Button` icon-only (eliminar).
 - No hay `className` de estilo de fila: el aspecto lo fija CSS por `data-component`.
@@ -187,7 +188,7 @@ host (role=radiogroup)
 - Identidad: `data-component="PetroleumSegmented"`, `data-instance`, `data-density`.
 - Selected: fondo `color.marca` + `color.texto.invertido`. Reposo: `color.superficie` + texto marca. Hover reposo: marca al 5%.
 - Radio del host: `espacio.2` (8 px; el shell legacy usaba `rounded-lg`, no `radio.control`).
-- Tipografía de opción: 10 px, `font-black`, uppercase (Ventas abandona el 8 px ad hoc al migrar a compact canónico).
+- Tipografía de opción: 10 px, `font-black`, caja oración (Ventas abandona el 8 px ad hoc al migrar a compact canónico).
 - Semántica: selección exclusiva vía `value` / `onChange`. Si el consumidor navega (p. ej. Ventas → sala), lo hace en el callback; el componente no conoce el router.
 - No es Button, Tab, Chip ni el segmented de track zinc (`bg-zinc-100`).
 - Sin `className` de shell: geometría solo por CSS.
@@ -285,6 +286,19 @@ Piezas transversales con comportamiento propio y contrato estricto. **Estas sí 
 
 **Estado**: existe. Migrados: Labor, Albaranes, Reservas, Propinas, Carta, inventario, Recetas, Ingredientes, Ventas, Tesorería, Asistencia, Perfil, Insights, Precios desde albarán, catálogo de actividades e Importación. T1 (dashboard mosaico) no usa PageScreen: es otra anatomía.
 
+### Barra superior de la aplicación (`Navbar`)
+
+**Propósito**: chrome fijo de la app (logo, saludo, campanas, IA). No es la cabecera de una pantalla.
+
+**Código**: `src/components/Navbar.tsx`.
+
+**Reglas**:
+- Alto visible: `tactil.minimo` (48 px + área segura). Logo e iconos a esa proporción.
+- Offset del contenido: `estructura.cabecera` (56 px + área segura). Los 8 px de diferencia son separación vacía (envolvente).
+- El saludo («Hola, …») va en caja oración, a `tipo.minimo`. No es cabecera: no lleva mayúsculas. El nombre se reduce para caber; no se abrevia con puntos.
+- Las siglas (IA, PG) se mantienen.
+- Chrome back ≠ Button. Táctil 48 px.
+
 ### Marco de calendario mensual (`MonthCalendarFrame`)
 
 **Propósito**: pintar el cromo P3 de Cierres (franja, tarjeta al 97 %, cabecera roja de días). El contenido de cada celda lo pone el dominio.
@@ -313,7 +327,7 @@ Piezas transversales con comportamiento propio y contrato estricto. **Estas sí 
 **Propósito**: identidad, notificaciones y acceso al perfil.
 
 **Reglas**:
-- Alto fijo más área segura superior.
+- Alto visible: `tactil.minimo` más área segura. El contenido reserva `estructura.cabecera`; la diferencia es hueco vacío.
 - Se atenúa con modal abierto.
 - Los avisadores de notificación muestran cantidad, no solo presencia.
 

@@ -354,9 +354,10 @@ export function ReservationsBell() {
           })
         }}
         className={cn(
-          'relative grid min-h-12 min-w-12 shrink-0 place-items-center text-white transition-transform active:scale-95',
+          'relative grid shrink-0 place-items-center text-white transition-transform active:scale-95',
           open && 'opacity-90'
         )}
+        data-element="chrome"
         aria-label={
           unreadCount > 0
             ? `Avisos de reservas, ${unreadCount} sin leer`

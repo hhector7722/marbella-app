@@ -166,7 +166,7 @@ Norma en [EXPERIENCIA §1](EXPERIENCIA.md#1-táctil).
 
 | Token | Valor | Papel | Estado |
 |---|---|---|---|
-| `estructura.cabecera` | 56 px + área segura superior | Alto de la barra superior fija | adoptado |
+| `estructura.cabecera` | 56 px + área segura superior | Hueco reservado desde el borde superior hasta el contenido. La barra visible mide `tactil.minimo` (48 px); la diferencia (8 px) es separación vacía | adoptado (`--estructura-cabecera`) |
 | `estructura.barra-inferior` | 80 px + área segura inferior | Alto reservado por la navegación inferior | adoptado |
 | `estructura.fin-de-lista` | 96 px + área segura | Hueco al final de listas táctiles | adoptado |
 | `estructura.fin-de-lista.tarjetas` | 240 px + área segura | Hueco al final de listas con barra de cantidad | adoptado |

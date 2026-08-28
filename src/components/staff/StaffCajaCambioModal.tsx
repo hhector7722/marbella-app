@@ -8,6 +8,7 @@ import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/Qui
 import { Modal } from '@/components/ui/modal';
 import { DenominationCountGrid } from '@/components/cash/DenominationCountGrid';
 import { CashCountFooter } from '@/components/cash/CashCountFooter';
+import { randomId } from '@/lib/random-id';
 
 const ALL_DENOMS = [...BILLS, ...COINS];
 
@@ -126,7 +127,7 @@ export function StaffCajaCambioModal({ isOpen, changeBox, onClose, onSuccess }: 
         setSaving(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
-            const exchangeGroupId = crypto.randomUUID();
+            const exchangeGroupId = randomId();
             const breakdownIn = buildBreakdown(step1Counts);
             const breakdownOut = buildBreakdown(step2Counts);
 

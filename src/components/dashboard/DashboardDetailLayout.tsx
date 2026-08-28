@@ -107,7 +107,7 @@ export function PageScreen({
                   {titleLeading}
                 </div>
               ) : null}
-              <div className="min-w-0">
+              <div data-element="title-block" className="min-w-0">
                 <h1 data-element="title">{title}</h1>
                 {subtitle ? <p data-element="subtitle">{subtitle}</p> : null}
               </div>

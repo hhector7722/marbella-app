@@ -18,6 +18,7 @@ import LiveClock from '@/components/ui/LiveClock';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { randomId } from '@/lib/random-id';
 import { MiniMonthCalendar } from '@/components/time/MiniMonthCalendar';
 import { Surface } from '@/components/ui/Surface';
 import { KpiStat } from '@/components/ui/KpiStat';
@@ -128,7 +129,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
         const todayStr = format(new Date(), 'yyyy-MM-dd');
         // Nombre único: reutilizar el mismo topic tras subscribe() (Strict Mode / remount)
         // lanza "cannot add postgres_changes callbacks ... after subscribe()".
-        const channelName = `realtime_tickets_dashboard:${crypto.randomUUID()}`;
+        const channelName = `realtime_tickets_dashboard:${randomId()}`;
         const channel = supabase
             .channel(channelName)
             .on(
