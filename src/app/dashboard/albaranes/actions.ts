@@ -7,8 +7,6 @@ import { convertToPurchaseUnitQuantity } from '@/lib/recipe-cost'
 import {
   INVOICE_LINE_STATUS_EXCLUDED,
   INVOICE_LINE_STATUS_EXPENSE_ONLY,
-  invoiceLineRequiresStock,
-  isInvoiceLineResolved,
 } from '@/lib/albaranes-line-status'
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
@@ -74,11 +72,6 @@ async function syncPurchaseInvoiceStatusRpc(
     if (/could not find the function|PGRST202|function .* does not exist|schema cache/i.test(m)) return
     console.error('sync_purchase_invoice_status:', m)
   }
-}
-
-function isMissingReferenceDocColumnError(message: string | undefined): boolean {
-  const m = String(message ?? '')
-  return m.includes('reference_doc') && m.includes('does not exist')
 }
 
 /** Si el diccionario tiene factor 1 por defecto pero el ingrediente es botella→L, usa 0,75 L/botella. */
@@ -225,7 +218,7 @@ const PURCHASE_INVOICE_LIST_SELECT = `
       suppliers(name,image_url)
     `
 
-function mapPurchaseInvoiceRows(data: unknown[]): Omit<PurchaseInvoiceListItem, 'is_fully_processed'>[] {
+function mapPurchaseInvoiceRows(data: unknown[]): PurchaseInvoiceListItem[] {
   return (data ?? []).map((r: any) => ({
     id: r.id,
     created_at: r.created_at,
@@ -240,6 +233,9 @@ function mapPurchaseInvoiceRows(data: unknown[]): Omit<PurchaseInvoiceListItem, 
     invoice_date: r.invoice_date ?? null,
     total_amount: r.total_amount ?? null,
     file_path: r.file_path ?? null,
+    // El tick de stock se resuelve al abrir el detalle, no en el listado:
+    // cruzar 200 albaranes con stock_movements colgaba el SSR y pintaba lista vacía.
+    is_fully_processed: false,
   }))
 }
 

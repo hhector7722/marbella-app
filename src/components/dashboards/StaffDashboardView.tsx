@@ -33,7 +33,7 @@ import { syncOvertimeCostAfterTimeLogChange } from '@/app/actions/persist-overti
 import { getEmployeeHistoryWeek, type HistoryWeekDto } from '@/app/actions/history-read';
 import { WeekCard } from '@/app/staff/history/WeekCard';
 import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
-import WorkTimer, { formatStaffWorkedHours } from '@/components/ui/WorkTimer';
+import WorkTimer, { StaffElapsedDigits, formatStaffElapsedHms } from '@/components/ui/WorkTimer';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
@@ -712,7 +712,7 @@ export default function StaffDashboardView() {
                                     type="button"
                                     onClick={() => setShowConsumptionModal(true)}
                                     disabled={actionLoading}
-                                    className="flex h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-rose-500 text-white shadow-lg shadow-rose-200/40 transition-all active:scale-95 hover:bg-rose-600 disabled:opacity-70"
+                                    className="flex h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl border border-white bg-rose-500 text-white shadow-lg shadow-rose-200/40 transition-all active:scale-95 hover:bg-rose-600 disabled:opacity-70"
                                 >
                                     {actionLoading ? (
                                         <LoadingSpinner size="sm" className="text-white" />
@@ -722,17 +722,18 @@ export default function StaffDashboardView() {
                                 </button>
                             </div>
                         ) : status === 'finished' ? (
-                            <div className="flex h-12 w-full items-center justify-center rounded-xl bg-zinc-400/20">
-                                <span className="text-sm font-medium tabular-nums text-zinc-400">
-                                    {formatStaffWorkedHours(todayLog?.total_hours) || '\u00a0'}
-                                </span>
+                            <div className="flex h-12 w-full items-center justify-center rounded-xl bg-zinc-100">
+                                <StaffElapsedDigits
+                                    value={formatStaffElapsedHms(todayLog?.clock_in, todayLog?.clock_out)}
+                                    tone="quiet"
+                                />
                             </div>
                         ) : (
                             <button
                                 type="button"
                                 onClick={() => openConfirmation()}
                                 disabled={actionLoading}
-                                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 text-white shadow-lg transition-all active:scale-95 hover:bg-emerald-600 disabled:opacity-70"
+                                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-white bg-emerald-500 text-white shadow-lg transition-all active:scale-95 hover:bg-emerald-600 disabled:opacity-70"
                             >
                                 {actionLoading ? (
                                     <LoadingSpinner size="sm" className="text-white" />

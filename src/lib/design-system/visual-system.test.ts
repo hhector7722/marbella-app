@@ -332,6 +332,8 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(staff, /data-instance="staff-fichaje"/);
         assert.doesNotMatch(staff, /No has fichado/);
         assert.match(staff, /flex-\[2\]/, 'el cronómetro ocupa dos tercios en turno');
+        assert.match(staff, /border-white/, 'Entrada y Salida se recortan del petróleo');
+        assert.match(staff, /formatStaffElapsedHms/, 'el turno cerrado enseña el tiempo real');
         const timer = readFileSync(join(SRC_ROOT, 'components/ui/WorkTimer.tsx'), 'utf8');
         assert.doesNotMatch(timer, /No has fichado/);
     });
@@ -380,6 +382,16 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             weekCard,
             /rounded-xl border border-zinc-200/,
             'WeekCard no pinta un cromo de tarjeta propio'
+        );
+        assert.doesNotMatch(
+            weekCard,
+            /min-h-\[52px\]|min-h-\[36px\]/,
+            'la celda no reserva alto de más'
+        );
+        assert.doesNotMatch(
+            weekCard,
+            />P<\s*\/span>/,
+            'las horas personales no van en la celda; van en el detalle del día'
         );
 
         assert.doesNotMatch(plantilla, /from ['"].*\/WeekCard['"]/);

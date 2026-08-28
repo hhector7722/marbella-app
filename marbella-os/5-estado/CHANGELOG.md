@@ -38,6 +38,10 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-28
 
+- **Con el turno cerrado, las horas se leen.** Fondo claro, cifra con horas, minutos y segundos. Entrada y Salida llevan un contorno blanco.
+
+- **En la semana de asistencia, la celda baja de alto.** Entrada y salida van con la fecha; H y Ex debajo, con el mismo aire. Las horas personales (P) solo se ven al abrir el día.
+
 - **El fichaje del mosaico Staff es una sola fila sobre el petróleo.** Sin tarjeta blanca. Sin fichar, solo Entrada, más baja. En turno, el cronómetro a dos tercios y Salida a un tercio. Turno cerrado, el tiempo en gris, sin destacar.
 
 - **Asistencia usa el mismo calendario que Cierres.** El mes, el mosaico Staff y el modal de una semana en horas extras pintan la misma rejilla. Cada semana de una persona lleva el pie de Horas, Pendientes, Extras e Importe. En el mosaico Staff la semana flota sobre el petróleo, a todo el ancho, sin cabecera.

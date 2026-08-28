@@ -187,7 +187,6 @@ export function WeekCard({
                         return m !== filterMonth || y !== filterYear;
                     })() : false;
                     const hWorkedFmt = fmtHours(workedHours);
-                    const hJustFmt = fmtHours(justifiedHours);
                     const exFormatted = fmtHours(day.extraHours);
 
                     // TEMP DEBUG Ex. — no cambia lógica; solo traza lo que se pinta
@@ -214,105 +213,88 @@ export function WeekCard({
                                 day.isToday && !isOtherMonth && 'bg-blue-50/10'
                             )}
                         >
-                            <span className={cn("absolute top-1 right-1 text-[9px] font-bold", day.isToday && !isOtherMonth ? "text-blue-600" : (isOtherMonth ? "text-gray-400 opacity-50" : "text-gray-400"))}>
+                            <span className={cn("absolute top-1 right-1 z-10 text-[9px] font-bold", day.isToday && !isOtherMonth ? "text-blue-600" : (isOtherMonth ? "text-gray-400 opacity-50" : "text-gray-400"))}>
                                 {day.dayNumber}
                             </span>
-                            <div className={cn("flex-1 flex flex-col items-stretch justify-center mt-2.5 w-full min-h-[52px]", isOtherMonth && "opacity-45")}>
-                                {isSpecialOnly ? (
-                                    <div className="flex min-h-[52px] w-full min-w-0 flex-1 flex-col items-center">
-                                        <div className="flex-1 mt-[14px]" />
-                                        {eventConfig!.showCross ? (
-                                            <X size={22} strokeWidth={2.5} className={cn(eventConfig!.text, isOtherMonth && 'opacity-60')} />
-                                        ) : (
-                                            <SpecialDayLabel
-                                                label={eventConfig!.label}
-                                                className={cn(eventConfig!.text, isOtherMonth && 'opacity-60')}
-                                            />
-                                        )}
-                                        <div className="flex-1" />
-                                    </div>
-                                ) : day.eventType === 'no_registered' ? (
-                                    <div className="flex min-h-[52px] w-full min-w-0 flex-1 flex-col items-center">
-                                        <div className="flex-1 mt-[14px]" />
-                                        <X size={22} strokeWidth={2.5} className={cn("text-red-600", isOtherMonth && 'opacity-60')} />
-                                        <div className="flex-1" />
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div className="h-5 flex items-center justify-center gap-1 shrink-0">
+                            {isSpecialOnly ? (
+                                <div className={cn("flex min-h-0 flex-1 items-center justify-center", isOtherMonth && "opacity-45")}>
+                                    {eventConfig!.showCross ? (
+                                        <X size={18} strokeWidth={2.5} className={cn(eventConfig!.text, isOtherMonth && 'opacity-60')} />
+                                    ) : (
+                                        <SpecialDayLabel
+                                            label={eventConfig!.label}
+                                            className={cn(eventConfig!.text, isOtherMonth && 'opacity-60')}
+                                        />
+                                    )}
+                                </div>
+                            ) : day.eventType === 'no_registered' ? (
+                                <div className={cn("flex min-h-0 flex-1 items-center justify-center", isOtherMonth && "opacity-45")}>
+                                    <X size={18} strokeWidth={2.5} className={cn("text-red-600", isOtherMonth && 'opacity-60')} />
+                                </div>
+                            ) : (
+                                <div className={cn("flex min-h-0 flex-1 flex-col justify-start gap-1", isOtherMonth && "opacity-45")}>
+                                    <div className="flex w-full flex-col items-center">
+                                        <div className="flex h-4 items-center justify-center gap-1">
                                             {day.hasLog && day.clockIn ? (
                                                 <>
-                                                    <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isOtherMonth ? "bg-gray-400" : "bg-green-500")} />
-                                                    <span className={cn("text-[9px] font-mono leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>{day.clockIn}</span>
+                                                    <div className={cn("h-1.5 w-1.5 shrink-0 rounded-full", isOtherMonth ? "bg-gray-400" : "bg-green-500")} />
+                                                    <span className={cn("font-mono text-[9px] leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>{day.clockIn}</span>
                                                 </>
-                                            ) : <span className="text-[9px] text-transparent select-none">0</span>}
+                                            ) : <span className="select-none text-[9px] text-transparent">0</span>}
                                         </div>
-                                        <div className="h-5 flex items-center justify-center gap-1 shrink-0">
+                                        <div className="flex h-4 items-center justify-center gap-1">
                                             {day.hasLog && day.clockOut ? (
                                                 day.eventType === 'no_registered' ? (
                                                     <>
                                                         <span className="inline-flex h-1.5 w-1.5 shrink-0 items-center justify-center overflow-visible" aria-hidden>
                                                             <X size={8} strokeWidth={2.5} className={cn("shrink-0", isOtherMonth ? "text-gray-400" : "text-red-500")} />
                                                         </span>
-                                                        <span className={cn("text-[9px] font-mono leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>{day.clockOut}</span>
+                                                        <span className={cn("font-mono text-[9px] leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>{day.clockOut}</span>
                                                     </>
                                                 ) : day.clock_out_show_no_registrada ? (
                                                     <span
                                                         title="Salida no registrada (olvidó fichar)"
-                                                        className="inline-flex items-center justify-center gap-1 shrink-0"
+                                                        className="inline-flex shrink-0 items-center justify-center gap-1"
                                                     >
                                                         <span className="inline-flex h-1.5 w-1.5 shrink-0 items-center justify-center overflow-visible" aria-hidden>
                                                             <X size={8} strokeWidth={2.5} className={cn("shrink-0", isOtherMonth ? "text-gray-400" : "text-red-500")} />
                                                         </span>
-                                                        <span className={cn("text-[9px] font-mono leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>
+                                                        <span className={cn("font-mono text-[9px] leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>
                                                             {day.clockOut}
                                                         </span>
                                                     </span>
                                                 ) : (
                                                     <>
-                                                        <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isOtherMonth ? "bg-gray-400" : "bg-red-500")} />
-                                                        <span className={cn("text-[9px] font-mono leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>{day.clockOut}</span>
+                                                        <div className={cn("h-1.5 w-1.5 shrink-0 rounded-full", isOtherMonth ? "bg-gray-400" : "bg-red-500")} />
+                                                        <span className={cn("font-mono text-[9px] leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>{day.clockOut}</span>
                                                     </>
                                                 )
                                             ) : (day.hasLog && !day.clockOut && day.isToday) ? (
-                                                <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0" />
+                                                <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400 animate-pulse" />
                                             ) : (
-                                                <span className="text-[9px] text-transparent select-none">0</span>
+                                                <span className="select-none text-[9px] text-transparent">0</span>
                                             )}
                                         </div>
-                                    </>
-                                )}
-                            </div>
-                            {!isSpecialOnly && (
-                                <div className={cn("w-full space-y-0 mt-0.5 shrink-0 min-h-[36px]", isOtherMonth && "opacity-45")}>
-                                    {/* Slot fijo P → H → Ex: vacío reserva h-3 para no desplazar filas */}
-                                    <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                        {hasPersonalAdd && hJustFmt ? (
-                                            <>
-                                                <span className="ml-0.5">P</span>
-                                                <span className={cn("font-bold pr-1", isOtherMonth ? "text-gray-400" : "text-blue-500")}>
-                                                    {hJustFmt}
-                                                </span>
-                                            </>
-                                        ) : null}
                                     </div>
-                                    <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                        {day.hasLog && day.clockIn && hWorkedFmt ? (
-                                            <>
-                                                <span className="ml-0.5">H</span>
-                                                <span className={cn("font-bold pr-1", isOtherMonth ? "text-gray-400" : "text-gray-800")}>
-                                                    {hWorkedFmt}
-                                                </span>
-                                            </>
-                                        ) : null}
-                                    </div>
-                                    <div className="flex justify-between items-center text-[8px] text-gray-400 h-3">
-                                        {exFormatted ? (
-                                            <>
-                                                <span className="ml-0.5">Ex</span>
-                                                <span className={cn("font-bold pr-1", isOtherMonth ? "text-gray-400" : "text-gray-800")}>{exFormatted}</span>
-                                            </>
-                                        ) : null}
+                                    <div className="w-full shrink-0">
+                                        <div className="flex h-3 items-center justify-between text-[8px] text-gray-400">
+                                            {day.hasLog && day.clockIn && hWorkedFmt ? (
+                                                <>
+                                                    <span className="ml-0.5">H</span>
+                                                    <span className={cn("pr-1 font-bold", isOtherMonth ? "text-gray-400" : "text-gray-800")}>
+                                                        {hWorkedFmt}
+                                                    </span>
+                                                </>
+                                            ) : null}
+                                        </div>
+                                        <div className="flex h-3 items-center justify-between text-[8px] text-gray-400">
+                                            {exFormatted ? (
+                                                <>
+                                                    <span className="ml-0.5">Ex</span>
+                                                    <span className={cn("pr-1 font-bold", isOtherMonth ? "text-gray-400" : "text-gray-800")}>{exFormatted}</span>
+                                                </>
+                                            ) : null}
+                                        </div>
                                     </div>
                                 </div>
                             )}
