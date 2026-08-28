@@ -598,24 +598,45 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
 
     const horasExtrasSection = (
         <Surface variant="page" instance="dashboard-horas-extras" className="flex flex-col overflow-hidden">
-                    <div className="bg-purple-600 px-4 py-4 md:px-8 flex justify-between items-center text-white shrink-0 relative">
-                        <h2 className="text-lg md:text-xl font-black uppercase tracking-wider leading-tight">
-                            <span className="md:hidden">H. EXTRAS</span>
-                            <span className="hidden md:inline">Horas Extras</span>
-                        </h2>
-                        {/* Mes + flechas en cabecera, centrados (móvil y escritorio) */}
-                        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5">
-                            <button type="button" onClick={() => setOvertimeViewMonth(prev => subMonths(prev, 1))} className="p-1 rounded-lg hover:bg-purple-500 text-white/90 hover:text-white transition-colors shrink-0 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center" aria-label="Mes anterior">
-                                <ChevronLeft className="w-4 h-4" />
-                            </button>
-                            <span className="text-[11px] md:text-xs font-black uppercase tracking-wider text-white min-w-[70px] md:min-w-[80px] text-center">
-                                {format(overtimeViewMonth, 'MMMM yyyy', { locale: es })}
-                            </span>
-                            <button type="button" onClick={() => setOvertimeViewMonth(prev => addMonths(prev, 1))} className="p-1 rounded-lg hover:bg-purple-500 text-white/90 hover:text-white transition-colors shrink-0 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center" aria-label="Mes siguiente">
-                                <ChevronRight className="w-4 h-4" />
-                            </button>
+                    <div data-element="header" className="flex items-center justify-between gap-2 shrink-0">
+                        <span
+                            className={cn(
+                                'py-1 px-2.5 md:py-1.5 md:px-3 flex items-center justify-center rounded-lg text-[11px] font-bold uppercase tracking-widest',
+                                'bg-white/10 text-white border-0 shadow-none'
+                            )}
+                        >
+                            <span className="md:hidden">H. extras</span>
+                            <span className="hidden md:inline">Horas extras</span>
+                        </span>
+                        <div className="flex-1 flex items-center justify-center min-w-0">
+                            <div className="inline-flex items-center gap-1 md:gap-1.5 rounded-lg">
+                                <button
+                                    type="button"
+                                    onClick={() => setOvertimeViewMonth(prev => subMonths(prev, 1))}
+                                    className="shrink-0 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-[0.98] transition-all cursor-pointer touch-manipulation"
+                                    aria-label="Mes anterior"
+                                >
+                                    <ChevronLeft className="w-5 h-5 text-white" />
+                                </button>
+                                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-white/90 whitespace-nowrap min-w-[70px] md:min-w-[80px] text-center">
+                                    {format(overtimeViewMonth, 'MMMM yyyy', { locale: es })}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setOvertimeViewMonth(prev => addMonths(prev, 1))}
+                                    className="shrink-0 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-[0.98] transition-all cursor-pointer touch-manipulation"
+                                    aria-label="Mes siguiente"
+                                >
+                                    <ChevronRight className="w-5 h-5 text-white" />
+                                </button>
+                            </div>
                         </div>
-                        <Link href="/dashboard/overtime" className="text-[11px] font-black hover:text-white/80 transition-colors uppercase tracking-widest">Ver más</Link>
+                        <Link
+                            href="/dashboard/overtime"
+                            className="shrink-0 text-[7px] font-black uppercase tracking-widest text-white/70 hover:text-white"
+                        >
+                            Ver más
+                        </Link>
                     </div>
                     <div className="p-2 md:p-2 relative min-h-[120px]">
                         {overtimeLoading ? (

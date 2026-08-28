@@ -1117,14 +1117,15 @@ function RecipeDetailContent() {
                                         <span className="shrink-0 text-xs font-black tabular-nums text-blue-600">
                                             {(recommendedPrice || 0).toFixed(2)}€
                                         </span>
-                                        <button
+                                        <Button
                                             type="button"
+                                            variant="secondary"
+                                            instance="recipe-simulador"
                                             onClick={() => setSimulatorExpanded((v) => !v)}
-                                            aria-expanded={simulatorExpanded}
-                                            className="ml-auto shrink-0 min-h-12 rounded-lg bg-purple-600 px-3 text-[10px] font-black uppercase tracking-widest text-white hover:bg-purple-500 active:scale-[0.99]"
+                                            className="ml-auto shrink-0"
                                         >
                                             Simulador
-                                        </button>
+                                        </Button>
                                     </div>
                                 </div>
 
@@ -1217,20 +1218,6 @@ function RecipeDetailContent() {
                             </div>
                         )}
                         <div className="custom-scrollbar relative">
-                            {!isRestricted && (
-                                <div className="absolute left-2 top-0 z-10 flex h-[calc(var(--espacio-2)+var(--espacio-2)+(11px*1.25))] items-center">
-                                    <Button
-                                        type="button"
-                                        variant="tertiary"
-                                        instance="recipe-nuevo-ingrediente"
-                                        onClick={() => setIsModalOpen(true)}
-                                        aria-label="Nuevo ingrediente"
-                                        className="shrink-0"
-                                    >
-                                        Nuevo
-                                    </Button>
-                                </div>
-                            )}
                             <table data-component={TABLE_COMPONENT_ID} data-instance="recipe-ingredients" className="w-full text-left">
                                 <colgroup>
                                     <col />
@@ -1241,7 +1228,7 @@ function RecipeDetailContent() {
                                 </colgroup>
                                 <thead>
                                     <tr>
-                                        <th scope="col" aria-label="Ingrediente" />
+                                        <th scope="col">Ingredientes</th>
                                         <th className="text-center">Cant</th>
                                         <th className="text-center">Ud</th>
                                         {!isRestricted && <th className="text-right">Coste</th>}
@@ -1339,14 +1326,9 @@ function RecipeDetailContent() {
                                             aria-label="Incluir ingrediente"
                                         >
                                             <td className="px-2 py-1.5">
-                                                <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold italic tracking-normal text-zinc-400">
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold italic tracking-normal text-zinc-400">
                                                     Añadir
-                                                    <span
-                                                        className="inline-flex h-3 w-3 shrink-0 items-center justify-center rounded-full bg-[var(--color-positivo)] text-white"
-                                                        aria-hidden
-                                                    >
-                                                        <Plus className="h-2 w-2" strokeWidth={3} />
-                                                    </span>
+                                                    <Plus className="h-2.5 w-2.5 shrink-0" strokeWidth={2.5} aria-hidden />
                                                 </span>
                                             </td>
                                             <td></td>

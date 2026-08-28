@@ -31,6 +31,8 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { WorkerListSummary, WorkerPersonRow } from '@/components/staff/WorkerPersonRow';
+import { chunkCalendarWeeks } from '@/lib/month-calendar-weeks';
+import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
 import {
     filterVisiblePlantillaEmployees,
     PLANTILLA_EMPLOYEE_SELECT,
@@ -174,6 +176,7 @@ export default function ConsumoPersonalDashboardPage() {
     const endVisible = endOfWeek(endOfMonth(viewMonth), { weekStartsOn: 1 });
     return eachDayOfInterval({ start: startVisible, end: endVisible });
   }, [viewMonth]);
+  const calendarWeeks = useMemo(() => chunkCalendarWeeks(calendarDays), [calendarDays]);
 
   const filterActive = useMemo(() => {
     const cur = defaultFullMonthPeriod();
@@ -441,7 +444,7 @@ export default function ConsumoPersonalDashboardPage() {
   return (
     <>
     <DashboardDetailLayout
-      title="Consumo staff"
+      title="Consumo"
       showBackButton={false}
       template="list"
       maxWidthClass="max-w-none"
@@ -495,8 +498,8 @@ export default function ConsumoPersonalDashboardPage() {
         </div>
       }
     >
-          <div className="px-2 pt-0 pb-2 md:px-3 md:pt-0 flex flex-col month-cal-body min-h-0">
-            <div className="grid grid-cols-2 gap-0.5 sm:gap-1 mb-1 py-1 shrink-0 min-w-0">
+          <div className="flex flex-col month-cal-body min-h-0">
+            <div className="grid grid-cols-2 gap-0.5 sm:gap-1 mb-1 py-1 shrink-0 min-w-0 px-2 md:px-3">
               <div className="flex min-w-0 flex-col items-center justify-center px-0.5 text-center">
                 <span className="text-[6px] font-black uppercase leading-tight text-gray-400 sm:text-[7px]">
                   Importe
@@ -520,22 +523,11 @@ export default function ConsumoPersonalDashboardPage() {
                 <LoadingSpinner size="lg" className="text-ds-marca" />
               </div>
             ) : (
-              <div className="mx-auto w-[97%] min-w-0 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.08)] month-cal-grid-wrap flex flex-col flex-1 min-h-0">
-                <div className="grid grid-cols-7 border-b border-gray-100 shrink-0">
-                  {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((d, index) => (
-                    <div
-                      key={d}
-                      className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-sm border-r border-white/30 last:border-r-0"
-                    >
-                      <span className="text-[9px] font-bold text-white uppercase tracking-wider truncate px-0.5 drop-shadow-sm leading-none">
-                        <span className="hidden md:inline">{d}</span>
-                        <span className="md:hidden">{['L', 'M', 'X', 'J', 'V', 'S', 'D'][index]}</span>
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <div className="grid grid-cols-7 month-cal-days">
-                  {calendarDays.map((day) => {
+              <MonthCalendarFrame>
+                <div className="month-cal-weeks">
+                  {calendarWeeks.map((week) => (
+                  <div key={format(week[0], 'yyyy-MM-dd')} className="grid grid-cols-7 border-b border-gray-100 last:border-b-0 month-cal-week">
+                  {week.map((day) => {
                     const key = format(day, 'yyyy-MM-dd');
                     const isFutureDay = key > todayStr;
                     const cell = summary?.byDate[key];
@@ -553,7 +545,7 @@ export default function ConsumoPersonalDashboardPage() {
                         onClick={() => clickable && openDayDetail(day)}
                         disabled={!clickable}
                         className={cn(
-                          'group relative flex flex-col text-left min-h-[52px] md:min-h-[100px] transition-colors p-0.5 sm:p-1 month-cal-cell',
+                          'group relative flex flex-col text-left transition-colors p-0.5 sm:p-1 month-cal-cell',
                           'border-r border-gray-100 last:border-r-0 bg-white',
                           !isViewMonthDay && 'opacity-25 pointer-events-none',
                           isViewMonthDay && isFutureDay && 'cursor-default bg-zinc-50/90',
@@ -583,8 +575,10 @@ export default function ConsumoPersonalDashboardPage() {
                       </button>
                     );
                   })}
+                  </div>
+                  ))}
                 </div>
-              </div>
+              </MonthCalendarFrame>
             )}
           </div>
     </DashboardDetailLayout>

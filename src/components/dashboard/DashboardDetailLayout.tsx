@@ -18,6 +18,10 @@ export type PageScreenProps = {
   maxWidthClass?: string
   rightSlot?: ReactNode
   showBackButton?: boolean
+  /** Si existe, la flecha atrás ejecuta esto en lugar de navegar a `backHref`. */
+  onBack?: () => void
+  /** Pieza a la izquierda del título (p. ej. avatar). */
+  titleLeading?: ReactNode
   compactHeader?: boolean
   fillViewport?: boolean
   footerSlot?: ReactNode
@@ -43,6 +47,8 @@ export function PageScreen({
   maxWidthClass = 'max-w-4xl',
   rightSlot,
   showBackButton = true,
+  onBack,
+  titleLeading,
   compactHeader = false,
   fillViewport = false,
   footerSlot,
@@ -90,11 +96,16 @@ export function PageScreen({
                   type="button"
                   variant="secondary"
                   instance="pagescreen-volver"
-                  onClick={() => router.push(backHref)}
+                  onClick={() => (onBack ? onBack() : router.push(backHref))}
                   aria-label="Volver"
                   icon={<ArrowLeft size={20} strokeWidth={2.5} />}
                   className="shrink-0"
                 />
+              ) : null}
+              {titleLeading ? (
+                <div data-element="title-leading" className="shrink-0">
+                  {titleLeading}
+                </div>
               ) : null}
               <div className="min-w-0">
                 <h1 data-element="title">{title}</h1>
@@ -114,7 +125,7 @@ export function PageScreen({
           </div>
           <div
             data-element="body"
-            className={cn('px-3 pt-1 pb-2 md:px-4 md:pt-1 md:pb-3 flex flex-col', contentClassName)}
+            className={cn('px-3 pb-2 md:px-4 md:pb-3 flex flex-col', contentClassName)}
           >
             {children}
           </div>

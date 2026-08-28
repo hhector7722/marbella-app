@@ -1,12 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import Image from 'next/image';
-import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
 import { Modal } from '@/components/ui/modal';
+import { AccessMenuGrid, CatalogTile } from '@/components/catalog/CatalogTile';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 
 interface AdminProductModalProps {
@@ -16,24 +14,24 @@ interface AdminProductModalProps {
 }
 
 type AdminMenuItem =
-    | { title: string; hover: string; special: 'pedidos' }
-    | { title: string; hover: string; href: string; img: string };
+    | { title: string; special: 'pedidos'; img: string }
+    | { title: string; href: string; img: string };
 
 const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
-    { title: 'Recetas', href: '/recipes', img: '/icons/recipes.png', hover: 'hover:bg-red-50/30' },
-    { title: 'Ingredientes', href: '/ingredients', img: '/icons/ingrediente.png', hover: 'hover:bg-orange-50/30' },
-    { title: 'Pedidos', hover: 'hover:bg-emerald-50/30', special: 'pedidos' },
-    { title: 'Inventario', href: '/dashboard/inventory', hover: 'hover:bg-purple-50/30', img: '/icons/inventory.png' },
-    { title: 'Mermas', href: '/dashboard/inventory/waste', hover: 'hover:bg-orange-50/30', img: '/icons/bin.png' },
-    { title: 'Stock', href: '/dashboard/inventory/ledger', hover: 'hover:bg-violet-50/30', img: '/icons/productes.png' },
-    { title: 'Carta', href: '/staff/carta', hover: 'hover:bg-blue-50/30', img: '/icons/menu.png' },
-    { title: 'Albaranes', href: '/dashboard/albaranes', hover: 'hover:bg-zinc-100/30', img: '/icons/scan.png' },
-    { title: 'Consumo Personal', href: '/dashboard/consumo-personal', hover: 'hover:bg-emerald-50/30', img: '/icons/consum.png' },
-    { title: 'Proveedores', href: '/suppliers', img: '/icons/suplier.png', hover: 'hover:bg-zinc-100/30' },
+    { title: 'Recetas', href: '/recipes', img: '/icons/recipes.png' },
+    { title: 'Ingredientes', href: '/ingredients', img: '/icons/ingrediente.png' },
+    { title: 'Pedidos', special: 'pedidos', img: '/icons/shipment.png' },
+    { title: 'Inventario', href: '/dashboard/inventory', img: '/icons/inventory.png' },
+    { title: 'Mermas', href: '/dashboard/inventory/waste', img: '/icons/bin.png' },
+    { title: 'Stock', href: '/dashboard/inventory/ledger', img: '/icons/productes.png' },
+    { title: 'Carta', href: '/staff/carta', img: '/icons/menu.png' },
+    { title: 'Albaranes', href: '/dashboard/albaranes', img: '/icons/scan.png' },
+    { title: 'Consumo Personal', href: '/dashboard/consumo-personal', img: '/icons/consum.png' },
+    { title: 'Proveedores', href: '/suppliers', img: '/icons/suplier.png' },
 ];
 
 export function AdminProductModal({ isOpen, onClose, onOpenSupplierModal }: AdminProductModalProps) {
-    const pathname = usePathname();
+    const router = useRouter();
     const [isNavigating, setIsNavigating] = useState(false);
 
     const trackAdminProduct = useTrackModalApply('admin-product', 'Menú stock (admin)');
@@ -48,66 +46,46 @@ export function AdminProductModal({ isOpen, onClose, onOpenSupplierModal }: Admi
             open={isOpen}
             onClose={handleClose}
             title="Stock"
+            variant="standard"
             headerVariant="petroleum"
             usageId="admin-product"
             usageLabel="Menú stock (admin)"
-            wrapperClassName="max-w-md"
             scrollContent={false}
         >
-            <div className="relative grid grid-cols-2 gap-3 bg-gray-50/30 overflow-y-auto">
-                {ADMIN_MENU_ITEMS.map((item, i) => {
-                    if ('special' in item && item.special === 'pedidos') {
+            <div className="relative overflow-y-auto">
+                <AccessMenuGrid>
+                    {ADMIN_MENU_ITEMS.map((item) => {
+                        if ('special' in item && item.special === 'pedidos') {
+                            return (
+                                <CatalogTile
+                                    key={item.title}
+                                    title={item.title}
+                                    imageSrc={item.img}
+                                    onClick={() => {
+                                        trackAdminProduct(item.title);
+                                        onClose();
+                                        setTimeout(() => onOpenSupplierModal(), 150);
+                                    }}
+                                />
+                            );
+                        }
+
+                        if (!('href' in item)) return null;
+
                         return (
-                            <button
-                                key={i}
-                                type="button"
+                            <CatalogTile
+                                key={item.title}
+                                title={item.title}
+                                imageSrc={item.img}
                                 onClick={() => {
                                     trackAdminProduct(item.title);
-                                    onClose();
-                                    setTimeout(() => onOpenSupplierModal(), 150);
+                                    setIsNavigating(true);
+                                    router.push(item.href);
                                 }}
-                                className={cn(
-                                    'bg-transparent border-0 p-4 rounded-2xl flex flex-col items-center gap-3 group transition-all active:scale-95 cursor-pointer',
-                                    item.hover,
-                                )}
-                            >
-                                <div className="w-12 h-12 transition-transform group-hover:scale-110">
-                                    <Image
-                                        src="/icons/shipment.png"
-                                        alt="Pedidos"
-                                        width={48}
-                                        height={48}
-                                        className="w-full h-full object-contain"
-                                    />
-                                </div>
-                                <span className="font-black text-sm text-gray-700">{item.title}</span>
-                            </button>
+                            />
                         );
-                    }
-
-                    if (!('href' in item) || !('img' in item)) return null;
-
-                    const isActive = pathname === item.href;
-                    const baseClass = cn(
-                        'bg-transparent border-0 p-4 rounded-2xl flex flex-col items-center gap-3 group transition-all active:scale-95 text-center no-underline',
-                        item.hover,
-                        isActive && 'ring-2 ring-[#36606F]/40 bg-white shadow-sm',
-                    );
-                    return (
-                        <Link key={i} href={item.href} onClick={() => { trackAdminProduct(item.title); setIsNavigating(true); }} className={baseClass}>
-                            <div className="w-12 h-12 transition-transform group-hover:scale-110">
-                                <Image
-                                    src={item.img}
-                                    alt={item.title}
-                                    width={48}
-                                    height={48}
-                                    className="w-full h-full object-contain"
-                                />
-                            </div>
-                            <span className="font-black text-sm text-gray-700">{item.title}</span>
-                        </Link>
-                    );
-                })}
+                    })}
+                </AccessMenuGrid>
 
                 {isNavigating && (
                     <div

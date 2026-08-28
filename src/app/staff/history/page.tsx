@@ -2,18 +2,18 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams, usePathname } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import {
-    X, ChevronDown, ChevronLeft, ChevronRight, Share2
+    X, ChevronLeft, ChevronRight, Share, User
 } from 'lucide-react';
 import { buildTimesheetPayload, type TimesheetExportPayload, type TimesheetWeekData } from '@/lib/staff/timesheet-export-payload';
 import {
     SimulationUnavailableError,
 } from '@/lib/staff/staff-schedule-normalizer';
 import { buildCoordinatedPlantillaSimulation } from '@/lib/staff/coordinated-plantilla-simulation';
-import { generateTimesheetPdf, generateTimesheetPdfMulti } from '@/lib/staff/timesheet-pdf';
+import { generateTimesheetPdf, generateTimesheetPdfMulti, openPdfBlob, timesheetPdfBlob, timesheetPdfMultiBlob } from '@/lib/staff/timesheet-pdf';
 import { generateTimesheetXlsx, generateTimesheetXlsxMulti } from '@/lib/staff/timesheet-xlsx';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import {
@@ -147,6 +147,8 @@ export default function HistoryPage() {
     const [summaryDate, setSummaryDate] = useState<string | null>(null);
     const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
     const [showExportMenu, setShowExportMenu] = useState(false);
+    const [exportMenuPos, setExportMenuPos] = useState({ top: 0, right: 0 });
+    const shareRootRef = useRef<HTMLDivElement>(null);
     const [isExporting, setIsExporting] = useState(false);
     const [userEmail, setUserEmail] = useState<string>('');
     const [showExportEmployeeModal, setShowExportEmployeeModal] = useState(false);
@@ -220,6 +222,25 @@ export default function HistoryPage() {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedEmployeeId, currentUserId, filterYear, filterMonth, userRole]);
+
+    useEffect(() => {
+        if (!showExportMenu) return;
+        const onPointerDown = (e: PointerEvent) => {
+            const target = e.target as HTMLElement | null;
+            if (!target) return;
+            if (target.closest('[data-history-share-root="true"]')) return;
+            setShowExportMenu(false);
+        };
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setShowExportMenu(false);
+        };
+        document.addEventListener('pointerdown', onPointerDown, true);
+        document.addEventListener('keydown', onKeyDown);
+        return () => {
+            document.removeEventListener('pointerdown', onPointerDown, true);
+            document.removeEventListener('keydown', onKeyDown);
+        };
+    }, [showExportMenu]);
 
     async function fetchCalendar() {
         setLoading(true);
@@ -370,12 +391,7 @@ export default function HistoryPage() {
 
     const isManager = userRole === 'manager';
     const isPlantilla = isManager && selectedEmployeeId === '';
-    const viewingOther = isManager && selectedEmployeeId && selectedEmployeeId !== currentUserId;
     const isMaster = isMasterDashboardUser(userEmail);
-    const hasRealExportData = weeksData.length > 0;
-    const showExportButton =
-        (isPlantilla && isMaster && plantillaWeeksData.length > 0) ||
-        (!isPlantilla && (hasRealExportData || isMaster));
 
     const headerLabel = isPlantilla
         ? 'Plantilla'
@@ -387,6 +403,16 @@ export default function HistoryPage() {
                   last_name: '',
               }
           );
+    const filteredEmployee = employees.find((e) => e.id === selectedEmployeeId);
+    const filteredInitials = (() => {
+        if (filteredEmployee) {
+            const a = filteredEmployee.first_name.trim().charAt(0);
+            const b = filteredEmployee.last_name.trim().charAt(0);
+            return `${a}${b}`.toUpperCase() || '?';
+        }
+        const parts = selectedEmployeeLabel.trim().split(/\s+/).filter(Boolean);
+        return parts.slice(0, 2).map((p) => p.charAt(0)).join('').toUpperCase() || '?';
+    })();
 
     const summaryLogs = (() => {
         if (!summaryDate || !plantillaWeeksData.length) return [];
@@ -444,6 +470,123 @@ export default function HistoryPage() {
         } catch (err) {
             console.error('Export error:', err);
             toast.error('Error al generar el documento');
+        } finally {
+            setIsExporting(false);
+        }
+    }
+
+    async function buildCurrentViewPdf(): Promise<{ blob: Blob; filename: string } | null> {
+        if (isPlantilla) {
+            const selectedIds = employees.map((e) => e.id);
+            const exportPayloads: Array<{
+                employee: { fullName: string; dni: string | null };
+                payload: TimesheetExportPayload;
+            }> = [];
+
+            for (const id of selectedIds) {
+                const emp = employees.find((e) => e.id === id);
+                if (!emp) continue;
+                const fullName = `${emp.first_name} ${emp.last_name}`.trim();
+                const { data: profileRow } = await supabase
+                    .from('profiles')
+                    .select('dni, contracted_hours_weekly')
+                    .eq('id', id)
+                    .maybeSingle();
+                const dni = profileRow?.dni ?? null;
+                const contractedHoursWeekly = Number(profileRow?.contracted_hours_weekly ?? 0);
+                const res = await getEmployeeHistoryMonth({
+                    userId: id,
+                    filterYear,
+                    filterMonth,
+                });
+                if (!res.success) continue;
+                const payload = buildTimesheetPayload(
+                    res.weeks as WeekData[],
+                    fullName,
+                    dni,
+                    filterYear,
+                    filterMonth,
+                    undefined,
+                    contractedHoursWeekly,
+                );
+                if (payload.rows.length === 0) continue;
+                exportPayloads.push({ employee: { fullName, dni }, payload });
+            }
+
+            if (exportPayloads.length === 0) {
+                toast.error('No hay registros para exportar');
+                return null;
+            }
+            return timesheetPdfMultiBlob(exportPayloads);
+        }
+
+        const targetId = selectedEmployeeId || currentUserId;
+        const targetEmployee = employees.find((e) => e.id === targetId);
+        const fullName = targetEmployee
+            ? `${targetEmployee.first_name} ${targetEmployee.last_name}`.trim()
+            : headerLabel;
+        let dni: string | null = null;
+        let contractedHoursWeekly = 0;
+        try {
+            const { data: profileRow } = await supabase
+                .from('profiles')
+                .select('dni, contracted_hours_weekly')
+                .eq('id', targetId)
+                .maybeSingle();
+            dni = profileRow?.dni ?? null;
+            contractedHoursWeekly = Number(profileRow?.contracted_hours_weekly ?? 0);
+        } catch {
+            // DNI opcional
+        }
+        const payload = buildTimesheetPayload(
+            weeksData,
+            fullName,
+            dni,
+            filterYear,
+            filterMonth,
+            undefined,
+            contractedHoursWeekly,
+        );
+        if (payload.rows.length === 0) {
+            toast.error('No hay registros para exportar');
+            return null;
+        }
+        return timesheetPdfBlob(payload);
+    }
+
+    async function handleShareExportPdf() {
+        setShowExportMenu(false);
+        setIsExporting(true);
+        try {
+            const result = await buildCurrentViewPdf();
+            if (!result) return;
+            openPdfBlob(result.blob, result.filename);
+        } catch (err) {
+            console.error('Export PDF error:', err);
+            toast.error('Error al generar el PDF');
+        } finally {
+            setIsExporting(false);
+        }
+    }
+
+    async function handleShareSendPdf() {
+        setShowExportMenu(false);
+        setIsExporting(true);
+        try {
+            const result = await buildCurrentViewPdf();
+            if (!result) return;
+            const file = new File([result.blob], result.filename, { type: 'application/pdf' });
+            if (navigator.canShare?.({ files: [file] })) {
+                await navigator.share({ files: [file], title: result.filename });
+                return;
+            }
+            toast.error('Este dispositivo no puede enviar el archivo');
+            openPdfBlob(result.blob, result.filename);
+        } catch (err) {
+            const name = err instanceof Error ? err.name : '';
+            if (name === 'AbortError') return;
+            console.error('Enviar PDF error:', err);
+            toast.error('No se pudo enviar el PDF');
         } finally {
             setIsExporting(false);
         }
@@ -769,140 +912,99 @@ export default function HistoryPage() {
                                 setShowMonthPicker(true);
                             }}
                         />
-                        {showExportButton && (
-                                <div className="relative">
+                        <div className="relative" ref={shareRootRef} data-history-share-root="true">
                                     <Button
                                         type="button"
                                         variant="tertiary"
                                         instance="staff-history-export-menu"
-                                        onClick={() => setShowExportMenu((v) => !v)}
+                                        onClick={() => {
+                                            const rect = shareRootRef.current?.getBoundingClientRect();
+                                            if (rect) {
+                                                setExportMenuPos({
+                                                    top: rect.bottom + 6,
+                                                    right: window.innerWidth - rect.right,
+                                                });
+                                            }
+                                            setShowExportMenu((v) => !v);
+                                        }}
                                         disabled={isExporting}
-                                        aria-label="Exportar historial de jornada"
-                                        icon={<Share2 size={16} strokeWidth={2} />}
+                                        aria-label="Compartir"
+                                        icon={<Share size={16} strokeWidth={2} />}
                                     />
 
                                     {showExportMenu && (
-                                        <>
-                                            {/* Overlay transparente para cerrar al clicar fuera */}
-                                            <button
-                                                type="button"
-                                                aria-label="Cerrar menú"
-                                                className="fixed inset-0 z-[40] cursor-default"
-                                                onClick={() => setShowExportMenu(false)}
-                                                tabIndex={-1}
-                                            />
-                                            {/* Mini-menú */}
                                             <div
                                                 role="menu"
-                                                className="absolute right-0 top-full mt-1.5 z-[50] bg-white rounded-xl shadow-lg border border-zinc-100 overflow-hidden min-w-[210px] animate-in fade-in zoom-in-95 duration-150"
+                                                className="fixed z-[50] w-56 rounded-lg bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden"
+                                                style={{ top: exportMenuPos.top, right: exportMenuPos.right }}
                                             >
-                                                {isPlantilla && isMaster ? (
-                                                    <>
-                                                        <button
-                                                            type="button"
-                                                            role="menuitem"
-                                                            onClick={() => { setShowExportMenu(false); setExportFormat('pdf'); setShowExportEmployeeModal(true); }}
-                                                            className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
-                                                        >
-                                                            Exportar todos (PDF)
-                                                        </button>
-                                                        <div className="h-px bg-zinc-100 mx-3" />
-                                                        <button
-                                                            type="button"
-                                                            role="menuitem"
-                                                            onClick={() => { setShowExportMenu(false); setExportFormat('xlsx'); setShowExportEmployeeModal(true); }}
-                                                            className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
-                                                        >
-                                                            Exportar todos (Excel)
-                                                        </button>
-                                                        <div className="h-px bg-zinc-100 mx-3" />
-                                                        <button
-                                                            type="button"
-                                                            role="menuitem"
-                                                            onClick={() => void openSimulationExportModal()}
-                                                            className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
-                                                        >
-                                                            <span className="text-base leading-none">📄</span>
-                                                            <span>PDF <span className="font-normal text-zinc-400">(Simulación horas contratadas)</span></span>
-                                                        </button>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        {hasRealExportData ? (
-                                                            <>
-                                                                <button
-                                                                    type="button"
-                                                                    role="menuitem"
-                                                                    onClick={() => handleExport('pdf')}
-                                                                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
-                                                                >
-                                                                    <span className="text-base leading-none">📄</span>
-                                                                    <span>PDF <span className="font-normal text-zinc-400">(Registros reales)</span></span>
-                                                                </button>
-                                                                <div className="h-px bg-zinc-100 mx-3" />
-                                                                <button
-                                                                    type="button"
-                                                                    role="menuitem"
-                                                                    onClick={() => handleExport('xlsx')}
-                                                                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
-                                                                >
-                                                                    <span className="text-base leading-none">📊</span>
-                                                                    <span>Excel <span className="font-normal text-zinc-400">(Registros reales)</span></span>
-                                                                </button>
-                                                                <div className="h-px bg-zinc-100 mx-3" />
-                                                            </>
-                                                        ) : null}
-                                                        {isMaster ? (
-                                                            <button
-                                                                type="button"
-                                                                role="menuitem"
-                                                                onClick={() => void openSimulationExportModal()}
-                                                                className="w-full flex items-center gap-3 px-4 py-3 text-left text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 transition-colors"
-                                                            >
-                                                                <span className="text-base leading-none">📄</span>
-                                                                <span>PDF <span className="font-normal text-zinc-400">(Simulación horas contratadas)</span></span>
-                                                            </button>
-                                                        ) : null}
-                                                    </>
-                                                )}
+                                                <Button
+                                                    type="button"
+                                                    variant="secondary"
+                                                    instance="staff-history-export-pdf"
+                                                    onClick={() => void handleShareExportPdf()}
+                                                    className="w-full"
+                                                >
+                                                    Exportar PDF
+                                                </Button>
+                                                <div className="h-px bg-zinc-100" />
+                                                <Button
+                                                    type="button"
+                                                    variant="secondary"
+                                                    instance="staff-history-enviar-pdf"
+                                                    onClick={() => void handleShareSendPdf()}
+                                                    className="w-full"
+                                                >
+                                                    Enviar
+                                                </Button>
                                             </div>
-                                        </>
                                     )}
                                 </div>
-                            )}
 
                             {isManager && (
-                                <div className="relative">
-                                    <button
-                                        onClick={() => setShowEmployeeDropdown(true)}
-                                        className={cn(
-                                            "flex items-center justify-center text-[8px] font-black uppercase tracking-widest transition-all active:scale-95 text-white shrink-0",
-                                            isPlantilla
-                                                ? "min-h-0 px-1 py-0 bg-transparent border-0 shadow-none rounded-none hover:bg-transparent hover:text-white/85"
-                                                : "h-8 px-3 bg-white/10 hover:bg-white/20 rounded-lg border border-white/10 shadow-sm",
-                                            viewingOther && !isPlantilla && "bg-white/20 border-white/30"
-                                        )}
-                                    >
-                                        <span className="max-w-[120px] md:max-w-[160px] truncate">{headerLabel}</span>
-                                        <ChevronDown size={10} className="ml-1.5 opacity-40 shrink-0" />
-                                    </button>
-                                    {!isPlantilla && selectedEmployeeId && (
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setSelectedEmployeeId('');
-                                                setSelectedEmployeeLabel('');
-                                                trackUsageModalApply(
-                                                    'staff-history-employee-filter',
-                                                    'Filtro asistencia',
-                                                    pathname,
-                                                    'Plantilla (todos)'
-                                                );
-                                            }}
-                                            className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors z-30 border-2 border-[#36606F]"
-                                        >
-                                            <X size={8} strokeWidth={4} />
-                                        </button>
+                                <div className="relative shrink-0">
+                                    {isPlantilla ? (
+                                        <Button
+                                            type="button"
+                                            variant="tertiary"
+                                            instance="staff-history-employee-filter"
+                                            onClick={() => setShowEmployeeDropdown(true)}
+                                            aria-label="Filtrar por trabajador"
+                                            icon={<User size={20} strokeWidth={2.25} />}
+                                        />
+                                    ) : (
+                                        <>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowEmployeeDropdown(true)}
+                                                aria-label={`Filtrado: ${headerLabel}`}
+                                                className="relative flex h-9 w-9 items-center justify-center bg-transparent p-0"
+                                            >
+                                                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-[10px] font-black uppercase leading-none text-ds-marca">
+                                                    {filteredInitials}
+                                                </span>
+                                            </button>
+                                            {selectedEmployeeId ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedEmployeeId('');
+                                                        setSelectedEmployeeLabel('');
+                                                        trackUsageModalApply(
+                                                            'staff-history-employee-filter',
+                                                            'Filtro asistencia',
+                                                            pathname,
+                                                            'Plantilla (todos)'
+                                                        );
+                                                    }}
+                                                    aria-label="Quitar filtro de trabajador"
+                                                    className="absolute top-0 right-0 z-10 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-600 text-white"
+                                                >
+                                                    <X size={8} strokeWidth={3} />
+                                                </button>
+                                            ) : null}
+                                        </>
                                     )}
                                 </div>
                             )}

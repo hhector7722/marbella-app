@@ -27,6 +27,8 @@ import { Button } from '@/components/ui/button';
 import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { PeriodNav } from '@/components/time/PeriodNav';
+import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
+import { chunkCalendarWeeks } from '@/lib/month-calendar-weeks';
 import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
 import { PavilionDayModal } from '@/components/pavilion/PavilionDayModal';
 import { createClient } from '@/utils/supabase/client';
@@ -42,9 +44,6 @@ const ACTIVIDADES_EMAILS = [
   'albamasia.opos@gmail.com',
   'hernang6799@gmail.com',
 ];
-
-const CALENDAR_WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const;
-const MOBILE_HEADERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'] as const;
 
 /* ── Exact copy of helpers from /staff/actividades ───────────────────────── */
 
@@ -198,6 +197,7 @@ export default function HorarioPage() {
     () => eachDayOfInterval({ start: gridStart, end: gridEnd }),
     [gridStart, gridEnd],
   );
+  const calendarWeeks = useMemo(() => chunkCalendarWeeks(calendarDays), [calendarDays]);
 
   const rangeStart = format(calendarDays[0]!, 'yyyy-MM-dd');
   const rangeEnd = format(calendarDays[calendarDays.length - 1]!, 'yyyy-MM-dd');
@@ -395,32 +395,17 @@ export default function HorarioPage() {
               <LoadingSpinner size="lg" className="text-ds-marca" />
             </div>
           ) : (
-            <div
-              className="flex flex-col gap-0.5 bg-zinc-50/50 px-[1%] pt-0.5 pb-1 touch-pan-y month-cal-body"
+            <>
+            <MonthCalendarFrame
+              className="touch-pan-y month-cal-body"
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
             >
-              <div className="mx-auto w-full min-w-0 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.08)] month-cal-grid-wrap">
-
-                {/* Day headers */}
-                <div className="grid grid-cols-7 border-b border-gray-100 shrink-0">
-                  {CALENDAR_WEEKDAYS.map((d, index) => (
-                    <div
-                      key={d}
-                      className="flex h-5 items-center justify-center border-r border-white/30 bg-gradient-to-b from-red-500 to-red-600 shadow-sm last:border-r-0"
-                    >
-                      <span className="block truncate px-0.5 text-[9px] font-bold uppercase tracking-wider text-white drop-shadow-sm leading-none">
-                        <span className="hidden md:inline">{d}</span>
-                        <span className="md:hidden">{MOBILE_HEADERS[index]}</span>
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Days grid */}
-                <div className="grid grid-cols-7 divide-y divide-gray-100 month-cal-days">
-                  {calendarDays.map((day) => {
+                <div className="month-cal-weeks">
+                  {calendarWeeks.map((week) => (
+                  <div key={format(week[0]!, 'yyyy-MM-dd')} className="grid grid-cols-7 border-b border-gray-100 last:border-b-0 month-cal-week">
+                  {week.map((day) => {
                     const key = format(day, 'yyyy-MM-dd');
                     const shift = shiftsByDate[key];
 
@@ -431,8 +416,7 @@ export default function HorarioPage() {
 
                     const cellCls = cn(
                       'relative flex flex-col border-r border-gray-100 p-0.5 sm:p-1 last:border-r-0 cursor-pointer month-cal-cell',
-                      'h-24 sm:h-28 md:h-32',
-                      isPastDay ? 'bg-zinc-100' : 'bg-white',
+                      isPastDay ? 'bg-zinc-50/90' : 'bg-white',
                       isToday && isViewMonthDay && 'bg-blue-50/20',
                       isSelected && 'ring-2 ring-inset ring-[#36606F]/40',
                       'hover:bg-blue-50/40 active:bg-blue-50/60 transition-colors',
@@ -518,7 +502,7 @@ export default function HorarioPage() {
                               const grouped = groupActivities(barActs);
                               if (grouped.length === 0) return null;
                               return (
-                                <div className="flex-1 w-full min-h-0 overflow-hidden flex flex-col gap-0.5 mt-0.5 month-cal-chips">
+                                <div className="mt-0.5 flex w-full flex-col gap-0.5 month-cal-chips">
                                   {grouped.map((act, i) => {
                                     const bgColor = act.activityColor || stringToHslColor(act.activityName);
                                     const hasParticipants = act.totalParticipants != null || (act.categories && act.categories.length > 0);
@@ -569,8 +553,10 @@ export default function HorarioPage() {
                       </div>
                     );
                   })}
+                  </div>
+                  ))}
                 </div>
-              </div>
+            </MonthCalendarFrame>
 
               {/* Swipe indicator */}
               <div className="flex justify-center items-center gap-1.5 py-2 w-full month-cal-swipe-dots">
@@ -578,7 +564,7 @@ export default function HorarioPage() {
                 <div className="w-2 h-2 rounded-full bg-white shadow-sm border border-zinc-200"></div>
                 <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 shadow-sm opacity-70"></div>
               </div>
-            </div>
+            </>
           )}
     </DashboardDetailLayout>
 

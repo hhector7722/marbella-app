@@ -8,7 +8,9 @@ import {
   endOfMonth,
   endOfWeek,
   format,
+  isBefore,
   isSameMonth,
+  startOfDay,
   startOfMonth,
   startOfWeek,
   subMonths,
@@ -41,6 +43,7 @@ import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { PeriodNav } from '@/components/time/PeriodNav'
+import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame'
 import { cn } from '@/lib/utils'
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking'
 import { useTrackModalApply } from '@/hooks/useTrackModalApply'
@@ -1151,20 +1154,7 @@ export default function ReservasClient() {
                 <div className="text-xs font-medium">{rpcError}</div>
               </div>
             ) : (
-              <div className="mx-auto w-[97%] min-w-0 rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white month-cal-grid-wrap">
-                <div className="grid grid-cols-7 border-b border-gray-100 shrink-0">
-                  {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((d, index) => (
-                    <div
-                      key={d}
-                      className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-sm border-r border-white/30 last:border-r-0"
-                    >
-                      <span className="text-[9px] font-bold text-white uppercase tracking-wider truncate px-0.5 drop-shadow-sm leading-none">
-                        <span className="hidden md:inline">{d}</span>
-                        <span className="md:hidden">{['L', 'M', 'X', 'J', 'V', 'S', 'D'][index]}</span>
-                      </span>
-                    </div>
-                  ))}
-                </div>
+              <MonthCalendarFrame>
                 <div className="month-cal-weeks">
                 {calendarWeeks.map((week, weekIdx) => (
                   <div key={weekIdx} className="grid grid-cols-7 border-b border-gray-100 last:border-b-0 month-cal-week">
@@ -1173,17 +1163,11 @@ export default function ReservasClient() {
                       const isViewMonthDay = isSameMonth(day, viewMonth)
                       const cellReservations = byDate[key] ?? []
                       const cellEncargos = (encargosByDate[key] ?? []).filter((e) => !e.reservation_id)
-                      const maxEntries = 2
-                      const visibleRes = cellReservations.slice(0, maxEntries)
-                      const remainingSlots = Math.max(0, maxEntries - visibleRes.length)
-                      const visibleEnc = cellEncargos.slice(0, remainingSlots)
-                      const hiddenCount =
-                        cellReservations.length -
-                        visibleRes.length +
-                        (cellEncargos.length - visibleEnc.length)
                       const hasCalendarEntries =
                         cellReservations.length > 0 || cellEncargos.length > 0
                       const today = isToday(day)
+                      const isPastDay = isViewMonthDay && isBefore(day, startOfDay(new Date()))
+                      const pastDayBg = isPastDay ? 'bg-zinc-50/90' : 'bg-white'
 
                       return (
                         <button
@@ -1192,11 +1176,13 @@ export default function ReservasClient() {
                           onClick={() => isViewMonthDay && handleDayClick(day)}
                           disabled={!isViewMonthDay}
                           className={cn(
-                            'group relative flex flex-col text-left min-h-[72px] sm:min-h-[88px] md:min-h-[108px] transition-colors p-1 sm:p-1.5 month-cal-cell',
-                            'border-r border-gray-100 last:border-r-0 bg-white',
+                            'group relative flex flex-col text-left transition-colors p-0.5 sm:p-1 month-cal-cell',
+                            'border-r border-gray-100 last:border-r-0',
+                            pastDayBg,
                             !isViewMonthDay && 'opacity-25 pointer-events-none',
                             isViewMonthDay &&
-                              'hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer'
+                              'hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer',
+                            today && isViewMonthDay && !isPastDay && 'bg-blue-50/10'
                           )}
                         >
                           <span
@@ -1208,10 +1194,10 @@ export default function ReservasClient() {
                           >
                             {format(day, 'd')}
                           </span>
-                          <div className="flex-1 flex flex-col justify-center w-full pb-1 mt-4 min-h-0 gap-0.5 overflow-hidden">
+                          <div className="flex-1 flex flex-col justify-center w-full pb-1 mt-4 min-h-0 gap-0.5">
                             {isViewMonthDay && hasCalendarEntries ? (
                               <>
-                                {visibleRes.map((r) => (
+                                {cellReservations.map((r) => (
                                   <ReservationCalendarEntry
                                     key={r.id}
                                     r={r}
@@ -1219,16 +1205,13 @@ export default function ReservasClient() {
                                     showNewBadge={reservationIdsWithUnreadClientOrder.has(r.id)}
                                   />
                                 ))}
-                                {visibleEnc.map((e) => (
+                                {cellEncargos.map((e) => (
                                   <EncargoCalendarEntry
                                     key={e.id}
                                     e={e}
                                     showNewBadge={unreadClientOrderEventIds.has(e.id)}
                                   />
                                 ))}
-                                {hiddenCount > 0 ? (
-                                  <span className="text-[8px] text-gray-400">+{hiddenCount} más</span>
-                                ) : null}
                               </>
                             ) : null}
                           </div>
@@ -1238,7 +1221,7 @@ export default function ReservasClient() {
                   </div>
                 ))}
                 </div>
-              </div>
+              </MonthCalendarFrame>
             )}
 
             {!loading && !rpcError ? <div className="shrink-0"><ReservasCalendarLegend /></div> : null}

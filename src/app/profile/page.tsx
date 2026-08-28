@@ -10,7 +10,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
-import { CreditCard, ChevronLeft } from 'lucide-react';
+import { CreditCard } from 'lucide-react';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
 import NominasModal from '@/components/NominasModal';
 import DatosPersonalesModal from '@/components/profile/DatosPersonalesModal';
@@ -435,74 +435,62 @@ function ProfileContent() {
                           ? (profile.role === 'manager' ? 'Manager' : profile.role === 'supervisor' ? 'Supervisor' : 'Staff')
                           : undefined
                 }
-                showBackButton={false}
-                template="detail"
-                maxWidthClass="max-w-2xl"
-                rightSlot={
-                    <div className="flex items-center gap-1">
-                        {isManager ? (
-                            <Button
-                                type="button"
-                                variant="tertiary"
-                                instance="profile-open-plantilla"
-                                onClick={() => void openPlantillaFromProfile()}
-                                aria-label="Abrir plantilla"
-                                icon={<ChevronLeft className="size-5 shrink-0" strokeWidth={2.25} />}
+                showBackButton={isManager}
+                onBack={isManager ? () => void openPlantillaFromProfile() : undefined}
+                titleLeading={
+                    showAccountSection ? (
+                        <label className="relative block h-full w-full cursor-pointer">
+                            <input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp,image/gif"
+                                onChange={handleAvatarFileSelect}
+                                disabled={avatarUploading}
+                                className="hidden"
+                                aria-label={avatarUploading ? 'Subiendo foto' : 'Editar foto'}
                             />
-                        ) : null}
-                        {showPersonalPurchasesAccountsButton ? (
-                            <Button
-                                type="button"
-                                variant="tertiary"
-                                instance="profile-cuentas-personales"
-                                onClick={() => router.push('/dashboard/ledger')}
-                                aria-label="Cuentas de compras personales"
-                                icon={<CreditCard size={20} strokeWidth={2.25} />}
-                            />
-                        ) : null}
-                    </div>
-                }
-            >
-                        <div className="flex flex-col items-center gap-2 pb-4">
                             <Avatar
                                 src={profile.avatar_url}
                                 alt={fullName}
-                                size="md"
-                                className="shadow-md bg-white ring-1 ring-zinc-200"
+                                size="sm"
+                                className="h-full w-full bg-white"
                             />
-                            {showAccountSection && (
-                                <label
-                                    className={cn(
-                                        'shrink-0 inline-flex items-center justify-center self-center text-center',
-                                        'px-2 py-1 min-h-12',
-                                        'rounded-lg border border-zinc-200',
-                                        'text-zinc-700 text-[9px] font-black uppercase tracking-widest leading-none',
-                                        'hover:bg-zinc-50 transition-colors cursor-pointer active:scale-95'
-                                    )}
-                                >
-                                    <input
-                                        type="file"
-                                        accept="image/jpeg,image/png,image/webp,image/gif"
-                                        onChange={handleAvatarFileSelect}
-                                        disabled={avatarUploading}
-                                        className="hidden"
-                                    />
-                                    {avatarUploading ? 'Subiendo…' : 'Editar'}
-                                </label>
-                            )}
-                        </div>
-                        <div className="grid grid-cols-2 gap-6">
+                        </label>
+                    ) : (
+                        <Avatar
+                            src={profile.avatar_url}
+                            alt={fullName}
+                            size="sm"
+                            className="h-full w-full bg-white"
+                        />
+                    )
+                }
+                template="detail"
+                maxWidthClass="max-w-2xl"
+                rightSlot={
+                    showPersonalPurchasesAccountsButton ? (
+                        <Button
+                            type="button"
+                            variant="tertiary"
+                            instance="profile-cuentas-personales"
+                            onClick={() => router.push('/dashboard/ledger')}
+                            aria-label="Cuentas de compras personales"
+                            icon={<CreditCard size={20} strokeWidth={2.25} />}
+                        />
+                    ) : null
+                }
+            >
+                        <div className="grid grid-cols-3 gap-3">
                             {gridItems.map((item) => (
                                 <button
                                     key={item.id}
                                     type="button"
                                     onClick={() => handleGridAction(item.id)}
                                     className={cn(
-                                        'min-h-[80px] flex flex-col items-center justify-center p-3 transition-all active:scale-[0.98]',
+                                        'min-h-[72px] flex flex-col items-center justify-center p-2 transition-all active:scale-[0.98]',
                                         item.id === 'cerrar-sesion' ? 'hover:opacity-80' : 'hover:opacity-90'
                                     )}
                                 >
-                                    <img src={item.icon} alt="" className="w-10 h-10 object-contain mb-2 shrink-0" />
+                                    <img src={item.icon} alt="" className="w-8 h-8 object-contain mb-1.5 shrink-0" />
                                     <span className={cn(
                                         'font-black text-[10px] uppercase tracking-widest text-center leading-tight',
                                         item.id === 'cerrar-sesion' ? 'text-rose-600' : 'text-zinc-700'

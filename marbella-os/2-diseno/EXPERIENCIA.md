@@ -42,7 +42,7 @@ La densidad se adapta al contexto físico, no al tamaño de la pantalla:
 - **En revisión** (registros, albaranes, precios, movimientos): densidad alta. Muchas filas comparables de un vistazo, porque el trabajo consiste en comparar.
 - **En análisis**: densidad media, con espacio para leer una cifra sin confundirla con la vecina.
 
-**Una pantalla de trabajo cabe en un viewport.** Si la tarea principal exige desplazarse para verse completa, la pantalla está mal compuesta. El calendario mensual y los modales de día son el caso canónico: se resuelven repartiendo el alto disponible, no permitiendo que crezcan.
+**Una pantalla de trabajo cabe en un viewport.** Si la tarea principal exige desplazarse para verse completa, la pantalla está mal compuesta. Los modales de día caben repartiendo el alto. El calendario mensual parte del tamaño de Cierres y una semana crece si su contenido lo pide.
 
 ---
 

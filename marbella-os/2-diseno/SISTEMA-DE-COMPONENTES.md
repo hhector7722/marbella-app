@@ -279,10 +279,24 @@ Piezas transversales con comportamiento propio y contrato estricto. **Estas sí 
 - La card es `Surface` variante `page`. El consumidor no pinta `bg-white rounded-2xl shadow-2xl` ni `bg-[#36606F]` de cabecera.
 - Las acciones de cabecera (`rightSlot`) sobre petróleo: `Button` invertido, **sin relleno ni marco**. No es una quinta variante. El chrome de recarga nativo blanco (Albaranes) sigue siendo chrome, no Button.
 - Cabecera: misma altura que el Modal (`estructura.cabecera-modal`). El título, el subtítulo y los iconos se reducen en proporción. No se recortan ni se abrevian con puntos.
+- Orden de la cabecera: flecha atrás (si se muestra), identidad opcional (`titleLeading`, p. ej. avatar), título, resto. La flecha puede ejecutar `onBack` en lugar de navegar.
 - En smartphone el ancho de la plantilla es el del dispositivo menos un margen mínimo (`espacio.1`) a **ambos** lados, donde se ve el fondo. El contenido no puede empujar la tarjeta contra un borde. La altura de la tarjeta sigue al contenido.
 - En smartphone el calendario mensual es más estrecho que la plantilla (`espacio.2` de diferencia).
 
 **Estado**: existe. Migrados: Labor, Albaranes, Reservas, Propinas, Carta, inventario, Recetas, Ingredientes, Ventas, Tesorería, Asistencia, Perfil, Insights, Precios desde albarán, catálogo de actividades e Importación. T1 (dashboard mosaico) no usa PageScreen: es otra anatomía.
+
+### Marco de calendario mensual (`MonthCalendarFrame`)
+
+**Propósito**: pintar el cromo P3 de Cierres (franja, tarjeta al 97 %, cabecera roja de días). El contenido de cada celda lo pone el dominio.
+
+**Código**: `src/components/time/MonthCalendarFrame.tsx`.
+
+**Reglas**:
+- Lo usan Labor, Reservas, Horario, Actividades, Consumo y Cierres.
+- Semana vacía: el alto de Cierres. Si el contenido no cabe, la fila crece.
+- Horas extras, Asistencia y MiniMonthCalendar no lo usan.
+
+**Estado**: existe.
 
 ### Navegación inferior
 
@@ -396,6 +410,16 @@ Su contrato lo fija la [especificación de su capacidad](../1-producto/capacidad
 **Estado**: existe. Consumidores: rejilla Master, Staff y Admin.
 
 **Código**: `src/components/dashboards/DashboardShortcut.tsx`.
+
+### Rejilla de catálogo y de accesos (`CatalogGrid` / `AccessMenuGrid`)
+
+**Propósito**: elegir un ítem por icono + nombre, en página (recetas, ingredientes, proveedores) o en modal (Info, Documentos, Manuales, Caja, Stock).
+
+**Anatomía**: rejilla de celdas cuadradas (imagen + pie de una fila). Sin tarjeta. `AccessMenuGrid` es la misma celda con **mínimo 3 columnas**; más solo si el consumidor lo pide. Proveedores (página y pedido) van a 4.
+
+**Estado**: existe. No es primitiva del sistema.
+
+**Código**: `src/components/catalog/CatalogTile.tsx`.
 
 ---
 

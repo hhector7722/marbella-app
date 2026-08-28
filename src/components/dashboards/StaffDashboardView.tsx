@@ -42,7 +42,16 @@ import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
 import { ConsumptionModal } from '@/app/staff/ConsumptionModal';
-import { STAFF_MANUAL_ASSETS, STAFF_MANUAL_MENU, STAFF_TPV_MANUAL_ITEMS, STAFF_TPV_MANUAL_VIDEOS, type StaffManualMenuId } from '@/lib/staff-manuals';
+import { AccessMenuGrid, CatalogTile } from '@/components/catalog/CatalogTile';
+import {
+    STAFF_HORNO_MANUAL_ITEMS,
+    STAFF_MANUAL_ASSETS,
+    STAFF_MANUAL_MENU,
+    STAFF_TPV_MANUAL_ICONS,
+    STAFF_TPV_MANUAL_ITEMS,
+    STAFF_TPV_MANUAL_VIDEOS,
+    type StaffManualMenuId,
+} from '@/lib/staff-manuals';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 
@@ -54,6 +63,16 @@ const CONTACTS_DATA = [
     { name: 'Ramón', phone: '(3466) 023-1748' },
     { name: 'Héctor', phone: '(3464) 722-9309' },
 ];
+
+const STAFF_INFO_MENU = [
+    { title: 'Contactos de Interés', imageSrc: '/icons/whatsapp.png', kind: 'contactos' as const },
+    { title: 'Página web', imageSrc: '/icons/web.png', kind: 'web' as const },
+    { title: 'Reservas y encargos', imageSrc: '/icons/reservas.png', kind: 'href' as const, href: '/staff/reservas' },
+    { title: 'Carta', imageSrc: '/icons/menu.png', kind: 'href' as const, href: '/staff/carta' },
+    { title: 'Manuales', imageSrc: '/icons/guide.png', kind: 'manuales' as const },
+];
+
+const STAFF_WEB_HREF = 'https://marbella-web.vercel.app';
 
 type WorkStatus = 'idle' | 'working' | 'finished';
 
@@ -922,7 +941,7 @@ export default function StaffDashboardView() {
             <Modal
                 open={!!activeMenu}
                 onClose={closeMenus}
-                variant={infoSubMenu === 'contactos' ? 'standard' : 'compact'}
+                variant="standard"
                 layer="base"
                 instance="staff-info"
                 title={
@@ -937,69 +956,37 @@ export default function StaffDashboardView() {
             >
                 <div className="space-y-2">
                     {!infoSubMenu && (
-                        <div className="space-y-1">
-                            <button onClick={() => { trackStaffInfoMenu('Contactos de Interés'); setInfoSubMenu('contactos'); }} className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl">
-                                <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                    <Image src="/icons/whatsapp.png" alt="Contactos" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
-                                </div>
-                                <span className="font-bold text-sm tracking-tight text-left">Contactos de Interés</span>
-                            </button>
-
-                            <a
-                                href="https://marbella-web.vercel.app"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl"
-                            >
-                                <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                    <Image
-                                        src="/icons/web.png"
-                                        alt="Página web"
-                                        width={36}
-                                        height={36}
-                                        className="rounded-xl object-contain transition-transform group-hover:scale-110"
-                                    />
-                                </div>
-                                <span className="font-bold text-sm tracking-tight text-left">Página web</span>
-                            </a>
-
-                            <Link
-                                href="/staff/reservas"
-                                onClick={() => { trackStaffInfoMenu('Reservas y encargos'); closeMenus(); }}
-                                className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl"
-                            >
-                                <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                    <Image src="/icons/reservas.png" alt="Reservas y encargos" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
-                                </div>
-                                <span className="font-bold text-sm tracking-tight text-left">Reservas y encargos</span>
-                            </Link>
-
-                            <Link
-                                href="/staff/carta"
-                                onClick={closeMenus}
-                                className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl"
-                            >
-                                <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                    <Image src="/icons/menu.png" alt="Carta" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
-                                </div>
-                                <span className="font-bold text-sm tracking-tight text-left">Carta</span>
-                            </Link>
-
-                            <button
-                                onClick={() => {
-                                    trackStaffInfoMenu('Manuales');
-                                    setInfoSubMenu(null);
-                                    setActiveMenu(null);
-                                    setIsManualsModalOpen(true);
-                                }}
-                                className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl"
-                            >
-                                <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                    <Image src="/icons/guide.png" alt="Manuales" width={36} height={36} className="object-contain transition-transform group-hover:scale-110" />
-                                </div>
-                                <span className="font-bold text-sm tracking-tight text-left">Manuales</span>
-                            </button>
-                        </div>
+                        <AccessMenuGrid>
+                            {STAFF_INFO_MENU.map((item) => (
+                                <CatalogTile
+                                    key={item.title}
+                                    title={item.title}
+                                    imageSrc={item.imageSrc}
+                                    onClick={() => {
+                                        if (item.kind === 'contactos') {
+                                            trackStaffInfoMenu(item.title);
+                                            setInfoSubMenu('contactos');
+                                            return;
+                                        }
+                                        if (item.kind === 'web') {
+                                            trackStaffInfoMenu(item.title);
+                                            window.open(STAFF_WEB_HREF, '_blank', 'noopener,noreferrer');
+                                            return;
+                                        }
+                                        if (item.kind === 'href') {
+                                            trackStaffInfoMenu(item.title);
+                                            closeMenus();
+                                            router.push(item.href);
+                                            return;
+                                        }
+                                        trackStaffInfoMenu(item.title);
+                                        setInfoSubMenu(null);
+                                        setActiveMenu(null);
+                                        setIsManualsModalOpen(true);
+                                    }}
+                                />
+                            ))}
+                        </AccessMenuGrid>
                     )}
                     {infoSubMenu === 'contactos' && (
                         <div className="max-h-[60vh] overflow-y-auto pr-1 divide-y divide-gray-100">
@@ -1024,51 +1011,41 @@ export default function StaffDashboardView() {
             <Modal
                 open={isManualsModalOpen}
                 onClose={closeManualsModal}
-                variant="compact"
+                variant="standard"
                 layer="base"
                 instance="staff-manuales"
                 title="Manuales"
                 headerTone="petroleum"
                 onBack={backToInfoFromManuals}
             >
-                <div className="space-y-1">
+                <AccessMenuGrid>
                     {STAFF_MANUAL_MENU.map((item) => (
-                        <button
+                        <CatalogTile
                             key={item.id}
+                            title={item.label}
+                            imageSrc={item.icon}
                             onClick={() => handleStaffManualItem(item.id)}
-                            className="flex items-center gap-4 w-full p-4 text-gray-600 hover:text-blue-600 transition-all group active:scale-95 min-h-[56px] rounded-2xl"
-                            type="button"
-                        >
-                            <div className="w-10 h-10 flex items-center justify-center shrink-0 p-1">
-                                <Image
-                                    src={item.icon}
-                                    alt={item.label}
-                                    width={36}
-                                    height={36}
-                                    className="object-contain transition-transform group-hover:scale-110"
-                                />
-                            </div>
-                            <span className="font-bold text-sm tracking-tight text-left">{item.label}</span>
-                        </button>
+                        />
                     ))}
-                </div>
+                </AccessMenuGrid>
             </Modal>
 
             <Modal
                 open={isManualsModalOpen && isTpvManualModalOpen}
                 onClose={closeTpvManualModal}
-                variant="compact"
+                variant="standard"
                 layer="derived"
                 instance="staff-manual-tpv"
                 parentInstance="staff-manuales"
                 title="TPV"
                 headerTone="petroleum"
             >
-                <div className="max-h-[60vh] space-y-1 overflow-y-auto">
+                <AccessMenuGrid>
                     {STAFF_TPV_MANUAL_ITEMS.map((label) => (
-                        <button
+                        <CatalogTile
                             key={label}
-                            type="button"
+                            title={label}
+                            imageSrc={STAFF_TPV_MANUAL_ICONS[label]}
                             onClick={() => {
                                 const v = STAFF_TPV_MANUAL_VIDEOS[label];
                                 if (!v) {
@@ -1079,48 +1056,43 @@ export default function StaffDashboardView() {
                                 setIsHornoManualModalOpen(false);
                                 setManualMediaViewer({ type: 'video', src: v.src, title: v.title });
                             }}
-                            className="flex min-h-[56px] w-full items-center rounded-2xl border border-zinc-100 bg-white px-4 py-3 text-left text-sm font-bold text-gray-700 shadow-sm transition-all hover:border-blue-200 hover:text-blue-600 active:scale-[0.99]"
-                        >
-                            {label}
-                        </button>
+                        />
                     ))}
-                </div>
+                </AccessMenuGrid>
             </Modal>
 
             <Modal
                 open={isManualsModalOpen && isHornoManualModalOpen}
                 onClose={closeHornoManualModal}
-                variant="compact"
+                variant="standard"
                 layer="derived"
                 instance="staff-manual-horno"
                 parentInstance="staff-manuales"
                 title="Horno"
                 headerTone="petroleum"
             >
-                <div className="space-y-3">
-                    <button
-                        type="button"
-                        onClick={() => openStaffPdf(STAFF_MANUAL_ASSETS.hornoLimpiezaPdf)}
-                        className="flex min-h-[56px] w-full items-center rounded-2xl border border-zinc-100 bg-white px-4 py-3 text-left text-sm font-bold text-gray-700 shadow-sm transition-all hover:border-blue-200 hover:text-blue-600 active:scale-[0.99]"
-                    >
-                        Limpieza Horno
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setIsHornoManualModalOpen(false);
-                            setIsTpvManualModalOpen(false);
-                            setManualMediaViewer({
-                                type: 'video',
-                                src: STAFF_MANUAL_ASSETS.hornoFuncionamientoVideo,
-                                title: 'Funcionamiento Horno',
-                            });
-                        }}
-                        className="flex min-h-[56px] w-full items-center rounded-2xl border border-zinc-100 bg-white px-4 py-3 text-left text-sm font-bold text-gray-700 shadow-sm transition-all hover:border-blue-200 hover:text-blue-600 active:scale-[0.99]"
-                    >
-                        Funcionamiento Horno
-                    </button>
-                </div>
+                <AccessMenuGrid>
+                    {STAFF_HORNO_MANUAL_ITEMS.map((item) => (
+                        <CatalogTile
+                            key={item.id}
+                            title={item.label}
+                            imageSrc={item.icon}
+                            onClick={() => {
+                                if (item.id === 'limpieza') {
+                                    openStaffPdf(STAFF_MANUAL_ASSETS.hornoLimpiezaPdf);
+                                    return;
+                                }
+                                setIsHornoManualModalOpen(false);
+                                setIsTpvManualModalOpen(false);
+                                setManualMediaViewer({
+                                    type: 'video',
+                                    src: STAFF_MANUAL_ASSETS.hornoFuncionamientoVideo,
+                                    title: 'Funcionamiento Horno',
+                                });
+                            }}
+                        />
+                    ))}
+                </AccessMenuGrid>
             </Modal>
 
             <Modal
@@ -1178,7 +1150,7 @@ export default function StaffDashboardView() {
             <Modal
                 open={isCashOptionsModalOpen}
                 onClose={() => setIsCashOptionsModalOpen(false)}
-                variant="compact"
+                variant="standard"
                 layer="base"
                 instance="staff-cash-options"
                 usageId="staff-cash-options"
@@ -1201,22 +1173,19 @@ export default function StaffDashboardView() {
             >
                             <QuickCalculatorModal isOpen={cashOptionsCalculatorOpen} onClose={() => setCashOptionsCalculatorOpen(false)} />
                             <FloatingCalculatorFab isOpen={cashOptionsCalculatorOpen} onToggle={() => setCashOptionsCalculatorOpen(true)} />
-                            <div className="py-5 flex flex-col gap-5 bg-white">
-                                <button
+                            <AccessMenuGrid>
+                                <CatalogTile
+                                    title="Cambio"
+                                    imageSrc="/icons/change.png"
                                     onClick={() => {
                                         trackStaffCashOption('Cambio');
                                         setIsCashOptionsModalOpen(false);
                                         setIsCashChangeModalOpen(true);
                                     }}
-                                    className="w-full flex min-h-12 items-center gap-4 py-1 text-left transition-all active:scale-[0.98] group hover:opacity-80"
-                                >
-                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center transition-transform group-hover:scale-110">
-                                        <Image src="/icons/change.png" alt="Cambio" width={48} height={48} className="h-full w-full object-contain" />
-                                    </div>
-                                    <span className="font-black uppercase tracking-wide text-gray-800">Cambio</span>
-                                </button>
-
-                                <button
+                                />
+                                <CatalogTile
+                                    title="Compra"
+                                    imageSrc="/icons/shipment.png"
                                     onClick={() => {
                                         trackStaffCashOption('Compra');
                                         const cashBoxes = allBoxes.filter((b: any) => b.type === 'operational' || b.type === 'change' || b.type === 'tpv');
@@ -1227,41 +1196,25 @@ export default function StaffDashboardView() {
                                         setIsCashOptionsModalOpen(false);
                                         openPurchaseMultiSourceModal();
                                     }}
-                                    className="w-full flex min-h-12 items-center gap-4 py-1 text-left transition-all active:scale-[0.98] group hover:opacity-80"
-                                >
-                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center transition-transform group-hover:scale-110">
-                                        <Image src="/icons/shipment.png" alt="Compra" width={48} height={48} className="h-full w-full object-contain" />
-                                    </div>
-                                    <span className="font-black uppercase tracking-wide text-gray-800">Compra</span>
-                                </button>
-
-                                <button
+                                />
+                                <CatalogTile
+                                    title="Cierre"
+                                    imageSrc="/icons/lock.png"
                                     onClick={() => {
                                         trackStaffCashOption('Cierre de caja');
                                         setIsCashOptionsModalOpen(false);
                                         setIsClosingModalOpen(true);
                                     }}
-                                    className="w-full flex min-h-12 items-center gap-4 py-1 text-left transition-all active:scale-[0.98] group hover:opacity-80"
-                                >
-                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center transition-transform group-hover:scale-110">
-                                        <Image src="/icons/lock.png" alt="Cierre" width={48} height={48} className="h-full w-full object-contain" />
-                                    </div>
-                                    <span className="font-black uppercase tracking-wide text-gray-800">Cierre</span>
-                                </button>
-
-                                <button
+                                />
+                                <CatalogTile
+                                    title="Propinas"
+                                    imageSrc="/icons/tip.png"
                                     onClick={() => {
                                         setIsCashOptionsModalOpen(false);
                                         router.push('/staff/propinas');
                                     }}
-                                    className="w-full flex min-h-12 items-center gap-4 py-1 text-left transition-all active:scale-[0.98] group hover:opacity-80"
-                                >
-                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center transition-transform group-hover:scale-110">
-                                        <Image src="/icons/tip.png" alt="Propinas" width={48} height={48} className="h-full w-full object-contain" />
-                                    </div>
-                                    <span className="font-black uppercase tracking-wide text-gray-800">Propinas</span>
-                                </button>
-                            </div>
+                                />
+                            </AccessMenuGrid>
             </Modal>
 
             <Modal

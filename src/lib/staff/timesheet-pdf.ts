@@ -243,28 +243,54 @@ export async function createTimesheetPdfDocument(
   return doc
 }
 
-export async function generateTimesheetPdf(payload: TimesheetExportPayload): Promise<void> {
-  const logoDataUrl = await loadImageAsDataUrl('/icons/logo-white.png')
-  const doc = await createTimesheetPdfDocument(payload, logoDataUrl)
-
-  const monthLabel = format(new Date(payload.periodYear, payload.periodMonth, 1), 'yyyy-MM')
-  const employeeSlug = payload.employeeFullName
+function slugFilenamePart(value: string): string {
+  return value
     .toLowerCase()
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '')
-    .replace(/\s+/g, '_')
-    .replace(/[^a-z0-9_]/g, '')
-
-  doc.save(`jornada_${employeeSlug}_${monthLabel}.pdf`)
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_|_$/g, '')
 }
 
-export async function generateTimesheetPdfMulti(
+function triggerPdfDownload(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(url), 1_000)
+}
+
+export function openPdfBlob(blob: Blob, filename = 'jornada.pdf'): void {
+  const url = URL.createObjectURL(blob)
+  const opened = window.open(url, '_blank', 'noopener,noreferrer')
+  if (!opened) triggerPdfDownload(blob, filename)
+}
+
+export async function timesheetPdfBlob(
+  payload: TimesheetExportPayload,
+): Promise<{ blob: Blob; filename: string }> {
+  const logoDataUrl = await loadImageAsDataUrl('/icons/logo-white.png')
+  const doc = await createTimesheetPdfDocument(payload, logoDataUrl)
+  const monthLabel = format(new Date(payload.periodYear, payload.periodMonth, 1), 'yyyy-MM')
+  const filename = `jornada_${slugFilenamePart(payload.employeeFullName)}_${monthLabel}.pdf`
+  return { blob: doc.output('blob'), filename }
+}
+
+export async function generateTimesheetPdf(payload: TimesheetExportPayload): Promise<void> {
+  const { blob, filename } = await timesheetPdfBlob(payload)
+  triggerPdfDownload(blob, filename)
+}
+
+export async function timesheetPdfMultiBlob(
   payloads: Array<{
     employee: { fullName: string; dni: string | null }
     payload: TimesheetExportPayload
   }>,
-): Promise<void> {
-  if (payloads.length === 0) return
+): Promise<{ blob: Blob; filename: string }> {
+  if (payloads.length === 0) {
+    throw new Error('No hay registros para exportar')
+  }
 
   const firstPayload = payloads[0].payload
   const exportId = buildExportId(firstPayload.generatedAt)
@@ -314,17 +340,22 @@ export async function generateTimesheetPdfMulti(
     y = drawTimesheetTable(doc, geom, payload, y) + DS_SPACE.lg
   }
 
-  // Re-aplicar chrome con el mismo título (addPage ya pintó páginas intermedias)
   Object.assign(chrome, {
     documentTitle: `JORNADA PLANTILLA · ${period}`,
   })
   paintChromeAll()
 
-  const fileSlug = periodLabel
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .replace(/[^a-z0-9_]+/g, '_')
-    .replace(/^_|_$/g, '')
-  doc.save(`jornada_plantilla_${fileSlug}.pdf`)
+  const filename = `jornada_plantilla_${slugFilenamePart(periodLabel)}.pdf`
+  return { blob: doc.output('blob'), filename }
+}
+
+export async function generateTimesheetPdfMulti(
+  payloads: Array<{
+    employee: { fullName: string; dni: string | null }
+    payload: TimesheetExportPayload
+  }>,
+): Promise<void> {
+  if (payloads.length === 0) return
+  const { blob, filename } = await timesheetPdfMultiBlob(payloads)
+  triggerPdfDownload(blob, filename)
 }

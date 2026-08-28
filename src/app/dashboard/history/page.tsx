@@ -31,6 +31,7 @@ import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/Qui
 import { PeriodNav, PeriodFilterButton } from '@/components/time/PeriodNav';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
 import { MiniMonthCalendar } from '@/components/time/MiniMonthCalendar';
+import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
 import { Button } from '@/components/ui/button';
 import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
@@ -51,8 +52,6 @@ import { CashCountFooter } from '@/components/cash/CashCountFooter';
 
 // --- TYPES & CONSTANTS ---
 type MetricType = 'net_sales' | 'tpv_sales' | 'avg_ticket' | 'tickets_count' | 'cash_counted';
-
-const CALENDAR_WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const;
 
 interface RendimientoScale {
     level: 1 | 2 | 3 | 4 | 5;
@@ -1791,22 +1790,7 @@ export default function HistoryPage() {
                                         </div>
                                     ) : (
                                         <>
-                                            <div className="py-1 bg-zinc-50/50 flex flex-col gap-1 flex-1 min-h-0">
-                                                <div className="mx-auto w-[97%] min-w-0 rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white month-cal-grid-wrap flex-1 min-h-0">
-                                                <div className="grid grid-cols-7 border-b border-gray-100 shrink-0">
-                                                    {CALENDAR_WEEKDAYS.map((d, index) => (
-                                                        <div
-                                                            key={d}
-                                                            className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-sm border-r border-white/30 last:border-r-0"
-                                                        >
-                                                            <span className="text-[9px] font-bold text-white uppercase tracking-wider truncate px-0.5 drop-shadow-sm leading-none">
-                                                                <span className="hidden md:inline">{d}</span>
-                                                                <span className="md:hidden">{['L', 'M', 'X', 'J', 'V', 'S', 'D'][index]}</span>
-                                                            </span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-
+                                            <MonthCalendarFrame>
                                                 <div className="month-cal-weeks">
                                                 {calendarWeeks.map((week) => (
                                                     <div key={format(week[0], 'yyyy-MM-dd')} className="grid grid-cols-7 border-b border-gray-100 last:border-b-0 month-cal-week">
@@ -1823,7 +1807,7 @@ export default function HistoryPage() {
                                                                     <div
                                                                         key={key}
                                                                         className={cn(
-                                                                            'relative flex flex-col min-h-[68px] sm:min-h-[76px] md:min-h-[84px] p-0.5 sm:p-1 month-cal-cell',
+                                                                            'relative flex flex-col p-0.5 sm:p-1 month-cal-cell',
                                                                             'border-r border-gray-100 last:border-r-0',
                                                                             pastDayBg,
                                                                             !isViewMonthDay && 'opacity-25',
@@ -1841,7 +1825,7 @@ export default function HistoryPage() {
                                                                     type="button"
                                                                     onClick={() => openClosingDetail(closing)}
                                                                     className={cn(
-                                                                        'group relative flex flex-col text-left min-h-[68px] sm:min-h-[76px] md:min-h-[84px] transition-colors p-0.5 sm:p-1 month-cal-cell',
+                                                                        'group relative flex flex-col text-left transition-colors p-0.5 sm:p-1 month-cal-cell',
                                                                         'border-r border-gray-100 last:border-r-0 hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer',
                                                                         pastDayBg,
                                                                         !isViewMonthDay && 'opacity-25',
@@ -1861,8 +1845,7 @@ export default function HistoryPage() {
                                                     </div>
                                                 ))}
                                                 </div>
-                                            </div>
-                                            </div>
+                                            </MonthCalendarFrame>
                                         </>
                                     )}
                                 </div>

@@ -55,9 +55,23 @@ export const STAFF_TPV_MANUAL_ITEMS = [
 
 export type StaffTpvManualItemLabel = (typeof STAFF_TPV_MANUAL_ITEMS)[number];
 
+export const STAFF_TPV_MANUAL_ICONS: Record<StaffTpvManualItemLabel, string> = {
+    'Anulaciones': '/icons/reverse.png',
+    'Descuentos': '/icons/400.2.png',
+    'Cobros Pendientes': '/icons/wallet.png',
+    'Conceptos Botonera': '/icons/pos.png',
+    'Impresoras Tpv': '/icons/notas.png',
+    'Instrucciones Handy': '/icons/phone.png',
+};
+
 export const STAFF_TPV_MANUAL_VIDEOS: Partial<Record<StaffTpvManualItemLabel, { src: string; title: string }>> = {
     'Anulaciones': { src: STAFF_MANUAL_ASSETS.tpvAnulacionesVideo, title: 'TPV · Anulaciones' },
     'Descuentos': { src: STAFF_MANUAL_ASSETS.tpvDescuentosVideo, title: 'TPV · Descuentos' },
     'Cobros Pendientes': { src: STAFF_MANUAL_ASSETS.tpvCobrosPendientesVideo, title: 'TPV · Cobros Pendientes' },
     'Impresoras Tpv': { src: STAFF_MANUAL_ASSETS.tpvImpresorasVideo, title: 'TPV · Impresoras TPV' },
 };
+
+export const STAFF_HORNO_MANUAL_ITEMS = [
+    { id: 'limpieza', label: 'Limpieza Horno', icon: '/icons/bin.png' },
+    { id: 'funcionamiento', label: 'Funcionamiento Horno', icon: '/icons/horno.png' },
+] as const;

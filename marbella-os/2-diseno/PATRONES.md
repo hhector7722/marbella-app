@@ -57,6 +57,7 @@ El patrón más usado del producto. Sus leyes están en [EXPERIENCIA §8](EXPERI
 - La navegación padre→hijo no es nesting de capas ni z-index (`AF-MODAL-NAV-NO-ES-LAYER`). Contrato en [Modal](SISTEMA-DE-COMPONENTES.md#modal).
 - Al abrirse, las barras fijas de la aplicación se atenúan y dejan de responder al toque.
 - Sin scroll horizontal. Centrado respecto al viewport visible.
+- Un menú de accesos a otras páginas o submodales no es una lista. Es la misma rejilla de icono + nombre que el catálogo (Info, Documentos, Manuales, Caja, Stock). Mínimo 3 columnas; más solo si el consumidor lo pide.
 - El componente que materializa este patrón es el [Modal de sistema](SISTEMA-DE-COMPONENTES.md#modal). Las leyes de interacción, incluido el viewport estrecho, están en [EXPERIENCIA §8](EXPERIENCIA.md#8-modales).
 
 ---
@@ -68,13 +69,11 @@ Patrón de navegación temporal para todo lo que se organiza por fechas: horario
 **Anatomía**: cabecera con mes y navegación, rejilla continua de siete columnas, cabecera de días idéntica, celdas de día con indicadores compactos, y una franja de indicadores del mes cuando el dominio lo pide.
 
 **Reglas**:
-- **En escritorio cabe en un viewport.** El alto disponible se reparte entre las filas; las celdas no crecen con su contenido. Es el caso más exigente de la ley de densidad.
-- En móvil se puede desplazar y se navega también por gesto lateral, con la navegación visible además del gesto.
-- Todas las filas tienen la misma altura, con independencia de cuántos indicadores contenga cada día.
-- Los indicadores de una celda se truncan con un contador de resto; nunca deforman la celda.
+- **Semana vacía: el tamaño de Cierres.** La celda mide 68 / 76 / 84 px. Si el contenido de esa semana no cabe, la fila crece. En móvil el mes se desplaza.
+- En móvil se navega también por gesto lateral, con la navegación visible además del gesto.
 - El día se construye en tiempo local del negocio. Un desplazamiento de zona horaria en este patrón produce un error de un día completo en toda la vista.
 - Pulsar un día abre P4.
-- **Un solo cromo.** Labor, Reservas, Horario, Actividades, Consumo staff y Cierres muestran el mismo tipo de calendario. Cambia el contenido de la celda, no la rejilla. Horas extras no es P3: es mini-calendario de días + filas de semana.
+- **Un solo cromo.** Labor, Reservas, Horario, Actividades, Consumo y Cierres muestran el mismo tipo de calendario. Cambia el contenido de la celda, no la rejilla. El cromo (franja, tarjeta, cabecera de días) es el de Cierres. Horas extras no es P3: es mini-calendario de días + filas de semana. Asistencia monta tarjetas semanales (P6). El selector de un día (ventas, filtro de periodo, editor de horario) es MiniMonthCalendar, no P3.
 
 ---
 
@@ -218,7 +217,7 @@ La composición por defecto de listado, detalle y formulario de gestión. No es 
 - El periodo (P7) vive **en la cabecera** (`periodSlot`). El icono de filtro es siempre el mismo, a la derecha. Las acciones de alcance (trabajador, exportar) también van en `rightSlot`.
 - El cuerpo empieza pegado al contenido: no se deja un hueco vacío entre la cabecera y la tabla o el calendario.
 - `Button` en la cabecera se pinta invertido, sin relleno ni marco. No es una quinta variante de Button.
-- Labor, Reservas, Horario, Actividades, Consumo staff y Cierres montan el calendario mensual (P3) **dentro** de esta plantilla; no sustituyen la cabecera. La rejilla es una. Horas extras también entra por PageScreen, pero su interior es vista semanal (mini-calendario + filas), no P3.
+- Labor, Reservas, Horario, Actividades, Consumo y Cierres montan el calendario mensual (P3) **dentro** de esta plantilla; no sustituyen la cabecera. La rejilla es una. Horas extras también entra por PageScreen, pero su interior es vista semanal (mini-calendario + filas), no P3.
 - Recetas e Ingredientes montan la rejilla de catálogo a **3 columnas**; Proveedores (página y el modal de Pedido) a **4**. Cada celda es un cuadrado (imagen + pie), sin tarjeta, con aire entre celdas. La imagen se reduce al mismo tamaño; el pie es una sola fila. El disparador **CAT** / **PROV** flota sobre el fondo, sin mini-card y sin punto.
 - Asistencia (historial) monta tarjetas semanales (P6) dentro de esta plantilla, no el calendario P3.
 

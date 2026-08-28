@@ -1,6 +1,7 @@
 'use client';
 
 import { Modal } from '@/components/ui/modal';
+import { AccessMenuGrid, CatalogTile } from '@/components/catalog/CatalogTile';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 
 export type NominasMenuAction = 'nominas' | 'comunicados' | 'contrato' | 'convenio' | 'conducta';
@@ -27,29 +28,26 @@ export default function NominasMenuModal({ isOpen, onClose, onSelect }: NominasM
             open={isOpen}
             onClose={onClose}
             title="Documentos"
-            variant="compact"
+            variant="standard"
             layer="base"
             instance="documentos-menu"
             headerTone="petroleum"
             usageId="documentos-menu"
             usageLabel="Menú documentos"
         >
-            <div className="grid grid-cols-1 gap-6">
+            <AccessMenuGrid>
                 {OPTIONS.map(({ key, label, iconPath }) => (
-                    <button
+                    <CatalogTile
                         key={key}
-                        type="button"
+                        title={label}
+                        imageSrc={iconPath}
                         onClick={() => {
                             trackNominasMenu(label);
                             onSelect(key);
                         }}
-                        className="min-h-[56px] flex items-center justify-center gap-3 p-3 transition-all active:scale-[0.98] hover:opacity-80"
-                    >
-                        <img src={iconPath} alt="" className="w-10 h-10 object-contain shrink-0" />
-                        <span className="font-black text-zinc-800 text-sm uppercase tracking-wide">{label}</span>
-                    </button>
+                    />
                 ))}
-            </div>
+            </AccessMenuGrid>
         </Modal>
     );
 }

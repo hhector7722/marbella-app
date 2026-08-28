@@ -72,7 +72,11 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             /\[data-component='PageScreen'\]\[data-fill-viewport='true'\] \{[\s\S]*?padding-bottom:\s*calc\(5\.5rem/,
             'solo los editores a viewport reservan el pie de navegación'
         );
-        assert.match(css, /\[data-component='Field'\]/);
+        assert.match(
+            css,
+            /\[data-component='PageScreen'\] \[data-element='body'\] \{[\s\S]*?padding-top:\s*var\(--espacio-2\)/,
+            'PageScreen deja un aire ligero entre la cabecera y el contenido'
+        );
         assert.match(css, /\[data-component='SearchField'\]/);
         assert.match(css, /\[data-component='EmptyState'\]/);
         assert.match(
@@ -123,7 +127,22 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             /data-element="body"[\s\S]*?flex-1 flex flex-col min-h-0/,
             'el cuerpo de PageScreen no se estira: la tarjeta acaba con el contenido'
         );
+        assert.match(source, /titleLeading/, 'la cabecera admite identidad junto al título');
+        assert.match(source, /onBack/, 'la flecha atrás puede ejecutar una acción');
         assert.match(source, /data-fill-viewport=\{fillViewport \? 'true' : undefined\}/);
+    });
+
+    it('perfil pone el avatar en la cabecera y las opciones en 3 columnas', () => {
+        const source = readFileSync(join(SRC_ROOT, 'app/profile/page.tsx'), 'utf8');
+        assert.match(source, /titleLeading/, 'el avatar vive a la izquierda del nombre');
+        assert.match(source, /grid-cols-3/, 'las opciones van en 3 columnas');
+        assert.doesNotMatch(source, /grid-cols-2 gap-6/, 'ya no es la rejilla de 2');
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        assert.match(
+            css,
+            /\[data-element='title-leading'\]/,
+            'el avatar de cabecera escala con el título'
+        );
     });
 
     it('listas de varios trabajadores usan WorkerPersonRow', () => {
@@ -214,11 +233,6 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             assert.match(source, /DashboardDetailLayout|PageScreen/, `${rel} debe usar PageScreen`);
             assert.match(source, /month-cal-shell/, `${rel} debe usar month-cal-shell`);
             assert.match(source, /month-cal-card/, `${rel} debe usar month-cal-card`);
-            assert.match(
-                source,
-                /from-red-500 to-red-600/,
-                `${rel} debe usar la misma cabecera de días`
-            );
             assert.doesNotMatch(
                 source,
                 /month-cal-days--gap/,
@@ -229,7 +243,28 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
                 /bg-white rounded-2xl shadow-2xl/,
                 `${rel} no debe clonar la tarjeta de pantalla`
             );
+            assert.match(source, /month-cal-weeks/, `${rel} apila semanas como Cierres`);
+            assert.match(source, /MonthCalendarFrame/, `${rel} usa el cromo de Cierres`);
+            assert.doesNotMatch(
+                source,
+                /min-h-\[52px\]|h-24 sm:h-28 md:h-32/,
+                `${rel} no usa un alto de celda distinto al de Cierres`
+            );
+            assert.doesNotMatch(
+                source,
+                /px-\[1%\]|w-full min-w-0 overflow-hidden rounded-xl border border-zinc-200/,
+                `${rel} no pinta un cromo propio alrededor de la rejilla`
+            );
         }
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        assert.match(
+            css,
+            /--month-cal-cell-min-h:\s*68px/,
+            'la semana vacía mide lo mismo que Cierres'
+        );
+        const frame = readFileSync(join(SRC_ROOT, 'components/time/MonthCalendarFrame.tsx'), 'utf8');
+        assert.match(frame, /from-red-500 to-red-600/, 'la cabecera de días es la de Cierres');
+        assert.match(frame, /month-cal-chrome/, 'el marco pinta el cromo unificado');
     });
 
     it('albaranes usa Field, EmptyState y Notice', () => {
@@ -266,7 +301,8 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
         assert.match(admin, /<Surface /);
         assert.match(admin, /dashboard-horas-extras/);
-        assert.match(admin, /bg-purple-600/);
+        assert.match(admin, /dashboard-horas-extras[\s\S]*?data-element="header"/);
+        assert.doesNotMatch(admin, /bg-purple-600/);
         assert.match(ventas, /<Surface /);
         assert.match(ventas, /data-element="header"/);
         assert.match(ventas, /dashboard-ventas-total/);
@@ -472,6 +508,10 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(tile, /aspect-square/, 'la celda imagen+pie es un cuadrado');
         assert.match(tile, /grid-cols-3/, 'la rejilla admite 3 columnas');
         assert.match(tile, /grid-cols-4/, 'la rejilla admite 4 columnas');
+        assert.match(tile, /grid-cols-5/, 'la rejilla admite más de 4 columnas');
+        assert.match(tile, /grid-cols-6/, 'la rejilla admite 6 columnas');
+        assert.match(tile, /function AccessMenuGrid/, 'los menús de acceso usan la misma rejilla');
+        assert.match(tile, /columns = 3/, 'los menús de acceso van a 3 columnas por defecto');
         assert.match(tile, /gap-5/, 'hay aire entre celdas');
         assert.match(tile, /object-contain/, 'la imagen se reduce para caber');
         assert.match(tile, /h-5/, 'el pie reserva una sola fila en las tres páginas');
@@ -479,6 +519,40 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.doesNotMatch(tile, /break-words/, 'el pie no pasa a segunda fila');
         assert.doesNotMatch(tile, /bg-white/, 'la celda no tiene card blanca');
         assert.doesNotMatch(tile, /shadow-md/, 'la celda no tiene sombra de card');
+    });
+
+    it('los menús de acceso en modal van en rejilla, nunca en lista', () => {
+        const hosts = [
+            'components/profile/NominasMenuModal.tsx',
+            'components/dashboards/StaffDashboardView.tsx',
+            'components/modals/StaffProductModal.tsx',
+            'components/modals/AdminProductModal.tsx',
+        ];
+        for (const rel of hosts) {
+            const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
+            assert.match(source, /AccessMenuGrid/, `${rel} monta la rejilla de accesos`);
+            assert.match(source, /CatalogTile/, `${rel} monta la misma celda que el catálogo`);
+            assert.doesNotMatch(
+                source,
+                /grid grid-cols-1 gap/,
+                `${rel} no lista los accesos en una columna`
+            );
+            assert.doesNotMatch(
+                source,
+                /grid-cols-2 gap-3 bg-gray-50/,
+                `${rel} no usa la rejilla de dos columnas de Stock`
+            );
+        }
+        const docs = readFileSync(join(SRC_ROOT, 'components/profile/NominasMenuModal.tsx'), 'utf8');
+        assert.doesNotMatch(docs, /min-h-\[56px\] flex items-center justify-center gap-3/, 'Documentos no es una lista');
+        const staff = readFileSync(join(SRC_ROOT, 'components/dashboards/StaffDashboardView.tsx'), 'utf8');
+        assert.doesNotMatch(
+            staff,
+            /flex items-center gap-4 w-full p-4 text-gray-600/,
+            'Info y Manuales no son una lista'
+        );
+        const patrones = readFileSync(join(REPO_ROOT, 'marbella-os/2-diseno/PATRONES.md'), 'utf8');
+        assert.match(patrones, /menú de accesos/, 'P2 declara la rejilla de accesos');
     });
 
     it('ningún piloto prioritario reintroduce rounded-[2.5rem]', () => {
@@ -608,6 +682,10 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             /<h2 data-element="title">Ingredientes/,
             'la tabla de ingredientes no duplica la palabra Ingredientes'
         );
+        assert.match(recipe, /<th scope="col">Ingredientes<\/th>/, 'la columna se llama Ingredientes');
+        assert.match(recipe, /instance="recipe-simulador"/, 'Simulador es el botón de sistema');
+        assert.doesNotMatch(recipe, /bg-purple-600 px-3/, 'Simulador no es una pastilla propia');
+        assert.doesNotMatch(recipe, /instance="recipe-nuevo-ingrediente"/, 'añadir no es un botón de 48px sobre la cabecera');
         assert.match(recipe, /openAddIngredientModal/, 'se añade ingrediente desde la tabla');
         const recipeCss = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
         assert.match(

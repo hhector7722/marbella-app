@@ -35,6 +35,8 @@
   --espacio-4: 16px;
   --espacio-8: 32px;
   --tactil-minimo: 48px;
+  /* Alto por defecto de celda del calendario mensual (P3 / Cierres). */
+  --month-cal-cell-min-h: 68px;
   --elevacion-superficie: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --elevacion-modal: 0 25px 50px -12px rgb(0 0 0 / 0.25);
   --elevacion-pagina: 0 25px 50px -12px rgb(0 0 0 / 0.25);
@@ -65,6 +67,59 @@
   --z-modal-derived: 210;
   --z-modal-system: 220;
   --z-modal-sheet: 205;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --month-cal-cell-min-h: 76px;
+  }
+}
+@media (min-width: 768px) {
+  :root {
+    --month-cal-cell-min-h: 84px;
+  }
+}
+
+/* Celda P3: semana vacía = Cierres; si hay más contenido, la fila crece. */
+.month-cal-cell {
+  min-height: var(--month-cal-cell-min-h);
+  padding: 0.125rem;
+}
+
+@media (min-width: 640px) {
+  .month-cal-cell {
+    padding: 0.25rem;
+  }
+}
+
+/* Cromo P3 de Cierres: franja zinc-50 + tarjeta al 97 %. */
+.month-cal-chrome {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-block: 0.25rem;
+  background-color: rgb(250 250 250 / 0.5);
+}
+
+.month-cal-grid-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  margin-inline: auto;
+  width: 97%;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  border: 1px solid #e4e4e7;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  background-color: #fff;
+}
+
+@media (max-width: 1023px) {
+  [data-component='PageScreen'].month-cal-shell .month-cal-grid-wrap {
+    width: calc(100% - var(--espacio-2));
+    max-width: calc(100% - var(--espacio-2));
+  }
 }
 
 /* Backdrop del contrato Modal: filtros solo en nivel base/sheet. */
@@ -481,6 +536,7 @@
 }
 [data-component='PageScreen'] [data-element='body'] {
   flex: none;
+  padding-top: var(--espacio-2);
 }
 [data-component='PageScreen'] [data-element='header'],
 [data-component='Surface'][data-variant='page'] > [data-element='header'] {
@@ -506,6 +562,19 @@
     padding-inline: var(--espacio-8);
   }
 }
+
+[data-component='PageScreen'] [data-element='header'] [data-element='title-leading'] {
+  width: calc(1.125rem * var(--page-header-scale, 1) * 1.7);
+  height: calc(1.125rem * var(--page-header-scale, 1) * 1.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+[data-component='PageScreen'] [data-element='header'] [data-element='title-leading'] > * {
+  width: 100%;
+  height: 100%;
+}
+
 [data-component='PageScreen'] [data-element='title'],
 [data-component='Surface'][data-variant='page'] > [data-element='header'] [data-element='title'] {
   margin: 0;
@@ -1471,9 +1540,8 @@ button[data-element='catalog-filter'] {
   }
 
   /**
-   * Calendario mensual a 1 viewport en escritorio (≥1024px).
-   * Filas de igual altura (minmax(0,1fr) + min-height:0 en celdas).
-   * Smartphone: el grid usa el ancho útil, siempre menor que la PageScreen.
+   * Calendario mensual. Smartphone: el grid usa el ancho útil.
+   * Escritorio: misma celda por defecto que Cierres; la semana crece si el contenido lo pide.
    */
   @media (max-width: 1023px) {
     [data-component='PageScreen'].month-cal-shell .month-cal-grid-wrap,
@@ -1496,12 +1564,12 @@ button[data-element='catalog-filter'] {
       max-width: 1400px;
       margin-left: auto;
       margin-right: auto;
-      height: calc(100dvh - var(--marbella-cal-header) - var(--marbella-cal-bottom));
-      max-height: calc(100dvh - var(--marbella-cal-header) - var(--marbella-cal-bottom));
+      height: auto;
+      max-height: none;
       min-height: 0 !important;
       padding: 0.25rem 0.75rem !important;
       padding-bottom: 0.35rem !important;
-      overflow: hidden;
+      overflow: visible;
     }
 
     /* Anula max-width interno en desktop para usar todo el shell */
@@ -1512,18 +1580,18 @@ button[data-element='catalog-filter'] {
     .month-cal-card {
       display: flex !important;
       flex-direction: column !important;
-      flex: 1 1 0% !important;
+      flex: none !important;
       min-height: 0 !important;
-      overflow: hidden !important;
+      overflow: visible !important;
       width: 100%;
     }
 
     .month-cal-body {
       display: flex !important;
       flex-direction: column !important;
-      flex: 1 1 0% !important;
+      flex: none !important;
       min-height: 0 !important;
-      overflow: hidden !important;
+      overflow: visible !important;
       flex-shrink: 1 !important;
       padding-top: 0 !important;
       padding-bottom: 0.15rem !important;
@@ -1542,70 +1610,66 @@ button[data-element='catalog-filter'] {
     .month-cal-grid-wrap {
       display: flex !important;
       flex-direction: column !important;
-      flex: 1 1 0% !important;
+      flex: none !important;
       min-height: 0 !important;
       overflow: hidden !important;
-      width: 100%;
+      width: 97%;
     }
 
-    /* Días en un único grid plano (horario, actividades, consumo, labor) */
+    /* Días en un único grid plano (legado). Filas al alto de Cierres; crecen si hace falta. */
     .month-cal-days {
       display: grid !important;
       grid-template-columns: repeat(7, minmax(0, 1fr));
-      grid-auto-rows: minmax(0, 1fr) !important;
-      flex: 1 1 0% !important;
+      grid-auto-rows: minmax(var(--month-cal-cell-min-h), auto) !important;
+      flex: none !important;
       min-height: 0 !important;
       height: auto !important;
-      align-content: stretch;
-      overflow: hidden;
+      align-content: start;
+      overflow: visible;
     }
 
     .month-cal-days.month-cal-days--gap {
       gap: 0.2rem;
     }
 
-    /* Semanas apiladas (reservas, historial cierres) — misma altura cada fila */
+    /* Semanas apiladas — alto por defecto de Cierres; la fila crece con el contenido. */
     .month-cal-weeks {
       display: flex !important;
       flex-direction: column !important;
-      flex: 1 1 0% !important;
+      flex: none !important;
       min-height: 0 !important;
       height: auto !important;
-      overflow: hidden;
+      overflow: visible;
     }
 
     .month-cal-week {
       display: grid !important;
       grid-template-columns: repeat(7, minmax(0, 1fr));
-      flex: 1 1 0% !important;
-      min-height: 0 !important;
-      overflow: hidden !important;
+      flex: none !important;
+      min-height: var(--month-cal-cell-min-h) !important;
+      overflow: visible !important;
     }
 
-    /**
-     * Celda: ocupa exactamente su área de grid/semana.
-     * min-height:0 evita que el contenido (chips) fuerce filas más altas.
-     */
     .month-cal-cell {
-      height: 100% !important;
-      min-height: 0 !important;
-      max-height: 100% !important;
-      overflow: hidden !important;
+      height: auto !important;
+      min-height: var(--month-cal-cell-min-h) !important;
+      max-height: none !important;
+      overflow: visible;
       align-self: stretch !important;
       padding: 0.15rem 0.2rem !important;
     }
 
     .month-cal-days > *,
     .month-cal-week > * {
-      min-height: 0 !important;
-      overflow: hidden;
+      min-height: var(--month-cal-cell-min-h) !important;
+      overflow: visible;
     }
 
-    /* Chips de actividad más densos en escritorio */
+    /* Chips de actividad más densos en escritorio; la semana crece si no caben. */
     .month-cal-chips {
       gap: 1px !important;
       min-height: 0 !important;
-      overflow: hidden !important;
+      overflow: visible !important;
     }
 
     .month-cal-chips > * > div {

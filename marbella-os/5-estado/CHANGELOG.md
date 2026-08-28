@@ -36,6 +36,26 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
 
+## 2026-08-28
+
+- **Los menús de acceso del modal se leen como el de proveedores.** Icono y nombre en filas y columnas, nunca en lista. Info, Documentos, Manuales, Caja y Stock van iguales, con tres columnas de mínimo.
+
+- **En Perfil, la cabecera va atrás, foto y nombre.** La foto es pequeña, a la medida del título. Las opciones se leen en tres columnas.
+
+- **En Asistencia, compartir abre Exportar PDF o Enviar.** El PDF es el de lo que se ve ahora; Enviar lo pasa al envío del dispositivo. Plantilla pasa a un icono de persona; con alguien filtrado, sus iniciales y la cruz sobre el círculo.
+
+- **Horas extras en el mosaico usa la misma cabecera que Ventas.** Petróleo y compacta; el Ver más queda pequeño.
+
+- **El calendario mensual unificado se ve como Cierres.** Misma franja, misma tarjeta, misma cabecera de días. Semana vacía, ese alto; si hay más datos, la fila crece.
+
+- **Los calendarios mensuales miden lo mismo que Cierres.** Semana vacía, ese alto; si hay más contenido, la fila crece. Coste laboral, Consumo, Horario, Actividades y Reservas dejan de ir cada uno a su tamaño.
+
+- **Las pantallas de gestión dejan un aire entre la cabecera y el contenido.** Ligero, el mismo en todas.
+
+- **Consumo personal se titula Consumo.** En la cabecera ya no dice Consumo staff.
+
+- **En la ficha de receta, Simulador es el mismo botón que el resto.** El más de añadir ingrediente baja de tamaño. La primera columna de la tabla se llama Ingredientes.
+
 ## 2026-08-27
 
 - **La tarjeta de gestión se acaba con el contenido.** En proveedores y el resto de pantallas unificadas ya no queda un hueco blanco al final: el aire bajo la tarjeta es el de los lados, como en la ventana de elegir proveedor.

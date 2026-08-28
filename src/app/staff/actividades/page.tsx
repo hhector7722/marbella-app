@@ -22,6 +22,8 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { PeriodNav } from '@/components/time/PeriodNav';
+import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
+import { chunkCalendarWeeks } from '@/lib/month-calendar-weeks';
 import { PavilionDayModal } from '@/components/pavilion/PavilionDayModal';
 import {
   fetchActivitiesForRangeAction,
@@ -30,10 +32,6 @@ import {
 import { usePageView } from '@/lib/usage/usePageView';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import { createClient } from '@/utils/supabase/client';
-
-const CALENDAR_WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const;
-const MOBILE_HEADERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'] as const;
-const MAX_VISIBLE = 4;
 
 function fmtHour(time: string): string {
   const parts = time.split(':');
@@ -192,6 +190,7 @@ export default function ActividadesPage() {
     () => eachDayOfInterval({ start: gridStart, end: gridEnd }),
     [gridStart, gridEnd],
   );
+  const calendarWeeks = useMemo(() => chunkCalendarWeeks(calendarDays), [calendarDays]);
 
   const rangeStart = format(calendarDays[0]!, 'yyyy-MM-dd');
   const rangeEnd = format(calendarDays[calendarDays.length - 1]!, 'yyyy-MM-dd');
@@ -288,44 +287,29 @@ export default function ActividadesPage() {
               <LoadingSpinner size="lg" className="text-ds-marca" />
             </div>
           ) : (
-            <div 
-              className="flex flex-col gap-0.5 bg-zinc-50/50 px-[1%] pt-0.5 pb-1 touch-pan-y month-cal-body"
+            <>
+            <MonthCalendarFrame
+              className="touch-pan-y month-cal-body"
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
             >
-              <div className="mx-auto w-full min-w-0 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.08)] month-cal-grid-wrap">
-                {/* Day headers */}
-                <div className="grid grid-cols-7 border-b border-gray-100 shrink-0">
-                  {CALENDAR_WEEKDAYS.map((d, index) => (
-                    <div
-                      key={d}
-                      className="flex h-5 items-center justify-center border-r border-white/30 bg-gradient-to-b from-red-500 to-red-600 shadow-sm last:border-r-0"
-                    >
-                      <span className="block truncate px-0.5 text-[9px] font-bold uppercase tracking-wider text-white drop-shadow-sm leading-none">
-                        <span className="hidden md:inline">{d}</span>
-                        <span className="md:hidden">{MOBILE_HEADERS[index]}</span>
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Days grid */}
-                <div className="grid grid-cols-7 month-cal-days">
-                  {calendarDays.map((day) => {
+                <div className="month-cal-weeks">
+                  {calendarWeeks.map((week) => (
+                  <div key={format(week[0]!, 'yyyy-MM-dd')} className="grid grid-cols-7 border-b border-gray-100 last:border-b-0 month-cal-week">
+                  {week.map((day) => {
                     const key = format(day, 'yyyy-MM-dd');
                     const dayData = byDate[key];
                     const barActs = dayData?.barActivities ?? [];
                     const isViewMonthDay = isSameMonth(day, viewMonth);
                     const isPastDay = isBefore(day, today);
                     const isToday = isSameDay(day, today);
-                    const pastDayBg = isPastDay ? 'bg-zinc-100' : 'bg-white';
+                    const pastDayBg = isPastDay ? 'bg-zinc-50/90' : 'bg-white';
 
                     const grouped = groupActivities(barActs);
 
                     const cellCls = cn(
                       'relative flex flex-col border-r border-gray-100 p-0.5 sm:p-1 last:border-r-0 month-cal-cell',
-                      'h-24 sm:h-28 md:h-32',
                       pastDayBg,
                       isToday && isViewMonthDay && !isPastDay && 'bg-blue-50/10',
                     );
@@ -359,13 +343,13 @@ export default function ActividadesPage() {
                         onClick={() => openDay(day)}
                         role="button"
                         tabIndex={0}
-                        className={cn(cellCls, 'hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer text-left overflow-hidden')}
+                        className={cn(cellCls, 'hover:bg-blue-50/50 active:bg-blue-50/70 cursor-pointer text-left')}
                       >
                         <div className="flex justify-end items-center gap-0.5 shrink-0 w-full mb-0.5">
                           <span className={dayNumCls}>{format(day, 'd')}</span>
                         </div>
 
-                        <div className="flex-1 w-full min-h-0 overflow-hidden flex flex-col gap-0.5 month-cal-chips">
+                        <div className="flex w-full flex-col gap-0.5 month-cal-chips">
                           {grouped.map((act, i) => {
                             const bgColor = act.activityColor || stringToHslColor(act.activityName);
                             return (
@@ -396,15 +380,17 @@ export default function ActividadesPage() {
                       </div>
                     );
                   })}
+                  </div>
+                  ))}
                 </div>
-              </div>
+            </MonthCalendarFrame>
               
               <div className="flex justify-center items-center gap-1.5 py-2 w-full month-cal-swipe-dots">
                 <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 shadow-sm opacity-70"></div>
                 <div className="w-2 h-2 rounded-full bg-white shadow-sm border border-zinc-200"></div>
                 <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 shadow-sm opacity-70"></div>
               </div>
-            </div>
+            </>
           )}
     </DashboardDetailLayout>
 

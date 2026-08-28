@@ -3,32 +3,57 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
+const CATALOG_GRID_COLS = {
+    3: 'grid-cols-3',
+    4: 'grid-cols-4',
+    5: 'grid-cols-5',
+    6: 'grid-cols-6',
+} as const;
+
+export type CatalogGridColumns = keyof typeof CATALOG_GRID_COLS;
+
 /**
- * Celda de catálogo (Recetas, Ingredientes, Proveedores).
- * Pieza local de dominio: no es primitiva del sistema.
+ * Celda de catálogo (Recetas, Ingredientes, Proveedores) y de menús de acceso
+ * (Info, Documentos, Manuales, Caja, Stock). Pieza local de dominio: no es
+ * primitiva del sistema.
  *
  * El conjunto imagen + pie es un cuadrado. La imagen se encoge dentro
  * del hueco; el pie es una sola fila. El hueco del pie se reserva siempre
- * para que proveedores, recetas e ingredientes pinten la foto al mismo tamaño.
+ * para que todas las rejillas pinten la foto al mismo tamaño.
  * Recetas e ingredientes: 3 columnas. Proveedores (página y pedido): 4.
+ * Menús de acceso: mínimo 3 columnas; más solo si el consumidor lo pide.
  */
 export function CatalogGrid({
     children,
     columns = 4,
 }: {
     children: ReactNode;
-    columns?: 3 | 4;
+    columns?: CatalogGridColumns;
 }) {
     return (
         <div
             className={cn(
                 'grid items-start gap-5 sm:gap-6 md:gap-8',
-                columns === 3 ? 'grid-cols-3' : 'grid-cols-4',
+                CATALOG_GRID_COLS[columns],
             )}
         >
             {children}
         </div>
     );
+}
+
+/**
+ * Rejilla de accesos en modal: otras páginas o submodales.
+ * Misma celda que el catálogo. Por defecto 3 columnas; más si se especifica.
+ */
+export function AccessMenuGrid({
+    children,
+    columns = 3,
+}: {
+    children: ReactNode;
+    columns?: CatalogGridColumns;
+}) {
+    return <CatalogGrid columns={columns}>{children}</CatalogGrid>;
 }
 
 export function CatalogTile({
@@ -42,7 +67,7 @@ export function CatalogTile({
     title: string;
     imageSrc?: string | null;
     imageAlt?: string;
-    fallback: ReactNode;
+    fallback?: ReactNode;
     subtitle?: ReactNode;
     onClick: () => void;
 }) {
@@ -61,9 +86,9 @@ export function CatalogTile({
                             alt={imageAlt}
                             className="max-h-full max-w-full object-contain"
                         />
-                    ) : (
+                    ) : fallback ? (
                         <span className="text-gray-200">{fallback}</span>
-                    )}
+                    ) : null}
                 </div>
                 <div className="flex h-5 w-full shrink-0 items-center justify-center gap-1 overflow-hidden sm:h-6">
                     <span className="min-w-0 truncate text-[11px] font-bold leading-none text-gray-700 sm:text-xs md:text-sm">
