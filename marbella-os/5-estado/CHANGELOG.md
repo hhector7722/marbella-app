@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-28
 
+- **El fichaje recupera un negro de 1 px por fuera del blanco.** El volumen sigue en el relleno; sin base.
+
 - **El volumen de Entrada y Salida va en el color.** Más claro arriba y más oscuro abajo; al pulsar, el relleno se aplana. Se retira el contorno negro.
 
 - **Entrada y Salida del fichaje se pulsan.** Borde blanco, aro negro y una base de 2 px; al tocar, bajan.
