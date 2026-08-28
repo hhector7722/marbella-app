@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-28
 
+- **El volumen de Entrada y Salida va en el color.** Más claro arriba y más oscuro abajo; al pulsar, el relleno se aplana. Se retira el contorno negro.
+
 - **Entrada y Salida del fichaje se pulsan.** Borde blanco, aro negro y una base de 2 px; al tocar, bajan.
 
 - **En Tesorería, el resumen va arriba y se busca igual que en el resto.** Ingresos, gastos, saldo actual y diferencia en una fila; sin cifra, el nombre no se mueve. Debajo, el buscador a la izquierda y Entrada, Salida y Arqueo a la derecha.
