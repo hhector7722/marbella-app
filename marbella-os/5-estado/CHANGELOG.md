@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-28
 
+- **El fichaje del mosaico Staff es una sola fila sobre el petróleo.** Sin tarjeta blanca. Sin fichar, solo Entrada, más baja. En turno, el cronómetro a dos tercios y Salida a un tercio. Turno cerrado, el tiempo en gris, sin destacar.
+
 - **Asistencia usa el mismo calendario que Cierres.** El mes, el mosaico Staff y el modal de una semana en horas extras pintan la misma rejilla. Cada semana de una persona lleva el pie de Horas, Pendientes, Extras e Importe. En el mosaico Staff la semana flota sobre el petróleo, a todo el ancho, sin cabecera.
 
 - **En Horas extras del mosaico, el importe de cada semana se lee entero y a la derecha.** Ya no se recorta.

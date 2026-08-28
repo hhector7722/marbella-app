@@ -317,7 +317,6 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(ventas, /dashboard-ventas-total/);
         assert.doesNotMatch(ventas, /#36606F|#407080/);
         assert.match(ventas, /<KpiStat /);
-        assert.match(staff, /<Surface /);
         assert.match(staff, /<MonthCalendarFrame flush/);
         assert.doesNotMatch(staff, /staff-semana/);
         assert.doesNotMatch(
@@ -325,6 +324,16 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             /data-element="header"/,
             'el resumen semanal del mosaico Staff no lleva cabecera de bloque'
         );
+        assert.doesNotMatch(
+            staff,
+            /<Surface /,
+            'el mosaico Staff ya no envuelve semana ni fichaje en Surface'
+        );
+        assert.match(staff, /data-instance="staff-fichaje"/);
+        assert.doesNotMatch(staff, /No has fichado/);
+        assert.match(staff, /flex-\[2\]/, 'el cronómetro ocupa dos tercios en turno');
+        const timer = readFileSync(join(SRC_ROOT, 'components/ui/WorkTimer.tsx'), 'utf8');
+        assert.doesNotMatch(timer, /No has fichado/);
     });
 
     it('tarjeta semanal de una persona es WeekCard; plantilla sigue aparte', () => {

@@ -33,9 +33,8 @@ import { syncOvertimeCostAfterTimeLogChange } from '@/app/actions/persist-overti
 import { getEmployeeHistoryWeek, type HistoryWeekDto } from '@/app/actions/history-read';
 import { WeekCard } from '@/app/staff/history/WeekCard';
 import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
-import WorkTimer from '@/components/ui/WorkTimer';
+import WorkTimer, { formatStaffWorkedHours } from '@/components/ui/WorkTimer';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { Surface } from '@/components/ui/Surface';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { Modal } from '@/components/ui/modal';
@@ -699,41 +698,50 @@ export default function StaffDashboardView() {
                         </div>
                     </div>
 
-                    <Surface variant="page" instance="staff-fichaje" className="flex w-full flex-col items-center overflow-hidden p-4 md:p-3 gap-3 md:gap-2 text-center">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                if (status === 'working') {
-                                    setShowConsumptionModal(true);
-                                } else {
-                                    openConfirmation();
-                                }
-                            }}
-                            disabled={clockLoading || status === 'finished' || actionLoading}
-                            className={cn(
-                                "w-full h-16 md:h-8 rounded-2xl md:rounded-xl shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95 duration-150",
-                                clockLoading && "bg-zinc-200 text-zinc-500",
-                                !clockLoading && status === 'idle' && "bg-emerald-500 hover:bg-emerald-600 text-white",
-                                !clockLoading && status === 'working' && "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-200",
-                                !clockLoading && status === 'finished' && "bg-zinc-100 text-zinc-400 cursor-not-allowed border-zinc-100"
-                            )}>
-                            {clockLoading || actionLoading ? (
-                                <>
-                                    <LoadingSpinner size="sm" className={clockLoading ? "text-[#36606F]" : "text-white"} />
-                                    <span className="text-xl md:text-sm font-black uppercase tracking-wider">
-                                        {clockLoading ? 'Cargando...' : (modalAction === 'in' ? 'Iniciando...' : 'Cerrando...')}
-                                    </span>
-                                </>
-                            ) : (
-                                <span className="text-xl md:text-sm font-black uppercase tracking-wider">
-                                    {status === 'idle' ? 'ENTRADA' : (status === 'working' ? 'SALIDA' : 'FINALIZADO')}
+                    <div data-instance="staff-fichaje" className="w-full">
+                        {clockLoading ? (
+                            <div className="flex h-12 w-full items-center justify-center" role="status" aria-label="Cargando fichaje">
+                                <LoadingSpinner size="sm" className="text-white" />
+                            </div>
+                        ) : status === 'working' ? (
+                            <div className="flex h-12 w-full gap-2">
+                                <div className="flex min-w-0 flex-[2] items-center justify-center rounded-xl bg-black/25">
+                                    <WorkTimer clockIn={todayLog?.clock_in || null} />
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowConsumptionModal(true)}
+                                    disabled={actionLoading}
+                                    className="flex h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-rose-500 text-white shadow-lg shadow-rose-200/40 transition-all active:scale-95 hover:bg-rose-600 disabled:opacity-70"
+                                >
+                                    {actionLoading ? (
+                                        <LoadingSpinner size="sm" className="text-white" />
+                                    ) : (
+                                        <span className="text-sm font-black tracking-wide">Salida</span>
+                                    )}
+                                </button>
+                            </div>
+                        ) : status === 'finished' ? (
+                            <div className="flex h-12 w-full items-center justify-center rounded-xl bg-zinc-400/20">
+                                <span className="text-sm font-medium tabular-nums text-zinc-400">
+                                    {formatStaffWorkedHours(todayLog?.total_hours) || '\u00a0'}
                                 </span>
-                            )}
-                        </button>
-                        <div className="w-full">
-                            <WorkTimer clockIn={todayLog?.clock_in || null} status={status} totalHours={todayLog?.total_hours} />
-                        </div>
-                    </Surface>
+                            </div>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => openConfirmation()}
+                                disabled={actionLoading}
+                                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 text-white shadow-lg transition-all active:scale-95 hover:bg-emerald-600 disabled:opacity-70"
+                            >
+                                {actionLoading ? (
+                                    <LoadingSpinner size="sm" className="text-white" />
+                                ) : (
+                                    <span className="text-sm font-black tracking-wide">Entrada</span>
+                                )}
+                            </button>
+                        )}
+                    </div>
 
                     <div className="w-full grid grid-cols-2 gap-3 md:gap-4">
                         {/* MINI CALENDAR HORARIOS CARD — scaled */}

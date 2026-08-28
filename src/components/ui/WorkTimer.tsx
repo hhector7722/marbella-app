@@ -5,14 +5,6 @@ import { Share_Tech_Mono } from 'next/font/google';
 
 const digitalFont = Share_Tech_Mono({ weight: '400', subsets: ['latin'] });
 
-type WorkStatus = 'idle' | 'working' | 'finished';
-
-interface WorkTimerProps {
-    clockIn: string | null;
-    status: WorkStatus;
-    totalHours?: number | null;
-}
-
 /**
  * Rounding rule from the business logic (replicated here to avoid prop drilling)
  */
@@ -30,63 +22,50 @@ const roundHoursValue = (hours: number): number => {
     return applyRoundingRule(minutes);
 };
 
+/** Duración de un turno cerrado, para lectura: «7 h» / «7,5 h». */
+export function formatStaffWorkedHours(totalHours: number | null | undefined): string {
+    if (totalHours == null || !Number.isFinite(Number(totalHours))) return '';
+    const rounded = roundHoursValue(Number(totalHours));
+    if (rounded % 1 === 0) return `${rounded} h`;
+    return `${rounded.toFixed(1).replace('.', ',')} h`;
+}
+
 /**
- * WorkTimer — Isolated chronometer for the Staff Dashboard.
- * 
- * Keeps its own tick state (1s interval).
- * Parent component does NOT re-render from timer ticks.
+ * Cronómetro vivo del turno. El padre pinta el hueco; aquí solo van los dígitos.
+ * El tick (1 s) no re-renderiza al padre.
  */
-const WorkTimer = memo(function WorkTimer({ clockIn, status, totalHours }: WorkTimerProps) {
-    const [display, setDisplay] = useState('00:00');
+const WorkTimer = memo(function WorkTimer({ clockIn }: { clockIn: string | null }) {
+    const [display, setDisplay] = useState('00:00:00');
 
     useEffect(() => {
-        let interval: NodeJS.Timeout;
-
-        if (status === 'working' && clockIn) {
-            const tick = () => {
-                const start = new Date(clockIn).getTime();
-                const now = Date.now();
-                const diff = now - start;
-                const hours = Math.floor(diff / (1000 * 60 * 60));
-                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-                setDisplay(
-                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-                );
-            };
-            tick();
-            interval = setInterval(tick, 1000);
-        } else if (status === 'finished' && totalHours) {
-            const rounded = roundHoursValue(totalHours);
-            const h = Math.floor(rounded);
-            const m = Math.round((rounded - h) * 60);
-            setDisplay(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
-        } else {
-            setDisplay('00:00');
+        if (!clockIn) {
+            setDisplay('00:00:00');
+            return;
         }
 
+        const tick = () => {
+            const start = new Date(clockIn).getTime();
+            const now = Date.now();
+            const diff = Math.max(0, now - start);
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            setDisplay(
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+            );
+        };
+        tick();
+        const interval = setInterval(tick, 1000);
         return () => clearInterval(interval);
-    }, [status, clockIn, totalHours]);
-
-    if (status === 'idle') {
-        return (
-            <div className="w-full h-12 md:h-8 rounded-2xl md:rounded-xl bg-gray-50 border-2 md:border border-gray-100 flex items-center justify-center">
-                <span className="text-[10px] md:text-xs text-gray-400 text-center uppercase font-bold tracking-tight">
-                    No has fichado hoy
-                </span>
-            </div>
-        );
-    }
+    }, [clockIn]);
 
     return (
-        <div className="w-full h-12 md:h-8 bg-gray-900 rounded-2xl md:rounded-xl border-2 md:border border-gray-700 shadow-inner flex flex-col items-center justify-center relative overflow-hidden">
-            <span
-                className={`${digitalFont.className} text-3xl md:text-2xl text-red-600 drop-shadow-[0_0_10px_rgba(220,38,38,0.5)] z-10 leading-none tracking-widest`}
-                style={{ fontVariantNumeric: 'tabular-nums' }}
-            >
-                {display}
-            </span>
-        </div>
+        <span
+            className={`${digitalFont.className} text-xl leading-none tracking-widest text-red-500`}
+            style={{ fontVariantNumeric: 'tabular-nums' }}
+        >
+            {display}
+        </span>
     );
 });
 
