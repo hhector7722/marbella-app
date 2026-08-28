@@ -599,12 +599,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const horasExtrasSection = (
         <Surface variant="page" instance="dashboard-horas-extras" className="flex flex-col overflow-hidden">
                     <div data-element="header" className="flex items-center justify-between gap-2 shrink-0">
-                        <span
-                            className={cn(
-                                'py-1 px-2.5 md:py-1.5 md:px-3 flex items-center justify-center rounded-lg text-[11px] font-bold uppercase tracking-widest',
-                                'bg-white/10 text-white border-0 shadow-none'
-                            )}
-                        >
+                        <span data-element="title">
                             <span className="md:hidden">H. extras</span>
                             <span className="hidden md:inline">Horas extras</span>
                         </span>
@@ -702,11 +697,11 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                             setWeekDetailModal({ week });
                                                         }}
                                                         className={cn(
-                                                            'w-full h-6 md:h-7 flex items-center justify-between gap-2 px-1.5 py-0 rounded-md shadow-sm hover:shadow transition-all text-left flex-shrink-0',
+                                                            'w-full min-w-0 h-6 md:h-7 flex items-center gap-2 px-1.5 py-0 rounded-md shadow-sm hover:shadow transition-all text-left flex-shrink-0',
                                                             'bg-transparent border-0 hover:bg-purple-50/50'
                                                         )}
                                                     >
-                                                        <div className="flex items-center gap-1 shrink-0 w-20 md:w-24">
+                                                        <div className="flex min-w-0 flex-1 items-center gap-1">
                                                             <div className="shrink-0 flex items-center justify-center w-6 md:w-7">
                                                                 {isFullyPaid ? (
                                                                     <div className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm">
@@ -719,11 +714,11 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                                                                 )}
                                                             </div>
                                                             <span className="text-[7px] md:text-[8px] font-black text-zinc-500 uppercase shrink-0">Semana {getISOWeek(new Date(week.weekId))}</span>
+                                                            <span className="min-w-0 truncate text-[7px] md:text-[8px] font-bold text-zinc-500 uppercase">
+                                                                {format(new Date(week.weekId), 'd MMM', { locale: es })} - {format(addDays(new Date(week.weekId), 6), 'd MMM', { locale: es })}
+                                                            </span>
                                                         </div>
-                                                        <span className="flex-1 text-[7px] md:text-[8px] font-bold text-zinc-500 uppercase truncate min-w-0 text-left pl-8 md:pl-10">
-                                                            {format(new Date(week.weekId), 'd MMM', { locale: es })} - {format(addDays(new Date(week.weekId), 6), 'd MMM', { locale: es })}
-                                                        </span>
-                                                        <span className="text-[9px] md:text-[10px] font-black text-zinc-900 shrink-0 w-9 md:w-11 text-right">
+                                                        <span className="ml-auto shrink-0 text-right tabular-nums whitespace-nowrap text-[9px] md:text-[10px] font-black text-zinc-900">
                                                             {weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}
                                                         </span>
                                                     </button>

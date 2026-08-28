@@ -38,6 +38,10 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-28
 
+- **En Horas extras del mosaico, el importe de cada semana se lee entero y a la derecha.** Ya no se recorta.
+
+- **H. extras en el mosaico flota sobre la cabecera.** El título va sobre el petróleo, sin pastilla ni relleno propio.
+
 - **Los menús de acceso del modal se leen como el de proveedores.** Icono y nombre en filas y columnas, nunca en lista. Info, Documentos, Manuales, Caja y Stock van iguales, con tres columnas de mínimo.
 
 - **En Perfil, la cabecera va atrás, foto y nombre.** La foto es pequeña, a la medida del título. Las opciones se leen en tres columnas.

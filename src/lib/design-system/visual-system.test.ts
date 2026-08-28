@@ -302,6 +302,14 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(admin, /<Surface /);
         assert.match(admin, /dashboard-horas-extras/);
         assert.match(admin, /dashboard-horas-extras[\s\S]*?data-element="header"/);
+        const extrasStart = admin.indexOf('dashboard-horas-extras');
+        const extrasHeader = admin.slice(extrasStart, extrasStart + 1800);
+        assert.match(extrasHeader, /data-element="title"[\s\S]*?H\. extras/);
+        assert.doesNotMatch(
+            extrasHeader,
+            /bg-white\/10 text-white border-0/,
+            'H. extras flota sobre el petróleo, sin pastilla'
+        );
         assert.doesNotMatch(admin, /bg-purple-600/);
         assert.match(ventas, /<Surface /);
         assert.match(ventas, /data-element="header"/);
@@ -638,6 +646,12 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(admin, /isToday && 'bg-ds-marca text-white'/);
         assert.match(overtime, /isToday && 'bg-ds-marca text-white'/);
         assert.doesNotMatch(admin, /isToday && 'bg-blue-500 text-white'/);
+        assert.match(
+            admin,
+            /ml-auto shrink-0 text-right tabular-nums whitespace-nowrap/,
+            'el importe de la semana queda entero y a la derecha'
+        );
+        assert.doesNotMatch(admin, /w-9 md:w-11/, 'el importe no se recorta en un hueco fijo');
     });
 
     it('el calendario de elegir un día usa MiniMonthCalendar', () => {
