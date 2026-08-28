@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-28
 
+- **Entrada y Salida del fichaje se pulsan.** Borde blanco, aro negro y una base de 2 px; al tocar, bajan.
+
 - **En Tesorería, el resumen va arriba y se busca igual que en el resto.** Ingresos, gastos, saldo actual y diferencia en una fila; sin cifra, el nombre no se mueve. Debajo, el buscador a la izquierda y Entrada, Salida y Arqueo a la derecha.
 
 - **Albaranes vuelve a mostrar la lista al abrir.** La carga ya no espera el cruce con el stock; un fallo de lectura se avisa y no se pinta como si no hubiera documentos.
