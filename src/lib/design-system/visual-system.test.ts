@@ -86,6 +86,11 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
         assert.match(css, /\[data-component='Notice'\]\[data-variant='negative'\]/);
         assert.match(css, /\[data-component='KpiStat'\]/);
+        assert.match(
+            css,
+            /\[data-component='KpiStat'\] \[data-element='value'\] \{[\s\S]*?min-height:\s*1\.125rem/,
+            'sin cifra, el hueco de KpiStat no colapsa'
+        );
         assert.match(css, /\[data-component='Table'\] thead/);
         assert.match(
             css,
@@ -800,6 +805,11 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         const consumption = readFileSync(join(SRC_ROOT, 'app/staff/ConsumptionModal.tsx'), 'utf8');
         assert.match(albaranes, /SearchField/, 'albaranes usa SearchField');
         assert.match(consumption, /SearchField/, 'consumo usa SearchField');
+        const movements = readFileSync(join(SRC_ROOT, 'app/dashboard/movements/page.tsx'), 'utf8');
+        assert.match(movements, /<KpiStat /, 'tesorería resume con KpiStat');
+        assert.match(movements, /SearchField/, 'tesorería busca con SearchField');
+        assert.match(movements, /label="Diferencia"/);
+        assert.doesNotMatch(movements, /DIFER\. ACTUAL/);
     });
 
     it('wizard, carta, proveedores e ingredientes recogen datos con Field', () => {

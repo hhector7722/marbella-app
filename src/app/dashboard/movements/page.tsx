@@ -4,20 +4,11 @@ import { useState, useEffect, useRef } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from 'next/navigation';
 import {
-    ArrowDownLeft,
-    ArrowUpRight,
     Plus,
     Minus,
-    Search,
-    Check,
-    TrendingUp,
-    Wallet,
-    TrendingDown,
-    ArrowRightLeft,
     ArrowUp,
     ArrowDown,
     RefreshCw,
-    AlertTriangle,
     Share,
     Printer
 } from 'lucide-react';
@@ -29,6 +20,8 @@ import { cn } from '@/lib/utils';
 import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { SearchField } from '@/components/ui/SearchField';
+import { KpiStat } from '@/components/ui/KpiStat';
 import { CashDenominationForm, CASH_COUNT_FORM_ID } from '@/components/CashDenominationForm';
 import { BoxInventoryView } from '@/components/BoxInventoryView';
 import { MovementDetailModal } from '@/components/MovementDetailModal';
@@ -116,6 +109,7 @@ export default function MovementsPage() {
     });
     const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all');
     const [dateSortDir, setDateSortDir] = useState<'asc' | 'desc'>('desc');
+    const [searchQuery, setSearchQuery] = useState('');
 
     const parseLocalSafe = (dateStr: string | null) => {
         if (!dateStr) return new Date();
@@ -179,7 +173,26 @@ export default function MovementsPage() {
     const [latestLedgerSaldoCents, setLatestLedgerSaldoCents] = useState<number>(0);
     const [latestLedgerLoading, setLatestLedgerLoading] = useState<boolean>(true);
     const diffFromSaldoCents = physicalBalanceCents - latestLedgerSaldoCents;
-    const isDiffZero = !latestLedgerLoading && diffFromSaldoCents === 0;
+
+    const conceptOf = (mov: Movement) =>
+        mov.notes || (mov.type === 'income' ? 'Entrada manual' : mov.type === 'expense' ? 'Salida manual' : 'Arqueo de caja');
+
+    const searchNeedle = searchQuery.trim().toLowerCase();
+    const visibleMovements = searchNeedle
+        ? movements.filter((mov) => conceptOf(mov).toLowerCase().includes(searchNeedle))
+        : movements;
+
+    const incomeValue = periodSummary.income > 0.005 ? `+${periodSummary.income.toFixed(2)}€` : '\u00A0';
+    const expenseValue = periodSummary.expense > 0.005 ? `-${periodSummary.expense.toFixed(2)}€` : '\u00A0';
+    const saldoValue =
+        !latestLedgerLoading && latestLedgerSaldoCents !== 0
+            ? formatCentsToEur(latestLedgerSaldoCents)
+            : '\u00A0';
+    const diffValue =
+        !latestLedgerLoading && diffFromSaldoCents !== 0
+            ? formatCentsToEur(diffFromSaldoCents, { showPlus: true })
+            : '\u00A0';
+    const diffTone = diffFromSaldoCents > 0 ? 'info' : diffFromSaldoCents < 0 ? 'negative' : 'neutral';
 
     // ARCHITECT_ULTRAFLUIDITY: True Network Pagination
     const PAGE_SIZE = 40;
@@ -784,85 +797,66 @@ export default function MovementsPage() {
                 </div>
             }
         >
-            <div className="px-2 pt-0.5 pb-0.5 shrink-0">
-                <div className="flex items-center justify-center gap-3">
-                    <button
-                        type="button"
-                        onClick={() => setCashModalMode('in')}
-                        aria-label="Entrada"
-                        className="shrink-0 min-h-[48px] min-w-[48px] px-2 rounded-lg hover:bg-zinc-100 transition-colors flex flex-col items-center justify-center gap-1 active:scale-95"
-                    >
-                        <div className="w-5 h-5 flex items-center justify-center bg-emerald-500 rounded-full shadow-sm">
-                            <Plus className="w-3 h-3 text-white" strokeWidth={3} />
-                        </div>
-                        <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500 leading-none">Entrada</span>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={openOut}
-                        aria-label="Salida"
-                        className="shrink-0 min-h-[48px] min-w-[48px] px-2 rounded-lg hover:bg-zinc-100 transition-colors flex flex-col items-center justify-center gap-1 active:scale-95"
-                    >
-                        <div className="w-5 h-5 flex items-center justify-center bg-rose-500 rounded-full shadow-sm">
-                            <Minus className="w-3 h-3 text-white" strokeWidth={3} />
-                        </div>
-                        <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500 leading-none">Salida</span>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={openAudit}
-                        aria-label="Arqueo"
-                        className="shrink-0 min-h-[48px] min-w-[48px] px-2 rounded-lg hover:bg-zinc-100 transition-colors flex flex-col items-center justify-center gap-1 active:scale-95"
-                    >
-                        <div className="w-5 h-5 flex items-center justify-center bg-orange-500 rounded-full shadow-sm">
-                            <RefreshCw className="w-2.5 h-2.5 text-white" strokeWidth={4} />
-                        </div>
-                        <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500 leading-none">Arqueo</span>
-                    </button>
-                </div>
-            </div>
-
-                    {/* CUERPO BLANCO (RESUMEN + TABLA) */}
                     <div className="bg-white">
-                        {/* RESUMEN: Grid 4x1 en móvil y escritorio */}
-                        <div className="py-1 px-2 grid grid-cols-4 border-b border-zinc-50">
-                            <div className="flex flex-col items-center justify-center text-center px-1">
-                                <span className="text-[13px] md:text-2xl font-black text-emerald-500 line-clamp-1">{periodSummary.income > 0.005 ? `+${periodSummary.income.toFixed(2)}€` : " "}</span>
-                                <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">INGRESOS</span>
-                            </div>
+                        <div className="grid grid-cols-4 items-start gap-1 px-2 py-2 border-b border-zinc-50">
+                            <KpiStat instance="movements-ingresos" label="Ingresos" tone="positive">
+                                {incomeValue}
+                            </KpiStat>
+                            <KpiStat instance="movements-gastos" label="Gastos" tone="negative">
+                                {expenseValue}
+                            </KpiStat>
+                            <KpiStat instance="movements-saldo" label="Saldo actual" tone="neutral">
+                                {saldoValue}
+                            </KpiStat>
+                            <KpiStat instance="movements-diferencia" label="Diferencia" tone={diffTone}>
+                                {diffValue}
+                            </KpiStat>
+                        </div>
 
-                            <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-1">
-                                <span className="text-[13px] md:text-2xl font-black text-rose-500 line-clamp-1">{periodSummary.expense > 0.005 ? `-${periodSummary.expense.toFixed(2)}€` : " "}</span>
-                                <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">GASTOS</span>
+                        <div className="flex w-full items-center gap-2 px-2 py-1.5 border-b border-zinc-50">
+                            <div className="min-w-0 flex-1">
+                                <SearchField
+                                    instance="movements-search"
+                                    placeholder="Buscar..."
+                                    value={searchQuery}
+                                    onChange={setSearchQuery}
+                                    ariaLabel="Buscar movimientos"
+                                />
                             </div>
-
-                            <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-1">
-                                <span className="text-[13px] md:text-2xl font-black text-[#36606F] line-clamp-1 tabular-nums">
-                                    {latestLedgerLoading ? (
-                                        " "
-                                    ) : latestLedgerSaldoCents !== 0 ? (
-                                        formatCentsToEur(latestLedgerSaldoCents)
-                                    ) : (
-                                        " "
-                                    )}
-                                </span>
-                                <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">SALDO ACTUAL</span>
-                            </div>
-
-                            <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-1">
-                                <span className={cn(
-                                    "text-[13px] md:text-2xl font-black line-clamp-1 flex items-center justify-center h-full",
-                                    diffFromSaldoCents > 0 ? "text-blue-500" : diffFromSaldoCents < 0 ? "text-orange-500" : "text-emerald-500"
-                                )}>
-                                    {latestLedgerLoading ? (
-                                        " "
-                                    ) : isDiffZero ? (
-                                        <Check className="w-4 h-4 md:w-6 md:h-6" strokeWidth={4} />
-                                    ) : (
-                                        formatCentsToEur(diffFromSaldoCents, { showPlus: true })
-                                    )}
-                                </span>
-                                <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">DIFER. ACTUAL</span>
+                            <div className="flex shrink-0 items-center">
+                                <button
+                                    type="button"
+                                    onClick={() => setCashModalMode('in')}
+                                    aria-label="Entrada"
+                                    className="shrink-0 min-h-[48px] min-w-[48px] px-2 rounded-lg hover:bg-zinc-100 transition-colors flex flex-col items-center justify-center gap-1 active:scale-95"
+                                >
+                                    <div className="w-5 h-5 flex items-center justify-center bg-emerald-500 rounded-full shadow-sm">
+                                        <Plus className="w-3 h-3 text-white" strokeWidth={3} />
+                                    </div>
+                                    <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500 leading-none">Entrada</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={openOut}
+                                    aria-label="Salida"
+                                    className="shrink-0 min-h-[48px] min-w-[48px] px-2 rounded-lg hover:bg-zinc-100 transition-colors flex flex-col items-center justify-center gap-1 active:scale-95"
+                                >
+                                    <div className="w-5 h-5 flex items-center justify-center bg-rose-500 rounded-full shadow-sm">
+                                        <Minus className="w-3 h-3 text-white" strokeWidth={3} />
+                                    </div>
+                                    <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500 leading-none">Salida</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={openAudit}
+                                    aria-label="Arqueo"
+                                    className="shrink-0 min-h-[48px] min-w-[48px] px-2 rounded-lg hover:bg-zinc-100 transition-colors flex flex-col items-center justify-center gap-1 active:scale-95"
+                                >
+                                    <div className="w-5 h-5 flex items-center justify-center bg-orange-500 rounded-full shadow-sm">
+                                        <RefreshCw className="w-2.5 h-2.5 text-white" strokeWidth={4} />
+                                    </div>
+                                    <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500 leading-none">Arqueo</span>
+                                </button>
                             </div>
                         </div>
 
@@ -922,8 +916,18 @@ export default function MovementsPage() {
                                                         />
                                                     </td>
                                                 </tr>
+                                            ) : visibleMovements.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan={4}>
+                                                        <EmptyState
+                                                            instance="movements-mismatch"
+                                                            variant="mismatch"
+                                                            title="No hay movimientos que coincidan."
+                                                        />
+                                                    </td>
+                                                </tr>
                                             ) : (
-                                                movements.map((mov) => {
+                                                visibleMovements.map((mov) => {
                                                     const date = new Date(mov.created_at);
                                                     return (
                                                         <tr
@@ -965,7 +969,7 @@ export default function MovementsPage() {
                                                                                 <RefreshCw size={8} className="md:size-[14px]" strokeWidth={3} />}
                                                                     </div>
                                                                     <span className="text-[9px] md:text-[11px] font-bold text-zinc-500 uppercase tracking-tight truncate min-w-0">
-                                                                        {mov.notes || (mov.type === 'income' ? 'Entrada manual' : mov.type === 'expense' ? 'Salida manual' : 'Arqueo de caja')}
+                                                                        {conceptOf(mov)}
                                                                     </span>
                                                                 </div>
                                                             </td>
@@ -992,7 +996,7 @@ export default function MovementsPage() {
                                     </table>
 
                                     {/* SCROLL SENSOR */}
-                                    {hasMore && movements.length > 0 && (
+                                    {hasMore && movements.length > 0 && !searchNeedle && (
                                         <div
                                             className="py-6 flex justify-center"
                                             ref={(el) => {

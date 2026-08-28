@@ -1044,6 +1044,7 @@ button[data-element='catalog-filter'] {
   font-size: 1.125rem;
   font-weight: 900;
   line-height: 1;
+  min-height: 1.125rem;
   color: var(--color-texto);
   font-variant-numeric: tabular-nums;
 }
@@ -1057,6 +1058,7 @@ button[data-element='catalog-filter'] {
 @media (min-width: 768px) {
   [data-component='KpiStat'] [data-element='value'] {
     font-size: 1.875rem;
+    min-height: 1.875rem;
   }
 }
 [data-component='KpiStat'] [data-element='label'] {
@@ -1066,6 +1068,7 @@ button[data-element='catalog-filter'] {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-texto-tenue);
+  white-space: nowrap;
 }
 [data-component='KpiStat'][data-tone='positive'] [data-element='value'] {
   color: var(--color-positivo);

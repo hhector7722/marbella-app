@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-28
 
+- **En Tesorería, el resumen va arriba y se busca igual que en el resto.** Ingresos, gastos, saldo actual y diferencia en una fila; sin cifra, el nombre no se mueve. Debajo, el buscador a la izquierda y Entrada, Salida y Arqueo a la derecha.
+
 - **Albaranes vuelve a mostrar la lista al abrir.** La carga ya no espera el cruce con el stock; un fallo de lectura se avisa y no se pinta como si no hubiera documentos.
 
 - **Con el turno cerrado, las horas se leen.** Fondo claro, cifra con horas, minutos y segundos. Entrada y Salida llevan un contorno blanco.
