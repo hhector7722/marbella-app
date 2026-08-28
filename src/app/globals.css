@@ -115,6 +115,16 @@
   background-color: #fff;
 }
 
+/* Mosaico Staff: la semana flota sobre el petróleo al ancho del bloque. */
+.month-cal-chrome--flush {
+  background-color: transparent;
+  padding-block: 0;
+  gap: 0;
+}
+.month-cal-chrome--flush .month-cal-grid-wrap {
+  width: 100%;
+}
+
 @media (max-width: 1023px) {
   [data-component='PageScreen'].month-cal-shell .month-cal-grid-wrap {
     width: calc(100% - var(--espacio-2));

@@ -263,15 +263,12 @@ export const STUDIO_ELEMENTS: StudioElement[] = [
             'Comparte parte del chrome del Page Header, pero T1 no utiliza PageScreen y sus anatomías pueden diferir.',
         listSummary: 'Especializado · Surface page',
         blueprintNeedle: '| T1 · Sala / Staff |',
-        sourceFiles: [
-            'src/app/dashboard/sala/page.tsx',
-            'src/components/dashboards/StaffDashboardView.tsx',
-        ],
+        sourceFiles: ['src/app/dashboard/sala/page.tsx'],
         impactPatterns: [],
         applyKind: 'locked',
         warning:
-            'Sala LIVE y Staff semana usan data-element="header" dentro de Surface page. El CSS de Page Header las pinta. No son PageScreen.',
-        examples: ['Sala LIVE — título «Sala» + badge Live.', 'Staff semana — mes/semana + enlace Historial.'],
+            'Sala LIVE usa data-element="header" dentro de Surface page. El CSS de Page Header la pinta. No es PageScreen. El resumen semanal del mosaico Staff no lleva esa cabecera: flota sobre el petróleo.',
+        examples: ['Sala LIVE — título «Sala» + badge Live.'],
         properties: [],
     },
     {

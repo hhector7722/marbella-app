@@ -10,8 +10,6 @@ import LaborConditionsView from '@/components/profile/LaborConditionsView';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 
-const DAY_HEADERS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
-
 const EVENT_TYPES = [
     { value: 'regular', label: 'Regular' },
     { value: 'holiday', label: 'Festivo', initial: 'F', color: 'bg-red-500 text-white', text: 'text-red-500', border: 'border-red-200 bg-red-50' },
@@ -67,7 +65,6 @@ interface WeekSummary {
 
 interface WeekCardProps {
     week: { weekNumber: number; startDate: string; days: DayData[]; summary: WeekSummary };
-    idx: number;
     filterMonth: number;
     filterYear: number;
     onDayClick: (date: string) => void;
@@ -88,7 +85,6 @@ interface WeekCardProps {
 
 export function WeekCard({
     week,
-    idx,
     filterMonth,
     filterYear,
     onDayClick,
@@ -173,25 +169,8 @@ export function WeekCard({
         }
     };
     return (
-        <div className="rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white">
-            {idx === 0 && (
-                <div className="rounded-t-2xl overflow-hidden">
-                    <div className="grid grid-cols-7 border-b border-gray-100">
-                        {DAY_HEADERS.map((d) => (
-                            <div
-                                key={d}
-                                className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-sm border-r border-white/30 last:border-r-0"
-                            >
-                                <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">
-                                    {d}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            <div className="grid grid-cols-7 border-b border-gray-100">
+        <>
+            <div className="grid grid-cols-7 border-b border-gray-100 month-cal-week">
                 {week.days.map((day, di) => {
                     const eventConfig = EVENT_TYPES.find(t => t.value === day.eventType);
                     const isSpecial = day.eventType && day.eventType !== 'regular' && day.eventType !== 'no_registered' && eventConfig;
@@ -229,10 +208,10 @@ export function WeekCard({
                             key={di}
                             onClick={interactive ? () => onDayClick(day.date) : undefined}
                             className={cn(
-                                "relative border-r border-gray-100 last:border-r-0 min-h-[85px] flex flex-col items-center p-1 pb-1 transition-colors",
-                                "bg-white",
-                                interactive ? "cursor-pointer hover:bg-zinc-50" : "cursor-default",
-                                day.isToday && !isOtherMonth && "bg-blue-50/10"
+                                'relative flex flex-col items-center border-r border-gray-100 last:border-r-0 p-0.5 sm:p-1 month-cal-cell transition-colors',
+                                'bg-white',
+                                interactive ? 'cursor-pointer hover:bg-zinc-50' : 'cursor-default',
+                                day.isToday && !isOtherMonth && 'bg-blue-50/10'
                             )}
                         >
                             <span className={cn("absolute top-1 right-1 text-[9px] font-bold", day.isToday && !isOtherMonth ? "text-blue-600" : (isOtherMonth ? "text-gray-400 opacity-50" : "text-gray-400"))}>
@@ -538,6 +517,6 @@ export function WeekCard({
                     </div>
                 </Modal>
             )}
-        </div>
+        </>
     );
 }

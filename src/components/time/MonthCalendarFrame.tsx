@@ -9,16 +9,19 @@ const MOBILE_HEADERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'] as const;
 /**
  * Cromo P3 de Cierres: franja, tarjeta al 97 % y cabecera roja de días.
  * El contenido de cada celda lo pone el dominio.
+ * `flush`: sin franja ni margen; la tarjeta ocupa el ancho del hueco (mosaico Staff).
  */
 export function MonthCalendarFrame({
     children,
     className,
+    flush = false,
     ...rest
-}: HTMLAttributes<HTMLDivElement> & { children: ReactNode }) {
+}: HTMLAttributes<HTMLDivElement> & { children: ReactNode; flush?: boolean }) {
     return (
         <div
             data-component="MonthCalendarFrame"
-            className={cn('month-cal-chrome', className)}
+            data-flush={flush ? 'true' : undefined}
+            className={cn('month-cal-chrome', flush && 'month-cal-chrome--flush', className)}
             {...rest}
         >
             <div className="month-cal-grid-wrap">

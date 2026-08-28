@@ -3,8 +3,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-const DAY_HEADERS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
-
 const MAX_ROWS = 12;
 const LOG_ROW_HEIGHT = 7;
 const LOG_ROW_GAP = 3;
@@ -50,7 +48,6 @@ export type PlantillaWeek = {
 
 interface PlantillaWeekCardProps {
     week: PlantillaWeek;
-    idx: number;
     onDayClick: (date: string) => void;
 }
 
@@ -69,7 +66,7 @@ function formatHourOnly(time: string | null | undefined): string {
     return Number.isFinite(hour) ? String(hour) : '';
 }
 
-export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardProps) {
+export function PlantillaWeekCard({ week, onDayClick }: PlantillaWeekCardProps) {
     const maxDisplayedLogs = Math.max(
         0,
         ...week.days.map((day) => Math.min((day.logs || []).length, MAX_ROWS)),
@@ -82,35 +79,18 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
         DAY_VERTICAL_PAD + DAY_CONTENT_TOP_OFFSET + contentHeight + DAY_VERTICAL_PAD;
 
     return (
-        <div className="rounded-xl border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-hidden bg-white">
-            {idx === 0 && (
-                <div className="rounded-t-2xl overflow-hidden">
-                    <div className="grid grid-cols-7 border-b border-gray-100">
-                        {DAY_HEADERS.map((d) => (
-                            <div
-                                key={d}
-                                className="h-5 bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center shadow-sm border-r border-white/30 last:border-r-0"
-                            >
-                                <span className="text-[9px] font-bold text-white uppercase tracking-wider block truncate px-0.5 drop-shadow-sm">
-                                    {d}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            <div className="grid grid-cols-7 border-b border-gray-100">
-                {week.days.map((day, di) => {
+        <div className="grid grid-cols-7 border-b border-gray-100 last:border-b-0 month-cal-week">
+            {week.days.map((day, di) => {
                     return (
                         <div
                             key={di}
                             onClick={() => onDayClick(day.date)}
-                            style={{ height: dayHeight }}
+                            style={{ minHeight: `max(${dayHeight}px, var(--month-cal-cell-min-h))` }}
                             className={cn(
-                                "relative border-r border-gray-100 last:border-r-0 flex flex-col p-1 pb-1 cursor-pointer transition-colors",
-                                "bg-white hover:bg-zinc-50",
-                                day.isToday && !day.isOtherMonth && "bg-blue-50/10"
+                                'relative flex flex-col cursor-pointer transition-colors p-0.5 sm:p-1 month-cal-cell',
+                                'border-r border-gray-100 last:border-r-0',
+                                'bg-white hover:bg-zinc-50',
+                                day.isToday && !day.isOtherMonth && 'bg-blue-50/10'
                             )}
                         >
                             <span className={cn(
@@ -190,9 +170,6 @@ export function PlantillaWeekCard({ week, idx, onDayClick }: PlantillaWeekCardPr
                         </div>
                     );
                 })}
-            </div>
-
-            {/* Sin fila resumen en vista plantilla (manager sin empleado filtrado) */}
         </div>
     );
 }

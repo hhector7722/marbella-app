@@ -265,6 +265,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         const frame = readFileSync(join(SRC_ROOT, 'components/time/MonthCalendarFrame.tsx'), 'utf8');
         assert.match(frame, /from-red-500 to-red-600/, 'la cabecera de días es la de Cierres');
         assert.match(frame, /month-cal-chrome/, 'el marco pinta el cromo unificado');
+        assert.match(frame, /flush/, 'el mosaico Staff puede ir a ancho completo');
     });
 
     it('albaranes usa Field, EmptyState y Notice', () => {
@@ -317,7 +318,13 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.doesNotMatch(ventas, /#36606F|#407080/);
         assert.match(ventas, /<KpiStat /);
         assert.match(staff, /<Surface /);
-        assert.match(staff, /data-element="header"/);
+        assert.match(staff, /<MonthCalendarFrame flush/);
+        assert.doesNotMatch(staff, /staff-semana/);
+        assert.doesNotMatch(
+            staff,
+            /data-element="header"/,
+            'el resumen semanal del mosaico Staff no lleva cabecera de bloque'
+        );
     });
 
     it('tarjeta semanal de una persona es WeekCard; plantilla sigue aparte', () => {
@@ -330,6 +337,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'utf8'
         );
         const history = readFileSync(join(SRC_ROOT, 'app/staff/history/page.tsx'), 'utf8');
+        const weekCard = readFileSync(join(SRC_ROOT, 'app/staff/history/WeekCard.tsx'), 'utf8');
         const plantilla = readFileSync(
             join(SRC_ROOT, 'app/staff/history/PlantillaWeekCard.tsx'),
             'utf8'
@@ -337,6 +345,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
 
         assert.match(staff, /from '@\/app\/staff\/history\/WeekCard'/);
         assert.match(staff, /<WeekCard/);
+        assert.match(staff, /MonthCalendarFrame/);
         assert.doesNotMatch(
             staff,
             /from-red-500 to-red-600/,
@@ -345,13 +354,34 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
 
         assert.match(overtimeModal, /from '@\/app\/staff\/history\/WeekCard'/);
         assert.match(overtimeModal, /<WeekCard/);
+        assert.match(overtimeModal, /MonthCalendarFrame/);
 
         assert.match(history, /<WeekCard/);
         assert.match(history, /<PlantillaWeekCard/);
+        assert.match(history, /MonthCalendarFrame/);
+
+        assert.match(weekCard, /month-cal-cell/, 'la celda de una persona es la de Cierres');
+        assert.match(weekCard, /HORAS/);
+        assert.doesNotMatch(
+            weekCard,
+            /from-red-500 to-red-600/,
+            'WeekCard no pinta una cabecera de días propia'
+        );
+        assert.doesNotMatch(
+            weekCard,
+            /rounded-xl border border-zinc-200/,
+            'WeekCard no pinta un cromo de tarjeta propio'
+        );
 
         assert.doesNotMatch(plantilla, /from ['"].*\/WeekCard['"]/);
         assert.match(plantilla, /getInitials/);
+        assert.match(plantilla, /month-cal-cell/);
         assert.doesNotMatch(plantilla, /Pendiente|Importe/);
+        assert.doesNotMatch(
+            plantilla,
+            /from-red-500 to-red-600/,
+            'la plantilla no clona la cabecera de días'
+        );
     });
 
     it('el periodo temporal es PeriodNav en cabecera; filtro fijo, sin cruz', () => {

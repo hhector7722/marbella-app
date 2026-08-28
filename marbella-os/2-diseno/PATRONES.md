@@ -64,7 +64,7 @@ El patrón más usado del producto. Sus leyes están en [EXPERIENCIA §8](EXPERI
 
 ## P3 · Calendario mensual
 
-Patrón de navegación temporal para todo lo que se organiza por fechas: horarios, actividades, cierres, reservas, consumo, coste.
+Patrón de navegación temporal para todo lo que se organiza por fechas: horarios, actividades, cierres, reservas, consumo, coste, asistencia.
 
 **Anatomía**: cabecera con mes y navegación, rejilla continua de siete columnas, cabecera de días idéntica, celdas de día con indicadores compactos, y una franja de indicadores del mes cuando el dominio lo pide.
 
@@ -73,7 +73,7 @@ Patrón de navegación temporal para todo lo que se organiza por fechas: horario
 - En móvil se navega también por gesto lateral, con la navegación visible además del gesto.
 - El día se construye en tiempo local del negocio. Un desplazamiento de zona horaria en este patrón produce un error de un día completo en toda la vista.
 - Pulsar un día abre P4.
-- **Un solo cromo.** Labor, Reservas, Horario, Actividades, Consumo y Cierres muestran el mismo tipo de calendario. Cambia el contenido de la celda, no la rejilla. El cromo (franja, tarjeta, cabecera de días) es el de Cierres. Horas extras no es P3: es mini-calendario de días + filas de semana. Asistencia monta tarjetas semanales (P6). El selector de un día (ventas, filtro de periodo, editor de horario) es MiniMonthCalendar, no P3.
+- **Un solo cromo.** Labor, Reservas, Horario, Actividades, Consumo, Cierres y Asistencia muestran el mismo tipo de calendario. Cambia el contenido de la celda, no la rejilla. El cromo (franja, tarjeta, cabecera de días) es el de Cierres. Asistencia de una persona añade un pie semanal (P6). Horas extras no es P3: es mini-calendario de días + filas de semana. El selector de un día (ventas, filtro de periodo, editor de horario) es MiniMonthCalendar, no P3.
 
 ---
 
@@ -109,16 +109,17 @@ Para revisar y comparar: registros, albaranes, precios, movimientos, líneas de 
 
 ## P6 · Tarjeta semanal
 
-El patrón propio del dominio de horas: una semana de negocio como unidad visual.
+El patrón propio del dominio de horas: una semana de negocio como unidad, **dentro del cromo P3**.
 
-**Anatomía**: cabecera de días de lunes a domingo, siete celdas de día con las magnitudes del día, y —en la tarjeta de una persona— un pie de resumen con las magnitudes de la semana: horas, pendientes, extras e importe. La vista de plantilla omite el pie.
+**Anatomía**: el marco de Cierres (`MonthCalendarFrame`: cabecera de días y rejilla de siete columnas). Cada semana de una persona añade un pie de resumen: horas, pendientes, extras e importe. La vista de plantilla omite el pie.
 
 **Reglas**:
-- La cabecera de días aparece una sola vez, en la primera semana de la lista.
-- **La tarjeta de una persona es una.** Asistencia de un trabajador, el mosaico Staff y el historial al pulsar un trabajador en horas extras pintan la misma pieza: cabecera LUN–DOM, celdas de día y pie Horas / Pendiente / Extras / Importe.
-- **La vista de plantilla (todos los trabajadores) es otra tarjeta.** Iniciales y fichajes por día, sin pie de resumen. No se unifica con la de una persona.
-- Las celdas tienen alto mínimo fijo y no crecen con el contenido; el exceso se trunca con contador.
-- El pie de resumen mantiene su altura aunque no tenga contenido, para no romper el ritmo vertical de la lista.
+- La cabecera de días es la de P3, una sola vez por calendario. No se pinta otra LUN–DOM en cada semana.
+- **La semana de una persona es una.** Asistencia de un trabajador, el mosaico Staff y el historial al pulsar un trabajador en horas extras pintan la misma pieza: cromo P3, celdas de día y pie Horas / Pendientes / Extras / Importe.
+- En el mosaico Staff la semana flota sobre el petróleo, al ancho del hueco, sin cabecera de bloque.
+- **La vista de plantilla (todos los trabajadores) comparte el cromo y no el pie.** Iniciales y fichajes por día. No se unifica el contenido de celda con el de una persona.
+- Las celdas miden lo mismo que P3 en una semana vacía (68 / 76 / 84 px) y crecen si el contenido no cabe.
+- El pie de resumen mantiene su altura aunque no tenga contenido, para no romper el ritmo vertical.
 - Los controles de decisión de la semana (modo bolsa o pago, contrato, aplicar) viven en el pie, no en un modo aparte.
 
 ---
@@ -217,9 +218,8 @@ La composición por defecto de listado, detalle y formulario de gestión. No es 
 - El periodo (P7) vive **en la cabecera** (`periodSlot`). El icono de filtro es siempre el mismo, a la derecha. Las acciones de alcance (trabajador, exportar) también van en `rightSlot`.
 - El cuerpo empieza pegado al contenido: no se deja un hueco vacío entre la cabecera y la tabla o el calendario.
 - `Button` en la cabecera se pinta invertido, sin relleno ni marco. No es una quinta variante de Button.
-- Labor, Reservas, Horario, Actividades, Consumo y Cierres montan el calendario mensual (P3) **dentro** de esta plantilla; no sustituyen la cabecera. La rejilla es una. Horas extras también entra por PageScreen, pero su interior es vista semanal (mini-calendario + filas), no P3.
+- Labor, Reservas, Horario, Actividades, Consumo, Cierres y Asistencia montan el calendario mensual (P3) **dentro** de esta plantilla; no sustituyen la cabecera. La rejilla es una. Asistencia añade el pie semanal (P6). Horas extras también entra por PageScreen, pero su interior es vista semanal (mini-calendario + filas), no P3.
 - Recetas e Ingredientes montan la rejilla de catálogo a **3 columnas**; Proveedores (página y el modal de Pedido) a **4**. Cada celda es un cuadrado (imagen + pie), sin tarjeta, con aire entre celdas. La imagen se reduce al mismo tamaño; el pie es una sola fila. El disparador **CAT** / **PROV** flota sobre el fondo, sin mini-card y sin punto.
-- Asistencia (historial) monta tarjetas semanales (P6) dentro de esta plantilla, no el calendario P3.
 
 **Cuándo no**: mosaico Admin/Staff (T1), Sala LIVE, pantalla de cocina, carta de cliente, overlay (P2).
 

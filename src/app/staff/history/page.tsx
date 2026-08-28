@@ -33,6 +33,7 @@ import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PeriodNav, PeriodFilterButton } from '@/components/time/PeriodNav';
+import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { trackUsageModalApply } from '@/lib/usage/client';
@@ -58,20 +59,6 @@ import {
     filterVisiblePlantillaEmployees,
     PLANTILLA_EMPLOYEE_SELECT,
 } from '@/lib/staff/plantilla-employees';
-
-/** Línea roja fina con gradiente y difuminado en los extremos; forma parte del borde visual entre semanas (sin añadir espacio). */
-function WeekSeparator() {
-    return (
-        <div className="flex justify-center" aria-hidden>
-            <div
-                className={cn(
-                    'h-0.5 w-[70%] max-w-[280px]',
-                    'bg-[linear-gradient(90deg,transparent_0%,rgb(220_38_38/0.3)_4%,rgb(220_38_38)_8%,rgb(220_38_38)_92%,rgb(220_38_38/0.3)_96%,transparent_100%)]'
-                )}
-            />
-        </div>
-    );
-}
 
 // --- TIPOS ---
 interface WeekSummary {
@@ -1023,16 +1010,17 @@ export default function HistoryPage() {
                                 title="No hay registros este mes"
                             />
                         ) : (
-                            <div className="px-3 pt-2 pb-4 bg-zinc-50/50">
-                                {plantillaWeeksData.map((week, idx) => (
-                                    <PlantillaWeekCard
-                                        key={week.weekNumber}
-                                        week={week}
-                                        idx={idx}
-                                        onDayClick={handleDayClick}
-                                    />
-                                ))}
-                            </div>
+                            <MonthCalendarFrame>
+                                <div className="month-cal-weeks">
+                                    {plantillaWeeksData.map((week) => (
+                                        <PlantillaWeekCard
+                                            key={week.weekNumber}
+                                            week={week}
+                                            onDayClick={handleDayClick}
+                                        />
+                                    ))}
+                                </div>
+                            </MonthCalendarFrame>
                         )
                     ) : weeksData.length === 0 ? (
                         <EmptyState
@@ -1041,12 +1029,12 @@ export default function HistoryPage() {
                             title="No hay registros este mes"
                         />
                     ) : (
-                        <div className="p-4 bg-zinc-50/50">
-                            {weeksData.map((week, idx) => (
-                                <React.Fragment key={week.weekNumber}>
+                        <MonthCalendarFrame>
+                            <div className="month-cal-weeks">
+                                {weeksData.map((week) => (
                                     <WeekCard
+                                        key={week.weekNumber}
                                         week={week}
-                                        idx={idx}
                                         filterMonth={filterMonth}
                                         filterYear={filterYear}
                                         onDayClick={handleDayClick}
@@ -1070,10 +1058,9 @@ export default function HistoryPage() {
                                             return result;
                                         }}
                                     />
-                                    {idx < weeksData.length - 1 && <WeekSeparator />}
-                                </React.Fragment>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        </MonthCalendarFrame>
                     )}
             </DashboardDetailLayout>
 

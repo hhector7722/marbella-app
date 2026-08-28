@@ -13,6 +13,7 @@ import {
   type HistoryWeekDto,
 } from '@/app/actions/history-read';
 import { WeekCard } from '@/app/staff/history/WeekCard';
+import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
 
 interface WorkerWeeklyHistoryModalProps {
   isOpen: boolean;
@@ -112,17 +113,18 @@ export default function WorkerWeeklyHistoryModal({
           <LoadingSpinner size="lg" className="text-zinc-900" />
         </div>
       ) : week ? (
-        <div className="p-4 bg-zinc-50/50">
-          <WeekCard
-            week={week as any}
-            idx={0}
-            filterMonth={filterMonth}
-            filterYear={filterYear}
-            onDayClick={() => {}}
-            readOnly
-            showWeekOverrides={false}
-          />
-        </div>
+        <MonthCalendarFrame>
+          <div className="month-cal-weeks">
+            <WeekCard
+              week={week as any}
+              filterMonth={filterMonth}
+              filterYear={filterYear}
+              onDayClick={() => {}}
+              readOnly
+              showWeekOverrides={false}
+            />
+          </div>
+        </MonthCalendarFrame>
       ) : (
         <p className="text-center text-sm text-zinc-500 py-10">Sin datos</p>
       )}

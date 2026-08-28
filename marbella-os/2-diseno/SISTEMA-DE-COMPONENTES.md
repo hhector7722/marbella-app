@@ -292,9 +292,11 @@ Piezas transversales con comportamiento propio y contrato estricto. **Estas sí 
 **Código**: `src/components/time/MonthCalendarFrame.tsx`.
 
 **Reglas**:
-- Lo usan Labor, Reservas, Horario, Actividades, Consumo y Cierres.
+- Lo usan Labor, Reservas, Horario, Actividades, Consumo, Cierres y Asistencia (el mosaico Staff y el modal de una semana en horas extras montan la misma pieza).
 - Semana vacía: el alto de Cierres. Si el contenido no cabe, la fila crece.
-- Horas extras, Asistencia y MiniMonthCalendar no lo usan.
+- En Asistencia, cada semana de una persona lleva un pie (Horas / Pendientes / Extras / Importe). La plantilla no.
+- En el mosaico Staff el marco va a ancho completo (`flush`), sin franja, sobre el petróleo.
+- Horas extras (página) y MiniMonthCalendar no lo usan.
 
 **Estado**: existe.
 

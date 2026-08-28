@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import {
     Play, Square, CalendarDays,
-    Calendar, ArrowRight, Play as PlayIcon, ArrowLeft,
+    Calendar, Play as PlayIcon, ArrowLeft,
     Check, Info, Package,
     Phone, Scale, ShoppingCart, Boxes, MessageCircle,
     ChefHat, Calculator, ArrowRightLeft, Save, ArrowDown, ArrowUp,
@@ -22,7 +22,6 @@ import { CashCountFooter } from '@/components/cash/CashCountFooter';
 import { CashCountDateButton, formatCashCountDateInput } from '@/components/cash/CashCountDateButton';
 import { PurchaseMultiSourceForm, type PaymentSourceOption, type PurchaseMultiSourcePayload } from '@/components/PurchaseMultiSourceForm';
 import { toast } from 'sonner';
-import Link from 'next/link';
 import { differenceInMinutes, startOfWeek, format } from 'date-fns';
 import { formatYmdInMadrid, madridDayUtcRangeIso, madridRangeUtcIso } from '@/lib/madrid-date-bounds';
 import { es } from 'date-fns/locale';
@@ -33,6 +32,7 @@ import { FICHAJE_OVERLAY_VIDEOS } from '@/lib/fichaje-overlay-videos';
 import { syncOvertimeCostAfterTimeLogChange } from '@/app/actions/persist-overtime-cost';
 import { getEmployeeHistoryWeek, type HistoryWeekDto } from '@/app/actions/history-read';
 import { WeekCard } from '@/app/staff/history/WeekCard';
+import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
 import WorkTimer from '@/components/ui/WorkTimer';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Surface } from '@/components/ui/Surface';
@@ -94,18 +94,6 @@ const applyRoundingRule = (totalMinutes: number): number => {
     return h + 1;
 };
 
-function computeIsoWeekNumber(weekStart: Date): number {
-    const target = new Date(weekStart.valueOf());
-    const dayNr = (weekStart.getDay() + 6) % 7;
-    target.setDate(target.getDate() - dayNr + 3);
-    const firstThursday = target.valueOf();
-    target.setMonth(0, 1);
-    if (target.getDay() !== 4) {
-        target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
-    }
-    return 1 + Math.ceil((firstThursday - target.valueOf()) / 604800000);
-}
-
 export default function StaffDashboardView() {
     const supabase = createClient();
     const router = useRouter();
@@ -124,14 +112,6 @@ export default function StaffDashboardView() {
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
     const [monthShifts, setMonthShifts] = useState<ShiftMock[]>([]);
     const [nextShifts, setNextShifts] = useState<ShiftMock[]>([]);
-    const [currentMonthName, setCurrentMonthName] = useState(() =>
-        startOfWeek(new Date(), { weekStartsOn: 1 })
-            .toLocaleDateString('es-ES', { month: 'long' })
-            .replace(/^\w/, (c) => c.toUpperCase())
-    );
-    const [weekNumber, setWeekNumber] = useState<number | null>(() =>
-        computeIsoWeekNumber(startOfWeek(new Date(), { weekStartsOn: 1 }))
-    );
     const [showModal, setShowModal] = useState(false);
     const [modalAction, setModalAction] = useState<'in' | 'out' | null>(null);
     const [showGiffOverlay, setShowGiffOverlay] = useState(false);
@@ -308,10 +288,6 @@ export default function StaffDashboardView() {
             setClockLoading(false);
 
             const weekStart = startOfWeek(today, { weekStartsOn: 1 });
-            setCurrentMonthName(
-                weekStart.toLocaleDateString('es-ES', { month: 'long' }).replace(/^\w/, (c) => c.toUpperCase())
-            );
-            setWeekNumber(computeIsoWeekNumber(weekStart));
             const weekStartYmd = format(weekStart, 'yyyy-MM-dd');
 
             const weekTask = (async () => {
@@ -324,7 +300,6 @@ export default function StaffDashboardView() {
                 setHistoryWeek(res.week);
                 setWeekFilterYear(res.filterYear);
                 setWeekFilterMonth(res.filterMonth);
-                setWeekNumber(res.week.weekNumber);
             })().catch((e) => {
                 console.error(e);
                 toast.error('No se pudo cargar el resumen semanal');
@@ -696,43 +671,32 @@ export default function StaffDashboardView() {
             <div className="px-4 md:px-0 w-full max-w-lg md:max-w-2xl mx-auto space-y-3 md:space-y-4">
                 <div className="flex flex-col gap-4 md:gap-4 items-center">
                     <div className="w-full space-y-3 md:space-y-4">
-                        <Surface variant="page" instance="staff-semana" className="flex flex-col overflow-hidden">
-                            {/* Header Estrecho - Estilo Vista Marbella Detail */}
-                            <div data-element="header" className="flex justify-between items-center shrink-0">
-                                <span data-element="title">
-                                    {currentMonthName} {weekNumber ? `- SEMANA ${weekNumber}` : ''}
-                                </span>
-                                <div className="flex items-center gap-3 shrink-0">
-                                    <Link href="/staff/history" className="text-[11px] font-black flex items-center gap-1 hover:text-white/80 transition-colors uppercase tracking-widest text-white">
-                                        Historial <ArrowRight size={12} strokeWidth={3} />
-                                    </Link>
+                        <div className="relative w-full min-h-[200px]">
+                            {weekLoading ? (
+                                <div className="absolute inset-0 flex items-center justify-center z-10" role="status" aria-label="Cargando semana">
+                                    <LoadingSpinner size="md" className="text-white" />
                                 </div>
-                            </div>
-
-                            <div className="p-4 relative min-h-[200px]">
-                                {weekLoading ? (
-                                    <div className="absolute inset-0 flex items-center justify-center z-10 bg-white/80" role="status" aria-label="Cargando semana">
-                                        <LoadingSpinner size="md" className="text-ds-marca" />
+                            ) : null}
+                            {historyWeek ? (
+                                <MonthCalendarFrame flush>
+                                    <div className="month-cal-weeks">
+                                        <WeekCard
+                                            week={historyWeek as any}
+                                            filterMonth={weekFilterMonth}
+                                            filterYear={weekFilterYear}
+                                            onDayClick={(ymd) => {
+                                                const [y, m, d] = ymd.split('-').map(Number);
+                                                setSelectedDayDate(new Date(y, m - 1, d));
+                                                setIsDayDetailModalOpen(true);
+                                            }}
+                                            showWeekOverrides={false}
+                                        />
                                     </div>
-                                ) : null}
-                                {historyWeek ? (
-                                    <WeekCard
-                                        week={historyWeek as any}
-                                        idx={0}
-                                        filterMonth={weekFilterMonth}
-                                        filterYear={weekFilterYear}
-                                        onDayClick={(ymd) => {
-                                            const [y, m, d] = ymd.split('-').map(Number);
-                                            setSelectedDayDate(new Date(y, m - 1, d));
-                                            setIsDayDetailModalOpen(true);
-                                        }}
-                                        showWeekOverrides={false}
-                                    />
-                                ) : !weekLoading ? (
-                                    <EmptyState instance="staff-week-none" variant="none" title="Sin datos" />
-                                ) : null}
-                            </div>
-                        </Surface>
+                                </MonthCalendarFrame>
+                            ) : !weekLoading ? (
+                                <EmptyState instance="staff-week-none" variant="none" title="Sin datos" />
+                            ) : null}
+                        </div>
                     </div>
 
                     <Surface variant="page" instance="staff-fichaje" className="flex w-full flex-col items-center overflow-hidden p-4 md:p-3 gap-3 md:gap-2 text-center">
