@@ -57,10 +57,9 @@ export default function MasterShortcutGrid({
                 <DashboardShortcut
                     instance="caja-inicial"
                     label="C INICIAL"
-                    labelClassName="text-white/90"
-                    contentClassName="w-full h-12 md:h-11 flex-none md:w-full items-center justify-center"
+                    plate
+                    contentClassName="bg-emerald-600"
                     onClick={() => router.push('/dashboard/movements')}
-                    className="bg-emerald-600 shadow-md border-2 border-white"
                 >
                     {treasuryLoading ? (
                         <LoadingSpinner size="sm" className="text-white" />
@@ -104,6 +103,7 @@ export default function MasterShortcutGrid({
                     instance="ingredientes"
                     label="Ingredientes"
                     img="/icons/ingrediente.png"
+                    plate
                     onClick={() => router.push('/ingredients')}
                 />
             ),
@@ -115,6 +115,7 @@ export default function MasterShortcutGrid({
                     instance="albaranes"
                     label="Albaranes"
                     img="/icons/scan.png"
+                    plate
                     onClick={() => router.push('/dashboard/albaranes')}
                 />
             ),
@@ -126,6 +127,7 @@ export default function MasterShortcutGrid({
                     instance="carta"
                     label="Carta"
                     img="/icons/menu.png"
+                    plate
                     onClick={() => router.push('/staff/carta')}
                 />
             ),
@@ -148,6 +150,7 @@ export default function MasterShortcutGrid({
                     instance="rentabilidad"
                     label="Rentabilidad"
                     img="/icons/rent.png"
+                    plate
                     onClick={() => router.push('/dashboard/insights')}
                 />
             ),
@@ -159,6 +162,7 @@ export default function MasterShortcutGrid({
                     instance="horarios"
                     label="Horarios"
                     img="/icons/schedule.png"
+                    plate
                     onClick={onOpenHorarios}
                 />
             ),
@@ -169,7 +173,7 @@ export default function MasterShortcutGrid({
                 <DashboardShortcut
                     instance="hextras"
                     label="H. extras"
-                    contentClassName="w-12 h-12 md:w-11 md:h-11 flex-none"
+                    plate
                     onClick={() => router.push('/dashboard/overtime')}
                 >
                     <div className="flex items-center justify-center gap-1 w-full h-full">
@@ -204,6 +208,7 @@ export default function MasterShortcutGrid({
                     instance="plantilla"
                     label="Plantilla"
                     img="/icons/admin.png"
+                    plate
                     onClick={onOpenPlantilla}
                 />
             ),
@@ -215,6 +220,7 @@ export default function MasterShortcutGrid({
                     instance="cierre"
                     label="Cierre"
                     img="/icons/lock.png"
+                    plate
                     onClick={onOpenCierre}
                 />
             ),
@@ -226,6 +232,7 @@ export default function MasterShortcutGrid({
                     instance="cambio"
                     label="Cambio"
                     img="/icons/change.png"
+                    plate
                     onClick={onOpenCambio}
                 />
             ),
@@ -237,6 +244,7 @@ export default function MasterShortcutGrid({
                     instance="web"
                     label="Web"
                     img="/icons/link.png"
+                    plate
                     onClick={() => window.open(WEB_URL, '_blank', 'noopener,noreferrer')}
                 />
             ),
@@ -248,6 +256,7 @@ export default function MasterShortcutGrid({
                     instance="reservas"
                     label="Reservas"
                     img="/icons/reservas.png"
+                    plate
                     onClick={onOpenReservas}
                     badgeCount={pendingReservationsCount}
                 />
@@ -260,6 +269,7 @@ export default function MasterShortcutGrid({
                     instance="propinas"
                     label="Propinas"
                     img="/icons/tip.png"
+                    plate
                     onClick={() => router.push('/dashboard/propinas')}
                 />
             ),
@@ -272,6 +282,7 @@ export default function MasterShortcutGrid({
                     label="Uso app"
                     icon={BarChart3}
                     iconClassName="text-[#36606F]"
+                    plate
                     onClick={() => router.push('/dashboard/uso')}
                 />
             ),
@@ -282,7 +293,12 @@ export default function MasterShortcutGrid({
         items.push({
             key: 'cambio-1',
             node: (
-                <DashboardShortcut instance="cambio-1" label="Cambio 1" onClick={() => onOpenChangeBoxAudit(changeBox1)}>
+                <DashboardShortcut
+                    instance="cambio-1"
+                    label="Cambio 1"
+                    plate
+                    onClick={() => onOpenChangeBoxAudit(changeBox1)}
+                >
                     <span className="text-sm md:text-[11px] font-black text-zinc-800 leading-none tabular-nums text-center">
                         {formatBoxEur(Number(changeBox1.current_balance ?? 0))}
                     </span>
@@ -295,7 +311,12 @@ export default function MasterShortcutGrid({
         items.push({
             key: 'cambio-2',
             node: (
-                <DashboardShortcut instance="cambio-2" label="Cambio 2" onClick={() => onOpenChangeBoxAudit(changeBox2)}>
+                <DashboardShortcut
+                    instance="cambio-2"
+                    label="Cambio 2"
+                    plate
+                    onClick={() => onOpenChangeBoxAudit(changeBox2)}
+                >
                     <span className="text-sm md:text-[11px] font-black text-zinc-800 leading-none tabular-nums text-center">
                         {formatBoxEur(Number(changeBox2.current_balance ?? 0))}
                     </span>
@@ -311,13 +332,14 @@ export default function MasterShortcutGrid({
                 instance="proveedores"
                 label="Proveedores"
                 img="/icons/suplier.png"
+                plate
                 onClick={() => router.push('/suppliers')}
             />
         ),
     });
 
     return (
-        <div className="grid grid-cols-4 gap-3 md:grid-cols-7 md:gap-x-3 md:gap-y-2.5 md:justify-items-center lg:grid-cols-8 lg:gap-x-4 lg:gap-y-3">
+        <div className="grid grid-cols-4 gap-x-7 gap-y-8 md:grid-cols-7 md:gap-x-7 md:gap-y-8 md:justify-items-center lg:grid-cols-8 lg:gap-x-8 lg:gap-y-8">
             {items.map(({ key, node }) => (
                 <div key={key} className="min-h-0 min-w-0 w-full md:w-auto md:flex md:justify-center">
                     {node}

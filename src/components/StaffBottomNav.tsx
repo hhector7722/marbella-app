@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Calendar, Clock, Home, Package, User, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { trackUsageTabSwitch } from '@/lib/usage/client';
@@ -31,10 +31,7 @@ const STAFF_NAV_ITEMS: StaffNavItem[] = [
 
 export default function StaffBottomNav() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const effectivePathname = pathname.startsWith('/playground/studio')
-    ? searchParams.get('route') ?? '/master/dashboard'
-    : pathname;
+  const effectivePathname = pathname;
   const router = useRouter();
   const supabase = createClient();
   const navRef = useRef<HTMLElement>(null);

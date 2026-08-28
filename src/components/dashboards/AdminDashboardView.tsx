@@ -810,9 +810,9 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
 
     const quickActionCards = [
         { title: 'Asistencia', img: '/icons/calendar.png', link: '/staff/history', instance: 'admin-asistencia' },
-        { title: 'M obra', img: '/icons/overtime.png', link: '/dashboard/labor', instance: 'admin-m-obra' },
-        { title: 'Plantilla', img: '/icons/admin.png', link: '/staff/dashboard', instance: 'admin-plantilla' },
-        { title: 'Stock', img: '/icons/suppliers.png', link: '/ingredients', instance: 'admin-stock' },
+        { title: 'M obra', img: '/icons/overtime.png', link: '/dashboard/labor', instance: 'admin-m-obra', plate: true },
+        { title: 'Plantilla', img: '/icons/admin.png', link: '/staff/dashboard', instance: 'admin-plantilla', plate: true },
+        { title: 'Stock', img: '/icons/suppliers.png', link: '/ingredients', instance: 'admin-stock', plate: true },
     ] as const;
 
     const renderQuickActionSquare = (card: (typeof quickActionCards)[number]) => (
@@ -820,6 +820,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             instance={card.instance}
             label={card.title}
             img={card.img}
+            plate={'plate' in card ? card.plate : false}
             onClick={() => {
                 if (card.title === 'Plantilla') setIsStaffModalOpen(true);
                 else if (card.title === 'Stock') setIsProductModalOpen(true);
@@ -829,7 +830,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     );
 
     const dashboardCambiosYAccesosMobile = (
-        <div className="grid grid-cols-4 gap-3 items-stretch md:hidden">
+        <div className="grid grid-cols-4 gap-x-5 gap-y-5 items-stretch md:hidden">
             <div className="col-span-2 row-start-1 min-h-0 min-w-0 flex">{renderDashboardChangeCard('Caja cambio 1', 0)}</div>
             <div className="col-span-1 row-start-1 min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[0])}</div>
             <div className="col-span-1 row-start-1 min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[1])}</div>
@@ -853,7 +854,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             </div>
 
             {/* Conjunto 2: Accesos rápidos */}
-            <div className="grid grid-cols-2 grid-rows-2 gap-4">
+            <div className="grid grid-cols-2 grid-rows-2 gap-x-5 gap-y-6">
                 <div className="flex min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[0])}</div>
                 <div className="flex min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[1])}</div>
                 <div className="flex min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[2])}</div>

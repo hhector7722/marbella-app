@@ -417,13 +417,29 @@ Su contrato lo fija la [especificación de su capacidad](../1-producto/capacidad
 
 **Propósito**: acceso táctil a una capacidad desde los dashboards (rejilla de iconos).
 
-**Anatomía**: host → iconBox → asset; text como pieza hermana. Badge y `children` métricos son accesorios de instancia, no variantes.
+**Anatomía**: host transparente → iconBox (misma forma redondeada para todos) → asset; text como pieza hermana **debajo**, nunca dentro del icono. Badge y `children` métricos son accesorios de instancia, no variantes.
 
-**Variantes** (cerradas, estructurales): `icon-text`, `icon-card-text-outside`, `separated`, `icon-only`, `text-only`. Se resuelven a propiedades independientes de composición; no existe el enum legacy `composition`.
+```text
+host (transparente)
+ ├── iconBox   (forma única; con relleno, el fondo lleva el mismo radio)
+ │   ├── rim   (hilo inset de la misma silueta)
+ │   └── asset (PNG, Lucide o cifra, entero)
+ └── text      (nombre, fuera del icono)
+```
+
+**Relleno del icono** (`data-plate`, no es variante estructural):
+- Todos los recuadros miden lo mismo y usan el mismo `radio.superficie`.
+- La imagen se ve **entera** cuando va sobre placa (`object-fit: contain`). Sin relleno, llena el recorte del sistema.
+- `bleed` — el gráfico se adapta a esa forma (Recetas, calendario).
+- `fill` — el gráfico no puede ser la forma; un fondo opaco la completa (Caja, objeto 3D, Lucide, cifra).
+- Con relleno, la placa opaca se recorta a la silueta y el hilo mezcla el color del fondo. Sin relleno, el gráfico llena el mismo recorte y el hilo se sienta sobre el color, como el canto de iOS. No es el aro de Entrada/Salida.
+Si no se declara: `bleed` cuando hay `img`; `fill` si no.
+
+**Variantes** (cerradas, estructurales): `icon-text`, `icon-card-text-outside` (**default**), `separated`, `icon-only`, `text-only`. Se resuelven a propiedades independientes de composición; no existe el enum legacy `composition`.
 
 **Identidad**: `data-component="DashboardShortcut"`, `data-variant`, `data-instance` (id de negocio, p. ej. `asistencia`). El label visible no forma parte de la identidad. `data-studio-target` (`bg` / `asset` / `text`) se conserva para compatibilidad con Marbella Studio.
 
-**Estado**: existe. Consumidores: rejilla Master, Staff y Admin.
+**Estado**: existe. Consumidores: rejilla Master, Staff y Admin. El mosaico pinta el atajo sobre el petróleo: el nombre usa `color.texto.invertido`.
 
 **Código**: `src/components/dashboards/DashboardShortcut.tsx`.
 

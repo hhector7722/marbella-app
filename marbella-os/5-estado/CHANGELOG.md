@@ -38,6 +38,22 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-28
 
+- **Recetas, Consumo y Asistencia se alejan un poco.** El color sigue a sangre; el gráfico tiene más aire. C INICIAL lleva el mismo brillo en el canto.
+
+- **Recetas, Consumo y Asistencia se recortan como C INICIAL.** Mismo canto sobre el color, sin marco vacío.
+
+- **Recetas deja el marco vacío.** Como en iOS: el gráfico es el icono y la sombra lo sigue. Los de placa blanca no cambian.
+
+- **Los atajos blancos recuperan las esquinas redondas.** El recuadro recorta el PNG; Ingredientes y Carta se leen como ChatGPT en iOS, Recetas como Spotify.
+
+- **El canto del atajo deja el recuadro blanco.** En Caja mezcla el fondo. En Recetas se sienta sobre el rojo.
+
+- **El canto del atajo toma el color del icono.** En Caja, del blanco. En Recetas, del gráfico.
+
+- **Los atajos se ven enteros y más separados.** Misma medida y mismas esquinas. Sin recorte ni zoom. Recetas se adapta al recuadro; Caja lleva fondo.
+
+- **Los atajos del mosaico separan el icono y el nombre.** Misma forma redondeada para todos. Recetas llena la forma; Caja y los de objeto van sobre un fondo.
+
 - **Los botones de sistema dejan el doble aro.** Guardar y Eliminar se leen por el color. Cancelar y los menores, un hilo suave. El volumen y el pulso se quedan. Entrada y Salida del mosaico no cambian.
 
 - **Los botones de sistema se pulsan como Entrada y Salida.** Contorno blanco, hilo negro suave y un poco de volumen en el color. El relleno sigue compacto. Entrada y Salida del mosaico Staff no cambian de tamaño.

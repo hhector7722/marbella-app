@@ -185,6 +185,94 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.doesNotMatch(css, /\[data-compact='true'\]/);
     });
 
+    it('DashboardShortcut separa icono y nombre con la misma forma', () => {
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        const shortcut = readFileSync(
+            join(SRC_ROOT, 'components/dashboards/DashboardShortcut.tsx'),
+            'utf8'
+        );
+        const staff = readFileSync(
+            join(SRC_ROOT, 'components/dashboards/StaffDashboardView.tsx'),
+            'utf8'
+        );
+        const admin = readFileSync(
+            join(SRC_ROOT, 'components/dashboards/AdminDashboardView.tsx'),
+            'utf8'
+        );
+        const master = readFileSync(
+            join(SRC_ROOT, 'components/dashboards/MasterShortcutGrid.tsx'),
+            'utf8'
+        );
+        assert.match(shortcut, /variant = 'icon-card-text-outside'/);
+        assert.match(
+            css,
+            /\[data-component='DashboardShortcut'\]\[data-variant='icon-card-text-outside'\] \[data-element='iconBox'\] \{[\s\S]*?border-radius:\s*var\(--radio-superficie\)/,
+            'todos los iconos comparten radio.superficie'
+        );
+        assert.match(css, /\[data-plate='fill'\] \[data-element='iconBox'\]/);
+        assert.match(css, /\[data-plate='bleed'\] \[data-element='iconBox'\]/);
+        const shortcutCss =
+            css.match(
+                /\/\*\n \* DashboardShortcut[\s\S]*?(?=\n\/\*\n \* DocumentListRow)/
+            )?.[0] ?? '';
+        assert.ok(shortcutCss.length > 0, 'el CSS del atajo está acotado');
+        assert.doesNotMatch(shortcutCss, /clip-path:/);
+        assert.doesNotMatch(shortcutCss, /mix-blend-mode:/);
+        assert.match(
+            css,
+            /\[data-plate='fill'\] \[data-element='iconBox'\] \{[\s\S]*?background-color:\s*var\(--shortcut-fill/,
+            'el relleno pinta el fondo del recuadro'
+        );
+        assert.match(
+            css,
+            /\[data-element='iconBox'\] \{[\s\S]*?mask-image:\s*var\(--shortcut-silhouette\)/,
+            'todos los atajos se recortan a la misma silueta'
+        );
+        assert.match(
+            css,
+            /\[data-element='asset'\] img \{[\s\S]*?object-fit:\s*contain/,
+            'la imagen del atajo se ve entera'
+        );
+        assert.match(
+            css,
+            /\[data-plate='bleed'\] \[data-element='asset'\] img \{[\s\S]*?object-fit:\s*cover/,
+            'sin relleno, el gráfico llena el recorte del sistema'
+        );
+        assert.match(
+            css,
+            /\[data-plate='bleed'\] \[data-element='rim'\] \{[\s\S]*?linear-gradient/,
+            'sin relleno, el canto se sienta sobre el gráfico recortado'
+        );
+        assert.doesNotMatch(
+            css,
+            /\[data-plate='bleed'\] \[data-element='asset'\] img \{[\s\S]*?transform:\s*scale/,
+            'sin relleno, el aire va en el PNG; el recorte no acerca el gráfico'
+        );
+        assert.match(master, /gap-x-7 gap-y-8/);
+        assert.match(staff, /gap-x-5 gap-y-6/);
+        assert.match(master, /instance="hextras"[\s\S]*?plate/);
+        assert.match(master, /instance="uso-app"[\s\S]*?plate/);
+        assert.match(
+            css,
+            /\[data-plate='fill'\] \[data-element='rim'\] \{[\s\S]*?var\(--shortcut-fill/,
+            'con relleno, el canto mezcla el color del fondo'
+        );
+        assert.match(shortcut, /data-element="rim"/);
+        assert.match(
+            css,
+            /\[data-element='text'\] \{[\s\S]*?color:\s*var\(--color-texto-invertido\)/,
+            'el nombre va fuera del icono, en invertido sobre el petróleo'
+        );
+        assert.match(staff, /plate instance="staff-caja"/);
+        assert.doesNotMatch(staff, /instance="staff-recetas"[^>]*plate/);
+        assert.match(staff, /plate instance="staff-stock"/);
+        assert.match(admin, /plate: true/);
+        assert.match(master, /img="\/icons\/change\.png"\s+plate/);
+        assert.doesNotMatch(staff, /variant="icon-text"/);
+        assert.doesNotMatch(admin, /variant="icon-text"/);
+        assert.doesNotMatch(master, /variant="icon-text"/);
+    });
+
     it('PageScreen es el host de DashboardDetailLayout', () => {
         const source = readFileSync(
             join(SRC_ROOT, 'components/dashboard/DashboardDetailLayout.tsx'),

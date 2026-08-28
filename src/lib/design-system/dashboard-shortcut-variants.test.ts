@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
@@ -40,6 +42,12 @@ describe('DashboardShortcut variantes → composición independiente', () => {
         assert.equal(c.iconBoxMode, 'box');
         assert.equal(c.showText, true);
         assert.equal(c.showIcon, true);
+    });
+
+    it('el default de mosaico es icono y nombre separados', () => {
+        const source = readFileSync(join(process.cwd(), 'src/components/dashboards/DashboardShortcut.tsx'), 'utf8');
+        assert.match(source, /variant = 'icon-card-text-outside'/);
+        assert.match(source, /data-plate=\{ios \? \(plate \? 'fill' : 'bleed'\)/);
     });
 
     it('separated: sin card en host ni iconBox', () => {

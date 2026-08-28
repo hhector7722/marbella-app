@@ -820,11 +820,11 @@ export default function StaffDashboardView() {
                         </div>
 
                         {/* Iconos Flotantes - Now in a grid beside horarios */}
-                        <div className="grid grid-cols-2 gap-3 md:gap-4">
-                            <DashboardShortcut instance="staff-caja" label="Caja" img="/icons/change.png" onClick={() => setIsCashOptionsModalOpen(true)} />
+                        <div className="grid grid-cols-2 gap-x-5 gap-y-6 md:gap-x-6 md:gap-y-7">
+                            <DashboardShortcut plate instance="staff-caja" label="Caja" img="/icons/change.png" onClick={() => setIsCashOptionsModalOpen(true)} />
                             <DashboardShortcut instance="staff-recetas" label="Recetas" img="/icons/recipes.png" onClick={() => router.push('/recipes?view=staff')} />
-                            <DashboardShortcut instance="staff-info" label="Info" img="/icons/information.png" onClick={() => setActiveMenu('info')} />
-                            <DashboardShortcut instance="staff-stock" label="Stock" img="/icons/suppliers.png" onClick={() => setIsProductModalOpen(true)} />
+                            <DashboardShortcut plate instance="staff-info" label="Info" img="/icons/information.png" onClick={() => setActiveMenu('info')} />
+                            <DashboardShortcut plate instance="staff-stock" label="Stock" img="/icons/suppliers.png" onClick={() => setIsProductModalOpen(true)} />
                         </div>
                     </div>
                 </div>

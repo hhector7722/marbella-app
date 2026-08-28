@@ -730,7 +730,7 @@ export function CanonicalCompositions() {
                                 42
                             </KpiStat>
                         </div>
-                        <div className="flex gap-ds-3">
+                        <div className="flex gap-ds-3 rounded-ds-superficie bg-ds-marca p-ds-3">
                             <DashboardShortcut instance="ds-atajo-1" label="Caja" onClick={() => undefined} />
                             <DashboardShortcut instance="ds-atajo-2" label="Sala" onClick={() => undefined} />
                         </div>

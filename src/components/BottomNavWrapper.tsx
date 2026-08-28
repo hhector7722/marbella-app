@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import BottomNavStaff from './BottomNavStaff';
@@ -7,8 +8,13 @@ import { isFullscreenCartaPath } from '@/lib/carta-fullscreen-path';
 
 export default function BottomNavWrapper() {
     const pathname = usePathname();
-    if (typeof document === 'undefined') return null;
+    const [mounted, setMounted] = useState(false);
 
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    if (!mounted) return null;
     if (pathname === '/login') return null;
     if (isFullscreenCartaPath(pathname)) return null;
     // Rutas /staff/* usan la barra inferior de src/app/staff/layout.tsx
