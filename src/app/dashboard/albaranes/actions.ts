@@ -7,6 +7,8 @@ import { convertToPurchaseUnitQuantity } from '@/lib/recipe-cost'
 import {
   INVOICE_LINE_STATUS_EXCLUDED,
   INVOICE_LINE_STATUS_EXPENSE_ONLY,
+  invoiceLineRequiresStock,
+  isInvoiceLineResolved,
 } from '@/lib/albaranes-line-status'
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
@@ -36,6 +38,11 @@ async function gateAuthenticated(): Promise<GateResult> {
 }
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
+
+function isMissingReferenceDocColumnError(message: string): boolean {
+  const m = String(message ?? '')
+  return /reference_doc/i.test(m) && /does not exist|schema cache|PGRST204|could not find/i.test(m)
+}
 
 /**
  * Entornos sin migración aplicada: PostgREST falla en filtros/DELETE por `reference_doc`.

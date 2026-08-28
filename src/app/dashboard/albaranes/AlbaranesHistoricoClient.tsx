@@ -1379,11 +1379,13 @@ export default function AlbaranesHistoricoClient({
 
       <div className="px-1.5 py-1">
             {filtered.length === 0 ? (
-              <EmptyState
-                instance="albaranes-list-empty"
-                variant="mismatch"
-                title="No hay albaranes que coincidan."
-              />
+              error ? null : (
+                <EmptyState
+                  instance="albaranes-list-empty"
+                  variant={query.trim() ? 'mismatch' : 'none'}
+                  title={query.trim() ? 'No hay albaranes que coincidan.' : 'No hay albaranes.'}
+                />
+              )
             ) : (
               <div className="flex flex-col">
                 {filtered.map((it) => {

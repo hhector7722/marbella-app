@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-28
 
+- **Albaranes vuelve a mostrar la lista al abrir.** La carga ya no espera el cruce con el stock; un fallo de lectura se avisa y no se pinta como si no hubiera documentos.
+
 - **Con el turno cerrado, las horas se leen.** Fondo claro, cifra con horas, minutos y segundos. Entrada y Salida llevan un contorno blanco.
 
 - **En la semana de asistencia, la celda baja de alto.** Entrada y salida van con la fecha; H y Ex debajo, con el mismo aire. Las horas personales (P) solo se ven al abrir el día.
