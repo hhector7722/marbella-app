@@ -73,8 +73,9 @@ Reglas tipográficas:
 
 - **La jerarquía se construye con peso y tamaño, no con color.** El texto atenuado es información secundaria, no un nivel de título.
 - **Las cifras son tabulares donde se comparan.** En una columna de importes, los dígitos alinean.
-- **Nada por debajo del tamaño mínimo legible** definido en TOKENS, salvo en la vista de calendario mensual en escritorio, donde la densidad extrema es el requisito y el texto se acompaña de la posición como pista.
-- **No se usan mayúsculas para enfatizar** una frase. Se aceptan en etiquetas cortas de una o dos palabras.
+- **Lo que hay que entender no baja de `tipo.minimo` (11 px):** cifras, nombres, acciones, etiquetas de dato. Una cifra más pequeña es un dato falso.
+- **Una anotación puede ser más pequeña.** `tipo.anotacion` (8 px) es para notas y cromo que no es el dato. El calendario mensual denso puede usarlo. Por debajo de 8 px, no.
+- **Las mayúsculas solo van en cabeceras** (título de pantalla, de modal o de tarjeta). No en botones, saludos, «Ver más» ni etiquetas de dato. Las siglas (IA, TPV, PDF) se escriben como siglas, no como énfasis.
 - **El texto se ajusta al contenedor reduciéndose, nunca cortándose a mitad de una cifra.** Una cifra truncada es un dato falso.
 
 ---

@@ -46,7 +46,7 @@ Ejemplos de la diferencia:
 - **Una etiqueta nombra su contenido, no su acción.** «Horas de la semana», no «Ver horas».
 - Se usa el término del [GLOSARIO](../GLOSARIO.md), no un sinónimo. Si el término oficial suena mal en la interfaz, el problema es del término y se corrige en el glosario.
 - Las etiquetas de columna son sustantivos, cortos y sin artículo.
-- Las etiquetas en mayúsculas se reservan para cabeceras de una o dos palabras.
+- Las mayúsculas solo van en **cabeceras** (título de pantalla, de modal o de tarjeta), de una o dos palabras. El resto va en caja oración. Las siglas se mantienen.
 - Los días de la semana se abrevian a tres letras con acento cuando corresponde: LUN, MAR, MIÉ, JUE, VIE, SÁB, DOM.
 
 ---

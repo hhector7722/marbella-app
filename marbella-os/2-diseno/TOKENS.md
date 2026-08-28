@@ -111,7 +111,8 @@ Los tokens semánticos de documentos impresos usan los mismos nombres con valore
 | `tipo.subtitulo` | 16 px / peso 600 | Título de bloque | declarado |
 | `tipo.cuerpo` | 14 px / peso 400 | Texto general | declarado |
 | `tipo.apoyo` | 12 px / peso 400 | Metadatos, etiquetas | declarado |
-| `tipo.minimo` | 11 px | Mínimo legible. Por debajo solo el calendario mensual en escritorio | adoptado (piloto `DocumentListRow` título; subtítulo de esa familia conserva 10 px documentado) |
+| `tipo.minimo` | 11 px | Suelo de lo que hay que **leer**: cifras, nombres, acciones, etiquetas de dato. Un importe o un nombre no baja de aquí | adoptado (piloto `DocumentListRow` título; subtítulo de esa familia conserva 10 px documentado) |
+| `tipo.anotacion` | 8 px | Nota, cromo menor, texto que no es el dato («Ver más», pie de un atajo). Por debajo de esto, no | declarado |
 | `tipo.entrada` | 16 px | Mínimo en campos de entrada para evitar el zoom automático del móvil | declarado |
 
 ## 8. Espaciado
