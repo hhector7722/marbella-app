@@ -74,7 +74,7 @@ const STAFF_INFO_MENU = [
 const STAFF_WEB_HREF = 'https://marbella-web.vercel.app';
 
 const STAFF_CLOCK_ACTION =
-    'flex h-12 items-center justify-center gap-2 rounded-xl border border-white outline outline-1 outline-zinc-900 bg-gradient-to-b text-white transition-[filter,background-color] active:brightness-95 disabled:opacity-70';
+    'flex h-12 items-center justify-center gap-2 rounded-xl border border-white shadow-[0_0_0_1px_#18181b] bg-gradient-to-b text-white transition-[filter] duration-75 active:brightness-[0.99] disabled:opacity-70';
 
 type WorkStatus = 'idle' | 'working' | 'finished';
 
@@ -701,7 +701,7 @@ export default function StaffDashboardView() {
                         </div>
                     </div>
 
-                    <div data-instance="staff-fichaje" className="w-full">
+                    <div data-instance="staff-fichaje" className="w-full p-px">
                         {clockLoading ? (
                             <div className="flex h-12 w-full items-center justify-center" role="status" aria-label="Cargando fichaje">
                                 <LoadingSpinner size="sm" className="text-white" />
@@ -715,7 +715,7 @@ export default function StaffDashboardView() {
                                     type="button"
                                     onClick={() => setShowConsumptionModal(true)}
                                     disabled={actionLoading}
-                                    className={cn(STAFF_CLOCK_ACTION, 'min-w-0 flex-1 from-rose-400 to-rose-600 hover:to-rose-700 active:from-rose-600 active:to-rose-600')}
+                                    className={cn(STAFF_CLOCK_ACTION, 'min-w-0 flex-1 from-rose-500 to-[#e8365a]')}
                                 >
                                     {actionLoading ? (
                                         <LoadingSpinner size="sm" className="text-white" />
@@ -736,7 +736,7 @@ export default function StaffDashboardView() {
                                 type="button"
                                 onClick={() => openConfirmation()}
                                 disabled={actionLoading}
-                                className={cn(STAFF_CLOCK_ACTION, 'w-full from-emerald-400 to-emerald-600 hover:to-emerald-700 active:from-emerald-600 active:to-emerald-600')}
+                                className={cn(STAFF_CLOCK_ACTION, 'w-full from-emerald-500 to-[#0eab78]')}
                             >
                                 {actionLoading ? (
                                     <LoadingSpinner size="sm" className="text-white" />

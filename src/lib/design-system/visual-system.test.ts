@@ -338,9 +338,9 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.doesNotMatch(staff, /No has fichado/);
         assert.match(staff, /flex-\[2\]/, 'el cronómetro ocupa dos tercios en turno');
         assert.match(staff, /border-white/, 'Entrada y Salida se recortan del petróleo');
-        assert.match(staff, /outline-1 outline-zinc-900/, 'un negro fino por fuera del blanco');
-        assert.match(staff, /from-emerald-400/, 'Entrada tiene volumen en el verde');
-        assert.match(staff, /from-rose-400/, 'Salida tiene volumen en el rosa');
+        assert.match(staff, /0_0_0_1px_#18181b/, 'un negro fino por fuera del blanco');
+        assert.match(staff, /from-emerald-500/, 'Entrada tiene volumen en el verde');
+        assert.match(staff, /from-rose-500/, 'Salida tiene volumen en el rosa');
         assert.match(staff, /formatStaffElapsedHms/, 'el turno cerrado enseña el tiempo real');
         const timer = readFileSync(join(SRC_ROOT, 'components/ui/WorkTimer.tsx'), 'utf8');
         assert.doesNotMatch(timer, /No has fichado/);

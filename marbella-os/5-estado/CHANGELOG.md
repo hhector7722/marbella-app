@@ -38,6 +38,10 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-08-28
 
+- **El negro fino de Entrada y Salida se ve.** Va pegado al blanco, 1 px. Al pulsar, el color casi no cambia.
+
+- **Al pulsar Entrada o Salida, el relleno apenas se oscurece.** Lo justo para notarlo al tocar, no a la vista.
+
 - **El fichaje recupera un negro de 1 px por fuera del blanco.** El volumen sigue en el relleno; sin base.
 
 - **El volumen de Entrada y Salida va en el color.** Más claro arriba y más oscuro abajo; al pulsar, el relleno se aplana. Se retira el contorno negro.
