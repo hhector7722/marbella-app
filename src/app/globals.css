@@ -2802,11 +2802,11 @@ button[data-element='catalog-filter'] {
   white-space: nowrap;
   text-transform: none;
 }
-[data-week-summary] .month-cal-weeks > [data-week-footer] .grid > div:nth-child(-n + 4) span {
+[data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric-value] {
   font-size: 10px;
   font-weight: 600;
 }
-[data-week-summary] .month-cal-weeks > [data-week-footer] .grid > div:nth-child(n + 5) span {
+[data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric-label] {
   font-size: 8px;
   font-weight: 500;
 }
@@ -2845,10 +2845,10 @@ button[data-element='catalog-filter'] {
   min-height: 23px;
   max-height: 23px;
 }
-[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-weeks > [data-week-footer] .grid > div:nth-child(-n + 4) span {
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric-value] {
   font-size: 9px;
 }
-[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-weeks > [data-week-footer] .grid > div:nth-child(n + 5) span {
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric-label] {
   font-size: 7px;
 }
 /* Varias semanas: una sola L–D. El wrap recorta el radio hasta la última. */

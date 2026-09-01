@@ -312,15 +312,21 @@ export function WeekCard({
                         </div>
                     )}
                 </div>
-                {/* Métricas: ocupan el hueco que deja Semana y, si hay, Pagado */}
+                {/* Métricas: concepto y valor en la misma fila que Semana */}
                 <div className="flex min-h-0 min-w-0 flex-1 items-center self-stretch">
-                    <div className="grid w-full min-w-0 grid-cols-4 grid-rows-[auto_auto] gap-y-0">
-                        <div className="row-start-1 col-start-1 flex items-end justify-center self-stretch">
-                            <span className="text-[10px] font-semibold leading-none text-black tabular-nums">
+                    <div className="grid w-full min-w-0 grid-cols-4 gap-x-0.5">
+                        <div data-week-metric="horas" className="flex min-w-0 items-center justify-center gap-0.5">
+                            <span data-week-metric-label className="shrink-0 text-[8px] font-medium leading-none text-zinc-400">
+                                Horas
+                            </span>
+                            <span data-week-metric-value className="min-w-0 truncate text-[10px] font-semibold leading-none text-black tabular-nums">
                                 {week.summary.totalHours > 0.05 ? fmtDecimal(week.summary.totalHours) : '\u00a0'}
                             </span>
                         </div>
-                        <div className="row-start-1 col-start-2 flex items-end justify-center self-stretch">
+                        <div data-week-metric="pendientes" className="flex min-w-0 items-center justify-center gap-0.5">
+                            <span data-week-metric-label className="shrink-0 text-[8px] font-medium leading-none text-zinc-400">
+                                Pendientes
+                            </span>
                             {(() => {
                                 const startBalance = week.summary.startBalance ?? 0;
                                 const hasPending = Math.abs(startBalance) > 0.05;
@@ -332,42 +338,39 @@ export function WeekCard({
                                 const colorClass = !showPending ? 'text-transparent' : startBalance >= 0 ? 'text-emerald-600' : 'text-red-600';
                                 const text = showPending ? fmtDecimal(Math.abs(startBalance)) : '\u00a0';
                                 return (
-                                    <span className={cn('text-[10px] font-semibold leading-none tabular-nums', colorClass)}>
+                                    <span data-week-metric-value className={cn('min-w-0 truncate text-[10px] font-semibold leading-none tabular-nums', colorClass)}>
                                         {text}
                                     </span>
                                 );
                             })()}
                         </div>
-                        <div className="row-start-1 col-start-3 flex items-end justify-center self-stretch">
-                            <span className="text-[10px] font-semibold leading-none text-black tabular-nums">
+                        <div data-week-metric="extras" className="flex min-w-0 items-center justify-center gap-0.5">
+                            <span data-week-metric-label className="shrink-0 text-[8px] font-medium leading-none text-zinc-400">
+                                Extras
+                            </span>
+                            <span data-week-metric-value className="min-w-0 truncate text-[10px] font-semibold leading-none text-black tabular-nums">
                                 {(week.summary.weeklyBalance ?? 0) > 0.05 ? fmtDecimal(Math.abs(week.summary.weeklyBalance)) : '\u00a0'}
                             </span>
                         </div>
-                        <div className="row-start-1 col-start-4 flex items-end justify-center self-stretch">
-                            <span className={cn(
-                                "text-[10px] font-semibold leading-none tabular-nums",
-                                week.summary.estimatedValue === null || (week.summary as any).hasMissingRate
-                                    ? "text-amber-600 font-bold text-[9px]"
-                                    : "text-emerald-600"
-                            )}>
+                        <div data-week-metric="importe" className="flex min-w-0 items-center justify-center gap-0.5">
+                            <span data-week-metric-label className="shrink-0 text-[8px] font-medium leading-none text-zinc-400">
+                                Importe
+                            </span>
+                            <span
+                                data-week-metric-value
+                                className={cn(
+                                    'min-w-0 truncate text-[10px] font-semibold leading-none tabular-nums',
+                                    week.summary.estimatedValue === null || (week.summary as any).hasMissingRate
+                                        ? 'text-[9px] font-bold text-amber-600'
+                                        : 'text-emerald-600',
+                                )}
+                            >
                                 {week.summary.estimatedValue === null || (week.summary as any).hasMissingRate
                                     ? 'Sin tarifa'
                                     : (week.summary.estimatedValue ?? 0) > 0.05
-                                    ? fmtMoney(week.summary.estimatedValue)
-                                    : '\u00a0'}
+                                      ? fmtMoney(week.summary.estimatedValue)
+                                      : '\u00a0'}
                             </span>
-                        </div>
-                        <div className="row-start-2 col-start-1 flex justify-center">
-                            <span className="text-[8px] font-medium leading-none text-zinc-400">Horas</span>
-                        </div>
-                        <div className="row-start-2 col-start-2 flex justify-center">
-                            <span className="text-center text-[8px] font-medium leading-none text-zinc-400">Pendientes</span>
-                        </div>
-                        <div className="row-start-2 col-start-3 flex justify-center">
-                            <span className="text-[8px] font-medium leading-none text-zinc-400">Extras</span>
-                        </div>
-                        <div className="row-start-2 col-start-4 flex justify-center">
-                            <span className="text-[8px] font-medium leading-none text-zinc-400">Importe</span>
                         </div>
                     </div>
                 </div>
