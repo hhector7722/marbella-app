@@ -51,8 +51,8 @@
   --espacio-4: 16px;
   --espacio-8: 32px;
   --tactil-minimo: 48px;
-  /* Pista de la cápsula flotante (46 px). El aire y el home indicator van fuera. */
-  --estructura-barra-inferior: 46px;
+  /* Pista de la cápsula flotante (54 px). El aire y el home indicator van fuera. */
+  --estructura-barra-inferior: 54px;
   /* Shell desktop: 0 en smartphone; en lg+ desplaza topbar/contenido. */
   --shell-sidebar-width: 0px;
   --shell-bottom-inset: calc(
@@ -3962,6 +3962,8 @@ button[data-element='catalog-filter'] {
  */
 [data-component='TabBar'] {
   --tabbar-icon-size: 22px;
+  --tabbar-capsule-max-width: 22rem;
+  --tabbar-capsule-radius: 18px;
 }
 [data-component='TabBar'].marbella-fixed-bottombar {
   box-sizing: border-box;
@@ -3972,13 +3974,13 @@ button[data-element='catalog-filter'] {
   display: flex;
   align-items: stretch;
   justify-content: space-around;
-  width: min(calc(100% - (var(--espacio-2) * 2)), 28rem);
-  max-width: 28rem;
+  width: min(calc(100% - (var(--espacio-2) * 2)), var(--tabbar-capsule-max-width));
+  max-width: var(--tabbar-capsule-max-width);
   height: var(--estructura-barra-inferior);
   margin-inline: auto;
   padding: 4px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--tabbar-capsule-radius);
   overflow: visible;
   isolation: isolate;
   transform: none;
@@ -4027,7 +4029,7 @@ button[data-element='catalog-filter'] {
   justify-content: center;
   gap: 1px;
   padding: 1px 2px;
-  border-radius: 999px;
+  border-radius: var(--radio-control);
   color: rgb(255 255 255 / 0.55);
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;

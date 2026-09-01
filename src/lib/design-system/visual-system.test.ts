@@ -202,7 +202,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             /\.pt-header-safe-tight \{[\s\S]*?var\(--app-navbar-height\)/,
             'el mosaico de inicio reserva menos hueco bajo la cabecera'
         );
-        assert.match(css, /--estructura-barra-inferior:\s*46px/);
+        assert.match(css, /--estructura-barra-inferior:\s*54px/);
         assert.match(css, /--shell-sidebar-width:\s*0px/, 'sidebar desktop arranca a 0 en smartphone');
         assert.match(
             css,
@@ -216,8 +216,8 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
         assert.match(
             css,
-            /\[data-component='TabBar'\]\.marbella-fixed-bottombar \{[\s\S]*?border-radius:\s*999px/,
-            'el tab bar es una cápsula flotante, no una losa a sangre'
+            /\[data-component='TabBar'\]\.marbella-fixed-bottombar \{[\s\S]*?border-radius:\s*var\(--tabbar-capsule-radius\)/,
+            'el tab bar es una cápsula con esquinas moderadas, no pastilla completa'
         );
         assert.match(
             css,
@@ -227,7 +227,12 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(
             css,
             /\[data-component='TabBar'\]\.marbella-fixed-bottombar \{[\s\S]*?height:\s*var\(--estructura-barra-inferior\)/,
-            'la cápsula mide 49 pt; el área segura queda fuera'
+            'la altura de la cápsula usa estructura-barra-inferior'
+        );
+        assert.match(
+            css,
+            /\[data-component='TabBar'\]\.marbella-fixed-bottombar \{[\s\S]*?max-width:\s*var\(--tabbar-capsule-max-width\)/,
+            'la cápsula del tab bar tiene ancho máximo acotado'
         );
         assert.match(
             css,
