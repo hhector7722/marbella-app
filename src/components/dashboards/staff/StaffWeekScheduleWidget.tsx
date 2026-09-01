@@ -142,11 +142,7 @@ function WeekendDayColumn({
                         <span className="min-w-0 truncate text-[8px] font-black tabular-nums leading-none text-white">
                             {turno}
                         </span>
-                    ) : (
-                        <span className="min-w-0 truncate text-[5px] font-normal leading-none text-emerald-200/40">
-                            Sin información
-                        </span>
-                    )}
+                    ) : null}
                 </div>
 
                 <div className="flex min-w-0 items-baseline gap-0.5 border-l border-amber-400 pl-0.5">
@@ -166,11 +162,7 @@ function WeekendDayColumn({
                                 .filter(Boolean)
                                 .join(' · ')}
                         </span>
-                    ) : (
-                        <span className="min-w-0 truncate text-[5px] font-normal leading-none text-amber-200/40">
-                            Sin información
-                        </span>
-                    )}
+                    ) : null}
                 </div>
             </div>
 
@@ -381,20 +373,21 @@ export function StaffWeekScheduleWidget({ userId, onOpenNote }: StaffWeekSchedul
                                                             handleDaySelect(day);
                                                         }}
                                                         aria-label={format(day, "EEEE d 'de' MMMM", { locale: es })}
+                                                        aria-current={today ? 'date' : undefined}
                                                         className={cn(
                                                             'relative flex w-full items-center justify-center transition-colors',
                                                             'before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']',
-                                                            !isExpanded && today && 'rounded-full bg-emerald-500',
-                                                            !isExpanded && !today && 'hover:bg-white/10',
+                                                            !today && 'hover:bg-white/10',
                                                         )}
                                                     >
                                                         <span
+                                                            data-today={today ? 'true' : undefined}
                                                             className={cn(
                                                                 'text-[7px] tabular-nums leading-none',
-                                                                !inMonth && 'font-medium text-white/45',
-                                                                inMonth && !today && 'font-black text-white/90',
-                                                                inMonth && today && !isExpanded && 'font-black text-white',
-                                                                inMonth && today && isExpanded && 'font-black text-emerald-300',
+                                                                today &&
+                                                                    'flex h-[var(--staff-week-day-size)] w-[var(--staff-week-day-size)] items-center justify-center rounded-full bg-emerald-500 font-black text-white',
+                                                                !today && !inMonth && 'font-medium text-white/45',
+                                                                !today && inMonth && 'font-black text-white/90',
                                                             )}
                                                         >
                                                             {format(day, 'd')}
