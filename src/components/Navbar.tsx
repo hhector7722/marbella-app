@@ -72,7 +72,7 @@ export default function Navbar() {
                 data-component="AppNavbar"
                 data-hidden={topHidden ? 'true' : undefined}
                 className={cn(
-                    'marbella-fixed-topbar bg-[var(--color-envolvente-alto)] text-white pt-safe fixed top-0 right-0 left-0 z-[100] border-b border-white/15 shadow-sm h-header-safe flex items-center isolate print:hidden'
+                    'marbella-fixed-topbar text-white pt-safe fixed top-0 right-0 left-0 z-[100] h-header-safe flex items-center isolate print:hidden'
                 )}
             >
                 <div className="max-w-7xl lg:max-w-none mx-auto flex items-center justify-between px-1 lg:px-4 w-full min-w-0">

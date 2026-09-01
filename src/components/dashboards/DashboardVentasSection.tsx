@@ -243,6 +243,9 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
         return new Date(y, (m || 1) - 1, d || 1);
     };
 
+    const chartRangeData = salesChartData.slice(BUSINESS_HOURS.start, BUSINESS_HOURS.end + 1);
+    const chartHasData = Math.max(...chartRangeData.map((d) => d.total), 0) > 0;
+
     return (
         <>
             <Surface variant="page" instance="dashboard-ventas" className="flex h-full min-h-0 flex-col overflow-hidden">
@@ -311,19 +314,23 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     </Link>
                 </div>
 
-                {(() => {
+                <div
+                    className={cn(
+                        'flex min-h-0 flex-1 flex-col overflow-hidden',
+                        chartHasData ? 'justify-end' : 'justify-center'
+                    )}
+                >
+                {chartHasData && (() => {
                     const chartData = salesChartData;
-                    const rangeData = chartData.slice(BUSINESS_HOURS.start, BUSINESS_HOURS.end + 1);
+                    const rangeData = chartRangeData;
                     const maxMain = Math.max(...rangeData.map((d) => d.total), 0);
                     const scaleMax = Math.max(maxMain, 1);
-                    const hasData = maxMain > 0;
-                    if (!hasData) return null;
                     const numPoints = rangeData.length;
                     const maxSelectableHour = isToday(parseSalesViewDate()) ? new Date().getHours() : BUSINESS_HOURS.end;
                     const toPath = (data: { hora: number; total: number }[]) => {
                         const pts = data.map((d, i) => {
                             const x = (i / (numPoints - 1 || 1)) * 120;
-                            const y = 22 - (d.total / scaleMax) * 18;
+                            const y = 16 - (d.total / scaleMax) * 13;
                             return `${x},${y}`;
                         });
                         return pts.length > 0 ? `M ${pts.join(' L ')}` : '';
@@ -348,7 +355,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                   0
                               );
                     return (
-                        <div className="w-full shrink-0 px-2 pt-1">
+                        <div className="w-full shrink-0 px-2 pt-0">
                             <div
                                 ref={chartContainerRef}
                                 className="w-full relative"
@@ -360,11 +367,11 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                     }
                                 }}
                             >
-                                <svg viewBox="0 0 120 24" className="w-full h-5 block select-none" preserveAspectRatio="none">
+                                <svg viewBox="0 0 120 20" className="w-full h-3 block select-none" preserveAspectRatio="none">
                                     <path d={toPath(rangeData)} fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="butt" strokeLinejoin="miter" vectorEffect="non-scaling-stroke" className="text-ds-marca" />
                                 </svg>
                             </div>
-                            <div className="mt-0.5 flex justify-between px-0 text-[9px] font-mono leading-none text-ds-marca select-none pointer-events-none">
+                            <div className="flex justify-between px-0 text-[8px] font-mono leading-none text-ds-marca select-none pointer-events-none">
                                 <span>{BUSINESS_HOURS.start} h</span>
                                 <span>{BUSINESS_HOURS.end} h</span>
                             </div>
@@ -372,8 +379,8 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                 (() => {
                                     const idx = selectedChartHour - BUSINESS_HOURS.start;
                                     const xPct = (idx / (numPoints - 1 || 1)) * 100;
-                                    const yView = 22 - ((chartData[selectedChartHour]?.total ?? 0) / scaleMax) * 18;
-                                    const yPct = (yView / 24) * 100;
+                                    const yView = 16 - ((chartData[selectedChartHour]?.total ?? 0) / scaleMax) * 13;
+                                    const yPct = (yView / 20) * 100;
                                     const rect = chartContainerRef.current?.getBoundingClientRect();
                                     const pointLeft = rect ? rect.left + (xPct / 100) * rect.width : 0;
                                     const pointTop = rect ? rect.top + (yPct / 100) * rect.height : 0;
@@ -393,10 +400,8 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                 })()}
 
                 <div
-                    className={cn(
-                        'grid shrink-0 grid-cols-3 items-start gap-1 px-2 pb-2',
-                        displaySummary.total > 0 ? 'mt-auto' : 'my-auto'
-                    )}
+                    data-element="kpis"
+                    className="grid shrink-0 grid-cols-3 items-start gap-0.5 px-2 pt-0.5"
                 >
                     {salesLoading ? (
                         <div className="col-span-3 flex items-center justify-center py-2" role="status" aria-label="Cargando ventas">
@@ -424,6 +429,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     </div>
                     </>
                     )}
+                </div>
                 </div>
             </Surface>
 

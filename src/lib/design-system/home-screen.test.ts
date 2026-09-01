@@ -36,7 +36,8 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
             )?.[0] ?? '';
         assert.ok(home.length > 0, 'el CSS de HomeScreen está acotado');
         assert.match(home, /grid-template-columns:\s*repeat\(4,/);
-        assert.match(home, /grid-auto-rows:\s*var\(--home-icon-size\)/);
+        assert.match(home, /grid-auto-rows:\s*var\(--home-row-track\)/);
+        assert.match(home, /--home-row-track:\s*calc\(var\(--home-icon-size\) \+ var\(--home-shortcut-label-band\)\)/);
         assert.match(home, /\[data-slot='icon'\][\s\S]*?span 1/);
         assert.match(home, /\[data-slot='small'\][\s\S]*?span 2/);
         assert.match(home, /\[data-slot='medium'\][\s\S]*?span 4/);
@@ -48,19 +49,29 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.match(home, /\[data-element='body'\][\s\S]*?position:\s*absolute/);
         assert.match(home, /> \[data-element='slot'\] \{[\s\S]*?max-height:\s*100%/);
         assert.match(home, /--home-name-band:\s*calc\(var\(--espacio-1\) \+ var\(--home-name\)\)/);
-        assert.match(home, /--home-row-gap:\s*var\(--espacio-2\)/);
+        assert.match(home, /--home-row-gap:\s*var\(--espacio-4\)/);
         assert.match(
+            home,
+            /row-gap:\s*var\(--home-row-gap\)/
+        );
+        assert.doesNotMatch(
             home,
             /row-gap:\s*calc\(var\(--home-name-band\) \+ var\(--home-row-gap\)\)/
         );
         assert.match(
             home,
-            /:not\(\[data-named='true'\]\) > \[data-element='body'\][\s\S]*?--home-name-band/
+            /\[data-named='true'\] > \[data-element='body'\][\s\S]*?height:\s*var\(--home-icon-size\)/,
+            'tile con etiqueta: el cristal es solo el squircle'
         );
-        assert.match(
+        assert.doesNotMatch(
             home,
-            /:not\(\[data-slot='icon'\]\):not\(\[data-named='true'\]\) \{[\s\S]*?margin-bottom:\s*calc\(-1 \* var\(--home-name-band\)\)/,
-            'el widget no duplica la franja de nombre en el row-gap siguiente'
+            /:not\(\[data-named='true'\]\) > \[data-element='body'\][\s\S]*?bottom:\s*calc\(-1 \* var\(--home-name-band\)\)/,
+            'el widget llena la pista; no prolonga el cristal al row-gap'
+        );
+        assert.doesNotMatch(
+            home,
+            /--home-row-after-widget-push/,
+            'el aire entre filas sale de la pista y del row-gap, no de parches por instancia'
         );
         assert.match(home, /data-layout='ops-admin'/);
         assert.match(home, /data-layout='staff'/);
@@ -76,23 +87,13 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         );
         assert.match(
             home,
-            /dashboard-horas-extras'\][\s\S]*?margin-bottom:\s*calc\(-1 \* var\(--home-shortcut-label-band\)\)/,
-            'H. extras compensa la franja de un atajo de una línea'
-        );
-        assert.match(
-            home,
             /--home-shortcut-label-band:\s*calc\(var\(--espacio-1\) \+ 11px \* 1\.2\)/,
             'franja de nombre de un atajo de una línea'
         );
-        assert.match(
+        assert.doesNotMatch(
             home,
-            /dashboard-horas-extras'\]::before[\s\S]*?bottom:\s*calc\(-1 \* var\(--home-shortcut-label-band\)\)/,
-            'H. extras llega al nombre de Albaranes'
-        );
-        assert.match(
-            home,
-            /staff-horarios'\]::before[\s\S]*?bottom:\s*calc\(-1 \* var\(--home-shortcut-label-band\)\)/,
-            'Horarios Staff llega al nombre de Caja'
+            /dashboard-horas-extras'\][\s\S]*?bottom:\s*calc\(-1 \* var\(--home-shortcut-label-band\)\)/,
+            'el panel ocupa dos pistas enteras; no prolonga el cristal'
         );
         assert.match(
             home,
@@ -106,6 +107,21 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
             home,
             /\[data-instance='staff-semana'\][\s\S]*month-cal-grid-wrap[\s\S]*border:\s*0/,
             'la semana Staff llena el hueco: un solo canto, sin tarjeta interior'
+        );
+        assert.match(
+            home,
+            /\[data-instance='staff-semana'\] \[data-week-summary\] \.month-cal-grid-wrap > \.grid\.shrink-0[\s\S]*?height:\s*13px/,
+            'en el mosaico Staff la franja L–D es más baja'
+        );
+        assert.match(
+            home,
+            /\[data-instance='staff-semana'\] \[data-week-summary\] \.month-cal-day-clocks span[\s\S]*?font-size:\s*8px/,
+            'en el mosaico Staff las horas de fichaje bajan un punto'
+        );
+        assert.match(
+            home,
+            /\[data-instance='staff-semana'\] \[data-week-summary\] \.month-cal-weeks > \[data-week-footer\][\s\S]*?font-size:\s*7px/,
+            'en el mosaico Staff los conceptos del pie bajan un punto'
         );
         assert.doesNotMatch(home, /--week-scale/);
         assert.doesNotMatch(
@@ -150,7 +166,7 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         );
         assert.match(
             home,
-            /\[data-layout='staff'\][\s\S]*grid-template-rows:[\s\S]*var\(--home-icon-size\)\s+var\(--home-icon-size\)\s+var\(--home-icon-size\)\s+var\(--home-icon-size\)\s+var\(--home-icon-size\)\s+var\(--home-icon-size\)/
+            /\[data-layout='staff'\][\s\S]*grid-template-rows:[\s\S]*repeat\(6, var\(--home-row-track\)\)/
         );
         assert.match(
             home,
@@ -181,8 +197,8 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.match(css, /--color-envolvente-bajo:\s*#0b1c36/);
         assert.match(
             home,
-            /\[data-widget-scheme='dark'\][\s\S]*?--home-widget-fill:\s*rgb\(255 255 255 \/ 0\.16\)/,
-            'el cristal es el de Caja cambio 2: blanco 16 % + blur'
+            /\[data-widget-scheme='dark'\][\s\S]*?--home-widget-fill:\s*var\(--chrome-glass-fill\)/,
+            'el cristal oscuro reutiliza el material del chrome'
         );
         assert.match(
             home,

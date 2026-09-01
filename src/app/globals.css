@@ -96,6 +96,15 @@
   /* Cabecera cromo de tablas (recipe-panel / PageScreen / Modal) */
   --table-chrome-fill: color-mix(in srgb, white 16%, var(--color-envolvente-bajo));
   --home-widget-separator: rgb(255 255 255 / 0.16);
+  /* Cristal compartido: widgets HomeScreen (oscuro) y TabBar sobre el envolvente */
+  --chrome-glass-fill: rgb(255 255 255 / 0.16);
+  --chrome-glass-fallback: rgb(255 255 255 / 0.16);
+  --chrome-glass-blur: var(--espacio-8);
+  --chrome-glass-saturate: 180%;
+  --chrome-glass-shadow:
+    inset 0 0.5px 0 rgb(255 255 255 / 0.38),
+    0 0 0 1px rgb(255 255 255 / 0.18),
+    0 8px 28px rgb(0 0 0 / 0.22);
 }
 
 @media (min-width: 640px) {
@@ -1038,15 +1047,12 @@
 }
 [data-component='PageScreen'][data-work='catalog'] {
   --home-widget-radius: var(--radio-superficie);
-  --home-widget-fill: rgb(255 255 255 / 0.16);
-  --home-widget-fallback: rgb(255 255 255 / 0.16);
-  --home-widget-blur: var(--espacio-8);
-  --home-widget-saturate: 180%;
-  --home-widget-separator: rgb(255 255 255 / 0.16);
-  --home-widget-shadow:
-    inset 0 0.5px 0 rgb(255 255 255 / 0.38),
-    0 0 0 1px rgb(255 255 255 / 0.18),
-    0 8px 28px rgb(0 0 0 / 0.22);
+  --home-widget-fill: var(--chrome-glass-fill);
+  --home-widget-fallback: var(--chrome-glass-fallback);
+  --home-widget-blur: var(--chrome-glass-blur);
+  --home-widget-saturate: var(--chrome-glass-saturate);
+  --home-widget-separator: var(--chrome-glass-fill);
+  --home-widget-shadow: var(--chrome-glass-shadow);
   /*
    * Cristal del mosaico sobre marino: mismo tono en todas las cabeceras
    * de ficha, sin depender del fondo (blanco o envolvente) que haya detrás.
@@ -2088,24 +2094,32 @@ button[data-element='catalog-filter'] {
   font-weight: 400;
   margin-top: 2px;
 }
+[data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas'] > [data-element='body'] {
+  box-sizing: border-box;
+  padding-bottom: var(--espacio-1);
+}
+[data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas'] [data-element='kpis'] {
+  flex-shrink: 0;
+  padding-bottom: var(--espacio-1);
+}
+[data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas'] [data-component='KpiStat'] [data-element='label'] {
+  margin-top: 2px;
+  line-height: 1.2;
+}
 
 /*
  * HomeScreen — página de inicio (T1). Como Springboard en iPhone:
- * 4 columnas, 6 filas. La pista es el squircle.
- * El nombre (icono o widget) vive en --home-name-band, bajo el hueco.
- * Sin nombre: el widget tiene la altura de icono + nombre.
- * Entre filas, después de los nombres, va --home-row-gap (más compacto que column-gap).
- * Widget: small 2×2, medium 4×2, large 4×4, wide 4×1, half 2×1, panel 3×2, tile 1×1.
- * Un 2×2 iguala dos iconos + el hueco del medio.
- * El widget es material de sistema (como iOS): cristal que toma el wallpaper,
- * claro u oscuro según el fondo, contenido sobre el vidrio. El hilo es del icono.
+ * 4 columnas, 6 filas. Cada pista = squircle + nombre de un atajo (una línea).
+ * Equivale a una celda de la plantilla: icono + «nombre». Entre pistas, --home-row-gap.
+ * Un widget 4×1 llena una pista; un panel 3×2 llena dos pistas + el hueco entre ellas.
  */
 [data-component='HomeScreen'] {
   --home-icon-size: 4.5rem;
   --home-name: 1.65rem;
   --home-name-band: calc(var(--espacio-1) + var(--home-name));
   --home-shortcut-label-band: calc(var(--espacio-1) + 11px * 1.2);
-  --home-row-gap: var(--espacio-2);
+  --home-row-track: calc(var(--home-icon-size) + var(--home-shortcut-label-band));
+  --home-row-gap: var(--espacio-4);
   --home-wallpaper: var(--color-envolvente);
   --home-widget-radius: var(--radio-superficie);
   --home-widget-fill: rgb(255 255 255 / 0.62);
@@ -2123,29 +2137,26 @@ button[data-element='catalog-filter'] {
   box-sizing: border-box;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  grid-auto-rows: var(--home-icon-size);
+  grid-auto-rows: var(--home-row-track);
   grid-auto-flow: dense;
   column-gap: var(--espacio-4);
-  row-gap: calc(var(--home-name-band) + var(--home-row-gap));
+  row-gap: var(--home-row-gap);
   width: 100%;
   max-width: 26rem;
   margin-inline: auto;
   padding-inline: var(--espacio-4);
-  padding-bottom: calc(var(--home-name-band) + var(--home-row-gap));
+  padding-bottom: var(--home-row-gap);
   align-items: stretch;
   overflow: visible;
 }
 [data-component='HomeScreen'][data-widget-scheme='dark'] {
-  --home-widget-fill: rgb(255 255 255 / 0.16);
-  --home-widget-fallback: rgb(255 255 255 / 0.16);
+  --home-widget-fill: var(--chrome-glass-fill);
+  --home-widget-fallback: var(--chrome-glass-fallback);
   --home-widget-ink: var(--color-texto-invertido);
   --home-widget-ink-secondary: var(--color-texto-invertido);
   --home-widget-fill-secondary: rgb(255 255 255 / 0.1);
-  --home-widget-separator: rgb(255 255 255 / 0.16);
-  --home-widget-shadow:
-    inset 0 0.5px 0 rgb(255 255 255 / 0.38),
-    0 0 0 1px rgb(255 255 255 / 0.18),
-    0 8px 28px rgb(0 0 0 / 0.22);
+  --home-widget-separator: var(--chrome-glass-fill);
+  --home-widget-shadow: var(--chrome-glass-shadow);
 }
 [data-component='HomeScreen'] > [data-element='slot'] {
   position: relative;
@@ -2167,16 +2178,9 @@ button[data-element='catalog-filter'] {
   background: var(--color-envolvente-bajo);
   pointer-events: none;
 }
-[data-component='HomeScreen'] > [data-element='slot']:not([data-slot='icon']):not([data-named='true'])::before {
-  bottom: calc(-1 * var(--home-name-band));
-}
-/*
- * Widget sin etiqueta externa: ocupa la franja de nombre bajo el hueco.
- * El row-gap siguiente ya incluye esa franja; la anulamos para que solo
- * quede --home-row-gap, igual que entre el nombre de un icono y el siguiente.
- */
-[data-component='HomeScreen'] > [data-element='slot']:not([data-slot='icon']):not([data-named='true']) {
-  margin-bottom: calc(-1 * var(--home-name-band));
+[data-component='HomeScreen'] > [data-element='slot'][data-named='true']::before {
+  bottom: auto;
+  height: var(--home-icon-size);
 }
 [data-component='HomeScreen'] > [data-element='slot'][data-slot='icon'] {
   grid-column: span 1;
@@ -2227,13 +2231,7 @@ button[data-element='catalog-filter'] {
     'hextras hextras hextras albaranes'
     'cambio1 cambio2 recetas asis'
     'mobra stock ingredientes cambio';
-  grid-template-rows:
-    var(--home-icon-size)
-    var(--home-icon-size)
-    var(--home-icon-size)
-    var(--home-icon-size)
-    var(--home-icon-size)
-    var(--home-icon-size);
+  grid-template-rows: repeat(6, var(--home-row-track));
   grid-auto-flow: row;
 }
 [data-component='HomeScreen'] [data-element='header'] {
@@ -2292,13 +2290,7 @@ button[data-element='catalog-filter'] {
     'recetas  pedidos cambio  propinas'
     'compra   carta     reservas cierre'
     'prov     invent    info     web';
-  grid-template-rows:
-    var(--home-icon-size)
-    var(--home-icon-size)
-    var(--home-icon-size)
-    var(--home-icon-size)
-    var(--home-icon-size)
-    var(--home-icon-size);
+  grid-template-rows: repeat(6, var(--home-row-track));
   grid-auto-flow: row;
 }
 [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-horarios'] > [data-element='body'] {
@@ -2405,7 +2397,7 @@ button[data-element='catalog-filter'] {
  */
 [data-component='StaffFichajeControl'][data-layout='dual-stack'] {
   gap: 0;
-  --fichaje-dual-stack-height: calc(var(--home-icon-size) + var(--home-shortcut-label-band));
+  --fichaje-dual-stack-height: var(--home-row-track);
 }
 [data-component='StaffFichajeControl'][data-layout='dual-stack'] [data-element='iconStack'] {
   display: flex;
@@ -2603,10 +2595,10 @@ button[data-element='catalog-filter'] {
 [data-component='HomeScreen'][data-widget-scheme='dark'] > [data-element='slot'] > [data-element='body'] :is(.shadow-lg, .shadow-2xl).bg-white * {
   color: unset;
 }
-[data-component='HomeScreen'] > [data-element='slot']:not([data-slot='icon']):not([data-named='true']) > [data-element='body'] {
-  bottom: calc(-1 * var(--home-name-band));
-  height: auto;
-  max-height: none;
+[data-component='HomeScreen'] > [data-element='slot'][data-named='true'] > [data-element='body'] {
+  height: var(--home-icon-size);
+  max-height: var(--home-icon-size);
+  bottom: auto;
 }
 /*
  * Semana Staff: papel blanco y cabecera roja. No es cristal.
@@ -2631,23 +2623,6 @@ button[data-element='catalog-filter'] {
 }
 [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] > [data-element='body'] :is(.border-gray-100, .border-gray-50, .border-zinc-100) {
   border-color: var(--color-borde-marcado);
-}
-/*
- * Panel 3×2 sin nombre: el cristal llega al pie del segundo atajo de la columna.
- * Una línea (11px × 1.2) + el aire de encima del nombre, no toda la franja
- * de dos líneas — si no, queda más alto que el par.
- */
-[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='dashboard-horas-extras']::before,
-[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='dashboard-horas-extras'] > [data-element='body'],
-[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-horarios']::before,
-[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-horarios'] > [data-element='body'] {
-  bottom: calc(-1 * var(--home-shortcut-label-band));
-  height: auto;
-  max-height: none;
-}
-[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='dashboard-horas-extras'],
-[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-horarios'] {
-  margin-bottom: calc(-1 * var(--home-shortcut-label-band));
 }
 /* Semana Staff: el mismo WeekSummary que historial y horas extras. */
 [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-fit='week'] [data-component='MonthCalendarFrame'] {
@@ -2803,16 +2778,47 @@ button[data-element='catalog-filter'] {
     var(--color-borde) 100%
   );
 }
+/*
+ * Resumen semanal en mosaico Staff (hueco 4×1): tipografía y franja L–D un poco más compactas.
+ * Historial y horas extras conservan el tamaño base de [data-week-summary].
+ */
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0,
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0 > div {
+  height: 13px;
+  min-height: 13px;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0 span {
+  font-size: 6px;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-day-clocks > div {
+  height: 12px;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-day-clocks span {
+  font-size: 8px;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-weeks > [data-week-footer]:not([data-overrides='true']) {
+  height: 23px;
+  min-height: 23px;
+  max-height: 23px;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-weeks > [data-week-footer] .grid > div:nth-child(-n + 4) span {
+  font-size: 9px;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-weeks > [data-week-footer] .grid > div:nth-child(n + 5) span {
+  font-size: 7px;
+}
 /* Varias semanas: una sola L–D. El wrap recorta el radio hasta la última. */
 .month-cal-chrome[data-stacked='true'] .month-cal-grid-wrap {
   overflow: hidden;
 }
 [data-component='HomeScreen'] > [data-element='slot'] > [data-element='name'] {
   position: absolute;
-  top: 100%;
+  top: var(--home-icon-size);
   left: 0;
   right: 0;
-  margin-top: var(--espacio-1);
+  bottom: 0;
+  margin-top: 0;
+  padding-top: var(--espacio-1);
   pointer-events: none;
   max-width: 100%;
   padding-inline: 2px;
@@ -3949,8 +3955,8 @@ button[data-element='catalog-filter'] {
 
 /*
  * TabBar — UITabBar iOS 26 Liquid Glass. Isla que flota sobre el contenido,
- * no losa a sangre. Cristal del envolvente a media tinta + blur: se ve el
- * fondo y sobre el papel de trabajo la cápsula y los iconos blancos se leen.
+ * no losa a sangre. Mismo cristal que los widgets HomeScreen (--chrome-glass-*):
+ * translúcido sobre iconos y contenido al hacer scroll.
  * Position fixed. Inset 16 pt, aire 8 pt sobre el home indicator.
  * overflow visible: el blur no sobrevive a overflow:hidden en Safari.
  */
@@ -3977,13 +3983,10 @@ button[data-element='catalog-filter'] {
   isolation: isolate;
   transform: none;
   -webkit-transform: none;
-  background-color: color-mix(in srgb, var(--color-envolvente-bajo) 55%, transparent);
-  -webkit-backdrop-filter: saturate(180%) blur(32px);
-  backdrop-filter: saturate(180%) blur(32px);
-  box-shadow:
-    inset 0 0.5px 0 rgb(255 255 255 / 0.22),
-    0 0 0 1px rgb(255 255 255 / 0.18),
-    0 8px 24px rgb(0 0 0 / 0.28);
+  background-color: var(--chrome-glass-fallback);
+  -webkit-backdrop-filter: saturate(var(--chrome-glass-saturate)) blur(var(--chrome-glass-blur));
+  backdrop-filter: saturate(var(--chrome-glass-saturate)) blur(var(--chrome-glass-blur));
+  box-shadow: var(--chrome-glass-shadow);
   transition:
     transform 0.35s cubic-bezier(0.32, 0.72, 0, 1),
     opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1),
@@ -3991,7 +3994,7 @@ button[data-element='catalog-filter'] {
 }
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
   [data-component='TabBar'] {
-    background-color: color-mix(in srgb, var(--color-envolvente-bajo) 82%, white 18%);
+    background-color: var(--chrome-glass-fallback);
   }
 }
 [data-component='TabBar'][data-hidden='true'] {
@@ -4031,7 +4034,6 @@ button[data-element='catalog-filter'] {
 }
 [data-component='TabBar'] [data-element='item'][data-active='true'] {
   color: var(--color-texto-invertido);
-  background-color: rgb(255 255 255 / 0.16);
 }
 [data-component='TabBar'] [data-element='item']:active {
   opacity: 0.7;
@@ -4207,14 +4209,9 @@ button[data-element='catalog-filter'] {
       'hextras hextras hextras hextras mobra   stock'
       'hextras hextras hextras hextras ingredientes cambio'
       'cambio1 cambio1 cambio2 cambio2 .      .';
-    grid-template-rows:
-      var(--home-icon-size)
-      var(--home-icon-size)
-      var(--home-icon-size)
-      var(--home-icon-size)
-      var(--home-icon-size);
+    grid-template-rows: repeat(5, var(--home-row-track));
     column-gap: var(--espacio-3);
-    row-gap: calc(var(--home-name-band) + var(--espacio-2));
+    row-gap: var(--home-row-gap);
   }
 
   [data-component='HomeScreen'][data-layout='staff'] {
@@ -4261,10 +4258,24 @@ button[data-element='catalog-filter'] {
 .marbella-fixed-topbar {
   --app-navbar-scale: calc(var(--app-navbar-height) / var(--tactil-minimo));
   box-sizing: border-box;
-  overflow: visible;
+  overflow: hidden;
+  background-color: transparent;
   transition:
     transform 0.35s cubic-bezier(0.32, 0.72, 0, 1),
     opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+/* Recorte del degradado del shell solo a la franja de cabecera (sin capa viewport). */
+.marbella-fixed-topbar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--color-envolvente);
+  background-image: var(--marbella-shell-image);
+  background-repeat: no-repeat;
+  background-size: 100% 100dvh;
+  background-position: center top;
 }
 .marbella-fixed-topbar[data-hidden='true'] {
   transform: translateY(-100%);

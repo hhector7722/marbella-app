@@ -1,7 +1,6 @@
 /**
  * Rejilla de inicio (T1). Una página de Springboard: 4 columnas × 6 filas.
- * La pista es el squircle. Con nombre, la etiqueta vive en la franja bajo el hueco.
- * Sin nombre, el widget tiene la altura de icono + nombre. Entre filas hay aire aparte.
+ * Cada pista = squircle + nombre de un atajo (una línea). Entre pistas, solo --home-row-gap.
  */
 
 export const HOME_SCREEN_COMPONENT_ID = 'HomeScreen' as const;

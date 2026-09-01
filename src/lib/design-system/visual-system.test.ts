@@ -119,6 +119,16 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
         assert.match(
             css,
+            /\.marbella-fixed-topbar::before \{[\s\S]*?position:\s*absolute/,
+            'la cabecera recorta el degradado sin tapar el contenido'
+        );
+        assert.match(
+            css,
+            /\.marbella-fixed-topbar::before \{[\s\S]*?var\(--marbella-shell-image\)/,
+            'la cabecera comparte el degradado del shell, sin salto de color'
+        );
+        assert.match(
+            css,
             /\[data-component='PageScreen'\]\[data-work='calendar'\] \[data-component='Surface'\]\[data-variant='page'\]/,
             'el calendario de PageScreen no lleva ficha alrededor: Surface transparente'
         );
@@ -221,8 +231,8 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
         assert.match(
             css,
-            /\[data-component='TabBar'\]\.marbella-fixed-bottombar \{[\s\S]*?background-color:\s*color-mix\(in srgb, var\(--color-envolvente-bajo\) 55%, transparent\)/,
-            'la cápsula es cristal del envolvente, no una losa opaca'
+            /\[data-component='TabBar'\]\.marbella-fixed-bottombar \{[\s\S]*?background-color:\s*var\(--chrome-glass-fallback\)/,
+            'la cápsula comparte el cristal de los widgets HomeScreen'
         );
         assert.match(
             css,
