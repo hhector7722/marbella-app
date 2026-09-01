@@ -22,7 +22,7 @@ import { addDays, format, parseISO } from 'date-fns';
 import type { PayrollAllocationService } from '../payroll/payroll-allocation-service.ts';
 import type { ContractTermsService } from '../payroll/contract-terms-service.ts';
 import type { PayrollFactRepository } from '../payroll/payroll-fact-repository.ts';
-import { Money, LaborCost, Percentage } from '../payroll/value-objects.ts';
+import { Money, Percentage } from '../payroll/value-objects.ts';
 import type { LaborCostDayDTO, WorkerLaborCostDTO } from './labor-cost-dtos.ts';
 import { loadEmployeeBoundaryFacts } from '../hours-engine/load-employee-facts.ts';
 import { liquidateWeekForCard } from '../hours-engine/week-card-from-liquidation.ts';
@@ -58,6 +58,11 @@ export class LaborCostDayReadModelProjector {
 
   /**
    * Proyecta el detalle diario del coste laboral para una fecha.
+   *
+   * Los datos estáticos del período (hechos de nómina y perfiles) y los contratos
+   * del período se cargan en lote para evitar N+1. La liquidación semanal sigue
+   * utilizando el mismo Hours Engine y el mismo horizonte histórico necesario
+   * para conservar exactamente el carry existente.
    */
   async projectDayDetail(
     dateYmd: string,
@@ -68,14 +73,30 @@ export class LaborCostDayReadModelProjector {
   ): Promise<LaborCostDayDTO> {
     const day = dateYmd.split('T')[0]!;
     const periodYm = day.substring(0, 7);
-    const includeAll = options?.includeAllContracted ?? false; // Default Toggle OFF
+    const includeAll = options?.includeAllContracted ?? false;
 
     const weekStart = mondayOf(day);
     const weekEnd = format(addDays(parseISO(weekStart), 6), 'yyyy-MM-dd');
 
-    // 1. Obtener hechos de nómina para verificar si el mes tiene nómina cargada
+    // 1. Hechos de nómina del período: una sola consulta para todo el día.
     const activeFacts = await this.payrollRepo.getActiveFactsForPeriod(periodYm);
     const isPayrollPending = activeFacts.length === 0;
+
+    // Índice de coste empresa consolidado por trabajador a partir de los hechos
+    // ya cargados. Sustituye las consultas repetidas de PayrollAllocationService
+    // sin alterar la fórmula oficial.
+    const monthlyCompanyCostByUser = new Map<string, number>();
+    const payrollFactCountByUser = new Map<string, number>();
+    for (const fact of activeFacts) {
+      monthlyCompanyCostByUser.set(
+        fact.user_id,
+        (monthlyCompanyCostByUser.get(fact.user_id) ?? 0) + Number(fact.total_company_cost),
+      );
+      payrollFactCountByUser.set(
+        fact.user_id,
+        (payrollFactCountByUser.get(fact.user_id) ?? 0) + 1,
+      );
+    }
 
     // 2. Obtener Ventas Netas del día
     let netSalesMoney = Money.zero();
@@ -100,25 +121,36 @@ export class LaborCostDayReadModelProjector {
 
     const { data: profileRows } = await profilesQuery;
     const profiles = filterVisiblePlantillaEmployees(profileRows ?? []);
+    const workerIds = profiles.map((profile) => profile.id);
+
+    // 4. Cargar contratos del período en lote y resolverlos en memoria.
+    const contractStore = await this.contractTermsService.loadTermsForMonth(workerIds, periodYm);
 
     const workerDTOs: WorkerLaborCostDTO[] = [];
     let summaryFixed = Money.zero();
     let summaryOvertime = Money.zero();
 
+    // Cálculo de D_vigentes y actividad contractual sin I/O por trabajador.
+    const activeContractDaysByUser = new Map<string, number>();
+    const hasActiveContractByUser = new Map<string, boolean>();
+    for (const profile of profiles) {
+      const activeDays = contractStore.getActiveContractDays(profile.id, periodYm);
+      const hasActiveContract = contractStore.isContractActiveOn(profile.id, day);
+      activeContractDaysByUser.set(profile.id, activeDays);
+      hasActiveContractByUser.set(profile.id, hasActiveContract);
+    }
+
     for (const profile of profiles) {
       const name = `${profile.first_name ?? ''} ${profile.last_name ?? ''}`.trim() || '—';
-
-      // A. Contrato Activo (Contracts SSOT)
-      const hasActiveContract = await this.contractTermsService.isContractActiveOn(
-        profile.id,
-        day,
-      );
+      const hasActiveContract = hasActiveContractByUser.get(profile.id) ?? false;
 
       // B. Horas Extras (Hours Engine SSOT)
       let overtimeMoney = Money.zero();
       let hasClockIns = false;
 
       try {
+        // Conservamos exactamente el horizonte histórico anterior para que el
+        // opening carry y la liquidación semanal produzcan el mismo resultado.
         const employee = await loadEmployeeBoundaryFacts(this.supabase, profile.id);
         const timelineStart = employeeTimelineStartWeek(employee);
         const logsFromYmd =
@@ -187,14 +219,16 @@ export class LaborCostDayReadModelProjector {
 
       const hasActivity = hasClockIns || !overtimeMoney.isZero();
 
-      // C. Fijo Diario (Payroll Allocation Service)
+      // C. Fijo Diario (misma fórmula oficial que PayrollAllocationService,
+      // pero usando los hechos ya cargados en esta operación).
       let fixedMoney = Money.zero();
       if (!isPayrollPending) {
-        const allocation = await this.allocationService.getDailyPayrollCost(
-          profile.id,
-          day,
-        );
-        fixedMoney = allocation.dailyFixedCost;
+        const monthlyCompanyCost = Money.from(monthlyCompanyCostByUser.get(profile.id) ?? 0);
+        const activeContractDays = activeContractDaysByUser.get(profile.id) ?? 0;
+
+        if (hasActiveContract && activeContractDays > 0 && !monthlyCompanyCost.isZero()) {
+          fixedMoney = monthlyCompanyCost.divide(activeContractDays);
+        }
       }
 
       const isEventual = !hasActiveContract && isPayrollPending;
@@ -205,9 +239,6 @@ export class LaborCostDayReadModelProjector {
       const totalMoney = fixedMoney.add(overtimeMoney);
       const workerPct = Percentage.fromValues(totalMoney, netSalesMoney);
 
-      // Criterios de Inclusión:
-      // - Toggle OFF: Muestra únicamente trabajadores con actividad real
-      // - Toggle ON: Muestra trabajadores con contrato activo UNION trabajadores con actividad real
       const shouldInclude = includeAll ? (hasActiveContract || hasActivity) : hasActivity;
 
       if (shouldInclude) {
