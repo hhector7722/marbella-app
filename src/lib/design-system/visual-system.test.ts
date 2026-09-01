@@ -199,8 +199,8 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(css, /--estructura-cabecera:\s*48px/);
         assert.match(
             css,
-            /\.pt-header-safe-tight \{[\s\S]*?var\(--app-navbar-height\)/,
-            'el mosaico de inicio reserva menos hueco bajo la cabecera'
+            /\.pt-header-safe-tight \{[\s\S]*?var\(--estructura-cabecera\)[\s\S]*?var\(--espacio-2\)/,
+            'el mosaico de inicio reserva cabecera + aire antes del contenido'
         );
         assert.match(css, /--estructura-barra-inferior:\s*54px/);
         assert.match(css, /--shell-sidebar-width:\s*0px/, 'sidebar desktop arranca a 0 en smartphone');

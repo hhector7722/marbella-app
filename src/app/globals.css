@@ -3638,10 +3638,10 @@ button[data-element='catalog-filter'] {
     padding-top: calc(var(--estructura-cabecera) + env(safe-area-inset-top, 0px));
   }
 
-  /* Mosaicos de inicio: menos aire bajo la cabecera fija (barra + 4 px). */
+  /* Mosaicos de inicio (/dashboard, /master/dashboard, /staff/dashboard): cabecera + aire. */
   .pt-header-safe-tight {
     padding-top: calc(
-      var(--app-navbar-height) + var(--espacio-1) + env(safe-area-inset-top, 0px)
+      var(--estructura-cabecera) + var(--espacio-2) + env(safe-area-inset-top, 0px)
     );
   }
 
