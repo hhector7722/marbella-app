@@ -24,7 +24,9 @@ import type { ContractTermsService } from '../payroll/contract-terms-service.ts'
 import type { PayrollFactRepository } from '../payroll/payroll-fact-repository.ts';
 import { Money, LaborCost, Percentage } from '../payroll/value-objects.ts';
 import type { LaborCostDayDTO, WorkerLaborCostDTO } from './labor-cost-dtos.ts';
-import { loadEmployeeBoundaryFacts } from '../hours-engine/load-employee-facts.ts';
+import {
+  loadEmployeeBoundaryFactsBatch,
+} from '../hours-engine/load-employee-facts.ts';
 import { liquidateWeekForCard } from '../hours-engine/week-card-from-liquidation.ts';
 import {
   employeeTimelineStartWeek,
@@ -73,9 +75,17 @@ export class LaborCostDayReadModelProjector {
     const weekStart = mondayOf(day);
     const weekEnd = format(addDays(parseISO(weekStart), 6), 'yyyy-MM-dd');
 
-    // 1. Obtener hechos de nómina para verificar si el mes tiene nómina cargada
+    // 1. Obtener hechos de nómina para verificar si el mes tiene nómina cargada.
+    //    También se reutilizan estos mismos hechos para calcular el coste mensual por trabajador,
+    //    evitando volver a consultar employee_payroll_facts dentro del bucle.
     const activeFacts = await this.payrollRepo.getActiveFactsForPeriod(periodYm);
     const isPayrollPending = activeFacts.length === 0;
+    const payrollFactsByUser = new Map<string, typeof activeFacts>();
+    for (const fact of activeFacts) {
+      const facts = payrollFactsByUser.get(fact.user_id) ?? [];
+      facts.push(fact);
+      payrollFactsByUser.set(fact.user_id, facts);
+    }
 
     // 2. Obtener Ventas Netas del día
     let netSalesMoney = Money.zero();
@@ -100,6 +110,24 @@ export class LaborCostDayReadModelProjector {
 
     const { data: profileRows } = await profilesQuery;
     const profiles = filterVisiblePlantillaEmployees(profileRows ?? []);
+    const profileIds = profiles.map((profile) => profile.id);
+
+    // 4. Cargar una sola vez los hechos contractuales y de frontera necesarios para todos
+    //    los trabajadores visibles. La evaluación posterior es 100% en memoria.
+    let contractStore;
+    let boundaryFactsByUser: Record<string, Awaited<ReturnType<typeof loadEmployeeBoundaryFactsBatch>>[string]> = {};
+
+    try {
+      contractStore = await this.contractTermsService.loadTermsForMonth(profileIds, periodYm);
+    } catch {
+      contractStore = null;
+    }
+
+    try {
+      boundaryFactsByUser = await loadEmployeeBoundaryFactsBatch(this.supabase, profileIds);
+    } catch {
+      boundaryFactsByUser = {};
+    }
 
     const workerDTOs: WorkerLaborCostDTO[] = [];
     let summaryFixed = Money.zero();
@@ -108,18 +136,19 @@ export class LaborCostDayReadModelProjector {
     for (const profile of profiles) {
       const name = `${profile.first_name ?? ''} ${profile.last_name ?? ''}`.trim() || '—';
 
-      // A. Contrato Activo (Contracts SSOT)
-      const hasActiveContract = await this.contractTermsService.isContractActiveOn(
-        profile.id,
-        day,
-      );
+      // A. Contrato Activo (Contracts SSOT), resuelto en memoria a partir de la carga en lote.
+      const hasActiveContract = contractStore
+        ? contractStore.isContractActiveOn(profile.id, day)
+        : await this.contractTermsService.isContractActiveOn(profile.id, day);
 
       // B. Horas Extras (Hours Engine SSOT)
       let overtimeMoney = Money.zero();
       let hasClockIns = false;
 
       try {
-        const employee = await loadEmployeeBoundaryFacts(this.supabase, profile.id);
+        const employee = boundaryFactsByUser[profile.id];
+        if (!employee) throw new Error(`Empleado ${profile.id} sin hechos de frontera válidos`);
+
         const timelineStart = employeeTimelineStartWeek(employee);
         const logsFromYmd =
           timelineStart && timelineStart < weekStart ? timelineStart : weekStart;
@@ -187,14 +216,21 @@ export class LaborCostDayReadModelProjector {
 
       const hasActivity = hasClockIns || !overtimeMoney.isZero();
 
-      // C. Fijo Diario (Payroll Allocation Service)
+      // C. Fijo Diario (Payroll facts ya cargados para todo el periodo).
       let fixedMoney = Money.zero();
-      if (!isPayrollPending) {
-        const allocation = await this.allocationService.getDailyPayrollCost(
-          profile.id,
-          day,
+      const userFacts = payrollFactsByUser.get(profile.id) ?? [];
+      if (!isPayrollPending && userFacts.length > 0) {
+        const monthlyCompanyCost = userFacts.reduce(
+          (sum, fact) => sum + Number(fact.total_company_cost),
+          0,
         );
-        fixedMoney = allocation.dailyFixedCost;
+        const activeContractDays = contractStore
+          ? contractStore.getActiveContractDays(profile.id, periodYm)
+          : await this.contractTermsService.getActiveContractDays(profile.id, periodYm);
+
+        if (hasActiveContract && activeContractDays > 0 && monthlyCompanyCost !== 0) {
+          fixedMoney = Money.from(monthlyCompanyCost).divide(activeContractDays);
+        }
       }
 
       const isEventual = !hasActiveContract && isPayrollPending;
