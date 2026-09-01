@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense, useRef, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
-import { Trash2, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, Import, Pencil, Check, PlayCircle, AlertCircle } from 'lucide-react';
+import { Trash2, Edit2, Plus, X, Save, Camera, ChevronLeft, ChevronRight, Pencil, Check, PlayCircle, AlertCircle } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -25,14 +25,12 @@ import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { SearchField } from '@/components/ui/SearchField';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import { CatalogSquare } from '@/components/catalog/CatalogTile';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { namedEntitySummary } from '@/lib/usage/modal-apply';
-import * as XLSX from 'xlsx';
-import { importRecipes } from '@/app/actions/import-legacy';
-import { translateCaToEsTextAction } from '@/app/actions/translate-ca-es';
 import {
     type MenuCategoryRow,
     denormalizedRecipeCategoryName,
@@ -58,9 +56,7 @@ function RecipeDetailContent() {
     const recipeId = params.id as string;
     const supabaseRef = useRef(createClient());
     const supabase = supabaseRef.current;
-    const importInputRef = useRef<HTMLInputElement | null>(null);
     const elaborationVideoInputRef = useRef<HTMLInputElement | null>(null);
-    const [importScope, setImportScope] = useState<'all' | 'elaboration' | 'presentation'>('all');
 
     // --- 1. ESTADOS ---
     const [recipe, setRecipe] = useState<any>(null);
@@ -93,7 +89,6 @@ function RecipeDetailContent() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [userRole, setUserRole] = useState<string | null>(null);
-    const [importingRecipe, setImportingRecipe] = useState(false);
     const [isEditingPrice, setIsEditingPrice] = useState(false);
     const [priceDraft, setPriceDraft] = useState('');
     const [uploadingElaborationVideo, setUploadingElaborationVideo] = useState(false);
@@ -268,254 +263,7 @@ function RecipeDetailContent() {
 
     const isRestricted = isStaffView || (userRole !== 'manager' && userRole !== 'supervisor' && userRole !== null);
     const canOpenFullEdit = isStaffView && (userRole === 'manager' || userRole === 'supervisor');
-    const canImportRecipe = !isStaffView && userRole === 'manager';
     const canManageRecipeVideo = !isStaffView && userRole === 'manager';
-
-    async function sha256Hex(buf: ArrayBuffer): Promise<string> {
-        const hash = await crypto.subtle.digest('SHA-256', buf);
-        const bytes = new Uint8Array(hash);
-        return Array.from(bytes)
-            .map((b) => b.toString(16).padStart(2, '0'))
-            .join('');
-    }
-
-    function looksLikeRecipeFichaCsv(text: string): boolean {
-        const t = text.toLowerCase();
-        return t.includes('ingredients;') && (t.includes('elaboració') || t.includes('elaboracio')) && t.includes('presentació');
-    }
-
-    function parseRecipeFichaCsvToImportRows(text: string): any[] {
-        const lines = text
-            .split(/\r?\n/)
-            .map((l) => l.trimEnd())
-            .filter((l) => l.length > 0);
-
-        const rows = lines.map((l) => l.split(';'));
-
-        // Nombre receta = primera celda no vacía que no sea cabecera "Ingredients"
-        const firstNameRow = rows.find((r) => {
-            const c0 = (r[0] ?? '').trim();
-            if (!c0) return false;
-            const c0n = c0.toLowerCase();
-            return c0n !== 'ingredients' && c0n !== 'ingredientes';
-        });
-        const recipeName = (firstNameRow?.[0] ?? '').trim();
-
-        const headerIdx = rows.findIndex((r) => (r[0] ?? '').trim().toLowerCase() === 'ingredients');
-        if (!recipeName || headerIdx === -1) return [];
-
-        // Ingredientes: desde después de cabecera hasta antes de "Elaboració"
-        const elaborIdx = rows.findIndex((r) => (r[0] ?? '').trim().toLowerCase().startsWith('elabor'));
-        const ingStart = headerIdx + 1;
-        const ingEnd = elaborIdx === -1 ? rows.length : elaborIdx;
-        const ingredientRows: Array<{ ingrediente_nombre: string; cantidad: string; unidad: string }> = [];
-
-        for (let i = ingStart; i < ingEnd; i++) {
-            const r = rows[i];
-            const name = (r[0] ?? '').trim();
-            const unit = (r[1] ?? '').trim();
-            const qty = (r[2] ?? '').trim();
-            if (!name) continue;
-            // saltar filas separadoras
-            if (name.toLowerCase() === 'ingredients') continue;
-            ingredientRows.push({ ingrediente_nombre: name, unidad: unit, cantidad: qty });
-        }
-
-        // Elaboración / Presentación: filas con bullets tras el separador
-        let elaboration = '';
-        let presentation = '';
-        if (elaborIdx !== -1) {
-            const elabLines: string[] = [];
-            const presLines: string[] = [];
-            for (let i = elaborIdx + 1; i < rows.length; i++) {
-                const r = rows[i];
-                const e = (r[0] ?? '').trim();
-                const p = (r[4] ?? '').trim();
-                if (e) elabLines.push(e.replace(/^[•‣\-\s]+/, '').trim());
-                if (p) presLines.push(p.replace(/^[•‣\-\s]+/, '').trim());
-            }
-            elaboration = elabLines.filter(Boolean).join('\n');
-            presentation = presLines.filter(Boolean).join('\n');
-        }
-
-        const base = {
-            nombre_receta: recipeName,
-            // claves que importRecipes ya reconoce
-            'elaboración': elaboration,
-            'presentación': presentation,
-        };
-
-        if (ingredientRows.length === 0) {
-            return [base];
-        }
-
-        return ingredientRows.map((ir, idx) => ({
-            ...base,
-            ingrediente_nombre: ir.ingrediente_nombre,
-            cantidad: ir.cantidad,
-            unidad: ir.unidad,
-            // solo por ahorrar payload; pero seguimos poniendo el texto en la primera fila del grupo
-            ...(idx === 0 ? {} : { 'elaboración': '', 'presentación': '' }),
-        }));
-    }
-
-    function normalizeKey(s: string) {
-        return s.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    }
-
-    function getRowRecipeName(row: Record<string, any>): string {
-        const keys = Object.keys(row ?? {});
-        const candidates = [
-            'nombre_receta',
-            'nombre receta',
-            'receta',
-            'recipe_name',
-            'nombre_plato',
-            'nombre',
-            'name',
-        ];
-        for (const c of candidates) {
-            const nk = normalizeKey(c);
-            const found = keys.find((k) => normalizeKey(k) === nk);
-            if (found && row[found] != null && String(row[found]).trim() !== '') {
-                return String(row[found]).trim();
-            }
-        }
-        return '';
-    }
-
-    function getRowTextByKey(row: Record<string, any>, candidates: string[]): string {
-        const keys = Object.keys(row ?? {});
-        for (const c of candidates) {
-            const nk = normalizeKey(c);
-            const found = keys.find((k) => normalizeKey(k) === nk);
-            if (found && row[found] != null) {
-                const v = String(row[found]).trim();
-                if (v) return v;
-            }
-        }
-        return '';
-    }
-
-    async function parseImportFileToRows(file: File): Promise<Record<string, any>[]> {
-        if (file.name.toLowerCase().endsWith('.csv')) {
-            const txt = await file.text();
-            if (looksLikeRecipeFichaCsv(txt)) {
-                return parseRecipeFichaCsvToImportRows(txt) as any;
-            }
-            // XLSX también puede leer CSV; usamos el mismo fallback que dashboard/import
-            const wb = XLSX.read(txt, { type: 'string' });
-            const wsname = wb.SheetNames[0];
-            const ws = wb.Sheets[wsname];
-            return XLSX.utils.sheet_to_json(ws) as any;
-        }
-
-        const buf = await file.arrayBuffer();
-        const wb = XLSX.read(buf, { type: 'array' });
-        const wsname = wb.SheetNames[0];
-        const ws = wb.Sheets[wsname];
-        return XLSX.utils.sheet_to_json(ws) as any;
-    }
-
-    async function handleImportIconClick() {
-        if (!canImportRecipe) return;
-        if (!recipe?.name) {
-            toast.error('No se puede importar: receta sin nombre cargado.');
-            return;
-        }
-        setImportScope('all');
-        importInputRef.current?.click();
-    }
-
-    async function handleImportSectionClick(scope: 'elaboration' | 'presentation') {
-        if (!canImportRecipe) return;
-        if (!recipe?.name) {
-            toast.error('No se puede importar: receta sin nombre cargado.');
-            return;
-        }
-        setImportScope(scope);
-        importInputRef.current?.click();
-    }
-
-    async function handleImportFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
-        const file = e.target.files?.[0] ?? null;
-        // permitir re-seleccionar el mismo archivo
-        e.target.value = '';
-        if (!file) return;
-        if (!canImportRecipe) return;
-        if (!recipe?.name) {
-            toast.error('No se puede importar: receta sin nombre cargado.');
-            return;
-        }
-
-        setImportingRecipe(true);
-        try {
-            const fileRows = await parseImportFileToRows(file);
-
-            if (!Array.isArray(fileRows) || fileRows.length === 0) {
-                toast.error('Archivo vacío o no interpretable.');
-                return;
-            }
-
-            const expected = String(recipe.name).trim().toLowerCase();
-            const filtered = fileRows.filter((r) => getRowRecipeName(r).trim().toLowerCase() === expected);
-
-            if (filtered.length === 0) {
-                toast.error(`El archivo no contiene filas para "${recipe.name}" (por nombre_receta).`);
-                return;
-            }
-
-            if (importScope === 'elaboration' || importScope === 'presentation') {
-                const keyCandidates = importScope === 'elaboration' ? ['elaboración', 'elaboracion', 'elaboration'] : ['presentación', 'presentacion', 'presentation'];
-                const sectionText =
-                    filtered.map((r) => getRowTextByKey(r, keyCandidates)).find((t) => String(t ?? '').trim() !== '') ??
-                    '';
-                if (!String(sectionText).trim()) {
-                    toast.error(`El archivo no trae ${importScope === 'elaboration' ? 'elaboración' : 'presentación'} para esta receta.`);
-                    return;
-                }
-                const translated = await translateCaToEsTextAction({ text: sectionText });
-                if (translated.warning) toast(translated.warning);
-                await updateRecipeField(importScope === 'elaboration' ? 'elaboration' : 'presentation', translated.text);
-                toast.success(
-                    `Importación OK (solo ${importScope === 'elaboration' ? 'elaboración' : 'presentación'}${translated.translated ? ', traducido' : ''})`
-                );
-                await fetchRecipe();
-                return;
-            }
-
-            const ok = confirm(`Vas a IMPORTAR y SOBREESCRIBIR la receta actual:\n\n"${recipe.name}"\n\n¿Continuar?`);
-            if (!ok) return;
-
-            const buf = await file.arrayBuffer();
-            const fileHashSha256 = await sha256Hex(buf).catch(() => null);
-
-            const res = await importRecipes(filtered, { fileName: file.name, fileHashSha256: fileHashSha256 ?? undefined }, { overwriteExisting: true });
-
-            if (!res.success) {
-                toast.error(res.message || 'Error importando receta');
-                if (res.errors?.length) {
-                    for (const err of res.errors.slice(0, 3)) toast.error(err);
-                }
-                return;
-            }
-
-            toast.success(`Importación OK: ${res.message}`);
-            if (res.errors?.length) {
-                // avisos no fatales
-                for (const warn of res.errors.slice(0, 3)) toast(warn);
-            }
-
-            await fetchRecipe();
-            fetchBackendCost();
-        } catch (err: any) {
-            console.error(err);
-            toast.error(err?.message || 'Error inesperado importando receta');
-        } finally {
-            setImportingRecipe(false);
-            setImportScope('all');
-        }
-    }
 
     useEffect(() => {
         if (!recipe) return;
@@ -899,62 +647,39 @@ function RecipeDetailContent() {
 
             <DashboardDetailLayout
                 title={recipe.name}
+                titleFace="display"
+                titleAlign="center"
                 showBackButton
                 backHref={recipesListHref}
                 template="detail"
+                work="catalog"
                 maxWidthClass="max-w-6xl"
                 contentClassName="p-0 flex flex-col min-h-0"
                 rightSlot={
-                    <div className="flex shrink-0 items-center justify-end gap-2">
-                        {canOpenFullEdit ? (
-                            <Button
-                                type="button"
-                                variant="tertiary"
-                                instance="recipe-full-edit"
-                                onClick={() => router.push(fullEditHref)}
-                                aria-label="Abrir ficha de edición completa"
-                                icon={<Edit2 className="h-5 w-5" strokeWidth={2.5} />}
-                                className="shrink-0"
-                            />
-                        ) : null}
-                        {!isRestricted && (
-                            <Button
-                                type="button"
-                                variant="tertiary"
-                                instance="recipe-editar-nombre-imagen"
-                                onClick={() => setRecipeMetaModalOpen(true)}
-                                aria-label="Editar nombre e imagen"
-                                icon={<Pencil className="h-5 w-5" strokeWidth={2.2} />}
-                                className="shrink-0"
-                            />
-                        )}
-                        {canImportRecipe && (
-                            <Button
-                                type="button"
-                                variant="tertiary"
-                                instance="recipe-importar"
-                                onClick={handleImportIconClick}
-                                disabled={importingRecipe}
-                                loading={importingRecipe}
-                                aria-label="Importar (sobrescribe esta receta)"
-                                icon={<Import className="h-5 w-5" />}
-                                className="shrink-0"
-                            />
-                        )}
-                    </div>
-                }
-            >
-                    {canImportRecipe && (
-                        <input
-                            ref={importInputRef}
-                            type="file"
-                            accept=".xlsx,.xls,.csv"
-                            className="hidden"
-                            onChange={handleImportFileSelected}
+                    !isRestricted ? (
+                        <Button
+                            type="button"
+                            variant="tertiary"
+                            instance="recipe-editar-nombre-imagen"
+                            onClick={() => setRecipeMetaModalOpen(true)}
+                            aria-label="Editar receta"
+                            icon={<Pencil className="h-5 w-5" strokeWidth={2.2} />}
+                            className="shrink-0"
                         />
-                    )}
-
-                    <div data-element="photo-nav" className="mt-1 flex w-full shrink-0 items-center justify-center gap-8 py-2">
+                    ) : canOpenFullEdit ? (
+                        <Button
+                            type="button"
+                            variant="tertiary"
+                            instance="recipe-full-edit"
+                            onClick={() => router.push(fullEditHref)}
+                            aria-label="Abrir ficha de edición completa"
+                            icon={<Edit2 className="h-5 w-5" strokeWidth={2.5} />}
+                            className="shrink-0"
+                        />
+                    ) : null
+                }
+                leadSlot={
+                    <div data-element="photo-nav" className="flex w-full shrink-0 items-center justify-center gap-4 py-1 sm:gap-6">
                         <Button
                             type="button"
                             variant="tertiary"
@@ -965,21 +690,31 @@ function RecipeDetailContent() {
                             onClick={handlePreviousRecipe}
                         />
 
-                        <div className="relative flex h-14 w-24 items-center justify-center overflow-hidden">
+                        <div className="w-[min(34vw,9rem)] shrink-0">
                             {recipe.photo_url ? (
                                 <button
                                     type="button"
                                     onClick={() => setIsPhotoLightboxOpen(true)}
                                     className={cn(
-                                        'absolute inset-0 h-full w-full cursor-zoom-in',
-                                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ds-marca/40',
+                                        'w-full cursor-zoom-in border-0 bg-transparent p-0',
+                                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ds-marca/40 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
                                     )}
                                     aria-label="Ver foto ampliada"
                                 >
-                                    <img src={recipe.photo_url} alt={recipe.name} className="h-full w-full object-contain" />
+                                    <CatalogSquare
+                                        imageSrc={recipe.photo_url}
+                                        imageAlt={recipe.name}
+                                        price={recipe.sale_price}
+                                        priceClassName={!isRestricted ? healthIndicator.color : undefined}
+                                    />
                                 </button>
                             ) : (
-                                <Camera className="h-6 w-6 text-gray-300" />
+                                <CatalogSquare
+                                    imageAlt={recipe.name}
+                                    fallback={<Camera className="h-8 w-8 text-gray-300 md:h-10 md:w-10" />}
+                                    price={recipe.sale_price}
+                                    priceClassName={!isRestricted ? healthIndicator.color : undefined}
+                                />
                             )}
                         </div>
 
@@ -993,11 +728,12 @@ function RecipeDetailContent() {
                             onClick={handleNextRecipe}
                         />
                     </div>
+                }
+            >
 
-                {/* CUERPO: fondo blanco roto */}
-                <div className="bg-[#fafafa] p-4 md:p-5 grid grid-cols-1 md:grid-cols-2 gap-4 content-start">
+                <div className="grid grid-cols-1 content-start gap-4 p-4 md:grid-cols-2 md:p-5">
                     {!isRestricted && (
-                        <div className="bg-white rounded-xl shadow-lg overflow-hidden h-full flex flex-col">
+                        <div data-element="recipe-panel" className="h-full flex flex-col">
                             <div data-element="block-header">
                                 <h2 data-element="title">Precio</h2>
                             </div>
@@ -1094,24 +830,24 @@ function RecipeDetailContent() {
                                                     />
                                                 </div>
                                             )}
-                                            <div className="text-[9px] font-bold uppercase tracking-wide text-gray-500">Precio</div>
+                                            <div data-element="field-label">Precio</div>
                                         </div>
                                         <div className="min-w-0 flex-1 text-center">
                                             <div className={cn('text-sm font-black tabular-nums', healthIndicator.color)}>{(foodCost || 0).toFixed(0)}%</div>
-                                            <div className="text-[9px] font-bold uppercase tracking-wide text-gray-500">FC</div>
+                                            <div data-element="field-label">FC</div>
                                         </div>
                                         <div className="min-w-0 flex-1 text-center">
                                             <div className="text-sm font-black tabular-nums text-gray-800">{(basePrice || 0).toFixed(2)}€</div>
-                                            <div className="text-[9px] font-bold uppercase tracking-wide text-gray-500">Base</div>
+                                            <div data-element="field-label">Base</div>
                                         </div>
                                         <div className="min-w-0 flex-1 text-center">
                                             <div className="text-sm font-black tabular-nums text-gray-800">{(margin || 0).toFixed(2)}€</div>
-                                            <div className="text-[9px] font-bold uppercase tracking-wide text-gray-500">Margen</div>
+                                            <div data-element="field-label">Margen</div>
                                         </div>
                                     </div>
 
                                     <div className="mt-2 flex items-center gap-2 px-1 shrink-0">
-                                        <span className="min-w-0 text-[10px] font-bold uppercase tracking-wide text-gray-400">
+                                        <span data-element="field-label" className="mb-0 min-w-0">
                                             Recomendado ({activeTargetFC}%)
                                         </span>
                                         <span className="shrink-0 text-xs font-black tabular-nums text-blue-600">
@@ -1131,7 +867,7 @@ function RecipeDetailContent() {
 
                                 {simulatorExpanded ? (
                                 <div className="border-t border-gray-100 p-3 shrink-0">
-                                    <div className="overflow-hidden rounded-xl bg-purple-600 text-white">
+                                    <div data-surface="accent" className="overflow-hidden rounded-xl bg-purple-600 text-white">
                                         <div className="flex justify-end px-3 pt-3">
                                             <Button
                                                 type="button"
@@ -1172,7 +908,7 @@ function RecipeDetailContent() {
                                             />
                                             <div className="grid grid-cols-3 gap-2 text-center">
                                                 <div>
-                                                    <div className="text-[9px] font-bold uppercase tracking-widest text-white/80">
+                                                    <div data-element="field-label" className="mb-0">
                                                         FC
                                                     </div>
                                                     <div className="text-lg font-black text-white">
@@ -1180,7 +916,7 @@ function RecipeDetailContent() {
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <div className="text-[9px] font-bold uppercase tracking-widest text-white/80">
+                                                    <div data-element="field-label" className="mb-0">
                                                         Base
                                                     </div>
                                                     <div className="text-lg font-black text-white">
@@ -1188,7 +924,7 @@ function RecipeDetailContent() {
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <div className="text-[9px] font-bold uppercase tracking-widest text-white/80">
+                                                    <div data-element="field-label" className="mb-0">
                                                         Margen
                                                     </div>
                                                     <div className="text-lg font-black text-white">
@@ -1203,7 +939,7 @@ function RecipeDetailContent() {
                             </div>
                         </div>
                     )}
-                    <div className={`bg-white rounded-xl shadow-lg overflow-hidden flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
+                    <div data-element="recipe-panel" className={`flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
                         {!isRestricted && recipeIngredientCostIssueCount > 0 && (
                             <div
                                 className="flex items-start gap-1.5 border-b border-amber-100 bg-amber-50 px-3 py-1.5 text-[9px] font-bold leading-snug text-amber-900"
@@ -1248,7 +984,7 @@ function RecipeDetailContent() {
                                         const costDisplayOk = costAnalysis.status === 'ok';
                                         return (
                                             <tr key={ing.id} className="transition-colors hover:bg-gray-50/80">
-                                                <td className="px-2 py-1">
+                                                <td className="py-1 pe-2">
                                                     {!isRestricted && ing.ingredients ? (
                                                         <button
                                                             type="button"
@@ -1325,7 +1061,7 @@ function RecipeDetailContent() {
                                             role="button"
                                             aria-label="Incluir ingrediente"
                                         >
-                                            <td className="px-2 py-1.5">
+                                            <td className="py-1.5">
                                                 <span className="inline-flex items-center gap-1 text-[10px] font-semibold italic tracking-normal text-zinc-400">
                                                     Añadir
                                                     <Plus className="h-2.5 w-2.5 shrink-0" strokeWidth={2.5} aria-hidden />
@@ -1339,7 +1075,7 @@ function RecipeDetailContent() {
                                         <tr className="sticky bottom-0 border-t border-gray-100 bg-[#5B8FB9]/5 font-black text-[10px]">
                                             <td className="px-2 py-1.5 text-gray-800" colSpan={3}>
                                                 <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0">
-                                                    <span>COSTO TOTAL</span>
+                                                    <span>Costo total</span>
                                                     {Number(recipe.servings) > 1 ? (
                                                         <span className="text-[9px] font-semibold italic tracking-normal text-zinc-500">
                                                             {Number(recipe.servings)} raciones
@@ -1356,23 +1092,11 @@ function RecipeDetailContent() {
                             </table>
                         </div>
                     </div>
-                    <div className={`bg-white rounded-xl shadow-lg overflow-hidden flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
+                    <div data-element="recipe-panel" className={`flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
                         <div data-element="block-header" className="relative justify-between">
                             <h2 data-element="title">Elaboración</h2>
                             {!isRestricted && (
                                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 shrink-0">
-                                    {canImportRecipe && (
-                                        <Button
-                                            type="button"
-                                            variant="tertiary"
-                                            instance="recipe-importar-elaboracion"
-                                            onClick={() => handleImportSectionClick('elaboration')}
-                                            disabled={importingRecipe}
-                                            loading={importingRecipe}
-                                            aria-label="Importar (solo elaboración)"
-                                            icon={<Import className="w-4 h-4" />}
-                                        />
-                                    )}
                                     {canManageRecipeVideo && (
                                         <>
                                             <Button
@@ -1440,7 +1164,7 @@ function RecipeDetailContent() {
                                                 type="button"
                                                 onClick={handleSaveElaboration}
                                                 disabled={savingElaboration}
-                                                className="h-12 w-full bg-white text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-sm hover:bg-blue-50 active:scale-[0.99] disabled:opacity-60"
+                                                className="h-12 w-full bg-white text-blue-700 border border-blue-200 text-sm font-bold rounded-xl shadow-sm hover:bg-blue-50 active:scale-[0.99] disabled:opacity-60"
                                             >
                                                 <span className="inline-flex items-center justify-center gap-2">
                                                     <Save className="w-4 h-4" />
@@ -1492,23 +1216,11 @@ function RecipeDetailContent() {
                         </div>
                     </div>
 
-                    <div className={`bg-white rounded-xl shadow-lg overflow-hidden flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
+                    <div data-element="recipe-panel" className={`flex flex-col ${!isRestricted ? 'h-full min-h-0' : 'h-fit'}`}>
                         <div data-element="block-header" className="relative justify-between">
                             <h2 data-element="title">Presentación</h2>
                             {!isRestricted && (
                                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 shrink-0">
-                                    {canImportRecipe && (
-                                        <Button
-                                            type="button"
-                                            variant="tertiary"
-                                            instance="recipe-importar-presentacion"
-                                            onClick={() => handleImportSectionClick('presentation')}
-                                            disabled={importingRecipe}
-                                            loading={importingRecipe}
-                                            aria-label="Importar (solo presentación)"
-                                            icon={<Import className="w-4 h-4" />}
-                                        />
-                                    )}
                                     <Button
                                         type="button"
                                         variant="tertiary"
@@ -1555,7 +1267,7 @@ function RecipeDetailContent() {
                                                 type="button"
                                                 onClick={handleSavePresentation}
                                                 disabled={savingPresentation}
-                                                className="h-12 w-full bg-white text-emerald-700 border border-emerald-200 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-sm hover:bg-emerald-50 active:scale-[0.99] disabled:opacity-60"
+                                                className="h-12 w-full bg-white text-emerald-700 border border-emerald-200 text-sm font-bold rounded-xl shadow-sm hover:bg-emerald-50 active:scale-[0.99] disabled:opacity-60"
                                             >
                                                 <span className="inline-flex items-center justify-center gap-2">
                                                     <Save className="w-4 h-4" />

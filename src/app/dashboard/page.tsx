@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import DashboardSwitcher from '@/components/dashboards/DashboardSwitcher';
 import { withTimeout } from '@/lib/with-timeout';
+import { resolveSessionUser } from '@/lib/auth/resolve-session-user';
 
 /**
  * Admin dashboard: shell inmediata. AdminDashboardView carga tesorería/ventas
@@ -9,13 +10,7 @@ import { withTimeout } from '@/lib/with-timeout';
  */
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
-
-  const sessionResult = await withTimeout(
-    supabase.auth.getSession(),
-    1500,
-    { data: { session: null }, error: null },
-  );
-  const user = sessionResult.data.session?.user ?? null;
+  const user = await resolveSessionUser(supabase);
 
   if (!user) {
     redirect('/login');

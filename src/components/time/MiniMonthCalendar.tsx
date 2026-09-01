@@ -14,6 +14,7 @@ import {
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { PERIOD_PICKER_ACCENT_BG, PERIOD_PICKER_ACCENT_TEXT } from '@/components/time/MonthPickerGrid';
 
 const WEEKDAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'] as const;
 
@@ -51,7 +52,7 @@ export function MiniMonthCalendar({
                     >
                         <ChevronLeft size={20} className="text-zinc-400" />
                     </button>
-                    <div className="text-xs font-black uppercase tracking-tight text-zinc-900">
+                    <div className={cn('text-xs font-black uppercase tracking-tight', PERIOD_PICKER_ACCENT_TEXT)}>
                         {format(month, 'MMMM yyyy', { locale: es })}
                     </div>
                     <button
@@ -90,9 +91,9 @@ export function MiniMonthCalendar({
                                 muted ? 'opacity-20' : 'opacity-100',
                                 disabled && 'cursor-not-allowed text-zinc-300',
                                 selected
-                                    ? 'bg-ds-marca text-white'
+                                    ? PERIOD_PICKER_ACCENT_BG
                                     : inRange
-                                      ? 'text-ds-marca'
+                                      ? 'bg-zinc-100 text-[var(--color-envolvente)]'
                                       : disabled
                                         ? 'text-zinc-300'
                                         : 'text-zinc-600',

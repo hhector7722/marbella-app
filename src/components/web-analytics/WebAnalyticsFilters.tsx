@@ -41,7 +41,7 @@ export function WebAnalyticsFilters({ filters }: WebAnalyticsFiltersProps) {
         onChange={(event) => setDay(event.target.value)}
         className={cn(
           'box-border h-12 w-[7rem] max-w-[7rem] shrink-0 rounded-xl border border-zinc-200 bg-white px-2 text-xs text-zinc-800 outline-none',
-          'focus:border-[#36606F] focus:ring-1 focus:ring-[#36606F]/30'
+          'focus:border-[var(--color-envolvente)] focus:ring-1 focus:ring-[var(--color-envolvente)]/30'
         )}
       />
       <Button type="submit" variant="primary" instance="web-analytics-filters-ok">
@@ -55,7 +55,7 @@ export function WebAnalyticsFilters({ filters }: WebAnalyticsFiltersProps) {
         }}
         className={cn(
           'inline-flex h-12 shrink-0 items-center justify-center rounded-xl border border-zinc-200 px-3 text-xs text-zinc-500',
-          'hover:border-[#36606F]/40 hover:text-[#36606F]'
+          'hover:border-[var(--color-envolvente)]/40 hover:text-[var(--color-envolvente)]'
         )}
       >
         ×

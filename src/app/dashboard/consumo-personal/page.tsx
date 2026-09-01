@@ -447,6 +447,7 @@ export default function ConsumoPersonalDashboardPage() {
       title="Consumo"
       showBackButton={false}
       template="list"
+      work="calendar"
       maxWidthClass="max-w-none"
       className="month-cal-shell"
       cardClassName="month-cal-card"
@@ -460,7 +461,7 @@ export default function ConsumoPersonalDashboardPage() {
         />
       }
       rightSlot={
-        <div className="flex items-center gap-0.5 md:gap-1.5 shrink-0 text-white">
+        <div className="flex items-center gap-0.5 md:gap-1.5 shrink-0">
           <PeriodFilterButton instance="consumo-period-filter" onClick={() => setIsTimeFilterOpen(true)} />
           {canEditConsumptionOrder ? (
             <Button
@@ -497,9 +498,8 @@ export default function ConsumoPersonalDashboardPage() {
           </div>
         </div>
       }
-    >
-          <div className="flex flex-col month-cal-body min-h-0">
-            <div className="grid grid-cols-2 gap-0.5 sm:gap-1 mb-1 py-1 shrink-0 min-w-0 px-2 md:px-3">
+      leadSlot={
+        <div className="grid grid-cols-2 gap-0.5 sm:gap-1 min-w-0">
               <div className="flex min-w-0 flex-col items-center justify-center px-0.5 text-center">
                 <span className="text-[6px] font-black uppercase leading-tight text-gray-400 sm:text-[7px]">
                   Importe
@@ -517,7 +517,9 @@ export default function ConsumoPersonalDashboardPage() {
                 </span>
               </div>
             </div>
-
+      }
+    >
+          <div className="flex flex-col month-cal-body min-h-0">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4">
                 <LoadingSpinner size="lg" className="text-ds-marca" />

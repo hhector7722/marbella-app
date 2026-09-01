@@ -12,16 +12,17 @@ const CATALOG_GRID_COLS = {
 
 export type CatalogGridColumns = keyof typeof CATALOG_GRID_COLS;
 
+export { CatalogSquare, CatalogTileUnificado, type CatalogNameTone } from './UnifiedCatalogTile';
+
 /**
  * Celda de catálogo (Recetas, Ingredientes, Proveedores) y de menús de acceso
  * (Info, Documentos, Manuales, Caja, Stock). Pieza local de dominio: no es
  * primitiva del sistema.
  *
- * El conjunto imagen + pie es un cuadrado. La imagen se encoge dentro
- * del hueco; el pie es una sola fila. El hueco del pie se reserva siempre
- * para que todas las rejillas pinten la foto al mismo tamaño.
- * Recetas e ingredientes: 3 columnas. Proveedores (página y pedido): 4.
- * Menús de acceso: mínimo 3 columnas; más solo si el consumidor lo pide.
+ * El recuadro blanco (imagen + precio opcional) flota sobre el envolvente.
+ * El nombre va fuera, en una fila fija, para no desalinear los cuadrados.
+ * Recetas, ingredientes y proveedores usan `CatalogTileUnificado`.
+ * Menús de acceso en modal siguen con `CatalogTile` (nombre dentro del cuadrado).
  */
 export function CatalogGrid({
     children,
@@ -33,8 +34,11 @@ export function CatalogGrid({
     return (
         <div
             className={cn(
-                'grid items-start gap-5 sm:gap-6 md:gap-8',
+                'grid items-start gap-5 sm:gap-6 md:gap-8 lg:gap-4 xl:gap-5',
                 CATALOG_GRID_COLS[columns],
+                columns === 4 && 'lg:grid-cols-6 xl:grid-cols-7',
+                columns === 5 && 'lg:grid-cols-6 xl:grid-cols-8',
+                columns === 6 && 'lg:grid-cols-7 xl:grid-cols-8',
             )}
         >
             {children}
@@ -91,7 +95,7 @@ export function CatalogTile({
                     ) : null}
                 </div>
                 <div className="flex h-5 w-full shrink-0 items-center justify-center gap-1 overflow-hidden sm:h-6">
-                    <span className="min-w-0 truncate text-[11px] font-bold leading-none text-gray-700 sm:text-xs md:text-sm">
+                    <span data-element="name" className="min-w-0 truncate text-[11px] font-bold leading-none text-gray-700 sm:text-xs md:text-sm">
                         {title}
                     </span>
                     {subtitle ? (

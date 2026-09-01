@@ -1,4 +1,4 @@
-import type { WeeklyStats } from '@/app/actions/overtime';
+import type { WeeklyStats } from '@/lib/hours-engine/overtime-weeks-ssot';
 
 export type OvertimeWeekSnapshot = {
     total: number;

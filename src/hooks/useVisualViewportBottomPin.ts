@@ -2,7 +2,7 @@
 
 import { useEffect, type RefObject } from 'react';
 
-/** Mantiene una barra `position:fixed; bottom:0` anclada al borde visual en iOS Safari/PWA. */
+/** Mantiene una barra `position:fixed` anclada al borde visual en iOS Safari/PWA. */
 export function useVisualViewportBottomPin(ref: RefObject<HTMLElement | null>) {
   useEffect(() => {
     const node = ref.current;
@@ -12,6 +12,14 @@ export function useVisualViewportBottomPin(ref: RefObject<HTMLElement | null>) {
     const initialHeight = window.innerHeight;
 
     const pin = () => {
+      if (window.matchMedia('(min-width: 1024px)').matches) {
+        node.style.transform = '';
+        node.style.opacity = '';
+        node.style.pointerEvents = '';
+        node.style.transition = '';
+        return;
+      }
+
       let keyboardOpen = false;
       const vv = window.visualViewport;
 
@@ -39,13 +47,12 @@ export function useVisualViewportBottomPin(ref: RefObject<HTMLElement | null>) {
         node.style.pointerEvents = 'none';
         node.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
       } else {
-        node.style.transform = 'translateY(0px)';
-        node.style.opacity = '1';
-        node.style.pointerEvents = 'auto';
-        node.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
+        // No forzar opacity/transform: el cromo de scroll (compact/hidden) manda.
+        node.style.transform = '';
+        node.style.opacity = '';
+        node.style.pointerEvents = '';
+        node.style.transition = '';
       }
-      
-      node.style.bottom = '0px';
     };
 
     pin();
@@ -61,10 +68,11 @@ export function useVisualViewportBottomPin(ref: RefObject<HTMLElement | null>) {
       window.visualViewport?.removeEventListener('scroll', pin);
       window.removeEventListener('resize', pin);
       window.removeEventListener('scroll', pin);
-      node.style.bottom = '';
       node.style.transform = '';
       node.style.opacity = '';
       node.style.pointerEvents = '';
+      node.style.transition = '';
+      node.style.bottom = '';
     };
   }, [ref]);
 }

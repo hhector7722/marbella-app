@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { Trash2, Package } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Trash2, Package, Minus, Plus } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
 import { cn } from "@/lib/utils";
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -43,6 +43,9 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
     const [customUnit, setCustomUnit] = useState(isStartCustom ? startUnit : '');
     const [isUpdating, setIsUpdating] = useState(false);
     const [showModal, setShowModal] = useState(false);
+    const [quantityRaw, setQuantityRaw] = useState(() => (initialQuantity > 0 ? String(initialQuantity) : ''));
+    const [quantityInputFocused, setQuantityInputFocused] = useState(false);
+    const quantityInputRef = useRef<HTMLInputElement>(null);
 
     // This ref tells us if the user is currently interacting and hasn't saved yet
     const isDirtyRef = useRef(false);
@@ -51,6 +54,9 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
     useEffect(() => {
         if (!isDirtyRef.current) {
             setQuantity(initialQuantity);
+            if (!quantityInputFocused) {
+                setQuantityRaw(initialQuantity > 0 ? String(initialQuantity) : '');
+            }
 
             const propUnit = initialUnit || ingredient.order_unit || 'unidad';
             const isPropCustom = !unitOptions.includes(propUnit) && propUnit !== '';
@@ -63,18 +69,33 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                 setUnit(propUnit);
             }
         }
-    }, [initialQuantity, initialUnit, ingredient.order_unit]);
+    }, [initialQuantity, initialUnit, ingredient.order_unit, quantityInputFocused]);
 
     // 2. Helper to apply local changes INSTANTLY to parent UI
     const updateLocal = (newQ: number, newU: string, isCust: boolean, custU: string) => {
         isDirtyRef.current = true;
         setQuantity(newQ);
+        setQuantityRaw(newQ > 0 ? String(newQ) : '');
         setUnit(newU);
         setIsCustomUnit(isCust);
         setCustomUnit(custU);
 
         const fUnit = isCust ? (custU || 'unidad') : (newU || 'unidad');
         onQuantityChange?.(ingredient.id, newQ, fUnit);
+    };
+
+    const commitQuantityRaw = (raw: string) => {
+        const t = raw.replace(',', '.').trim();
+        if (t === '' || t === '0') {
+            updateLocal(0, unit, isCustomUnit, customUnit);
+            return;
+        }
+        const n = parseFloat(t);
+        if (!Number.isFinite(n) || n < 0) {
+            setQuantityRaw(quantity > 0 ? String(quantity) : '');
+            return;
+        }
+        updateLocal(Math.max(0, n), unit, isCustomUnit, customUnit);
     };
 
     // 3. DB Syncer (Debounced). Only persist when supplierId is set (drafts are per supplier).
@@ -115,13 +136,21 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
 
     const handleTrash = () => updateLocal(0, unit, isCustomUnit, customUnit);
 
+    const adjustQuantity = (delta: number) => {
+        const next = Math.max(0, quantity + delta);
+        updateLocal(next, unit, isCustomUnit, customUnit);
+    };
+
     const renderCard = (isModal: boolean) => (
-        <div className={cn(
-            "flex flex-col bg-white transition-all overflow-hidden relative",
-            isModal ? "rounded-[24px] shadow-2xl h-80 w-64 sm:w-80 sm:h-96" : "h-full rounded-2xl shadow-md",
-            !isModal && quantity > 0 ? "" : "",
-            !isModal ? "hover:shadow-lg hover:-translate-y-0.5" : ""
-        )}>
+        <div
+            data-element="order-product-card"
+            data-view={isModal ? 'modal' : 'grid'}
+            className={cn(
+                "flex flex-col bg-white transition-all overflow-hidden relative",
+                isModal ? "rounded-[24px] shadow-2xl h-80 w-64 sm:w-80 sm:h-96" : "rounded-2xl shadow-md",
+                !isModal ? "hover:shadow-lg hover:-translate-y-0.5" : ""
+            )}
+        >
             {/* Recommended Stock Badge */}
             {(ingredient.recommended_stock !== null && ingredient.recommended_stock !== undefined && ingredient.recommended_stock > 0) && (
                 <div className={cn("absolute text-zinc-400 font-black flex items-center gap-0.5 transition-all z-30", isModal ? "top-4 left-4 text-xs" : "top-2 left-2 text-[9px]")} title="Stock Recomendado">
@@ -130,16 +159,17 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                 </div>
             )}
 
-            {/* ZONA SUPERIOR BLANCA (Elástica) */}
+            {/* ZONA SUPERIOR BLANCA */}
             <div className={cn(
-                "flex-1 flex flex-col items-center justify-start",
-                isModal ? "p-6" : "p-1.5 min-h-[90px]"
+                "flex shrink-0 flex-col items-center justify-start bg-white",
+                isModal ? "flex-1 p-6" : "px-1.5 pt-1.5 pb-1"
             )}>
-                {/* Contenedor de Imagen Rígido */}
                 <div
                     className={cn(
-                        "w-full bg-white flex items-center justify-center overflow-hidden relative shrink-0",
-                        isModal ? "h-32 mb-4 rounded-lg" : "h-12 mb-1"
+                        "flex items-center justify-center overflow-hidden relative shrink-0 bg-white",
+                        isModal
+                            ? "mb-4 h-32 w-full rounded-lg"
+                            : "mb-0.5 h-11 w-11 rounded-lg"
                     )}
                     onClick={() => {
                         if (!isModal) setShowModal(true);
@@ -158,9 +188,17 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                     )}
                 </div>
 
-                {/* Product Info */}
-                <div className={cn("flex flex-col w-full px-1", isModal ? "mt-auto gap-1.5 items-center text-center" : "items-start text-left justify-start")}>
-                    <span className={cn("font-black text-zinc-800 leading-tight w-full truncate", isModal ? "text-sm sm:text-base px-1" : "text-[9px] min-[380px]:text-[10px]")} title={ingredient.name}>
+                <div className={cn(
+                    "flex w-full min-w-0 flex-col items-center text-center",
+                    isModal ? "mt-auto gap-1.5" : "gap-0.5"
+                )}>
+                    <span
+                        className={cn(
+                            "font-black text-zinc-800 leading-tight w-full truncate text-center",
+                            isModal ? "text-sm sm:text-base px-1" : "text-[9px] min-[380px]:text-[10px]"
+                        )}
+                        title={ingredient.name}
+                    >
                         {ingredient.name}
                     </span>
 
@@ -202,27 +240,74 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
                             </div>
                         )
                     ) : (
-                        <span className="text-[7.5px] font-bold text-zinc-400 uppercase tracking-widest text-left mt-auto pt-1 w-full truncate">
+                        <span className="w-full truncate text-center text-[7.5px] font-bold uppercase tracking-widest text-zinc-400">
                             {isCustomUnit ? (customUnit || '?') : unit}
                         </span>
                     )}
                 </div>
             </div>
 
-            {/* ZONA INFERIOR (barra de cantidad de sistema) */}
-            <div className={cn(
-                "shrink-0 w-full flex items-center justify-center bg-white",
-                isModal ? "px-6 py-4" : "px-1.5 pb-1.5"
-            )}>
-                <QuantityStepper
-                    value={quantity}
-                    onChange={(n) => updateLocal(n, unit, isCustomUnit, customUnit)}
-                    min={0}
-                    inputMode="decimal"
-                    ariaLabel="Cantidad"
-                    className={isModal ? 'min-h-14' : 'min-h-10'}
-                />
-            </div>
+            {/* ZONA INFERIOR — cromo de cabecera de tabla; sin pastilla */}
+            {isModal ? (
+                <div className="shrink-0 w-full flex items-center justify-center bg-white px-6 py-4">
+                    <QuantityStepper
+                        value={quantity}
+                        onChange={(n) => updateLocal(n, unit, isCustomUnit, customUnit)}
+                        min={0}
+                        inputMode="decimal"
+                        ariaLabel="Cantidad"
+                        className="min-h-14"
+                    />
+                </div>
+            ) : (
+                <div data-element="order-qty-bar" className="grid w-full shrink-0 grid-cols-3 items-center justify-items-center">
+                    <button
+                        type="button"
+                        onClick={() => adjustQuantity(-1)}
+                        disabled={quantity <= 0}
+                        aria-label={`Menos cantidad de ${ingredient.name}`}
+                        className="flex shrink-0 items-center justify-center px-1 py-1 transition-colors hover:bg-white/10 active:bg-white/15 disabled:opacity-40"
+                    >
+                        <Minus size={13} strokeWidth={3} aria-hidden />
+                    </button>
+                    <span
+                        data-element="qty-value"
+                        className="relative z-[1] flex min-w-[1.25rem] shrink-0 items-center justify-center px-0.5 py-1 text-center text-[10px] font-black tabular-nums leading-none"
+                    >
+                        <input
+                            ref={quantityInputRef}
+                            type="text"
+                            inputMode="decimal"
+                            data-element="qty-input"
+                            value={quantityInputFocused ? quantityRaw : (quantity > 0 ? String(quantity) : '')}
+                            onChange={(e) => setQuantityRaw(e.target.value)}
+                            onFocus={() => {
+                                setQuantityInputFocused(true);
+                                setQuantityRaw(quantity > 0 ? String(quantity) : '');
+                                requestAnimationFrame(() => quantityInputRef.current?.select());
+                            }}
+                            onBlur={() => {
+                                setQuantityInputFocused(false);
+                                commitQuantityRaw(quantityRaw);
+                            }}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.currentTarget.blur();
+                                }
+                            }}
+                            aria-label={`Cantidad de ${ingredient.name}`}
+                        />
+                    </span>
+                    <button
+                        type="button"
+                        onClick={() => adjustQuantity(1)}
+                        aria-label={`Más cantidad de ${ingredient.name}`}
+                        className="flex shrink-0 items-center justify-center px-1 py-1 transition-colors hover:bg-white/10 active:bg-white/15"
+                    >
+                        <Plus size={13} strokeWidth={3} aria-hidden />
+                    </button>
+                </div>
+            )}
 
             {quantity > 0 && (
                 <button
@@ -239,7 +324,7 @@ export function OrderProductCard({ ingredient, initialQuantity = 0, initialUnit,
     );
 
     return (
-        <div className="relative group overflow-hidden h-full">
+        <div className="relative group overflow-hidden">
             {renderCard(false)}
 
             <Modal

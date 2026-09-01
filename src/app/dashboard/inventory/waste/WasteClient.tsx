@@ -9,6 +9,7 @@ import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented'
 import { QuantityStepper } from '@/components/ui/QuantityStepper'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { SearchField } from '@/components/ui/SearchField'
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { processRecipeWaste, processWasteEntries } from './actions'
 
 type Ingredient = {
@@ -440,15 +441,19 @@ export function WasteClient({
   const submitDisabled =
     isSubmitting || (mode === 'recipes' ? !canSubmitRecipes : !canSubmitIngredients)
 
-  return (
-    <div className="flex flex-col gap-4 min-h-0 flex-1">
-      <div className="flex flex-col gap-3 shrink-0">
-        <p className="text-sm text-zinc-600">
-          Registra aquí la <span className="font-semibold text-zinc-800">pérdida</span> de producto. Se guardará
-          como movimiento tipo merma.
-        </p>
+  const filterOpen = mode === 'recipes' ? recipeFilterOpen : ingredientFilterOpen
+  const activeCategory = mode === 'recipes' ? recipeCategory : ingredientCategory
+  const filterCategories = mode === 'recipes' ? recipeCategories : ingredientCategories
+  const filterTotal = mode === 'recipes' ? recipes.length : initialIngredients.length
 
-        <div className="flex shrink-0 w-full justify-start">
+  return (
+    <DashboardDetailLayout
+      title="Mermas"
+      subtitle="Pérdida de producto, movimiento tipo merma"
+      maxWidthClass="max-w-7xl"
+      showBackButton={false}
+      toolbarSlot={
+        <div className="flex flex-col gap-2">
           <PetroleumSegmented
             instance="waste-mode"
             density="comfortable"
@@ -465,84 +470,107 @@ export function WasteClient({
               { value: 'ingredients', label: 'Ingredientes' },
             ]}
           />
-        </div>
-      </div>
-
-      <div className="flex-1 min-h-0 overflow-auto pr-0.5">
-        {mode === 'recipes' ? (
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-2 w-full shrink-0 relative">
-              <div className="w-full flex-1 min-w-0">
-                <SearchField
-                  instance="waste-search-recipe"
-                  placeholder="Buscar receta…"
-                  value={recipeQuery}
-                  onChange={setRecipeQuery}
-                />
-              </div>
-
-              <div className="shrink-0 relative" data-waste-filter-root="true">
-                <Button
-                  type="button"
-                  variant="tertiary"
-                  instance="waste-filtrar-recetas-categoria"
-                  onClick={() => {
+          <div className="flex items-center gap-2 w-full relative">
+            <div className="w-full flex-1 min-w-0">
+              <SearchField
+                instance={mode === 'recipes' ? 'waste-search-recipe' : 'waste-search-ingredient'}
+                placeholder={mode === 'recipes' ? 'Buscar receta…' : 'Buscar ingrediente…'}
+                value={mode === 'recipes' ? recipeQuery : ingredientQuery}
+                onChange={mode === 'recipes' ? setRecipeQuery : setIngredientQuery}
+              />
+            </div>
+            <div className="shrink-0 relative" data-waste-filter-root="true">
+              <Button
+                type="button"
+                variant="tertiary"
+                instance={mode === 'recipes' ? 'waste-filtrar-recetas-categoria' : 'waste-filtrar-ingredientes-categoria'}
+                onClick={() => {
+                  if (mode === 'recipes') {
                     setIngredientFilterOpen(false)
                     setRecipeFilterOpen((v) => !v)
-                  }}
-                  aria-label="Filtrar recetas por categoría"
-                  icon={<Filter className="w-5 h-5" strokeWidth={2.5} />}
-                />
-
-                {recipeFilterOpen ? (
-                  <div
-                    className="absolute right-0 mt-2 w-64 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden z-20"
-                    data-waste-filter-root="true"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => {
+                  } else {
+                    setRecipeFilterOpen(false)
+                    setIngredientFilterOpen((v) => !v)
+                  }
+                }}
+                aria-label={mode === 'recipes' ? 'Filtrar recetas por categoría' : 'Filtrar ingredientes por categoría'}
+                icon={<Filter className="w-5 h-5" strokeWidth={2.5} />}
+              />
+              {filterOpen ? (
+                <div
+                  className="absolute right-0 mt-2 w-64 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden z-20"
+                  data-waste-filter-root="true"
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (mode === 'recipes') {
                         setRecipeCategory(null)
                         setRecipeFilterOpen(false)
-                      }}
-                      className={cn(
-                        'w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors',
-                        !recipeCategory && 'bg-zinc-50',
-                      )}
-                    >
-                      <span className="text-[11px] font-black uppercase tracking-widest">Todas</span>
-                      <span className="text-[10px] font-black text-zinc-400">{recipes.length}</span>
-                    </button>
-                    <div className="h-px bg-zinc-100" />
-                    <div className="max-h-72 overflow-auto">
-                      {recipeCategories.length === 0 ? (
-                        <EmptyState instance="waste-categories-none" variant="none" title="Sin categorías" />
-                      ) : (
-                        recipeCategories.map((c) => (
-                          <button
-                            key={c}
-                            type="button"
-                            onClick={() => {
+                      } else {
+                        setIngredientCategory(null)
+                        setIngredientFilterOpen(false)
+                      }
+                    }}
+                    className={cn(
+                      'w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors',
+                      !activeCategory && 'bg-zinc-50',
+                    )}
+                  >
+                    <span className="text-[11px] font-black uppercase tracking-widest">Todas</span>
+                    <span className="text-[10px] font-black text-zinc-400">{filterTotal}</span>
+                  </button>
+                  <div className="h-px bg-zinc-100" />
+                  <div className="max-h-72 overflow-auto">
+                    {filterCategories.length === 0 ? (
+                      <EmptyState instance="waste-categories-none" variant="none" title="Sin categorías" />
+                    ) : (
+                      filterCategories.map((c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => {
+                            if (mode === 'recipes') {
                               setRecipeCategory(c)
                               setRecipeFilterOpen(false)
-                            }}
-                            className={cn(
-                              'w-full min-h-12 px-4 py-3 text-left hover:bg-zinc-50 active:bg-zinc-100 transition-colors',
-                              recipeCategory === c && 'bg-zinc-50',
-                            )}
-                          >
-                            <span className="text-[11px] font-black uppercase tracking-widest text-zinc-700">
-                              {c}
-                            </span>
-                          </button>
-                        ))
-                      )}
-                    </div>
+                            } else {
+                              setIngredientCategory(c)
+                              setIngredientFilterOpen(false)
+                            }
+                          }}
+                          className={cn(
+                            'w-full min-h-12 px-4 py-3 text-left hover:bg-zinc-50 active:bg-zinc-100 transition-colors',
+                            activeCategory === c && 'bg-zinc-50',
+                          )}
+                        >
+                          <span className="text-[11px] font-black uppercase tracking-widest text-zinc-700">{c}</span>
+                        </button>
+                      ))
+                    )}
                   </div>
-                ) : null}
-              </div>
+                </div>
+              ) : null}
             </div>
-
+          </div>
+        </div>
+      }
+      footerSlot={
+        <div className="flex justify-end px-4 pb-2">
+          <Button
+            type="button"
+            variant="primary"
+            instance="waste-save"
+            onClick={handleSubmit}
+            disabled={submitDisabled}
+            loading={isSubmitting}
+          >
+            Registrar mermas
+          </Button>
+        </div>
+      }
+    >
+      {mode === 'recipes' ? (
+        <div className="flex flex-col gap-4">
             {filteredRecipes.length === 0 ? (
               <EmptyState
                 instance="waste-recipes-empty"
@@ -550,7 +578,7 @@ export function WasteClient({
                 title="No hay recetas que coincidan"
               />
             ) : (
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6 items-stretch justify-items-stretch">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6 lg:gap-3 xl:gap-4 items-stretch justify-items-stretch">
                 {filteredRecipes.map((r) => (
                   <RecipeWasteCard
                     key={r.id}
@@ -572,72 +600,6 @@ export function WasteClient({
           </div>
         ) : (
           <div className="flex flex-col gap-6">
-            <div className="flex items-center gap-2 w-full shrink-0 relative">
-              <div className="w-full flex-1 min-w-0">
-                <SearchField
-                  instance="waste-search-ingredient"
-                  placeholder="Buscar ingrediente…"
-                  value={ingredientQuery}
-                  onChange={setIngredientQuery}
-                />
-              </div>
-
-              <div className="shrink-0 relative" data-waste-filter-root="true">
-                <Button
-                  type="button"
-                  variant="tertiary"
-                  instance="waste-filtrar-ingredientes-categoria"
-                  onClick={() => {
-                    setRecipeFilterOpen(false)
-                    setIngredientFilterOpen((v) => !v)
-                  }}
-                  aria-label="Filtrar ingredientes por categoría"
-                  icon={<Filter className="w-5 h-5" strokeWidth={2.5} />}
-                />
-
-                {ingredientFilterOpen ? (
-                  <div
-                    className="absolute right-0 mt-2 w-64 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden z-20"
-                    data-waste-filter-root="true"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIngredientCategory(null)
-                        setIngredientFilterOpen(false)
-                      }}
-                      className={cn(
-                        'w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors',
-                        !ingredientCategory && 'bg-zinc-50',
-                      )}
-                    >
-                      <span className="text-[11px] font-black uppercase tracking-widest">Todas</span>
-                      <span className="text-[10px] font-black text-zinc-400">{initialIngredients.length}</span>
-                    </button>
-                    <div className="h-px bg-zinc-100" />
-                    <div className="max-h-72 overflow-auto">
-                      {ingredientCategories.map((c) => (
-                        <button
-                          key={c}
-                          type="button"
-                          onClick={() => {
-                            setIngredientCategory(c)
-                            setIngredientFilterOpen(false)
-                          }}
-                          className={cn(
-                            'w-full min-h-12 px-4 py-3 text-left hover:bg-zinc-50 active:bg-zinc-100 transition-colors',
-                            ingredientCategory === c && 'bg-zinc-50',
-                          )}
-                        >
-                          <span className="text-[11px] font-black uppercase tracking-widest text-zinc-700">{c}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-
             {Object.keys(grouped).length === 0 ? (
               <EmptyState
                 instance="waste-ingredients-empty"
@@ -648,7 +610,7 @@ export function WasteClient({
               Object.entries(grouped).map(([category, items]) => (
                 <section key={category} className="flex flex-col gap-3 shrink-0">
                   <div className="text-sm font-black uppercase tracking-wide text-zinc-500 px-0.5">{category}</div>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6 items-stretch justify-items-stretch">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6 lg:gap-3 xl:gap-4 items-stretch justify-items-stretch">
                     {items.map((item) => {
                       const wu = normalizeWasteUnit(wasteUnits[item.id] ?? item.unit)
                       const numeric = amounts[item.id] ?? 0
@@ -695,22 +657,6 @@ export function WasteClient({
             )}
           </div>
         )}
-      </div>
-
-      <div className="sticky bottom-0 left-0 right-0 shrink-0 border-t border-zinc-100 bg-white pt-3">
-        <div className="flex justify-end">
-          <Button
-            type="button"
-            variant="primary"
-            instance="waste-save"
-            onClick={handleSubmit}
-            disabled={submitDisabled}
-            loading={isSubmitting}
-          >
-            Registrar mermas
-          </Button>
-        </div>
-      </div>
-    </div>
+    </DashboardDetailLayout>
   )
 }

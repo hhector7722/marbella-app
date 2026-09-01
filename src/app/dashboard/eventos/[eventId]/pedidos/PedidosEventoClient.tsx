@@ -56,7 +56,7 @@ export default function PedidosEventoClient({
           <span data-element="title">Resumen</span>
           <a
             href={`/api/eventos/${event.id}/export`}
-            className="shrink-0 text-[11px] font-black text-white uppercase tracking-widest hover:text-white/80 transition-colors min-h-[48px] flex items-center"
+            className="shrink-0 text-[11px] font-black text-ds-texto uppercase tracking-widest hover:opacity-80 transition-colors min-h-[48px] flex items-center"
             aria-label="Exportar CSV"
           >
             Exportar CSV

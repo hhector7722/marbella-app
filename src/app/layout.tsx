@@ -12,6 +12,8 @@ import SileoProvider from "@/components/SileoProvider";
 import ChatMarbellaLazy from "@/components/chat/ChatMarbellaLazy";
 import { UsageAuthenticatedTracker } from "@/components/usage/UsageAuthenticatedTracker";
 import { StudioPreviewClient } from "@/components/studio/StudioPreviewClient";
+import { ChromeScrollProvider } from "@/components/chrome/ChromeScrollProvider";
+import { catalogTitleFont } from "@/lib/fonts/catalog-title";
 import { cn } from "@/lib/utils";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -23,7 +25,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#ffffff",
+  themeColor: "#15345C",
   interactiveWidget: "overlays-content",
 };
 
@@ -66,6 +68,7 @@ export default function RootLayout({
       <body
         className={cn(
           inter.className,
+          catalogTitleFont.variable,
           "bg-marbella-shell",
           "touch-manipulation",
         )}
@@ -77,6 +80,7 @@ export default function RootLayout({
           <PushNotificationsPrompt />
           
           <StudioPreviewClient>
+            <ChromeScrollProvider>
             <Navbar />
             <MainWrapper>{children}</MainWrapper>
             <BottomNavWrapper />
@@ -84,6 +88,7 @@ export default function RootLayout({
 
             {/* LÓGICA DEL ASISTENTE (INVISIBLE HASTA QUE PULSES TU BOTÓN IA) */}
             <ChatMarbellaLazy />
+            </ChromeScrollProvider>
           </StudioPreviewClient>
         </UnreadNotificationsShell>
       </body>

@@ -1,5 +1,4 @@
 import { createClient } from '@/utils/supabase/server'
-import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { WasteClient } from './WasteClient'
 
 export const dynamic = 'force-dynamic'
@@ -23,13 +22,5 @@ export default async function WastePage() {
     throw new Error('No se pudo cargar el listado de recetas.')
   }
 
-  return (
-    <DashboardDetailLayout
-      title="Mermas"
-      maxWidthClass="max-w-7xl"
-      showBackButton={false}
-    >
-      <WasteClient initialIngredients={ingRes.data || []} recipes={recRes.data || []} />
-    </DashboardDetailLayout>
-  )
+  return <WasteClient initialIngredients={ingRes.data || []} recipes={recRes.data || []} />
 }

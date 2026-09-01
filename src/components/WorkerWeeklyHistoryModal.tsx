@@ -12,8 +12,7 @@ import {
   getEmployeeHistoryWeek,
   type HistoryWeekDto,
 } from '@/app/actions/history-read';
-import { WeekCard } from '@/app/staff/history/WeekCard';
-import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
+import { WeekSummary } from '@/components/staff/WeekSummary';
 
 interface WorkerWeeklyHistoryModalProps {
   isOpen: boolean;
@@ -31,7 +30,7 @@ interface WorkerWeeklyHistoryModalProps {
 
 /**
  * Shell modal del Dashboard → Horas Extras → empleado.
- * La semana se pinta con el mismo WeekCard + HistoryWeekDto que `/staff/history`.
+ * La semana es el mismo WeekSummary + HistoryWeekDto que `/staff/history`.
  * Única diferencia: `readOnly` (sin editar / overrides / clics de día).
  */
 export default function WorkerWeeklyHistoryModal({
@@ -113,18 +112,14 @@ export default function WorkerWeeklyHistoryModal({
           <LoadingSpinner size="lg" className="text-zinc-900" />
         </div>
       ) : week ? (
-        <MonthCalendarFrame>
-          <div className="month-cal-weeks">
-            <WeekCard
-              week={week as any}
-              filterMonth={filterMonth}
-              filterYear={filterYear}
-              onDayClick={() => {}}
-              readOnly
-              showWeekOverrides={false}
-            />
-          </div>
-        </MonthCalendarFrame>
+        <WeekSummary
+          weeks={[week]}
+          filterMonth={filterMonth}
+          filterYear={filterYear}
+          onDayClick={() => {}}
+          readOnly
+          dimOtherMonth={false}
+        />
       ) : (
         <p className="text-center text-sm text-zinc-500 py-10">Sin datos</p>
       )}

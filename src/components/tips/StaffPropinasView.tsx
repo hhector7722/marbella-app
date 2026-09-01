@@ -1,9 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, X } from 'lucide-react';
+import { ChevronRight, X } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
-import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
@@ -26,6 +25,8 @@ import { StaffTipRepartoPanel } from '@/components/tips/StaffTipRepartoPanel';
 import { StaffTipDistributionDetailModal } from '@/components/tips/StaffTipDistributionDetailModal';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { Button } from '@/components/ui/button';
+import { Surface } from '@/components/ui/Surface';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 export type { StaffTipHistoryEntry };
 
@@ -129,10 +130,11 @@ export default function StaffPropinasView({
     <>
       <DashboardDetailLayout
         title="Propinas"
-        subtitle="Último reparto"
         showBackButton={false}
-        template="list"
-        maxWidthClass="max-w-lg"
+        template="detail"
+        work="catalog"
+        maxWidthClass="max-w-2xl"
+        contentClassName="flex flex-col gap-4 p-0"
         rightSlot={
           canSelectEmployee ? (
             <div className="relative shrink-0">
@@ -161,53 +163,70 @@ export default function StaffPropinasView({
           ) : null
         }
       >
-        <section>
-          {historyLoading ? (
-            <div className="flex justify-center py-8">
-              <LoadingSpinner className="text-ds-marca" />
-            </div>
-          ) : !lastEntry ? (
-            <p className="text-sm font-medium text-zinc-500">{emptyLastMessage}</p>
-          ) : (
-            <StaffTipRepartoPanel entry={lastEntry} />
-          )}
-        </section>
+        <Surface variant="block" instance="staff-propinas-last">
+          <div data-element="header">
+            <span data-element="title">Último reparto</span>
+          </div>
+          <div className="p-4">
+            {historyLoading ? (
+              <div className="flex justify-center py-8">
+                <LoadingSpinner className="text-ds-marca" />
+              </div>
+            ) : !lastEntry ? (
+              <EmptyState
+                instance="staff-propinas-last-empty"
+                variant="none"
+                title={emptyLastMessage}
+              />
+            ) : (
+              <StaffTipRepartoPanel entry={lastEntry} />
+            )}
+          </div>
+        </Surface>
 
-        <section className="mt-6">
-          <h2 className="mb-3 text-sm font-semibold text-zinc-900">Historial</h2>
-          {historyLoading ? (
-            <div className="flex justify-center py-6">
-              <LoadingSpinner className="text-ds-marca" />
-            </div>
-          ) : history.length === 0 ? (
-            <p className="text-sm font-medium text-zinc-500">{emptyHistoryMessage}</p>
-          ) : (
-            <ul className="divide-y divide-zinc-100">
-              {history.map((entry) => (
-                <li key={entry.lineId}>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedEntry(entry)}
-                    className="flex min-h-12 w-full items-center justify-between gap-3 py-4 text-left transition-colors hover:bg-zinc-50/80 active:scale-[0.99] first:pt-0 last:pb-0"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-zinc-900">
-                        {formatLocalIsoDateLabel(entry.periodStart, 'd MMM')} –{' '}
-                        {formatLocalIsoDateLabel(entry.periodEnd, 'd MMM yyyy')}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <span className="text-base font-black tabular-nums text-emerald-600">
-                        {formatRoundedTipMoney(entry.totalAmount)}
-                      </span>
-                      <ChevronRight size={18} className="text-zinc-300" strokeWidth={2.5} />
-                    </div>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+        <Surface variant="block" instance="staff-propinas-history">
+          <div data-element="header">
+            <span data-element="title">Historial</span>
+          </div>
+          <div className="px-4 pb-2">
+            {historyLoading ? (
+              <div className="flex justify-center py-6">
+                <LoadingSpinner className="text-ds-marca" />
+              </div>
+            ) : history.length === 0 ? (
+              <EmptyState
+                instance="staff-propinas-history-empty"
+                variant="none"
+                title={emptyHistoryMessage}
+              />
+            ) : (
+              <ul className="divide-y divide-zinc-100">
+                {history.map((entry) => (
+                  <li key={entry.lineId}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedEntry(entry)}
+                      className="flex min-h-12 w-full items-center justify-between gap-3 py-4 text-left transition-colors hover:bg-zinc-50/80 active:scale-[0.99] first:pt-3 last:pb-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-zinc-900">
+                          {formatLocalIsoDateLabel(entry.periodStart, 'd MMM')} –{' '}
+                          {formatLocalIsoDateLabel(entry.periodEnd, 'd MMM yyyy')}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <span className="text-base font-black tabular-nums text-emerald-600">
+                          {formatRoundedTipMoney(entry.totalAmount)}
+                        </span>
+                        <ChevronRight size={18} className="text-zinc-300" strokeWidth={2.5} />
+                      </div>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </Surface>
       </DashboardDetailLayout>
 
       <StaffTipDistributionDetailModal

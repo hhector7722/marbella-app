@@ -3,6 +3,7 @@ import { deriveUsageLabel } from '@/lib/usage/labels';
 import { recordAppUsageEventWithClient } from '@/lib/usage/record';
 import type { AppUsageEventType, UsageClientEventPayload } from '@/lib/usage/types';
 import { createClient } from '@/utils/supabase/server';
+import { resolveSessionUser } from '@/lib/auth/resolve-session-user';
 
 const ALLOWED_TYPES: AppUsageEventType[] = ['login', 'page_view', 'action'];
 
@@ -40,9 +41,7 @@ function sanitizeMetadata(value: unknown): Record<string, string | number | bool
 
 export async function POST(request: Request) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await resolveSessionUser();
 
   if (!user) {
     return NextResponse.json({ error: 'No autenticado' }, { status: 401 });

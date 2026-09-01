@@ -102,6 +102,7 @@ export function SimulationPlantillaExportModal({
             title="Simulación de jornada"
             subtitle={`Ene – hoy ${year} · elige quién entra en la plantilla simulada`}
             headerTone="petroleum"
+            scheme="dark"
             footer={
                 <Button
                     type="button"
@@ -115,13 +116,13 @@ export function SimulationPlantillaExportModal({
             }
         >
             <div className="flex min-h-0 flex-1 flex-col">
-                <div className="shrink-0 px-4 pt-3 pb-2 border-b border-zinc-100">
-                    <p className="text-[11px] leading-relaxed text-zinc-600">
+                <div className="shrink-0 px-4 pt-3 pb-2 border-b border-white/10">
+                    <p className="text-[11px] leading-relaxed text-white/70">
                         Se generará un PDF por empleado seleccionado. La simulación reparte turnos entre ellos,
                         respeta alta/baja y evita festivos de cierre.
                     </p>
                     {belowMinStaffing ? (
-                        <p className="mt-2 text-[11px] font-semibold text-amber-700">
+                        <p className="mt-2 text-[11px] font-semibold text-amber-400">
                             Selecciona al menos {MIN_PLANTILLA_DAILY_STAFF} personas para cumplir el mínimo diario de plantilla.
                         </p>
                     ) : null}
@@ -138,19 +139,19 @@ export function SimulationPlantillaExportModal({
                         <button
                             type="button"
                             onClick={toggleAll}
-                            className="text-[10px] font-bold text-[#36606F] uppercase tracking-wider hover:underline min-h-12 px-1"
+                            className="text-[10px] font-bold text-white/70 uppercase tracking-wider hover:underline min-h-12 px-1"
                         >
                             {allFilteredSelected ? 'Deseleccionar todos' : 'Seleccionar todos'}
                         </button>
-                        <span className="text-[10px] font-bold text-zinc-500">
+                        <span className="text-[10px] font-bold text-white/55">
                             {selectedCount} seleccionados
                         </span>
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-3 divide-y divide-zinc-100">
+                <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-3 divide-y divide-white/10">
                     {filtered.length === 0 ? (
-                        <div className="py-8 text-center text-zinc-400 text-xs font-bold">
+                        <div className="py-8 text-center text-white/40 text-xs font-bold">
                             No hay empleados que coincidan
                         </div>
                     ) : (
@@ -162,22 +163,22 @@ export function SimulationPlantillaExportModal({
                                     key={emp.id}
                                     className={cn(
                                         'flex items-center gap-3 py-3 min-h-12 cursor-pointer transition-colors',
-                                        checked ? 'bg-[#36606F]/5 -mx-1 px-1 rounded-xl' : 'hover:opacity-80',
+                                        checked ? 'bg-white/10 -mx-1 px-1 rounded-xl' : 'hover:opacity-80',
                                     )}
                                 >
                                     <input
                                         type="checkbox"
                                         checked={checked}
                                         onChange={() => toggle(emp.id)}
-                                        className="w-4 h-4 shrink-0 rounded border-zinc-300 text-[#36606F] focus:ring-[#36606F]/30 accent-[#36606F]"
+                                        className="w-4 h-4 shrink-0 rounded border-white/30 text-ds-marca focus:ring-ds-marca/30 accent-ds-marca"
                                     />
                                     <Avatar src={emp.avatar_url} alt={emp.first_name} size="sm" />
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-xs font-black text-zinc-800 uppercase truncate">
+                                        <p className="text-xs font-black text-white/90 uppercase truncate">
                                             {emp.first_name} {emp.last_name}
                                         </p>
                                         {contractHint ? (
-                                            <p className="text-[10px] font-medium text-zinc-500 truncate">{contractHint}</p>
+                                            <p className="text-[10px] font-medium text-white/55 truncate">{contractHint}</p>
                                         ) : null}
                                     </div>
                                 </label>

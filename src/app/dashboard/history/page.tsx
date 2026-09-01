@@ -13,7 +13,6 @@ import {
     Trash2,
     ChevronRight as ChevronRightIcon,
     Banknote,
-    Printer,
     Share,
 } from 'lucide-react';
 import Image from 'next/image';
@@ -30,20 +29,16 @@ import CashClosingModal from '@/components/CashClosingModal';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { PeriodNav, PeriodFilterButton } from '@/components/time/PeriodNav';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
-import { MiniMonthCalendar } from '@/components/time/MiniMonthCalendar';
+import { MonthPickerGrid } from '@/components/time/MonthPickerGrid';
 import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
 import { Button } from '@/components/ui/button';
 import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { TABLE_COMPONENT_ID } from '@/lib/design-system';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
-import {
-    formatMonthYear,
-    formatYmdShort,
-    periodRangeSummary,
-} from '@/lib/usage/modal-apply';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import * as XLSX from 'xlsx';
+import { downloadWorkbook, printHtml } from '@/lib/export/browser-output';
 import { deleteCashClosingPhotosAction, getCashClosingPhotoUrlsAction } from '@/app/actions/cash-closing-photos';
 import { CLOSING_WEATHER_OPTIONS, weatherIdFromLabel } from '@/lib/cash-closing-weather';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
@@ -127,22 +122,25 @@ const EXPORT_TABLE_HEADERS = [
 
 function buildClosingExportRows(closings: any[]): ClosingExportRow[] {
     return [...closings]
-        .sort((a, b) => new Date(b.closed_at).getTime() - new Date(a.closed_at).getTime())
+        // Ordenar por closing_date (siempre presente) en lugar de closed_at (puede ser null)
+        .sort((a, b) => (b.closing_date ?? '').localeCompare(a.closing_date ?? ''))
         .map((c) => {
-            const d = new Date(c.closed_at);
+            // Usar closing_date (campo local YYYY-MM-DD) para la fecha del export;
+            // closed_at puede ser null en registros antiguos y causaría Invalid Date.
+            const d = parseLocalSafe(c.closing_date);
             const avgTicket = (c.tickets_count || 0) > 0 ? (c.tpv_sales || 0) / c.tickets_count : 0;
             const diff = c.difference ?? 0;
-            const fmt = (val: number) => (val === 0 ? '' : formatCurrencySpanish(val));
+            const fmtCur = (val: number) => (val === 0 ? '' : formatCurrencySpanish(val));
             return {
                 fecha: format(d, 'd/M/yy', { locale: es }),
-                ventas: fmt(c.tpv_sales || 0),
-                neta: fmt(c.net_sales || 0),
+                ventas: fmtCur(c.tpv_sales || 0),
+                neta: fmtCur(c.net_sales || 0),
                 ticks: (c.tickets_count || 0).toLocaleString('es-ES'),
                 tm: avgTicket === 0 ? '' : formatCurrencySpanish(avgTicket),
-                cash: fmt(c.cash_counted || 0),
-                card: fmt(c.sales_card || 0),
-                pend: fmt(c.sales_pending || 0),
-                recup: fmt(c.debt_recovered || 0),
+                cash: fmtCur(c.cash_counted || 0),
+                card: fmtCur(c.sales_card || 0),
+                pend: fmtCur(c.sales_pending || 0),
+                recup: fmtCur(c.debt_recovered || 0),
                 dif: diff === 0 ? '' : formatCurrencySpanish(diff),
             };
         });
@@ -159,7 +157,7 @@ function buildExportTableHtml(rows: ClosingExportRow[], title: string): string {
     return `<h1 style="font-size:18px;margin-bottom:12px;font-weight:800;">${title}</h1><table><thead><tr>${headerHtml}</tr></thead><tbody>${bodyHtml}</tbody></table>`;
 }
 
-function exportClosingsToExcel(closings: any[], monthKeys: string[]) {
+async function exportClosingsToExcel(closings: any[], monthKeys: string[]) {
     const rows = buildClosingExportRows(closings);
     const aoa = [
         [...EXPORT_TABLE_HEADERS],
@@ -173,77 +171,16 @@ function exportClosingsToExcel(closings: any[], monthKeys: string[]) {
     const pad = (n: number) => String(n).padStart(2, '0');
     const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
     const monthStamp = monthKeys.length === 1 ? monthKeys[0] : `${monthKeys[0]}_${monthKeys[monthKeys.length - 1]}`;
-    XLSX.writeFile(wb, `cierres_${monthStamp}_${stamp}.xlsx`, { compression: true });
+    const fileName = `cierres_${monthStamp}_${stamp}.xlsx`;
+    downloadWorkbook(wb, fileName);
 }
 
 function printClosingsTable(closings: any[], title: string) {
     const rows = buildClosingExportRows(closings);
-    const html = buildExportTableHtml(rows, title);
-
-    const iframe = document.createElement('iframe');
-    iframe.setAttribute('aria-hidden', 'true');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = '0';
-    document.body.appendChild(iframe);
-
-    const doc = iframe.contentDocument;
-    if (!doc) {
-        iframe.remove();
-        throw new Error('No se pudo preparar la impresión.');
-    }
-
-    doc.open();
-    doc.write(`<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Imprimir cierres</title>
-    <style>
-      * { box-sizing: border-box; }
-      body { margin: 24px; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color: #111827; }
-      table { width: 100%; border-collapse: collapse; }
-      thead th {
-        background: #36606F; color: white;
-        text-transform: uppercase; letter-spacing: 0.12em;
-        font-weight: 800; font-size: 11px;
-        padding: 10px 12px; text-align: right;
-      }
-      thead th:first-child { text-align: left; }
-      tbody td {
-        border-top: 1px solid #f4f4f5;
-        padding: 10px 12px;
-        font-size: 12px;
-        vertical-align: top;
-        text-align: right;
-      }
-      tbody td:first-child { text-align: left; }
-      tbody tr:nth-child(even) td { background: #fafafa; }
-      @media print {
-        body { margin: 0; padding: 0; }
-        thead { display: table-header-group; }
-        tr { page-break-inside: avoid; }
-      }
-    </style>
-  </head>
-  <body>
-    ${html}
-  </body>
-</html>`);
-    doc.close();
-
-    setTimeout(() => {
-        try {
-            iframe.contentWindow?.focus();
-            iframe.contentWindow?.print();
-        } finally {
-            setTimeout(() => iframe.remove(), 250);
-        }
-    }, 50);
+    printHtml(buildExportTableHtml(rows, title), {
+        pageSize: 'landscape',
+        extraCss: 'thead th, tbody td { text-align: right; } thead th:first-child, tbody td:first-child { text-align: left; }',
+    });
 }
 
 function formatCurrencyModal(val: number): string {
@@ -629,13 +566,13 @@ function DailySalesChart({
     const show6k = maxVal >= 6000;
 
     return (
-        <div className="bg-white py-2.5 px-4 print:hidden">
+        <div className="py-1 print:hidden">
             <div className="max-w-[97%] mx-auto flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1.5">
                             <svg className="w-4 h-2 shrink-0" viewBox="0 0 16 8" aria-hidden="true">
-                                <line x1="0" y1="4" x2="16" y2="4" stroke="#10b981" strokeWidth="3" strokeLinecap="round" />
+                                <line x1="0" y1="4" x2="16" y2="4" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
                             </svg>
                             <span className="text-[10px] font-black text-zinc-900 uppercase tracking-wider">{currentMonthLabel}</span>
                         </div>
@@ -652,24 +589,6 @@ function DailySalesChart({
                 </div>
                 <div className="relative w-full h-[65px] mt-1">
                     <svg viewBox={`0 0 ${width} 65`} className="w-full h-full" preserveAspectRatio="none">
-                        {show1k && (
-                            <g>
-                                <line x1={paddingX} y1={y1k} x2={width - paddingX} y2={y1k} stroke="#e4e4e7" strokeWidth="1" strokeDasharray="2 3" />
-                                <text x={paddingX - 4} y={y1k + 2.5} textAnchor="end" className="fill-zinc-600 font-sans font-semibold" style={{ fontSize: '9px' }}>1k</text>
-                            </g>
-                        )}
-                        {show3k && (
-                            <g>
-                                <line x1={paddingX} y1={y3k} x2={width - paddingX} y2={y3k} stroke="#e4e4e7" strokeWidth="1" strokeDasharray="2 3" />
-                                <text x={paddingX - 4} y={y3k + 2.5} textAnchor="end" className="fill-zinc-600 font-sans font-semibold" style={{ fontSize: '9px' }}>3k</text>
-                            </g>
-                        )}
-                        {show6k && (
-                            <g>
-                                <line x1={paddingX} y1={y6k} x2={width - paddingX} y2={y6k} stroke="#e4e4e7" strokeWidth="1" strokeDasharray="2 3" />
-                                <text x={paddingX - 4} y={y6k + 2.5} textAnchor="end" className="fill-zinc-600 font-sans font-semibold" style={{ fontSize: '9px' }}>6k</text>
-                            </g>
-                        )}
                         {comparisonPath && (
                             <path
                                 d={comparisonPath}
@@ -685,11 +604,11 @@ function DailySalesChart({
                             <path
                                 d={actualPath}
                                 fill="none"
-                                stroke="#10b981"
-                                strokeWidth="3"
+                                stroke="#ffffff"
+                                strokeWidth="1.5"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
-                                className="drop-shadow-[0_1.5px_3px_rgba(16,185,129,0.2)]"
+                                className="drop-shadow-[0_1.5px_3px_rgba(255,255,255,0.2)]"
                             />
                         )}
                     </svg>
@@ -737,9 +656,6 @@ function DailySalesChart({
 export default function HistoryPage() {
     const supabase = createClient();
     const router = useRouter();
-    const trackHistoryMonthPicker = useTrackModalApply('history-month-picker', 'Selector de mes historial');
-    const trackHistoryDateSingle = useTrackModalApply('history-date-single', 'Calendario día historial');
-    const trackHistoryDateRange = useTrackModalApply('history-date-range', 'Calendario periodo historial');
     const trackHistoryExportMonths = useTrackModalApply('history-export-month-picker', 'Exportar meses historial');
 
     const [filterMode, setFilterMode] = useState<'single' | 'range'>('range');
@@ -764,10 +680,6 @@ export default function HistoryPage() {
     };
 
     const [loading, setLoading] = useState(true);
-    const [showCalendar, setShowCalendar] = useState<'single' | 'range' | null>(null);
-    const [showMonthPicker, setShowMonthPicker] = useState(false);
-    const [calendarBaseDate, setCalendarBaseDate] = useState(new Date());
-    const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
     const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
     const [shareMenuOpen, setShareMenuOpen] = useState(false);
     const [shareBusy, setShareBusy] = useState<null | 'excel' | 'print'>(null);
@@ -1117,24 +1029,7 @@ export default function HistoryPage() {
         })();
     }, [searchParams, closings, loading]);
 
-    useEffect(() => {
-        if (!shareMenuOpen) return;
-        const onPointerDown = (e: PointerEvent) => {
-            const target = e.target as HTMLElement | null;
-            if (!target) return;
-            if (target.closest('[data-history-share-root="true"]')) return;
-            setShareMenuOpen(false);
-        };
-        const onKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') setShareMenuOpen(false);
-        };
-        document.addEventListener('pointerdown', onPointerDown, true);
-        document.addEventListener('keydown', onKeyDown);
-        return () => {
-            document.removeEventListener('pointerdown', onPointerDown, true);
-            document.removeEventListener('keydown', onKeyDown);
-        };
-    }, [shareMenuOpen]);
+
 
     useEffect(() => {
         if (!selectedClosing) {
@@ -1310,9 +1205,9 @@ export default function HistoryPage() {
         return new Set([getCurrentViewMonthKey()]);
     };
 
-    const openExportMonthPicker = (format: 'excel' | 'print') => {
+    const openExportMonthPicker = (fmt: 'excel' | 'print') => {
         setShareMenuOpen(false);
-        setExportPendingFormat(format);
+        setExportPendingFormat(fmt);
         const initialMonths = getInitialExportMonths();
         const currentKey = getCurrentViewMonthKey();
         setExportSelectedMonths(initialMonths);
@@ -1368,7 +1263,7 @@ export default function HistoryPage() {
                 : `Cierres — ${monthKeyLabel(sortedKeys[0])} a ${monthKeyLabel(sortedKeys[sortedKeys.length - 1])}`;
 
             if (exportPendingFormat === 'excel') {
-                exportClosingsToExcel(closingsData, sortedKeys);
+                await exportClosingsToExcel(closingsData, sortedKeys);
                 toast.success('Excel descargado.');
             } else {
                 printClosingsTable(closingsData, titleLabel);
@@ -1390,34 +1285,6 @@ export default function HistoryPage() {
             setShareBusy(null);
         }
     };
-
-    const handleDateSelect = (picked: Date) => {
-        const dateStr = format(picked, 'yyyy-MM-dd');
-        if (showCalendar === 'single') {
-            setSelectedDate(dateStr);
-            setFilterMode('single');
-            setShowCalendar(null);
-            trackHistoryDateSingle(formatYmdShort(dateStr), { selectedDate: dateStr });
-        } else if (showCalendar === 'range') {
-            if (!rangeStart || (rangeStart && rangeEnd)) {
-                setRangeStart(dateStr);
-                setRangeEnd(null);
-            } else {
-                if (new Date(dateStr) < new Date(rangeStart)) {
-                    setRangeStart(dateStr);
-                } else {
-                    setRangeEnd(dateStr);
-                    setFilterMode('range');
-                    setShowCalendar(null);
-                    trackHistoryDateRange(periodRangeSummary(rangeStart, dateStr), {
-                        rangeStart,
-                        rangeEnd: dateStr,
-                    });
-                }
-            }
-        }
-    };
-
 
     const formatValue = (val: number, type: MetricType) => {
         if (type === 'tickets_count') return val.toLocaleString('es-ES');
@@ -1568,10 +1435,24 @@ export default function HistoryPage() {
             title="Cierres"
             showBackButton={false}
             template="list"
+            work={viewMode === 'calendar' ? 'calendar' : 'table'}
             maxWidthClass="max-w-none"
             className={cn('print:bg-white print:p-0 print:pb-0', viewMode === 'calendar' && 'month-cal-shell')}
             cardClassName={cn('print:rounded-none print:shadow-none', viewMode === 'calendar' && 'month-cal-card')}
             contentClassName={cn('p-0 flex flex-col min-h-0', viewMode === 'calendar' && 'month-cal-body')}
+            periodStartSlot={
+                <PetroleumSegmented
+                    instance="history-vista"
+                    density="compact"
+                    value={viewMode}
+                    onChange={(next) => setViewMode(next as 'calendar' | 'table')}
+                    aria-label="Vista de cierres"
+                    options={[
+                        { value: 'calendar', label: 'Mes' },
+                        { value: 'table', label: 'Tabla' },
+                    ]}
+                />
+            }
             periodSlot={
                 <PeriodNav
                     label={monthNavLabel}
@@ -1581,69 +1462,27 @@ export default function HistoryPage() {
                 />
             }
             rightSlot={
-                <div className="flex items-center gap-1 shrink-0 text-white">
+                <div className="flex items-center gap-1 shrink-0">
                     <PeriodFilterButton instance="history-period-filter" onClick={() => setIsTimeFilterOpen(true)} />
                     {viewMode === 'table' ? (
-                        <div className="relative" data-history-share-root="true">
-                            <Button
-                                type="button"
-                                variant="tertiary"
-                                instance="history-compartir"
-                                onClick={() => setShareMenuOpen(v => !v)}
-                                disabled={!!shareBusy}
-                                aria-label="Compartir"
-                                icon={<Share size={16} />}
-                            />
-
-                            {shareMenuOpen ? (
-                                <div className="absolute right-0 mt-2 w-56 rounded-lg bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden z-20">
-                                    <Button
-                                        type="button"
-                                        variant="secondary"
-                                        instance="history-export-excel"
-                                        onClick={() => openExportMonthPicker('excel')}
-                                        className="w-full"
-                                    >
-                                        Exportar Excel
-                                    </Button>
-                                    <div className="h-px bg-zinc-100" />
-                                    <button
-                                        type="button"
-                                        onClick={() => openExportMonthPicker('print')}
-                                        className="w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors"
-                                    >
-                                        <span className="text-[11px] font-black uppercase tracking-widest">Imprimir / PDF</span>
-                                        <Printer className="w-4 h-4 text-zinc-500" />
-                                    </button>
-                                </div>
-                            ) : null}
-                        </div>
+                        <Button
+                            type="button"
+                            variant="tertiary"
+                            instance="history-compartir"
+                            onClick={() => setShareMenuOpen(true)}
+                            disabled={!!shareBusy}
+                            aria-label="Compartir"
+                            icon={<Share size={14} strokeWidth={2} />}
+                        />
                     ) : null}
                 </div>
             }
-        >
-            <div className="px-2 pt-0.5 pb-0.5 shrink-0 print:hidden">
-                <PetroleumSegmented
-                    instance="history-vista"
-                    density="compact"
-                    value={viewMode}
-                    onChange={(next) => setViewMode(next as 'calendar' | 'table')}
-                    aria-label="Vista del historial"
-                    options={[
-                        { value: 'calendar', label: 'Calendario' },
-                        { value: 'table', label: 'Tabla' },
-                    ]}
-                />
-            </div>
-
-                    <div className="bg-white flex-1 min-h-0 flex flex-col">
-                        <div className={cn(
-                            'pt-2 pb-0.5 px-2 grid grid-cols-3 print:hidden shrink-0',
-                            viewMode === 'calendar' && 'month-cal-kpi lg:pt-2 lg:pb-0'
-                        )}>
+            leadSlot={
+                <>
+                        <div className="grid grid-cols-3 print:hidden">
                             <div className="flex flex-col items-center justify-center text-center">
                                 <div className="flex items-center gap-1.5 leading-none">
-                                    <span className="text-[12px] sm:text-xs md:text-sm font-black text-zinc-950 tabular-nums month-cal-kpi-value">
+                                    <span className="text-sm sm:text-base md:text-lg font-black text-zinc-950 tabular-nums month-cal-kpi-value">
                                         {formatValue(summary.totalNet, 'net_sales')}
                                     </span>
                                 </div>
@@ -1657,15 +1496,11 @@ export default function HistoryPage() {
                             >
                                 <div className="flex items-center gap-1 leading-none">
                                     {(() => {
-                                        const popScale = getRendimientoScale(popPercent);
                                         const isNeutral = popPercent >= -5 && popPercent <= 5;
                                         const triangleSymbol = isNeutral ? '' : (popPercent > 5 ? '▲' : '▼');
-                                        return (
-                                            <span className={cn(
-                                                "text-[12px] sm:text-xs md:text-sm font-extrabold tabular-nums flex items-center gap-1 month-cal-kpi-value",
-                                                popScale.color
-                                            )}>
-                                                {!isNeutral && <span className="text-[9px] sm:text-[10px] md:text-xs leading-none">{triangleSymbol}</span>}
+                                        return popPercent === 0 ? null : (
+                                            <span className="text-sm sm:text-base md:text-lg font-extrabold tabular-nums flex items-center gap-1 month-cal-kpi-value text-white">
+                                                {!isNeutral && <span className="text-[10px] sm:text-xs md:text-sm leading-none">{triangleSymbol}</span>}
                                                 <span>{Math.abs(popPercent).toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 1 })}%</span>
                                             </span>
                                         );
@@ -1676,7 +1511,7 @@ export default function HistoryPage() {
                                 </span>
                             </div>
                             <div className="flex flex-col items-center justify-center text-center">
-                                <span className="text-[12px] sm:text-xs md:text-sm font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
+                                <span className="text-sm sm:text-base md:text-lg font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
                                     {formatValue(summary.totalGross, 'tpv_sales')}
                                 </span>
                                 <span className="text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest mt-1.5 lg:mt-0.5">
@@ -1686,19 +1521,21 @@ export default function HistoryPage() {
                         </div>
 
                         {/* En calendario escritorio el gráfico sobra: el mes ya muestra cada día */}
-                        {!loading && closings.length > 0 && (
-                            <div className={cn(viewMode === 'calendar' && 'lg:hidden shrink-0')}>
+                        {!loading && closings.length > 0 ? (
+                            <div className={cn(viewMode === 'calendar' && 'lg:hidden')}>
                                 <DailySalesChart closings={closings} historicalClosingsMap={historicalClosingsMap} />
                             </div>
-                        )}
-
+                        ) : null}
+                </>
+            }
+        >
                         <div className={cn(
                             'pb-1 md:pb-2 pt-0.5 px-0',
                             viewMode === 'calendar' && 'flex-1 min-h-0 flex flex-col'
                         )}>
                             {viewMode === 'table' ? (
-                                <div className="py-1 bg-zinc-50/50 flex flex-col gap-1 shrink-0 min-w-0">
-                                    <div className="mx-auto w-[97%] min-w-0 rounded-lg border border-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.08)] overflow-x-hidden bg-white print:overflow-visible print:bg-white print-table-cierres">
+                                <div className="py-1 flex flex-col gap-1 shrink-0 min-w-0">
+                                    <div data-table-piece className="mx-auto w-[97%] min-w-0 overflow-x-hidden print:overflow-visible print-table-cierres">
                                         <div className="hidden print:block text-lg font-black text-zinc-800 p-4 pb-2">Cierres — Historial</div>
                                         {loading ? (
                                             <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -1711,7 +1548,7 @@ export default function HistoryPage() {
                                                 title="Sin actividad"
                                             />
                                         ) : (
-                                            <table data-component={TABLE_COMPONENT_ID} data-instance="cierres-tabla" className="w-full text-left border-collapse table-fixed">
+                                            <table data-component={TABLE_COMPONENT_ID} data-instance="history-cierres" className="w-full text-left border-collapse table-fixed">
                                                 <thead>
                                                     <tr>
                                                         <th className="py-1.5 px-0.5 md:px-1 whitespace-nowrap">Fecha</th>
@@ -1741,7 +1578,7 @@ export default function HistoryPage() {
                                                                     onClick={() => openClosingDetail(c)}
                                                                     className="group hover:bg-zinc-50/80 transition-colors cursor-pointer active:bg-zinc-100 border-b border-zinc-50/40 last:border-0"
                                                                 >
-                                                                    <td className="py-1 px-0.5 md:px-1 whitespace-nowrap text-zinc-500 font-mono text-[7px] md:text-[8.5px]">
+                                                                    <td className="py-1 px-0.5 md:px-1 whitespace-nowrap text-zinc-500 font-mono text-[7.5px] md:text-[8px]">
                                                                         {format(d, 'd/M/yy', { locale: es })}
                                                                     </td>
                                                                     <td className="py-1 px-0.5 md:px-1 text-right font-black tabular-nums whitespace-nowrap text-[8px] md:text-[9px]">
@@ -1851,7 +1688,6 @@ export default function HistoryPage() {
                                 </div>
                             )}
                         </div>
-                    </div>
         </DashboardDetailLayout>
 
             {selectedClosing && (
@@ -2396,110 +2232,6 @@ export default function HistoryPage() {
                 }}
             />
 
-            {showCalendar && (
-                <Modal
-                    open={true}
-                    onClose={() => setShowCalendar(null)}
-                    variant="compact"
-                    layer="derived"
-                    instance="history-calendar"
-                    parentInstance="history-closing-detail"
-                    title={showCalendar === 'single' ? 'Fecha Única' : 'Rango de Fechas'}
-                    headerTone="petroleum"
-                >
-                    <div className="bg-white w-full max-w-sm overflow-hidden">
-                        <div className="p-6">
-                            <MiniMonthCalendar
-                                month={calendarBaseDate}
-                                onMonthChange={setCalendarBaseDate}
-                                onSelectDay={handleDateSelect}
-                                isSelected={(day) => {
-                                    const dStr = format(day, 'yyyy-MM-dd');
-                                    return showCalendar === 'single'
-                                        ? selectedDate === dStr
-                                        : rangeStart === dStr || rangeEnd === dStr;
-                                }}
-                                isInRange={(day) => {
-                                    const dStr = format(day, 'yyyy-MM-dd');
-                                    return Boolean(
-                                        showCalendar === 'range' &&
-                                            rangeStart &&
-                                            rangeEnd &&
-                                            dStr > rangeStart &&
-                                            dStr < rangeEnd
-                                    );
-                                }}
-                            />
-                        </div>
-                    </div>
-                </Modal>
-            )}
-
-            {showMonthPicker && (
-                <Modal
-                    open={true}
-                    onClose={() => setShowMonthPicker(false)}
-                    variant="compact"
-                    layer="derived"
-                    instance="history-month-picker"
-                    parentInstance="history-closing-detail"
-                    title="Seleccionar Mes"
-                    headerTone="petroleum"
-                >
-                    <div className="bg-white w-full max-w-sm overflow-hidden">
-                        <div className="p-6">
-                            <div className="flex items-center justify-between mb-8 px-2">
-                                <button
-                                    onClick={() => setPickerYear(pickerYear - 1)}
-                                    className="p-3 hover:bg-zinc-50 rounded-lg transition-colors"
-                                    aria-label="Año anterior"
-                                >
-                                    <ChevronLeft size={20} className="text-zinc-400" />
-                                </button>
-                                <span className="font-black text-xl text-zinc-900 tracking-tighter">{pickerYear}</span>
-                                <button
-                                    onClick={() => setPickerYear(pickerYear + 1)}
-                                    className="p-3 hover:bg-zinc-50 rounded-lg transition-colors"
-                                    aria-label="Año siguiente"
-                                >
-                                    <ChevronRight size={20} className="text-zinc-400" />
-                                </button>
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-2">
-                                {Array.from({ length: 12 }).map((_, i) => {
-                                    const date = new Date(pickerYear, i, 1);
-                                    const isSelected = filterMode === 'range' && rangeStart === format(startOfMonth(date), 'yyyy-MM-dd') && rangeEnd === format(endOfMonth(date), 'yyyy-MM-dd');
-
-                                    return (
-                                        <button
-                                            key={i}
-                                            onClick={() => {
-                                                const s = startOfMonth(date);
-                                                const e = endOfMonth(date);
-                                                setRangeStart(format(s, 'yyyy-MM-dd'));
-                                                setRangeEnd(format(e, 'yyyy-MM-dd'));
-                                                setFilterMode('range');
-                                                setShowMonthPicker(false);
-                                                trackHistoryMonthPicker(formatMonthYear(pickerYear, i));
-                                            }}
-                                            className={cn(
-                                                "py-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border-2",
-                                                isSelected
-                                                    ? "bg-zinc-900 border-zinc-900 text-white shadow-lg scale-105"
-                                                    : "bg-zinc-50 border-transparent text-zinc-400 hover:border-zinc-200 hover:text-zinc-900"
-                                            )}
-                                        >
-                                            {format(date, 'MMM', { locale: es })}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </div>
-                </Modal>
-            )}
-
             {exportMonthPickerOpen && exportPendingFormat ? (
                 <Modal
                     open={true}
@@ -2509,63 +2241,31 @@ export default function HistoryPage() {
                         setExportPendingFormat(null);
                     }}
                     variant="compact"
-                    layer="derived"
                     instance="history-export-month-picker"
-                    parentInstance="history-closing-detail"
                     title="Meses a exportar"
                     subtitle={`${exportPendingFormat === 'excel' ? 'Excel' : 'Imprimir / PDF'} — puedes elegir uno o varios`}
-                    headerTone="petroleum"
                 >
                     <div
-                        className="bg-white w-full max-w-sm overflow-hidden"
+                        className="w-full max-w-sm overflow-hidden"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="p-6">
-                            <div className="flex items-center justify-between mb-6 px-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setExportPickerYear((y) => y - 1)}
-                                    className="p-3 hover:bg-zinc-50 rounded-lg transition-colors min-h-12 min-w-12 flex items-center justify-center"
-                                    aria-label="Año anterior"
-                                >
-                                    <ChevronLeft size={20} className="text-zinc-400" />
-                                </button>
-                                <span className="font-black text-xl text-zinc-900 tracking-tighter">{exportPickerYear}</span>
-                                <button
-                                    type="button"
-                                    onClick={() => setExportPickerYear((y) => y + 1)}
-                                    className="p-3 hover:bg-zinc-50 rounded-lg transition-colors min-h-12 min-w-12 flex items-center justify-center"
-                                    aria-label="Año siguiente"
-                                >
-                                    <ChevronRight size={20} className="text-zinc-400" />
-                                </button>
-                            </div>
+                        <div className="space-y-3">
+                            <MonthPickerGrid
+                                year={exportPickerYear}
+                                onYearChange={setExportPickerYear}
+                                isSelected={(monthIndex) =>
+                                    exportSelectedMonths.has(
+                                        toMonthKey(new Date(exportPickerYear, monthIndex, 1))
+                                    )
+                                }
+                                onSelectMonth={(monthIndex) =>
+                                    toggleExportMonth(
+                                        toMonthKey(new Date(exportPickerYear, monthIndex, 1))
+                                    )
+                                }
+                            />
 
-                            <div className="grid grid-cols-3 gap-2">
-                                {Array.from({ length: 12 }).map((_, i) => {
-                                    const date = new Date(exportPickerYear, i, 1);
-                                    const key = toMonthKey(date);
-                                    const isSelected = exportSelectedMonths.has(key);
-
-                                    return (
-                                        <button
-                                            key={key}
-                                            type="button"
-                                            onClick={() => toggleExportMonth(key)}
-                                            className={cn(
-                                                'py-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border-2 min-h-12',
-                                                isSelected
-                                                    ? 'bg-[#36606F] border-[#36606F] text-white shadow-lg scale-105'
-                                                    : 'bg-zinc-50 border-transparent text-zinc-400 hover:border-zinc-200 hover:text-zinc-900'
-                                            )}
-                                        >
-                                            {format(date, 'MMM', { locale: es })}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-
-                            <p className="mt-4 text-center text-[10px] font-bold text-zinc-400 px-1">
+                            <p className="text-center text-[10px] font-bold text-zinc-400 px-1">
                                 {exportSelectedMonths.size === 0
                                     ? 'Ningún mes seleccionado'
                                     : exportSelectedMonths.size === 1
@@ -2577,7 +2277,7 @@ export default function HistoryPage() {
                             </p>
                         </div>
 
-                        <div className="p-6 pt-0 flex gap-2">
+                        <div className="mt-4 flex gap-2">
                             <Button
                                 type="button"
                                 variant="secondary"
@@ -2591,22 +2291,20 @@ export default function HistoryPage() {
                             >
                                 Cancelar
                             </Button>
-                            <button
+                            <Button
                                 type="button"
+                                variant="primary"
+                                instance="history-export-month-confirm"
                                 onClick={() => void confirmExport()}
                                 disabled={!!shareBusy || exportSelectedMonths.size === 0}
-                                className={cn(
-                                    'flex-1 min-h-12 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors',
-                                    'bg-zinc-900 text-white hover:bg-zinc-800',
-                                    (!!shareBusy || exportSelectedMonths.size === 0) && 'opacity-50 pointer-events-none'
-                                )}
+                                className="flex-1"
                             >
                                 {shareBusy
                                     ? 'Exportando…'
                                     : exportPendingFormat === 'excel'
                                       ? 'Descargar Excel'
                                       : 'Imprimir'}
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </Modal>
@@ -2722,18 +2420,20 @@ export default function HistoryPage() {
                                             </div>
                                             <div className="flex flex-col items-center justify-center text-center">
                                                 <div className="flex items-center gap-1 leading-none">
-                                                    {popPercent !== 0 && (
-                                                        <TrendTriangle 
-                                                            type={getRendimientoScale(popPercent).icon} 
-                                                            className={getRendimientoScale(popPercent).color}
-                                                        />
-                                                    )}
-                                                    <span className={cn(
-                                                        "text-sm md:text-base font-black tabular-nums",
-                                                        getRendimientoScale(popPercent).color
-                                                    )}>
-                                                        {popPercent >= 0 ? '+' : ''}{popPercent.toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
-                                                    </span>
+                                                    {popPercent !== 0 ? (
+                                                        <>
+                                                            <TrendTriangle
+                                                                type={getRendimientoScale(popPercent).icon}
+                                                                className={getRendimientoScale(popPercent).color}
+                                                            />
+                                                            <span className={cn(
+                                                                "text-sm md:text-base font-black tabular-nums",
+                                                                getRendimientoScale(popPercent).color
+                                                            )}>
+                                                                {popPercent >= 0 ? '+' : ''}{popPercent.toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
+                                                            </span>
+                                                        </>
+                                                    ) : null}
                                                 </div>
                                                 <span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
                                                     Rendimiento
@@ -2750,6 +2450,37 @@ export default function HistoryPage() {
                                 );
                             })()}
                         </div>
+                    </div>
+                </Modal>
+            )}
+            
+            {shareMenuOpen && (
+                <Modal
+                    open={shareMenuOpen}
+                    onClose={() => setShareMenuOpen(false)}
+                    instance="history-share-menu"
+                    title="Exportar"
+                    variant="compact"
+                >
+                    <div className="flex flex-col gap-3">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            instance="history-export-excel"
+                            onClick={() => openExportMonthPicker('excel')}
+                            layout="fill"
+                        >
+                            Exportar Excel
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="primary"
+                            instance="history-export-print"
+                            onClick={() => openExportMonthPicker('print')}
+                            layout="fill"
+                        >
+                            Imprimir / PDF
+                        </Button>
                     </div>
                 </Modal>
             )}

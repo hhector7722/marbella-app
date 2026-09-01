@@ -331,6 +331,7 @@ export default function HorarioPage() {
       title="Horario"
       showBackButton={false}
       template="list"
+      work="calendar"
       maxWidthClass="max-w-none"
       className="month-cal-shell"
       cardClassName="month-cal-card"
@@ -359,7 +360,7 @@ export default function HorarioPage() {
             <select
               value={selectedEmployeeId ?? ''}
               onChange={(e) => setSelectedEmployeeId(e.target.value || null)}
-              className="rounded bg-white/10 border border-white/20 text-white text-[11px] font-semibold text-center px-1.5 py-1 min-h-ds-tactil focus:outline-none"
+              className="rounded border border-ds-borde bg-ds-superficie text-ds-texto text-[11px] font-semibold text-center px-1.5 py-1 min-h-ds-tactil focus:outline-none"
               aria-label="Filtrar trabajador"
             >
               <option value="" style={{ color: '#1a1a1a', backgroundColor: '#fff' }}>
@@ -374,8 +375,8 @@ export default function HorarioPage() {
           ) : null}
         </div>
       }
-    >
-          <div className="px-2 pt-0.5 pb-0.5 shrink-0">
+      toolbarSlot={
+          <div className="flex justify-center">
             <PetroleumSegmented
               instance="horario-vista"
               density="compact"
@@ -388,6 +389,8 @@ export default function HorarioPage() {
               ]}
             />
           </div>
+      }
+    >
 
           {/* ── Calendar ── */}
           {loading ? (
@@ -418,7 +421,7 @@ export default function HorarioPage() {
                       'relative flex flex-col border-r border-gray-100 p-0.5 sm:p-1 last:border-r-0 cursor-pointer month-cal-cell',
                       isPastDay ? 'bg-zinc-50/90' : 'bg-white',
                       isToday && isViewMonthDay && 'bg-blue-50/20',
-                      isSelected && 'ring-2 ring-inset ring-[#36606F]/40',
+                      isSelected && 'ring-2 ring-inset ring-[var(--color-envolvente)]/40',
                       'hover:bg-blue-50/40 active:bg-blue-50/60 transition-colors',
                       !isViewMonthDay && 'opacity-40',
                     );

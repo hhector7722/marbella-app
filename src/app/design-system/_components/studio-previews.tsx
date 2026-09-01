@@ -53,7 +53,7 @@ export function StudioHeaderFrame({
     title,
     action,
     values,
-    petroleum = true,
+    petroleum: _petroleum = true,
     showBack = true,
 }: {
     title: string;
@@ -77,7 +77,7 @@ export function StudioHeaderFrame({
             data-align-x={alignX}
             data-align-y={alignY}
             data-fixed-height={fixedHeight ? 'true' : undefined}
-            className={`flex gap-ds-2 ${fixedHeight ? '' : 'min-h-ds-tactil '} ${petroleum ? 'bg-ds-marca text-ds-texto-invertido' : 'bg-ds-superficie border-b border-ds-borde'}`}
+            className={`flex gap-ds-2 ${fixedHeight ? '' : 'min-h-ds-tactil '} bg-ds-superficie text-ds-texto border-b border-ds-borde`}
             style={{
                 paddingInline: padX?.cssVar ? `var(${padX.cssVar})` : padX?.value,
                 paddingBlock: fixedHeight ? 0 : padY?.cssVar ? `var(${padY.cssVar})` : padY?.value,
@@ -106,7 +106,7 @@ export function StudioHeaderFrame({
                 ) : null}
                 <p
                     data-element="title"
-                    className="m-0 font-black uppercase tracking-wider truncate"
+                    className="m-0 font-medium uppercase tracking-wider truncate"
                     style={{ fontSize: `calc(${titleSize?.value ?? '18px'} * var(--page-header-scale, 1))` }}
                 >
                     {title}
@@ -189,11 +189,11 @@ export function ElementPreview({
         return (
             <div className="border border-ds-borde rounded-ds-superficie overflow-hidden bg-ds-superficie">
                 <div
-                    className="flex h-ds-modal-header items-center px-ds-4 bg-ds-marca text-ds-texto-invertido"
+                    className="flex h-ds-modal-header items-center px-ds-4 bg-ds-superficie text-ds-texto-fuerte border-b border-ds-borde"
                     data-studio-preview="header"
                     data-align-x={values['align-x'] ?? 'left'}
                 >
-                    <p className="m-0 text-[14px] font-black uppercase tracking-wider">Detalle</p>
+                    <p className="m-0 text-[14px] font-medium uppercase tracking-wider">Detalle</p>
                 </div>
                 <p className="m-0 p-ds-4 text-[14px] text-ds-texto">
                     {element.id === 'derived-modal-header'

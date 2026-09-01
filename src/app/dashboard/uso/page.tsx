@@ -7,7 +7,11 @@ import { canAccessUsageAnalytics } from '@/lib/usage/access';
 import { getUsageDashboardData, parseUsageDashboardFilters } from '@/lib/usage/queries';
 import { createClient } from '@/utils/supabase/server';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
-import { DayPeriodFilter, DayPeriodNav } from '@/components/time/DayPeriodChrome';
+import {
+  DayPeriodChromeProvider,
+  DayPeriodFilter,
+  DayPeriodNav,
+} from '@/components/time/DayPeriodChrome';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,39 +46,37 @@ export default async function UsoPage({ searchParams }: UsoPageProps) {
   const data = await getUsageDashboardData(filters);
 
   return (
-    <DashboardDetailLayout
-      title="Uso de la app"
-      showBackButton={false}
-      template="list"
-      maxWidthClass="max-w-3xl"
-      periodSlot={
-        <Suspense fallback={null}>
-          <DayPeriodNav day={filters.day} basePath="/dashboard/uso" />
-        </Suspense>
-      }
-      rightSlot={
-        <div className="flex shrink-0 items-center gap-1">
-          <Suspense fallback={null}>
-            <DayPeriodFilter day={filters.day} basePath="/dashboard/uso" instance="uso-period-filter" />
-          </Suspense>
-          <Link
-            href="/dashboard/web"
-            aria-label="Uso web"
-            className="flex size-12 shrink-0 items-center justify-center text-white"
-          >
-            <Globe className="size-6" strokeWidth={1.5} aria-hidden />
-          </Link>
-          <Link
-            href="/dashboard/instalacion-app"
-            aria-label="Instalación de la app"
-            className="flex size-12 shrink-0 items-center justify-center text-white"
-          >
-            <Smartphone className="size-6" strokeWidth={1.5} aria-hidden />
-          </Link>
-        </div>
-      }
-    >
-      <UsageDashboard data={data} />
-    </DashboardDetailLayout>
+    <Suspense fallback={null}>
+      <DayPeriodChromeProvider day={filters.day} basePath="/dashboard/uso" instance="uso-period-filter">
+        <DashboardDetailLayout
+          title="Uso de la app"
+          showBackButton={false}
+          template="list"
+          maxWidthClass="max-w-3xl"
+          periodSlot={<DayPeriodNav day={filters.day} basePath="/dashboard/uso" />}
+          rightSlot={
+            <div className="flex shrink-0 items-center gap-1">
+              <DayPeriodFilter day={filters.day} basePath="/dashboard/uso" instance="uso-period-filter" />
+              <Link
+                href="/dashboard/web"
+                aria-label="Uso web"
+                className="flex size-12 shrink-0 items-center justify-center text-ds-texto"
+              >
+                <Globe className="size-6" strokeWidth={1.5} aria-hidden />
+              </Link>
+              <Link
+                href="/dashboard/instalacion-app"
+                aria-label="Instalación de la app"
+                className="flex size-12 shrink-0 items-center justify-center text-ds-texto"
+              >
+                <Smartphone className="size-6" strokeWidth={1.5} aria-hidden />
+              </Link>
+            </div>
+          }
+        >
+          <UsageDashboard data={data} />
+        </DashboardDetailLayout>
+      </DayPeriodChromeProvider>
+    </Suspense>
   );
 }

@@ -18,10 +18,14 @@ export default function MainWrapper({ children }: { children: React.ReactNode })
     const isDesignSystem = pathname.startsWith('/design-system');
 
     return (
-        <main className={cn(
+        <main
+            data-app-shell={
+                !isLogin && !fullscreenCarta && !isDesignSystem ? 'true' : undefined
+            }
+            className={cn(
             'min-h-screen transition-all duration-300',
             !isLogin && !fullscreenCarta && !isDesignSystem && 'pt-header-safe',
-            !isLogin && !fullscreenCarta && !appShellScroll && 'pb-[calc(5rem+env(safe-area-inset-bottom))]'
+            !isLogin && !fullscreenCarta && !appShellScroll && 'pb-[calc(var(--shell-bottom-inset)+var(--espacio-2))]'
         )}>
             <PullToRefresh enabled={!isLogin && !internalScrollShell}>
                 {children}

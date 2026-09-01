@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-25
+revisado: 2026-08-29
 caducidad: 6 meses
 supersede: —
 ---
@@ -34,7 +34,7 @@ Los valores recogidos aquí **son los que el producto usa hoy**, no una propuest
 
 | Token | Valor | Papel | Estado |
 |---|---|---|---|
-| `color.marca` | `#36606F` | Identidad del producto en pantalla. Cabeceras, elementos activos, Button tertiary, PetroleumSegmented | adoptado (piloto Modal vía `--color-marca`; Button tertiary; PetroleumSegmented; resto del producto aún literal) |
+| `color.marca` | `#36606F` | Identidad del producto en pantalla. Elementos activos, Button tertiary. **No** pinta cabeceras ni PetroleumSegmented | adoptado (Button tertiary; resto del producto aún literal) |
 | `color.marca.intenso` | `#2F5D6A` | Estado pulsado y variantes de mayor contraste de la marca | adoptado (variable `--color-marca-intenso`; Button primary ya no la usa) |
 | `color.marca.profundo` | `#2A4A56` | Fondos de marca de máxima intensidad | declarado |
 | `color.marca.suave` | `#407080` | Marca sobre fondo oscuro, bordes de elementos de marca | declarado |
@@ -49,9 +49,9 @@ El fondo sobre el que flotan las superficies de trabajo. **No contiene contenido
 
 | Token | Valor | Papel | Estado |
 |---|---|---|---|
-| `color.envolvente` | `#5B8FB9` | Color base del lienzo de la aplicación | adoptado |
-| `color.envolvente.alto` | `#7EB0D4` | Extremo superior del degradado | adoptado |
-| `color.envolvente.bajo` | `#46769C` | Extremo inferior del degradado | adoptado |
+| `color.envolvente` | `#15345C` | Color base del lienzo. Marino con degradado, el mismo en todas las páginas | adoptado |
+| `color.envolvente.alto` | `#2A5A96` | Extremo superior del degradado | adoptado |
+| `color.envolvente.bajo` | `#0B1C36` | Extremo inferior del degradado | adoptado |
 
 Es el único token con implementación centralizada real: existe como utilidad única y todos los contenedores de aplicación la consumen.
 
@@ -62,6 +62,8 @@ Es el único token con implementación centralizada real: existe como utilidad �
 | `color.superficie` | `#FFFFFF` | Superficie de trabajo. Tarjetas, modales, paneles | adoptado (piloto `DashboardShortcut` vía `--color-superficie`) |
 | `color.superficie.hundida` | `#FAFAFA` | Fondo de zonas agrupadas dentro de una superficie | declarado |
 | `color.superficie.inactiva` | `#F4F4F5` | Elementos deshabilitados, cabeceras de tabla | adoptado (piloto Button vía `--color-superficie-inactiva`) |
+
+`color.superficie` no pinta el cuerpo del widget de HomeScreen. Ese hueco es material de sistema (`--home-widget-fill` + blur del `--color-envolvente`). Claro u oscuro según la luminancia del wallpaper. PageScreen, Modal y Surface fuera del mosaico siguen blancos.
 
 ## 4. Texto
 
@@ -167,7 +169,7 @@ Norma en [EXPERIENCIA §1](EXPERIENCIA.md#1-táctil).
 | Token | Valor | Papel | Estado |
 |---|---|---|---|
 | `estructura.cabecera` | 56 px + área segura superior | Hueco reservado desde el borde superior hasta el contenido. La barra visible mide `tactil.minimo` (48 px); la diferencia (8 px) es separación vacía | adoptado (`--estructura-cabecera`) |
-| `estructura.barra-inferior` | 80 px + área segura inferior | Alto reservado por la navegación inferior | adoptado |
+| `estructura.barra-inferior` | 49 px + área segura inferior | Pista del tab bar iOS (icono + nombre). El material sigue bajo el home indicator | adoptado (`--estructura-barra-inferior`) |
 | `estructura.fin-de-lista` | 96 px + área segura | Hueco al final de listas táctiles | adoptado |
 | `estructura.fin-de-lista.tarjetas` | 240 px + área segura | Hueco al final de listas con barra de cantidad | adoptado |
 | `estructura.alto-modal` | `min(68dvh, 100dvh − safe − 2.5rem)` en contrato Modal (ref. Albaranes); otros shells pueden conservar 94% documentado históricamente | Alto máximo de un modal de tarea | adoptado (`--modal-max-height`) |

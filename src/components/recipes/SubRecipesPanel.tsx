@@ -124,20 +124,15 @@ export function SubRecipesPanel({ recipeId }: { recipeId: string }) {
   }
 
   return (
-    <div
-      className={cn(
-        'rounded-xl border border-zinc-100 bg-white shadow-sm overflow-hidden',
-        'md:col-span-2'
-      )}
-    >
+    <div data-element="recipe-panel" className={cn('md:col-span-2')}>
       <div data-element="block-header">
-        <UtensilsCrossed className="w-3.5 h-3.5 text-white/80" />
+        <UtensilsCrossed className="w-3.5 h-3.5 shrink-0" aria-hidden />
         <h2 data-element="title">Sub-recetas del menú</h2>
       </div>
       <div className="p-4 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_minmax(120px,140px)] gap-3 items-end">
           <div className="min-w-0">
-            <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block mb-1">Buscar receta</label>
+            <label data-element="field-label">Buscar receta</label>
             <input
               type="text"
               value={search}
@@ -180,7 +175,7 @@ export function SubRecipesPanel({ recipeId }: { recipeId: string }) {
             )}
           </div>
           <div>
-            <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block mb-1">Cantidad</label>
+            <label data-element="field-label">Cantidad</label>
             <input
               type="text"
               inputMode="decimal"
@@ -202,7 +197,7 @@ export function SubRecipesPanel({ recipeId }: { recipeId: string }) {
         </div>
 
         <div className="rounded-xl border border-zinc-100 bg-zinc-50/50 p-3">
-          <div className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-2">Incluidas en el menú</div>
+          <div data-element="field-label" className="mb-2">Incluidas en el menú</div>
           {loading ? (
             <div className="flex justify-center py-6 text-zinc-400">
               <Loader2 className="w-6 h-6 animate-spin" />

@@ -59,7 +59,9 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 
 **Pago parcial (2026-08-20, Block 1B/1C Button consumers):** CTAs de negocio claros migrados a `Button` (~155). Gate de regresión: cero CTAs claros nativos (`button-native-business-scan`). Block 1C: «Vista plantilla» en `StaffSelectionModal` pasa a `Button`; el grid de avatares, filas `text-left`, tabs/chips, composer de chat, steppers ±, badges 18px, celdas de escandallo y «Ver foto» se mantienen como controles especializados — ver D27.
 
-**Pago parcial (2026-08-26, overlays):** `ImageLightbox` (recetas, fotos de cierre), `AvatarCropModal` y el selector de categorías de Reporte adoptan `Modal`. Salen de la allowlist de overlay paralelo. Quedan: calculadora, vídeo de fichaje, dismiss de exportar historial, spinner de horarios, KDS, playground y pantallas de error/carga.
+**Pago parcial (2026-08-26, overlays):** `ImageLightbox` (recetas, fotos de cierre), `AvatarCropModal` y el selector de categorías de Reporte adoptan `Modal`. Salen de la allowlist de overlay paralelo. Quedan: calculadora, vídeo de fichaje, spinner de horarios, KDS, playground y pantallas de error/carga.
+
+**Pago (2026-08-31, exportar):** los menús de compartir de Cierres, Ventas, Tesorería y Asistencia pasan a `Modal`. Dejan el desplegable recortado y el listener de captura que desmontaba el panel antes del clic.
 
 **Pago (2026-08-26, filtros de lista):** los desplegables de categoría (Recetas, Proveedores), proveedor (Ingredientes) y modo de creación de ingrediente pasan a `Modal`. Ingredientes sale de la allowlist de overlay paralelo.
 

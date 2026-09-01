@@ -10,7 +10,6 @@ import {
     ArrowDown,
     RefreshCw,
     Share,
-    Printer
 } from 'lucide-react';
 
 import { toast } from 'sonner';
@@ -35,6 +34,7 @@ import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLay
 import { CashCountFooter } from '@/components/cash/CashCountFooter';
 import { CashCountDateButton, formatCashCountDateInput } from '@/components/cash/CashCountDateButton';
 import * as XLSX from 'xlsx';
+import { downloadWorkbook, printHtml } from '@/lib/export/browser-output';
 
 interface Movement {
     id: string;
@@ -485,25 +485,6 @@ export default function MovementsPage() {
         setFilterMode('range');
     };
 
-    useEffect(() => {
-        if (!shareMenuOpen) return;
-        const onPointerDown = (e: PointerEvent) => {
-            const target = e.target as HTMLElement | null;
-            if (!target) return;
-            if (target.closest('[data-movements-share-root="true"]')) return;
-            setShareMenuOpen(false);
-        };
-        const onKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') setShareMenuOpen(false);
-        };
-        document.addEventListener('pointerdown', onPointerDown, true);
-        document.addEventListener('keydown', onKeyDown);
-        return () => {
-            document.removeEventListener('pointerdown', onPointerDown, true);
-            document.removeEventListener('keydown', onKeyDown);
-        };
-    }, [shareMenuOpen]);
-
     const getCurrentFilterISO = () => {
         let startISO: string;
         let endISO: string;
@@ -602,10 +583,9 @@ export default function MovementsPage() {
 
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Movimientos');
-
             const now = new Date();
             const fileName = `movimientos_${format(now, 'yyyy-MM-dd_HHmm')}.xlsx`;
-            XLSX.writeFile(wb, fileName, { compression: true });
+            downloadWorkbook(wb, fileName);
             toast.success('Excel descargado.');
         } catch (e) {
             console.error(e);
@@ -649,7 +629,7 @@ export default function MovementsPage() {
 </tr>`;
             }).join('\n');
 
-            const html = `<table>
+            const html = `<h1>Movimientos</h1><table>
   <thead>
     <tr>
       <th>FECHA</th>
@@ -663,71 +643,9 @@ export default function MovementsPage() {
   </tbody>
 </table>`;
 
-            const iframe = document.createElement('iframe');
-            iframe.setAttribute('aria-hidden', 'true');
-            iframe.style.position = 'fixed';
-            iframe.style.right = '0';
-            iframe.style.bottom = '0';
-            iframe.style.width = '0';
-            iframe.style.height = '0';
-            iframe.style.border = '0';
-            document.body.appendChild(iframe);
-
-            const doc = iframe.contentDocument;
-            if (!doc) {
-                iframe.remove();
-                toast.error('No se pudo preparar la impresión.');
-                return;
-            }
-
-            doc.open();
-            doc.write(`<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Imprimir movimientos</title>
-    <style>
-      * { box-sizing: border-box; }
-      body { margin: 24px; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color: #111827; }
-      table { width: 100%; border-collapse: collapse; }
-      thead th {
-        background: #36606F; color: white;
-        text-transform: uppercase; letter-spacing: 0.12em;
-        font-weight: 800; font-size: 11px;
-        padding: 10px 12px; text-align: center;
-      }
-      tbody td {
-        border-top: 1px solid #f4f4f5;
-        padding: 10px 12px;
-        font-size: 12px;
-        vertical-align: top;
-        text-align: center;
-      }
-      tbody tr:nth-child(even) td { background: #fafafa; }
-      @media print {
-        body { margin: 0; padding: 0; }
-        table { page-break-inside: auto; }
-        tr { page-break-inside: avoid; page-break-after: auto; }
-        thead { display: table-header-group; }
-      }
-    </style>
-  </head>
-  <body>
-    ${html}
-  </body>
-</html>`);
-            doc.close();
-
-            // Dar un tick para que el iframe termine de maquetar antes del print (iOS/Safari es sensible).
-            setTimeout(() => {
-                try {
-                    iframe.contentWindow?.focus();
-                    iframe.contentWindow?.print();
-                } finally {
-                    setTimeout(() => iframe.remove(), 250);
-                }
-            }, 50);
+            printHtml(html, {
+                extraCss: 'thead th, tbody td { text-align: center; }',
+            });
         } catch (e) {
             console.error(e);
             toast.error('Error al imprimir.');
@@ -743,6 +661,7 @@ export default function MovementsPage() {
             title="Tesorería"
             showBackButton={false}
             template="list"
+            work="table"
             maxWidthClass="max-w-4xl"
             contentClassName="p-0 flex flex-col min-h-0"
             periodSlot={
@@ -758,111 +677,86 @@ export default function MovementsPage() {
                 />
             }
             rightSlot={
-                <div className="flex items-center gap-1 shrink-0 text-white" data-movements-share-root="true">
+                <div className="flex items-center gap-1 shrink-0">
                     <PeriodFilterButton instance="movements-period-filter" onClick={() => setIsTimeFilterOpen(true)} />
-                    <div className="relative shrink-0" data-movements-share-root="true">
-                        <Button
-                            type="button"
-                            variant="tertiary"
-                            instance="movements-compartir"
-                            onClick={() => setShareMenuOpen(v => !v)}
-                            disabled={!!shareBusy}
-                            aria-label="Compartir"
-                            icon={<Share size={16} />}
+                    <Button
+                        type="button"
+                        variant="tertiary"
+                        instance="movements-compartir"
+                        onClick={() => setShareMenuOpen(true)}
+                        disabled={!!shareBusy}
+                        aria-label="Compartir"
+                        icon={<Share size={14} strokeWidth={2} />}
+                    />
+                </div>
+            }
+            toolbarSlot={
+                <div className="flex flex-row items-center gap-2 w-full justify-between">
+                    <div className="min-w-0 flex-1 md:max-w-xs">
+                        <SearchField
+                            instance="movements-search"
+                            placeholder="Buscar..."
+                            value={searchQuery}
+                            onChange={setSearchQuery}
+                            ariaLabel="Buscar movimientos"
                         />
-
-                        {shareMenuOpen ? (
-                            <div className="absolute right-0 mt-2 w-56 rounded-lg bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden z-20">
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    instance="movements-export-excel"
-                                    onClick={exportFilteredTableToExcel}
-                                    className="w-full"
-                                >
-                                    Exportar Excel
-                                </Button>
-                                <div className="h-px bg-zinc-100" />
-                                <button
-                                    type="button"
-                                    onClick={printFilteredTable}
-                                    className="w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors"
-                                >
-                                    <span className="text-[11px] font-black uppercase tracking-widest">Imprimir</span>
-                                    <Printer className="w-4 h-4 text-zinc-500" />
-                                </button>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1.5 md:gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setCashModalMode('in')}
+                            aria-label="Entrada"
+                            className="shrink-0 flex flex-col items-center justify-center gap-1 min-w-[48px] min-h-[48px] rounded-lg transition-colors hover:bg-white/10 active:scale-95"
+                        >
+                            <div className="w-5 h-5 flex items-center justify-center bg-emerald-500 rounded-full shadow-sm">
+                                <Plus className="w-3 h-3 text-white" strokeWidth={3} />
                             </div>
-                        ) : null}
+                            <span className="text-[8px] font-black uppercase tracking-widest text-white leading-none">Entrada</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={openOut}
+                            aria-label="Salida"
+                            className="shrink-0 flex flex-col items-center justify-center gap-1 min-w-[48px] min-h-[48px] rounded-lg transition-colors hover:bg-white/10 active:scale-95"
+                        >
+                            <div className="w-5 h-5 flex items-center justify-center bg-rose-500 rounded-full shadow-sm">
+                                <Minus className="w-3 h-3 text-white" strokeWidth={3} />
+                            </div>
+                            <span className="text-[8px] font-black uppercase tracking-widest text-white leading-none">Salida</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={openAudit}
+                            aria-label="Arqueo"
+                            className="shrink-0 flex flex-col items-center justify-center gap-1 min-w-[48px] min-h-[48px] rounded-lg transition-colors hover:bg-white/10 active:scale-95"
+                        >
+                            <div className="w-5 h-5 flex items-center justify-center bg-orange-500 rounded-full shadow-sm">
+                                <RefreshCw className="w-2.5 h-2.5 text-white" strokeWidth={4} />
+                            </div>
+                            <span className="text-[8px] font-black uppercase tracking-widest text-white leading-none">Arqueo</span>
+                        </button>
                     </div>
                 </div>
             }
+            leadSlot={
+                <div className="grid grid-cols-4 items-start gap-1 w-full">
+                    <KpiStat instance="movements-ingresos" label="Ingresos" tone="neutral">
+                        <span style={{ fontSize: '0.85rem', color: '#fff', fontWeight: 900 }} className="truncate block leading-tight">{incomeValue}</span>
+                    </KpiStat>
+                    <KpiStat instance="movements-gastos" label="Gastos" tone="neutral">
+                        <span style={{ fontSize: '0.85rem', color: '#fff', fontWeight: 900 }} className="truncate block leading-tight">{expenseValue}</span>
+                    </KpiStat>
+                    <KpiStat instance="movements-saldo" label="Saldo actual" tone="neutral">
+                        <span style={{ fontSize: '0.85rem', color: '#fff', fontWeight: 900 }} className="truncate block leading-tight">{saldoValue}</span>
+                    </KpiStat>
+                    <KpiStat instance="movements-diferencia" label="Diferencia" tone="neutral">
+                        <span style={{ fontSize: '0.85rem', color: '#fff', fontWeight: 900 }} className="truncate block leading-tight">{diffValue}</span>
+                    </KpiStat>
+                </div>
+            }
         >
-                    <div className="bg-white">
-                        <div className="grid grid-cols-4 items-start gap-1 px-2 py-2 border-b border-zinc-50">
-                            <KpiStat instance="movements-ingresos" label="Ingresos" tone="positive">
-                                {incomeValue}
-                            </KpiStat>
-                            <KpiStat instance="movements-gastos" label="Gastos" tone="negative">
-                                {expenseValue}
-                            </KpiStat>
-                            <KpiStat instance="movements-saldo" label="Saldo actual" tone="neutral">
-                                {saldoValue}
-                            </KpiStat>
-                            <KpiStat instance="movements-diferencia" label="Diferencia" tone={diffTone}>
-                                {diffValue}
-                            </KpiStat>
-                        </div>
-
-                        <div className="flex w-full items-center gap-2 px-2 py-1.5 border-b border-zinc-50">
-                            <div className="min-w-0 flex-1">
-                                <SearchField
-                                    instance="movements-search"
-                                    placeholder="Buscar..."
-                                    value={searchQuery}
-                                    onChange={setSearchQuery}
-                                    ariaLabel="Buscar movimientos"
-                                />
-                            </div>
-                            <div className="flex shrink-0 items-center">
-                                <button
-                                    type="button"
-                                    onClick={() => setCashModalMode('in')}
-                                    aria-label="Entrada"
-                                    className="shrink-0 min-h-[48px] min-w-[48px] px-2 rounded-lg hover:bg-zinc-100 transition-colors flex flex-col items-center justify-center gap-1 active:scale-95"
-                                >
-                                    <div className="w-5 h-5 flex items-center justify-center bg-emerald-500 rounded-full shadow-sm">
-                                        <Plus className="w-3 h-3 text-white" strokeWidth={3} />
-                                    </div>
-                                    <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500 leading-none">Entrada</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={openOut}
-                                    aria-label="Salida"
-                                    className="shrink-0 min-h-[48px] min-w-[48px] px-2 rounded-lg hover:bg-zinc-100 transition-colors flex flex-col items-center justify-center gap-1 active:scale-95"
-                                >
-                                    <div className="w-5 h-5 flex items-center justify-center bg-rose-500 rounded-full shadow-sm">
-                                        <Minus className="w-3 h-3 text-white" strokeWidth={3} />
-                                    </div>
-                                    <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500 leading-none">Salida</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={openAudit}
-                                    aria-label="Arqueo"
-                                    className="shrink-0 min-h-[48px] min-w-[48px] px-2 rounded-lg hover:bg-zinc-100 transition-colors flex flex-col items-center justify-center gap-1 active:scale-95"
-                                >
-                                    <div className="w-5 h-5 flex items-center justify-center bg-orange-500 rounded-full shadow-sm">
-                                        <RefreshCw className="w-2.5 h-2.5 text-white" strokeWidth={4} />
-                                    </div>
-                                    <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500 leading-none">Arqueo</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* LISTADO DE MOVIMIENTOS INTEGRADO */}
-                        <div className="p-1.5 bg-white">
-                            <div className="rounded-lg overflow-hidden border border-zinc-100 shadow-sm">
+                        <div className="p-1.5">
+                            <div data-table-piece className="overflow-hidden">
                                 <div className="w-full min-w-0 overflow-x-hidden">
                                     <table ref={tableRef} data-component={TABLE_COMPONENT_ID} data-instance="tesoreria-movimientos" className="w-full text-left font-sans">
                                         <thead>
@@ -939,7 +833,7 @@ export default function MovementsPage() {
                                                                 setSelectedMovement(mov);
                                                             }}
                                                         >
-                                                            <td className="px-1 md:px-4 py-2 md:py-2.5">
+                                                            <td>
                                                                 <div className="flex flex-col">
                                                                     <span className="text-[10px] md:text-[13px] font-black text-zinc-900 italic">
                                                                         {isNaN(date.getTime()) ? (
@@ -956,10 +850,10 @@ export default function MovementsPage() {
                                                                     </span>
                                                                 </div>
                                                             </td>
-                                                            <td className="px-0.5 md:px-3 py-2 md:py-2.5">
-                                                                <div className="flex items-center gap-0.5 md:gap-2 min-w-0">
+                                                            <td>
+                                                                <div data-element="concept-row" className="flex min-w-0 items-center gap-0.5">
                                                                     <div className={cn(
-                                                                        "w-4 h-4 md:w-7 md:h-7 rounded-md md:rounded-lg flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110",
+                                                                        "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-md shadow-sm transition-transform group-hover:scale-110 md:h-6 md:w-6 md:rounded-lg",
                                                                         mov.type === 'income' ? "bg-emerald-50 text-emerald-500" :
                                                                             mov.type === 'expense' ? "bg-rose-50 text-rose-500" :
                                                                                 "bg-orange-50 text-orange-500"
@@ -968,7 +862,10 @@ export default function MovementsPage() {
                                                                             mov.type === 'expense' ? <ArrowUp size={8} className="md:size-[16px]" strokeWidth={3} /> :
                                                                                 <RefreshCw size={8} className="md:size-[14px]" strokeWidth={3} />}
                                                                     </div>
-                                                                    <span className="text-[9px] md:text-[11px] font-bold text-zinc-500 uppercase tracking-tight truncate min-w-0">
+                                                                    <span
+                                                                        data-element="concept"
+                                                                        className="min-w-0 text-[9px] font-bold uppercase tracking-tight text-zinc-500 md:text-[11px]"
+                                                                    >
                                                                         {conceptOf(mov)}
                                                                     </span>
                                                                 </div>
@@ -1016,7 +913,6 @@ export default function MovementsPage() {
                                 </div>
                             </div>
                         </div>
-                    </div>
         </DashboardDetailLayout>
 
             {/* MODALES EXTERNOS */}
@@ -1146,6 +1042,39 @@ export default function MovementsPage() {
                     toast.success("Cierre realizado correctamente");
                 }}
             />
+
+            {shareMenuOpen && (
+                <Modal
+                    open={shareMenuOpen}
+                    onClose={() => setShareMenuOpen(false)}
+                    instance="movements-share-menu"
+                    title="Exportar"
+                    variant="compact"
+                >
+                    <div className="flex flex-col gap-3">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            instance="movements-export-excel"
+                            onClick={() => void exportFilteredTableToExcel()}
+                            layout="fill"
+                            disabled={!!shareBusy}
+                        >
+                            Exportar Excel
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="primary"
+                            instance="movements-export-print"
+                            onClick={() => void printFilteredTable()}
+                            layout="fill"
+                            disabled={!!shareBusy}
+                        >
+                            Imprimir / PDF
+                        </Button>
+                    </div>
+                </Modal>
+            )}
         </>
     );
 }

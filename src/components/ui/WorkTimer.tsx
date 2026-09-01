@@ -26,16 +26,33 @@ export function formatStaffElapsedHms(clockIn: string | null | undefined, clockO
 export function StaffElapsedDigits({
     value,
     tone,
+    compact = false,
+    mini = false,
+    inverted = false,
 }: {
     value: string;
     tone: 'live' | 'quiet';
+    compact?: boolean;
+    /** Cronómetro en media celda del mosaico (fichaje en turno). */
+    mini?: boolean;
+    /** Texto claro sobre fondo oscuro (fichaje en turno). */
+    inverted?: boolean;
 }) {
     return (
         <span
             className={cn(
                 digitalFont.className,
-                'text-xl leading-none tracking-widest',
-                tone === 'live' ? 'text-red-500' : 'text-zinc-700',
+                'leading-none tabular-nums',
+                mini
+                    ? 'text-[13px] tracking-tight'
+                    : compact
+                      ? 'text-base tracking-tight'
+                      : 'text-xl tracking-widest',
+                inverted
+                    ? 'text-white'
+                    : tone === 'live'
+                      ? 'text-red-500'
+                      : 'text-zinc-700',
             )}
             style={{ fontVariantNumeric: 'tabular-nums' }}
         >
@@ -48,7 +65,17 @@ export function StaffElapsedDigits({
  * Cronómetro vivo del turno. El padre pinta el hueco; aquí solo van los dígitos.
  * El tick (1 s) no re-renderiza al padre.
  */
-const WorkTimer = memo(function WorkTimer({ clockIn }: { clockIn: string | null }) {
+const WorkTimer = memo(function WorkTimer({
+    clockIn,
+    compact = false,
+    mini = false,
+    inverted = false,
+}: {
+    clockIn: string | null;
+    compact?: boolean;
+    mini?: boolean;
+    inverted?: boolean;
+}) {
     const [display, setDisplay] = useState('00:00:00');
 
     useEffect(() => {
@@ -65,7 +92,7 @@ const WorkTimer = memo(function WorkTimer({ clockIn }: { clockIn: string | null 
         return () => clearInterval(interval);
     }, [clockIn]);
 
-    return <StaffElapsedDigits value={display} tone="live" />;
+    return <StaffElapsedDigits value={display} tone="live" compact={compact} mini={mini} inverted={inverted} />;
 });
 
 export default WorkTimer;

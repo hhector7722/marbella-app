@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/modal';
-import { Button } from '@/components/ui/button';
 import { isHiddenPlantillaName } from '@/lib/staff/plantilla-employees';
 import { trackUsageModalApply } from '@/lib/usage/client';
 import { staffSelectionApplySummary } from '@/lib/usage/modal-apply';
@@ -18,6 +17,11 @@ export interface PlantillaEmployee {
     avatar_url?: string | null;
     end_date?: string | null;
     visible_in_plantilla?: boolean;
+}
+
+export interface StaffListEndAction {
+    label: string;
+    onClick: () => void | Promise<void>;
 }
 
 interface StaffSelectionModalProps {
@@ -35,14 +39,19 @@ interface StaffSelectionModalProps {
     children?: React.ReactNode;
     /** Opcional: botón en cabecera para abrir la vista de Propinas desde /dashboard (Plantilla) */
     onOpenTips?: () => void;
-    /** Si true, muestra opción "Plantilla" primero (id ''); para vista asistencia manager */
+    /** Si true, añade «Ver todos / Ver activos» como último usuario (id '') */
     allowPlantilla?: boolean;
+    /** Si la vista plantilla (todos) está activa; el último usuario pasa a «Ver activos» */
+    plantillaSelected?: boolean;
     /** Modo gestión: lista con toggles de visibilidad en plantilla */
     manageVisibility?: boolean;
     /** Callback al cambiar visible_in_plantilla (solo en manageVisibility) */
     onToggleVisibility?: (employeeId: string, visible: boolean) => void | Promise<void>;
-    /** Acción de texto en cabecera (sin marco ni relleno) */
-    headerTextAction?: { label: string; onClick: () => void };
+    /**
+     * Último ítem del listado, como un usuario más.
+     * Si no se pasa y `allowPlantilla` es true, se usa «Ver todos» / «Ver activos».
+     */
+    listEndAction?: StaffListEndAction;
     /** Si true, oculta la cruz (X) de cierre en cabecera */
     hideHeaderClose?: boolean;
     /**
@@ -72,6 +81,7 @@ function VisibilityToggle({
         <button
             type="button"
             role="switch"
+            data-visibility-toggle="true"
             aria-checked={visible}
             aria-label={visible ? `Ocultar ${label} de plantilla` : `Mostrar ${label} en plantilla`}
             onClick={(e) => {
@@ -79,12 +89,61 @@ function VisibilityToggle({
                 onToggle();
             }}
             className={cn(
-                'flex min-h-12 min-w-[3.75rem] shrink-0 items-center rounded-full p-1 transition-colors',
+                'absolute top-0 right-0 z-10 flex h-5 w-8 items-center rounded-full p-0.5',
                 visible ? 'bg-emerald-600 justify-end' : 'bg-zinc-300/90 justify-start',
             )}
             title={visible ? 'Visible en plantilla' : 'Oculto en plantilla'}
         >
-            <span className="h-8 w-8 max-h-full aspect-square rounded-full bg-white shadow-md shrink-0 pointer-events-none" />
+            <span className="h-3.5 w-3.5 shrink-0 rounded-full bg-white shadow-sm pointer-events-none" />
+        </button>
+    );
+}
+
+function ListEndUserTile({
+    variant,
+    label,
+    onClick,
+}: {
+    variant: 'profile-list' | 'grid';
+    label: string;
+    onClick: () => void;
+}) {
+    if (variant === 'profile-list') {
+        return (
+            <button
+                type="button"
+                data-list-end="true"
+                onClick={onClick}
+                aria-label={label}
+                className="group flex flex-col items-center gap-1 py-2 min-h-[48px] transition-all hover:opacity-80 active:scale-[0.98]"
+            >
+                <Avatar src={null} alt={label} size="md" />
+                <p className="text-[10px] font-medium text-zinc-800 leading-tight w-full text-center tracking-tight">
+                    {label}
+                </p>
+            </button>
+        );
+    }
+
+    return (
+        <button
+            type="button"
+            data-list-end="true"
+            onClick={onClick}
+            aria-label={label}
+            className="group flex flex-col items-center gap-1 p-2 rounded-[1.5rem] transition-all hover:bg-blue-50 active:scale-95 min-h-[48px]"
+        >
+            <div className="transition-all group-hover:-translate-y-1 shrink-0">
+                <Avatar src={null} alt={label} size="md" />
+            </div>
+            <div className="text-center">
+                <p className="text-[10px] font-medium text-zinc-700 leading-tight w-full max-w-[70px]">
+                    {label}
+                </p>
+                <p className="text-[8px] font-medium text-zinc-400 tracking-tighter w-full max-w-[70px]">
+                    {' '}
+                </p>
+            </div>
         </button>
     );
 }
@@ -101,9 +160,10 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
     children,
     onOpenTips,
     allowPlantilla = false,
+    plantillaSelected = false,
     manageVisibility = false,
     onToggleVisibility,
-    headerTextAction,
+    listEndAction,
     hideHeaderClose = false,
     onBack,
 }) => {
@@ -124,28 +184,41 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
 
     const filteredEmployees = filterPlantillaEmployees(employees);
 
-    const headerTrailing = (
-        <>
-            {onOpenTips && (
-                <button
-                    type="button"
-                    onClick={onOpenTips}
-                    className="inline-flex items-center justify-center min-h-[48px] h-10 px-2 rounded-2xl bg-transparent border-0 text-[9px] font-black uppercase tracking-widest text-white/90 hover:text-white active:scale-95 transition-all shrink-0"
-                >
-                    Propinas
-                </button>
-            )}
-            {headerTextAction && (
-                <button
-                    type="button"
-                    onClick={headerTextAction.onClick}
-                    className="inline-flex items-center justify-center min-h-[48px] h-10 px-2 rounded-2xl bg-transparent border-0 text-[9px] font-black uppercase tracking-widest text-white/90 hover:text-white active:scale-95 transition-all shrink-0"
-                >
-                    {headerTextAction.label}
-                </button>
-            )}
-        </>
+    const endAction: StaffListEndAction | undefined = listEndAction ?? (
+        allowPlantilla
+            ? {
+                label: plantillaSelected ? 'Ver activos' : 'Ver todos',
+                onClick: () => {
+                    if (plantillaSelected) return;
+                    handleSelect(PLANTILLA_SENTINEL);
+                },
+            }
+            : undefined
     );
+
+    const handleEndAction = () => {
+        void endAction?.onClick();
+    };
+
+    const endTileVariant = variant === 'profile-list' ? 'profile-list' : 'grid';
+
+    const endTile = endAction ? (
+        <ListEndUserTile
+            variant={endTileVariant}
+            label={endAction.label}
+            onClick={handleEndAction}
+        />
+    ) : null;
+
+    const headerTrailing = onOpenTips ? (
+        <button
+            type="button"
+            onClick={onOpenTips}
+            className="inline-flex items-center justify-center min-h-[48px] h-10 px-2 rounded-2xl bg-transparent border-0 text-[9px] font-black uppercase tracking-widest text-white/90 hover:text-white active:scale-95 transition-all shrink-0"
+        >
+            Propinas
+        </button>
+    ) : undefined;
 
     return (
         <Modal
@@ -153,6 +226,7 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
             onClose={onClose}
             title={title}
             headerVariant="petroleum"
+            scheme="dark"
             usageId={usageId}
             usageLabel={usageLabel}
             variant={variant === 'profile-list' ? 'amplify' : 'standard'}
@@ -170,93 +244,68 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
             )}>
                 {children}
 
-                {allowPlantilla && !manageVisibility && (
-                    <div className="mb-3">
-                        <Button
-                            type="button"
-                            variant="tertiary"
-                            instance="staff-selection-plantilla-vista"
-                            className="w-full"
-                            onClick={() => handleSelect(PLANTILLA_SENTINEL)}
-                        >
-                            Vista plantilla (todos)
-                        </Button>
-                    </div>
-                )}
-
-                {manageVisibility ? (
-                    <div className="divide-y divide-zinc-100">
+                {variant === 'profile-list' ? (
+                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
                         {filteredEmployees.map((emp) => {
                             const visible = emp.visible_in_plantilla !== false;
-                            const displayName = emp.first_name || 'Sin nombre';
                             return (
-                                <div
-                                    key={emp.id}
-                                    className="flex min-h-12 items-center gap-3 py-3"
-                                >
+                                <div key={emp.id} className="relative">
                                     <button
                                         type="button"
                                         onClick={() => handleSelect(emp)}
-                                        className="flex min-h-12 flex-1 min-w-0 items-center gap-3 text-left active:opacity-70"
+                                        className="group flex w-full flex-col items-center gap-1 py-2 min-h-[48px] transition-all hover:opacity-80 active:scale-[0.98]"
                                     >
-                                        <Avatar src={emp.avatar_url} alt={displayName} size="md" />
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-black text-zinc-900 truncate uppercase tracking-tight">
-                                                {displayName}
-                                            </p>
-                                            <p className="text-[10px] font-bold text-zinc-400 truncate uppercase tracking-wider">
-                                                {emp.last_name || ' '}
-                                                {emp.end_date ? ' · Baja' : ''}
-                                            </p>
-                                        </div>
+                                        <Avatar src={emp.avatar_url} alt={emp.first_name} size="md" />
+                                        <p className="text-[10px] font-medium text-zinc-800 leading-tight truncate w-full text-center tracking-tight">
+                                            {emp.first_name || 'Sin nombre'}
+                                        </p>
                                     </button>
-                                    <VisibilityToggle
-                                        visible={visible}
-                                        label={displayName}
-                                        onToggle={() => onToggleVisibility?.(emp.id, !visible)}
-                                    />
+                                    {manageVisibility ? (
+                                        <VisibilityToggle
+                                            visible={visible}
+                                            label={emp.first_name || 'Sin nombre'}
+                                            onToggle={() => onToggleVisibility?.(emp.id, !visible)}
+                                        />
+                                    ) : null}
                                 </div>
                             );
                         })}
-                    </div>
-                ) : variant === 'profile-list' ? (
-                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
-                        {filteredEmployees.map((emp) => (
-                            <button
-                                key={emp.id}
-                                type="button"
-                                onClick={() => handleSelect(emp)}
-                                className="group flex flex-col items-center gap-1 py-2 min-h-[48px] transition-all hover:opacity-80 active:scale-[0.98]"
-                            >
-                                <Avatar src={emp.avatar_url} alt={emp.first_name} size="md" />
-                                <p className="text-[10px] font-black text-zinc-800 leading-tight truncate w-full text-center uppercase tracking-tight">
-                                    {emp.first_name || 'Sin nombre'}
-                                </p>
-                            </button>
-                        ))}
+                        {endTile}
                     </div>
                 ) : (
                     <div className="grid grid-cols-4 gap-2">
-                        {filteredEmployees.map((emp) => (
-                            <button
-                                key={emp.id}
-                                type="button"
-                                onClick={() => handleSelect(emp)}
-                                className="group flex flex-col items-center gap-1 p-2 rounded-[1.5rem] transition-all hover:bg-blue-50 active:scale-95 min-h-[48px]"
-                            >
-                                <div className="transition-all group-hover:-translate-y-1 shrink-0">
-                                    <Avatar src={emp.avatar_url} alt={emp.first_name} size="md" />
+                        {filteredEmployees.map((emp) => {
+                            const visible = emp.visible_in_plantilla !== false;
+                            return (
+                                <div key={emp.id} className="relative">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSelect(emp)}
+                                        className="group flex w-full flex-col items-center gap-1 p-2 rounded-[1.5rem] transition-all hover:bg-blue-50 active:scale-95 min-h-[48px]"
+                                    >
+                                        <div className="transition-all group-hover:-translate-y-1 shrink-0">
+                                            <Avatar src={emp.avatar_url} alt={emp.first_name} size="md" />
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-[10px] font-medium text-zinc-700 leading-tight truncate w-full max-w-[70px]">
+                                                {emp.first_name}
+                                            </p>
+                                            <p className="text-[8px] font-medium text-zinc-400 tracking-tighter truncate w-full max-w-[70px]">
+                                                {emp.last_name || ' '}
+                                            </p>
+                                        </div>
+                                    </button>
+                                    {manageVisibility ? (
+                                        <VisibilityToggle
+                                            visible={visible}
+                                            label={emp.first_name || 'Sin nombre'}
+                                            onToggle={() => onToggleVisibility?.(emp.id, !visible)}
+                                        />
+                                    ) : null}
                                 </div>
-                                <div className="text-center">
-                                    <p className="text-[10px] font-black text-zinc-700 leading-tight truncate w-full max-w-[70px] uppercase">
-                                        {emp.first_name}
-                                    </p>
-                                    <p className="text-[8px] font-bold text-zinc-400 uppercase tracking-tighter truncate w-full max-w-[70px]">
-                                        {emp.last_name || ' '}
-                                    </p>
-                                </div>
-                            </button>
-                        ))}
+                            );
+                        })}
+                        {endTile}
                     </div>
                 )}
             </div>

@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -34,7 +33,6 @@ export type DashboardShortcutProps = {
      * Relleno del recuadro. `true`: el gráfico no puede ser la forma, va sobre fondo (Caja).
      * `false`: el gráfico se adapta a la forma (Recetas).
      * Si no se pasa: fondo si no hay `img` (Lucide o cifra).
-     * La imagen siempre se ve entera: sin recorte ni zoom.
      */
     plate?: boolean;
 };
@@ -98,11 +96,12 @@ export default function DashboardShortcut({
 
     const asset = children ?? (
         img ? (
-            <Image
-                src={img}
+            <img
+                src={img.includes('?') ? img : `${img}?v=20260829f`}
                 alt=""
                 width={96}
                 height={96}
+                draggable={false}
                 className={
                     ios
                         ? plate

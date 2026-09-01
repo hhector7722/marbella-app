@@ -4,15 +4,11 @@ import { createClient } from "@/utils/supabase/server";
 import DashboardSwitcher from '@/components/dashboards/DashboardSwitcher';
 import { withTimeout } from '@/lib/with-timeout';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { resolveSessionUser } from '@/lib/auth/resolve-session-user';
 
 async function StaffDashboardContent() {
     const supabase = await createClient();
-    const sessionResult = await withTimeout(
-        supabase.auth.getSession(),
-        2000,
-        { data: { session: null }, error: null },
-    );
-    const user = sessionResult.data.session?.user ?? null;
+    const user = await resolveSessionUser(supabase, 2000);
 
     if (!user) {
         redirect('/login');
@@ -51,7 +47,7 @@ export default function StaffDashboardPage() {
         <Suspense
             fallback={
                 <div className="flex min-h-[50dvh] items-center justify-center">
-                    <LoadingSpinner size="xl" className="text-[#5B8FB9]" />
+                    <LoadingSpinner size="xl" className="text-white" />
                 </div>
             }
         >

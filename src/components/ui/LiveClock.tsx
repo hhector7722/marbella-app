@@ -24,11 +24,11 @@ const LiveClock = memo(function LiveClock() {
 
     return (
         <div className="flex flex-col items-center leading-tight">
-            <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-white/90">
+            <span className="text-[9px] md:text-[10px] font-medium uppercase tracking-widest text-current opacity-90">
                 {format(now, "eee d MMM", { locale: es }).replace('.', '')}
             </span>
             <span
-                className="text-[10px] md:text-xs font-medium tracking-[0.1em] text-white/70"
+                className="text-[10px] md:text-xs font-medium tracking-[0.1em] text-current opacity-70"
                 style={{ fontVariantNumeric: 'tabular-nums' }}
             >
                 {format(now, "HH:mm:ss")}

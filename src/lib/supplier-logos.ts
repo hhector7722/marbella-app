@@ -1,15 +1,13 @@
 /**
- * Logos locales de proveedores (single source of truth).
+ * Logos locales de proveedores (single source of truth de pintura).
  *
- * Razón: la BD `suppliers.image_url` no siempre está poblada para los
- * proveedores históricos. Para no depender de subir todos los logos a
- * Storage (y para evitar problemas de `next/image` con dominios externos),
- * mantenemos aquí un fallback con los iconos servidos desde `public/icons/prov`.
- *
- * Uso recomendado: `getSupplierLogo(supplier.image_url, supplier.name)` →
- * devuelve la URL de Storage si existe, si no el path local del fallback,
- * y si tampoco hay match `null` para que el caller pinte un icono genérico.
+ * El pack vive en `public/icons/prov`. La BD `suppliers.image_url` puede
+ * tener una URL antigua de Storage; para los nombres conocidos gana el pack.
+ * Un proveedor sin match usa `image_url` o, si no hay, el icono genérico.
  */
+
+/** Sube esto al cambiar el pack para que el navegador no sirva el PNG viejo. */
+export const SUPPLIER_LOGO_REV = '20260831'
 
 export const SUPPLIER_LOGOS: Record<string, string> = {
   Ametller: '/icons/prov/Ametller.png',
@@ -40,24 +38,44 @@ function normalize(name: string): string {
     .trim()
 }
 
-/**
- * Devuelve la URL del logo para mostrar. Prioridad:
- *  1) `image_url` de BD (si existe).
- *  2) `SUPPLIER_LOGOS[name]` (match exacto).
- *  3) `SUPPLIER_LOGOS[k]` con `normalize(k) === normalize(name)` (case/acentos-insensitive).
- *  4) `null` si nada encaja → el caller pinta un icono genérico (ej. Truck).
- */
-export function getSupplierLogo(imageUrl: string | null | undefined, name: string | null | undefined): string | null {
-  const url = String(imageUrl ?? '').trim()
-  if (url) return url
+function withRev(path: string): string {
+  return `${path}?v=${SUPPLIER_LOGO_REV}`
+}
 
+export function localSupplierLogoPath(name: string | null | undefined): string | null {
   const raw = String(name ?? '').trim()
   if (!raw) return null
   if (SUPPLIER_LOGOS[raw]) return SUPPLIER_LOGOS[raw]!
 
   const target = normalize(raw)
+  if (!target) return null
+
   for (const key of Object.keys(SUPPLIER_LOGOS)) {
     if (normalize(key) === target) return SUPPLIER_LOGOS[key]!
   }
+
+  let best: { path: string; len: number } | null = null
+  for (const key of Object.keys(SUPPLIER_LOGOS)) {
+    const nk = normalize(key)
+    if (!nk) continue
+    if (target.includes(nk) || nk.includes(target)) {
+      if (!best || nk.length > best.len) best = { path: SUPPLIER_LOGOS[key]!, len: nk.length }
+    }
+  }
+  return best?.path ?? null
+}
+
+/**
+ * URL del logo para pintar. Prioridad:
+ *  1) Pack local (`public/icons/prov`) si el nombre encaja.
+ *  2) `image_url` de BD (proveedor propio / foto subida).
+ *  3) `null` → el caller pinta el icono genérico (ej. Truck).
+ */
+export function getSupplierLogo(imageUrl: string | null | undefined, name: string | null | undefined): string | null {
+  const local = localSupplierLogoPath(name)
+  if (local) return withRev(local)
+
+  const url = String(imageUrl ?? '').trim()
+  if (url) return url
   return null
 }

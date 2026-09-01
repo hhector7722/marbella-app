@@ -51,10 +51,25 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
         assert.match(css, /\[data-component='Surface'\]\[data-variant='page'\]/);
         assert.match(css, /--elevacion-pagina/);
+        assert.match(
+            css,
+            /--marbella-shell-image:/,
+            'el degradado del envolvente es un solo token reutilizable'
+        );
+        assert.match(
+            css,
+            /\.bg-marbella-shell::before \{[\s\S]*?position:\s*fixed;/,
+            'el wallpaper del shell va en capa fija al viewport, no estirada con el scroll'
+        );
+        assert.doesNotMatch(
+            css,
+            /\.bg-marbella-shell \{[\s\S]*?background-attachment:\s*fixed/,
+            'no se usa background-attachment: fixed en el shell (falla en iOS)'
+        );
         assert.match(css, /\[data-component='PageScreen'\] \[data-element='header'\]/);
         assert.match(
             css,
-            /\[data-component='PageScreen'\] \{[\s\S]*?width:\s*100%;[\s\S]*?padding-inline:\s*var\(--espacio-1\);/,
+            /\[data-component='PageScreen'\] \{[\s\S]*?width:\s*100%;[\s\S]*?padding-inline:\s*var\(--espacio-2\);/,
             'PageScreen móvil: ancho del dispositivo y el mismo margen a ambos lados'
         );
         assert.match(
@@ -64,22 +79,67 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
         assert.match(
             css,
-            /\[data-component='PageScreen'\] \{[\s\S]*?padding-bottom:\s*var\(--espacio-1\)/,
+            /\[data-component='PageScreen'\] \{[\s\S]*?padding-bottom:\s*var\(--espacio-2\)/,
             'PageScreen abraza el contenido: el aire inferior es el de los lados, no un hueco de pie'
         );
         assert.match(
             css,
-            /\[data-component='PageScreen'\]\[data-fill-viewport='true'\] \{[\s\S]*?padding-bottom:\s*calc\(5\.5rem/,
+            /\[data-component='PageScreen'\]\[data-fill-viewport='true'\] \{[\s\S]*?padding-bottom:\s*calc\(var\(--shell-bottom-inset\) \+ var\(--espacio-2\)/,
             'solo los editores a viewport reservan el pie de navegación'
         );
         assert.match(
             css,
             /\[data-component='PageScreen'\] \[data-element='body'\] \{[\s\S]*?padding-top:\s*var\(--espacio-2\)/,
-            'PageScreen deja un aire ligero entre la cabecera y el contenido'
+            'el papel deja un aire ligero encima del trabajo'
+        );
+        assert.match(
+            css,
+            /\[data-component='PageScreen'\] \[data-element='header'\] \{[\s\S]*?background-color:\s*transparent/,
+            'la cabecera de página flota, no es franja de marca'
+        );
+        assert.match(
+            css,
+            /\[data-component='PageScreen'\] \[data-element='title'\] \{[\s\S]*?color:\s*var\(--color-texto-invertido\)/,
+            'el título de página es tinta invertida sobre el envolvente'
+        );
+        assert.match(
+            css,
+            /\[data-component='PageScreen'\] \[data-element='chrome'\]/,
+            'el cromo de PageScreen vive fuera del papel'
+        );
+        assert.match(
+            css,
+            /\[data-component='PageScreen'\] \[data-element='toolbar'\]\[data-pin='true'\]/,
+            'el buscador de PageScreen se clava arriba al scrollear hacia arriba'
+        );
+        assert.match(
+            css,
+            /\.marbella-fixed-topbar\[data-hidden='true'\]/,
+            'la cabecera fija se oculta al scrollear'
+        );
+        assert.match(
+            css,
+            /\[data-component='PageScreen'\]\[data-work='calendar'\] \[data-component='Surface'\]\[data-variant='page'\]/,
+            'el calendario de PageScreen no lleva ficha alrededor: Surface transparente'
+        );
+        assert.match(
+            css,
+            /\[data-component='PageScreen'\] \[data-component='Table'\] thead th \{[\s\S]*?--color-texto-invertido\)/,
+            'la tabla de PageScreen usa cabecera cromo como recipe-panel'
+        );
+        assert.match(
+            css,
+            /\[data-component='PageScreen'\]\[data-work='calendar'\] \.month-cal-grid-wrap,[\s\S]*?0 0 0 1px rgb\(255 255 255 \/ 0\.18\)/,
+            'calendario y tabla usan el canto de widget'
+        );
+        assert.doesNotMatch(
+            css,
+            /\[data-paper='false'\]/,
+            'PageScreen no apaga el papel: el catálogo es trabajo'
         );
         {
             const titleRule = css.match(
-                /\[data-component='PageScreen'\] \[data-element='title'\],[\s\S]*?\{([^}]+)\}/
+                /\[data-component='PageScreen'\] \[data-element='title'\] \{([^}]+)\}/
             );
             assert.ok(titleRule, 'falta la regla del título de PageScreen');
             assert.doesNotMatch(
@@ -126,10 +186,81 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             /\.pt-header-safe \{[\s\S]*?var\(--estructura-cabecera\)/,
             'el contenido reserva el hueco de 56 px'
         );
+        assert.match(css, /--estructura-barra-inferior:\s*49px/);
+        assert.match(css, /--shell-sidebar-width:\s*0px/, 'sidebar desktop arranca a 0 en smartphone');
+        assert.match(
+            css,
+            /@media \(min-width: 1024px\) \{[\s\S]*?--shell-sidebar-width:\s*5\.5rem/,
+            'en desktop el TabBar pasa a sidebar'
+        );
+        assert.match(
+            css,
+            /@media \(min-width: 1024px\) \{[\s\S]*?\[data-component='TabBar'\]\.marbella-fixed-bottombar[\s\S]*?flex-direction:\s*column/,
+            'TabBar desktop es columna lateral'
+        );
+        assert.match(
+            css,
+            /\[data-component='TabBar'\]\.marbella-fixed-bottombar \{[\s\S]*?border-radius:\s*999px/,
+            'el tab bar es una cápsula flotante, no una losa a sangre'
+        );
+        assert.match(
+            css,
+            /\[data-component='TabBar'\]\.marbella-fixed-bottombar \{[\s\S]*?bottom:\s*calc\(env\(safe-area-inset-bottom/,
+            'flota sobre el home indicator, no se pega al borde'
+        );
+        assert.match(
+            css,
+            /\[data-component='TabBar'\]\.marbella-fixed-bottombar \{[\s\S]*?height:\s*var\(--estructura-barra-inferior\)/,
+            'la cápsula mide 49 pt; el área segura queda fuera'
+        );
+        assert.match(
+            css,
+            /\[data-component='TabBar'\]\.marbella-fixed-bottombar \{[\s\S]*?background-color:\s*color-mix\(in srgb, var\(--color-envolvente-bajo\) 55%, transparent\)/,
+            'la cápsula es cristal del envolvente, no una losa opaca'
+        );
+        assert.match(
+            css,
+            /\[data-component='TabBar'\] \[data-element='icon'\] \{[\s\S]*?width:\s*25px/,
+            'el icono del tab bar es 25 pt'
+        );
+        assert.match(
+            css,
+            /\[data-component='TabBar'\] \[data-element='label'\] \{[\s\S]*?font-size:\s*10px/,
+            'la etiqueta del tab bar es 10 pt, no mayúsculas black'
+        );
+        {
+            const tabbar = readFileSync(join(SRC_ROOT, 'components/StaffBottomNav.tsx'), 'utf8');
+            assert.match(tabbar, /data-component="TabBar"/);
+            assert.match(tabbar, /data-mode=\{tabMode\}/, 'el tab bar tiene paso compacto de solo iconos');
+            assert.match(tabbar, /data-hidden=\{hidden/, 'el tab bar se oculta al hacer scroll hacia abajo');
+            assert.doesNotMatch(tabbar, /uppercase/);
+            assert.doesNotMatch(tabbar, /scale-110/);
+            assert.doesNotMatch(tabbar, /drop-shadow-md/);
+        }
+        assert.match(
+            css,
+            /\[data-component='TabBar'\]\[data-hidden='true'\] \{[\s\S]*?translateY\(/,
+            'al ocultarse el tab bar baja del viewport'
+        );
+        assert.match(
+            css,
+            /\[data-component='TabBar'\]\[data-mode='compact'\] \[data-element='label'\]/,
+            'el paso compacto oculta el nombre y deja el icono'
+        );
         {
             const navbar = readFileSync(join(SRC_ROOT, 'components/Navbar.tsx'), 'utf8');
+            assert.match(navbar, /data-hidden=\{topHidden/, 'la cabecera superior se oculta al scrollear');
             assert.match(navbar, /data-element="greeting"/, 'el saludo de la barra tiene identidad');
             assert.match(navbar, /data-element="logo"/, 'el logo de la barra tiene identidad');
+            assert.match(navbar, /<ReservationsBell \/>/, 'reservas van en la barra');
+            assert.match(navbar, /<NotificationsBell \/>/, 'notificaciones van en la barra');
+            assert.match(
+                navbar,
+                /ml-auto[\s\S]*<ReservationsBell \/>[\s\S]*<NotificationsBell \/>/,
+                'reservas y notificaciones van a la derecha'
+            );
+            assert.doesNotMatch(navbar, /id="ia-button"|data-chrome="ia"|toggleChat/, 'la barra no lleva IA');
+            assert.doesNotMatch(navbar, /aria-label="Herramientas internas"|pgMenuOpen|>\s*PG\s*</, 'la barra no lleva PG');
             assert.doesNotMatch(
                 navbar,
                 /Hola,[\s\S]{0,80}uppercase/,
@@ -159,6 +290,16 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             css,
             /\[data-component='KpiStat'\] \[data-element='value'\] \{[\s\S]*?min-height:\s*1\.125rem/,
             'sin cifra, el hueco de KpiStat no colapsa'
+        );
+        assert.match(
+            css,
+            /\[data-instance='dashboard-ventas'\] \[data-component='KpiStat'\] \[data-element='value'\] \{[\s\S]*?font-size:\s*11px;[\s\S]*?font-weight:\s*400/,
+            'en el mosaico de Ventas la cifra es 11 px regular'
+        );
+        assert.match(
+            css,
+            /\[data-instance='dashboard-ventas'\] \[data-component='KpiStat'\] \[data-element='label'\] \{[\s\S]*?font-size:\s*8px;[\s\S]*?font-weight:\s*400/,
+            'en el mosaico de Ventas el concepto es 8 px regular'
         );
         assert.match(css, /\[data-component='Table'\] thead/);
         assert.match(
@@ -203,6 +344,10 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             join(SRC_ROOT, 'components/dashboards/MasterShortcutGrid.tsx'),
             'utf8'
         );
+        const masterView = readFileSync(
+            join(SRC_ROOT, 'components/dashboards/MasterDashboardView.tsx'),
+            'utf8'
+        );
         assert.match(shortcut, /variant = 'icon-card-text-outside'/);
         assert.match(
             css,
@@ -240,22 +385,82 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
         assert.match(
             css,
+            /\[data-plate='bleed'\] \[data-element='asset'\] img \{[\s\S]*?width:\s*100%/,
+            'Recetas, Consumo y Asistencia llenan el recorte sin zoom'
+        );
+        assert.doesNotMatch(css, /\[data-fit='frame'\]/, 'no hay zoom genérico');
+        assert.match(
+            css,
+            /\[data-instance='staff-info'\] \[data-element='asset'\] img \{[\s\S]*?width:\s*112%/,
+            'Info: mínimo para tocar el recorte'
+        );
+        assert.match(
+            css,
+            /\[data-instance='carta'\][\s\S]*?width:\s*112%/,
+            'Carta: el gráfico llega al canto, como Info'
+        );
+        assert.match(
+            css,
+            /\[data-instance='staff-carta'\][\s\S]*?width:\s*112%/,
+            'Carta staff: mismo recorte que Master'
+        );
+        assert.match(
+            css,
+            /\[data-instance='staff-pedidos'\][\s\S]*?width:\s*130%/,
+            'Pedidos staff: el gráfico toca el recorte sin hueco'
+        );
+        assert.match(
+            css,
+            /\[data-instance='staff-albaranes'\][\s\S]*?width:\s*132%/,
+            'Albaranes staff: el gráfico toca el recorte sin hueco'
+        );
+        assert.match(
+            css,
+            /\[data-instance='albaranes'\][\s\S]*?width:\s*132%/,
+            'Albaranes: mínimo para tocar el recorte'
+        );
+        assert.match(
+            css,
+            /\[data-instance='ingredientes'\] \[data-element='asset'\] img \{[\s\S]*?width:\s*127%/,
+            'Ingredientes: mínimo para tocar el recorte'
+        );
+        assert.match(
+            css,
+            /\[data-instance='horarios'\] \[data-element='asset'\] img \{[\s\S]*?width:\s*146%/,
+            'Horarios: mínimo para tocar el recorte'
+        );
+        assert.match(
+            css,
+            /\[data-instance='recetas'\][\s\S]*?background-color:\s*rgb\(231 16 31\)/,
+            'Recetas conserva el recuadro que ya estaba bien'
+        );
+        assert.match(
+            css,
+            /\[data-instance='admin-asistencia'\][\s\S]*?background-color:\s*#fff/,
+            'Asistencia conserva el recuadro que ya estaba bien'
+        );
+        assert.match(
+            css,
             /\[data-plate='bleed'\] \[data-element='rim'\] \{[\s\S]*?linear-gradient/,
             'sin relleno, el canto se sienta sobre el gráfico recortado'
         );
         assert.doesNotMatch(
             css,
             /\[data-plate='bleed'\] \[data-element='asset'\] img \{[\s\S]*?transform:\s*scale/,
-            'sin relleno, el aire va en el PNG; el recorte no acerca el gráfico'
+            'el acercamiento es tamaño del recorte, no un zoom aparte'
         );
-        assert.match(master, /gap-x-7 gap-y-8/);
-        assert.match(staff, /gap-x-5 gap-y-6/);
-        assert.match(master, /instance="hextras"[\s\S]*?plate/);
-        assert.match(master, /instance="uso-app"[\s\S]*?plate/);
+        assert.match(staff, /<HomeScreen/);
+        assert.match(admin, /<OpsHomeScreen/);
+        assert.match(masterView, /<HomeScreen/);
+        assert.doesNotMatch(masterView, /<OpsHomeScreen/);
+        assert.match(master, /size: 'tile'[\s\S]*label: 'H\. extras'/);
+        assert.doesNotMatch(master, /instance="hextras"[\s\S]*?plate/);
+        assert.match(master, /instance="uso-app"[\s\S]*?img="\/icons\/uso\.png"/);
+        assert.doesNotMatch(master, /instance="uso-app"[^>]*plate/);
         assert.match(
             css,
-            /\[data-plate='fill'\] \[data-element='rim'\] \{[\s\S]*?var\(--shortcut-fill/,
-            'con relleno, el canto mezcla el color del fondo'
+            /\[data-plate='fill'\] \[data-element='rim'\] \{[\s\S]*?linear-gradient/,
+            'con relleno, el canto es el mismo brillo que sin relleno'
         );
         assert.match(shortcut, /data-element="rim"/);
         assert.match(
@@ -263,11 +468,36 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             /\[data-element='text'\] \{[\s\S]*?color:\s*var\(--color-texto-invertido\)/,
             'el nombre va fuera del icono, en invertido sobre el petróleo'
         );
-        assert.match(staff, /plate instance="staff-caja"/);
+        assert.doesNotMatch(staff, /instance="staff-caja"/);
+        assert.match(staff, /instance="staff-pedidos"/);
+        assert.match(staff, /instance="staff-compra"/);
+        assert.match(staff, /instance="staff-propinas"/);
+        assert.match(staff, /instance="staff-carta"/);
+        assert.match(staff, /instance="staff-reservas"/);
+        assert.match(staff, /instance="staff-cierre"/);
+        assert.match(staff, /instance="staff-proveedores"/);
+        assert.match(staff, /instance="staff-inventario"/);
+        assert.doesNotMatch(staff, /instance="staff-stock"/);
+        assert.match(staff, /instance="staff-recetas"/);
         assert.doesNotMatch(staff, /instance="staff-recetas"[^>]*plate/);
-        assert.match(staff, /plate instance="staff-stock"/);
-        assert.match(admin, /plate: true/);
-        assert.match(master, /img="\/icons\/change\.png"\s+plate/);
+        assert.doesNotMatch(staff, /instance="staff-info"[^>]*plate/);
+        assert.doesNotMatch(shortcut, /\bframe\?:/);
+        assert.doesNotMatch(master, /\bframe\b/);
+        assert.doesNotMatch(staff, /instance="staff-recetas"[^>]*frame/);
+        assert.doesNotMatch(master, /instance="horarios"[\s\S]{0,80}plate/);
+        assert.doesNotMatch(admin, /instance: 'admin-stock'[\s\S]{0,40}plate/);
+        assert.doesNotMatch(admin, /plate: true/);
+        assert.doesNotMatch(admin, /instance: 'admin-plantilla', plate/);
+        assert.doesNotMatch(admin, /instance: 'admin-m-obra', plate/);
+        assert.doesNotMatch(master, /img="\/icons\/change\.png"\s+plate/);
+        assert.doesNotMatch(master, /img="\/icons\/tip\.png"\s+plate/);
+        assert.doesNotMatch(master, /img="\/icons\/menu\.png"\s+plate/);
+        assert.doesNotMatch(master, /img="\/icons\/scan\.png"\s+plate/);
+        assert.doesNotMatch(master, /img="\/icons\/admin\.png"\s+plate/);
+        assert.doesNotMatch(master, /img="\/icons\/lock\.png"\s+plate/);
+        assert.doesNotMatch(master, /img="\/icons\/reservas\.png"\s+plate/);
+        assert.doesNotMatch(master, /img="\/icons\/rent\.png"\s+plate/);
+        assert.doesNotMatch(master, /img="\/icons\/suplier\.png"\s+plate/);
         assert.doesNotMatch(staff, /variant="icon-text"/);
         assert.doesNotMatch(admin, /variant="icon-text"/);
         assert.doesNotMatch(master, /variant="icon-text"/);
@@ -289,17 +519,40 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             /data-element="body"[\s\S]*?flex-1 flex flex-col min-h-0/,
             'el cuerpo de PageScreen no se estira: la tarjeta acaba con el contenido'
         );
+        assert.match(source, /data-work=\{work\}/, 'calendario y tabla declaran work, no un boolean paper');
+        assert.match(source, /toolbarSlot/, 'buscador y filtros van fuera del papel');
+        assert.match(source, /periodStartSlot/, 'Cierres pone Calendario/Tabla a la izquierda; el mes sigue centrado');
+        assert.match(source, /data-element="period-start"/, 'el control de vista de Cierres vive a la izquierda de la fila');
+        assert.match(source, /leadSlot/, 'KPI y acciones rápidas van fuera del papel');
+        assert.match(source, /data-element="lead"/, 'el lead vive en el cromo');
+        assert.match(source, /data-pin=\{pinToolbar/, 'el buscador se clava arriba al scrollear hacia arriba');
+        assert.doesNotMatch(source, /paper\?: boolean/, 'el papel de trabajo no es opt-in');
         assert.match(source, /titleLeading/, 'la cabecera admite identidad junto al título');
         assert.match(source, /onBack/, 'la flecha atrás puede ejecutar una acción');
         assert.match(source, /data-fill-viewport=\{fillViewport \? 'true' : undefined\}/);
     });
 
-    it('perfil pone el avatar en la cabecera y las opciones en 3 columnas', () => {
+    it('perfil pone el avatar en la cabecera y el menú en una card conjunta', () => {
         const source = readFileSync(join(SRC_ROOT, 'app/profile/page.tsx'), 'utf8');
+        assert.match(source, /titleAlign="center"/, 'el nombre va centrado en la fila del avatar');
+        assert.match(source, /className="page-profile"/, 'el perfil fija tipografía de nombre propia');
         assert.match(source, /titleLeading/, 'el avatar vive a la izquierda del nombre');
-        assert.match(source, /grid-cols-3/, 'las opciones van en 3 columnas');
-        assert.doesNotMatch(source, /grid-cols-2 gap-6/, 'ya no es la rejilla de 2');
+        assert.match(source, /instance="profile-menu"/, 'las opciones comparten una sola card');
+        assert.match(source, /data-element="profile-actions"/, 'la rejilla de opciones es un bloque propio');
+        assert.doesNotMatch(source, /toUpperCase\(\)/, 'el nombre no va en mayúsculas');
+        assert.doesNotMatch(source, /leadSlot/, 'el avatar no va en el lead');
+        assert.doesNotMatch(source, /DashboardShortcut/, 'el menú no usa mosaicos sueltos');
         const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        assert.match(
+            css,
+            /\[data-component='PageScreen'\]\.page-profile[\s\S]*?text-transform:\s*none/,
+            'el nombre del perfil no va en mayúsculas'
+        );
+        assert.match(
+            css,
+            /\[data-element='profile-actions'\][\s\S]*?color:\s*var\(--color-texto-fuerte\)/,
+            'las etiquetas del perfil van en negro'
+        );
         assert.match(
             css,
             /\[data-element='title-leading'\]/,
@@ -344,6 +597,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'app/ingredients/page.tsx',
             'app/recipes/[id]/page.tsx',
             'app/dashboard/ventas/page.tsx',
+            'app/dashboard/sala/page.tsx',
             'app/dashboard/movements/page.tsx',
             'app/staff/history/page.tsx',
             'app/profile/page.tsx',
@@ -377,6 +631,16 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
                 source,
                 /rounded-\[2\.5rem\]/,
                 `${rel} no debe usar radio ilegítimo 2.5rem`
+            );
+            assert.doesNotMatch(
+                source,
+                /text-\[11px\] font-black text-white uppercase tracking-widest/,
+                `${rel} no pinta acciones de cabecera en blanco`
+            );
+            assert.doesNotMatch(
+                source,
+                /shrink-0 text-white/,
+                `${rel} no arrastra text-white en el cromo de cabecera`
             );
         }
     });
@@ -462,25 +726,73 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             join(SRC_ROOT, 'components/dashboards/StaffDashboardView.tsx'),
             'utf8'
         );
-        assert.match(admin, /<Surface /);
-        assert.match(admin, /dashboard-horas-extras/);
-        assert.match(admin, /dashboard-horas-extras[\s\S]*?data-element="header"/);
-        const extrasStart = admin.indexOf('dashboard-horas-extras');
-        const extrasHeader = admin.slice(extrasStart, extrasStart + 1800);
-        assert.match(extrasHeader, /data-element="title"[\s\S]*?H\. extras/);
+        const opsHome = readFileSync(
+            join(SRC_ROOT, 'components/dashboards/OpsHomeScreen.tsx'),
+            'utf8'
+        );
+        const opsWidgets = readFileSync(
+            join(SRC_ROOT, 'components/dashboards/ops-widgets.tsx'),
+            'utf8'
+        );
+        assert.match(admin, /<OpsHomeScreen/);
+        assert.match(opsHome, /layout="ops-admin"/);
         assert.doesNotMatch(
-            extrasHeader,
+            opsHome,
+            /label="H\. extras"/,
+            'H. extras no lleva nombre bajo el hueco'
+        );
+        assert.doesNotMatch(
+            opsHome,
+            /instance="dashboard-horas-extras"[^>]*label=/
+        );
+        assert.doesNotMatch(
+            opsWidgets,
+            /data-element="header"/,
+            'H. extras ya no lleva cabecera de otro color ni nombre bajo el hueco'
+        );
+        assert.doesNotMatch(
+            opsWidgets,
             /bg-white\/10 text-white border-0/,
-            'H. extras flota sobre el petróleo, sin pastilla'
+            'H. extras no usa pastilla sobre petróleo'
         );
         assert.doesNotMatch(admin, /bg-purple-600/);
         assert.match(ventas, /<Surface /);
         assert.match(ventas, /data-element="header"/);
+        assert.match(ventas, /data-tone="plain"/, 'Ventas no pinta la cabecera de petróleo');
         assert.match(ventas, /dashboard-ventas-total/);
+        assert.match(ventas, /items-start/, 'Venta Neta y Ticket medio arrancan a la altura de Ventas');
         assert.doesNotMatch(ventas, /#36606F|#407080/);
         assert.match(ventas, /<KpiStat /);
-        assert.match(staff, /<MonthCalendarFrame flush/);
-        assert.doesNotMatch(staff, /staff-semana/);
+        assert.match(ventas, /mt-auto/, 'con ventas, cifras y conceptos van abajo del widget');
+        assert.match(ventas, /my-auto/, 'sin ventas, cifras y conceptos van al centro');
+        assert.match(ventas, /displaySummary\.total > 0 \? 'mt-auto' : 'my-auto'/, 'sin ventas se centran; con ventas se quedan abajo');
+        assert.match(ventas, /hasData/, 'sin ventas no se pinta la gráfica');
+        assert.match(ventas, /strokeWidth="1"/, 'la línea de la gráfica es fina');
+        assert.match(ventas, /BUSINESS_HOURS\.start\} h/, 'la gráfica marca las 7 h a la izquierda');
+        assert.match(ventas, /BUSINESS_HOURS\.end\} h/, 'la gráfica marca las 23 h a la derecha');
+        assert.doesNotMatch(ventas, /dashboard-ventas-tickets/, 'el mosaico no enseña la tabla de tickets');
+        assert.doesNotMatch(ventas, /-mt-1/, 'el gráfico de ventas no pisa la cabecera');
+        assert.doesNotMatch(
+            ventas,
+            /salesLoading \|\| !isSalesExpanded/,
+            'el gráfico de ventas se ve encima de las cifras, sin expandir'
+        );
+        assert.match(opsWidgets, /CAJA_INICIAL_ACTION/, 'Caja inicial tiene cromo de acción');
+        assert.match(opsWidgets, /aria-label=\{title\}/, 'Caja cambio es un widget con el importe');
+        assert.match(opsWidgets, /onAudit\(box\)/, 'pulsar Caja cambio abre el arqueo');
+        assert.doesNotMatch(opsWidgets, /DashboardShortcut/, 'Caja cambio no es un icono de placa blanca');
+        assert.doesNotMatch(opsWidgets, /bg-zinc-50\/50/, 'los botones de caja flotan sobre el widget');
+        assert.match(opsWidgets, /gap-y-3/, 'aire entre el icono y el nombre de los botones de caja');
+        assert.match(opsWidgets, /h-9 w-9 items-center justify-center self-end rounded-full/, 'entrada vuelve al disco de color');
+        assert.match(opsWidgets, /strokeWidth=\{1\.75\}/, 'el icono de caja va en trazo, no relleno');
+        assert.match(opsWidgets, /grid-rows-subgrid/, 'la card y la diferencia se alinean con botones y conceptos');
+        assert.match(opsWidgets, /flex h-full min-h-0 w-full items-center/, 'el contenido de Caja inicial va al centro vertical del widget');
+        assert.match(opsWidgets, /flex h-9 w-fit[\s\S]*?rounded-lg bg-emerald-600/, 'la card de Caja inicial tiene la misma altura que los botones');
+        assert.match(opsWidgets, /col-start-1[\s\S]*Compra[\s\S]*col-start-2[\s\S]*Arqueo[\s\S]*col-start-3[\s\S]*Caja Inicial[\s\S]*col-start-4[\s\S]*Salida[\s\S]*col-start-5[\s\S]*Entrada/, 'Caja inicial: Compra, Arqueo, card, Salida, Entrada');
+        assert.match(opsWidgets, /WEEKDAY_INITIALS/, 'H. extras lleva las iniciales de la semana');
+        assert.match(opsWidgets, /!inMonth && !isToday && 'opacity-25'/, 'los días de otro mes se apagan');
+        assert.match(staff, /<WeekSummary/);
+        assert.match(staff, /instance="staff-semana"/);
         assert.doesNotMatch(
             staff,
             /data-element="header"/,
@@ -491,19 +803,33 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             /<Surface /,
             'el mosaico Staff ya no envuelve semana ni fichaje en Surface'
         );
-        assert.match(staff, /data-instance="staff-fichaje"/);
+        assert.match(staff, /instance="staff-horarios"/);
+        assert.match(staff, /<StaffWeekScheduleWidget/);
+        assert.doesNotMatch(staff, /label="Horarios"/);
+        assert.doesNotMatch(staff, /bg-purple-600/);
+        assert.match(staff, /instance="staff-fichaje"/);
+        assert.match(staff, /StaffFichajeIcon/);
         assert.doesNotMatch(staff, /No has fichado/);
-        assert.match(staff, /flex-\[2\]/, 'el cronómetro ocupa dos tercios en turno');
+        assert.match(staff, /compact/, 'el cronómetro en turno cabe en el icono');
         assert.match(staff, /border-white/, 'Entrada y Salida se recortan del petróleo');
         assert.match(staff, /0_0_0_1px_rgba\(24,24,27,0\.14\)/, 'un negro suave por fuera del blanco');
         assert.match(staff, /from-emerald-500/, 'Entrada tiene volumen en el verde');
         assert.match(staff, /from-rose-500/, 'Salida tiene volumen en el rosa');
         assert.match(staff, /formatStaffElapsedHms/, 'el turno cerrado enseña el tiempo real');
+        assert.match(staff, /instance="staff-albaranes"/);
+        assert.match(staff, /instance="staff-cambio"/);
         const timer = readFileSync(join(SRC_ROOT, 'components/ui/WorkTimer.tsx'), 'utf8');
         assert.doesNotMatch(timer, /No has fichado/);
     });
 
-    it('tarjeta semanal de una persona es WeekCard; plantilla sigue aparte', () => {
+    it('login entra a la app con recarga, no con router.push', () => {
+        const login = readFileSync(join(SRC_ROOT, 'app/login/page.tsx'), 'utf8');
+        assert.match(login, /window\.location\.replace\('\/'\)/);
+        assert.doesNotMatch(login, /router\.push\('\/'\)/);
+        assert.doesNotMatch(login, /useRouter/);
+    });
+
+    it('el resumen semanal es WeekSummary en historial, mosaico y horas extras', () => {
         const staff = readFileSync(
             join(SRC_ROOT, 'components/dashboards/StaffDashboardView.tsx'),
             'utf8'
@@ -513,31 +839,80 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'utf8'
         );
         const history = readFileSync(join(SRC_ROOT, 'app/staff/history/page.tsx'), 'utf8');
+        const weekSummary = readFileSync(
+            join(SRC_ROOT, 'components/staff/WeekSummary.tsx'),
+            'utf8'
+        );
         const weekCard = readFileSync(join(SRC_ROOT, 'app/staff/history/WeekCard.tsx'), 'utf8');
         const plantilla = readFileSync(
             join(SRC_ROOT, 'app/staff/history/PlantillaWeekCard.tsx'),
             'utf8'
         );
+        const historyRead = readFileSync(join(SRC_ROOT, 'app/actions/history-read.ts'), 'utf8');
 
-        assert.match(staff, /from '@\/app\/staff\/history\/WeekCard'/);
-        assert.match(staff, /<WeekCard/);
-        assert.match(staff, /MonthCalendarFrame/);
+        assert.match(weekSummary, /from '@\/app\/staff\/history\/WeekCard'/);
+        assert.match(weekSummary, /<MonthCalendarFrame/);
+        assert.match(weekSummary, /data-week-summary="true"/);
+        assert.match(weekSummary, /data-week-divider="true"/);
+        assert.match(weekSummary, /data-stacked=\{stacked \? 'true' : undefined\}/);
+        assert.match(weekSummary, /HistoryWeekDto|WeekCardProps\['week'\]/);
+        assert.doesNotMatch(
+            weekSummary,
+            /from-red-500 to-red-600/,
+            'WeekSummary no clona la cabecera L–D'
+        );
+
+        assert.match(staff, /from '@\/components\/staff\/WeekSummary'/);
+        assert.match(staff, /<WeekSummary/);
+        assert.match(staff, /getEmployeeHistoryWeek/);
+        assert.doesNotMatch(staff, /from '@\/app\/staff\/history\/WeekCard'/);
+        assert.doesNotMatch(staff, /<WeekCard/);
+        assert.doesNotMatch(staff, /<MonthCalendarFrame/);
         assert.doesNotMatch(
             staff,
             /from-red-500 to-red-600/,
             'el mosaico Staff no clona la cabecera de días de la semana'
         );
 
-        assert.match(overtimeModal, /from '@\/app\/staff\/history\/WeekCard'/);
-        assert.match(overtimeModal, /<WeekCard/);
-        assert.match(overtimeModal, /MonthCalendarFrame/);
+        assert.match(overtimeModal, /from '@\/components\/staff\/WeekSummary'/);
+        assert.match(overtimeModal, /<WeekSummary/);
+        assert.match(overtimeModal, /getEmployeeHistoryWeek/);
+        assert.doesNotMatch(overtimeModal, /from '@\/app\/staff\/history\/WeekCard'/);
+        assert.doesNotMatch(overtimeModal, /<WeekCard/);
+        assert.doesNotMatch(overtimeModal, /<MonthCalendarFrame/);
 
-        assert.match(history, /<WeekCard/);
+        assert.match(history, /from '@\/components\/staff\/WeekSummary'/);
+        assert.match(history, /<WeekSummary/);
+        assert.match(history, /getEmployeeHistoryMonth/);
         assert.match(history, /<PlantillaWeekCard/);
-        assert.match(history, /MonthCalendarFrame/);
+        assert.doesNotMatch(history, /from ['"].*\/WeekCard['"]/);
 
-        assert.match(weekCard, /month-cal-cell/, 'la celda de una persona es la de Cierres');
-        assert.match(weekCard, /HORAS/);
+        assert.match(historyRead, /buildEmployeeHistoryMonthFromEngine/);
+        assert.match(historyRead, /HistoryWeekDto/);
+
+        assert.match(weekCard, /text-\[7px\] font-normal/, 'el número del día es el del mosaico');
+        assert.match(weekCard, /h-\[25px\] min-h-\[25px\] max-h-\[25px\]/, 'el pie es el del mosaico');
+        assert.match(weekCard, /text-\[10px\] font-semibold/, 'las cifras del pie son las del mosaico');
+        assert.match(weekCard, /text-\[8px\] font-medium/, 'las etiquetas del pie son las del mosaico');
+        assert.match(weekCard, /data-week-paid="true"/);
+        assert.match(weekCard, /w-\[48px\][\s\S]*md:w-\[56px\]/, 'Pagado conserva su tamaño');
+        assert.doesNotMatch(
+            weekCard,
+            /absolute right-0\.5 top-1\/2/,
+            'Pagado no pisa el importe: va en el flujo del pie'
+        );
+        assert.match(weekCard, /month-cal-day-logs/, 'entrada y salida van en el cuerpo de la celda');
+        assert.doesNotMatch(
+            weekCard,
+            /font-mono/,
+            'entrada y salida usan la misma fuente que el resto'
+        );
+        assert.doesNotMatch(
+            weekCard,
+            /bg-orange-400 animate-pulse/,
+            'entrada sin salida no pinta un punto amarillo'
+        );
+        assert.match(weekCard, />Horas</);
         assert.doesNotMatch(
             weekCard,
             /from-red-500 to-red-600/,
@@ -568,6 +943,36 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             /from-red-500 to-red-600/,
             'la plantilla no clona la cabecera de días'
         );
+    });
+
+    it('Ver todos / Ver activos es el último usuario del selector, no un CTA de cabecera', () => {
+        const modal = readFileSync(
+            join(SRC_ROOT, 'components/modals/StaffSelectionModal.tsx'),
+            'utf8'
+        );
+        const history = readFileSync(join(SRC_ROOT, 'app/staff/history/page.tsx'), 'utf8');
+        const admin = readFileSync(
+            join(SRC_ROOT, 'components/dashboards/AdminDashboardView.tsx'),
+            'utf8'
+        );
+        const master = readFileSync(
+            join(SRC_ROOT, 'components/dashboards/MasterDashboardView.tsx'),
+            'utf8'
+        );
+
+        assert.match(modal, /data-list-end="true"/);
+        assert.match(modal, /plantillaSelected \? 'Ver activos' : 'Ver todos'/);
+        assert.doesNotMatch(modal, /headerTextAction/);
+        assert.doesNotMatch(modal, /Vista plantilla \(todos\)/);
+        assert.doesNotMatch(modal, /staff-selection-plantilla-vista/);
+
+        assert.match(history, /allowPlantilla=\{isManager\}/);
+        assert.match(history, /plantillaSelected=\{isPlantilla\}/);
+
+        assert.match(modal, /data-visibility-toggle="true"/);
+        assert.match(modal, /absolute top-0 right-0/);
+        assert.doesNotMatch(modal, /divide-y divide-zinc-100/);
+        assert.doesNotMatch(modal, /min-w-\[3\.75rem\]/);
     });
 
     it('el periodo temporal es PeriodNav en cabecera; filtro fijo, sin cruz', () => {
@@ -603,9 +1008,45 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
                 `${rel} no pinta cruz de quitar filtro de periodo`
             );
         }
+        const filterHosts = [
+            'app/staff/history/page.tsx',
+            'app/dashboard/history/page.tsx',
+            'app/dashboard/ventas/page.tsx',
+            'app/dashboard/movements/page.tsx',
+            'app/dashboard/overtime/page.tsx',
+            'app/dashboard/consumo-personal/page.tsx',
+            'app/dashboard/labor/page.tsx',
+            'components/ledger/ManagerLedgerView.tsx',
+            'components/tips/TipsDashboardView.tsx',
+            'app/dashboard/insights/InsightsClient.tsx',
+        ];
+        for (const rel of filterHosts) {
+            const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
+            assert.match(source, /PeriodFilterButton/, `${rel} monta el icono de filtro`);
+            assert.match(source, /TimeFilterModal/, `${rel} abre TimeFilterModal`);
+            assert.doesNotMatch(
+                source,
+                /history-month-picker|ventas-month-picker|staff-history-month-picker/,
+                `${rel} no monta un selector de mes paralelo`
+            );
+        }
         const nav = readFileSync(join(SRC_ROOT, 'components/time/PeriodNav.tsx'), 'utf8');
         assert.match(nav, /PeriodFilterButton/, 'el filtro de cabecera es siempre el mismo icono');
         assert.doesNotMatch(nav, /hasActiveFilter/, 'PeriodNav no tiene cruz de dismiss');
+        const timeFilter = readFileSync(join(SRC_ROOT, 'components/time/TimeFilterModal.tsx'), 'utf8');
+        assert.doesNotMatch(timeFilter, /headerVariant=["']petroleum["']/);
+        assert.doesNotMatch(timeFilter, /bg-ds-marca/);
+        assert.doesNotMatch(timeFilter, /#36606F/);
+        assert.match(timeFilter, /MonthPickerGrid/, 'el mes del filtro usa la rejilla unificada');
+        assert.match(timeFilter, /periodFilterTabClassName/, 'las pestañas del filtro usan envolvente');
+        const monthGrid = readFileSync(join(SRC_ROOT, 'components/time/MonthPickerGrid.tsx'), 'utf8');
+        assert.doesNotMatch(monthGrid, /#36606F|bg-ds-marca/);
+        const multiExport = readFileSync(
+            join(SRC_ROOT, 'components/modals/MultiEmployeeExportModal.tsx'),
+            'utf8'
+        );
+        assert.doesNotMatch(multiExport, /#36606F|headerTone=["']petroleum["']/);
+        assert.match(multiExport, /monthCellDarkClassName/);
     });
 
     it('eventos, inventario y recetas usan primitivas canónicas', () => {
@@ -636,14 +1077,18 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(recetasImport, /<Surface/);
     });
 
-    it('sala LIVE usa Surface y no reintroduce radio ilegítimo ni cabecera clonada', () => {
+    it('sala LIVE usa PageScreen como Ventas y no reintroduce radio ilegítimo ni cabecera clonada', () => {
         const sala = readFileSync(join(SRC_ROOT, 'app/dashboard/sala/page.tsx'), 'utf8');
         const radar = readFileSync(
             join(SRC_ROOT, 'components/dashboards/RadarSala.tsx'),
             'utf8'
         );
-        assert.match(sala, /<Surface/);
+        assert.match(sala, /DashboardDetailLayout/);
+        assert.match(sala, /work="table"/);
+        assert.match(sala, /toolbarSlot=/);
+        assert.match(sala, /<SubNavVentas/);
         assert.match(sala, /instance="sala-live"/);
+        assert.doesNotMatch(sala, /variant="page"/);
         assert.doesNotMatch(sala, /rounded-\[2\.5rem\]/);
         assert.doesNotMatch(sala, /italic/);
         assert.doesNotMatch(sala, /bg-\[#36606F\]/);
@@ -651,6 +1096,14 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(radar, /<EmptyState/);
         assert.doesNotMatch(radar, /bg-\[#36606F\]/);
         assert.doesNotMatch(radar, /rounded-\[2\.5rem\]/);
+    });
+
+    it('reservas dispara + reserva con Button', () => {
+        const reservas = readFileSync(join(SRC_ROOT, 'app/staff/reservas/ReservasClient.tsx'), 'utf8');
+        assert.match(reservas, /instance="reservas-nueva"/);
+        assert.match(reservas, /\+ reserva/);
+        assert.doesNotMatch(reservas, /Hacer reserva/);
+        assert.doesNotMatch(reservas, /<a\s+href="https:\/\/marbella-web/);
     });
 
     it('tablas operativas usan thead de sistema (T8)', () => {
@@ -661,11 +1114,10 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'app/staff/actividades/gestion/page.tsx',
             'components/ledger/ManagerLedgerView.tsx',
             'components/tips/TipsDashboardView.tsx',
-            'components/dashboards/DashboardVentasSection.tsx',
         ];
         for (const rel of tables) {
             const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
-            assert.match(source, /TABLE_COMPONENT_ID/, `${rel} debe usar Table`);
+            assert.match(source, /data-component=\{TABLE_COMPONENT_ID\}/, `${rel} debe usar Table`);
             assert.doesNotMatch(
                 source,
                 /<thead className="[^"]*bg-\[#36606F\]/,
@@ -686,19 +1138,18 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
     });
 
-    it('recetas e ingredientes van a 3 columnas; proveedores a 4', () => {
+    it('recetas, ingredientes y proveedores comparten rejilla y celda unificadas', () => {
         const recipes = readFileSync(join(SRC_ROOT, 'app/recipes/page.tsx'), 'utf8');
         const ingredients = readFileSync(join(SRC_ROOT, 'app/ingredients/page.tsx'), 'utf8');
         const suppliers = readFileSync(join(SRC_ROOT, 'app/suppliers/page.tsx'), 'utf8');
-        const pedido = readFileSync(join(SRC_ROOT, 'components/orders/SupplierSelectionModal.tsx'), 'utf8');
+        const grid = readFileSync(join(SRC_ROOT, 'components/suppliers/SupplierPickerGrid.tsx'), 'utf8');
         for (const [rel, source] of [
             ['app/recipes/page.tsx', recipes],
             ['app/ingredients/page.tsx', ingredients],
-            ['app/suppliers/page.tsx', suppliers],
         ] as const) {
             assert.match(source, /DashboardDetailLayout|PageScreen/, `${rel} debe usar PageScreen`);
             assert.match(source, /CatalogGrid/, `${rel} debe usar CatalogGrid`);
-            assert.match(source, /CatalogTile/, `${rel} debe usar CatalogTile`);
+            assert.match(source, /CatalogTileUnificado/, `${rel} debe usar la celda unificada`);
             assert.doesNotMatch(
                 source,
                 /rounded-\[2\.5rem\]/,
@@ -715,7 +1166,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
                 `${rel} no usa RecipeCard`
             );
         }
-        assert.match(recipes, /columns=\{3\}/, 'recetas: 3 columnas');
+        assert.match(recipes, /columns=\{4\}/, 'recetas: 4 columnas');
         assert.match(recipes, /buildRecipesHref/, 'pulsar una receta abre la ficha');
         assert.doesNotMatch(recipes, /recipes-staff-preview/, 'staff no abre un modal distinto');
         const recipeDetail = readFileSync(join(SRC_ROOT, 'app/recipes/[id]/page.tsx'), 'utf8');
@@ -723,26 +1174,54 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(recipeDetail, /ConfirmModal/, 'eliminar receta usa ConfirmModal');
         const recipeEditModal = readFileSync(join(SRC_ROOT, 'components/recipes/RecipeNamePhotoEditModal.tsx'), 'utf8');
         assert.match(recipeEditModal, /<Field instance="recipe-edit-category"/, 'la categoría se elige al editar la receta');
-        assert.match(ingredients, /columns=\{3\}/, 'ingredientes: 3 columnas');
-        assert.doesNotMatch(suppliers, /columns=\{3\}/, 'proveedores: 4 columnas');
-        assert.match(pedido, /CatalogGrid/, 'el pedido monta la misma rejilla');
-        assert.match(pedido, /CatalogTile/, 'el pedido monta la misma celda');
-        assert.match(pedido, /columns=\{4\}/, 'el pedido es de 4 columnas');
-        const tile = readFileSync(join(SRC_ROOT, 'components/catalog/CatalogTile.tsx'), 'utf8');
-        assert.match(tile, /aspect-square/, 'la celda imagen+pie es un cuadrado');
-        assert.match(tile, /grid-cols-3/, 'la rejilla admite 3 columnas');
-        assert.match(tile, /grid-cols-4/, 'la rejilla admite 4 columnas');
-        assert.match(tile, /grid-cols-5/, 'la rejilla admite más de 4 columnas');
-        assert.match(tile, /grid-cols-6/, 'la rejilla admite 6 columnas');
-        assert.match(tile, /function AccessMenuGrid/, 'los menús de acceso usan la misma rejilla');
-        assert.match(tile, /columns = 3/, 'los menús de acceso van a 3 columnas por defecto');
-        assert.match(tile, /gap-5/, 'hay aire entre celdas');
+        assert.match(ingredients, /columns=\{4\}/, 'ingredientes: 4 columnas');
+        assert.match(suppliers, /SupplierPickerGrid/, 'proveedores monta la rejilla unificada');
+        assert.match(grid, /CatalogGrid/, 'proveedores usa CatalogGrid');
+        assert.match(grid, /columns=\{4\}/, 'proveedores: 4 columnas');
+        assert.match(grid, /CatalogTileUnificado/, 'proveedores usa la celda unificada');
+        const tile = readFileSync(join(SRC_ROOT, 'components/catalog/UnifiedCatalogTile.tsx'), 'utf8');
+        const catalog = readFileSync(join(SRC_ROOT, 'components/catalog/CatalogTile.tsx'), 'utf8');
+        assert.match(catalog, /grid-cols-3/, 'la rejilla admite 3 columnas');
+        assert.match(catalog, /grid-cols-4/, 'la rejilla admite 4 columnas');
+        assert.match(catalog, /function AccessMenuGrid/, 'los menús de acceso usan la misma rejilla');
+        assert.match(catalog, /columns = 3/, 'los menús de acceso van a 3 columnas por defecto');
+        assert.match(catalog, /gap-5/, 'hay aire entre celdas');
+        assert.match(tile, /aspect-square/, 'el recuadro de imagen es cuadrado');
         assert.match(tile, /object-contain/, 'la imagen se reduce para caber');
-        assert.match(tile, /h-5/, 'el pie reserva una sola fila en las tres páginas');
-        assert.match(tile, /truncate/, 'el pie cabe en una fila');
-        assert.doesNotMatch(tile, /break-words/, 'el pie no pasa a segunda fila');
-        assert.doesNotMatch(tile, /bg-white/, 'la celda no tiene card blanca');
-        assert.doesNotMatch(tile, /shadow-md/, 'la celda no tiene sombra de card');
+        assert.match(tile, /data-element="square"/, 'el recuadro blanco es explícito');
+        assert.match(tile, /data-element="square-fill"/, 'el relleno blanco va en capa bajo la imagen');
+        assert.match(tile, /data-element="price"/, 'el precio vive dentro del recuadro');
+        assert.match(tile, /absolute inset-x-0 bottom/, 'el precio se ancla abajo del recuadro');
+        assert.match(tile, /line-clamp-2/, 'el nombre usa hasta dos filas');
+        assert.match(tile, /data-element="name-slot"/, 'el nombre reserva hueco fijo fuera del recuadro');
+        assert.doesNotMatch(tile, /truncate/, 'el nombre no se abrevia en una sola fila');
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        assert.match(
+            css,
+            /\[data-component='PageScreen'\]\[data-work='catalog'\] \[data-component='Surface'\]\[data-variant='page'\]/,
+            'el catálogo flota sobre el envolvente sin papel'
+        );
+        assert.match(
+            css,
+            /\[data-component='PageScreen'\]\[data-work='catalog'\] \[data-catalog-tile\] \[data-element='name'\]/,
+            'el nombre del catálogo se lee sobre el envolvente'
+        );
+    });
+
+    it('los tres selectores de proveedor comparten la misma rejilla de catálogo', () => {
+        const grid = readFileSync(join(SRC_ROOT, 'components/suppliers/SupplierPickerGrid.tsx'), 'utf8');
+        const modal = readFileSync(join(SRC_ROOT, 'components/suppliers/SupplierSelectionModal.tsx'), 'utf8');
+        const pedido = readFileSync(join(SRC_ROOT, 'components/orders/SupplierSelectionModal.tsx'), 'utf8');
+        const scanner = readFileSync(join(SRC_ROOT, 'app/dashboard/scanner/ScannerClient.tsx'), 'utf8');
+        const suppliers = readFileSync(join(SRC_ROOT, 'app/suppliers/page.tsx'), 'utf8');
+        assert.match(grid, /CatalogTileUnificado/, 'la celda es la del catálogo unificado');
+        assert.match(grid, /CatalogGrid/, 'la rejilla es la del catálogo');
+        assert.match(modal, /SupplierPickerGrid/, 'el modal de pedido/albarán monta la misma rejilla');
+        assert.match(pedido, /from '@\/components\/suppliers\/SupplierSelectionModal'/, 'pedido reexporta el mismo modal');
+        assert.match(scanner, /SupplierSelectionModal/, 'el albarán abre el mismo modal');
+        assert.match(scanner, /instance="scanner-supplier"/, 'el albarán conserva su instancia');
+        assert.match(suppliers, /SupplierPickerGrid/, 'el detalle monta la misma rejilla');
+        assert.match(modal, /CatalogTileUnificado|SupplierPickerGrid/, 'el modal usa la celda unificada');
     });
 
     it('los menús de acceso en modal van en rejilla, nunca en lista', () => {
@@ -856,42 +1335,53 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
     });
 
     it('horas extras Admin pinta el mismo hoy que la pantalla overtime', () => {
-        const admin = readFileSync(join(SRC_ROOT, 'components/dashboards/AdminDashboardView.tsx'), 'utf8');
+        const extras = readFileSync(join(SRC_ROOT, 'components/dashboards/ops-widgets.tsx'), 'utf8');
         const overtime = readFileSync(join(SRC_ROOT, 'app/dashboard/overtime/page.tsx'), 'utf8');
-        assert.match(admin, /w-6 h-6 md:w-7 md:h-7/);
-        assert.match(admin, /isToday && 'bg-ds-marca text-white'/);
-        assert.match(overtime, /isToday && 'bg-ds-marca text-white'/);
-        assert.doesNotMatch(admin, /isToday && 'bg-blue-500 text-white'/);
+        assert.match(extras, /flex h-5 w-5 items-center justify-center rounded-full/);
+        assert.match(extras, /periodTodayClassName\(true\)/);
+        assert.match(overtime, /periodTodayClassName\(true\)/);
+        assert.doesNotMatch(extras, /isToday && 'bg-blue-500 text-white'/);
         assert.match(
-            admin,
-            /ml-auto shrink-0 text-right tabular-nums whitespace-nowrap/,
-            'el importe de la semana queda entero y a la derecha'
+            extras,
+            /text-\[10px\] font-normal text-zinc-500[\s\S]*?ml-auto shrink-0 whitespace-nowrap[\s\S]*?font-normal tabular-nums/,
+            'Semana e importe van en regular; el valor no se recorta'
         );
-        assert.doesNotMatch(admin, /w-9 md:w-11/, 'el importe no se recorta en un hueco fijo');
-        {
-            const extrasStart = admin.indexOf('dashboard-horas-extras');
-            const extrasEnd = admin.indexOf('dashboardChangeBoxes');
-            const extrasMosaic = admin.slice(extrasStart, extrasEnd > extrasStart ? extrasEnd : extrasStart + 8000);
-            assert.doesNotMatch(
-                extrasMosaic,
-                /format\(new Date\(week\.weekId\), 'd MMM'/,
-                'el mosaico no escribe el rango de fechas; ya está el mini-calendario'
-            );
-        }
+        assert.doesNotMatch(
+            extras,
+            /Semana[\s\S]{0,80}uppercase/,
+            'Semana no va en mayúsculas'
+        );
+        assert.match(extras, /pt-3/, 'el calendario baja de la fecha del mes');
+        assert.match(
+            extras,
+            /grid min-h-0 flex-1 grid-cols-7/,
+            'las filas del calendario se reparte el hueco restante'
+        );
+        assert.doesNotMatch(
+            extras,
+            /flex h-full w-5 items-center justify-center rounded-full/,
+            'el día es un círculo, no una celda estirada'
+        );
+        assert.doesNotMatch(extras, /w-9 md:w-11/, 'el importe no se recorta en un hueco fijo');
+        assert.doesNotMatch(
+            extras,
+            /format\(new Date\(week\.weekId\), 'd MMM'/,
+            'el mosaico no escribe el rango de fechas; ya está el mini-calendario'
+        );
     });
 
     it('el calendario de elegir un día usa MiniMonthCalendar', () => {
         const hosts = [
             'components/time/TimeFilterModal.tsx',
-            'app/dashboard/history/page.tsx',
             'components/schedule/ScheduleDayEditor.tsx',
             'components/dashboards/DashboardVentasSection.tsx',
-            'app/dashboard/ventas/page.tsx',
         ];
         for (const rel of hosts) {
             const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
             assert.match(source, /MiniMonthCalendar/, `${rel} debe usar MiniMonthCalendar`);
         }
+        const mini = readFileSync(join(SRC_ROOT, 'components/time/MiniMonthCalendar.tsx'), 'utf8');
+        assert.doesNotMatch(mini, /bg-ds-marca/, 'el día seleccionado no pinta marca petróleo');
         const history = readFileSync(join(SRC_ROOT, 'app/dashboard/history/page.tsx'), 'utf8');
         assert.doesNotMatch(history, /bg-zinc-900 text-white shadow-xl scale-110/);
         const ventas = readFileSync(join(SRC_ROOT, 'app/dashboard/ventas/page.tsx'), 'utf8');
@@ -914,7 +1404,21 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             assert.match(source, /TABLE_COMPONENT_ID/, `${rel} debe usar Table`);
         }
         const recipe = readFileSync(join(SRC_ROOT, 'app/recipes/[id]/page.tsx'), 'utf8');
+        assert.match(recipe, /data-element="recipe-panel"/, 'las tarjetas de ficha usan recipe-panel');
         assert.match(recipe, /data-element="photo-nav"/, 'las flechas de receta flotan');
+        assert.match(recipe, /CatalogSquare/, 'la foto usa el recuadro del catálogo');
+        assert.match(recipe, /titleAlign="center"/, 'el nombre de receta va centrado en la cabecera');
+        const pageScreen = readFileSync(join(SRC_ROOT, 'components/dashboard/DashboardDetailLayout.tsx'), 'utf8');
+        const pageScreenCss = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        assert.match(
+            pageScreenCss,
+            /\[data-title-align='center'\] \[data-element='title-block'\] \{[\s\S]*?position:\s*absolute/,
+            'cabecera centrada: el título flota al centro sin contar los iconos'
+        );
+        assert.match(pageScreen, /titleAlign === 'center'/, 'PageScreen admite título centrado');
+        assert.match(recipe, /leadSlot=\{/, 'la foto con flechas va en leadSlot, debajo del nombre');
+        assert.match(recipe, /work="catalog"/, 'la ficha flota sobre el envolvente');
+        assert.doesNotMatch(recipe, /bg-\[#fafafa\]/, 'la ficha no lleva losa gris de fondo');
         assert.doesNotMatch(recipe, /instance="recipe-eliminar"/, 'eliminar receta no está en la ficha');
         assert.doesNotMatch(recipe, /Ingredientes <span/, 'la cabecera de ingredientes no lleva el recuento');
         assert.doesNotMatch(
@@ -930,9 +1434,36 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         const recipeCss = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
         assert.match(
             recipeCss,
+            /\[data-element='square-fill'\][\s\S]*?background-color:\s*var\(--color-superficie\)/,
+            'el recuadro de foto tiene relleno blanco bajo la imagen'
+        );
+        assert.match(
+            recipeCss,
             /\[data-element='photo-nav'\] \[data-component='Button'\]::before/,
             'las flechas de foto no pintan tarjeta'
         );
+        assert.match(
+            recipeCss,
+            /\[data-element='photo-nav'\] \[data-component='Button'\][\s\S]*?color:\s*var\(--color-texto-invertido\)/,
+            'las flechas de foto son blancas'
+        );
+        assert.match(
+            recipeCss,
+            /--recipe-panel-chrome-fill:\s*color-mix\(in srgb, white 16%, var\(--color-envolvente-bajo\)\)/,
+            'las cabeceras de ficha comparten un único tono de widget'
+        );
+        assert.match(
+            recipeCss,
+            /\[data-element='recipe-panel'\][\s\S]*?background-color:\s*var\(--recipe-panel-chrome-fill(?:,\s*var\(--table-chrome-fill\))?\)/,
+            'todas las cabeceras de ficha usan el mismo relleno'
+        );
+        assert.match(
+            recipeCss,
+            /\[data-element='recipe-panel'\][\s\S]*?text-transform:\s*uppercase[\s\S]*?font-weight:\s*500/,
+            'las cabeceras de tarjeta comparten versales y peso 500'
+        );
+        assert.doesNotMatch(recipe, /uppercase/, 'el cuerpo de la ficha no fuerza mayúsculas');
+        assert.match(recipe, /data-element="field-label"/, 'las etiquetas internas usan field-label');
     });
 
     it('inventario y merma usan EmptyState y SearchField', () => {
@@ -954,6 +1485,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             const source = readFileSync(join(SRC_ROOT, rel), 'utf8');
             assert.match(source, /SearchField/, `${rel} debe usar SearchField`);
             assert.match(source, /CatalogFilterChip/, `${rel} debe usar el filtro flotante`);
+            assert.match(source, /toolbarSlot/, `${rel} pone el buscador fuera del papel`);
             assert.doesNotMatch(source, /Cat\./, `${rel} dice CAT, no Cat.`);
             assert.doesNotMatch(source, /Prov\./, `${rel} dice PROV, no Prov.`);
         }
@@ -974,12 +1506,72 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
         const consumption = readFileSync(join(SRC_ROOT, 'app/staff/ConsumptionModal.tsx'), 'utf8');
         assert.match(albaranes, /SearchField/, 'albaranes usa SearchField');
+        assert.match(albaranes, /titleAlign="center"/, 'albaranes centra el título en la cabecera');
+        assert.match(albaranes, /titleFace="display"/, 'albaranes usa la misma fuente de título que recetas');
+        assert.match(albaranes, /data-element="albaranes-toolbar"/, 'albaranes alinea buscador y escanear');
         assert.match(consumption, /SearchField/, 'consumo usa SearchField');
         const movements = readFileSync(join(SRC_ROOT, 'app/dashboard/movements/page.tsx'), 'utf8');
         assert.match(movements, /<KpiStat /, 'tesorería resume con KpiStat');
         assert.match(movements, /SearchField/, 'tesorería busca con SearchField');
+        assert.match(movements, /leadSlot/, 'tesorería pone los KPI fuera del papel');
         assert.match(movements, /label="Diferencia"/);
         assert.doesNotMatch(movements, /DIFER\. ACTUAL/);
+    });
+
+    it('PageScreen deja en el papel solo el protagonista', () => {
+        const history = readFileSync(join(SRC_ROOT, 'app/dashboard/history/page.tsx'), 'utf8');
+        const ventas = readFileSync(join(SRC_ROOT, 'app/dashboard/ventas/page.tsx'), 'utf8');
+        const sala = readFileSync(join(SRC_ROOT, 'app/dashboard/sala/page.tsx'), 'utf8');
+        const movements = readFileSync(join(SRC_ROOT, 'app/dashboard/movements/page.tsx'), 'utf8');
+        const labor = readFileSync(join(SRC_ROOT, 'app/dashboard/labor/page.tsx'), 'utf8');
+        const consumo = readFileSync(join(SRC_ROOT, 'app/dashboard/consumo-personal/page.tsx'), 'utf8');
+        const horario = readFileSync(join(SRC_ROOT, 'app/horario/page.tsx'), 'utf8');
+        const ledger = readFileSync(join(SRC_ROOT, 'components/ledger/ManagerLedgerView.tsx'), 'utf8');
+        const asistencia = readFileSync(join(SRC_ROOT, 'app/staff/history/page.tsx'), 'utf8');
+        const albaranes = readFileSync(
+            join(SRC_ROOT, 'app/dashboard/albaranes/AlbaranesHistoricoClient.tsx'),
+            'utf8'
+        );
+        const recipes = readFileSync(join(SRC_ROOT, 'app/recipes/page.tsx'), 'utf8');
+        const inventory = readFileSync(join(SRC_ROOT, 'app/dashboard/inventory/InventoryClient.tsx'), 'utf8');
+        const orders = readFileSync(join(SRC_ROOT, 'app/orders/new/page.tsx'), 'utf8');
+        const insights = readFileSync(join(SRC_ROOT, 'app/dashboard/insights/InsightsClient.tsx'), 'utf8');
+        const stock = readFileSync(join(SRC_ROOT, 'app/dashboard/inventory/ledger/LedgerClient.tsx'), 'utf8');
+        const chrome = readFileSync(join(SRC_ROOT, 'components/chrome/ChromeScrollProvider.tsx'), 'utf8');
+        const patrones = readFileSync(join(REPO_ROOT, 'marbella-os/2-diseno/PATRONES.md'), 'utf8');
+        assert.match(history, /work=\{viewMode === 'calendar' \? 'calendar' : 'table'\}/, 'cierres: calendario y tabla flotan');
+        assert.match(history, /leadSlot=\{/, 'cierres: KPI fuera del papel');
+        assert.match(history, /periodSlot=\{/, 'cierres: el mes sigue en el centro');
+        assert.match(history, /periodStartSlot=\{/, 'cierres: Calendario/Tabla a la izquierda de la fila');
+        assert.match(history, /instance="history-vista"/, 'cierres: Calendario/Tabla a la izquierda de la fila');
+        assert.doesNotMatch(history, /toolbarSlot=\{/, 'cierres: la vista no ocupa una fila propia');
+        assert.match(history, /MonthCalendarFrame/, 'cierres: el calendario es el trabajo');
+        assert.match(sala, /work="table"/, 'sala LIVE: las mesas flotan');
+        assert.match(sala, /toolbarSlot=/, 'sala LIVE: SubNav fuera del papel');
+        assert.match(ventas, /work="table"/, 'ventas: la tabla flota sobre el envolvente');
+        assert.match(ventas, /data-table-piece/, 'ventas: pieza blanca flotante sin losa de fondo');
+        assert.match(ventas, /toolbarSlot=\{/, 'ventas: SubNav fuera del papel');
+        assert.match(ventas, /leadSlot=\{/, 'ventas: KPI y gráfico fuera del papel');
+        assert.match(movements, /leadSlot=\{/, 'tesorería: KPI y acciones fuera del papel');
+        assert.match(labor, /work="calendar"/, 'labor: el calendario flota');
+        assert.match(labor, /leadSlot=\{/, 'labor: KPI fuera del papel');
+        assert.match(consumo, /leadSlot=\{/, 'consumo: KPI fuera del papel');
+        assert.match(horario, /toolbarSlot=\{/, 'horario: segmented fuera del papel');
+        assert.match(ledger, /leadSlot=\{/, 'libro mayor: KPI fuera del papel');
+        assert.match(asistencia, /work="calendar"/, 'asistencia: el calendario flota');
+        assert.match(albaranes, /work="table"/, 'albaranes: la lista flota');
+        assert.match(albaranes, /toolbarSlot=\{/, 'albaranes: buscador fuera del papel');
+        assert.match(recipes, /toolbarSlot=\{/, 'recetas: buscador fuera del papel');
+        assert.match(inventory, /toolbarSlot=\{/, 'inventario: buscador fuera del papel');
+        assert.match(orders, /toolbarSlot=\{/, 'pedido: buscador fuera del papel');
+        assert.match(insights, /leadSlot=\{/, 'insights: KPI fuera del papel');
+        assert.match(stock, /toolbarSlot=\{/, 'stock: buscador fuera del papel');
+        const waste = readFileSync(join(SRC_ROOT, 'app/dashboard/inventory/waste/WasteClient.tsx'), 'utf8');
+        assert.match(waste, /toolbarSlot=\{/, 'mermas: buscador fuera del papel');
+        assert.match(chrome, /toolbarPinned/, 'un solo oído de scroll clava el buscador');
+        assert.match(chrome, /compact/, 'el tab bar tiene el paso de solo iconos');
+        assert.match(patrones, /pieza blanca/);
+        assert.match(patrones, /quedan los iconos/);
     });
 
     it('wizard, carta, proveedores e ingredientes recogen datos con Field', () => {

@@ -115,7 +115,7 @@ export const STUDIO_ELEMENTS: StudioElement[] = [
         group: 'cabeceras',
         status: 'CANON CERRADO',
         summary:
-            'Chrome de PageScreen (T2/T3/T4). Petróleo, título 18/900 uppercase, back a la izquierda, acciones a la derecha.',
+            'Chrome de PageScreen (T2/T3/T4). Superficie de trabajo, título 18/500 uppercase, back a la izquierda, acciones a la derecha. No es franja de marca.',
         listSummary: 'Canon cerrado · PageScreen',
         blueprintNeedle: '| Cabecera de página |',
         sourceFiles: [
@@ -131,10 +131,10 @@ export const STUDIO_ELEMENTS: StudioElement[] = [
             { label: 'Padding', value: 'espacio.4 horizontal y vertical (canon). En md el CSS sube el horizontal; eso no está congelado.' },
             { label: 'Alineación horizontal', value: 'Extremos' },
             { label: 'Alineación vertical', value: 'Centro' },
-            { label: 'Tipografía', value: '18 px · 900 · uppercase · tipo.titulo-pantalla. Se reduce para caber; no se abrevia con puntos.' },
+            { label: 'Tipografía', value: '18 px · 500 · uppercase · tipo.titulo-pantalla. Se reduce para caber; no se abrevia con puntos. No es negrita.' },
             { label: 'Acciones', value: 'rightSlot a la derecha. Back = Button secondary icon-only, hit 48 px.' },
             { label: 'Responsive', value: 'La alineación no cambia. Padding y título pueden crecer en md (implementación).' },
-            { label: 'Impacto', value: 'PageScreen T2/T3/T4. El selector CSS también pinta Surface page > header (T1).' },
+            { label: 'Impacto', value: 'PageScreen T2/T3/T4. Cromo sobre el envolvente; catálogo y formulario en papel de PageScreen; calendario y tabla en su pieza blanca, sin ficha alrededor.' },
         ],
         properties: [
             prop('height', 'Altura', 'estructura.cabecera-modal', PAGE_HEADER_HEIGHT_OPTIONS, 'choice'),
@@ -161,7 +161,7 @@ export const STUDIO_ELEMENTS: StudioElement[] = [
         examples: [
             'RadarSala — título + meta; no extremos + acción.',
             'PedidosEventoClient — título + Exportar CSV; sí extremos.',
-            'AdminDashboardView — cards de cambio de caja; título solo.',
+            'AdminDashboardView — cajas de cambio sin cabecera de bloque; el nombre va bajo el hueco.',
         ],
         facts: [
             { label: 'Decisión', value: 'SIN CANON. El CSS de facto no es contrato.' },
@@ -256,7 +256,7 @@ export const STUDIO_ELEMENTS: StudioElement[] = [
             { label: 'Alto visible', value: 'tactil.minimo (48 px + safe). Entre 56 y 36.' },
             { label: 'Offset', value: 'estructura.cabecera (56 px + safe). 8 px de hueco vacío hasta el contenido.' },
             { label: 'Saludo', value: 'Caja oración. tipo.minimo. Se reduce; no ellipsis.' },
-            { label: 'Siglas', value: 'IA y PG se mantienen.' },
+            { label: 'Campanas', value: 'Reservas y notificaciones a la derecha. Sin IA ni PG.' },
             { label: 'Toque', value: '48 px.' },
         ],
         properties: [],
@@ -274,8 +274,8 @@ export const STUDIO_ELEMENTS: StudioElement[] = [
         impactPatterns: [],
         applyKind: 'locked',
         warning:
-            'Sala LIVE usa data-element="header" dentro de Surface page. El CSS de Page Header la pinta. No es PageScreen. El resumen semanal del mosaico Staff no lleva esa cabecera: flota sobre el petróleo.',
-        examples: ['Sala LIVE — título «Sala» + badge Live.'],
+            'Sala LIVE usa PageScreen como Ventas. El resumen semanal del mosaico Staff no lleva esa cabecera: flota sobre el petróleo.',
+        examples: ['Sala LIVE — título «Sala» + Live. Staff T1 — semana sobre el petróleo.'],
         properties: [],
     },
     {

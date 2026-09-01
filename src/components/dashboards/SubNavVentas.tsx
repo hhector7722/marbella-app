@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { navigateInsideSandbox } from '@/lib/sandbox/client';
-import { Printer, Share } from 'lucide-react';
+import { Share } from 'lucide-react';
 import { PetroleumSegmented } from '@/components/ui/PetroleumSegmented';
+import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
 
 export type VentasTab = 'VENTAS' | 'LIVE' | 'PRODUCTOS' | 'HORAS';
 
@@ -25,6 +27,7 @@ interface SubNavVentasProps {
   onPrint?: () => void;
   /** Navegación interna alternativa cuando Ventas está montada en el sandbox. */
   sandboxNavigate?: (href: string) => void;
+  className?: string;
 }
 
 /**
@@ -35,29 +38,10 @@ interface SubNavVentasProps {
  *  - Resto → Si `onTabChange` existe (estamos en ventas) → invoca el callback.
  *             Si no existe (estamos en sala) → `router.push('/dashboard/ventas?tab=X')`.
  */
-export function SubNavVentas({ activeTab, onTabChange, showPrint = false, onExportExcel, onPrint, sandboxNavigate }: SubNavVentasProps) {
+export function SubNavVentas({ activeTab, onTabChange, showPrint = false, onExportExcel, onPrint, sandboxNavigate, className }: SubNavVentasProps) {
   const router = useRouter();
   const [shareMenuOpen, setShareMenuOpen] = useState(false);
   const [shareBusy, setShareBusy] = useState<null | 'excel' | 'print'>(null);
-
-  useEffect(() => {
-    if (!shareMenuOpen) return;
-    const onPointerDown = (e: PointerEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (!target) return;
-      if (target.closest('[data-ventas-share-root="true"]')) return;
-      setShareMenuOpen(false);
-    };
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setShareMenuOpen(false);
-    };
-    document.addEventListener('pointerdown', onPointerDown, true);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown, true);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [shareMenuOpen]);
 
   const handleTab = (tab: VentasTab) => {
     if (tab === 'LIVE') {
@@ -67,10 +51,8 @@ export function SubNavVentas({ activeTab, onTabChange, showPrint = false, onExpo
       return;
     }
     if (onTabChange) {
-      // Ya estamos en /dashboard/ventas: navegación instantánea por estado
       onTabChange(tab);
     } else {
-      // Venimos desde /dashboard/sala: hard-nav con parámetro de pestaña
       if (sandboxNavigate) sandboxNavigate(`/dashboard/ventas?tab=${tab}`);
       else if (navigateInsideSandbox(`/dashboard/ventas?tab=${tab}`)) return;
       else router.push(`/dashboard/ventas?tab=${tab}`);
@@ -128,7 +110,7 @@ export function SubNavVentas({ activeTab, onTabChange, showPrint = false, onExpo
   };
 
   return (
-    <div className="flex shrink-0 border-b border-zinc-100 px-2 py-1 justify-center items-center relative print:hidden">
+    <div className={cn("relative flex w-full shrink-0 items-center justify-center print:hidden", className)}>
       <PetroleumSegmented
         instance="ventas-subnav"
         density="compact"
@@ -140,43 +122,49 @@ export function SubNavVentas({ activeTab, onTabChange, showPrint = false, onExpo
 
       {showPrint && (
         <div className="absolute right-4 top-1/2 -translate-y-1/2" data-ventas-share-root="true">
-          <div className="relative" data-ventas-share-root="true">
-            <button
-              type="button"
-              onClick={() => setShareMenuOpen((v) => !v)}
-              className={cn(
-                "p-2 rounded-lg text-[#36606F] hover:bg-[#36606F]/5 transition-colors outline-none",
-                "min-h-[48px] min-w-[48px] flex items-center justify-center",
-                shareBusy ? "opacity-60 pointer-events-none" : ""
-              )}
-              title="Compartir"
-              aria-label="Compartir"
-            >
-              <Share size={16} />
-            </button>
-
-            {shareMenuOpen && (
-              <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden">
-                <button
-                  type="button"
-                  onClick={exportActiveTableToExcel}
-                  className="w-full min-h-12 px-4 py-3 flex items-center justify-between text-left hover:bg-zinc-50 active:bg-zinc-100 transition-colors"
-                >
-                  <span className="text-[11px] font-black uppercase tracking-widest">Exportar Excel</span>
-                </button>
-                <div className="h-px bg-zinc-100" />
-                <button
-                  type="button"
-                  onClick={printActiveTable}
-                  className="w-full min-h-12 px-4 py-3 flex items-center justify-between hover:bg-zinc-50 active:bg-zinc-100 transition-colors"
-                >
-                  <span className="text-[11px] font-black uppercase tracking-widest">Imprimir</span>
-                  <Printer className="w-4 h-4 text-zinc-500" />
-                </button>
-              </div>
-            )}
-          </div>
+          <Button
+            type="button"
+            variant="tertiary"
+            instance="ventas-compartir"
+            onClick={() => setShareMenuOpen(true)}
+            disabled={!!shareBusy}
+            aria-label="Compartir"
+            icon={<Share size={14} strokeWidth={2} />}
+          />
         </div>
+      )}
+
+      {shareMenuOpen && (
+        <Modal
+          open={shareMenuOpen}
+          onClose={() => setShareMenuOpen(false)}
+          instance="ventas-share-menu"
+          title="Exportar"
+          variant="compact"
+        >
+          <div className="flex flex-col gap-3">
+            <Button
+              type="button"
+              variant="secondary"
+              instance="ventas-export-excel"
+              onClick={() => void exportActiveTableToExcel()}
+              layout="fill"
+              disabled={!!shareBusy}
+            >
+              Exportar Excel
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              instance="ventas-export-print"
+              onClick={() => void printActiveTable()}
+              layout="fill"
+              disabled={!!shareBusy}
+            >
+              Imprimir / PDF
+            </Button>
+          </div>
+        </Modal>
       )}
     </div>
   );

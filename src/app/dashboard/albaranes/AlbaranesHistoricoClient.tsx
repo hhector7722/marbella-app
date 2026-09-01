@@ -1255,18 +1255,20 @@ export default function AlbaranesHistoricoClient({
   return (
     <DashboardDetailLayout
       title="Albaranes"
+      titleFace="display"
+      titleAlign="center"
       backHref="/dashboard"
       maxWidthClass="max-w-5xl"
       showBackButton={false}
       rightSlot={headerActions}
       template="list"
-    >
-    <div className="flex flex-col gap-2">
+      work="table"
+      toolbarSlot={
       <ScannerClient
         onSuccess={refresh}
         compactTrigger
         renderTrigger={(trigger) => (
-          <div className="flex w-full shrink-0 items-center gap-2">
+          <div className="flex w-full shrink-0 items-stretch gap-2" data-element="albaranes-toolbar">
             <div className="min-w-0 flex-1">
               <SearchField
                 instance="albaranes-search"
@@ -1280,6 +1282,9 @@ export default function AlbaranesHistoricoClient({
           </div>
         )}
       />
+      }
+    >
+    <div className="flex flex-col gap-2">
 
       {/* Banners fijos bajo el buscador (no scrollean con la lista). */}
       {autoMapError ? (
@@ -1387,10 +1392,9 @@ export default function AlbaranesHistoricoClient({
                 />
               )
             ) : (
-              <div className="flex flex-col">
+              <div data-table-piece className="flex flex-col overflow-hidden">
                 {filtered.map((it) => {
                   const supplier = it.supplier_name ? it.supplier_name : 'Proveedor pendiente'
-                  // Prioridad: image_url de BD > logo local en /public/icons/prov > icono genérico.
                   const logo = getSupplierLogo(it.supplier_image_url, it.supplier_name)
                   const st = String(it.status ?? '').toLowerCase()
                   const accountingReady = st === 'mapped' || st === 'completed'
@@ -1997,7 +2001,9 @@ export default function AlbaranesHistoricoClient({
                               title="Sin resultados."
                             />
                           ) : (
-                            supplierResults.map((s) => (
+                            supplierResults.map((s) => {
+                              const logo = getSupplierLogo(s.image_url, s.name)
+                              return (
                               <Button
                                 key={s.id}
                                 type="button"
@@ -2009,7 +2015,9 @@ export default function AlbaranesHistoricoClient({
                               >
                                 <span className="flex w-full min-w-0 items-center gap-3 text-left">
                                   <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50">
-                                    {s.image_url ? <img src={s.image_url} alt="" className="h-full w-full object-contain" /> : null}
+                                    {logo ? (
+                                      <img src={logo} alt="" className="h-full w-full object-contain" />
+                                    ) : null}
                                   </span>
                                   <span className="min-w-0">
                                     <span className="block truncate text-sm font-black">{s.name}</span>
@@ -2017,7 +2025,8 @@ export default function AlbaranesHistoricoClient({
                                   </span>
                                 </span>
                               </Button>
-                            ))
+                              )
+                            })
                           )}
                         </div>
                       </div>
@@ -2198,7 +2207,6 @@ export default function AlbaranesHistoricoClient({
         instance="albaranes-filter"
         usageId="albaranes-filter"
         usageLabel="Filtro albaranes"
-        headerTone="petroleum"
         headerTitleAlign="left"
         title="Filtrar"
         disableUsageTracking

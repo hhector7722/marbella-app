@@ -2,43 +2,41 @@
 
 import RadarSala from '@/components/dashboards/RadarSala';
 import { SubNavVentas } from '@/components/dashboards/SubNavVentas';
-import { Surface } from '@/components/ui/Surface';
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 
 /**
  * /dashboard/sala — Vista de Tiempo Real (LIVE)
  *
- * Arquitectura desacoplada:
- * - Este componente es el único dueño de <RadarSala /> y sus WebSockets.
- * - Cascarón de Surface page, sin PageScreen: no es listado/detalle/formulario.
- * - La navegación a pestañas históricas delega en SubNavVentas → router.push('/dashboard/ventas?tab=X')
+ * Misma plantilla que Ventas: PageScreen, SubNav en toolbar, mesas como pieza de trabajo.
+ * Este componente es el único dueño de <RadarSala /> y sus WebSockets.
+ * LIVE navega aquí; el resto de pestañas delega en SubNavVentas.
  */
 export default function SalaPage() {
   return (
-    <div className="min-h-screen p-4 md:p-6 pb-24">
-      <div className="mx-auto w-full max-w-4xl">
-        <Surface variant="page" instance="sala-live" className="flex flex-col overflow-hidden">
-          <div data-element="header" className="flex items-center justify-between gap-2 shrink-0">
-            <h1 data-element="title">Sala</h1>
-            <div
-              className="flex items-center gap-ds-2 shrink-0"
-              aria-label="En vivo"
-            >
-              <span
-                className="h-2 w-2 shrink-0 rounded-full bg-ds-negativo animate-pulse"
-                aria-hidden
-              />
-              <span className="text-[11px] font-black uppercase tracking-widest">Live</span>
-            </div>
-          </div>
-
-          {/* onTabChange no se pasa → SubNavVentas usa router.push para pestañas históricas */}
-          <SubNavVentas activeTab="LIVE" />
-
-          <div className="p-4 md:p-6 flex-1 min-h-0">
-            <RadarSala />
-          </div>
-        </Surface>
+    <DashboardDetailLayout
+      title="Sala"
+      showBackButton={false}
+      template="list"
+      work="table"
+      maxWidthClass="max-w-5xl"
+      contentClassName="p-0 flex flex-col min-h-0"
+      toolbarSlot={<SubNavVentas activeTab="LIVE" />}
+      rightSlot={
+        <div
+          className="flex items-center gap-ds-2 shrink-0"
+          aria-label="En vivo"
+        >
+          <span
+            className="h-2 w-2 shrink-0 rounded-full bg-ds-negativo animate-pulse"
+            aria-hidden
+          />
+          <span className="text-[11px] font-medium uppercase tracking-widest">Live</span>
+        </div>
+      }
+    >
+      <div data-instance="sala-live" className="px-1.5 py-1 md:px-2 md:py-1.5">
+        <RadarSala />
       </div>
-    </div>
+    </DashboardDetailLayout>
   );
 }

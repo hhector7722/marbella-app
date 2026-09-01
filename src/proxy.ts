@@ -3,12 +3,15 @@ import { createServerClient } from "@supabase/ssr";
 import { getHomeHrefForUser, isMasterDashboardUser } from "@/lib/master-dashboard";
 import { withTimeout } from "@/lib/with-timeout";
 import {
+  preserveSessionOnFailedRefresh,
+  readAuthUserFromCookies,
+} from "@/lib/auth/cookie-user";
+import {
   applyUsageTrackingCookies,
   enqueueUsageSessionRecord,
   getUsageTrackingFlags,
 } from "@/lib/usage/middleware-track";
 
-const PROXY_AUTH_TIMEOUT_MS = 1500;
 const PROXY_PROFILE_TIMEOUT_MS = 1200;
 
 function isPasswordRecoveryProfileRequest(request: NextRequest) {
@@ -69,6 +72,14 @@ function pathNeedsProfileRole(path: string): boolean {
   return true;
 }
 
+/**
+ * POST de Server Action. Un redirect HTML (login/home) rompe Next:
+ * "An unexpected response was received from the server" / fetchServerAction.
+ */
+function isServerActionRequest(request: NextRequest): boolean {
+  return request.headers.has("next-action");
+}
+
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isRecoveryProfileRoute = isPasswordRecoveryProfileRequest(request);
@@ -107,7 +118,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (path === "/staff") {
+  const isAction = isServerActionRequest(request);
+
+  if (path === "/staff" && !isAction) {
     return NextResponse.redirect(new URL("/staff/dashboard", request.url));
   }
 
@@ -117,6 +130,7 @@ export async function proxy(request: NextRequest) {
     },
   });
 
+  const cookieList = request.cookies.getAll();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -126,13 +140,14 @@ export async function proxy(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          const nextCookies = preserveSessionOnFailedRefresh(cookiesToSet);
+          nextCookies.forEach(({ name, value }) => request.cookies.set(name, value));
           response = NextResponse.next({
             request: {
               headers: request.headers,
             },
           });
-          cookiesToSet.forEach(({ name, value, options }) =>
+          nextCookies.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
           );
         },
@@ -140,16 +155,14 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  // `getUser()` hace round-trip a GoTrue y puede COLGAR el proxy.
-  // Para el guard de rutas basta la sesión del JWT en cookies.
-  const sessionResult = await withTimeout(
-    supabase.auth.getSession(),
-    PROXY_AUTH_TIMEOUT_MS,
-    { data: { session: null }, error: null }
-  );
-  const user = sessionResult.data.session?.user ?? null;
+  // Solo cookies. getSession aquí pega a GoTrue, entra en 429 y borra la sesión.
+  const user = readAuthUserFromCookies(cookieList);
 
   if (!user && !path.startsWith("/login") && !path.startsWith("/auth") && !isRecoveryProfileRoute) {
+    // Nunca devolver HTML de /login a fetchServerAction.
+    if (isAction) {
+      return response;
+    }
     const loginRedirect = NextResponse.redirect(new URL("/login", request.url));
     copyResponseCookies(response, loginRedirect);
     return loginRedirect;
@@ -157,6 +170,12 @@ export async function proxy(request: NextRequest) {
 
   if (user) {
     const emailFromJwt = user.email ?? "";
+
+    // Con sesión, la acción sigue en su ruta. Un 302 a home/login es HTML, no payload.
+    if (isAction) {
+      attachUsageTracking(response, request, supabase, user.id, path);
+      return response;
+    }
 
     // Gates solo por email (JWT): sin round-trip a profiles.
     if (path.startsWith("/master") && !isMasterDashboardUser(emailFromJwt)) {

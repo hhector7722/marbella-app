@@ -7,6 +7,7 @@
  * Origen: marbella-os/2-diseno/TOKENS.md. No inventa valores nuevos.
  */
 :root {
+  background-color: var(--color-envolvente);
   --color-superficie: #ffffff;
   --color-borde: #f4f4f5;
   --color-borde-marcado: #e4e4e7;
@@ -16,6 +17,21 @@
   --color-texto-tenue: #a1a1aa;
   --color-marca: #36606f;
   --color-marca-intenso: #2f5d6a;
+  --color-envolvente: #15345c;
+  --color-envolvente-alto: #2a5a96;
+  --color-envolvente-bajo: #0b1c36;
+  --marbella-shell-image:
+    radial-gradient(ellipse 110% 46% at 50% -8%, color-mix(in srgb, var(--color-envolvente-alto) 72%, transparent) 0%, transparent 62%),
+    radial-gradient(ellipse 90% 42% at 82% 8%, rgb(90 150 255 / 0.16) 0%, transparent 58%),
+    radial-gradient(ellipse 130% 40% at 50% 100%, color-mix(in srgb, var(--color-envolvente-bajo) 70%, transparent) 0%, transparent 65%),
+    linear-gradient(
+      to top,
+      var(--color-envolvente-bajo) 0%,
+      color-mix(in srgb, var(--color-envolvente-bajo) 48%, var(--color-envolvente)) 28%,
+      var(--color-envolvente) 52%,
+      color-mix(in srgb, var(--color-envolvente-alto) 50%, var(--color-envolvente)) 78%,
+      var(--color-envolvente-alto) 100%
+    );
   --color-superficie-inactiva: #f4f4f5;
   --color-texto-invertido: #ffffff;
   --color-positivo: #059669;
@@ -35,6 +51,13 @@
   --espacio-4: 16px;
   --espacio-8: 32px;
   --tactil-minimo: 48px;
+  /* Pista de la cápsula flotante (49 pt). El aire y el home indicator van fuera. */
+  --estructura-barra-inferior: 49px;
+  /* Shell desktop: 0 en smartphone; en lg+ desplaza topbar/contenido. */
+  --shell-sidebar-width: 0px;
+  --shell-bottom-inset: calc(
+    var(--estructura-barra-inferior) + var(--espacio-2) + env(safe-area-inset-bottom, 0px)
+  );
   /* Alto por defecto de celda del calendario mensual (P3 / Cierres). */
   --month-cal-cell-min-h: 68px;
   --elevacion-superficie: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -69,6 +92,9 @@
   --z-modal-derived: 210;
   --z-modal-system: 220;
   --z-modal-sheet: 205;
+  /* Cabecera cromo de tablas (recipe-panel / PageScreen / Modal) */
+  --table-chrome-fill: color-mix(in srgb, white 16%, var(--color-envolvente-bajo));
+  --home-widget-separator: rgb(255 255 255 / 0.16);
 }
 
 @media (min-width: 640px) {
@@ -310,6 +336,58 @@
 }
 
 /*
+ * Overlay de elección / menú de acceso. Superficie de trabajo (work) no entra.
+ */
+[data-component='Modal'][data-scheme='dark'] [data-element='container'] {
+  background-color: var(--color-envolvente-bajo);
+  color: var(--color-texto-invertido);
+  box-shadow:
+    inset 0 0.5px 0 rgb(255 255 255 / 0.22),
+    0 0 0 1px rgb(255 255 255 / 0.18),
+    var(--elevacion-modal);
+}
+[data-component='Modal'][data-scheme='dark'] [data-element='body'] .bg-white,
+[data-component='Modal'][data-scheme='dark'] [data-element='body'] .bg-zinc-50 {
+  background-color: transparent;
+}
+[data-component='Modal'][data-scheme='dark'] [data-element='body'] :is(.text-gray-700, .text-gray-800, .text-zinc-900, .text-zinc-800, .text-zinc-700) {
+  color: var(--color-texto-invertido);
+}
+[data-component='Modal'][data-scheme='dark'] [data-element='body'] :is(.text-gray-400, .text-zinc-400, .text-zinc-500) {
+  color: rgb(255 255 255 / 0.55);
+}
+[data-component='Modal'][data-scheme='dark'] [data-element='body'] .divide-y > * {
+  border-color: rgb(255 255 255 / 0.12);
+}
+[data-component='Modal'][data-scheme='dark'] [data-element='footer'] {
+  background-color: transparent;
+  border-color: rgb(255 255 255 / 0.12);
+}
+
+/*
+ * Fichaje staff: fill reparte el ancho; el relleno visual ocupa todo el host táctil.
+ */
+[data-component='Modal'][data-instance='staff-clock-confirm'] [data-element='body']:empty {
+  display: none;
+  padding: 0;
+  min-height: 0;
+}
+[data-component='Modal'][data-instance='staff-clock-confirm'] [data-element='footer'] {
+  border-top: none;
+  padding-top: var(--espacio-4);
+  padding-bottom: var(--espacio-4);
+}
+[data-component='Modal'][data-instance='staff-clock-confirm'] [data-component='Button'][data-layout='fill'] {
+  font-size: 1.25rem;
+}
+[data-component='Modal'][data-instance='staff-clock-confirm'] [data-component='Button'][data-layout='fill']::before {
+  top: 0;
+  bottom: 0;
+  height: auto;
+  transform: none;
+}
+
+/*
  * Contrato Button. La especificidad del atributo impide que utilidades
  * Tailwind de altura, color, radio o tipo escapen del contrato.
  * Hit-area 48px transparente. El relleno visual abraza el texto/icono
@@ -546,10 +624,9 @@
 }
 
 /*
- * Cabecera petróleo canónica: PageScreen y Surface page (primer hijo).
- * Altura = cabecera de modal (estructura.cabecera-modal). El contenido se
- * escala respecto a tactil.minimo para caber sin recorte ni ellipsis.
- * compactHeader no encoge el tipo por su cuenta.
+ * PageScreen: cromo sobre el envolvente; Surface page es solo el protagonista.
+ * Cabecera: misma altura que el Modal. El contenido se escala respecto
+ * a tactil.minimo para caber sin recorte ni ellipsis.
  */
 [data-component='PageScreen'] {
   box-sizing: border-box;
@@ -557,9 +634,9 @@
   max-width: 100%;
   min-width: 0;
   overflow-x: clip;
-  padding-inline: var(--espacio-1);
-  padding-top: var(--espacio-1);
-  padding-bottom: var(--espacio-1);
+  padding-inline: var(--espacio-2);
+  padding-top: var(--espacio-2);
+  padding-bottom: var(--espacio-2);
 }
 @media (min-width: 768px) {
   [data-component='PageScreen'] {
@@ -570,18 +647,262 @@
 }
 /* Editores a viewport: el main no reserva el pie; aquí sí. */
 [data-component='PageScreen'][data-fill-viewport='true'] {
-  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(var(--shell-bottom-inset) + var(--espacio-2));
 }
 [data-component='PageScreen'] [data-component='Surface'][data-variant='page'] {
   height: auto;
   min-height: 0;
   flex: none;
 }
+[data-component='PageScreen'][data-fill-viewport='true'] [data-component='Surface'][data-variant='page'] {
+  flex: 1 1 auto;
+}
+[data-component='PageScreen'][data-work='calendar'] [data-component='Surface'][data-variant='page'],
+[data-component='PageScreen'][data-work='table'] [data-component='Surface'][data-variant='page'],
+[data-component='PageScreen'][data-work='catalog'] [data-component='Surface'][data-variant='page'] {
+  background-color: transparent;
+  box-shadow: none;
+  border-radius: 0;
+}
+[data-component='PageScreen'][data-work='calendar'] .month-cal-chrome {
+  background-color: transparent;
+}
+[data-component='PageScreen'][data-work='calendar'] .month-cal-grid-wrap,
+[data-component='PageScreen'][data-work='table'] [data-table-piece],
+[data-component='PageScreen'][data-work='table'] [data-component='Surface'][data-variant='block'] {
+  border: 0;
+  border-radius: var(--radio-superficie);
+  background-color: rgb(255 255 255 / 0.97);
+  box-shadow:
+    inset 0 0.5px 0 rgb(255 255 255 / 0.38),
+    0 0 0 1px rgb(255 255 255 / 0.18),
+    0 8px 28px rgb(0 0 0 / 0.22);
+}
+[data-component='PageScreen'][data-work='table'] [data-component='Table']:not(
+    [data-instance='history-cierres'],
+    [data-instance='ventas-tickets'],
+    [data-instance='ventas-productos'],
+    [data-instance='ventas-horas']
+  ) td {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-texto);
+  padding-block: 10px;
+  padding-inline: var(--espacio-3);
+}
+[data-component='PageScreen'][data-work='table'] [data-component='Table'][data-instance='tesoreria-movimientos'] tbody td:first-child {
+  padding-inline-end: 0;
+}
+[data-component='PageScreen'][data-work='table'] [data-component='Table'][data-instance='tesoreria-movimientos'] tbody td:nth-child(2) {
+  padding-inline-start: 0;
+  padding-inline-end: var(--espacio-2);
+  overflow: visible;
+  text-overflow: unset;
+  white-space: normal;
+}
+[data-component='PageScreen'][data-work='table'] [data-component='Table'][data-instance='tesoreria-movimientos'] tbody td:nth-child(2) [data-element='concept-row'] {
+  margin-inline-start: calc(-1 * var(--espacio-3));
+}
+[data-component='PageScreen'][data-work='table'] [data-component='Table'][data-instance='tesoreria-movimientos'] tbody td:nth-child(2) [data-element='concept'] {
+  white-space: normal;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
 [data-component='PageScreen'] [data-element='body'] {
   flex: none;
   padding-top: var(--espacio-2);
 }
-[data-component='PageScreen'] [data-element='header'],
+[data-component='PageScreen'] [data-element='chrome'] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+  padding-bottom: var(--espacio-2);
+  min-width: 0;
+}
+[data-component='PageScreen'] [data-element='toolbar'] {
+  min-width: 0;
+  padding-inline: var(--espacio-4);
+}
+[data-component='PageScreen'] [data-element='toolbar'][data-pin='true'] {
+  position: fixed;
+  top: calc(var(--estructura-cabecera) + env(safe-area-inset-top, 0px) + var(--espacio-2));
+  left: calc(var(--shell-sidebar-width) + var(--espacio-4));
+  right: var(--espacio-4);
+  z-index: 90;
+  width: auto;
+  max-width: min(56rem, calc(100% - var(--shell-sidebar-width) - (var(--espacio-4) * 2)));
+  margin-inline: auto;
+  padding: 4px var(--espacio-3);
+  padding-top: 4px;
+  padding-bottom: 4px;
+  border-radius: 999px;
+  overflow: visible;
+  isolation: isolate;
+  background-color: color-mix(in srgb, var(--color-envolvente-bajo) 55%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(32px);
+  backdrop-filter: saturate(180%) blur(32px);
+  box-shadow:
+    inset 0 0.5px 0 rgb(255 255 255 / 0.22),
+    0 0 0 1px rgb(255 255 255 / 0.18),
+    0 8px 24px rgb(0 0 0 / 0.28);
+  animation: page-toolbar-in 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  [data-component='PageScreen'] [data-element='toolbar'][data-pin='true'] {
+    background-color: color-mix(in srgb, var(--color-envolvente-bajo) 82%, white 18%);
+  }
+}
+[data-component='PageScreen'] [data-element='toolbar-slot'] {
+  min-width: 0;
+}
+@keyframes page-toolbar-in {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: none;
+  }
+}
+[data-component='PageScreen'] [data-element='lead'] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+  min-width: 0;
+  padding-inline: var(--espacio-4);
+  color: var(--color-texto-invertido);
+}
+[data-component='PageScreen'] [data-element='lead'] [data-component='KpiStat'] [data-element='value'] {
+  color: var(--color-texto-invertido);
+}
+[data-component='PageScreen'] [data-element='lead'] [data-component='KpiStat'][data-tone='positive'] [data-element='value'] {
+  color: var(--color-positivo);
+}
+[data-component='PageScreen'] [data-element='lead'] [data-component='KpiStat'][data-tone='negative'] [data-element='value'] {
+  color: var(--color-negativo);
+}
+[data-component='PageScreen'] [data-element='lead'] [data-component='KpiStat'][data-tone='info'] [data-element='value'] {
+  color: var(--color-informativo);
+}
+[data-component='PageScreen'] [data-element='lead'] [data-component='KpiStat'] [data-element='label'] {
+  color: color-mix(in srgb, var(--color-texto-invertido) 70%, transparent);
+}
+[data-component='PageScreen'] [data-element='lead'] :is(.text-zinc-950, .text-zinc-900, .text-zinc-800, .text-zinc-700) {
+  color: var(--color-texto-invertido);
+}
+[data-component='PageScreen'] [data-element='lead'] :is(.text-zinc-500, .text-zinc-400, .text-gray-400) {
+  color: color-mix(in srgb, var(--color-texto-invertido) 65%, transparent);
+}
+[data-component='PageScreen'] [data-element='lead'] .bg-white {
+  background-color: transparent;
+}
+[data-component='PageScreen'] [data-element='lead'] .border-zinc-50,
+[data-component='PageScreen'] [data-element='lead'] .border-zinc-100 {
+  border-color: color-mix(in srgb, var(--color-texto-invertido) 18%, transparent);
+}
+[data-component='PageScreen'] [data-element='lead'] .hover\:bg-zinc-100:hover {
+  background-color: color-mix(in srgb, var(--color-texto-invertido) 10%, transparent);
+}
+[data-component='PageScreen'] [data-element='toolbar'] [data-ventas-share-root] [data-component='Button'] {
+  height: calc(var(--tactil-minimo) * 0.833);
+  min-height: calc(var(--tactil-minimo) * 0.833);
+  max-height: calc(var(--tactil-minimo) * 0.833);
+  width: calc(var(--tactil-minimo) * 0.833);
+  min-width: calc(var(--tactil-minimo) * 0.833);
+  color: var(--color-texto-invertido);
+}
+[data-component='PageScreen'] [data-element='toolbar'] [data-ventas-share-root] [data-component='Button']::before,
+[data-component='PageScreen'] [data-element='toolbar'] [data-ventas-share-root] [data-component='Button']:hover:not(:disabled)::before,
+[data-component='PageScreen'] [data-element='toolbar'] [data-ventas-share-root] [data-component='Button']:active:not(:disabled)::before {
+  background-color: transparent;
+  background-image: none;
+  border-color: transparent;
+  box-shadow: none;
+}
+[data-component='PageScreen'] [data-element='toolbar'] [data-ventas-share-root] [data-component='Button']:hover:not(:disabled)::before {
+  background-color: rgb(255 255 255 / 0.1);
+}
+[data-component='PageScreen'] [data-element='toolbar'] [data-ventas-share-root] [data-component='Button'] [data-element='icon'] svg {
+  width: 14px;
+  height: 14px;
+}
+[data-component='PageScreen'] [data-element='toolbar'] [data-element='catalog-filter'] {
+  color: var(--color-texto-invertido);
+}
+[data-component='PageScreen'] [data-element='toolbar'] [data-element='catalog-filter'] [data-element='chevron'] {
+  color: var(--color-texto-invertido);
+  opacity: 0.7;
+}
+[data-component='PageScreen'] [data-element='header'] {
+  --page-header-height: var(--modal-header-height);
+  --page-header-scale: calc(var(--page-header-height) / var(--tactil-minimo));
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--espacio-3) * var(--page-header-scale));
+  height: var(--page-header-height);
+  min-height: var(--page-header-height);
+  max-height: var(--page-header-height);
+  overflow: visible;
+  position: relative;
+  background-color: transparent;
+  color: var(--color-texto-invertido);
+  border-bottom: 0;
+  padding-inline: var(--espacio-4);
+  padding-block: 0;
+}
+[data-component='PageScreen'] [data-element='header'][data-title-align='center'] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espacio-2);
+  height: auto;
+  min-height: var(--page-header-height);
+  max-height: none;
+  padding-block: var(--espacio-2);
+}
+[data-component='PageScreen'] [data-element='header'][data-title-align='center'] [data-element='header-start'] {
+  position: relative;
+  z-index: 1;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+[data-component='PageScreen'] [data-element='header'][data-title-align='center'] [data-element='title-block'] {
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  z-index: 0;
+  width: auto;
+  max-width: none;
+  min-width: 0;
+  padding-inline: var(--espacio-4);
+  text-align: center;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+[data-component='PageScreen'] [data-element='header'][data-title-align='center'] [data-element='title-block'] [data-element='title'] {
+  display: block;
+  overflow: hidden;
+  white-space: normal;
+  line-height: 1.15;
+  color: var(--color-texto-invertido);
+  text-transform: none;
+  letter-spacing: normal;
+}
+[data-component='PageScreen'] [data-element='header'][data-title-align='center'] [data-element='actions'] {
+  position: relative;
+  z-index: 1;
+  flex: 0 1 auto;
+  justify-self: end;
+  margin-left: 0;
+  max-width: none;
+}
 [data-component='Surface'][data-variant='page'] > [data-element='header'] {
   --page-header-height: var(--modal-header-height);
   --page-header-scale: calc(var(--page-header-height) / var(--tactil-minimo));
@@ -593,14 +914,36 @@
   height: var(--page-header-height);
   min-height: var(--page-header-height);
   max-height: var(--page-header-height);
-  overflow: hidden;
-  background-color: var(--color-marca);
-  color: var(--color-texto-invertido);
+  overflow: visible;
+  position: relative;
+  background-color: transparent;
+  color: var(--color-texto);
+  border-bottom: 1px solid var(--color-borde);
   padding-inline: var(--espacio-4);
   padding-block: 0;
 }
+/*
+ * Cromo local de la era petróleo: text-white no sobrevive en cabecera
+ * de trabajo (Surface). En PageScreen la cabecera es cromo sobre el
+ * envolvente: la tinta invertida es la correcta.
+ */
+[data-component='Surface'][data-variant='page'] > [data-element='header'] :is(.text-white, .text-white\/90, .text-white\/80):not([class*='bg-red']):not([class*='bg-rose']):not([class*='bg-emerald']),
+[data-component='Surface'][data-variant='block'] > [data-element='header'] :is(.text-white, .text-white\/90, .text-white\/80),
+[data-element='block-header'] :is(.text-white, .text-white\/90, .text-white\/80) {
+  color: var(--color-texto);
+}
+[data-component='Surface'][data-variant='page'] > [data-element='header'][data-tone='plain'] {
+  background-color: transparent;
+  color: var(--color-texto);
+  border-bottom: 0;
+}
+[data-component='Surface'][data-variant='page'] > [data-element='header'][data-tone='plain'] [data-element='title'] {
+  color: var(--color-texto);
+}
 @media (min-width: 768px) {
   [data-component='PageScreen'] [data-element='header'],
+  [data-component='PageScreen'] [data-element='toolbar'],
+  [data-component='PageScreen'] [data-element='lead'],
   [data-component='Surface'][data-variant='page'] > [data-element='header'] {
     padding-inline: var(--espacio-8);
   }
@@ -622,13 +965,12 @@
   container-type: inline-size;
   min-width: 0;
 }
-[data-component='PageScreen'] [data-element='title'],
-[data-component='Surface'][data-variant='page'] > [data-element='header'] [data-element='title'] {
+[data-component='PageScreen'] [data-element='title'] {
   margin: 0;
   min-width: 0;
   overflow: hidden;
   text-overflow: clip;
-  font-weight: 900;
+  font-weight: 500;
   font-size: calc(1.125rem * var(--page-header-scale, 1));
   line-height: 1.25;
   color: var(--color-texto-invertido);
@@ -636,8 +978,34 @@
   letter-spacing: 0.05em;
   white-space: nowrap;
 }
+[data-component='PageScreen'] [data-element='title'][data-face='display'] {
+  font-family: var(--font-easports), sans-serif;
+  font-weight: 400;
+}
+[data-component='PageScreen'][data-work='catalog'] [data-element='title'][data-face='display'] {
+  font-size: clamp(1.25rem, 8cqi, 1.875rem);
+}
+[data-component='PageScreen'] [data-element='header'][data-title-align='center'] [data-element='title-block'] [data-element='title'][data-face='display'] {
+  font-size: clamp(1.125rem, 4.5vw, 1.75rem);
+}
+[data-component='Surface'][data-variant='page'] > [data-element='header'] [data-element='title'] {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: clip;
+  font-weight: 500;
+  font-size: calc(1.125rem * var(--page-header-scale, 1));
+  line-height: 1.25;
+  color: var(--color-texto);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
 [data-component='PageScreen'] [data-element='title-block'] [data-element='title'] {
   font-size: clamp(11px, 14cqi, calc(1.125rem * var(--page-header-scale, 1)));
+}
+[data-component='PageScreen'] [data-element='header'][data-title-align='center'] [data-element='title-block'] [data-element='title'] {
+  font-size: clamp(1.125rem, 4.5vw, 1.75rem);
 }
 @media (min-width: 768px) {
   [data-component='PageScreen'] [data-element='title'],
@@ -647,10 +1015,119 @@
   [data-component='PageScreen'] [data-element='title-block'] [data-element='title'] {
     font-size: clamp(11px, 14cqi, calc(1.25rem * var(--page-header-scale, 1)));
   }
+  [data-component='PageScreen'][data-work='catalog'] [data-element='title'][data-face='display'] {
+    font-size: clamp(1.375rem, 8cqi, 2.125rem);
+  }
+  [data-component='PageScreen'] [data-element='header'][data-title-align='center'] [data-element='title-block'] [data-element='title'][data-face='display'] {
+    font-size: clamp(1.25rem, 4vw, 2rem);
+  }
+}
+[data-component='PageScreen'][data-work='catalog'] [data-catalog-tile] [data-element='name'] {
+  color: var(--color-texto-invertido);
+}
+/*
+ * Recuadro blanco del catálogo: capa de relleno bajo la imagen (no usa .bg-white;
+ * el lead del PageScreen anula esa clase sobre el envolvente).
+ */
+[data-element='square-fill'] {
+  background-color: var(--color-superficie);
+}
+[data-component='PageScreen'] [data-element='lead'] [data-element='square'] {
+  border-color: var(--color-borde);
+}
+[data-component='PageScreen'][data-work='catalog'] {
+  --home-widget-radius: var(--radio-superficie);
+  --home-widget-fill: rgb(255 255 255 / 0.16);
+  --home-widget-fallback: rgb(255 255 255 / 0.16);
+  --home-widget-blur: var(--espacio-8);
+  --home-widget-saturate: 180%;
+  --home-widget-separator: rgb(255 255 255 / 0.16);
+  --home-widget-shadow:
+    inset 0 0.5px 0 rgb(255 255 255 / 0.38),
+    0 0 0 1px rgb(255 255 255 / 0.18),
+    0 8px 28px rgb(0 0 0 / 0.22);
+  /*
+   * Cristal del mosaico sobre marino: mismo tono en todas las cabeceras
+   * de ficha, sin depender del fondo (blanco o envolvente) que haya detrás.
+   */
+  --recipe-panel-chrome-fill: color-mix(in srgb, white 16%, var(--color-envolvente-bajo));
+}
+[data-component='PageScreen'][data-work='catalog'] [data-element='recipe-panel'] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--home-widget-radius);
+  background-color: transparent;
+  box-shadow: var(--home-widget-shadow);
+}
+[data-component='PageScreen'][data-work='catalog'] [data-element='recipe-panel'] :is(
+    [data-element='block-header'],
+    [data-component='Table'] thead,
+    [data-component='Table'] thead th
+  ) {
+  flex-shrink: 0;
+  color: var(--color-texto-invertido);
+  background-color: var(--recipe-panel-chrome-fill, var(--table-chrome-fill));
+  background-image: none;
+  border-bottom: 1px solid var(--home-widget-separator);
+  box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.38);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+[data-component='PageScreen'][data-work='catalog'] [data-element='recipe-panel'] > :not([data-element='block-header']):not([class*='amber']) {
+  background-color: rgb(255 255 255 / 0.97);
+}
+[data-component='PageScreen'][data-work='catalog'] [data-element='recipe-panel'] :is(
+    [data-element='block-header'] [data-element='title'],
+    [data-component='Table'] thead th
+  ) {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-texto-invertido);
+}
+[data-component='PageScreen'][data-work='catalog'] [data-element='recipe-panel'] [data-element='field-label'] {
+  display: block;
+  margin-top: var(--espacio-1);
+  margin-bottom: 0;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--color-texto-tenue);
+}
+[data-component='PageScreen'][data-work='catalog'] [data-element='recipe-panel'] label[data-element='field-label'] {
+  margin-top: 0;
+  margin-bottom: var(--espacio-1);
+}
+[data-component='PageScreen'][data-work='catalog'] [data-element='recipe-panel'] [data-element='field-label'].mb-0 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+[data-component='PageScreen'][data-work='catalog'] [data-element='recipe-panel'] [data-surface='accent'] [data-element='field-label'] {
+  color: rgb(255 255 255 / 0.8);
+}
+[data-component='PageScreen'][data-work='catalog'] [data-element='recipe-panel'] [data-element='block-header'] :is(svg, [data-component='Button']) {
+  color: var(--color-texto-invertido);
+}
+[data-component='PageScreen'][data-work='catalog'] [data-element='recipe-panel'] [data-element='block-header'] [data-component='Button']::before,
+[data-component='PageScreen'][data-work='catalog'] [data-element='recipe-panel'] [data-element='block-header'] [data-component='Button']:hover:not(:disabled)::before,
+[data-component='PageScreen'][data-work='catalog'] [data-element='recipe-panel'] [data-element='block-header'] [data-component='Button']:active:not(:disabled)::before {
+  background-color: transparent;
+  background-image: none;
+  border-color: transparent;
+  box-shadow: none;
+}
+[data-component='PageScreen'][data-work='catalog'] [data-element='recipe-panel'] [data-element='block-header'] [data-component='Button']:focus-visible {
+  outline-color: rgb(255 255 255 / 0.45);
 }
 [data-component='Surface'][data-variant='block'] > [data-element='header'] {
-  background-color: var(--color-marca);
-  color: var(--color-texto-invertido);
+  background-color: transparent;
+  color: var(--color-texto);
+  border-bottom: 1px solid var(--color-borde);
   padding-inline: var(--espacio-3);
   padding-block: var(--espacio-2);
 }
@@ -661,29 +1138,266 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 500;
   line-height: 1.25;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--color-texto-invertido);
+  color: var(--color-texto);
 }
-
 [data-component='PageScreen'] [data-element='period'] {
   min-width: 0;
+  pointer-events: none;
+  color: var(--color-texto-invertido);
+}
+[data-component='PageScreen'] [data-element='period'] > * {
+  pointer-events: auto;
+}
+[data-component='PageScreen'] [data-element='period'] button:hover {
+  background-color: rgb(255 255 255 / 0.1);
 }
 [data-component='PageScreen'] [data-element='actions'] {
   max-width: 42%;
 }
 
 /*
- * Table / T8 — thead de marca. Composición, no componente de columnas.
- * Un cambio aquí pinta Ventas, Tesorería, Libro Mayor, Cierres, Catálogo y Propinas.
+ * Table / T8 — composición, no componente de columnas.
+ * En PageScreen: cabecera cromo (misma que recipe-panel). Fuera: petróleo compacto.
  */
 [data-component='Table'] {
   width: 100%;
   max-width: 100%;
   table-layout: fixed;
   border-collapse: collapse;
+}
+[data-component='PageScreen'] [data-component='Table'] thead,
+[data-component='PageScreen'] [data-component='Table'] thead th {
+  color: var(--color-texto-invertido);
+  background-color: var(--table-chrome-fill);
+  background-image: none;
+  border-bottom: 1px solid var(--home-widget-separator);
+  box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.38);
+}
+[data-component='PageScreen'] [data-component='Table'] thead th {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-texto-invertido);
+  padding-block: var(--espacio-2);
+  padding-inline: var(--espacio-3);
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+[data-component='PageScreen'] [data-component='Table'] thead th button {
+  color: inherit;
+}
+[data-component='PageScreen'] [data-component='Table'] thead th button:hover,
+[data-component='PageScreen'] [data-component='Table'] thead th button:active {
+  background-color: rgb(255 255 255 / 0.1);
+}
+[data-component='PageScreen'] [data-component='Table'] thead th:is(.sticky, [class*='sticky']) {
+  background-color: var(--table-chrome-fill);
+}
+[data-component='PageScreen'] [data-component='Table'][data-instance='recetas-tpv-header'] {
+  display: grid;
+  color: var(--color-texto-invertido);
+  background-color: var(--table-chrome-fill);
+  border-bottom: 1px solid var(--home-widget-separator);
+  box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.38);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+/*
+ * Tablas compactas (ventas, cierres): cabecera cromo unificada con la densidad
+ * original del contrato Table (8px th / 10px td, padding 4px).
+ */
+[data-component='PageScreen'] [data-component='Table'][data-instance='history-cierres'] thead th,
+[data-component='PageScreen'] [data-component='Table'][data-instance='ventas-tickets'] thead th,
+[data-component='PageScreen'] [data-component='Table'][data-instance='ventas-productos'] thead th,
+[data-component='PageScreen'] [data-component='Table'][data-instance='ventas-horas'] thead th {
+  font-size: 8px;
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: normal;
+  text-transform: none;
+  padding-block: 4px;
+  padding-inline: 4px;
+}
+[data-component='PageScreen'] [data-component='Table'][data-instance='ventas-tickets'] td,
+[data-component='PageScreen'] [data-component='Table'][data-instance='ventas-productos'] td,
+[data-component='PageScreen'] [data-component='Table'][data-instance='ventas-horas'] td {
+  font-size: 10px;
+  line-height: 1.2;
+  padding-block: 4px;
+  padding-inline: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+[data-component='PageScreen'] [data-component='Table'][data-instance='ventas-tickets'] :is(thead th:first-child, tbody td:first-child),
+[data-component='PageScreen'] [data-component='Table'][data-instance='ventas-productos'] :is(thead th:first-child, tbody td:first-child),
+[data-component='PageScreen'] [data-component='Table'][data-instance='ventas-horas'] :is(thead th:first-child, tbody td:first-child) {
+  padding-inline-start: var(--espacio-3);
+}
+[data-component='PageScreen'] [data-component='Table'][data-instance='ventas-tickets'] :is(thead th:last-child, tbody td:last-child),
+[data-component='PageScreen'] [data-component='Table'][data-instance='ventas-productos'] :is(thead th:last-child, tbody td:last-child),
+[data-component='PageScreen'] [data-component='Table'][data-instance='ventas-horas'] :is(thead th:last-child, tbody td:last-child) {
+  padding-inline-end: var(--espacio-3);
+}
+@media (min-width: 768px) {
+  [data-component='PageScreen'] [data-component='Table'][data-instance='ventas-tickets'] :is(thead th:first-child, tbody td:first-child),
+  [data-component='PageScreen'] [data-component='Table'][data-instance='ventas-productos'] :is(thead th:first-child, tbody td:first-child),
+  [data-component='PageScreen'] [data-component='Table'][data-instance='ventas-horas'] :is(thead th:first-child, tbody td:first-child) {
+    padding-inline-start: var(--espacio-4);
+  }
+  [data-component='PageScreen'] [data-component='Table'][data-instance='ventas-tickets'] :is(thead th:last-child, tbody td:last-child),
+  [data-component='PageScreen'] [data-component='Table'][data-instance='ventas-productos'] :is(thead th:last-child, tbody td:last-child),
+  [data-component='PageScreen'] [data-component='Table'][data-instance='ventas-horas'] :is(thead th:last-child, tbody td:last-child) {
+    padding-inline-end: var(--espacio-4);
+  }
+}
+/*
+ * Desktop: columnas por contenido (no % uniformes dilatados).
+ * Tabla con ancho visual equilibrado (ni 100% estirado ni max-content perdido).
+ * Solo ≥1024px — smartphone conserva w-[%] de la marca.
+ */
+@media (min-width: 1024px) {
+  [data-component='PageScreen'] [data-component='Table'][data-instance='ventas-tickets'],
+  [data-component='PageScreen'] [data-component='Table'][data-instance='ventas-productos'],
+  [data-component='PageScreen'] [data-component='Table'][data-instance='ventas-horas'],
+  [data-component='PageScreen'] [data-component='Table'][data-instance='history-cierres'] {
+    width: 100%;
+    max-width: 40rem;
+    margin-inline: 0;
+    table-layout: fixed;
+  }
+
+  [data-component='PageScreen'][data-work='table'] [data-table-piece]:has(
+    [data-instance='ventas-tickets'],
+    [data-instance='ventas-productos'],
+    [data-instance='ventas-horas'],
+    [data-instance='history-cierres']
+  ) {
+    max-width: 40rem;
+    width: 100%;
+  }
+
+  [data-component='PageScreen'] [data-component='Table'][data-instance='ventas-tickets'] :is(thead th, tbody td):nth-child(1) {
+    width: 4.75rem;
+  }
+  [data-component='PageScreen'] [data-component='Table'][data-instance='ventas-tickets'] :is(thead th, tbody td):nth-child(2) {
+    width: auto;
+  }
+  [data-component='PageScreen'] [data-component='Table'][data-instance='ventas-tickets'] :is(thead th, tbody td):nth-child(3) {
+    width: 3.75rem;
+  }
+  [data-component='PageScreen'] [data-component='Table'][data-instance='ventas-tickets'] :is(thead th, tbody td):nth-child(4) {
+    width: 5.5rem;
+  }
+
+  [data-component='PageScreen'] [data-component='Table'][data-instance='ventas-productos'] :is(thead th, tbody td):nth-child(1) {
+    width: auto;
+  }
+  [data-component='PageScreen'] [data-component='Table'][data-instance='ventas-productos'] :is(thead th, tbody td):nth-child(2) {
+    width: 4.25rem;
+  }
+  [data-component='PageScreen'] [data-component='Table'][data-instance='ventas-productos'] :is(thead th, tbody td):nth-child(3) {
+    width: 5rem;
+  }
+  [data-component='PageScreen'] [data-component='Table'][data-instance='ventas-productos'] :is(thead th, tbody td):nth-child(4) {
+    width: 5.75rem;
+  }
+
+  [data-component='PageScreen'] [data-component='Table'][data-instance='ventas-horas'] :is(thead th, tbody td):nth-child(1) {
+    width: 6.25rem;
+  }
+  [data-component='PageScreen'] [data-component='Table'][data-instance='ventas-horas'] :is(thead th, tbody td):nth-child(2) {
+    width: 4.25rem;
+  }
+  [data-component='PageScreen'] [data-component='Table'][data-instance='ventas-horas'] :is(thead th, tbody td):nth-child(3) {
+    width: 5rem;
+  }
+  [data-component='PageScreen'] [data-component='Table'][data-instance='ventas-horas'] :is(thead th, tbody td):nth-child(4) {
+    width: auto;
+  }
+
+  [data-component='PageScreen'] [data-component='Table'][data-instance='history-cierres'] :is(thead th, tbody td):nth-child(1) {
+    width: 4.5rem;
+  }
+  [data-component='PageScreen'] [data-component='Table'][data-instance='history-cierres'] :is(thead th, tbody td):nth-child(n + 2) {
+    width: 5rem;
+  }
+  [data-component='PageScreen'] [data-component='Table'][data-instance='history-cierres'] :is(thead th, tbody td):nth-child(4) {
+    width: 3.5rem;
+  }
+  [data-component='PageScreen'] [data-component='Table'][data-instance='history-cierres'] :is(thead th, tbody td):nth-child(2),
+  [data-component='PageScreen'] [data-component='Table'][data-instance='history-cierres'] :is(thead th, tbody td):nth-child(3) {
+    width: 5.75rem;
+  }
+
+  /* Lead table: métricas compactas; gráfica al lado si existe (mismos hijos). */
+  [data-component='PageScreen'][data-work='table'] [data-element='lead'] {
+    display: grid;
+    grid-template-columns: minmax(15rem, 22rem);
+    column-gap: var(--espacio-4);
+    row-gap: var(--espacio-2);
+    align-items: end;
+    max-width: min(56rem, 100%);
+  }
+  [data-component='PageScreen'][data-work='table'] [data-element='lead']:has(> :nth-child(2)) {
+    grid-template-columns: minmax(15rem, 20rem) minmax(12rem, 1fr);
+  }
+  [data-component='PageScreen'][data-work='table'] [data-element='lead']:has(> .grid.grid-cols-4) {
+    grid-template-columns: minmax(22rem, 40rem);
+  }
+  [data-component='PageScreen'][data-work='table'] [data-element='lead'] > .grid.grid-cols-3 {
+    max-width: 100%;
+  }
+  [data-component='PageScreen'][data-work='table'] [data-element='lead'] > .grid.grid-cols-4 {
+    max-width: 100%;
+  }
+
+  /* Calendario: KPIs centrados sobre la rejilla, sin rail lateral. */
+  [data-component='PageScreen'][data-work='calendar'] [data-element='lead'] > .grid.grid-cols-3 {
+    max-width: min(36rem, 100%);
+    margin-inline: auto;
+  }
+
+  [data-component='PageScreen'][data-work='table'] [data-component='Table']:not(
+      [data-instance='history-cierres'],
+      [data-instance='ventas-tickets'],
+      [data-instance='ventas-productos'],
+      [data-instance='ventas-horas']
+    ) td {
+    padding-block: 8px;
+  }
+}
+/* Misma cabecera cromo en modales y hojas inferiores */
+[data-component='Modal'] [data-component='Table'] thead,
+[data-component='Modal'] [data-component='Table'] thead th,
+[data-component='ConsumptionBottomSheet'] [data-component='Table'] thead,
+[data-component='ConsumptionBottomSheet'] [data-component='Table'] thead th {
+  color: var(--color-texto-invertido);
+  background-color: var(--table-chrome-fill);
+  background-image: none;
+  border-bottom: 1px solid var(--home-widget-separator);
+  box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.38);
+}
+[data-component='Modal'] [data-component='Table'] thead th,
+[data-component='ConsumptionBottomSheet'] [data-component='Table'] thead th {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding-block: var(--espacio-2);
+  padding-inline: var(--espacio-3);
 }
 [data-component='Table'] thead {
   background-color: var(--color-marca);
@@ -717,11 +1431,11 @@
   white-space: normal;
   word-break: break-word;
 }
+[data-component='Table'][data-instance='recipe-ingredients'] thead th:first-child,
+[data-component='Table'][data-instance='recipe-ingredients'] tbody td:first-child {
+  padding-inline-start: var(--espacio-4);
+}
 [data-component='Table'][data-instance='recipe-ingredients'] thead th {
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.05em;
-  line-height: 1.25;
   padding-block: var(--espacio-2);
   padding-inline: var(--espacio-4);
   vertical-align: middle;
@@ -736,8 +1450,9 @@
   align-items: center;
   gap: var(--espacio-2);
   flex-shrink: 0;
-  background-color: var(--color-marca);
-  color: var(--color-texto-invertido);
+  background-color: transparent;
+  color: var(--color-texto);
+  border-bottom: 1px solid var(--color-borde);
   padding-inline: var(--espacio-4);
   padding-block: var(--espacio-2);
 }
@@ -748,19 +1463,21 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 500;
   line-height: 1.25;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--color-texto-invertido);
+  color: var(--color-texto);
 }
 [data-component='PageScreen'] [data-element='header'] [data-component='Button'][data-variant='tertiary'],
-[data-component='Surface'][data-variant='page'] > [data-element='header'] [data-component='Button'][data-variant='tertiary'],
 [data-component='PageScreen'] [data-element='header'] [data-component='Button'][data-variant='secondary'],
-[data-component='Surface'][data-variant='page'] > [data-element='header'] [data-component='Button'][data-variant='secondary'],
-[data-component='PageScreen'] [data-element='header'] [data-component='Button'][data-variant='primary'],
-[data-component='Surface'][data-variant='page'] > [data-element='header'] [data-component='Button'][data-variant='primary'] {
+[data-component='PageScreen'] [data-element='header'] [data-component='Button'][data-variant='primary'] {
   color: var(--color-texto-invertido);
+}
+[data-component='Surface'][data-variant='page'] > [data-element='header'] [data-component='Button'][data-variant='tertiary'],
+[data-component='Surface'][data-variant='page'] > [data-element='header'] [data-component='Button'][data-variant='secondary'],
+[data-component='Surface'][data-variant='page'] > [data-element='header'] [data-component='Button'][data-variant='primary'] {
+  color: var(--color-texto);
 }
 [data-component='PageScreen'] [data-element='header'] [data-component='Button']::before,
 [data-component='Surface'][data-variant='page'] > [data-element='header'] [data-component='Button']::before {
@@ -783,6 +1500,10 @@
   border-color: transparent;
   box-shadow: none;
 }
+[data-element='photo-nav'] [data-component='Button'],
+[data-element='photo-nav'] [data-component='Button'] [data-element='icon'] svg {
+  color: var(--color-texto-invertido);
+}
 [data-component='PageScreen'] [data-element='header'] [data-component='Button'],
 [data-component='Surface'][data-variant='page'] > [data-element='header'] [data-component='Button'] {
   height: calc(var(--tactil-minimo) * var(--page-header-scale, 1));
@@ -800,6 +1521,24 @@
   width: calc(20px * var(--page-header-scale, 1));
   height: calc(20px * var(--page-header-scale, 1));
 }
+[data-component='PageScreen'] [data-element='header'] [data-component='Button'][data-instance='history-compartir'],
+[data-component='PageScreen'] [data-element='header'] [data-component='Button'][data-instance='movements-compartir'] {
+  height: calc(var(--tactil-minimo) * 0.833);
+  min-height: calc(var(--tactil-minimo) * 0.833);
+  max-height: calc(var(--tactil-minimo) * 0.833);
+  width: calc(var(--tactil-minimo) * 0.833);
+  min-width: calc(var(--tactil-minimo) * 0.833);
+  color: var(--color-texto-invertido);
+}
+[data-component='PageScreen'] [data-element='header'] [data-component='Button'][data-instance='history-compartir']:hover:not(:disabled)::before,
+[data-component='PageScreen'] [data-element='header'] [data-component='Button'][data-instance='movements-compartir']:hover:not(:disabled)::before {
+  background-color: rgb(255 255 255 / 0.1);
+}
+[data-component='PageScreen'] [data-element='header'] [data-component='Button'][data-instance='history-compartir'] [data-element='icon'] svg,
+[data-component='PageScreen'] [data-element='header'] [data-component='Button'][data-instance='movements-compartir'] [data-element='icon'] svg {
+  width: 14px;
+  height: 14px;
+}
 [data-component='PageScreen'] [data-element='header'] [data-component='Button']::after,
 [data-component='Surface'][data-variant='page'] > [data-element='header'] [data-component='Button']::after {
   content: '';
@@ -810,6 +1549,17 @@
   height: var(--tactil-minimo);
   transform: translate(-50%, -50%);
 }
+[data-component='PageScreen'] [data-element='header'] [data-component='Button'][data-instance='reservas-nueva'] {
+  color: var(--color-texto);
+}
+[data-component='PageScreen'] [data-element='header'] [data-component='Button'][data-instance='reservas-nueva']::before,
+[data-component='PageScreen'] [data-element='header'] [data-component='Button'][data-instance='reservas-nueva']:hover:not(:disabled)::before {
+  background-color: var(--color-superficie);
+  background-image: none;
+  border-color: transparent;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+  opacity: 1;
+}
 [data-component='PageScreen'] [data-element='header'] [data-element='actions'],
 [data-component='Surface'][data-variant='page'] > [data-element='header'] [data-element='actions'] {
   max-height: 100%;
@@ -817,9 +1567,7 @@
 [data-component='PageScreen'] [data-element='subtitle'] {
   margin: calc(0.25rem * var(--page-header-scale, 1)) 0 0;
   font-size: calc(10px * var(--page-header-scale, 1));
-  font-weight: 700;
-  line-height: 1.3;
-  color: color-mix(in srgb, var(--color-texto-invertido) 60%, transparent);
+  font-weight: 400;
   text-transform: none;
   letter-spacing: normal;
   overflow: visible;
@@ -946,6 +1694,197 @@
 [data-component='SearchField'] input::-webkit-search-results-button,
 [data-component='SearchField'] input::-webkit-search-results-decoration {
   -webkit-appearance: none;
+}
+
+/*
+ * Pedidos — una sola fila de cromo: logo, buscador y acciones (sin cabecera de título).
+ */
+[data-component='PageScreen'].page-orders-new [data-element='header'] {
+  display: none;
+}
+[data-element='orders-toolbar'] [data-element='supplier-logo'] {
+  height: var(--espacio-8);
+  width: var(--espacio-8);
+  min-height: var(--espacio-8);
+  min-width: var(--espacio-8);
+  background-color: var(--color-superficie);
+}
+[data-element='orders-toolbar'] [data-component='Button'][data-instance='order-new-reset'],
+[data-element='orders-toolbar'] [data-component='Button'][data-instance='order-new-tramitar'] {
+  height: var(--espacio-8);
+  min-height: var(--espacio-8);
+  max-height: var(--espacio-8);
+  padding-inline: var(--espacio-2);
+  font-size: 11px;
+}
+[data-element='orders-toolbar'] [data-component='Button'][data-instance='order-new-reset']::before,
+[data-element='orders-toolbar'] [data-component='Button'][data-instance='order-new-tramitar']::before {
+  top: 0;
+  bottom: 0;
+  height: auto;
+  transform: none;
+}
+
+[data-element='order-product-card'] [data-element='order-qty-bar'] {
+  color: var(--color-texto-invertido);
+  background-color: var(--table-chrome-fill);
+  border-top: 1px solid var(--home-widget-separator);
+}
+[data-element='order-product-card'] [data-element='order-qty-bar'] [data-element='qty-input'] {
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
+  width: 1.25rem;
+  min-width: 1.25rem;
+  max-width: 2.75rem;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  line-height: inherit;
+  text-align: center;
+  outline: none;
+  box-shadow: none;
+  appearance: none;
+  -webkit-appearance: none;
+  pointer-events: auto;
+}
+[data-element='order-product-card'] [data-element='order-qty-bar'] [data-element='qty-input']:focus {
+  background: transparent;
+  outline: none;
+  box-shadow: none;
+}
+[data-element='order-product-card'][data-view='grid'] {
+  border: 1px solid var(--color-superficie);
+}
+
+/*
+ * Pedidos desktop (lg+): catálogo + resumen lateral.
+ * Estructura vía Tailwind (`lg:grid`, `hidden lg:flex`). Aquí solo el cromo del panel.
+ */
+@media (min-width: 1024px) {
+  [data-element='orders-toolbar'] {
+    gap: var(--espacio-3);
+  }
+  [data-element='orders-toolbar'] [data-component='Button'][data-instance='order-new-tramitar'] {
+    display: none;
+  }
+  [data-element='orders-toolbar'] [data-element='supplier-logo'] {
+    height: calc(var(--espacio-8) + var(--espacio-2));
+    width: calc(var(--espacio-8) + var(--espacio-2));
+    min-height: calc(var(--espacio-8) + var(--espacio-2));
+    min-width: calc(var(--espacio-8) + var(--espacio-2));
+  }
+  [data-element='orders-toolbar'] [data-component='Button'][data-instance='order-new-reset'] {
+    height: calc(var(--espacio-8) + 4px);
+    min-height: calc(var(--espacio-8) + 4px);
+    max-height: calc(var(--espacio-8) + 4px);
+    padding-inline: var(--espacio-3);
+    font-size: 12px;
+  }
+  [data-element='orders-summary-head'] {
+    flex-shrink: 0;
+    padding: var(--espacio-3) var(--espacio-4);
+    border-bottom: 1px solid var(--color-borde);
+    background-color: var(--table-chrome-fill);
+    color: var(--color-texto-invertido);
+  }
+  [data-element='orders-summary-title'] {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  [data-element='orders-summary-meta'] {
+    margin: var(--espacio-1) 0 0;
+    font-size: 12px;
+    font-weight: 500;
+    opacity: 0.85;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  [data-element='orders-summary-body'] {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: var(--espacio-2) 0;
+  }
+  [data-element='orders-summary-empty'] {
+    margin: 0;
+    padding: var(--espacio-4);
+    font-size: 13px;
+    color: var(--color-texto-tenue);
+    text-align: center;
+  }
+  [data-element='orders-summary-list'] {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  [data-element='orders-summary-row'] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: var(--espacio-2);
+    align-items: center;
+    padding: var(--espacio-2) var(--espacio-4);
+    border-bottom: 1px solid var(--color-borde);
+  }
+  [data-element='orders-summary-row']:last-child {
+    border-bottom: 0;
+  }
+  [data-element='orders-summary-name'] {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-texto);
+  }
+  [data-element='orders-summary-qty'] {
+    font-size: 14px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-marca);
+  }
+  [data-element='orders-summary-unit'] {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-texto-tenue);
+  }
+  [data-element='orders-summary-actions'] {
+    flex-shrink: 0;
+    display: flex;
+    gap: var(--espacio-2);
+    padding: var(--espacio-3) var(--espacio-4);
+    border-top: 1px solid var(--color-borde);
+  }
+  [data-element='orders-summary-actions'] [data-component='Button'] {
+    flex: 1 1 auto;
+  }
+}
+
+/*
+ * Albaranes — «Escanear» a la misma altura que el buscador compacto (SearchField).
+ */
+[data-element='albaranes-toolbar'] [data-component='Button'][data-instance='scanner-escanear'] {
+  height: var(--espacio-8);
+  min-height: var(--espacio-8);
+  max-height: var(--espacio-8);
+  font-size: 12px;
+}
+[data-element='albaranes-toolbar'] [data-component='Button'][data-instance='scanner-escanear']::before {
+  top: 0;
+  bottom: 0;
+  height: auto;
+  transform: none;
 }
 
 /*
@@ -1085,14 +2024,19 @@ button[data-element='catalog-filter'] {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   text-align: center;
   min-width: 0;
+  width: 100%;
 }
 [data-component='KpiStat'] [data-element='value'] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 1.125rem;
   font-weight: 900;
   line-height: 1;
+  height: 1.125rem;
   min-height: 1.125rem;
   color: var(--color-texto);
   font-variant-numeric: tabular-nums;
@@ -1107,10 +2051,14 @@ button[data-element='catalog-filter'] {
 @media (min-width: 768px) {
   [data-component='KpiStat'] [data-element='value'] {
     font-size: 1.875rem;
+    height: 1.875rem;
     min-height: 1.875rem;
   }
 }
 [data-component='KpiStat'] [data-element='label'] {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-1);
   margin-top: var(--espacio-1);
   font-size: 11px;
   font-weight: 700;
@@ -1128,17 +2076,760 @@ button[data-element='catalog-filter'] {
 [data-component='KpiStat'][data-tone='info'] [data-element='value'] {
   color: var(--color-informativo);
 }
+[data-instance='dashboard-ventas'] [data-component='KpiStat'] [data-element='value'] {
+  font-size: 11px;
+  font-weight: 400;
+  height: auto;
+  min-height: 0;
+}
+[data-instance='dashboard-ventas'] [data-component='KpiStat'] [data-element='label'] {
+  font-size: 8px;
+  font-weight: 400;
+  margin-top: 2px;
+}
+
+/*
+ * HomeScreen — página de inicio (T1). Como Springboard en iPhone:
+ * 4 columnas, 6 filas. La pista es el squircle.
+ * El nombre (icono o widget) vive en --home-name-band, bajo el hueco.
+ * Sin nombre: el widget tiene la altura de icono + nombre.
+ * Entre filas, después de los nombres, va --home-row-gap (el mismo aire que entre columnas).
+ * Widget: small 2×2, medium 4×2, large 4×4, wide 4×1, half 2×1, panel 3×2, tile 1×1.
+ * Un 2×2 iguala dos iconos + el hueco del medio.
+ * El widget es material de sistema (como iOS): cristal que toma el wallpaper,
+ * claro u oscuro según el fondo, contenido sobre el vidrio. El hilo es del icono.
+ */
+[data-component='HomeScreen'] {
+  --home-icon-size: 4.5rem;
+  --home-name: 1.65rem;
+  --home-name-band: calc(var(--espacio-2) + var(--home-name));
+  --home-shortcut-label-band: calc(var(--espacio-2) + 11px * 1.2);
+  --home-row-gap: var(--espacio-4);
+  --home-wallpaper: var(--color-envolvente);
+  --home-widget-radius: var(--radio-superficie);
+  --home-widget-fill: rgb(255 255 255 / 0.62);
+  --home-widget-fallback: color-mix(in srgb, white 72%, var(--home-wallpaper));
+  --home-widget-blur: var(--espacio-8);
+  --home-widget-saturate: 180%;
+  --home-widget-ink: var(--color-texto);
+  --home-widget-ink-secondary: color-mix(in srgb, var(--color-texto) 58%, transparent);
+  --home-widget-fill-secondary: rgb(0 0 0 / 0.06);
+  --home-widget-separator: rgb(0 0 0 / 0.08);
+  --home-widget-shadow:
+    inset 0 0.5px 0 rgb(255 255 255 / 0.55),
+    0 1px 1px rgb(0 0 0 / 0.04),
+    0 6px 18px rgb(0 0 0 / 0.14);
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: var(--home-icon-size);
+  grid-auto-flow: dense;
+  column-gap: var(--espacio-4);
+  row-gap: calc(var(--home-name-band) + var(--home-row-gap));
+  width: 100%;
+  max-width: 26rem;
+  margin-inline: auto;
+  padding-inline: var(--espacio-4);
+  padding-bottom: calc(var(--home-name-band) + var(--home-row-gap));
+  align-items: stretch;
+  overflow: visible;
+}
+[data-component='HomeScreen'][data-widget-scheme='dark'] {
+  --home-widget-fill: rgb(255 255 255 / 0.16);
+  --home-widget-fallback: rgb(255 255 255 / 0.16);
+  --home-widget-ink: var(--color-texto-invertido);
+  --home-widget-ink-secondary: var(--color-texto-invertido);
+  --home-widget-fill-secondary: rgb(255 255 255 / 0.1);
+  --home-widget-separator: rgb(255 255 255 / 0.16);
+  --home-widget-shadow:
+    inset 0 0.5px 0 rgb(255 255 255 / 0.38),
+    0 0 0 1px rgb(255 255 255 / 0.18),
+    0 8px 28px rgb(0 0 0 / 0.22);
+}
+[data-component='HomeScreen'] > [data-element='slot'] {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  align-self: stretch;
+  overflow: visible;
+}
+[data-component='HomeScreen'] > [data-element='slot']:not([data-slot='icon'])::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border: 0;
+  box-shadow: none;
+  border-radius: var(--home-widget-radius);
+  background: var(--color-envolvente-bajo);
+  pointer-events: none;
+}
+[data-component='HomeScreen'] > [data-element='slot']:not([data-slot='icon']):not([data-named='true'])::before {
+  bottom: calc(-1 * var(--home-name-band));
+}
+[data-component='HomeScreen'] > [data-element='slot'][data-slot='icon'] {
+  grid-column: span 1;
+  grid-row: span 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+[data-component='HomeScreen'] > [data-element='slot'][data-slot='small'] {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+[data-component='HomeScreen'] > [data-element='slot'][data-slot='medium'] {
+  grid-column: span 4;
+  grid-row: span 2;
+}
+[data-component='HomeScreen'] > [data-element='slot'][data-slot='large'] {
+  grid-column: span 4;
+  grid-row: span 4;
+}
+[data-component='HomeScreen'] > [data-element='slot'][data-slot='wide'] {
+  grid-column: span 4;
+  grid-row: span 1;
+}
+[data-component='HomeScreen'] > [data-element='slot'][data-slot='half'] {
+  grid-column: span 2;
+  grid-row: span 1;
+}
+[data-component='HomeScreen'] > [data-element='slot'][data-slot='panel'] {
+  grid-column: span 3;
+  grid-row: span 2;
+}
+[data-component='HomeScreen'] > [data-element='slot'][data-slot='tile'] {
+  grid-column: span 1;
+  grid-row: span 1;
+}
+/*
+ * Admin (/dashboard): áreas fijas.
+ * H. extras 3×2 en filas 3–4; Plantilla y Albaranes a la derecha.
+ * Fila 5: Cambio 1, Cambio 2, Recetas, Asistencia.
+ * Última fila: M obra, Stock, Ingredientes, Cambio.
+ */
+[data-component='HomeScreen'][data-layout='ops-admin'] {
+  grid-template-areas:
+    'ventas  ventas  ventas  ventas'
+    'caja    caja    caja    caja'
+    'hextras hextras hextras plant'
+    'hextras hextras hextras albaranes'
+    'cambio1 cambio2 recetas asis'
+    'mobra stock ingredientes cambio';
+  grid-template-rows:
+    var(--home-icon-size)
+    var(--home-icon-size)
+    var(--home-icon-size)
+    var(--home-icon-size)
+    var(--home-icon-size)
+    var(--home-icon-size);
+  grid-auto-flow: row;
+}
+[data-component='HomeScreen'] [data-element='header'] {
+  border-bottom: 0;
+}
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='dashboard-ventas'] {
+  grid-area: ventas;
+}
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='dashboard-caja-inicial'] {
+  grid-area: caja;
+}
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='dashboard-horas-extras'] {
+  grid-area: hextras;
+}
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='dashboard-caja-cambio-1'] {
+  grid-area: cambio1;
+}
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='dashboard-caja-cambio-2'] {
+  grid-area: cambio2;
+}
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-asistencia'] {
+  grid-area: asis;
+}
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-m-obra'] {
+  grid-area: mobra;
+}
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-plantilla'] {
+  grid-area: plant;
+}
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-stock'] {
+  grid-area: stock;
+}
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-recetas'] {
+  grid-area: recetas;
+}
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-albaranes'] {
+  grid-area: albaranes;
+}
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-cambio'] {
+  grid-area: cambio;
+}
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-ingredientes'] {
+  grid-area: ingredientes;
+}
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='dashboard-horas-extras'] > [data-element='name'] {
+  display: none;
+}
+/*
+ * Staff (/staff/dashboard): semana 4×1; horarios 3×2 (dos filas); iconos en columna derecha.
+ */
+[data-component='HomeScreen'][data-layout='staff'] {
+  grid-template-areas:
+    'semana   semana   semana   semana'
+    'horarios horarios horarios fichaje'
+    'horarios horarios horarios albaranes'
+    'recetas  pedidos cambio  propinas'
+    'compra   carta     reservas cierre'
+    'prov     invent    info     web';
+  grid-template-rows:
+    var(--home-icon-size)
+    var(--home-icon-size)
+    var(--home-icon-size)
+    var(--home-icon-size)
+    var(--home-icon-size)
+    var(--home-icon-size);
+  grid-auto-flow: row;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-horarios'] > [data-element='body'] {
+  color: var(--color-texto-invertido);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-horarios'] > [data-element='body'] > [data-component='StaffWeekSchedule'] {
+  --staff-calendar-gap: var(--espacio-2);
+  --staff-calendar-inset-bottom: var(--espacio-2);
+  --staff-week-day-size: 0.75rem;
+  --staff-week-expansion-min: 2.75rem;
+  --staff-week-expansion-max: 3.75rem;
+  box-sizing: border-box;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--staff-calendar-gap);
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding-bottom: var(--staff-calendar-inset-bottom);
+}
+[data-component='StaffWeekSchedule'] [data-element='month-scroll'] {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--staff-calendar-gap);
+  min-height: 0;
+  overflow: hidden;
+}
+[data-component='StaffWeekSchedule'] [data-element='month-weeks'] {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--staff-calendar-gap);
+  min-height: 0;
+  overflow: hidden;
+}
+[data-component='StaffWeekSchedule'] [data-element='week-block'] {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: var(--staff-calendar-gap);
+}
+[data-component='StaffWeekSchedule'] [data-element='week-block'][data-expanded='true'] {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+[data-component='StaffWeekSchedule'] [data-week-row] {
+  flex-shrink: 0;
+}
+[data-component='StaffWeekSchedule'] [data-week-row] button {
+  height: var(--staff-week-day-size);
+}
+[data-component='StaffWeekSchedule'] [data-element='week-expansion'] {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--staff-calendar-gap);
+  flex: 1 1 auto;
+  min-height: var(--staff-week-expansion-min);
+  max-height: var(--staff-week-expansion-max);
+  padding-block: var(--espacio-1);
+  align-items: stretch;
+  border-block: 1px solid rgb(255 255 255 / 0.1);
+}
+[data-component='StaffWeekSchedule'] [data-week-row] button::before {
+  z-index: 0;
+}
+[data-component='StaffWeekSchedule'] [data-element='weekend-day'] {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-height: 0;
+  height: 100%;
+}
+[data-component='StaffWeekSchedule'] [data-element='weekend-title'] {
+  margin-bottom: var(--espacio-2);
+}
+[data-component='StaffWeekSchedule'] [data-element='weekend-details'] {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--espacio-2);
+  min-height: 0;
+  overflow: hidden;
+}
+[data-component='StaffWeekSchedule'] [data-element='weekend-note'] {
+  margin-top: auto;
+  flex-shrink: 0;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] {
+  grid-area: semana;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-fichaje'] {
+  grid-area: fichaje;
+}
+/*
+ * Fichaje en turno: cronómetro + Salida reparten la huella completa
+ * de un atajo (icono + gap + nombre), sin franja de texto aparte.
+ */
+[data-component='StaffFichajeControl'][data-layout='dual-stack'] {
+  gap: 0;
+  --fichaje-dual-stack-height: calc(var(--home-icon-size) + var(--home-shortcut-label-band));
+}
+[data-component='StaffFichajeControl'][data-layout='dual-stack'] [data-element='iconStack'] {
+  display: flex;
+  width: 100%;
+  height: var(--fichaje-dual-stack-height);
+  flex: 0 0 var(--fichaje-dual-stack-height);
+  flex-direction: column;
+  gap: var(--espacio-1);
+}
+[data-component='StaffFichajeControl'][data-layout='dual-stack'] [data-element='iconWrap'] {
+  flex: 1 1 0;
+  min-height: 0;
+  border-radius: var(--radio-superficie);
+}
+[data-component='StaffFichajeControl'][data-layout='dual-stack'] [data-element='iconBox'] {
+  aspect-ratio: auto;
+  height: 100%;
+  width: 100%;
+  padding: 0;
+  cursor: default;
+  background-color: var(--shortcut-fill, transparent);
+  border-radius: var(--radio-superficie);
+  -webkit-mask-image: none;
+  mask-image: none;
+  overflow: hidden;
+}
+[data-component='StaffFichajeControl'][data-layout='dual-stack'] [data-element='iconBox'] [data-element='asset'] {
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+/*
+ * Las celdas del dual-stack no son cuadradas: la silueta squircle estirada
+ * rompe el anillo del rim (sobre todo arriba-izquierda). Aquí el contorno
+ * usa radio CSS + sombras interiores, mismo lenguaje que el resto del mosaico.
+ */
+[data-component='StaffFichajeControl'][data-layout='dual-stack'] [data-element='rim'] {
+  border-radius: var(--radio-superficie);
+  background: transparent;
+  -webkit-mask-image: none;
+  mask-image: none;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.24),
+    inset 0 1px 0 0 rgb(255 255 255 / 0.58),
+    inset 1px 0 0 0 rgb(255 255 255 / 0.38),
+    inset 0 -1px 0 0 rgb(0 0 0 / 0.2),
+    inset -1px 0 0 0 rgb(0 0 0 / 0.12);
+}
+[data-component='StaffFichajeControl'][data-layout='dual-stack'] button[data-element='iconBox'] {
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  padding: 0;
+}
+[data-component='StaffFichajeControl'] button[data-element='iconBox'] {
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  padding: 0;
+  width: 100%;
+  background-color: var(--shortcut-fill, transparent);
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-horarios'] {
+  grid-area: horarios;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-pedidos'] {
+  grid-area: pedidos;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-recetas'] {
+  grid-area: recetas;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-info'] {
+  grid-area: info;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-web'] {
+  grid-area: web;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-albaranes'] {
+  grid-area: albaranes;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-cambio'] {
+  grid-area: cambio;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-propinas'] {
+  grid-area: propinas;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-compra'] {
+  grid-area: compra;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-carta'] {
+  grid-area: carta;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-reservas'] {
+  grid-area: reservas;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-cierre'] {
+  grid-area: cierre;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-proveedores'] {
+  grid-area: prov;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-inventario'] {
+  grid-area: invent;
+}
+[data-component='HomeScreen'] > [data-element='slot'] > [data-element='body'] {
+  box-sizing: border-box;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  isolation: isolate;
+  color: var(--home-widget-ink);
+  border: 0;
+  border-radius: var(--home-widget-radius);
+  background: var(--home-widget-fallback);
+  box-shadow: var(--home-widget-shadow);
+}
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  [data-component='HomeScreen'] > [data-element='slot'] > [data-element='body'] {
+    background: var(--home-widget-fill);
+    -webkit-backdrop-filter: saturate(var(--home-widget-saturate)) blur(var(--home-widget-blur));
+    backdrop-filter: saturate(var(--home-widget-saturate)) blur(var(--home-widget-blur));
+  }
+}
+[data-component='HomeScreen'] > [data-element='slot'] > [data-element='body'] > * {
+  box-sizing: border-box;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background-color: transparent;
+  box-shadow: none;
+  border-radius: inherit;
+}
+[data-component='HomeScreen'] > [data-element='slot'] > [data-element='body'] > [data-component='Surface'] {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  background-color: transparent;
+  border-radius: inherit;
+}
+/*
+ * El contenido vive en el cristal: pastillas y celdas de papel no tapan el material.
+ * Los popovers (sombra fuerte) siguen siendo ficha, para leerse encima.
+ */
+[data-component='HomeScreen'] > [data-element='slot']:not([data-instance='staff-semana']) > [data-element='body'] :is(.bg-white, .bg-gray-50, .bg-blue-50\/10) {
+  background-color: transparent;
+  box-shadow: none;
+}
+[data-component='HomeScreen'] > [data-element='slot'] > [data-element='body'] :is(.bg-zinc-50, .bg-zinc-100, .bg-zinc-50\/50) {
+  background-color: var(--home-widget-fill-secondary);
+  box-shadow: none;
+}
+[data-component='HomeScreen'] > [data-element='slot'] > [data-element='body'] :is(.hover\:bg-zinc-50:hover, .hover\:bg-zinc-100:hover, .hover\:bg-gray-100:hover, .hover\:bg-zinc-50\/50:hover, .active\:bg-zinc-100:active) {
+  background-color: var(--home-widget-fill-secondary);
+}
+[data-component='HomeScreen'] > [data-element='slot'] > [data-element='body'] :is(.border-gray-100, .border-gray-50, .border-zinc-100) {
+  border-color: var(--home-widget-separator);
+}
+[data-component='HomeScreen'] > [data-element='slot']:not([data-instance='staff-semana']) > [data-element='body'] :is(.text-gray-400, .text-gray-300, .text-zinc-400, .text-zinc-500, .text-gray-500) {
+  color: var(--home-widget-ink-secondary);
+}
+[data-component='HomeScreen'][data-widget-scheme='dark'] > [data-element='slot']:not([data-instance='staff-semana']) > [data-element='body'] :is(.text-gray-900, .text-gray-800, .text-gray-700, .text-zinc-900, .text-zinc-800, .text-zinc-700, .text-zinc-600) {
+  color: var(--home-widget-ink);
+}
+/*
+ * Oscuro: el contenido del widget es blanco. Zinc, marca y azules
+ * no sobreviven. Los popovers de papel y el texto transparente (huecos
+ * de maquetación) se restauran. El canto es solo la hairline del cuerpo.
+ */
+[data-component='HomeScreen'][data-widget-scheme='dark'] > [data-element='slot']:not([data-instance='staff-semana']) > [data-element='body'],
+[data-component='HomeScreen'][data-widget-scheme='dark'] > [data-element='slot']:not([data-instance='staff-semana']) > [data-element='body'] * {
+  color: var(--color-texto-invertido);
+}
+[data-component='HomeScreen'][data-widget-scheme='dark'] > [data-element='slot'] > [data-element='body'] .text-transparent {
+  color: transparent;
+}
+[data-component='HomeScreen'] > [data-element='slot'] > [data-element='body'] :is(.shadow-lg, .shadow-2xl).bg-white {
+  background-color: var(--color-superficie);
+  color: var(--color-texto);
+}
+[data-component='HomeScreen'][data-widget-scheme='dark'] > [data-element='slot'] > [data-element='body'] :is(.shadow-lg, .shadow-2xl).bg-white * {
+  color: unset;
+}
+[data-component='HomeScreen'] > [data-element='slot']:not([data-slot='icon']):not([data-named='true']) > [data-element='body'] {
+  bottom: calc(-1 * var(--home-name-band));
+  height: auto;
+  max-height: none;
+}
+/*
+ * Semana Staff: papel blanco y cabecera roja. No es cristal.
+ * El invertido del mosaico no aplica: la tinta es la de historial.
+ */
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana']::before {
+  display: none;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] > [data-element='body'] {
+  color: var(--color-texto);
+  background: var(--color-superficie);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.12);
+}
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] > [data-element='body'] {
+    background: var(--color-superficie);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] > [data-element='body'] :is(.border-gray-100, .border-gray-50, .border-zinc-100) {
+  border-color: var(--color-borde-marcado);
+}
+/*
+ * Panel 3×2 sin nombre: el cristal llega al pie del segundo atajo de la columna.
+ * Una línea (11px × 1.2) + el aire de encima del nombre, no toda la franja
+ * de dos líneas — si no, queda más alto que el par.
+ */
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='dashboard-horas-extras']::before,
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='dashboard-horas-extras'] > [data-element='body'],
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-horarios']::before,
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-horarios'] > [data-element='body'] {
+  bottom: calc(-1 * var(--home-shortcut-label-band));
+  height: auto;
+  max-height: none;
+}
+/* Semana Staff: el mismo WeekSummary que historial y horas extras. */
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-fit='week'] [data-component='MonthCalendarFrame'] {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  transform: none;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] .month-cal-chrome--flush .month-cal-grid-wrap {
+  display: flex;
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  border: 0;
+  box-shadow: none;
+  background-color: var(--color-superficie);
+  border-radius: var(--home-widget-radius);
+  flex-direction: column;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] .month-cal-chrome--flush .month-cal-weeks {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] .month-cal-chrome--flush .month-cal-week {
+  display: grid;
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: stretch;
+}
+/*
+ * Resumen de persona (mosaico, historial, horas extras):
+ * la pintura del mosaico Staff. Cierres no se toca.
+ */
+[data-week-summary] .month-cal-grid-wrap > .grid.shrink-0 {
+  height: 15px;
+  min-height: 15px;
+  overflow: hidden;
+}
+[data-week-summary] .month-cal-grid-wrap > .grid.shrink-0 > div {
+  height: 15px;
+  min-height: 15px;
+  background-color: #dc2626;
+  background-image: linear-gradient(to bottom, #ef4444, #dc2626);
+  border-right: 1px solid rgb(255 255 255 / 0.3);
+  box-shadow: none;
+}
+[data-week-summary] .month-cal-grid-wrap > .grid.shrink-0 > div:last-child {
+  border-right: 0;
+}
+[data-week-summary] .month-cal-grid-wrap > .grid.shrink-0 span {
+  font-size: 7px;
+  font-weight: 700;
+  color: #fff;
+}
+[data-week-summary] .month-cal-week,
+[data-week-summary] .month-cal-cell,
+[data-week-summary] .month-cal-week > * {
+  min-height: 0 !important;
+}
+[data-week-summary] .month-cal-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 2px;
+  overflow: hidden;
+  background-color: var(--color-superficie);
+}
+[data-week-summary] .month-cal-cell > span:first-of-type {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  z-index: 10;
+  font-size: 7px;
+  font-weight: 400;
+  line-height: 1;
+}
+[data-week-summary] .month-cal-day-logs {
+  padding-top: 10px;
+  gap: 2px;
+}
+[data-week-summary] .month-cal-day-totals {
+  margin-top: auto;
+  flex-shrink: 0;
+}
+[data-week-summary] .month-cal-day-totals span {
+  font-weight: 400;
+}
+[data-week-summary] .month-cal-day-totals > div {
+  height: 10px;
+  font-size: 7px;
+}
+[data-week-summary] .month-cal-day-clocks > div {
+  height: 13px;
+  flex-shrink: 0;
+  gap: 3px;
+}
+[data-week-summary] .month-cal-day-clocks > div + div {
+  margin-top: 1px;
+}
+[data-week-summary] .month-cal-day-clocks .rounded-full,
+[data-week-summary] .month-cal-day-clocks .h-1\.5 {
+  width: 4.5px;
+  height: 4.5px;
+}
+[data-week-summary] .month-cal-day-clocks svg {
+  width: 6px;
+  height: 6px;
+}
+[data-week-summary] .month-cal-day-clocks span {
+  font-family: inherit;
+  font-size: 9px;
+  line-height: 1;
+  white-space: nowrap;
+}
+[data-week-summary] .month-cal-weeks > [data-week-footer]:not([data-overrides='true']) {
+  box-sizing: border-box;
+  height: 25px;
+  min-height: 25px;
+  max-height: 25px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  overflow: hidden;
+  border-top-width: 0.5px;
+}
+[data-week-summary] .month-cal-weeks > [data-week-footer] span {
+  font-weight: 500;
+  letter-spacing: 0;
+  white-space: nowrap;
+  text-transform: none;
+}
+[data-week-summary] .month-cal-weeks > [data-week-footer] .grid > div:nth-child(-n + 4) span {
+  font-size: 10px;
+  font-weight: 600;
+}
+[data-week-summary] .month-cal-weeks > [data-week-footer] .grid > div:nth-child(n + 5) span {
+  font-size: 8px;
+  font-weight: 500;
+}
+[data-week-summary][data-stacked='true'] [data-week-divider] {
+  height: 1px;
+  min-height: 1px;
+  background-color: var(--color-borde);
+  background-image: linear-gradient(
+    to right,
+    var(--color-borde) 0%,
+    #dc2626 18%,
+    #dc2626 82%,
+    var(--color-borde) 100%
+  );
+}
+/* Varias semanas: una sola L–D. El wrap recorta el radio hasta la última. */
+.month-cal-chrome[data-stacked='true'] .month-cal-grid-wrap {
+  overflow: hidden;
+}
+[data-component='HomeScreen'] > [data-element='slot'] > [data-element='name'] {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: var(--espacio-2);
+  pointer-events: none;
+  max-width: 100%;
+  padding-inline: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--color-texto-invertido);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+[data-component='HomeScreen'] [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'],
+[data-component='HomeScreen'] [data-component='StaffFichajeControl'] {
+  max-width: var(--home-icon-size);
+}
 
 /*
  * DashboardShortcut — atajo de mosaico. Icono en recuadro, nombre debajo.
  * Misma medida y mismo radio para todos.
- * plate=fill: fondo que completa la forma (Caja). plate=bleed: el gráfico se adapta (Recetas).
- * fill: el objeto se ve entero. bleed: el gráfico llena el recorte del sistema.
- * Apple: mismo recorte para todos. El arte llena el lienzo; el sistema recorta.
- * fill: placa opaca (C INICIAL). bleed: el gráfico a sangre (Recetas); el hilo va sobre el color.
+ * plate=fill: fondo que completa la forma (Caja, C INICIAL). plate=bleed: el gráfico es el icono (Recetas).
+ * fill: el objeto se ve entero. bleed: el PNG llega a sangre; el aire del dibujo va en el archivo.
+ * El recorte (máscara) es el mismo. El canto es el mismo hilo, hermano del recuadro.
  * Sin clip-path ni mix-blend (Safari iOS pintaba un recuadro y rayas).
  */
-[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'] {
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'],
+[data-component='StaffFichajeControl'] {
   --shortcut-silhouette: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Crect width='100' height='100' rx='22' ry='22' fill='black'/%3E%3C/svg%3E");
   box-sizing: border-box;
   display: flex;
@@ -1159,7 +2850,8 @@ button[data-element='catalog-filter'] {
   -webkit-appearance: none;
   -webkit-tap-highlight-color: transparent;
 }
-[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'] [data-element='iconWrap'] {
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'] [data-element='iconWrap'],
+[data-component='StaffFichajeControl'] [data-element='iconWrap'] {
   position: relative;
   width: 100%;
   flex: 0 0 auto;
@@ -1167,7 +2859,8 @@ button[data-element='catalog-filter'] {
   border-radius: var(--radio-superficie);
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.22);
 }
-[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'] [data-element='iconBox'] {
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'] [data-element='iconBox'],
+[data-component='StaffFichajeControl'] [data-element='iconBox'] {
   position: relative;
   box-sizing: border-box;
   width: 100%;
@@ -1185,7 +2878,8 @@ button[data-element='catalog-filter'] {
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
 }
-[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'] [data-element='rim'] {
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'] [data-element='rim'],
+[data-component='StaffFichajeControl'] [data-element='rim'] {
   position: absolute;
   inset: 0;
   z-index: 2;
@@ -1193,49 +2887,84 @@ button[data-element='catalog-filter'] {
   pointer-events: none;
   border: 0;
   border-radius: var(--radio-superficie);
-  background: transparent;
-  -webkit-mask-image: var(--shortcut-silhouette);
-  mask-image: var(--shortcut-silhouette);
-  -webkit-mask-size: 100% 100%;
-  mask-size: 100% 100%;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
+  background: linear-gradient(
+    145deg,
+    rgb(255 255 255 / 0.78) 0%,
+    rgb(255 255 255 / 0.28) 26%,
+    rgb(255 255 255 / 0.06) 48%,
+    rgb(0 0 0 / 0.08) 72%,
+    rgb(0 0 0 / 0.28) 100%
+  );
+  -webkit-mask-image: var(--shortcut-silhouette), var(--shortcut-silhouette);
+  mask-image: var(--shortcut-silhouette), var(--shortcut-silhouette);
+  -webkit-mask-size: 100% 100%, calc(100% - 2px) calc(100% - 2px);
+  mask-size: 100% 100%, calc(100% - 2px) calc(100% - 2px);
+  -webkit-mask-position: center, center;
+  mask-position: center, center;
+  -webkit-mask-repeat: no-repeat, no-repeat;
+  mask-repeat: no-repeat, no-repeat;
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
 }
-[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='fill'] [data-element='iconBox'] {
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='fill'] [data-element='iconBox'],
+[data-component='StaffFichajeControl'][data-plate='fill'] [data-element='iconBox'] {
   background-color: var(--shortcut-fill, var(--color-superficie));
   padding: 0;
 }
-[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='fill'] [data-element='rim'] {
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='fill'] [data-element='rim'],
+[data-component='StaffFichajeControl'][data-plate='fill'] [data-element='rim'] {
   background: linear-gradient(
-    180deg,
-    rgb(255 255 255 / 0.32) 0%,
-    rgb(255 255 255 / 0) 34%,
-    rgb(0 0 0 / 0) 70%,
-    rgb(0 0 0 / 0.14) 100%
+    145deg,
+    rgb(255 255 255 / 0.78) 0%,
+    rgb(255 255 255 / 0.28) 26%,
+    rgb(255 255 255 / 0.06) 48%,
+    rgb(0 0 0 / 0.08) 72%,
+    rgb(0 0 0 / 0.28) 100%
   );
+}
+[data-component='StaffFichajeControl'][data-layout='dual-stack'][data-plate='fill'] [data-element='rim'] {
+  background: transparent;
+  -webkit-mask-image: none;
+  mask-image: none;
   box-shadow:
-    inset 0 0 0 1px rgb(0 0 0 / 0.16),
-    inset 0 1px 0 rgb(255 255 255 / 0.5);
-  box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--color-texto) 20%, var(--shortcut-fill, var(--color-superficie))),
-    inset 0 1px 0 color-mix(in srgb, white 55%, var(--shortcut-fill, var(--color-superficie)));
+    inset 0 0 0 1px rgb(255 255 255 / 0.24),
+    inset 0 1px 0 0 rgb(255 255 255 / 0.58),
+    inset 1px 0 0 0 rgb(255 255 255 / 0.38),
+    inset 0 -1px 0 0 rgb(0 0 0 / 0.2),
+    inset -1px 0 0 0 rgb(0 0 0 / 0.12);
 }
 [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='fill'] [data-element='asset'] {
+  padding: var(--espacio-2);
+}
+[data-component='StaffFichajeControl'][data-plate='fill'] [data-element='asset'] {
   padding: var(--espacio-2);
 }
 [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'] [data-element='iconBox'] {
   padding: 0;
   background-color: transparent;
+  overflow: hidden;
+}
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='recetas'] [data-element='iconBox'],
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='staff-recetas'] [data-element='iconBox'],
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='admin-recetas'] [data-element='iconBox'] {
+  background-color: rgb(231 16 31);
+}
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='consumo'] [data-element='iconBox'] {
+  background-color: rgb(17 51 119);
+}
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='asistencia'] [data-element='iconBox'],
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='admin-asistencia'] [data-element='iconBox'] {
+  background-color: #fff;
 }
 [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'] [data-element='rim'] {
   background: linear-gradient(
-    180deg,
-    rgb(255 255 255 / 0.32) 0%,
-    rgb(255 255 255 / 0) 34%,
-    rgb(0 0 0 / 0) 70%,
-    rgb(0 0 0 / 0.14) 100%
+    145deg,
+    rgb(255 255 255 / 0.78) 0%,
+    rgb(255 255 255 / 0.28) 26%,
+    rgb(255 255 255 / 0.06) 48%,
+    rgb(0 0 0 / 0.08) 72%,
+    rgb(0 0 0 / 0.28) 100%
   );
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.28);
 }
 [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'] [data-element='asset'] {
   position: relative;
@@ -1273,7 +3002,66 @@ button[data-element='catalog-filter'] {
   object-position: center;
   transform: none;
 }
-[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'] [data-element='text'] {
+/* Solo PNG con margen: el mínimo para que el gráfico toque el recorte. */
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='staff-info'] [data-element='asset'] img {
+  width: 112%;
+  height: 112%;
+  left: -6%;
+  top: -6%;
+}
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='staff-web'] [data-element='asset'] img {
+  width: 118%;
+  height: 118%;
+  left: -9%;
+  top: -9%;
+}
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='staff-inventario'] [data-element='asset'] img {
+  width: 122%;
+  height: 122%;
+  left: -11%;
+  top: -11%;
+}
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='carta'] [data-element='asset'] img,
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='staff-carta'] [data-element='asset'] img {
+  width: 112%;
+  height: 112%;
+  left: -6%;
+  top: -6%;
+}
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='staff-pedidos'] [data-element='asset'] img {
+  width: 130%;
+  height: 130%;
+  left: -15%;
+  top: -15%;
+}
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='albaranes'] [data-element='asset'] img,
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='admin-albaranes'] [data-element='asset'] img,
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='staff-albaranes'] [data-element='asset'] img {
+  width: 132%;
+  height: 132%;
+  left: -16%;
+  top: -16%;
+}
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='ingredientes'] [data-element='asset'] img {
+  width: 127%;
+  height: 127%;
+  left: -13.5%;
+  top: -13.5%;
+}
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='admin-ingredientes'] [data-element='asset'] img {
+  width: 127%;
+  height: 127%;
+  left: -13.5%;
+  top: -13.5%;
+}
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='horarios'] [data-element='asset'] img {
+  width: 146%;
+  height: 146%;
+  left: -23%;
+  top: -23%;
+}
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'] [data-element='text'],
+[data-component='StaffFichajeControl'] [data-element='text'] {
   flex-shrink: 0;
   max-width: 100%;
   padding-inline: 2px;
@@ -1288,6 +3076,76 @@ button[data-element='catalog-filter'] {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/*
+ * Perfil — nombre compacto en cabecera; menú en una sola card blanca.
+ */
+[data-component='PageScreen'].page-profile [data-element='header'][data-title-align='center'] [data-element='title-block'] [data-element='title'] {
+  font-size: clamp(0.8125rem, 3.2vw, 1rem);
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: normal;
+  line-height: 1.2;
+}
+[data-component='Surface'][data-instance='profile-menu'] {
+  border-radius: var(--radio-superficie);
+  padding: var(--espacio-3);
+}
+[data-element='profile-actions'] {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--espacio-2);
+}
+[data-element='profile-actions'] [data-element='profile-action'] {
+  box-sizing: border-box;
+  display: flex;
+  min-width: 0;
+  min-height: var(--tactil-minimo);
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--espacio-1);
+  padding: var(--espacio-1);
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+[data-element='profile-actions'] [data-element='profile-action']:active {
+  opacity: 0.85;
+}
+[data-element='profile-actions'] [data-element='icon-wrap'] {
+  display: flex;
+  width: 3.25rem;
+  height: 3.25rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+}
+[data-element='profile-actions'] [data-element='icon-wrap'] img {
+  display: block;
+  width: 2.375rem;
+  height: 2.375rem;
+  object-fit: contain;
+}
+[data-element='profile-actions'] [data-element='label'] {
+  max-width: 100%;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--color-texto-fuerte);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+[data-element='profile-actions'] [data-instance='profile-cerrar-sesion'] [data-element='label'] {
+  color: var(--color-negativo);
 }
 
 /*
@@ -1391,9 +3249,8 @@ button[data-element='catalog-filter'] {
 }
 
 /*
- * PetroleumSegmented — borde color.marca, fill selected.
- * Densidades: comfortable (tactil.minimo) | compact (piloto recipes/ventas).
- * Radio del host = espacio.2 (8px), como el shell legacy rounded-lg — no radio.control.
+ * PetroleumSegmented — selector de sección. Borde y selected neutros;
+ * la marca no pinta el control.
  */
 [data-component='PetroleumSegmented'] {
   box-sizing: border-box;
@@ -1401,7 +3258,7 @@ button[data-element='catalog-filter'] {
   max-width: 100%;
   overflow: hidden;
   flex-shrink: 0;
-  border: 1px solid var(--color-marca);
+  border: 1px solid var(--color-borde);
   border-radius: var(--espacio-2);
   box-shadow: var(--elevacion-superficie);
   background-color: var(--color-superficie);
@@ -1416,31 +3273,31 @@ button[data-element='catalog-filter'] {
   border: 0;
   margin: 0;
   cursor: pointer;
-  font-weight: 900;
+  font-weight: 500;
   text-transform: none;
   white-space: nowrap;
   transition: background-color 150ms ease, color 150ms ease;
   background-color: var(--color-superficie);
-  color: var(--color-marca);
+  color: var(--color-texto);
   outline: none;
 }
 
 [data-component='PetroleumSegmented'] [data-element='option']:hover {
-  background-color: color-mix(in srgb, var(--color-marca) 5%, var(--color-superficie));
+  background-color: var(--color-superficie-inactiva);
 }
 
 [data-component='PetroleumSegmented'] [data-element='option'][aria-checked='true'] {
-  background-color: var(--color-marca);
-  color: var(--color-texto-invertido);
+  background-color: var(--color-superficie-inactiva);
+  color: var(--color-texto-fuerte);
 }
 
 [data-component='PetroleumSegmented'] [data-element='option'][aria-checked='true']:hover {
-  background-color: var(--color-marca);
-  color: var(--color-texto-invertido);
+  background-color: var(--color-superficie-inactiva);
+  color: var(--color-texto-fuerte);
 }
 
 [data-component='PetroleumSegmented'] [data-element='option']:focus-visible {
-  outline: 2px solid var(--color-marca);
+  outline: 2px solid var(--color-borde-marcado);
   outline-offset: 2px;
   z-index: 1;
 }
@@ -1458,6 +3315,34 @@ button[data-element='catalog-filter'] {
   padding-block: var(--espacio-1);
   font-size: 10px;
   letter-spacing: normal;
+}
+
+[data-component='PageScreen'] [data-element='toolbar'] [data-component='PetroleumSegmented'],
+[data-component='PageScreen'] [data-element='period'] [data-component='PetroleumSegmented'],
+[data-component='PageScreen'] [data-element='period-start'] [data-component='PetroleumSegmented'] {
+  background-color: transparent;
+  border-color: rgb(255 255 255 / 0.28);
+  box-shadow: none;
+}
+[data-component='PageScreen'] [data-element='toolbar'] [data-component='PetroleumSegmented'] [data-element='option'],
+[data-component='PageScreen'] [data-element='period'] [data-component='PetroleumSegmented'] [data-element='option'],
+[data-component='PageScreen'] [data-element='period-start'] [data-component='PetroleumSegmented'] [data-element='option'] {
+  background-color: transparent;
+  color: var(--color-texto-invertido);
+}
+[data-component='PageScreen'] [data-element='toolbar'] [data-component='PetroleumSegmented'] [data-element='option']:hover,
+[data-component='PageScreen'] [data-element='period'] [data-component='PetroleumSegmented'] [data-element='option']:hover,
+[data-component='PageScreen'] [data-element='period-start'] [data-component='PetroleumSegmented'] [data-element='option']:hover {
+  background-color: rgb(255 255 255 / 0.1);
+}
+[data-component='PageScreen'] [data-element='toolbar'] [data-component='PetroleumSegmented'] [data-element='option'][aria-checked='true'],
+[data-component='PageScreen'] [data-element='period'] [data-component='PetroleumSegmented'] [data-element='option'][aria-checked='true'],
+[data-component='PageScreen'] [data-element='period-start'] [data-component='PetroleumSegmented'] [data-element='option'][aria-checked='true'],
+[data-component='PageScreen'] [data-element='toolbar'] [data-component='PetroleumSegmented'] [data-element='option'][aria-checked='true']:hover,
+[data-component='PageScreen'] [data-element='period'] [data-component='PetroleumSegmented'] [data-element='option'][aria-checked='true']:hover,
+[data-component='PageScreen'] [data-element='period-start'] [data-component='PetroleumSegmented'] [data-element='option'][aria-checked='true']:hover {
+  background-color: var(--color-superficie);
+  color: var(--color-texto-fuerte);
 }
 
 /* Lente visual del sandbox: afecta a la expresión, nunca a datos o lógica. */
@@ -1666,24 +3551,24 @@ button[data-element='catalog-filter'] {
 
 @layer utilities {
   /**
-   * Fondo de app: azul corporativo (#5B8FB9) con difuminado sutil —
-   * un poco más claro arriba y más oscuro abajo.
+   * Fondo de app: marino con degradado visible —
+   * azul más abierto arriba (#2A5A96), más cerrado abajo (#0B1C36).
+   * Capa fija al viewport (::before): en scroll largo el degradado no se estira
+   * (background-attachment: fixed falla en iOS y pinta sobre toda la altura del documento).
    */
   .bg-marbella-shell {
-    background-color: #5b8fb9;
-    background-image:
-      radial-gradient(ellipse 130% 40% at 50% 100%, rgba(58, 105, 145, 0.5) 0%, transparent 65%),
-      radial-gradient(ellipse 90% 34% at 50% 0%, rgba(255, 255, 255, 0.14) 0%, transparent 58%),
-      linear-gradient(
-        to top,
-        #46769c 0%,
-        #4f84ab 22%,
-        #5b8fb9 42%,
-        #5b8fb9 58%,
-        #68a0c7 80%,
-        #7eb0d4 100%
-      );
-    background-attachment: fixed;
+    --home-wallpaper: var(--color-envolvente);
+    position: relative;
+    background-color: transparent;
+  }
+  .bg-marbella-shell::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-color: var(--color-envolvente);
+    background-image: var(--marbella-shell-image);
   }
 
   .pt-safe {
@@ -1777,21 +3662,26 @@ button[data-element='catalog-filter'] {
   }
 
   @media (min-width: 1024px) {
+    :root {
+      /* Legible; no achicar a 48px ni estirar celdas en un shell de 72rem. */
+      --month-cal-cell-min-h: 68px;
+    }
+
     .month-cal-shell {
       --marbella-cal-header: calc(3.5rem + env(safe-area-inset-top, 0px));
-      --marbella-cal-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+      --marbella-cal-bottom: var(--shell-bottom-inset);
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
       width: 100%;
-      max-width: 1400px;
+      max-width: 56rem;
       margin-left: auto;
       margin-right: auto;
       height: auto;
       max-height: none;
       min-height: 0 !important;
-      padding: 0.25rem 0.75rem !important;
-      padding-bottom: 0.35rem !important;
+      padding: 0.2rem 0.5rem !important;
+      padding-bottom: 0.25rem !important;
       overflow: visible;
     }
 
@@ -1822,8 +3712,8 @@ button[data-element='catalog-filter'] {
     }
 
     .month-cal-kpi {
-      padding-top: 0.4rem !important;
-      padding-bottom: 0.15rem !important;
+      padding-top: 0.25rem !important;
+      padding-bottom: 0.1rem !important;
     }
 
     .month-cal-kpi .month-cal-kpi-value {
@@ -1836,7 +3726,12 @@ button[data-element='catalog-filter'] {
       flex: none !important;
       min-height: 0 !important;
       overflow: hidden !important;
-      width: 97%;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .month-cal-cell {
+      padding: 0.1rem 0.15rem;
     }
 
     /* Días en un único grid plano (legado). Filas al alto de Cierres; crecen si hace falta. */
@@ -2032,11 +3927,324 @@ button[data-element='catalog-filter'] {
   backface-visibility: hidden;
 }
 
+/*
+ * TabBar — UITabBar iOS 26 Liquid Glass. Isla que flota sobre el contenido,
+ * no losa a sangre. Cristal del envolvente a media tinta + blur: se ve el
+ * fondo y sobre el papel de trabajo la cápsula y los iconos blancos se leen.
+ * Position fixed. Inset 16 pt, aire 8 pt sobre el home indicator.
+ * overflow visible: el blur no sobrevive a overflow:hidden en Safari.
+ */
+[data-component='TabBar'].marbella-fixed-bottombar {
+  box-sizing: border-box;
+  z-index: 95;
+  left: 0;
+  right: 0;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--espacio-2));
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+  width: min(26rem, calc(100% - (var(--espacio-4) * 2)));
+  max-width: 26rem;
+  height: var(--estructura-barra-inferior);
+  margin-inline: auto;
+  padding: 4px;
+  border: 0;
+  border-radius: 999px;
+  overflow: visible;
+  isolation: isolate;
+  transform: none;
+  -webkit-transform: none;
+  background-color: color-mix(in srgb, var(--color-envolvente-bajo) 55%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(32px);
+  backdrop-filter: saturate(180%) blur(32px);
+  box-shadow:
+    inset 0 0.5px 0 rgb(255 255 255 / 0.22),
+    0 0 0 1px rgb(255 255 255 / 0.18),
+    0 8px 24px rgb(0 0 0 / 0.28);
+  transition:
+    transform 0.35s cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1),
+    height 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  [data-component='TabBar'] {
+    background-color: color-mix(in srgb, var(--color-envolvente-bajo) 82%, white 18%);
+  }
+}
+[data-component='TabBar'][data-hidden='true'] {
+  transform: translateY(calc(100% + env(safe-area-inset-bottom, 0px) + var(--espacio-2)));
+  -webkit-transform: translateY(calc(100% + env(safe-area-inset-bottom, 0px) + var(--espacio-2)));
+  opacity: 0;
+  pointer-events: none;
+}
+[data-component='TabBar'][data-mode='compact'] {
+  height: 41px;
+}
+[data-component='TabBar'][data-mode='compact'] [data-element='item'] {
+  gap: 0;
+}
+[data-component='TabBar'][data-mode='compact'] [data-element='label'] {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+[data-component='TabBar'] [data-element='item'] {
+  box-sizing: border-box;
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 2px 4px;
+  border-radius: 999px;
+  color: rgb(255 255 255 / 0.55);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+[data-component='TabBar'] [data-element='item'][data-active='true'] {
+  color: var(--color-texto-invertido);
+  background-color: rgb(255 255 255 / 0.16);
+}
+[data-component='TabBar'] [data-element='item']:active {
+  opacity: 0.7;
+}
+[data-component='TabBar'] [data-element='icon'] {
+  display: flex;
+  width: 25px;
+  height: 25px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+[data-component='TabBar'] [data-element='icon'] svg {
+  width: 25px;
+  height: 25px;
+}
+[data-component='TabBar'] [data-element='label'] {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.12px;
+  text-transform: none;
+  transition: opacity 0.25s cubic-bezier(0.22, 1, 0.36, 1), max-height 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  max-height: 1.4em;
+}
+[data-component='TabBar'] [data-element='item'][data-active='true'] [data-element='label'] {
+  font-weight: 600;
+}
+
+/*
+ * Shell desktop (lg+): TabBar → sidebar; topbar y contenido se desplazan.
+ * Smartphone: sin cambios (variables a 0 / inset de cápsula).
+ */
+@media (min-width: 1024px) {
+  :root {
+    --shell-sidebar-width: 5.5rem;
+    --shell-bottom-inset: var(--espacio-4);
+    /* Fuera de @layer: debe ganar al token md (84px) sin capas. */
+    --month-cal-cell-min-h: 68px;
+  }
+
+  .month-cal-shell {
+    max-width: 56rem;
+    margin-left: auto;
+    margin-right: auto;
+    --marbella-cal-bottom: var(--shell-bottom-inset);
+  }
+
+  .month-cal-cell {
+    padding: 0.1rem 0.15rem;
+  }
+
+  .marbella-fixed-topbar {
+    left: var(--shell-sidebar-width);
+  }
+  .marbella-fixed-topbar[data-hidden='true'] {
+    transform: none;
+    -webkit-transform: none;
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .marbella-fixed-topbar > div {
+    max-width: none;
+    padding-inline: var(--espacio-4);
+  }
+
+  main[data-app-shell='true'] {
+    padding-left: var(--shell-sidebar-width);
+    padding-bottom: var(--espacio-4) !important;
+  }
+
+  .staff-shell-pad {
+    padding-bottom: 0 !important;
+  }
+
+  [data-component='TabBar'].marbella-fixed-bottombar,
+  [data-component='TabBar'].marbella-fixed-bottombar[data-mode='compact'],
+  [data-component='TabBar'].marbella-fixed-bottombar[data-mode='full'],
+  [data-component='TabBar'].marbella-fixed-bottombar[data-hidden='true'] {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: auto;
+    width: var(--shell-sidebar-width);
+    max-width: var(--shell-sidebar-width);
+    height: 100%;
+    margin: 0;
+    padding: var(--espacio-3) var(--espacio-2);
+    border-radius: 0;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: var(--espacio-1);
+    transform: none !important;
+    -webkit-transform: none !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    box-shadow:
+      inset -1px 0 0 rgb(255 255 255 / 0.12),
+      4px 0 24px rgb(0 0 0 / 0.18);
+  }
+
+  [data-component='TabBar'] [data-element='item'] {
+    flex: 0 0 auto;
+    height: auto;
+    min-height: var(--tactil-minimo);
+    padding: var(--espacio-2) var(--espacio-1);
+    border-radius: var(--radio-control);
+    gap: 4px;
+  }
+
+  [data-component='TabBar'][data-mode='compact'] [data-element='label'] {
+    max-height: 1.4em;
+    opacity: 1;
+    overflow: hidden;
+    pointer-events: auto;
+  }
+
+  [data-component='HomeScreen'] {
+    /* Densidad desktop: mismo tamaño de tile que móvil; más columnas, no tiles más grandes. */
+    --home-icon-size: 4.5rem;
+    max-width: min(52rem, 100%);
+    width: 100%;
+    margin-inline: auto;
+    padding-inline: var(--espacio-4);
+  }
+
+  [data-component='PageScreen'] {
+    padding-inline: var(--espacio-4);
+  }
+
+  [data-component='PageScreen'] > div {
+    max-width: min(56rem, 100%);
+  }
+
+  [data-component='PageScreen'][data-work='table'] > div {
+    max-width: min(56rem, 100%);
+  }
+
+  [data-component='PageScreen'][data-work='calendar'] > div {
+    max-width: min(56rem, 100%);
+  }
+
+  [data-component='PageScreen'][data-work='catalog'] > div {
+    max-width: min(72rem, 100%);
+  }
+
+  [data-component='PageScreen'][data-fill-viewport='true'] {
+    padding-bottom: var(--espacio-4);
+  }
+
+  /*
+   * Home ops-admin: mismos slots que smartphone, en paralelo.
+   * Iconos a tamaño fijo; widgets no se hinchan con más fr.
+   */
+  [data-component='HomeScreen'][data-layout='ops-admin'] {
+    max-width: min(52rem, 100%);
+    grid-template-columns:
+      repeat(4, minmax(0, 1fr))
+      var(--home-icon-size)
+      var(--home-icon-size);
+    grid-template-areas:
+      'ventas  ventas  ventas  ventas  plant   albaranes'
+      'caja    caja    caja    caja    recetas asis'
+      'hextras hextras hextras hextras mobra   stock'
+      'hextras hextras hextras hextras ingredientes cambio'
+      'cambio1 cambio1 cambio2 cambio2 .      .';
+    grid-template-rows:
+      var(--home-icon-size)
+      var(--home-icon-size)
+      var(--home-icon-size)
+      var(--home-icon-size)
+      var(--home-icon-size);
+    column-gap: var(--espacio-3);
+    row-gap: calc(var(--home-name-band) + var(--espacio-2));
+  }
+
+  [data-component='HomeScreen'][data-layout='staff'] {
+    /* Misma composición 4×N que smartphone; ancho acotado para no estirar tiles. */
+    max-width: min(42rem, 100%);
+  }
+
+  /* Widgets home: no heredar tipografía hinchada de KpiStat md+. */
+  [data-component='HomeScreen'] [data-component='KpiStat'] [data-element='value'] {
+    font-size: 11px;
+    min-height: 0;
+    height: auto;
+  }
+}
+
+@media (min-width: 1440px) {
+  :root {
+    --shell-sidebar-width: 6.25rem;
+  }
+  [data-component='HomeScreen'] {
+    --home-icon-size: 4.5rem;
+    max-width: min(56rem, 100%);
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin'] {
+    /* Misma rejilla 4+2: más viewport ≠ widgets más anchos. */
+    max-width: min(56rem, 100%);
+    --home-icon-size: 4.5rem;
+  }
+  [data-component='HomeScreen'][data-layout='staff'] {
+    max-width: min(44rem, 100%);
+    --home-icon-size: 4.5rem;
+  }
+  [data-component='PageScreen'] > div {
+    max-width: min(60rem, 100%);
+  }
+  [data-component='PageScreen'][data-work='table'] > div {
+    max-width: min(56rem, 100%);
+  }
+  [data-component='PageScreen'][data-work='calendar'] > div {
+    max-width: min(56rem, 100%);
+  }
+}
+
 .marbella-fixed-topbar {
   --app-navbar-height: var(--tactil-minimo);
   --app-navbar-scale: calc(var(--app-navbar-height) / var(--tactil-minimo));
   box-sizing: border-box;
   overflow: visible;
+  transition:
+    transform 0.35s cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.marbella-fixed-topbar[data-hidden='true'] {
+  transform: translateY(-100%);
+  -webkit-transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
 }
 .marbella-fixed-topbar [data-element='logo'] {
   width: calc(32px * var(--app-navbar-scale));
@@ -2097,7 +4305,8 @@ button[data-element='catalog-filter'] {
 }
 
 html[data-modal-open="true"] .marbella-fixed-topbar,
-html[data-modal-open="true"] .marbella-fixed-bottombar {
+html[data-modal-open="true"] .marbella-fixed-bottombar,
+html[data-modal-open="true"] [data-component='PageScreen'] [data-element='toolbar'][data-pin='true'] {
   filter: blur(6px);
   opacity: 0.35;
   pointer-events: none;
@@ -2160,4 +4369,33 @@ html[data-modal-open="true"] .marbella-fixed-bottombar {
 
 .n8n-chat-send-button {
   background-color: #3F5E7A !important;
+}
+
+@media print {
+  body.marbella-printing > *:not(#marbella-print-container) {
+    display: none !important;
+  }
+  #marbella-print-container {
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    left: 0 !important;
+    top: 0 !important;
+    background: white !important;
+    color: black !important;
+  }
+}
+#marbella-print-container {
+  display: none;
+}
+
+/* Cierre desktop: gana a hide-on-scroll del topbar/TabBar definidos más arriba. */
+@media (min-width: 1024px) {
+  .marbella-fixed-topbar[data-hidden='true'],
+  [data-component='TabBar'][data-hidden='true'] {
+    transform: none !important;
+    -webkit-transform: none !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
 }

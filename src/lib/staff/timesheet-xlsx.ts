@@ -14,6 +14,7 @@
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { downloadWorkbook } from '@/lib/export/browser-output';
 import type { TimesheetExportPayload, TimesheetDayRow } from './timesheet-export-payload';
 
 // ---------------------------------------------------------------------------
@@ -178,7 +179,7 @@ export function generateTimesheetXlsx(payload: TimesheetExportPayload): void {
         .replace(/\s+/g, '_')
         .replace(/[^a-z0-9_]/g, '');
 
-    XLSX.writeFile(wb, `jornada_${employeeSlug}_${monthLabel}.xlsx`, { compression: true });
+    downloadWorkbook(wb, `jornada_${employeeSlug}_${monthLabel}.xlsx`);
 }
 
 // ---------------------------------------------------------------------------
@@ -269,5 +270,5 @@ export function generateTimesheetXlsxMulti(
             .replace(/^_|_$/g, '')
         : format(new Date(firstPayload.periodYear, firstPayload.periodMonth, 1), 'yyyy-MM');
 
-    XLSX.writeFile(wb, `jornada_plantilla_${label}.xlsx`, { compression: true });
+    downloadWorkbook(wb, `jornada_plantilla_${label}.xlsx`);
 }

@@ -56,14 +56,14 @@ interface WeekSummary {
     startBalance: number;
     weeklyBalance: number;
     finalBalance: number;
-    estimatedValue: number;
+    estimatedValue: number | null;
     isPaid: boolean;
     preferStock?: boolean;
     limitHours?: number;
     hourlyRate?: number;
 }
 
-interface WeekCardProps {
+export interface WeekCardProps {
     week: { weekNumber: number; startDate: string; days: DayData[]; summary: WeekSummary };
     filterMonth: number;
     filterYear: number;
@@ -81,6 +81,11 @@ interface WeekCardProps {
      * Usado por Dashboard → Horas Extras → empleado.
      */
     readOnly?: boolean;
+    /** Varias semanas en el mismo marco: el radio inferior solo en la última. */
+    stacked?: boolean;
+    isLast?: boolean;
+    /** Historial por mes: atenúa días fuera del mes filtrado. En mosaico / semana suelta, false. */
+    dimOtherMonth?: boolean;
 }
 
 export function WeekCard({
@@ -92,6 +97,9 @@ export function WeekCard({
     userId,
     onApplyWeekOverrides,
     readOnly = false,
+    stacked = false,
+    isLast = true,
+    dimOtherMonth = true,
 }: WeekCardProps) {
     const interactive = !readOnly;
     const overridesEnabled = interactive && !!showWeekOverrides;
@@ -181,7 +189,7 @@ export function WeekCard({
                     const workedHours = hasPersonalAdd
                         ? Math.max(0, day.totalHours - justifiedHours)
                         : day.totalHours;
-                    const isOtherMonth = day.date ? (() => {
+                    const isOtherMonth = dimOtherMonth && day.date ? (() => {
                         const y = parseInt(day.date.slice(0, 4), 10);
                         const m = parseInt(day.date.slice(5, 7), 10) - 1;
                         return m !== filterMonth || y !== filterYear;
@@ -213,7 +221,7 @@ export function WeekCard({
                                 day.isToday && !isOtherMonth && 'bg-blue-50/10'
                             )}
                         >
-                            <span className={cn("absolute top-1 right-1 z-10 text-[9px] font-bold", day.isToday && !isOtherMonth ? "text-blue-600" : (isOtherMonth ? "text-gray-400 opacity-50" : "text-gray-400"))}>
+                            <span className={cn("absolute top-0.5 right-0.5 z-10 text-[7px] font-normal leading-none", day.isToday && !isOtherMonth ? "text-blue-600" : (isOtherMonth ? "text-gray-400 opacity-50" : "text-gray-400"))}>
                                 {day.dayNumber}
                             </span>
                             {isSpecialOnly ? (
@@ -232,66 +240,64 @@ export function WeekCard({
                                     <X size={18} strokeWidth={2.5} className={cn("text-red-600", isOtherMonth && 'opacity-60')} />
                                 </div>
                             ) : (
-                                <div className={cn("flex min-h-0 flex-1 flex-col justify-start gap-1", isOtherMonth && "opacity-45")}>
-                                    <div className="flex w-full flex-col items-center">
-                                        <div className="flex h-4 items-center justify-center gap-1">
+                                <div className={cn("month-cal-day-logs flex min-h-0 flex-1 flex-col justify-start gap-0.5 pt-2.5", isOtherMonth && "opacity-45")}>
+                                    <div className="month-cal-day-clocks flex w-full flex-col items-center">
+                                        <div className="flex h-[13px] items-center justify-center gap-[3px]">
                                             {day.hasLog && day.clockIn ? (
                                                 <>
-                                                    <div className={cn("h-1.5 w-1.5 shrink-0 rounded-full", isOtherMonth ? "bg-gray-400" : "bg-green-500")} />
-                                                    <span className={cn("font-mono text-[9px] leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>{day.clockIn}</span>
+                                                    <div className={cn("h-[4.5px] w-[4.5px] shrink-0 rounded-full", isOtherMonth ? "bg-gray-400" : "bg-green-500")} />
+                                                    <span className={cn("text-[9px] leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>{day.clockIn}</span>
                                                 </>
                                             ) : <span className="select-none text-[9px] text-transparent">0</span>}
                                         </div>
-                                        <div className="flex h-4 items-center justify-center gap-1">
+                                        <div className="mt-px flex h-[13px] items-center justify-center gap-[3px]">
                                             {day.hasLog && day.clockOut ? (
                                                 day.eventType === 'no_registered' ? (
                                                     <>
-                                                        <span className="inline-flex h-1.5 w-1.5 shrink-0 items-center justify-center overflow-visible" aria-hidden>
-                                                            <X size={8} strokeWidth={2.5} className={cn("shrink-0", isOtherMonth ? "text-gray-400" : "text-red-500")} />
+                                                        <span className="inline-flex h-[4.5px] w-[4.5px] shrink-0 items-center justify-center overflow-visible" aria-hidden>
+                                                            <X size={6} strokeWidth={2.5} className={cn("shrink-0", isOtherMonth ? "text-gray-400" : "text-red-500")} />
                                                         </span>
-                                                        <span className={cn("font-mono text-[9px] leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>{day.clockOut}</span>
+                                                        <span className={cn("text-[9px] leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>{day.clockOut}</span>
                                                     </>
                                                 ) : day.clock_out_show_no_registrada ? (
                                                     <span
                                                         title="Salida no registrada (olvidó fichar)"
                                                         className="inline-flex shrink-0 items-center justify-center gap-1"
                                                     >
-                                                        <span className="inline-flex h-1.5 w-1.5 shrink-0 items-center justify-center overflow-visible" aria-hidden>
-                                                            <X size={8} strokeWidth={2.5} className={cn("shrink-0", isOtherMonth ? "text-gray-400" : "text-red-500")} />
+                                                        <span className="inline-flex h-[4.5px] w-[4.5px] shrink-0 items-center justify-center overflow-visible" aria-hidden>
+                                                            <X size={6} strokeWidth={2.5} className={cn("shrink-0", isOtherMonth ? "text-gray-400" : "text-red-500")} />
                                                         </span>
-                                                        <span className={cn("font-mono text-[9px] leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>
+                                                        <span className={cn("text-[9px] leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>
                                                             {day.clockOut}
                                                         </span>
                                                     </span>
                                                 ) : (
                                                     <>
-                                                        <div className={cn("h-1.5 w-1.5 shrink-0 rounded-full", isOtherMonth ? "bg-gray-400" : "bg-red-500")} />
-                                                        <span className={cn("font-mono text-[9px] leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>{day.clockOut}</span>
+                                                        <div className={cn("h-[4.5px] w-[4.5px] shrink-0 rounded-full", isOtherMonth ? "bg-gray-400" : "bg-red-500")} />
+                                                        <span className={cn("text-[9px] leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>{day.clockOut}</span>
                                                     </>
                                                 )
-                                            ) : (day.hasLog && !day.clockOut && day.isToday) ? (
-                                                <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400 animate-pulse" />
                                             ) : (
                                                 <span className="select-none text-[9px] text-transparent">0</span>
                                             )}
                                         </div>
                                     </div>
-                                    <div className="w-full shrink-0">
-                                        <div className="flex h-3 items-center justify-between text-[8px] text-gray-400">
+                                    <div className="month-cal-day-totals mt-auto w-full shrink-0">
+                                        <div className="flex h-[10px] items-center justify-between text-[7px] font-normal text-gray-400">
                                             {day.hasLog && day.clockIn && hWorkedFmt ? (
                                                 <>
                                                     <span className="ml-0.5">H</span>
-                                                    <span className={cn("pr-1 font-bold", isOtherMonth ? "text-gray-400" : "text-gray-800")}>
+                                                    <span className={cn("pr-1 font-normal", isOtherMonth ? "text-gray-400" : "text-gray-800")}>
                                                         {hWorkedFmt}
                                                     </span>
                                                 </>
                                             ) : null}
                                         </div>
-                                        <div className="flex h-3 items-center justify-between text-[8px] text-gray-400">
+                                        <div className="flex h-[10px] items-center justify-between text-[7px] font-normal text-gray-400">
                                             {exFormatted ? (
                                                 <>
                                                     <span className="ml-0.5">Ex</span>
-                                                    <span className={cn("pr-1 font-bold", isOtherMonth ? "text-gray-400" : "text-gray-800")}>{exFormatted}</span>
+                                                    <span className={cn("pr-1 font-normal", isOtherMonth ? "text-gray-400" : "text-gray-800")}>{exFormatted}</span>
                                                 </>
                                             ) : null}
                                         </div>
@@ -304,20 +310,16 @@ export function WeekCard({
             </div>
 
             <div
+                data-week-footer="true"
+                data-overrides={overridesEnabled ? 'true' : undefined}
                 className={cn(
-                    'bg-white border-t border-gray-100 relative z-10 flex w-full items-stretch pr-14 md:pr-16',
-                    overridesEnabled ? 'min-h-[48px]' : 'min-h-8 py-0.5'
+                    'relative z-10 flex w-full items-stretch overflow-hidden border-t border-gray-100 bg-white',
+                    overridesEnabled ? 'min-h-[48px]' : 'h-[25px] min-h-[25px] max-h-[25px] py-px',
+                    stacked && !isLast && 'rounded-none',
                 )}
             >
-                {week.summary.isPaid && (
-                    <img
-                        src="/sello/pagado.png"
-                        alt="PAGADO"
-                        className="absolute right-0.5 top-1/2 -translate-y-1/2 w-[48px] h-auto z-30 pointer-events-none md:w-[56px]"
-                    />
-                )}
                 {/* «SEMANA N»: solo esta etiqueta, centrada en vertical en toda la altura de la fila */}
-                <div className="flex min-h-0 shrink-0 items-center self-stretch pl-3 min-w-[6.5rem]">
+                <div className="flex min-h-0 min-w-0 max-w-none shrink-0 items-center self-stretch px-2">
                     {overridesEnabled ? (
                         <button
                             type="button"
@@ -325,23 +327,23 @@ export function WeekCard({
                             aria-expanded={managerOverridesOpen}
                             className="flex h-full min-h-0 w-full items-center justify-start text-left rounded-none border-0 bg-transparent hover:bg-zinc-50 active:bg-zinc-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#36606F] focus-visible:ring-inset"
                         >
-                            <span className="font-black text-[11px] md:text-[12px] uppercase leading-none text-zinc-600 whitespace-nowrap">
-                                SEMANA {week.weekNumber}
+                            <span className="whitespace-nowrap text-[9px] font-medium leading-none text-zinc-600">
+                                Semana {week.weekNumber}
                             </span>
                         </button>
                     ) : (
                         <div className="flex h-full min-h-0 w-full items-center justify-start">
-                            <span className="font-black text-[11px] md:text-[12px] uppercase leading-none text-zinc-600 whitespace-nowrap">
-                                SEMANA {week.weekNumber}
+                            <span className="whitespace-nowrap text-[9px] font-medium leading-none text-zinc-600">
+                                Semana {week.weekNumber}
                             </span>
                         </div>
                     )}
                 </div>
-                {/* Métricas: bloque aparte, centrado en vertical en la fila */}
+                {/* Métricas: ocupan el hueco que deja Semana y, si hay, Pagado */}
                 <div className="flex min-h-0 min-w-0 flex-1 items-center self-stretch">
-                    <div className="grid w-full grid-cols-4 grid-rows-[auto_auto] gap-y-0.5">
+                    <div className="grid w-full min-w-0 grid-cols-4 grid-rows-[auto_auto] gap-y-0">
                         <div className="row-start-1 col-start-1 flex items-end justify-center self-stretch">
-                            <span className="pb-0.5 text-[11px] md:text-[12px] font-black leading-none text-black tabular-nums">
+                            <span className="text-[10px] font-semibold leading-none text-black tabular-nums">
                                 {week.summary.totalHours > 0.05 ? fmtDecimal(week.summary.totalHours) : '\u00a0'}
                             </span>
                         </div>
@@ -357,20 +359,20 @@ export function WeekCard({
                                 const colorClass = !showPending ? 'text-transparent' : startBalance >= 0 ? 'text-emerald-600' : 'text-red-600';
                                 const text = showPending ? fmtDecimal(Math.abs(startBalance)) : '\u00a0';
                                 return (
-                                    <span className={cn('pb-0.5 text-[11px] md:text-[12px] font-black leading-none tabular-nums', colorClass)}>
+                                    <span className={cn('text-[10px] font-semibold leading-none tabular-nums', colorClass)}>
                                         {text}
                                     </span>
                                 );
                             })()}
                         </div>
                         <div className="row-start-1 col-start-3 flex items-end justify-center self-stretch">
-                            <span className="pb-0.5 text-[11px] md:text-[12px] font-black leading-none text-black tabular-nums">
+                            <span className="text-[10px] font-semibold leading-none text-black tabular-nums">
                                 {(week.summary.weeklyBalance ?? 0) > 0.05 ? fmtDecimal(Math.abs(week.summary.weeklyBalance)) : '\u00a0'}
                             </span>
                         </div>
                         <div className="row-start-1 col-start-4 flex items-end justify-center self-stretch">
                             <span className={cn(
-                                "pb-0.5 text-[11px] md:text-[12px] font-black leading-none tabular-nums",
+                                "text-[10px] font-semibold leading-none tabular-nums",
                                 week.summary.estimatedValue === null || (week.summary as any).hasMissingRate
                                     ? "text-amber-600 font-bold text-[9px]"
                                     : "text-emerald-600"
@@ -383,19 +385,31 @@ export function WeekCard({
                             </span>
                         </div>
                         <div className="row-start-2 col-start-1 flex justify-center">
-                            <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">HORAS</span>
+                            <span className="text-[8px] font-medium leading-none text-zinc-400">Horas</span>
                         </div>
                         <div className="row-start-2 col-start-2 flex justify-center">
-                            <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter text-center">PENDIENTES</span>
+                            <span className="text-center text-[8px] font-medium leading-none text-zinc-400">Pendientes</span>
                         </div>
                         <div className="row-start-2 col-start-3 flex justify-center">
-                            <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">EXTRAS</span>
+                            <span className="text-[8px] font-medium leading-none text-zinc-400">Extras</span>
                         </div>
                         <div className="row-start-2 col-start-4 flex justify-center">
-                            <span className="text-[7px] text-zinc-400 font-black leading-none uppercase tracking-tighter">IMPORTE</span>
+                            <span className="text-[8px] font-medium leading-none text-zinc-400">Importe</span>
                         </div>
                     </div>
                 </div>
+                {week.summary.isPaid ? (
+                    <div
+                        data-week-paid="true"
+                        className="flex h-full shrink-0 items-center justify-center self-stretch"
+                    >
+                        <img
+                            src="/sello/pagado.png"
+                            alt="PAGADO"
+                            className="pointer-events-none h-auto w-[48px] md:w-[56px]"
+                        />
+                    </div>
+                ) : null}
             </div>
 
             {overridesEnabled && managerOverridesOpen && userId && onApplyWeekOverrides && (

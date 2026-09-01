@@ -17,7 +17,9 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { SearchField } from '@/components/ui/SearchField'
+import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { TABLE_COMPONENT_ID } from '@/lib/design-system'
+import Link from 'next/link'
 
 type Ingredient = {
   id: string
@@ -303,9 +305,21 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
   }
 
   return (
-    <div className="flex flex-col xl:flex-row gap-4 items-stretch min-h-0 flex-1">
-      <div className="w-full xl:w-[min(100%,520px)] xl:max-w-[44%] shrink-0 flex flex-col gap-3 min-h-0">
-        <div className="flex items-center gap-2 w-full shrink-0 relative">
+    <DashboardDetailLayout
+      title="Stock"
+      subtitle="Historial de movimientos y trazabilidad por ingrediente"
+      maxWidthClass="max-w-7xl"
+      showBackButton={false}
+      rightSlot={
+        <Link
+          href="/dashboard/recetas-tpv"
+          className="shrink-0 text-[11px] font-black uppercase tracking-widest hover:opacity-80 transition-colors min-h-[48px] flex items-center"
+        >
+          Mapeo TPV
+        </Link>
+      }
+      toolbarSlot={
+        <div className="flex items-center gap-2 w-full relative">
           <div className="w-full flex-1 min-w-0">
             <SearchField
               instance="inventory-ledger-search"
@@ -365,7 +379,10 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
             ) : null}
           </div>
         </div>
-
+      }
+    >
+    <div className="flex flex-col xl:flex-row gap-4 items-stretch min-h-0 flex-1">
+      <div className="w-full xl:w-[min(100%,520px)] xl:max-w-[44%] shrink-0 flex flex-col gap-3 min-h-0">
         <div className="flex-1 min-h-[min(480px,55vh)] max-h-[min(640px,70vh)] overflow-y-auto pr-0.5">
           {Object.keys(grouped).length === 0 ? (
             <EmptyState
@@ -378,7 +395,7 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
               {Object.entries(grouped).map(([cat, items]) => (
                 <section key={cat} className="flex flex-col gap-3">
                   <div className="text-sm font-black uppercase tracking-wide text-zinc-500 px-0.5">{cat}</div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-4 items-stretch justify-items-stretch">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-4 lg:gap-3 items-stretch justify-items-stretch">
                     {items.map((ing) => (
                       <LedgerIngredientCard
                         key={ing.id}
@@ -503,5 +520,6 @@ export function LedgerClient({ ingredients }: { ingredients: Ingredient[] }) {
         )}
       </div>
     </div>
+    </DashboardDetailLayout>
   )
 }

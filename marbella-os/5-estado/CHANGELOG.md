@@ -36,7 +36,225 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
 
+## 2026-09-01
+
+- **Un solo filtro de fecha.** Pulsar el mes o el icono de calendario abre el mismo `TimeFilterModal`. Sale el selector de mes petróleo de Asistencia y los pickers muertos de Ventas/Cierres. [PATRONES P7](../2-diseno/PATRONES.md#p7--filtro-temporal).
+
+## 2026-08-31
+
+- **Excel y PDF vuelven a descargar.** En Cierres, Ventas, Tesorería y Asistencia el menú de compartir es un Modal: el desplegable de la cabecera no recibía el toque.
+
+- **Calendario y tabla llevan el canto de widget.** Sin borde zinc; hairline blanca y sombra como en el mosaico.
+
+- **Ventas: cabecera de tabla como el resto de la app.** 11 px, peso 500, versales. Cuerpo sin mono.
+
+- **Sala LIVE entra por PageScreen.** Misma plantilla y SubNav que Ventas; las mesas son la pieza de trabajo.
+
+- **Cierres: Calendario/Tabla a la izquierda; el mes al centro.** Si el rendimiento es 0 %, no se pinta cifra.
+
+- **Reservas: el disparador es «+ reserva», un Button.** Relleno blanco sobre el envolvente.
+
+- **Calendario y tabla conservan su pieza blanca.** Se quita solo la ficha de PageScreen. El interior sigue blanco, con radio y sombra.
+
+- **Cabecera y buscador vuelven al subir.** La barra superior reaparece al scrollear hacia arriba en cualquier punto. El buscador flota como el tab bar, con el mismo cristal.
+
+- **Pestañas de vista: activa blanca, el resto al aire.** En Cierres y Ventas la pestaña elegida lleva relleno blanco; las demás muestran el envolvente y tinta invertida.
+
+- **El cromo de scroll se esconde por pasos.** La cabecera fija se oculta al bajar. El tab bar pierde primero los nombres y luego desaparece. El buscador de PageScreen se clava arriba al volver a subir.
+
+- **PageScreen: solo el protagonista va en blanco.** Calendario, tabla o catálogo viven en la ficha. KPI, buscador, segmented y acciones rápidas flotan en el envolvente.
+
+- **El catálogo vuelve al papel.** Recetas, ingredientes y proveedores son área de trabajo: la rejilla de productos va en la ficha blanca. El cromo (cabecera y buscador) sigue flotando.
+
+- **PageScreen: el catálogo no lleva ficha.** Recetas, ingredientes y proveedores se sientan en el envolvente; el blanco queda para tabla, calendario y formulario.
+
+- **PageScreen: el cromo flota; el papel es el trabajo.** Cabecera, fechas y buscador van sobre el envolvente. La tarjeta blanca empieza en la tabla, el calendario o el catálogo.
+
+- **Proveedores: un solo selector, con el icono de inicio.** Detalle, pedido y albarán pintan el mismo squircle y el nombre fuera. Ya no es la celda de catálogo.
+
+- **Proveedores: el selector de pedido y el detalle usan el pack nuevo.** Ganan los logos de `/icons/prov` sobre una URL vieja de la base.
+
+- **El sello Pagado no pisa el importe.** En el pie del resumen semanal es una columna más; Horas, Pendientes, Extras e Importe se reparte el hueco que queda.
+
+- **Plantilla: «Ver todos» no cambia de lista.** En Admin y Master sigue la misma rejilla; el interruptor de visibilidad va pequeño en la esquina derecha de cada persona.
+
+## 2026-08-30
+
+- **Asistencia: la raya entre semanas se apaga en los extremos.** Roja al centro, gris como el resto de líneas al llegar a los lados.
+
+- **Asistencia: raya roja entre semanas.** Fina, del color de L–D, entre el pie de una y el inicio de la siguiente.
+
+- **El resumen de persona vuelve al del mosaico Staff.** Historial, mosaico y horas extras pintan esa misma semana compacta (L–D roja, pie 25 px). En asistencia las semanas se apilan con una sola franja y el radio abajo solo en la última.
+
+- **Un solo resumen semanal.** Historial, mosaico Staff y el modal de horas extras pintan el mismo WeekSummary con los mismos datos. En asistencia las semanas se apilan: una sola franja L–D y el radio abajo solo en la última.
+
+- **Plantilla y asistencia: «Ver todos» es el último usuario.** En el selector de `/staff/history` y en Plantilla de Admin/Master va al final de la lista. Al activarse sigue el último y pasa a «Ver activos».
+
+- **Asistencia: sin icono de calendario ni Enviar al compartir.** El mes va sin «de» (agosto 2026) y las flechas quedan centradas en el ancho de la página.
+
+- **Admin: en H. extras, semana e indicador se acercan al calendario.** El importe queda más a la derecha.
+
+- **Admin: el mosaico cambia de orden.** H. extras lleva Plantilla y Albaranes a la derecha. Debajo: Cambio 1, Cambio 2, Recetas, Asistencia. Abajo: M obra, Stock, Ingredientes, Cambio.
+
+- **Staff: H y Ex del mosaico bajan un punto.** Etiquetas y cifras, a 7 px.
+
+- **Staff: el resumen semanal es papel blanco y franja roja.** El mosaico ya no lo pinta como cristal. El pie sube a 10 / 8 px y se queda en 25 px.
+
+- **Staff: el resumen semanal es blanco y rojo, no cristal.** El pie sube un punto (cifras 9 px, etiquetas 7 px) y se queda en 25 px para no recortar Ex.
+
+- **Staff: vuelve la fila Ex de cada día.** El pie del mosaico baja otra vez a 25 px para no recortarla.
+
+- **Staff: el resumen semanal sigue en cristal.** Solo vuelve la franja L–D roja con letras blancas. No es una placa de papel.
+
+- **Staff: el resumen semanal del mosaico vuelve a blanco y rojo.** Papel blanco y cabecera L–D roja. El resto (H/Ex abajo, tamaños, pie legible) se mantiene.
+
+- **Staff: el pie del mosaico se lee.** Cifras y «Semana N» a 11 px; Horas / Pendientes / Extras / Importe a 8 px. H y Ex de cada día, a 8 px.
+
+- **Staff: el pie del mosaico es barra de widget, no tabla.** Las cifras (10 px, 600) mandan; Horas / Pendientes / Extras / Importe van regulares y sin tracking. «Semana N» recula.
+
+- **Staff: L–D del mosaico deja el rojo.** Van en tinta del cristal, sin filetes de columna. El número del día pasa a regular.
+
+- **Staff: entrada y salida del mosaico un poco más grandes; la salida baja un punto.**
+
+- **Staff: H y Ex del resumen semanal van al fondo de la celda, sin negrita.** Relojes siguen arriba; las cifras de H y Ex pasan a regular.
+
+- **Staff: entrada y salida del mosaico usan la misma fuente que H y Ex.** La salida se acerca un poco a la entrada.
+
+- **Master: Cambio 1, Cambio 2 y H. extras son widgets de cristal.** Como en Admin. Si H. extras no tiene importe, muestra un tic.
+
+- **H. extras llega al nombre de Cambio 2.** Sin etiqueta propia, el cristal baja hasta ese pie; no se corta en el recuadro.
+
+- **H. extras sube a las filas 3–4.** Cambio 1 y 2 van a su derecha, como widget de cristal, no como icono blanco.
+
+- **Cambio 1 y 2 del mosaico Admin son iconos.** Solo el importe; pulsar abre el arqueo. A la derecha del calendario: Cambio e Ingredientes.
+
+- **H. extras ya no recorta el importe.** El calendario deja hueco; el valor queda a la derecha, entero.
+
+- **H. extras llena el hueco.** Las filas se reparte la altura; el día es un círculo. Más aire bajo el mes que entre semanas.
+
+- **H. extras compacta las filas del calendario.** Más aire bajo el mes. Semana e importe, en regular.
+
+- **Admin: Recetas, Asistencia, Plantilla y Albaranes en la fila 3.** H. extras baja a las filas 4–5. Las dos cajas de cambio van juntas en la última fila.
+
+- **H. extras: Semana al tamaño del importe; el valor, a la derecha.** Un poco más de aire bajo la fecha.
+
+- **H. extras del mosaico Admin es 3×2.** Recetas y Albaranes van a la derecha. El calendario y las semanas se compactan a la izquierda.
+
+- **Ventas centra los KPIs si no hay ventas.** Con importe, se quedan abajo.
+
+- **Caja inicial: Compra, Arqueo, card, Salida, Entrada.**
+
+- **H. extras apaga los días de otro mes y añade L M X J V S D.** El calendario se compacta para esa fila.
+
+- **El resumen de la semana Staff pierde mayúsculas; la línea de encima es más fina.**
+
+- **Caja inicial centra el bloque y alinea la diferencia con los conceptos.**
+
+- **La card de Caja inicial tiene la misma altura que los botones.**
+
+- **La card de Caja inicial se ajusta al importe.** Más baja, alineada otra vez con los botones.
+
+- **Caja inicial pierde Movimientos.** La card se alinea con los botones; la diferencia, con los conceptos.
+
+- **Ventas del mosaico marca 7 h y 23 h.** Solo si hay gráfica. Los conceptos suben un poco del canto.
+
+- **Ventas del mosaico: línea fina, sin gráfica vacía, KPIs abajo.** Sin tabla de tickets. La cabecera vuelve a su sitio.
+
+- **Caja inicial y cambio recuperan el disco; el icono va en trazo.** Entrada, salida, compra, arqueo y cambiar conservan el círculo de color; el pictograma es contorno.
+
+- **El gráfico de Ventas va encima de las cifras.** Siempre visible en el mosaico. Conceptos y valores a 11/8 px, regulares, para que quepan en el hueco.
+
+- **Ventas del mosaico baja de peso; caja flota en trazo.** Cifras y conceptos regulares y más pequeños, con aire para el gráfico. Entrada, salida, compra, arqueo y cambiar van en contorno sobre el cristal, no en disco relleno.
+
+- **El tab bar vuelve a ser cristal.** El envolvente va a media tinta con blur: se ve el fondo y sobre el papel no desaparece.
+
+- **El tab bar se lee sobre el papel.** La cápsula se sienta en el envolvente, no solo en cristal blanco: sobre las PageScreens blancas no desaparece.
+
+- **Las cabeceras de PageScreen ya no arrastran texto blanco.** Acciones, iconos y el selector de horario usan tinta de trabajo sobre el papel.
+
+## 2026-08-29
+
+- **Los modales de elección van en oscuro.** Proveedor, plantilla, Stock, Info, Manuales, Caja y Documentos usan el envolvente. Los de trabajo (caja, formularios, fichaje) siguen blancos.
+
+- **Cabeceras sin negrita; selectores de sección sin petróleo.** Títulos, fechas e iconos de cabecera van en peso 500/regular. PetroleumSegmented deja de pintar marca: borde y selected neutros.
+
+- **Las cabeceras de página y de modal dejan el petróleo.** Misma superficie que el trabajo, tinta oscura, hilo de borde. El periodo y los botones de cabecera también. La marca se queda en botones y controles, no en la franja.
+
+- **La barra inferior se oculta al hacer scroll hacia abajo.** Vuelve al subir o al llegar arriba del todo.
+
+- **El icono activo de la barra inferior va en trazo, sin relleno.** Blanco y semibold; la pastilla del destino se mantiene.
+
+- **La barra inferior es el tab bar de iPhone.** Fija, 49 pt, cristal del cromo, icono 25 pt y nombre 10 pt. Sin mayúsculas, sin sombra, sin agrandar el activo.
+
+- **Horas extras cabe en el mosaico; caja usa el hueco.** El calendario no se corta abajo. Entrada/Salida/Cambio/Arqueo crecen. Ventas y Cierres del dashboard bajan a 8 px.
+
+- **Carta llega al canto; Stock ya no lleva placa blanca; Uso app usa su PNG.** Ventas y Cierres del mosaico bajan un punto de tipo. El resumen de la semana no va en negrita.
+
+- **El resumen de la semana Staff se lee en el mosaico.** Semibold y tracking abierto: `font-black` a 5 px convertía PENDIENTES en una mancha. History no cambia.
+
+- **En el mosaico oscuro la fuente de los widgets es blanca.** Nada de zinc, gris ni marca sobre el cristal. El canto sigue siendo la hairline, no el hilo del icono.
+
+- **Todos los widgets usan el cristal de Caja cambio 2.** Blanco al 16 % + blur, sobre el marino de abajo — no un color mezclado.
+
+- **Todos los widgets del mosaico usan el cristal de Caja cambio 2.** Marino de abajo, el mismo arriba y abajo: ya no se tiñen del azul claro del cielo.
+
+- **El cristal del mosaico deja ver el marino.** Menos leche blanca: los de arriba ya no se encenizan sobre el azul abierto.
+
+- **El envolvente es marino con degradado, no una losa.** Azul más abierto arriba; los widgets del mosaico son cristal claro (blanco translúcido + blur), no una placa oscura.
+
+- **El envolvente es marino de medianoche.** Más cerrado (`#0E1A2C`), como las apps de banca oscura; el trabajo sigue en superficie clara.
+
+- **El envolvente es azul marino.** Oscuro (`#1B2A44`), sin el violeta ni el cielo anterior.
+
+- **El envolvente es petróleo con sombra violeta.** Oscuro y poco saturado (`#241E36`), no el morado de Trincadores ni el cielo anterior.
+
+- **El envolvente es el morado de Trincadores.** `#2E1260`, más abierto arriba (`#5030A8`) y más cerrado abajo. La marca de pantalla no cambia.
+
+- **El envolvente tira a azul-violeta.** Sigue siendo petróleo oscuro (`#2C3A58`), no el cielo anterior.
+
+- **El lienzo es petróleo oscuro.** Un solo envolvente (`#2A4A56`) con degradado en todas las páginas. Las superficies de trabajo siguen claras.
+
+- **Los widgets del mosaico se comportan como en iOS.** Cristal que toma el wallpaper, claro u oscuro según el fondo, y el contenido encima del vidrio — no pastillas de papel.
+
+- **La barra fija ya no lleva IA ni PG.** Reservas y notificaciones quedan a la derecha.
+
+- **Los widgets del mosaico ya no imitan al icono.** El hueco es material (leche sobre el petróleo), no un papel blanco con hilo de 2 px. Los iconos conservan el canto.
+
+- **La semana del mosaico Staff cabe en el hueco.** Misma tarjeta de hace dos días, más compacta: el número en la esquina y los relojes debajo, sin solaparse.
+
+- **Tras el acceso, te quedas dentro.** Un fallo de Auth (límite de peticiones) ya no borra la sesión ni te devuelve al login.
+
+- **La semana y tesorería no dicen «No autenticado» si la cookie sigue ahí.** No preguntan a Auth en cada carga.
+
+- **Tras el acceso, la app ya no te devuelve al login.** Las acciones de servidor (ventas, semana, tesorería) dejan de recibir la pantalla de acceso en vez de su respuesta.
+
+- **El canto del widget se ve.** Es un hilo de 2 px sobre la tarjeta, el mismo brillo que el icono. No una máscara que iOS se come.
+
+- **El canto del icono se sienta sobre el gráfico.** Los PNG con aire transparente se acercan al recorte para no dejar petróleo bajo el hilo.
+
+- **Los widgets del mosaico llevan el mismo canto que los iconos.** El hilo del recuadro no es solo del atajo.
+
+- **Los iconos nuevos llenan el recorte, sin placa.** Plantilla, Info, Carta, Albaranes, Cierre, Reservas, Rentabilidad y Proveedores no van sobre fondo blanco.
+
+- **H. extras, sin nombre, usa esa franja como altura.** El aire hasta Caja cambio es el mismo que entre filas, no un hueco extra.
+
+- **En Admin, Caja cambio 2 queda debajo de 1.** Los cuatro iconos van a la derecha, en 2×2. H. extras sigue en 4×2, sin la franja vacía del nombre entre las dos filas.
+
+- **Las tres pantallas de inicio conservan su inventario.** Staff, Admin y Master no ganan ni pierden widgets: solo cambia la disposición. Master sigue con C INICIAL, H. extras y Cambio 1/2 como iconos.
+
+- **Admin y Master montan el mismo mosaico operativo.** Ventas, Caja inicial, H. extras y Caja cambio 1/2 son las mismas ranuras. Staff sigue con Semana, Entrada y Horarios, en la misma rejilla.
+
+- **Un widget sin nombre usa también la franja del nombre.** Con `label` el texto va debajo; si no, el hueco es del widget.
+
+- **La pista de inicio es el icono.** El nombre va en el hueco entre filas. Ventas y Caja inicial son 4×1; H. extras 4×2; Caja cambio 2×1; Horarios 2×2. H. extras, Caja cambio y Horarios ya no llevan cabecera de otro color: el nombre va debajo.
+
+- **Las tres pantallas de inicio son la misma rejilla.** Staff, Admin y Master usan 4 columnas y huecos de icono. Un widget ocupa 2×2, 4×2 o 4×4; no un ancho libre.
+
 ## 2026-08-28
+
+- **Asistencia llena el recuadro.** El calendario llega a sangre; JUL 17 se lee entero. La forma la pone el atajo.
+
+- **Recetas, Consumo y Asistencia dejan la forma en el recuadro.** El archivo es el color a sangre y el dibujo con aire. El canto es el mismo hilo que C INICIAL.
 
 - **Recetas, Consumo y Asistencia se alejan un poco.** El color sigue a sangre; el gráfico tiene más aire. C INICIAL lleva el mismo brillo en el canto.
 

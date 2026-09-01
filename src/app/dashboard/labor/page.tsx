@@ -532,6 +532,7 @@ export default function LaborHistoryPage() {
                 title="Coste laboral"
                 showBackButton={false}
                 template="list"
+                work="calendar"
                 maxWidthClass="max-w-none"
                 className="month-cal-shell"
                 cardClassName="month-cal-card"
@@ -545,7 +546,7 @@ export default function LaborHistoryPage() {
                     />
                 }
                 rightSlot={
-                    <div className="flex items-center gap-1 md:gap-2 shrink-0 text-white">
+                    <div className="flex items-center gap-1 md:gap-2 shrink-0">
                             <PeriodFilterButton instance="labor-period-filter" onClick={() => setIsTimeFilterOpen(true)} />
                             <div className="relative shrink-0">
                                 <Button
@@ -560,9 +561,9 @@ export default function LaborHistoryPage() {
                             </div>
                     </div>
                 }
-            >
-                    <div className="flex flex-col month-cal-body min-h-0">
-                        <div className="grid grid-cols-4 gap-0.5 sm:gap-1 mb-1 py-1 shrink-0 min-w-0 px-2 md:px-3">
+            leadSlot={
+                <>
+                    <div className="grid grid-cols-4 gap-0.5 sm:gap-1 min-w-0">
                             <div className="flex min-w-0 flex-col items-center justify-center px-0.5 text-center">
                                 <span className="text-[6px] font-black uppercase leading-tight text-gray-400 sm:text-[7px]">
                                     Coste
@@ -595,9 +596,13 @@ export default function LaborHistoryPage() {
                             </div>
                         </div>
 
-                        <div className="mb-1 shrink-0 px-2 md:px-3">
+                        <div>
                             <ReconciliationBadge reconciliation={summary?.reconciliation} />
                         </div>
+                </>
+            }
+        >
+                    <div className="flex flex-col month-cal-body min-h-0">
 
                         {loading ? (
                             <div className="flex flex-col items-center justify-center py-20 gap-4">

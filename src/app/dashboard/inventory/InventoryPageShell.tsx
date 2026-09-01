@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { Pencil } from 'lucide-react'
-import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { Button } from '@/components/ui/button'
 import { InventoryClient, type ManagerIngredientRow } from './InventoryClient'
 
@@ -16,9 +15,12 @@ export function InventoryPageShell({ visibleIngredients, managerFullList, manage
   const [visibilityEditMode, setVisibilityEditMode] = useState(false)
 
   return (
-    <DashboardDetailLayout
-      title="Inventario"
-      maxWidthClass="max-w-7xl"
+    <InventoryClient
+      initialIngredients={visibleIngredients}
+      managerFullList={managerFullList}
+      visibilityEditMode={visibilityEditMode}
+      onCloseVisibilityEditMode={() => setVisibilityEditMode(false)}
+      managerEmptyHint={managerEmptyHint}
       rightSlot={
         <Button
           type="button"
@@ -29,14 +31,6 @@ export function InventoryPageShell({ visibleIngredients, managerFullList, manage
           onClick={() => setVisibilityEditMode((v) => !v)}
         />
       }
-    >
-      <InventoryClient
-        initialIngredients={visibleIngredients}
-        managerFullList={managerFullList}
-        visibilityEditMode={visibilityEditMode}
-        onCloseVisibilityEditMode={() => setVisibilityEditMode(false)}
-        managerEmptyHint={managerEmptyHint}
-      />
-    </DashboardDetailLayout>
+    />
   )
 }

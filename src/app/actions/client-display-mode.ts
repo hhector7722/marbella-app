@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { resolveSessionUser } from '@/lib/auth/resolve-session-user'
 import { z } from 'zod'
 
 const displayModeSchema = z.enum(['standalone', 'browser'])
@@ -12,9 +13,7 @@ export async function reportClientDisplayMode(mode: unknown) {
   }
 
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await resolveSessionUser()
 
   if (!user) {
     return { error: 'No autenticado' }
@@ -51,9 +50,7 @@ export async function fetchTeamClientInstallStatus(): Promise<{
   error?: string
 }> {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await resolveSessionUser()
 
   if (!user) {
     return { rows: [], error: 'No autenticado' }

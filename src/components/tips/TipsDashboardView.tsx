@@ -87,12 +87,11 @@ const fmtMoney = (val: number) => (Math.abs(val) < 0.005 ? ' ' : `${val.toFixed(
 const fmtHours = (val: number) => (Math.abs(val) < 0.005 ? ' ' : (val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)));
 
 /** Columnas desplegables (desglose H/€, Sin reg) vs fijas (nombre, H, PEN, PROP). */
-const TIP_EXPAND_TH = 'bg-[#4a7583]';
+const TIP_EXPAND_TH = 'bg-white/10';
 const TIP_EXPAND_TD = 'bg-ds-marca/[0.07] hover:bg-ds-marca/[0.11]';
 
 const TIP_TABLE_TH = 'whitespace-nowrap px-1 py-1 align-middle leading-none';
-const TIP_TABLE_TH_TEXT =
-  'text-[10px] font-black uppercase tracking-wide md:text-[8px]';
+const TIP_TABLE_TH_TEXT = '';
 const TIP_TABLE_TH_BTN =
   'inline-flex w-full max-w-full items-center gap-0.5 py-0 leading-none active:scale-95';
 const TIP_TABLE_BODY_TEXT = 'text-[10px] font-black leading-none md:text-[11px]';
@@ -101,11 +100,11 @@ const TIP_TABLE_DATA_CELL = cn(
   TIP_TABLE_BODY_TEXT
 );
 const TIP_TABLE_COMPACT_TH = 'px-0.5 py-0.5';
-const TIP_TABLE_COMPACT_TH_TEXT = 'text-[7px] tracking-tight md:text-[8px]';
+const TIP_TABLE_COMPACT_TH_TEXT = '';
 const TIP_TABLE_COMPACT_DATA_CELL = 'px-0.5 py-1 text-[8px] md:text-[9px]';
 const TIP_TABLE_COMPACT_NAME = 'px-1 py-1 text-[8px] md:text-[9px]';
 const TIP_TABLE_NAME_TH =
-  'sticky left-0 z-[1] max-w-none whitespace-nowrap bg-ds-marca px-1.5 text-left align-middle';
+  'sticky left-0 z-[1] max-w-none whitespace-nowrap px-1.5 text-left align-middle';
 const TIP_TABLE_NAME_TD = cn(
   'sticky left-0 z-[1] max-w-none whitespace-nowrap bg-white px-1.5 py-1.5 cursor-pointer align-middle',
   TIP_TABLE_BODY_TEXT,
@@ -464,6 +463,7 @@ export default function TipsDashboardView({
       showBackButton={false}
       maxWidthClass="max-w-6xl"
       template="list"
+      work="table"
       contentClassName="space-y-1.5 min-w-0"
       periodSlot={
         <PeriodNav
@@ -476,7 +476,7 @@ export default function TipsDashboardView({
         />
       }
       rightSlot={
-              <div className="flex items-center gap-1.5 md:gap-2 shrink-0 text-white">
+              <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
                 <PeriodFilterButton instance="tips-period-filter" onClick={() => setIsTimeFilterOpen(true)} />
                 <Button
                   type="button"

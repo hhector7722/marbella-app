@@ -144,7 +144,7 @@ export function humanWarning(element: StudioElement): string | null {
         return 'Este diseño también pinta las cabeceras de algunas pantallas de inicio. Cámbialo con cuidado.';
     }
     if (element.id === 'header-t1-sala-staff') {
-        return 'Sala no usa la plantilla de pantalla de gestión. El resumen semanal del equipo flota sin esa cabecera.';
+        return 'Sala LIVE usa la plantilla de pantalla de gestión. El resumen semanal del equipo flota sin esa cabecera.';
     }
     if (element.id === 'header-t1-ventas') {
         return 'Ventas no es un título con botón atrás: el día va al centro. No es la cabecera de página.';

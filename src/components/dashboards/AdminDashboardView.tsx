@@ -20,6 +20,8 @@ import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { updateProfile } from '@/app/actions/profile';
 import { Modal } from '@/components/ui/modal';
 import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
+import { OpsHomeScreen } from '@/components/dashboards/OpsHomeScreen';
+import { CajaCambioWidget, CajaInicialWidget, HorasExtrasWidget } from '@/components/dashboards/ops-widgets';
 import { getISOWeek, format, addDays, subDays, startOfWeek, parseISO, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isSameDay, isToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -154,24 +156,12 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const supabase = createClient();
     const router = useRouter();
 
-    const formatCentsToEur = (cents: number, opts?: { showPlus?: boolean }) => {
-        const showPlus = opts?.showPlus ?? false;
-        const neg = cents < 0;
-        const abs = Math.abs(cents);
-        const euros = Math.trunc(abs / 100);
-        const c = abs % 100;
-        const prefix = neg ? '-' : (showPlus && cents > 0 ? '+' : '');
-        return `${prefix}${euros}.${String(c).padStart(2, '0')}€`;
-    };
     const [treasuryLoading, setTreasuryLoading] = useState(!initialData);
     const [dailyStats, setDailyStats] = useState<any>(initialData?.dailyStats || null);
-    const [isMovementsExpanded, setIsMovementsExpanded] = useState(false);
     const [boxes, setBoxes] = useState<any[]>(initialData?.boxes || []);
-    const [boxMovements, setBoxMovements] = useState<any[]>(initialData?.boxMovements || []);
     const [theoreticalBalance, setTheoreticalBalance] = useState<number>(initialData?.theoreticalBalance || 0);
     const [actualBalance, setActualBalance] = useState<number>(initialData?.actualBalance || 0);
     const [differenceCents, setDifferenceCents] = useState<number>(initialData?.differenceCents ?? Math.round((initialData?.difference ?? 0) * 100));
-    const isDifferenceZero = differenceCents === 0;
     const [paidStatus, setPaidStatus] = useState<Record<string, boolean>>(initialData?.paidStatus || {});
     const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -224,8 +214,8 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
 
     useEffect(() => {
         const getUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user?.email) setCurrentUserEmail(user.email);
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user?.email) setCurrentUserEmail(session.user.email);
         };
         getUser();
     }, []);
@@ -358,7 +348,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             if (data) {
                 setDailyStats(data.dailyStats);
                 setBoxes(data.boxes);
-                setBoxMovements(data.boxMovements);
                 setTheoreticalBalance(data.theoreticalBalance || 0);
                 setActualBalance(data.actualBalance || 0);
                 setDifferenceCents(data.differenceCents ?? Math.round((data.difference ?? 0) * 100));
@@ -494,325 +483,52 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         <DashboardVentasSection />
     );
     const cajaInicialSection = (
-        <Surface variant="page" instance="dashboard-caja-inicial" className={cn("flex flex-col overflow-hidden", isMovementsExpanded ? "p-3" : "p-2 pb-0.5")}>
-            {treasuryLoading ? (
-                <div className="flex items-center justify-center min-h-[88px] py-4" role="status" aria-label="Cargando caja">
-                    <LoadingSpinner size="md" className="text-emerald-600" />
-                </div>
-            ) : (
-                boxes.filter(b => b.type === 'operational').map(box => (
-                        <div key={box.id} className="flex flex-col h-full">
-                            <div className="flex flex-row gap-1.5 md:gap-2 items-center">
-                                <div className="flex items-center gap-1 shrink-0">
-                                    <button onClick={() => router.push('/dashboard/movements')} className="shrink-0 w-fit min-w-0 px-3 py-2 md:py-2 rounded-xl bg-emerald-600 shadow-lg hover:bg-emerald-700 transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 text-white active:scale-95">
-                                        <span className="text-sm md:text-base font-black leading-none">
-                                            {Math.abs(actualBalance) > 0.005 ? `${actualBalance.toFixed(2)}€` : " "}
-                                        </span>
-                                        <span className="text-[7px] md:text-[9px] font-black uppercase tracking-wider opacity-80">Caja Inicial</span>
-                                    </button>
-                                </div>
-                                <div className="flex items-center justify-center min-w-0 flex-1">
-                                    {isDifferenceZero ? (
-                                        <span className="text-emerald-500 flex items-center">
-                                            <Check className="w-3.5 h-3.5 md:w-4 md:h-4" strokeWidth={3} />
-                                        </span>
-                                    ) : (
-                                        <span className={cn("text-[8px] md:text-[9px] font-black uppercase tracking-wider flex items-center gap-1", differenceCents < 0 ? "text-rose-500" : "text-emerald-500")}>
-                                            <AlertTriangle className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" strokeWidth={3} />
-                                            {formatCentsToEur(differenceCents, { showPlus: true })}
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="flex gap-1 md:gap-1.5 shrink-0">
-                                    <button onClick={() => openTreasuryModal(box, 'in')} className="bg-zinc-50/50 p-1.5 rounded-lg flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group">
-                                        <div className="w-6 h-6 flex items-center justify-center bg-emerald-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
-                                            <Plus size={12} className="text-white" strokeWidth={2.5} />
-                                        </div>
-                                        <span className="text-[6px] md:text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none">Entrada</span>
-                                    </button>
-                                    <button onClick={() => openTreasuryModal(box, 'out')} className="bg-zinc-50/50 p-1.5 rounded-lg flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group">
-                                        <div className="w-6 h-6 flex items-center justify-center bg-rose-500 rounded-full shadow-sm group-hover:scale-110 transition-transform">
-                                            <Minus size={12} className="text-white" strokeWidth={2.5} />
-                                        </div>
-                                        <span className="text-[6px] md:text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none">Salida</span>
-                                    </button>
-                                    <button onClick={() => openPurchaseMultiSourceModal()} className="bg-zinc-50/50 p-1.5 rounded-lg flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group">
-                                        <div className="w-6 h-6 flex items-center justify-center bg-[#5B8FB9] rounded-full shadow-sm group-hover:scale-110 transition-transform">
-                                            <ShoppingCart size={12} className="text-white" strokeWidth={2.5} />
-                                        </div>
-                                        <span className="text-[6px] md:text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none">Compra</span>
-                                    </button>
-                                    <button onClick={() => openTreasuryModal(box, 'audit')} className="bg-zinc-50/50 p-1.5 rounded-lg flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group">
-                                        <div className="w-6 h-6 flex items-center justify-center bg-orange-400 rounded-full shadow-sm group-hover:scale-110 transition-transform">
-                                            <RefreshCw size={12} className="text-white" strokeWidth={2.5} />
-                                        </div>
-                                        <span className="text-[6px] md:text-[7px] font-black text-zinc-500 uppercase tracking-widest leading-none">Arqueo</span>
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="flex flex-col flex-1 min-h-0">
-                                <div className={cn("flex justify-between items-center px-1 py-0.5", isMovementsExpanded ? "mb-2" : "mb-0.5")}>
-                                    <button onClick={() => setIsMovementsExpanded(!isMovementsExpanded)} className="flex items-center gap-1 text-[8px] md:text-[9px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors">
-                                        Movimientos
-                                        <ChevronDown className={cn("w-3 h-3 transition-transform duration-200", isMovementsExpanded && "rotate-180")} />
-                                    </button>
-                                    <Link href="/dashboard/movements" className="text-[7px] md:text-[8px] font-black text-[#5B8FB9] bg-zinc-50 px-2 py-1 rounded-full hover:bg-gray-100 transition-all flex items-center gap-0.5">
-                                        Ver más <ArrowRight className="w-2.5 h-2.5" />
-                                    </Link>
-                                </div>
-                                <div className={cn("overflow-hidden transition-all duration-300", isMovementsExpanded ? "flex-1 opacity-100" : "h-0 opacity-0")}>
-                                    <div className="space-y-1.5 py-1.5 max-h-[120px] md:max-h-[200px] overflow-y-auto no-scrollbar">
-                                        {boxMovements.length === 0 && (
-                                            <EmptyState
-                                                instance="dashboard-caja-movimientos-empty"
-                                                variant="none"
-                                                title="Sin historial reciente"
-                                            />
-                                        )}
-                                        {boxMovements.map(mov => (
-                                            <div key={mov.id} className="flex justify-between items-center text-[10px] md:text-sm bg-zinc-50 p-3 md:p-4 rounded-xl shadow-sm border border-gray-50">
-                                                <div className="flex items-center gap-2 md:gap-3 overflow-hidden">
-                                                    {mov.type === 'OUT' ? (
-                                                        <ArrowUpRight className="w-3.5 h-3.5 md:w-5 md:h-5 text-rose-400 shrink-0" />
-                                                    ) : (
-                                                        <ArrowDownLeft className="w-3.5 h-3.5 md:w-5 md:h-5 text-emerald-500 shrink-0" />
-                                                    )}
-                                                    <span className="truncate max-w-[150px] md:max-w-xs text-gray-600 font-medium">
-                                                        {mov.notes || 'Sin nota'}
-                                                    </span>
-                                                </div>
-                                                <span className={cn("font-black whitespace-nowrap", mov.type === 'OUT' ? 'text-rose-500' : 'text-emerald-600')}>
-                                                    {mov.type === 'OUT' ? '-' : '+'}
-                                                    {mov.amount > 0.005 ? `${mov.amount.toFixed(2)}€` : " "}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                ))
-            )}
-        </Surface>
+        <CajaInicialWidget
+            treasuryLoading={treasuryLoading}
+            boxes={boxes}
+            actualBalance={actualBalance}
+            differenceCents={differenceCents}
+            onOpenMovements={() => router.push('/dashboard/movements')}
+            onIn={(box) => openTreasuryModal(box, 'in')}
+            onOut={(box) => openTreasuryModal(box, 'out')}
+            onPurchase={() => openPurchaseMultiSourceModal()}
+            onAudit={(box) => openTreasuryModal(box, 'audit')}
+        />
     );
 
     const horasExtrasSection = (
-        <Surface variant="page" instance="dashboard-horas-extras" className="flex flex-col overflow-hidden">
-                    <div data-element="header" className="flex items-center justify-between gap-2 shrink-0">
-                        <span data-element="title">
-                            <span className="md:hidden">H. extras</span>
-                            <span className="hidden md:inline">Horas extras</span>
-                        </span>
-                        <div className="flex-1 flex items-center justify-center min-w-0">
-                            <div className="inline-flex items-center gap-1 md:gap-1.5 rounded-lg">
-                                <button
-                                    type="button"
-                                    onClick={() => setOvertimeViewMonth(prev => subMonths(prev, 1))}
-                                    className="shrink-0 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-[0.98] transition-all cursor-pointer touch-manipulation"
-                                    aria-label="Mes anterior"
-                                >
-                                    <ChevronLeft className="w-5 h-5 text-white" />
-                                </button>
-                                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-white/90 whitespace-nowrap min-w-[70px] md:min-w-[80px] text-center">
-                                    {format(overtimeViewMonth, 'MMMM yyyy', { locale: es })}
-                                </span>
-                                <button
-                                    type="button"
-                                    onClick={() => setOvertimeViewMonth(prev => addMonths(prev, 1))}
-                                    className="shrink-0 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-[0.98] transition-all cursor-pointer touch-manipulation"
-                                    aria-label="Mes siguiente"
-                                >
-                                    <ChevronRight className="w-5 h-5 text-white" />
-                                </button>
-                            </div>
-                        </div>
-                        <Link
-                            href="/dashboard/overtime"
-                            className="shrink-0 text-[7px] font-black text-white/70 hover:text-white"
-                        >
-                            Ver más
-                        </Link>
-                    </div>
-                    <div className="p-2 md:p-2 relative min-h-[120px]">
-                        {overtimeLoading ? (
-                            <div className="absolute inset-0 flex items-center justify-center" role="status" aria-label="Cargando horas extras">
-                                <LoadingSpinner size="md" className="text-purple-600" />
-                            </div>
-                        ) : (
-                        <div className="flex gap-2">
-                            {(() => {
-                                const start = startOfWeek(startOfMonth(overtimeViewMonth), { weekStartsOn: 1 });
-                                const end = endOfWeek(endOfMonth(overtimeViewMonth), { weekStartsOn: 1 });
-                                const days = eachDayOfInterval({ start, end });
-                                const today = new Date();
-                                const currentWeekStart = format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-                                const rows: Date[][] = [];
-                                for (let i = 0; i < days.length; i += 7) rows.push(days.slice(i, i + 7));
-                                const rowWeekIds = rows.map(row => row[0] ? format(row[0], 'yyyy-MM-dd') : '');
-                                return (
-                                    <>
-                                        <div className="shrink-0 flex flex-col gap-[2px]">
-                                            {rows.map((rowDays, rowIndex) => (
-                                                <div key={rowIndex} className="grid grid-cols-7 gap-[2px]">
-                                                    {rowDays.map((day) => {
-                                                        const inMonth = isSameMonth(day, overtimeViewMonth);
-                                                        const isToday = isSameDay(day, today);
-                                                        return (
-                                                            <div
-                                                                key={day.getTime()}
-                                                                className={cn(
-                                                                    'w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full text-[9px] md:text-[10px] font-bold',
-                                                                    !inMonth && 'text-zinc-300',
-                                                                    inMonth && !isToday && 'text-zinc-600',
-                                                                    isToday && 'bg-ds-marca text-white'
-                                                                )}
-                                                            >
-                                                                {format(day, 'd')}
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <div className="flex-1 min-w-0 flex flex-col gap-[2px]">
-                                            {rowWeekIds.map((weekId) => {
-                                                if (weekId === currentWeekStart) {
-                                                    return <div key={weekId} className="h-6 md:h-7 flex-shrink-0" aria-hidden />;
-                                                }
-                                                const week = overtimeWeeksData.find((w: any) => w.weekId === weekId);
-                                                if (!week) {
-                                                    return <div key={weekId} className="h-6 md:h-7 flex-shrink-0" aria-hidden />;
-                                                }
-                                                const isFullyPaid = week.staff?.every((s: any) => {
-                                                    const cost = (s.totalCost ?? s.amount ?? 0);
-                                                    return cost < 0.05 || !!s.isPaid || s.preferStock === true;
-                                                });
-                                                const weekTotal = week.totalAmount ?? week.total ?? 0;
-                                                return (
-                                                    <button
-                                                        key={week.weekId}
-                                                        type="button"
-                                                        onClick={() => {
-                                                            trackAdminOvertimeWeek(`Semana ${getISOWeek(new Date(week.weekId))}`, { weekId: week.weekId });
-                                                            setWeekDetailModal({ week });
-                                                        }}
-                                                        className={cn(
-                                                            'w-full min-w-0 h-6 md:h-7 flex items-center gap-2 px-1.5 py-0 rounded-md shadow-sm hover:shadow transition-all text-left flex-shrink-0',
-                                                            'bg-transparent border-0 hover:bg-purple-50/50'
-                                                        )}
-                                                    >
-                                                        <div className="flex min-w-0 flex-1 items-center gap-1">
-                                                            <div className="shrink-0 flex items-center justify-center w-6 md:w-7">
-                                                                {isFullyPaid ? (
-                                                                    <div className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm">
-                                                                        <Check className="w-2 h-2 md:w-2.5 md:h-2.5 text-white" strokeWidth={4} />
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full bg-rose-500 flex items-center justify-center shadow-sm">
-                                                                        <span className="text-white font-black text-[7px] leading-none">!</span>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                            <span className="text-[7px] md:text-[8px] font-black text-zinc-500 uppercase shrink-0">Semana {getISOWeek(new Date(week.weekId))}</span>
-                                                        </div>
-                                                        <span className="ml-auto shrink-0 text-right tabular-nums whitespace-nowrap text-[9px] md:text-[10px] font-black text-zinc-900">
-                                                            {weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}
-                                                        </span>
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    </>
-                                );
-                            })()}
-                        </div>
-                        )}
-                    </div>
-        </Surface>
+        <HorasExtrasWidget
+            overtimeViewMonth={overtimeViewMonth}
+            onPrevMonth={() => setOvertimeViewMonth((prev) => subMonths(prev, 1))}
+            onNextMonth={() => setOvertimeViewMonth((prev) => addMonths(prev, 1))}
+            overtimeLoading={overtimeLoading}
+            overtimeWeeksData={overtimeWeeksData}
+            onWeekClick={(week) => {
+                trackAdminOvertimeWeek(`Semana ${getISOWeek(new Date(week.weekId))}`, { weekId: week.weekId });
+                setWeekDetailModal({ week });
+            }}
+        />
     );
 
-    // Cajas cambio + accesos rápidos: rejilla unificada para que cada fila tenga la misma altura
-    // que los botones cuadrados (aspect-square); las tarjetas de cambio ocupan 2 columnas y se estiran.
     const dashboardChangeBoxes = boxes
-        .filter(b => b.type === 'change')
+        .filter((b) => b.type === 'change')
         .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
         .slice(0, 2);
 
-    const formatChangeBoxEur = (v: number) =>
-        v > 0.005 ? (Math.abs(v - Math.round(v)) < 0.005 ? `${Math.round(v)}€` : `${v.toFixed(2)}€`) : " ";
-
-    const renderDashboardChangeCard = (title: string, idx: number) => {
-        if (treasuryLoading) {
-            return (
-                <Surface
-                    key={`change-loading-${idx}`}
-                    variant="block"
-                    instance={`dashboard-caja-cambio-loading-${idx}`}
-                    className="flex flex-col overflow-hidden h-full min-h-[72px] w-full min-w-0"
-                >
-                    <div data-element="header" className="flex items-center justify-between shrink-0">
-                        <h3 data-element="title">{title}</h3>
-                    </div>
-                    <div className="flex-1 flex items-center justify-center min-h-[48px]" role="status" aria-label={`Cargando ${title}`}>
-                        <LoadingSpinner size="sm" className="text-ds-marca" />
-                    </div>
-                </Surface>
-            );
-        }
-        const box = dashboardChangeBoxes[idx];
-        if (!box) return null;
-        return (
-            <Surface
-                key={box.id}
-                variant="block"
-                instance={`dashboard-caja-cambio-${box.id}`}
-                className="flex flex-col overflow-hidden h-full min-h-0 w-full min-w-0"
-            >
-                <div data-element="header" className="flex items-center justify-between shrink-0">
-                    <h3 data-element="title">{title}</h3>
-                </div>
-                <div className="flex-1 flex items-center justify-center min-h-0 p-0.5 md:p-0.5 min-w-0">
-                    <div className="grid w-full min-w-0 grid-cols-3 items-center gap-x-1 sm:gap-x-1 md:gap-x-1.5 px-0.5 sm:px-1 md:px-1.5">
-                        <div className="min-w-0 flex flex-col items-start justify-center text-left">
-                            <span className="max-w-full text-xs sm:text-sm md:text-base font-black tabular-nums leading-tight text-zinc-800 break-words">
-                                {formatChangeBoxEur(box.current_balance)}
-                            </span>
-                        </div>
-                        <div className="flex min-h-[40px] min-w-0 items-center justify-center shrink-0">
-                            <button
-                                type="button"
-                                onClick={() => { setCashModalMode('swap'); }}
-                                className="bg-zinc-50/50 p-1 rounded-lg flex max-w-full flex-col items-center justify-center gap-1 transition-all active:scale-95 group min-h-[40px] min-w-[40px] shrink-0"
-                            >
-                                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500 text-white shadow-sm group-hover:scale-110 transition-transform md:h-5 md:w-5">
-                                    <ArrowRightLeft size={9} strokeWidth={2.5} />
-                                </div>
-                                <span className="max-w-[3.25rem] text-center text-[5px] font-black uppercase leading-none tracking-widest text-zinc-500 sm:max-w-none sm:text-[6px]">Cambiar</span>
-                            </button>
-                        </div>
-                        <div className="flex min-h-[40px] min-w-0 items-center justify-center shrink-0">
-                            <button
-                                type="button"
-                                onClick={() => openTreasuryModal(box, 'audit')}
-                                className="bg-zinc-50/50 p-1 rounded-lg flex max-w-full flex-col items-center justify-center gap-1 transition-all active:scale-95 group min-h-[40px] min-w-[40px] shrink-0"
-                            >
-                                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-orange-500 text-white shadow-sm group-hover:scale-110 transition-transform md:h-5 md:w-5">
-                                    <RefreshCw size={9} strokeWidth={2.5} />
-                                </div>
-                                <span className="max-w-[3.25rem] text-center text-[5px] font-black uppercase leading-none tracking-widest text-zinc-500 sm:max-w-none sm:text-[6px]">Arqueo</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </Surface>
-        );
-    };
-
+    const renderDashboardChangeCard = (title: string, idx: number) => (
+        <CajaCambioWidget
+            title={title}
+            idx={idx}
+            treasuryLoading={treasuryLoading}
+            box={dashboardChangeBoxes[idx]}
+            onAudit={(box) => openTreasuryModal(box, 'audit')}
+        />
+    );
     const quickActionCards = [
         { title: 'Asistencia', img: '/icons/calendar.png', link: '/staff/history', instance: 'admin-asistencia' },
-        { title: 'M obra', img: '/icons/overtime.png', link: '/dashboard/labor', instance: 'admin-m-obra', plate: true },
-        { title: 'Plantilla', img: '/icons/admin.png', link: '/staff/dashboard', instance: 'admin-plantilla', plate: true },
-        { title: 'Stock', img: '/icons/suppliers.png', link: '/ingredients', instance: 'admin-stock', plate: true },
+        { title: 'M obra', img: '/icons/overtime.png', link: '/dashboard/labor', instance: 'admin-m-obra' },
+        { title: 'Plantilla', img: '/icons/admin.png', link: '/staff/dashboard', instance: 'admin-plantilla' },
+        { title: 'Stock', img: '/icons/suppliers.png', link: '/ingredients', instance: 'admin-stock' },
     ] as const;
 
     const renderQuickActionSquare = (card: (typeof quickActionCards)[number]) => (
@@ -820,7 +536,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             instance={card.instance}
             label={card.title}
             img={card.img}
-            plate={'plate' in card ? card.plate : false}
             onClick={() => {
                 if (card.title === 'Plantilla') setIsStaffModalOpen(true);
                 else if (card.title === 'Stock') setIsProductModalOpen(true);
@@ -829,71 +544,55 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         />
     );
 
-    const dashboardCambiosYAccesosMobile = (
-        <div className="grid grid-cols-4 gap-x-5 gap-y-5 items-stretch md:hidden">
-            <div className="col-span-2 row-start-1 min-h-0 min-w-0 flex">{renderDashboardChangeCard('Caja cambio 1', 0)}</div>
-            <div className="col-span-1 row-start-1 min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[0])}</div>
-            <div className="col-span-1 row-start-1 min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[1])}</div>
-            <div className="col-span-2 row-start-2 min-h-0 min-w-0 flex">{renderDashboardChangeCard('Caja cambio 2', 1)}</div>
-            <div className="col-span-1 row-start-2 min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[2])}</div>
-            <div className="col-span-1 row-start-2 min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[3])}</div>
-        </div>
-    );
-
-    const dashboardCambiosYAccesosDesktop = (
-        <div className="hidden md:grid md:grid-cols-[0.56fr,1.6fr,0.56fr] md:gap-x-4 md:items-stretch">
-            {/* Conjunto 1: Cajas de cambio */}
-            <div className="flex flex-col gap-4">
-                <div className="flex-1 min-h-0">{renderDashboardChangeCard('Caja cambio 1', 0)}</div>
-                <div className="flex-1 min-h-0">{renderDashboardChangeCard('Caja cambio 2', 1)}</div>
-            </div>
-
-            {/* Centro: Horas Extras */}
-            <div className="min-h-0 min-w-0 flex flex-col">
-                {horasExtrasSection}
-            </div>
-
-            {/* Conjunto 2: Accesos rápidos */}
-            <div className="grid grid-cols-2 grid-rows-2 gap-x-5 gap-y-6">
-                <div className="flex min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[0])}</div>
-                <div className="flex min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[1])}</div>
-                <div className="flex min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[2])}</div>
-                <div className="flex min-h-0 min-w-0">{renderQuickActionSquare(quickActionCards[3])}</div>
-            </div>
-        </div>
+    const dashboardHome = (
+        <OpsHomeScreen
+            ventas={ventasSection}
+            cajaInicial={cajaInicialSection}
+            horasExtras={horasExtrasSection}
+            cajaCambio1={renderDashboardChangeCard('Cambio 1', 0)}
+            cajaCambio2={renderDashboardChangeCard('Cambio 2', 1)}
+            iconAsistencia={renderQuickActionSquare(quickActionCards[0])}
+            iconMObra={renderQuickActionSquare(quickActionCards[1])}
+            iconPlantilla={renderQuickActionSquare(quickActionCards[2])}
+            iconStock={renderQuickActionSquare(quickActionCards[3])}
+            iconRecetas={
+                <DashboardShortcut
+                    instance="admin-recetas"
+                    label="Recetas"
+                    img="/icons/recipes.png"
+                    onClick={() => router.push('/recipes')}
+                />
+            }
+            iconAlbaranes={
+                <DashboardShortcut
+                    instance="admin-albaranes"
+                    label="Albaranes"
+                    img="/icons/scan.png"
+                    onClick={() => router.push('/dashboard/albaranes')}
+                />
+            }
+            iconCambio={
+                <DashboardShortcut
+                    instance="admin-cambio"
+                    label="Cambio"
+                    img="/icons/change.png"
+                    onClick={() => setCashModalMode('swap')}
+                />
+            }
+            iconIngredientes={
+                <DashboardShortcut
+                    instance="admin-ingredientes"
+                    label="Ingredientes"
+                    img="/icons/ingrediente.png"
+                    onClick={() => router.push('/ingredients')}
+                />
+            }
+        />
     );
 
     return (
-        <div className="pt-3 md:pt-3 animate-in fade-in duration-500 pb-8">
-            <div className="px-4 w-full max-w-sm md:max-w-6xl mx-auto space-y-4 md:space-y-4">
-
-                {/* ===== LAYOUT MÓVIL: igual que antes ===== */}
-                <div className="space-y-4 md:hidden">
-                    {ventasSection}
-                    {cajaInicialSection}
-                    {horasExtrasSection}
-
-                    {dashboardCambiosYAccesosMobile}
-                </div>
-
-                {/* ===== LAYOUT ESCRITORIO ===== */}
-                <div className="hidden md:flex md:flex-col md:gap-4">
-                    {/* Fila superior: Ventas + Caja Inicial centrados al ancho del centro */}
-                    <div className="grid grid-cols-[minmax(0,0.56fr)_minmax(0,1.6fr)_minmax(0,0.28fr)_minmax(0,0.28fr)] gap-4 items-start">
-                        <div />
-                        <div className="flex flex-col gap-4">
-                            {ventasSection}
-                            {cajaInicialSection}
-                        </div>
-                        <div />
-                        <div />
-                    </div>
-
-                    {/* Fila inferior: rejilla unificada — altura filas = tarjetas cuadradas */}
-                    {dashboardCambiosYAccesosDesktop}
-                </div>
-
-            </div> {/* Close max-w-6xl */}
+        <div className="pt-3 animate-in fade-in duration-500 pb-8">
+            {dashboardHome}
 
             {cashModalMode !== 'none' && (
                 <>
@@ -1021,7 +720,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 hideHeaderClose
                 manageVisibility={showAllEmployeesInPlantilla}
                 onToggleVisibility={handleTogglePlantillaVisibility}
-                headerTextAction={{
+                listEndAction={{
                     label: showAllEmployeesInPlantilla ? 'Ver activos' : 'Ver todos',
                     onClick: async () => {
                         if (!showAllEmployeesInPlantilla) {

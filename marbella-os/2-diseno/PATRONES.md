@@ -116,7 +116,7 @@ El patrón propio del dominio de horas: una semana de negocio como unidad, **den
 **Reglas**:
 - La cabecera de días es la de P3, una sola vez por calendario. No se pinta otra LUN–DOM en cada semana.
 - **La semana de una persona es una.** Asistencia de un trabajador, el mosaico Staff y el historial al pulsar un trabajador en horas extras pintan la misma pieza: cromo P3, celdas de día y pie Horas / Pendientes / Extras / Importe.
-- En el mosaico Staff la semana flota sobre el petróleo, al ancho del hueco, sin cabecera de bloque.
+- En el mosaico Staff la semana flota sobre el petróleo, al ancho del hueco, sin cabecera de bloque. Es papel blanco y cabecera roja, no cristal.
 - **La vista de plantilla (todos los trabajadores) comparte el cromo y no el pie.** Iniciales y fichajes por día. No se unifica el contenido de celda con el de una persona.
 - Las celdas miden lo mismo que P3 en una semana vacía (68 / 76 / 84 px) y crecen si el contenido no cabe.
 - El pie de resumen mantiene su altura aunque no tenga contenido, para no romper el ritmo vertical.
@@ -149,8 +149,12 @@ La navegación principal en la aplicación instalada.
 **Reglas**:
 - Cinco destinos como máximo. El sexto obliga a repensar la información, no a añadir un botón.
 - Los destinos dependen del rol y cada rol tiene su conjunto propio.
-- Ocupa el alto reservado más el área segura inferior, y **nunca se encoge**.
-- El destino activo se distingue por color y peso, no solo por color.
+- Es el tab bar de iPhone: isla flotante, pista de 49 pt. Cristal translúcido del envolvente: se ve el fondo y sobre el papel no desaparece. Icono y nombre van en blanco.
+- El destino activo se distingue por color y peso, no por escala ni mayúsculas.
+- Al scrollear hacia abajo, primero se ocultan los nombres y quedan los iconos; si se sigue, se oculta del todo. Al scrollear hacia arriba vuelve. El teclado también la oculta.
+- La cabecera fija superior se oculta al scrollear hacia abajo y vuelve al scrollear hacia arriba, también si estás al fondo de la página.
+- En PageScreen, buscador y filtros que ya no se ven flotan arriba al scrollear hacia arriba, como el tab bar: isla de cristal del envolvente.
+- En PageScreen, el segmented de vista (Cierres, Ventas) pinta la pestaña activa en blanco; las demás van sin relleno, tinta invertida sobre el envolvente.
 - Se atenúa y deja de responder cuando hay un modal abierto.
 
 ---
@@ -211,17 +215,19 @@ Este patrón es la manifestación visual del principio de un único productor: s
 
 La composición por defecto de listado, detalle y formulario de gestión. No es el mosaico de atajos (T1) ni un Modal.
 
-**Anatomía**: cabecera petróleo, superficie de trabajo (`Surface` `page`), cuerpo, pie opcional. Materialización: `PageScreen`. Lo decide [ADR-0010](../4-decisiones/ADR-0010-jerarquia-visual-canonica.md).
+**Anatomía**: cromo sobre el envolvente (cabecera, periodo, buscador, KPI) + trabajo (catálogo/formulario en `Surface` `page`; calendario/tabla en su propia pieza blanca, sin ficha de PageScreen alrededor) + pie opcional. Materialización: `PageScreen`. Lo decide [ADR-0010](../4-decisiones/ADR-0010-jerarquia-visual-canonica.md).
 
 **Reglas**:
-- Una pantalla nueva de gestión usa esta composición. No se clona una cabecera petróleo.
+- Una pantalla nueva de gestión usa esta composición. No se clona una cabecera de marca.
+- La cabecera flota sobre el envolvente, con tinta invertida. No es franja de marca ni tira blanca.
 - El periodo (P7) vive **en la cabecera** (`periodSlot`). El icono de filtro es siempre el mismo, a la derecha. Las acciones de alcance (trabajador, exportar) también van en `rightSlot`.
-- El cuerpo empieza pegado al contenido: no se deja un hueco vacío entre la cabecera y la tabla o el calendario.
-- `Button` en la cabecera se pinta invertido, sin relleno ni marco. No es una quinta variante de Button.
-- Labor, Reservas, Horario, Actividades, Consumo, Cierres y Asistencia montan el calendario mensual (P3) **dentro** de esta plantilla; no sustituyen la cabecera. La rejilla es una. Asistencia añade el pie semanal (P6). Horas extras también entra por PageScreen, pero su interior es vista semanal (mini-calendario + filas), no P3.
-- Recetas e Ingredientes montan la rejilla de catálogo a **3 columnas**; Proveedores (página y el modal de Pedido) a **4**. Cada celda es un cuadrado (imagen + pie), sin tarjeta, con aire entre celdas. La imagen se reduce al mismo tamaño; el pie es una sola fila. El disparador **CAT** / **PROV** flota sobre el fondo, sin mini-card y sin punto.
+- Buscador, CAT / PROV y segmented de vista van en `toolbarSlot`, fuera del papel. En Cierres, Calendario/Tabla va a la izquierda de la fila (`periodStartSlot`); el mes y las flechas siguen centrados. Un KPI, un gráfico de contexto o Entrada/Salida/Arqueo van en `leadSlot`. Catálogo y formulario van en `Surface` `page`. Calendario y tabla **no llevan la ficha de PageScreen**: se ven sobre el envolvente, pero conservan su pieza blanca con el canto de widget.
+- El cuerpo del papel empieza pegado al contenido protagonista.
+- `Button` en la cabecera se pinta en tinta invertida, sin relleno ni marco. No es una quinta variante de Button.
+- Labor, Reservas, Horario, Actividades, Consumo, Cierres y Asistencia montan el calendario mensual (P3) **dentro** de esta plantilla; no sustituyen la cabecera. La rejilla es una. Asistencia añade el pie semanal (P6). Horas extras también entra por PageScreen, pero su interior es vista semanal (mini-calendario + filas), no P3. Sala LIVE entra por PageScreen como Ventas.
+- Recetas e Ingredientes montan la rejilla de catálogo a **3 columnas**, en el papel. El buscador y CAT / PROV van fuera. Proveedores (página, pedido y albarán) pintan el atajo de inicio: squircle + nombre fuera, 4 columnas. El disparador **CAT** / **PROV** flota sobre el fondo, sin mini-card y sin punto.
 
-**Cuándo no**: mosaico Admin/Staff (T1), Sala LIVE, pantalla de cocina, carta de cliente, overlay (P2).
+**Cuándo no**: mosaico Admin/Staff (T1), pantalla de cocina, carta de cliente, overlay (P2).
 
 ---
 

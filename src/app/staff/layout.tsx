@@ -18,7 +18,7 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
             {isStaffDashboard || isStaffCartaFullscreen ? (
                 children
             ) : (
-                <div className="pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-[calc(4rem+env(safe-area-inset-bottom))]">
+                <div className="staff-shell-pad pb-[calc(var(--shell-bottom-inset)+var(--espacio-2))]">
                     {children}
                 </div>
             )}

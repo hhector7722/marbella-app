@@ -11,7 +11,8 @@ import { createClient } from "@/utils/supabase/client";
 import { OrderProductCard } from "@/components/orders/OrderProductCard";
 import { toast, Toaster } from 'sonner';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
-import { CatalogFilterChip } from '@/components/catalog/CatalogFilterChip';
+import { getSupplierLogo } from '@/lib/supplier-logos';
+import { Truck } from 'lucide-react';
 
 interface Ingredient {
     id: string;
@@ -30,14 +31,12 @@ interface DraftItem {
     unit: string;
 }
 
-import { useRouter } from 'next/navigation';
 import { OrderSummaryModal } from "@/components/orders/OrderSummaryModal";
 import { OrderSuccessModal } from "@/components/orders/OrderSuccessModal";
 import { generateOrderPDF } from "@/utils/orders/pdf-generator";
 
 export default function NewOrderPage() {
     const supabase = createClient();
-    const router = useRouter();
     const [userId, setUserId] = useState<string | null>(null);
     const [ingredients, setIngredients] = useState<Ingredient[]>([]);
     const [drafts, setDrafts] = useState<Record<string, DraftItem>>({});
@@ -47,7 +46,7 @@ export default function NewOrderPage() {
     const initialSupplier = searchParams.get('supplier');
 
     const [selectedSupplier, setSelectedSupplier] = useState<string | null>(initialSupplier);
-    const [dbSuppliers, setDbSuppliers] = useState<{ id: string, name: string, phone: string | null }[]>([]);
+    const [dbSuppliers, setDbSuppliers] = useState<{ id: string, name: string, phone: string | null, image_url: string | null }[]>([]);
 
     // UI Modals
     const [isSummaryOpen, setIsSummaryOpen] = useState(false);
@@ -133,7 +132,7 @@ export default function NewOrderPage() {
             const { data: ingData } = await supabase.from('ingredients').select('*').order('name');
             setIngredients(ingData || []);
 
-            const { data: supData } = await supabase.from('suppliers').select('id, name, phone');
+            const { data: supData } = await supabase.from('suppliers').select('id, name, phone, image_url');
             setDbSuppliers(supData || []);
 
             // Drafts are loaded in useEffect when supplierId is set (shared per supplier)
@@ -281,16 +280,129 @@ export default function NewOrderPage() {
     };
 
     const totalSelected = selectedItems.length;
+    const selectedSupplierRow = selectedSupplier
+        ? dbSuppliers.find((s) => s.name === selectedSupplier)
+        : undefined;
+    const supplierLogo = getSupplierLogo(selectedSupplierRow?.image_url, selectedSupplier);
+
+    const ordersToolbar = (
+        <div data-element="orders-toolbar" className="flex min-w-0 items-center gap-2">
+            <div
+                data-element="supplier-logo"
+                className="flex shrink-0 items-center justify-center overflow-hidden rounded-md bg-white"
+                title={selectedSupplier ?? 'Proveedor'}
+            >
+                {supplierLogo ? (
+                    <img src={supplierLogo} alt="" className="h-full w-full object-contain" />
+                ) : (
+                    <Truck className="h-4 w-4 text-zinc-400" strokeWidth={2} aria-hidden />
+                )}
+            </div>
+            <div className="min-w-0 flex-1">
+                <SearchField
+                    instance="orders-new-search"
+                    placeholder="Buscar ingrediente..."
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                />
+            </div>
+            <Button
+                type="button"
+                variant="secondary"
+                instance="order-new-reset"
+                disabled={!supplierId || !selectedSupplier}
+                onClick={() => {
+                    if (!supplierId || !selectedSupplier) return;
+                    setResetConfirmOpen(true);
+                }}
+            >
+                Nuevo
+            </Button>
+            <Button
+                type="button"
+                variant="primary"
+                instance="order-new-tramitar"
+                disabled={selectedItems.length === 0 || !selectedSupplier}
+                onClick={() => setIsSummaryOpen(true)}
+            >
+                {totalSelected > 0 ? `Tramitar (${totalSelected})` : 'Tramitar'}
+            </Button>
+        </div>
+    );
+
+    const ordersCatalog = (
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y scroll-pb-end-cards">
+            <div
+                data-element="orders-catalog-grid"
+                className="grid grid-cols-3 gap-x-5 gap-y-6 pt-2 sm:grid-cols-4 sm:gap-x-6 sm:gap-y-8 md:grid-cols-5 md:gap-x-7 lg:grid-cols-5 lg:gap-x-5 lg:gap-y-6 xl:grid-cols-6 2xl:grid-cols-7"
+            >
+                {filteredIngredients.map(ing => (
+                    <OrderProductCard
+                        key={ing.id}
+                        ingredient={ing}
+                        supplierId={supplierId}
+                        initialQuantity={drafts[ing.id]?.quantity || 0}
+                        initialUnit={drafts[ing.id]?.unit}
+                        onQuantityChange={(id, q, u) => setDrafts(prev => ({ ...prev, [id]: { quantity: q, unit: u } }))}
+                    />
+                ))}
+            </div>
+            <div className="scroll-end-touch-cards" aria-hidden />
+        </div>
+    );
+
+    const ordersSummaryPanel = (
+        <aside
+            data-element="orders-summary"
+            aria-label="Resumen del pedido"
+            className="hidden min-h-0 flex-col overflow-hidden rounded-ds-superficie bg-white/95 shadow-ds-pagina lg:flex"
+        >
+            <div data-element="orders-summary-head">
+                <p data-element="orders-summary-title">Pedido</p>
+                <p data-element="orders-summary-meta">
+                    {selectedSupplier ? selectedSupplier : 'Sin proveedor'}
+                    {totalSelected > 0 ? ` · ${totalSelected}` : ''}
+                </p>
+            </div>
+            <div data-element="orders-summary-body">
+                {selectedItems.length === 0 ? (
+                    <p data-element="orders-summary-empty">Ningún producto en el pedido</p>
+                ) : (
+                    <ul data-element="orders-summary-list">
+                        {selectedItems.map((item) => (
+                            <li key={item.id} data-element="orders-summary-row">
+                                <span data-element="orders-summary-name" title={item.name}>{item.name}</span>
+                                <span data-element="orders-summary-qty">{item.quantity}</span>
+                                <span data-element="orders-summary-unit">{item.unit}</span>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+            <div data-element="orders-summary-actions">
+                <Button
+                    type="button"
+                    variant="primary"
+                    instance="order-new-tramitar-desktop"
+                    disabled={selectedItems.length === 0 || !selectedSupplier}
+                    onClick={() => setIsSummaryOpen(true)}
+                >
+                    {totalSelected > 0 ? `Tramitar (${totalSelected})` : 'Tramitar'}
+                </Button>
+            </div>
+        </aside>
+    );
 
     if (loading) {
         return (
             <DashboardDetailLayout
                 title="Pedido nuevo"
-                showBackButton
-                backHref="/suppliers"
+                showBackButton={false}
                 template="list"
-                maxWidthClass="max-w-7xl"
+                maxWidthClass="max-w-7xl lg:max-w-none"
                 fillViewport
+                className="page-orders-new"
+                toolbarSlot={ordersToolbar}
             >
                 <div className="flex flex-1 items-center justify-center py-20">
                     <LoadingSpinner size="xl" className="text-ds-marca" />
@@ -302,74 +414,24 @@ export default function NewOrderPage() {
     return (
         <DashboardDetailLayout
             title="Pedido nuevo"
-            showBackButton
-            backHref="/suppliers"
+            showBackButton={false}
             template="list"
-            maxWidthClass="max-w-7xl"
+            maxWidthClass="max-w-7xl lg:max-w-none"
             fillViewport
-            contentClassName="p-4 md:p-6 flex flex-col min-h-0"
+            className="page-orders-new"
+            contentClassName="p-4 md:p-6 lg:px-4 lg:py-3 flex flex-col min-h-0"
+            toolbarSlot={ordersToolbar}
         >
             <Toaster position="top-right" />
 
-            <div className="flex min-h-0 flex-1 flex-col">
-                <div className="z-10 shrink-0 pb-4 pt-0">
-                    <div className="flex flex-col gap-4">
-                        <div className="flex items-center gap-2">
-                            <CatalogFilterChip
-                                label="PROVEEDOR"
-                                value={selectedSupplier || null}
-                            />
-                            <div className="w-full">
-                                <SearchField
-                                    instance="orders-new-search"
-                                    placeholder="Buscar ingrediente..."
-                                    value={searchQuery}
-                                    onChange={setSearchQuery}
-                                />
-                            </div>
-                        </div>
-
-                        {selectedItems.length > 0 && selectedSupplier ? (
-                            <div className="flex flex-wrap items-center justify-end gap-2">
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    instance="order-new-reset"
-                                    onClick={() => {
-                                        if (!supplierId || !selectedSupplier) return;
-                                        setResetConfirmOpen(true);
-                                    }}
-                                >
-                                    Pedido Nuevo
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="primary"
-                                    instance="order-new-tramitar"
-                                    onClick={() => setIsSummaryOpen(true)}
-                                >
-                                    {`Tramitar (${selectedItems.length})`}
-                                </Button>
-                            </div>
-                        ) : null}
-                    </div>
+            <div
+                data-element="orders-workspace"
+                className="flex min-h-0 flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_19rem] lg:gap-4 xl:grid-cols-[minmax(0,1fr)_22rem] xl:gap-6"
+            >
+                <div data-element="orders-catalog" className="flex min-h-0 min-w-0 flex-1 flex-col">
+                    {ordersCatalog}
                 </div>
-
-                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y scroll-pb-end-cards">
-                    <div className="grid grid-cols-3 gap-2.5 pt-2 sm:grid-cols-4 sm:gap-6 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8">
-                        {filteredIngredients.map(ing => (
-                            <OrderProductCard
-                                key={ing.id}
-                                ingredient={ing}
-                                supplierId={supplierId}
-                                initialQuantity={drafts[ing.id]?.quantity || 0}
-                                initialUnit={drafts[ing.id]?.unit}
-                                onQuantityChange={(id, q, u) => setDrafts(prev => ({ ...prev, [id]: { quantity: q, unit: u } }))}
-                            />
-                        ))}
-                    </div>
-                    <div className="scroll-end-touch-cards" aria-hidden />
-                </div>
+                {ordersSummaryPanel}
             </div>
 
 

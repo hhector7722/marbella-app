@@ -135,7 +135,29 @@ export {
 export {
     PAGE_SCREEN_COMPONENT_ID,
     PAGE_SCREEN_TEMPLATES,
+    PAGE_SCREEN_WORK,
+    PAGE_SCREEN_TITLE_FACES,
+    PAGE_SCREEN_TITLE_ALIGNS,
     PAGE_SCREEN_FORBIDDEN_RADIUS,
     type PageScreenTemplate,
+    type PageScreenWork,
+    type PageScreenTitleFace,
+    type PageScreenTitleAlign,
 } from './page-screen';
 export { TABLE_COMPONENT_ID } from './table';
+export {
+    HOME_SCREEN_COMPONENT_ID,
+    HOME_SCREEN_COLUMNS,
+    HOME_SCREEN_ROWS,
+    HOME_SCREEN_SLOT_SIZES,
+    HOME_SCREEN_SLOT_SPAN,
+    HOME_SCREEN_LAYOUTS,
+    HOME_WIDGET_DARK_LUMINANCE,
+    isHomeScreenSlotSize,
+    parseCssColor,
+    relativeLuminance,
+    resolveHomeWidgetScheme,
+    type HomeScreenLayout,
+    type HomeScreenSlotSize,
+    type HomeWidgetScheme,
+} from './home-screen';

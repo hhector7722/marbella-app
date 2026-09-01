@@ -1121,6 +1121,7 @@ export default function ReservasClient() {
       title="Reservas y encargos"
       showBackButton={false}
       template="list"
+      work="calendar"
       maxWidthClass="max-w-none"
       className="month-cal-shell"
       cardClassName="month-cal-card"
@@ -1133,14 +1134,21 @@ export default function ReservasClient() {
         />
       }
       rightSlot={
-            <a
-              href="https://marbella-web.vercel.app/reservas-interno"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="shrink-0 text-[11px] font-black text-white uppercase tracking-widest hover:text-white/80 transition-colors min-h-[48px] flex items-center"
+            <Button
+              type="button"
+              variant="primary"
+              instance="reservas-nueva"
+              className="shrink-0"
+              onClick={() => {
+                window.open(
+                  'https://marbella-web.vercel.app/reservas-interno',
+                  '_blank',
+                  'noopener,noreferrer'
+                )
+              }}
             >
-              Hacer reserva
-            </a>
+              + Reserva
+            </Button>
       }
     >
           <div className="flex flex-col gap-0.5 month-cal-body">

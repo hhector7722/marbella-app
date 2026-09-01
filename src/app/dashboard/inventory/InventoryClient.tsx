@@ -365,6 +365,7 @@ export function InventoryClient({
       <div className="flex-1 min-h-0 pr-0.5">
         <div className="flex flex-col gap-6 relative">
           <div className="sticky top-0 z-30 bg-zinc-50/95 backdrop-blur-sm pb-4 pt-1 flex flex-col gap-3 -mx-2 px-2 border-b border-zinc-200/50">
+            <h1 className="text-2xl font-black text-zinc-900 mt-2">Ingredientes</h1>
             {!visibilityEditMode && (
               <div className="flex items-center gap-2 w-full shrink-0">
                 <div className="flex flex-1 bg-zinc-100 p-1 rounded-xl shrink-0 min-h-[48px] items-center min-w-0">
@@ -408,6 +409,14 @@ export function InventoryClient({
             )}
 
             <div className="flex items-center gap-2 w-full shrink-0 relative z-20">
+              <button
+                  type="button"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm hover:bg-emerald-600 hover:shadow transition-all"
+                  aria-label="Añadir nuevo"
+              >
+                  <Package size={16} strokeWidth={3} className="hidden" />
+                  <span className="text-lg font-black leading-none">+</span>
+              </button>
               <div className="flex-1 min-w-0">
                 <SearchField
                   instance="inventory-search"
@@ -495,7 +504,7 @@ export function InventoryClient({
             Object.entries(grouped).map(([category, items]) => (
               <section key={category} className="flex flex-col gap-3 shrink-0">
                 <div className="text-sm font-black uppercase tracking-wide text-zinc-500 px-0.5">{category}</div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6 items-stretch justify-items-stretch">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-2.5 sm:gap-6 lg:gap-3 xl:gap-4 items-stretch justify-items-stretch">
                   {items.map((item) => {
                     const u = normalizeUnit(item.unit)
                     const isBarra = locationMode === 'BARRA'

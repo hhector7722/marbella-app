@@ -292,9 +292,8 @@ async function queryPurchaseInvoicesList(
   const rows = mapPurchaseInvoiceRows((data as unknown[]) ?? [])
   const hasMore = rows.length > limit
   const pageRows = hasMore ? rows.slice(0, limit) : rows
-  const items = await enrichInvoicesWithProcessingState(gate.supabase, pageRows)
 
-  return { items, hasMore, canViewAll }
+  return { items: pageRows, hasMore, canViewAll }
 }
 
 export async function listPurchaseInvoicesAction(params?: {

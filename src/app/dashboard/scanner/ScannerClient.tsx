@@ -1,26 +1,14 @@
 'use client'
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { ChevronLeft, ChevronRight, Loader2, Truck, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react'
 import { assessScannerImageReadability } from '@/lib/scanner-image-quality'
 import { compressImageFileToDataUri } from '@/lib/scanner-image-compress'
 import { appendScannerPageToInvoiceAction, processScannerImage } from './actions'
 import { cn } from '@/lib/utils'
-import { getSupplierLogo } from '@/lib/supplier-logos'
-import { createClient } from '@/utils/supabase/client'
-import { useTrackModalApply } from '@/hooks/useTrackModalApply'
-import { namedEntitySummary } from '@/lib/usage/modal-apply'
-import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
-import { SearchField } from '@/components/ui/SearchField'
-import { CatalogGrid, CatalogTile } from '@/components/catalog/CatalogTile'
 import { randomId } from '@/lib/random-id'
-
-interface Supplier {
-  id: number
-  name: string
-  image_url?: string | null
-}
+import { SupplierSelectionModal } from '@/components/suppliers/SupplierSelectionModal'
 
 type PendingItem = { id: string; dataUri: string; filename: string }
 
@@ -50,9 +38,6 @@ export function ScannerClient({
   const [message, setMessage] = useState<string | null>(null)
   const [messageTone, setMessageTone] = useState<'error' | 'success' | 'info'>('info')
   const [showSupplierModal, setShowSupplierModal] = useState(false)
-  const [suppliers, setSuppliers] = useState<Supplier[]>([])
-  const [searchQuery, setSearchQuery] = useState('')
-  const [loadingSuppliers, setLoadingSuppliers] = useState(false)
   const [selectedSupplierId, setSelectedSupplierId] = useState<number | null>(null)
   /** Borrador: fotos validadas listas para guardar en un solo albarán (1ª = cabecera, resto = adjuntos). */
   const [pendingBatch, setPendingBatch] = useState<{ supplierId: number; items: PendingItem[] } | null>(null)
@@ -61,10 +46,8 @@ export function ScannerClient({
   const carouselRef = useRef<HTMLDivElement>(null)
   const prevBatchLenRef = useRef(0)
 
-  const trackScannerSupplier = useTrackModalApply('scanner-supplier', 'Proveedor escáner')
   /** Android: cámara directa (desde la UI nativa se puede ir a galería). iOS: selector nativo del SO. */
   const [fileInputCapture, setFileInputCapture] = useState<'environment' | undefined>('environment')
-  const supabase = createClient()
 
   useEffect(() => {
     const isIOS =
@@ -74,21 +57,6 @@ export function ScannerClient({
   }, [])
 
   const effectiveSupplierId = pendingBatch?.supplierId ?? selectedSupplierId
-
-  useEffect(() => {
-    if (showSupplierModal) {
-      const fetchSuppliers = async () => {
-        setLoadingSuppliers(true)
-        const { data, error } = await supabase
-          .from('suppliers')
-          .select('id, name, image_url')
-          .order('name')
-        if (!error && data) setSuppliers(data)
-        setLoadingSuppliers(false)
-      }
-      void fetchSuppliers()
-    }
-  }, [showSupplierModal, supabase])
 
   const removePendingItemById = (itemId: string) => {
     setPendingBatch((prev) => {
@@ -181,7 +149,6 @@ export function ScannerClient({
 
   const closeModal = () => {
     setShowSupplierModal(false)
-    setSearchQuery('')
   }
 
   const commitPendingBatch = async () => {
@@ -289,14 +256,8 @@ export function ScannerClient({
     }
   }
 
-  const filteredSuppliers = suppliers.filter((s) => s.name.toLowerCase().includes(searchQuery.toLowerCase()))
-
   const handleSelectSupplier = (id: number) => {
-    const supplierName = suppliers.find((s) => s.id === id)?.name ?? String(id)
-    trackScannerSupplier(namedEntitySummary(supplierName), { supplierId: String(id) })
     setSelectedSupplierId(id)
-    setShowSupplierModal(false)
-    setSearchQuery('')
     triggerNativeImagePicker()
   }
 
@@ -504,52 +465,18 @@ export function ScannerClient({
         ) : null}
       </div>
 
-      <Modal
-        open={showSupplierModal}
+      <SupplierSelectionModal
+        isOpen={showSupplierModal}
         onClose={closeModal}
-        title="Proveedor"
-        subtitle="Selecciona proveedor para el albarán"
-        variant="standard"
-        layer="base"
         instance="scanner-supplier"
-        headerTone="petroleum"
-        loading={loadingSuppliers}
-      >
-        <div className="flex-1 overflow-hidden flex flex-col">
-          <div className="mb-4 shrink-0">
-            <SearchField
-              instance="scanner-supplier-search"
-              placeholder="Buscar proveedor..."
-              value={searchQuery}
-              onChange={setSearchQuery}
-            />
-          </div>
-
-          <div className="overflow-y-auto p-2">
-            {loadingSuppliers ? (
-              <div className="col-span-full py-10 flex justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-[#36606F]" />
-              </div>
-            ) : filteredSuppliers.length === 0 ? (
-              <div className="col-span-full py-10 text-center">
-                <span className="text-sm font-bold text-gray-400">No se encontraron proveedores</span>
-              </div>
-            ) : (
-              <CatalogGrid columns={4}>
-                {filteredSuppliers.map((s) => (
-                  <CatalogTile
-                    key={s.id}
-                    title={s.name}
-                    imageSrc={getSupplierLogo(s.image_url, s.name)}
-                    fallback={<Truck className="h-8 w-8 md:h-10 md:w-10" />}
-                    onClick={() => handleSelectSupplier(s.id)}
-                  />
-                ))}
-              </CatalogGrid>
-            )}
-          </div>
-        </div>
-      </Modal>
+        usageLabel="Proveedor escáner"
+        subtitle="Selecciona proveedor para el albarán"
+        onSelect={(supplier) => {
+          const id = Number(supplier.id)
+          if (!Number.isFinite(id)) return
+          handleSelectSupplier(id)
+        }}
+      />
     </div>
   )
 }

@@ -48,6 +48,7 @@ export function AdminProductModal({ isOpen, onClose, onOpenSupplierModal }: Admi
             title="Stock"
             variant="standard"
             headerVariant="petroleum"
+            scheme="dark"
             usageId="admin-product"
             usageLabel="Menú stock (admin)"
             scrollContent={false}

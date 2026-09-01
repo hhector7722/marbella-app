@@ -33,6 +33,7 @@ import {
 export type { ModalLayer, ModalVariant };
 
 type ModalHeaderTone = 'white' | 'petroleum';
+type ModalScheme = 'work' | 'dark';
 /** `plain` = sin marco/fondo (default contrato). `soft` = tratamiento explícito. */
 type ModalHeaderActionChrome = 'plain' | 'soft';
 
@@ -70,6 +71,11 @@ export type ModalProps = {
     /** @deprecated Preferir `headerTone`. */
     headerVariant?: ModalHeaderTone;
     headerTone?: ModalHeaderTone;
+    /**
+     * `work` = superficie clara (formularios, recuentos).
+     * `dark` = overlay de elección / menú de acceso, sobre el envolvente.
+     */
+    scheme?: ModalScheme;
     /**
      * Tratamiento visual de botones de cabecera.
      * Default `plain` (sin borde/fondo). `soft` solo si se pide explícitamente.
@@ -116,20 +122,21 @@ export type ModalProps = {
 };
 
 function headerActionClassName(
-    petroleum: boolean,
     chrome: ModalHeaderActionChrome,
-    opts?: { plainForce?: boolean }
+    opts?: { plainForce?: boolean; dark?: boolean }
 ) {
     const plain = opts?.plainForce || chrome === 'plain';
+    const dark = Boolean(opts?.dark);
     return cn(
         /* Chrome independiente de Button: cuadrado = alto de cabecera (36px). */
         'flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 shadow-none ring-0 outline-none transition-opacity active:opacity-70',
         plain
-            ? 'bg-transparent'
-            : petroleum
+            ? dark
+                ? 'bg-transparent text-white/70 hover:opacity-100'
+                : 'bg-transparent text-zinc-500 hover:opacity-80'
+            : dark
               ? 'rounded-ds-control bg-white/10 text-white hover:bg-white/20'
-              : 'rounded-ds-control bg-zinc-100 text-zinc-500 hover:bg-zinc-200',
-        plain && (petroleum ? 'text-white/90 hover:opacity-100' : 'text-zinc-500 hover:opacity-80')
+              : 'rounded-ds-control bg-zinc-100 text-zinc-500 hover:bg-zinc-200'
     );
 }
 
@@ -137,7 +144,8 @@ function ModalPanelShell({
     title,
     titleId,
     subtitle,
-    headerTone,
+    headerTone: _headerTone,
+    scheme = 'work',
     headerActionChrome,
     onClose,
     onBack,
@@ -162,6 +170,7 @@ function ModalPanelShell({
     titleId: string;
     subtitle?: ReactNode;
     headerTone: ModalHeaderTone;
+    scheme?: ModalScheme;
     headerActionChrome: ModalHeaderActionChrome;
     onClose: () => void;
     onBack?: () => void;
@@ -182,18 +191,20 @@ function ModalPanelShell({
     isSubordinate?: boolean;
     bodyRef?: RefObject<HTMLDivElement | null>;
 }) {
-    const petroleum = headerTone === 'petroleum';
     const actionChrome = onBackPlain ? 'plain' : headerActionChrome;
     const hasBack = Boolean(onBack);
+    const dark = scheme === 'dark';
 
     return (
         <div
             data-element="container"
+            data-scheme={scheme}
             data-has-back={hasBack ? 'true' : undefined}
             data-header-compact={headerCompact ? 'true' : undefined}
             data-subordinate={isSubordinate ? 'true' : undefined}
             className={cn(
-                'flex w-full max-w-full flex-col overflow-hidden overflow-x-hidden rounded-ds-superficie bg-ds-superficie shadow-ds-modal outline-none',
+                'flex w-full max-w-full flex-col overflow-hidden overflow-x-hidden rounded-ds-superficie shadow-ds-modal outline-none',
+                dark ? 'bg-[var(--color-envolvente-bajo)] text-ds-texto-invertido' : 'bg-ds-superficie text-ds-texto-fuerte',
                 'max-h-ds-modal',
                 preferTall && 'min-h-[min(20rem,var(--modal-max-height))]',
                 pickModalPanelClassName(className)
@@ -208,9 +219,9 @@ function ModalPanelShell({
                     data-element="header"
                     className={cn(
                         'relative flex h-ds-modal-header max-h-ds-modal-header min-h-ds-modal-header shrink-0 items-center overflow-hidden overflow-x-hidden',
-                        petroleum ? 'bg-ds-marca text-white' : 'bg-ds-superficie text-ds-texto-fuerte',
+                        dark ? 'bg-transparent text-ds-texto-invertido' : 'bg-ds-superficie text-ds-texto-fuerte',
                         headerCompact ? 'gap-ds-1' : 'gap-ds-2',
-                        !hideHeaderDivider && !petroleum && 'border-b border-ds-borde'
+                        !hideHeaderDivider && (dark ? 'border-b border-white/15' : 'border-b border-ds-borde')
                     )}
                 >
                     {onBack ? (
@@ -219,13 +230,14 @@ function ModalPanelShell({
                             aria-label="Volver"
                             data-element="back"
                             onClick={onBack}
-                            className={headerActionClassName(petroleum, actionChrome, {
+                            className={headerActionClassName(actionChrome, {
                                 plainForce: onBackPlain,
+                                dark,
                             })}
                         >
                             <ChevronLeft
                                 className="h-[clamp(0.875rem,2.8vw,1rem)] w-[clamp(0.875rem,2.8vw,1rem)]"
-                                strokeWidth={onBackPlain ? 2.25 : undefined}
+                                strokeWidth={1.75}
                             />
                         </button>
                     ) : null}
@@ -238,10 +250,10 @@ function ModalPanelShell({
                             <h2
                                 id={titleId}
                                 className={cn(
-                                    'min-w-0 overflow-hidden font-black uppercase tracking-wide truncate',
+                                    'min-w-0 overflow-hidden font-medium uppercase tracking-wide truncate',
                                     'text-[clamp(0.5625rem,2.4vw,0.75rem)]',
                                     subtitle ? 'shrink' : 'flex-1',
-                                    petroleum ? 'text-white' : 'text-ds-texto-fuerte'
+                                    dark ? 'text-ds-texto-invertido' : 'text-ds-texto-fuerte'
                                 )}
                             >
                                 {title}
@@ -252,7 +264,7 @@ function ModalPanelShell({
                                     className={cn(
                                         'min-w-0 flex-1 overflow-hidden truncate font-medium tracking-wide',
                                         'text-[clamp(0.4375rem,1.8vw,0.5625rem)]',
-                                        petroleum ? 'text-white/70' : 'text-zinc-500'
+                                        dark ? 'text-white/55' : 'text-zinc-500'
                                     )}
                                 >
                                     {subtitle}
@@ -270,11 +282,11 @@ function ModalPanelShell({
                                 type="button"
                                 aria-label="Cerrar modal"
                                 onClick={onClose}
-                                className={headerActionClassName(petroleum, headerActionChrome)}
+                                className={headerActionClassName(headerActionChrome, { dark })}
                             >
                                 <X
                                     className="h-[clamp(0.875rem,2.8vw,1rem)] w-[clamp(0.875rem,2.8vw,1rem)]"
-                                    strokeWidth={2.5}
+                                    strokeWidth={1.75}
                                 />
                             </button>
                         ) : null}
@@ -331,6 +343,7 @@ export function Modal({
     subtitle,
     headerVariant,
     headerTone: headerToneProp,
+    scheme = 'work',
     headerActionChrome = 'plain',
     hideHeaderDivider = false,
     hideTitle = false,
@@ -552,6 +565,7 @@ export function Modal({
         <div
             data-component={MODAL_COMPONENT_ID}
             data-variant={variant}
+            data-scheme={scheme}
             data-instance={resolvedUsageId}
             data-parent-instance={parentInstance || undefined}
             data-layer={layer}
@@ -610,6 +624,7 @@ export function Modal({
                         titleId={titleId}
                         subtitle={subtitle}
                         headerTone={headerTone}
+                        scheme={scheme}
                         headerActionChrome={headerActionChrome}
                         onClose={() => requestCloseRef.current()}
                         onBack={backHandler}

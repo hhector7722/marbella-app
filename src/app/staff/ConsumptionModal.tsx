@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 import { Loader2, Package } from 'lucide-react';
 import { QuantityStepper } from '@/components/ui/QuantityStepper';
 import { SearchField } from '@/components/ui/SearchField';
-import { cn } from '@/lib/utils';
 import {
   isDrinkConsumptionRecipe,
   normalizeConsumptionRecipeName,
@@ -15,7 +14,7 @@ import {
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { consumptionCartSummary } from '@/lib/usage/modal-apply';
-import { ConsumptionBottomSheet } from '@/components/ui/ConsumptionBottomSheet';
+import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 
 /** Bocadillos sin opción medio (nombre normalizado). */
@@ -196,13 +195,16 @@ export function ConsumptionModal({
     showEmptyCartError && (step === 'drinks' ? !cartHasDrink : !cartHasFood);
 
   return (
-    <ConsumptionBottomSheet
+    <Modal
       open
       onClose={() => {
         if (!isSubmitting) onCancel();
       }}
       title="Consumo personal"
       instance="staff-consumption"
+      usageLabel="Consumo al fichar"
+      variant="amplify"
+      layer="base"
       hideCloseButton={isSubmitting}
       footer={
         step === 'drinks' ? (
@@ -255,152 +257,145 @@ export function ConsumptionModal({
         )
       }
     >
-      <div className="flex min-h-0 flex-1 flex-col">
-        {isLoading ? (
-          <div className="flex min-h-0 flex-1 items-center justify-center px-4 py-8">
-            <Loader2 className="h-12 w-12 shrink-0 animate-spin text-gray-400" aria-hidden />
-          </div>
-        ) : racionPicker ? (
-          <div className="flex flex-col gap-4 px-4 pb-4">
-            <p id="racion-picker-title" className="text-center text-base font-bold text-zinc-900">
-              {racionPicker.name}
-            </p>
-            <p className="text-center text-sm text-zinc-500">Selecciona la ración</p>
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                type="button"
-                variant="primary"
-                instance="staff-consumption-racion-full"
-                layout="hug"
-                disabled={isSubmitting}
-                onClick={() => {
-                  handleAdd(racionPicker, false);
-                  setRacionPicker(null);
-                }}
-              >
-                Entero
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                instance="staff-consumption-racion-half"
-                layout="hug"
-                disabled={isSubmitting}
-                onClick={() => {
-                  handleAdd(racionPicker, true);
-                  setRacionPicker(null);
-                }}
-              >
-                Medio
-              </Button>
-            </div>
+      {isLoading ? (
+        <div className="flex items-center justify-center px-4 py-12">
+          <Loader2 className="h-12 w-12 shrink-0 animate-spin text-gray-400" aria-hidden />
+        </div>
+      ) : racionPicker ? (
+        <div className="flex flex-col gap-4 px-4 pb-4">
+          <p id="racion-picker-title" className="text-center text-base font-bold text-zinc-900">
+            {racionPicker.name}
+          </p>
+          <p className="text-center text-sm text-zinc-500">Selecciona la ración</p>
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              type="button"
+              variant="primary"
+              instance="staff-consumption-racion-full"
+              layout="hug"
+              disabled={isSubmitting}
+              onClick={() => {
+                handleAdd(racionPicker, false);
+                setRacionPicker(null);
+              }}
+            >
+              Entero
+            </Button>
             <Button
               type="button"
               variant="secondary"
-              instance="staff-consumption-racion-cancel"
+              instance="staff-consumption-racion-half"
               layout="hug"
-              onClick={() => setRacionPicker(null)}
+              disabled={isSubmitting}
+              onClick={() => {
+                handleAdd(racionPicker, true);
+                setRacionPicker(null);
+              }}
             >
-              Cancelar
+              Medio
             </Button>
           </div>
-        ) : (
-          <div className="flex min-h-0 flex-1 flex-col space-y-5 p-4 md:p-5">
-            <div className="shrink-0">
-              <SearchField
-                instance="staff-consumption-search"
-                placeholder={step === 'drinks' ? 'Buscar bebidas...' : 'Buscar comida...'}
-                value={search}
-                onChange={setSearch}
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
-              {gridRecipes.map((recipe) => {
-                const badgeCount =
-                  getCartBadgeCount(recipe.id, false) + getCartBadgeCount(recipe.id, true);
-                return (
-                  <button
-                    key={recipe.id}
-                    type="button"
-                    onClick={() => onRecipeActivate(recipe)}
-                    disabled={isSubmitting}
-                    className="relative flex min-h-0 flex-col items-center gap-0.5 rounded-xl bg-transparent p-1.5 text-center transition-transform active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
-                  >
-                    {badgeCount > 0 ? (
-                      <span className="absolute right-0.5 top-0.5 z-10 min-h-6 min-w-6 rounded-full bg-[#36606F] px-1.5 text-[10px] font-black leading-6 text-white shadow-sm">
-                        ×{badgeCount}
-                      </span>
-                    ) : null}
-                    <div className="mb-0.5 flex h-12 w-full shrink-0 items-center justify-center">
-                      {recipe.photo_url ? (
-                        <img
-                          src={recipe.photo_url}
-                          alt=""
-                          className="max-h-12 w-full object-contain"
-                        />
-                      ) : (
-                        <Package className="h-5 w-5 text-zinc-300" aria-hidden />
-                      )}
-                    </div>
-                    <span
-                      className="line-clamp-2 w-full text-center text-[9px] font-black leading-tight text-zinc-800 min-[380px]:text-[10px]"
-                      title={recipe.name}
-                    >
-                      {recipe.name}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {cart.length > 0 ? (
-          <div className="shrink-0 space-y-2 border-t border-zinc-100 px-ds-4 py-3">
-            <h3 className="font-bold text-zinc-900">Has consumido:</h3>
-            <div className="flex flex-col gap-2">
-              {cart.map((c, i) => (
-                <div
-                  key={`${c.recipe.id}-${c.is_half}-${i}`}
-                  className="flex min-h-12 items-center gap-2 rounded-xl px-2"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className="truncate text-sm font-bold text-zinc-900"
-                      title={c.recipe.name}
-                    >
-                      {c.recipe.name}
-                      {c.is_half ? ' (Mitad)' : ''}
-                    </p>
-                  </div>
-                  <div className="w-[8.5rem] shrink-0">
-                    <QuantityStepper
-                      value={c.quantity}
-                      onChange={(n) => handleSetQuantity(c.recipe.id, c.is_half, n)}
-                      min={0}
-                      max={20}
-                      ariaLabel={`Cantidad de ${c.recipe.name}`}
-                      disabled={isSubmitting}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {emptyCartMessageVisible ? (
-          <p
-            className="shrink-0 px-ds-4 pb-3 text-center text-sm font-semibold text-red-600"
-            role="alert"
+          <Button
+            type="button"
+            variant="secondary"
+            instance="staff-consumption-racion-cancel"
+            layout="hug"
+            onClick={() => setRacionPicker(null)}
           >
-            {step === 'drinks'
-              ? 'Apunta tu bebida antes de continuar.'
-              : 'Apunta al menos una comida antes de fichar.'}
-          </p>
-        ) : null}
-      </div>
-    </ConsumptionBottomSheet>
+            Cancelar
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-5 p-4 md:p-5">
+          <SearchField
+            instance="staff-consumption-search"
+            placeholder={step === 'drinks' ? 'Buscar bebidas...' : 'Buscar comida...'}
+            value={search}
+            onChange={setSearch}
+          />
+
+          <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
+            {gridRecipes.map((recipe) => {
+              const badgeCount =
+                getCartBadgeCount(recipe.id, false) + getCartBadgeCount(recipe.id, true);
+              return (
+                <button
+                  key={recipe.id}
+                  type="button"
+                  onClick={() => onRecipeActivate(recipe)}
+                  disabled={isSubmitting}
+                  className="relative flex min-h-0 flex-col items-center gap-0.5 rounded-xl bg-transparent p-1.5 text-center transition-transform active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+                >
+                  {badgeCount > 0 ? (
+                    <span className="absolute right-0.5 top-0.5 z-10 min-h-6 min-w-6 rounded-full bg-[#36606F] px-1.5 text-[10px] font-black leading-6 text-white shadow-sm">
+                      ×{badgeCount}
+                    </span>
+                  ) : null}
+                  <div className="mb-0.5 flex h-12 w-full shrink-0 items-center justify-center">
+                    {recipe.photo_url ? (
+                      <img
+                        src={recipe.photo_url}
+                        alt=""
+                        className="max-h-12 w-full object-contain"
+                      />
+                    ) : (
+                      <Package className="h-5 w-5 text-zinc-300" aria-hidden />
+                    )}
+                  </div>
+                  <span
+                    className="line-clamp-2 w-full text-center text-[9px] font-black leading-tight text-zinc-800 min-[380px]:text-[10px]"
+                    title={recipe.name}
+                  >
+                    {recipe.name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {cart.length > 0 ? (
+        <div className="shrink-0 space-y-2 border-t border-zinc-100 px-ds-4 py-3">
+          <h3 className="font-bold text-zinc-900">Has consumido:</h3>
+          <div className="flex flex-col gap-2">
+            {cart.map((c, i) => (
+              <div
+                key={`${c.recipe.id}-${c.is_half}-${i}`}
+                className="flex min-h-12 items-center gap-2 rounded-xl px-2"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-bold text-zinc-900" title={c.recipe.name}>
+                    {c.recipe.name}
+                    {c.is_half ? ' (Mitad)' : ''}
+                  </p>
+                </div>
+                <div className="w-[8.5rem] shrink-0">
+                  <QuantityStepper
+                    value={c.quantity}
+                    onChange={(n) => handleSetQuantity(c.recipe.id, c.is_half, n)}
+                    min={0}
+                    max={20}
+                    ariaLabel={`Cantidad de ${c.recipe.name}`}
+                    disabled={isSubmitting}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {emptyCartMessageVisible ? (
+        <p
+          className="shrink-0 px-ds-4 pb-3 text-center text-sm font-semibold text-red-600"
+          role="alert"
+        >
+          {step === 'drinks'
+            ? 'Apunta tu bebida antes de continuar.'
+            : 'Apunta al menos una comida antes de fichar.'}
+        </p>
+      ) : null}
+    </Modal>
   );
 }

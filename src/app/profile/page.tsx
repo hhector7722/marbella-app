@@ -4,9 +4,9 @@ import { useEffect, useState, useCallback, useRef, Suspense } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { Avatar } from '@/components/ui/Avatar';
+import { Surface } from '@/components/ui/Surface';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
@@ -99,7 +99,7 @@ function ProfileContent() {
     const [viewerRole, setViewerRole] = useState<string | null>(null);
 
     const fullName = profile
-        ? `${profile.first_name} ${profile.last_name || ''}`.trim().toUpperCase()
+        ? `${profile.first_name} ${profile.last_name || ''}`.trim()
         : '';
 
     const handledRecoveryRef = useRef(false);
@@ -428,6 +428,8 @@ function ProfileContent() {
         <>
             <DashboardDetailLayout
                 title={fullName}
+                titleAlign="center"
+                className="page-profile"
                 subtitle={
                     viewMode === 'staff'
                         ? 'Mi cuenta'
@@ -479,27 +481,24 @@ function ProfileContent() {
                     ) : null
                 }
             >
-                        <div className="grid grid-cols-3 gap-3">
-                            {gridItems.map((item) => (
-                                <button
-                                    key={item.id}
-                                    type="button"
-                                    onClick={() => handleGridAction(item.id)}
-                                    className={cn(
-                                        'min-h-[72px] flex flex-col items-center justify-center p-2 transition-all active:scale-[0.98]',
-                                        item.id === 'cerrar-sesion' ? 'hover:opacity-80' : 'hover:opacity-90'
-                                    )}
-                                >
-                                    <img src={item.icon} alt="" className="w-8 h-8 object-contain mb-1.5 shrink-0" />
-                                    <span className={cn(
-                                        'font-black text-[10px] uppercase tracking-widest text-center leading-tight',
-                                        item.id === 'cerrar-sesion' ? 'text-rose-600' : 'text-zinc-700'
-                                    )}>
-                                        {item.label}
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
+                <Surface variant="block" instance="profile-menu">
+                    <div data-element="profile-actions">
+                        {gridItems.map((item) => (
+                            <button
+                                key={item.id}
+                                type="button"
+                                data-element="profile-action"
+                                data-instance={`profile-${item.id}`}
+                                onClick={() => handleGridAction(item.id)}
+                            >
+                                <span data-element="icon-wrap">
+                                    <img src={item.icon} alt="" />
+                                </span>
+                                <span data-element="label">{item.label}</span>
+                            </button>
+                        ))}
+                    </div>
+                </Surface>
 
                         {canManageLaborConditions ? (
                             <div className="mt-8">

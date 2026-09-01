@@ -18,6 +18,7 @@ import {
   type PageGeom,
 } from '../pdf/design-system-v2/index.ts'
 import type { TimesheetExportPayload } from './timesheet-export-payload'
+import { downloadBlob } from '@/lib/export/browser-output'
 
 const WORK_CENTER = 'Bar La Marbella — Barcelona'
 
@@ -253,18 +254,11 @@ function slugFilenamePart(value: string): string {
 }
 
 function triggerPdfDownload(blob: Blob, filename: string): void {
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  setTimeout(() => URL.revokeObjectURL(url), 1_000)
+  downloadBlob(blob, filename)
 }
 
 export function openPdfBlob(blob: Blob, filename = 'jornada.pdf'): void {
-  const url = URL.createObjectURL(blob)
-  const opened = window.open(url, '_blank', 'noopener,noreferrer')
-  if (!opened) triggerPdfDownload(blob, filename)
+  triggerPdfDownload(blob, filename)
 }
 
 export async function timesheetPdfBlob(

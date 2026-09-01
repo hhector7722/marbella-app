@@ -106,8 +106,8 @@ export function UsageFilters({ filters, users }: UsageFiltersProps) {
           onClick={() => setUsersOpen((prev) => !prev)}
           className={cn(
             'h-12 min-w-[8rem] flex-1 shrink-0 rounded-xl border border-zinc-200 bg-white px-3 text-left text-xs text-zinc-800 outline-none',
-            'focus:border-[#36606F] focus:ring-1 focus:ring-[#36606F]/30',
-            usersOpen && 'border-[#36606F] ring-1 ring-[#36606F]/30'
+          'focus:border-[var(--color-envolvente)] focus:ring-1 focus:ring-[var(--color-envolvente)]/30',
+            usersOpen && 'border-[var(--color-envolvente)] ring-1 ring-[var(--color-envolvente)]/30'
           )}
         >
           {userFilterLabel}
@@ -126,7 +126,7 @@ export function UsageFilters({ filters, users }: UsageFiltersProps) {
           }}
           className={cn(
             'inline-flex h-12 shrink-0 items-center justify-center rounded-xl border border-zinc-200 px-3 text-xs text-zinc-500',
-            'hover:border-[#36606F]/40 hover:text-[#36606F]'
+            'hover:border-[var(--color-envolvente)]/40 hover:text-[var(--color-envolvente)]'
           )}
         >
           ×
@@ -162,7 +162,7 @@ export function UsageFilters({ filters, users }: UsageFiltersProps) {
                   className={cn(
                     'inline-flex min-h-10 shrink-0 cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5',
                     checked
-                      ? 'border-[#36606F]/30 bg-[#36606F]/5'
+                      ? 'border-[var(--color-envolvente)]/30 bg-[var(--color-envolvente)]/5'
                       : 'border-zinc-100 hover:bg-zinc-50'
                   )}
                 >
@@ -170,7 +170,7 @@ export function UsageFilters({ filters, users }: UsageFiltersProps) {
                     type="checkbox"
                     checked={checked}
                     onChange={() => toggleUser(user.profileId)}
-                    className="size-4 shrink-0 rounded border-zinc-300 text-[#36606F] focus:ring-[#36606F]/30"
+                    className="size-4 shrink-0 rounded border-zinc-300 text-[var(--color-envolvente)] focus:ring-[var(--color-envolvente)]/30"
                   />
                   <span className="whitespace-nowrap text-sm text-zinc-800">
                     {firstNameOnly(user.displayName)}

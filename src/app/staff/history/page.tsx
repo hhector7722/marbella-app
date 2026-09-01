@@ -2,11 +2,11 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useSearchParams, usePathname } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import {
-    X, ChevronLeft, ChevronRight, Share, User
+    X, Share, User
 } from 'lucide-react';
 import { buildTimesheetPayload, type TimesheetExportPayload, type TimesheetWeekData } from '@/lib/staff/timesheet-export-payload';
 import {
@@ -33,17 +33,18 @@ import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PeriodNav, PeriodFilterButton } from '@/components/time/PeriodNav';
+import { TimeFilterModal } from '@/components/time/TimeFilterModal';
+import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { trackUsageModalApply } from '@/lib/usage/client';
 import { staffSelectionApplySummary } from '@/lib/usage/modal-apply';
-import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { updateWeeklyWorkerConfig } from '@/app/actions/overtime';
 import { AttendanceDetailModal } from '@/components/modals/AttendanceDetailModal';
 import { DaySummaryModal } from '@/components/modals/DaySummaryModal';
-import { WeekCard } from './WeekCard';
+import { WeekSummary } from '@/components/staff/WeekSummary';
 import { PlantillaWeekCard, type PlantillaWeek, type PlantillaDay, type PlantillaDayLog } from './PlantillaWeekCard';
 import { MultiEmployeeExportModal } from '@/components/modals/MultiEmployeeExportModal';
 import {
@@ -81,7 +82,7 @@ interface WeekData extends TimesheetWeekData {
 
 // --- CONSTANTES ---
 const getMonthLabel = (year: number, month: number) =>
-    new Date(year, month, 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+    format(new Date(year, month, 1), 'MMMM yyyy', { locale: es });
 
 function buildSimulationPeriodLabel(
     joiningDate: string | null | undefined,
@@ -119,8 +120,7 @@ export default function HistoryPage() {
     const [filterYear, setFilterYear] = useState(new Date().getFullYear());
     const [filterMonth, setFilterMonth] = useState(new Date().getMonth()); // 0-indexed
 
-    const [showMonthPicker, setShowMonthPicker] = useState(false);
-    const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
+    const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
 
     useModalUsageTracking({
         open: showEmployeeDropdown,
@@ -134,14 +134,11 @@ export default function HistoryPage() {
     const [summaryDate, setSummaryDate] = useState<string | null>(null);
     const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
     const [showExportMenu, setShowExportMenu] = useState(false);
-    const [exportMenuPos, setExportMenuPos] = useState({ top: 0, right: 0 });
-    const shareRootRef = useRef<HTMLDivElement>(null);
     const [isExporting, setIsExporting] = useState(false);
     const [userEmail, setUserEmail] = useState<string>('');
     const [showExportEmployeeModal, setShowExportEmployeeModal] = useState(false);
     const [showSimulationExportModal, setShowSimulationExportModal] = useState(false);
     const [simulationEmployees, setSimulationEmployees] = useState<SimulationPlantillaEmployee[]>([]);
-    const [exportFormat, setExportFormat] = useState<'pdf' | 'xlsx'>('pdf');
 
     const initUser = useCallback(async () => {
         const { data: { session } } = await supabase.auth.getSession();
@@ -209,25 +206,6 @@ export default function HistoryPage() {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedEmployeeId, currentUserId, filterYear, filterMonth, userRole]);
-
-    useEffect(() => {
-        if (!showExportMenu) return;
-        const onPointerDown = (e: PointerEvent) => {
-            const target = e.target as HTMLElement | null;
-            if (!target) return;
-            if (target.closest('[data-history-share-root="true"]')) return;
-            setShowExportMenu(false);
-        };
-        const onKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') setShowExportMenu(false);
-        };
-        document.addEventListener('pointerdown', onPointerDown, true);
-        document.addEventListener('keydown', onKeyDown);
-        return () => {
-            document.removeEventListener('pointerdown', onPointerDown, true);
-            document.removeEventListener('keydown', onKeyDown);
-        };
-    }, [showExportMenu]);
 
     async function fetchCalendar() {
         setLoading(true);
@@ -556,29 +534,6 @@ export default function HistoryPage() {
         }
     }
 
-    async function handleShareSendPdf() {
-        setShowExportMenu(false);
-        setIsExporting(true);
-        try {
-            const result = await buildCurrentViewPdf();
-            if (!result) return;
-            const file = new File([result.blob], result.filename, { type: 'application/pdf' });
-            if (navigator.canShare?.({ files: [file] })) {
-                await navigator.share({ files: [file], title: result.filename });
-                return;
-            }
-            toast.error('Este dispositivo no puede enviar el archivo');
-            openPdfBlob(result.blob, result.filename);
-        } catch (err) {
-            const name = err instanceof Error ? err.name : '';
-            if (name === 'AbortError') return;
-            console.error('Enviar PDF error:', err);
-            toast.error('No se pudo enviar el PDF');
-        } finally {
-            setIsExporting(false);
-        }
-    }
-
     async function fetchWeeksYearToDate(userId: string, year: number): Promise<WeekData[]> {
         const rangeStart = startOfWeek(new Date(year, 0, 1), { weekStartsOn: 1 });
         const rangeEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
@@ -877,6 +832,7 @@ export default function HistoryPage() {
                 title="Asistencia"
                 showBackButton={false}
                 template="list"
+                work="calendar"
                 maxWidthClass="max-w-4xl"
                 contentClassName="p-0 flex flex-col min-h-0"
                 periodSlot={
@@ -884,69 +840,24 @@ export default function HistoryPage() {
                         label={getMonthLabel(filterYear, filterMonth)}
                         onPrev={prevMonth}
                         onNext={nextMonth}
-                        onLabelClick={() => {
-                            setPickerYear(filterYear);
-                            setShowMonthPicker(true);
-                        }}
+                        onLabelClick={() => setIsTimeFilterOpen(true)}
                     />
                 }
                 rightSlot={
                     <div className="flex items-center gap-1 justify-end">
                         <PeriodFilterButton
                             instance="staff-history-period-filter"
-                            onClick={() => {
-                                setPickerYear(filterYear);
-                                setShowMonthPicker(true);
-                            }}
+                            onClick={() => setIsTimeFilterOpen(true)}
                         />
-                        <div className="relative" ref={shareRootRef} data-history-share-root="true">
-                                    <Button
-                                        type="button"
-                                        variant="tertiary"
-                                        instance="staff-history-export-menu"
-                                        onClick={() => {
-                                            const rect = shareRootRef.current?.getBoundingClientRect();
-                                            if (rect) {
-                                                setExportMenuPos({
-                                                    top: rect.bottom + 6,
-                                                    right: window.innerWidth - rect.right,
-                                                });
-                                            }
-                                            setShowExportMenu((v) => !v);
-                                        }}
-                                        disabled={isExporting}
-                                        aria-label="Compartir"
-                                        icon={<Share size={16} strokeWidth={2} />}
-                                    />
-
-                                    {showExportMenu && (
-                                            <div
-                                                role="menu"
-                                                className="fixed z-[50] w-56 rounded-lg bg-white text-zinc-900 shadow-2xl border border-zinc-100 overflow-hidden"
-                                                style={{ top: exportMenuPos.top, right: exportMenuPos.right }}
-                                            >
-                                                <Button
-                                                    type="button"
-                                                    variant="secondary"
-                                                    instance="staff-history-export-pdf"
-                                                    onClick={() => void handleShareExportPdf()}
-                                                    className="w-full"
-                                                >
-                                                    Exportar PDF
-                                                </Button>
-                                                <div className="h-px bg-zinc-100" />
-                                                <Button
-                                                    type="button"
-                                                    variant="secondary"
-                                                    instance="staff-history-enviar-pdf"
-                                                    onClick={() => void handleShareSendPdf()}
-                                                    className="w-full"
-                                                >
-                                                    Enviar
-                                                </Button>
-                                            </div>
-                                    )}
-                                </div>
+                        <Button
+                            type="button"
+                            variant="tertiary"
+                            instance="staff-history-export-menu"
+                            onClick={() => setShowExportMenu(true)}
+                            disabled={isExporting}
+                            aria-label="Compartir"
+                            icon={<Share size={16} strokeWidth={2} />}
+                        />
 
                             {isManager && (
                                 <div className="relative shrink-0">
@@ -1010,17 +921,17 @@ export default function HistoryPage() {
                                 title="No hay registros este mes"
                             />
                         ) : (
-                            <MonthCalendarFrame>
-                                <div className="month-cal-weeks">
-                                    {plantillaWeeksData.map((week) => (
-                                        <PlantillaWeekCard
-                                            key={week.weekNumber}
-                                            week={week}
-                                            onDayClick={handleDayClick}
-                                        />
-                                    ))}
-                                </div>
-                            </MonthCalendarFrame>
+                        <MonthCalendarFrame>
+                            <div className="month-cal-weeks">
+                                {plantillaWeeksData.map((week) => (
+                                    <PlantillaWeekCard
+                                        key={week.weekNumber}
+                                        week={week}
+                                        onDayClick={handleDayClick}
+                                    />
+                                ))}
+                            </div>
+                        </MonthCalendarFrame>
                         )
                     ) : weeksData.length === 0 ? (
                         <EmptyState
@@ -1029,38 +940,30 @@ export default function HistoryPage() {
                             title="No hay registros este mes"
                         />
                     ) : (
-                        <MonthCalendarFrame>
-                            <div className="month-cal-weeks">
-                                {weeksData.map((week) => (
-                                    <WeekCard
-                                        key={week.weekNumber}
-                                        week={week}
-                                        filterMonth={filterMonth}
-                                        filterYear={filterYear}
-                                        onDayClick={handleDayClick}
-                                        showWeekOverrides={isManager}
-                                        userId={selectedEmployeeId || currentUserId}
-
-                                        onApplyWeekOverrides={async (contractedHours, preferStock, overtimeCostPerHour) => {
-                                            const uid = selectedEmployeeId || currentUserId;
-                                            const weekStart = typeof week.startDate === 'string' ? week.startDate.split('T')[0] : String(week.startDate);
-                                            const result = await updateWeeklyWorkerConfig(uid, weekStart, {
-                                                contractedHours,
-                                                preferStock,
-                                                overtimeCostPerHour,
-                                            });
-                                            if (result.success) {
-                                                toast.success('Semana actualizada');
-                                                fetchCalendar();
-                                            } else {
-                                                toast.error(result.error ?? 'Error al guardar');
-                                            }
-                                            return result;
-                                        }}
-                                    />
-                                ))}
-                            </div>
-                        </MonthCalendarFrame>
+                        <WeekSummary
+                            weeks={weeksData}
+                            filterMonth={filterMonth}
+                            filterYear={filterYear}
+                            onDayClick={handleDayClick}
+                            showWeekOverrides={isManager}
+                            userId={selectedEmployeeId || currentUserId}
+                            onApplyWeekOverrides={async (week, contractedHours, preferStock, overtimeCostPerHour) => {
+                                const uid = selectedEmployeeId || currentUserId;
+                                const weekStart = typeof week.startDate === 'string' ? week.startDate.split('T')[0] : String(week.startDate);
+                                const result = await updateWeeklyWorkerConfig(uid, weekStart, {
+                                    contractedHours,
+                                    preferStock,
+                                    overtimeCostPerHour,
+                                });
+                                if (result.success) {
+                                    toast.success('Semana actualizada');
+                                    fetchCalendar();
+                                } else {
+                                    toast.error(result.error ?? 'Error al guardar');
+                                }
+                                return result;
+                            }}
+                        />
                     )}
             </DashboardDetailLayout>
 
@@ -1102,6 +1005,7 @@ export default function HistoryPage() {
                 usageId="staff-history-employee-filter"
                 usageLabel="Filtro asistencia"
                 allowPlantilla={isManager}
+                plantillaSelected={isPlantilla}
                 onSelect={(emp) => {
                     setSelectedEmployeeId(emp.id);
                     setSelectedEmployeeLabel(staffSelectionApplySummary(emp));
@@ -1120,54 +1024,53 @@ export default function HistoryPage() {
                 />
             ) : null}
 
-            <Modal
-                open={showMonthPicker}
-                onClose={() => setShowMonthPicker(false)}
-                variant="compact"
-                layer="base"
-                instance="staff-history-month-picker"
-                usageId="staff-history-month-picker"
-                usageLabel="Selector de mes"
-                title="Seleccionar mes"
-                headerTone="petroleum"
-            >
-                <div>
-                    <div className="flex items-center justify-between mb-6 px-2">
-                        <button type="button" onClick={() => setPickerYear(pickerYear - 1)} className="p-3 hover:bg-zinc-50 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"><ChevronLeft size={20} className="text-zinc-400" /></button>
-                        <span className="font-black text-xl text-zinc-900 tracking-tighter">{pickerYear}</span>
-                        <button type="button" onClick={() => setPickerYear(pickerYear + 1)} className="p-3 hover:bg-zinc-50 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"><ChevronRight size={20} className="text-zinc-400" /></button>
+            <TimeFilterModal
+                isOpen={isTimeFilterOpen}
+                onClose={() => setIsTimeFilterOpen(false)}
+                allowedKinds={['month']}
+                defaultKind="month"
+                initialValue={{ kind: 'month', year: filterYear, month: filterMonth + 1 }}
+                onApply={(v: TimeFilterValue) => {
+                    if (v.kind !== 'month') return;
+                    setFilterYear(v.year);
+                    setFilterMonth(v.month - 1);
+                }}
+            />
+
+            {showExportMenu && (
+                <Modal
+                    open={showExportMenu}
+                    onClose={() => setShowExportMenu(false)}
+                    instance="staff-history-share-menu"
+                    title="Exportar"
+                    variant="compact"
+                >
+                    <div className="flex flex-col gap-3">
+                        <Button
+                            type="button"
+                            variant="primary"
+                            instance="staff-history-export-pdf"
+                            onClick={() => void handleShareExportPdf()}
+                            layout="fill"
+                            disabled={isExporting}
+                        >
+                            Exportar PDF
+                        </Button>
+                        {!isPlantilla ? (
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                instance="staff-history-export-excel"
+                                onClick={() => void handleExport('xlsx')}
+                                layout="fill"
+                                disabled={isExporting}
+                            >
+                                Exportar Excel
+                            </Button>
+                        ) : null}
                     </div>
-                    <div className="grid grid-cols-3 gap-2">
-                        {Array.from({ length: 12 }).map((_, i) => {
-                            const date = new Date(pickerYear, i, 1);
-                            const isSelected = filterMonth === i && filterYear === pickerYear;
-                            return (
-                                <button
-                                    key={i}
-                                    type="button"
-                                    onClick={() => {
-                                        setFilterMonth(i);
-                                        setFilterYear(pickerYear);
-                                        setShowMonthPicker(false);
-                                        trackUsageModalApply(
-                                            'staff-history-month-picker',
-                                            'Selector de mes',
-                                            pathname,
-                                            format(date, 'MMMM yyyy', { locale: es })
-                                        );
-                                    }}
-                                    className={cn(
-                                        "py-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border-2 min-h-[48px]",
-                                        isSelected ? "bg-[#36606F] border-[#36606F] text-white shadow-lg" : "bg-zinc-50 border-transparent text-zinc-400 hover:border-[#36606F]/20 hover:text-zinc-900 hover:bg-[#36606F]/5"
-                                    )}
-                                >
-                                    {format(date, 'MMM', { locale: es })}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-            </Modal>
+                </Modal>
+            )}
         </>
     );
 }

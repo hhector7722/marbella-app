@@ -16,9 +16,9 @@ import { SearchField } from '@/components/ui/SearchField';
 import { Field } from '@/components/ui/Field';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
-import { CatalogGrid, CatalogTile } from '@/components/catalog/CatalogTile';
 import { CatalogFilterChip } from '@/components/catalog/CatalogFilterChip';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { SupplierPickerGrid } from '@/components/suppliers/SupplierPickerGrid';
 
 interface Supplier {
     id: string; // bigint en BD; string en UI para soportar rows "initial-*"
@@ -501,71 +501,66 @@ export default function SuppliersPage() {
             <Toaster position="top-right" />
             <DashboardDetailLayout
                 title="Proveedores"
+                titleFace="display"
+                titleBlockClassName="w-full text-center"
                 showBackButton={false}
                 template="list"
                 maxWidthClass="max-w-7xl"
-                rightSlot={
-                    <Button
+                toolbarSlot={
+                <div className="flex flex-row items-center gap-2">
+                    <button
                         type="button"
-                        variant="tertiary"
-                        instance="supplier-create-open"
-                        layout="hug"
-                        icon={<Plus />}
-                        aria-label="Nuevo proveedor"
                         onClick={() => setShowCreateModal(true)}
-                    />
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm hover:bg-emerald-600 hover:shadow transition-all"
+                        aria-label="Nuevo proveedor"
+                    >
+                        <Plus size={16} strokeWidth={3} />
+                    </button>
+                    <div className="min-w-0 flex-1">
+                        <SearchField
+                            instance="suppliers-search"
+                            placeholder="Buscar..."
+                            value={searchQuery}
+                            onChange={setSearchQuery}
+                        />
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1.5 md:gap-2">
+                        {!selectedCategory ? (
+                            <CatalogFilterChip
+                                label="CAT"
+                                onOpen={() => setShowCategoryPopup(true)}
+                            />
+                        ) : (
+                            <CatalogFilterChip
+                                label="CAT"
+                                value={selectedCategory}
+                                onClear={() => setSelectedCategory(null)}
+                            />
+                        )}
+                    </div>
+                </div>
                 }
             >
-            <div className="flex flex-row items-center gap-2">
-                <div className="min-w-0 flex-1">
-                    <SearchField
-                        instance="suppliers-search"
-                        placeholder="Buscar..."
-                        value={searchQuery}
-                        onChange={setSearchQuery}
-                    />
-                </div>
-                <div className="flex gap-1.5 md:gap-2 items-center shrink-0">
-                    {!selectedCategory ? (
-                        <CatalogFilterChip
-                            label="CAT"
-                            onOpen={() => setShowCategoryPopup(true)}
-                        />
-                    ) : (
-                        <CatalogFilterChip
-                            label="CAT"
-                            value={selectedCategory}
-                            onClear={() => setSelectedCategory(null)}
-                        />
-                    )}
-                </div>
-            </div>
 
             {!loading && (
-                <div className="pt-4 md:pt-6">
-                <CatalogGrid>
-                    {filteredSuppliers.map((supplier) => (
-                        <CatalogTile
-                            key={supplier.id}
-                            title={supplier.name}
-                            imageSrc={getSupplierLogo(supplier.image_url, supplier.name)}
-                            fallback={<Truck className="h-8 w-8 md:h-10 md:w-10" />}
-                            onClick={() => {
+                <div className="pt-1">
+                    {filteredSuppliers.length === 0 ? (
+                        <EmptyState
+                            instance="suppliers-empty"
+                            variant="mismatch"
+                            title="No se encontraron proveedores"
+                        />
+                    ) : (
+                        <SupplierPickerGrid
+                            suppliers={filteredSuppliers}
+                            onSelect={(supplier) => {
+                                const full = filteredSuppliers.find((row) => row.id === supplier.id);
+                                if (!full) return;
                                 trackSupplierDetail(namedEntitySummary(supplier.name));
-                                setDetailSupplier(supplier);
+                                setDetailSupplier(full);
                             }}
                         />
-                    ))}
-                    {filteredSuppliers.length === 0 ? (
-                        <div className="col-span-full">
-                            <EmptyState
-                                instance="suppliers-empty"
-                                variant="mismatch"
-                                title="No se encontraron proveedores"
-                            />
-                        </div>
-                    ) : null}
-                </CatalogGrid>
+                    )}
                 </div>
             )}
             {loading ? (

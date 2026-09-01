@@ -57,7 +57,11 @@ describe('PetroleumSegmented contract', () => {
     it('CSS fija shell, selected, hover, focus-visible y densidades', () => {
         const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
         assert.match(css, /\[data-component='PetroleumSegmented'\]/);
-        assert.match(css, /border:\s*1px solid var\(--color-marca\)/);
+        assert.match(
+            css,
+            /\[data-component='PetroleumSegmented'\] \{[\s\S]*?border:\s*1px solid var\(--color-borde\)/,
+            'el segmented no usa borde de marca'
+        );
         assert.match(css, /border-radius:\s*var\(--espacio-2\)/);
         assert.match(
             css,
@@ -76,7 +80,16 @@ describe('PetroleumSegmented contract', () => {
             /\[data-component='PetroleumSegmented'\]\[data-density='compact'\] \[data-element='option'\]/
         );
         assert.match(css, /min-height:\s*var\(--tactil-minimo\)/);
-        assert.match(css, /--color-texto-invertido/);
+        assert.match(
+            css,
+            /\[data-component='PetroleumSegmented'\] \[data-element='option'\]\[aria-checked='true'\] \{[\s\S]*?--color-superficie-inactiva/,
+            'la opción activa es neutra, no petróleo'
+        );
+        assert.match(
+            css,
+            /\[data-component='PageScreen'\] \[data-element='toolbar'\] \[data-component='PetroleumSegmented'\] \[data-element='option'\]\[aria-checked='true'\]/,
+            'en PageScreen la pestaña activa lleva relleno blanco'
+        );
     });
 
     it('piloto: Waste, recipes y SubNavVentas usan PetroleumSegmented', () => {

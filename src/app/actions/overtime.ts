@@ -17,8 +17,6 @@ import {
 } from '@/lib/hours-engine';
 import type { CivilDate } from '@/lib/hours-engine/types';
 
-export type { StaffWeeklyStats, WeeklyStats };
-
 /** Horas Marbella entre dos instantes ISO (misma regla que fn_round_marbella_hours en BD). */
 function marbellaHoursBetweenClockIso(clockInIso: string, clockOutIso: string): number {
     const clockIn = new Date(clockInIso);

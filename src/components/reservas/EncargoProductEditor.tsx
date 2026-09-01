@@ -847,7 +847,7 @@ export function EncargoProductEditor({
       <button
         type="button"
         onClick={() => setCartModalOpen(true)}
-        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-ds-texto shadow-none outline-none hover:bg-black/5 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
         aria-label={unitCount > 0 ? `Pedido actual, ${unitCount} unidades` : 'Pedido actual'}
       >
         <ShoppingBag size={20} strokeWidth={2.25} />
@@ -861,7 +861,7 @@ export function EncargoProductEditor({
         type="button"
         onClick={handleDeleteRequest}
         disabled={isPending}
-        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-ds-texto shadow-none outline-none hover:bg-black/5 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
         aria-label="Eliminar encargo"
       >
         <Trash2 size={20} strokeWidth={2.25} />

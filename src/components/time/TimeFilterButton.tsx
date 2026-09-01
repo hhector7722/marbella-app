@@ -56,7 +56,7 @@ export function TimeFilterButton({
             "w-5 h-5 md:w-6 md:h-6 rounded-full",
             "bg-rose-500 hover:bg-rose-600 text-white shadow-lg",
             "flex items-center justify-center transition-all active:scale-95",
-            "border-2 border-[#36606F]"
+            "border-2 border-[var(--color-envolvente)]"
           )}
         >
           <X size={10} className="md:size-3" strokeWidth={4} />

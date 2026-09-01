@@ -7,21 +7,20 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 
-/** Encima de BottomNavStaff (md:h-16 + safe-area), mismo criterio que móvil bottom-[88px] */
+/** Encima de la cápsula (mobile) o del aire inferior (desktop: --shell-bottom-inset). */
 const DASHBOARD_DOTS_BOTTOM =
-    'calc(4rem + env(safe-area-inset-bottom, 0px) + 0.75rem)';
+    'calc(var(--shell-bottom-inset) + 0.5rem)';
 
 function DashboardPanelSkeleton() {
     return <div className="min-h-[480px] w-full animate-pulse bg-white/10 rounded-2xl" aria-hidden />;
 }
 
+import StaffDashboardView from './StaffDashboardView';
+
 const AdminDashboardView = dynamic(() => import('./AdminDashboardView'), {
     loading: () => <DashboardPanelSkeleton />,
 });
 const MasterDashboardView = dynamic(() => import('./MasterDashboardView'), {
-    loading: () => <DashboardPanelSkeleton />,
-});
-const StaffDashboardView = dynamic(() => import('./StaffDashboardView'), {
     loading: () => <DashboardPanelSkeleton />,
 });
 
@@ -195,18 +194,20 @@ export default function DashboardSwitcher({
 
     const shouldRenderPanel = (panel: DashboardView) => {
         if (view === panel) return true;
+        // Caja inicial / H. extras / Caja cambio solo existen en /dashboard.
+        if (panel === 'admin') return false;
         if (!dragMountPanels) return false;
         if (isTriple) {
             return Math.abs(PANEL_INDEX[view] - PANEL_INDEX[panel]) === 1;
         }
-        return panel === 'admin' || panel === 'staff';
+        return panel === 'staff';
     };
 
     return (
         <div
             ref={containerRef}
             className={cn(
-                'w-full min-h-full overflow-x-hidden overflow-y-auto relative',
+                'relative w-full max-w-full min-h-full overflow-x-clip overflow-y-auto',
                 isManager ? 'touch-pan-y' : ''
             )}
             onTouchStart={handleTouchStart}
@@ -262,7 +263,10 @@ export default function DashboardSwitcher({
             {isManager && (
                 <>
                     {/* Móvil: sin cambios (solo indicador, no clicable) */}
-                    <div className="fixed bottom-[88px] left-0 right-0 flex md:hidden justify-center gap-1 z-50 pointer-events-none">
+                    <div
+                        className="fixed left-0 right-0 flex md:hidden justify-center gap-1 z-50 pointer-events-none"
+                        style={{ bottom: DASHBOARD_DOTS_BOTTOM }}
+                    >
                         {panelDots.map((panel) => (
                             <div
                                 key={panel}

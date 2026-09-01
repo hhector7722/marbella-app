@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { getOvertimeData } from '@/app/actions/overtime';
 import DashboardVentasSection from '@/components/dashboards/DashboardVentasSection';
 import MasterShortcutGrid from '@/components/dashboards/MasterShortcutGrid';
+import { HomeScreen, HomeScreenSlot } from '@/components/dashboards/HomeScreen';
 import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal, type BoxOption } from '@/components/CashChangeModal';
 import { CashDenominationForm, CASH_COUNT_FORM_ID } from '@/components/CashDenominationForm';
@@ -332,14 +333,16 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
     const userRole = (userData?.role as 'staff' | 'manager' | 'supervisor') || 'manager';
 
     return (
-        <div className="pt-3 md:pt-2 animate-in fade-in duration-500 pb-8 md:pb-4">
-            <div className="px-4 w-full max-w-sm md:max-w-6xl mx-auto space-y-4 md:space-y-2">
-                <DashboardVentasSection
-                    initialData={{
-                        liveTickets: initialData?.liveTickets,
-                        salesChartData: initialData?.salesChartData,
-                    }}
-                />
+        <div className="pt-3 animate-in fade-in duration-500 pb-8">
+            <HomeScreen>
+                <HomeScreenSlot size="wide" instance="dashboard-ventas">
+                    <DashboardVentasSection
+                        initialData={{
+                            liveTickets: initialData?.liveTickets,
+                            salesChartData: initialData?.salesChartData,
+                        }}
+                    />
+                </HomeScreenSlot>
                 <MasterShortcutGrid
                     actualBalance={actualBalance}
                     changeBoxes={changeBoxes}
@@ -357,7 +360,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                     onOpenChangeBoxAudit={openChangeBoxAudit}
                     pendingReservationsCount={pendingReservationsCount}
                 />
-            </div>
+            </HomeScreen>
 
             <StaffScheduleModal
                 isOpen={isScheduleModalOpen}
@@ -383,7 +386,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                 hideHeaderClose
                 manageVisibility={showAllEmployeesInPlantilla}
                 onToggleVisibility={handleTogglePlantillaVisibility}
-                headerTextAction={{
+                listEndAction={{
                     label: showAllEmployeesInPlantilla ? 'Ver activos' : 'Ver todos',
                     onClick: async () => {
                         if (!showAllEmployeesInPlantilla) {

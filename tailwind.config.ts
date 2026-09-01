@@ -9,6 +9,9 @@ const config: Config = {
     ],
     theme: {
         extend: {
+            fontFamily: {
+                easports: ['var(--font-easports)', 'sans-serif'],
+            },
             colors: {
                 "ds-superficie": "var(--color-superficie)",
                 "ds-borde": "var(--color-borde)",

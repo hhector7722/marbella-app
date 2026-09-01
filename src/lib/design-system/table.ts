@@ -1,6 +1,8 @@
 /**
  * Contrato Table / T8 — tabla operativa.
- * Composición: <table data-component="Table"> + thead de marca + tabular-nums.
+ * Composición: <table data-component="Table"> + thead + tabular-nums.
+ * En PageScreen y Modal: cabecera cromo (misma que recipe-panel). Fuera: petróleo compacto.
+ * Instancias compactas (ventas, cierres): ver globals.css — densidad propia, mismo cromo.
  * No es un componente Table con props de columnas.
  */
 

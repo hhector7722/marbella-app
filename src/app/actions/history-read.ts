@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
+import { resolveSessionUser } from '@/lib/auth/resolve-session-user';
 import {
   buildEmployeeHistoryMonthFromEngine,
   buildEmployeeHistoryRangeFromEngine,
@@ -17,9 +18,7 @@ export async function getEmployeeHistoryMonth(input: {
   filterMonth: number;
 }): Promise<{ success: true; weeks: HistoryWeekDto[] } | { success: false; error: string }> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await resolveSessionUser();
   if (!user) return { success: false, error: 'No autenticado' };
 
   try {
@@ -54,9 +53,7 @@ export async function getWeekDetailDto(input: {
   | { success: false; error: string }
 > {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await resolveSessionUser();
   if (!user) return { success: false, error: 'No autenticado' };
 
   try {
@@ -72,7 +69,7 @@ export async function getWeekDetailDto(input: {
 
 /**
  * Una semana con el mismo DTO que `/staff/history` (HistoryWeekDto).
- * Usado por Dashboard → Horas Extras → empleado (WeekCard en solo lectura).
+ * Usado por el mosaico Staff, horas extras → empleado y asistencia.
  */
 export async function getEmployeeHistoryWeek(input: {
   userId: string;
@@ -88,9 +85,7 @@ export async function getEmployeeHistoryWeek(input: {
   | { success: false; error: string }
 > {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await resolveSessionUser();
   if (!user) return { success: false, error: 'No autenticado' };
 
   try {
@@ -163,9 +158,7 @@ export async function getEmployeeHistoryRange(input: {
   rangeEndIso: string;
 }): Promise<{ success: true; weeks: HistoryWeekDto[] } | { success: false; error: string }> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await resolveSessionUser();
   if (!user) return { success: false, error: 'No autenticado' };
 
   try {

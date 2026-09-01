@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
-import { CatalogGrid, CatalogTile } from '@/components/catalog/CatalogTile';
+import { CatalogGrid, CatalogTileUnificado } from '@/components/catalog/CatalogTile';
 import { CatalogFilterChip } from '@/components/catalog/CatalogFilterChip';
 import { SearchField } from '@/components/ui/SearchField';
 import { cn } from '@/lib/utils';
@@ -275,33 +275,21 @@ function RecipesContent() {
             <Toaster position="top-right" />
             <DashboardDetailLayout
                 title="Recetas"
+                titleFace="display"
+                titleBlockClassName="w-full text-center"
                 showBackButton={false}
                 template="list"
                 maxWidthClass="max-w-7xl"
-                rightSlot={
-                    !isRestricted ? (
-                        <Button
-                            type="button"
-                            variant="tertiary"
-                            instance="recipes-crear"
-                            aria-label="Nueva receta"
-                            icon={<Plus className="h-5 w-5 md:h-6 md:w-6" />}
-                            onClick={() => {
-                                const tap = menuCategoryRows.find((r) => r.slug === 'tapas');
-                                setNewRecipe({
-                                    name: '',
-                                    menu_category_id: tap?.id ?? '',
-                                    category: tap ? denormalizedRecipeCategoryName(tap) : '',
-                                    sale_price: 0,
-                                    ingredients: [],
-                                });
-                                setShowCreateModal(true);
-                            }}
-                        />
-                    ) : null
-                }
-            >
+                toolbarSlot={
                 <div className="flex flex-row items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => setShowCreateModal(true)}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm hover:bg-emerald-600 hover:shadow transition-all"
+                        aria-label="Crear nueva receta"
+                    >
+                        <Plus size={16} strokeWidth={3} />
+                    </button>
                     <div className="min-w-0 flex-1">
                         <SearchField
                             instance="recipes-search"
@@ -338,22 +326,19 @@ function RecipesContent() {
                             )}
                     </div>
                 </div>
+                }
+            >
                 {!loading && (
-                    <div className="pt-4 md:pt-6">
-                        <CatalogGrid columns={3}>
+                    <div className="pt-1">
+                        <CatalogGrid columns={4}>
                             {filteredRecipes.map((recipe) => (
-                                <CatalogTile
+                                <CatalogTileUnificado
                                     key={recipe.id}
                                     title={recipe.name}
                                     imageSrc={recipe.photo_url}
                                     fallback={<ChefHat className="h-8 w-8 md:h-10 md:w-10" />}
-                                    subtitle={
-                                        !isRestricted ? (
-                                            <span className={getRecipeHealthColor(recipe)}>
-                                                {recipe.sale_price?.toFixed(1)}€
-                                            </span>
-                                        ) : undefined
-                                    }
+                                    price={recipe.sale_price}
+                                    priceClassName={!isRestricted ? getRecipeHealthColor(recipe) : undefined}
                                     onClick={() => router.push(buildRecipesHref(recipe.id))}
                                 />
                             ))}

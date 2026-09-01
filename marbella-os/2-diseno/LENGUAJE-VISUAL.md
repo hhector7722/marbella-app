@@ -38,7 +38,7 @@ Lo que Marbella no es visualmente: no es un panel de control corporativo lleno d
 Cuatro papeles, y solo cuatro:
 
 - **Marca** — el azul petróleo. Identifica al producto y marca la acción principal. Es el único color con carga de identidad.
-- **Envolvente** — el azul de fondo de la aplicación, con degradado sutil, más claro arriba y más oscuro abajo. Es el lienzo sobre el que flotan las superficies de trabajo. No lleva contenido nunca.
+- **Envolvente** — marino con degradado (`#15345C` → `#2A5A96` arriba). Es el mismo lienzo en todas las páginas. No lleva contenido nunca.
 - **Neutros** — la escala de grises fríos. Sostiene el 90% del producto: superficies, texto, bordes, separadores.
 - **Semánticos** — verde, rojo, ámbar y azul informativo. **Solo se usan cuando significan algo**: positivo, negativo, advertencia, información. Un verde decorativo destruye el significado del verde real.
 

@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import {
-    Play, Square, CalendarDays,
-    Calendar, Play as PlayIcon, ArrowLeft,
+    Calendar, ArrowLeft,
     Check, Info, Package,
     Phone, Scale, ShoppingCart, Boxes, MessageCircle,
     ChefHat, Calculator, ArrowRightLeft, Save, ArrowDown, ArrowUp,
@@ -14,7 +13,6 @@ import {
 import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal } from '@/components/CashChangeModal';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
-import { StaffProductModal } from '@/components/modals/StaffProductModal';
 import { AttendanceDetailModal } from '@/components/modals/AttendanceDetailModal';
 import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
 import { CashDenominationForm, CASH_COUNT_FORM_ID } from '@/components/CashDenominationForm';
@@ -31,15 +29,16 @@ import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, MAX
 import { FICHAJE_OVERLAY_VIDEOS } from '@/lib/fichaje-overlay-videos';
 import { syncOvertimeCostAfterTimeLogChange } from '@/app/actions/persist-overtime-cost';
 import { getEmployeeHistoryWeek, type HistoryWeekDto } from '@/app/actions/history-read';
-import { WeekCard } from '@/app/staff/history/WeekCard';
-import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
+import { WeekSummary } from '@/components/staff/WeekSummary';
+import { StaffWeekScheduleWidget } from '@/components/dashboards/staff/StaffWeekScheduleWidget';
 import WorkTimer, { StaffElapsedDigits, formatStaffElapsedHms } from '@/components/ui/WorkTimer';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
+import { HomeScreen, HomeScreenSlot } from '@/components/dashboards/HomeScreen';
 import { ConsumptionModal } from '@/app/staff/ConsumptionModal';
 import { AccessMenuGrid, CatalogTile } from '@/components/catalog/CatalogTile';
 import {
@@ -65,16 +64,10 @@ const CONTACTS_DATA = [
 
 const STAFF_INFO_MENU = [
     { title: 'Contactos de Interés', imageSrc: '/icons/whatsapp.png', kind: 'contactos' as const },
-    { title: 'Página web', imageSrc: '/icons/web.png', kind: 'web' as const },
-    { title: 'Reservas y encargos', imageSrc: '/icons/reservas.png', kind: 'href' as const, href: '/staff/reservas' },
-    { title: 'Carta', imageSrc: '/icons/menu.png', kind: 'href' as const, href: '/staff/carta' },
     { title: 'Manuales', imageSrc: '/icons/guide.png', kind: 'manuales' as const },
 ];
 
 const STAFF_WEB_HREF = 'https://marbella-web.vercel.app';
-
-const STAFF_CLOCK_ACTION =
-    'flex h-12 items-center justify-center gap-2 rounded-xl border border-white shadow-[0_0_0_1px_rgba(24,24,27,0.14)] bg-gradient-to-b text-white transition-[filter] duration-75 active:brightness-[0.99] disabled:opacity-70';
 
 type WorkStatus = 'idle' | 'working' | 'finished';
 
@@ -96,6 +89,188 @@ const applyRoundingRule = (totalMinutes: number): number => {
     return h + 1;
 };
 
+const FICHAJE_LABEL = 'Registro';
+
+function StaffFichajeShortcutShell({
+    label,
+    hideLabel = false,
+    onClick,
+    disabled,
+    shortcutFill,
+    children,
+}: {
+    label: string;
+    hideLabel?: boolean;
+    onClick?: () => void;
+    disabled?: boolean;
+    /** Mismo contrato que DashboardShortcut plate=fill (p. ej. C INICIAL). */
+    shortcutFill?: string;
+    children: ReactNode;
+}) {
+    const Tag = onClick ? 'button' : 'div';
+
+    return (
+        <Tag
+            type={onClick ? 'button' : undefined}
+            data-component="StaffFichajeControl"
+            data-plate="fill"
+            onClick={onClick}
+            disabled={disabled}
+            className={onClick ? 'touch-manipulation transition-all active:scale-95 disabled:opacity-70' : undefined}
+            style={shortcutFill ? { ['--shortcut-fill' as string]: shortcutFill } : undefined}
+        >
+            <div data-element="iconWrap">
+                <div data-element="iconBox">
+                    <div data-element="asset" className="flex h-full w-full items-center justify-center">
+                        {children}
+                    </div>
+                </div>
+                <span data-element="rim" aria-hidden />
+            </div>
+            <span data-element="text" className={hideLabel ? 'invisible' : undefined} aria-hidden={hideLabel}>
+                {label}
+            </span>
+        </Tag>
+    );
+}
+
+function StaffFichajeWorkingControl({
+    clockIn,
+    actionLoading,
+    onClockOut,
+}: {
+    clockIn?: string;
+    actionLoading: boolean;
+    onClockOut: () => void;
+}) {
+    return (
+        <div data-component="StaffFichajeControl" data-layout="dual-stack" data-plate="fill">
+            <div data-element="iconStack">
+                <div data-element="iconWrap">
+                    <div
+                        data-element="iconBox"
+                        aria-live="polite"
+                        style={{ ['--shortcut-fill' as string]: 'rgb(15 23 42 / 0.88)' }}
+                    >
+                        <div
+                            data-element="asset"
+                            className="flex h-full w-full items-center justify-center bg-gradient-to-b from-zinc-600/90 to-zinc-950/95"
+                        >
+                            <WorkTimer clockIn={clockIn || null} compact mini inverted />
+                        </div>
+                    </div>
+                    <span data-element="rim" aria-hidden />
+                </div>
+                <div data-element="iconWrap">
+                    <button
+                        type="button"
+                        data-element="iconBox"
+                        onClick={onClockOut}
+                        disabled={actionLoading}
+                        aria-label="Salida"
+                        className={cn(
+                            'relative touch-manipulation text-white transition-[filter] active:brightness-[0.99] disabled:opacity-70',
+                            'before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']',
+                        )}
+                        style={{ ['--shortcut-fill' as string]: '#e8365a' }}
+                    >
+                        <div data-element="asset" className="flex h-full w-full items-center justify-center bg-gradient-to-b from-rose-500 to-[#e8365a]">
+                            {actionLoading ? (
+                                <LoadingSpinner size="sm" className="text-white" />
+                            ) : (
+                                <span className="text-[10px] font-black uppercase leading-none tracking-wide">Salida</span>
+                            )}
+                        </div>
+                    </button>
+                    <span data-element="rim" aria-hidden />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function StaffFichajeIcon({
+    status,
+    clockLoading,
+    actionLoading,
+    todayLog,
+    onClockIn,
+    onClockOut,
+}: {
+    status: WorkStatus;
+    clockLoading: boolean;
+    actionLoading: boolean;
+    todayLog: { clock_in?: string; clock_out?: string } | null;
+    onClockIn: () => void;
+    onClockOut: () => void;
+}) {
+    if (clockLoading) {
+        return (
+            <StaffFichajeShortcutShell label={FICHAJE_LABEL} hideLabel>
+                <div data-element="asset" className="flex h-full w-full items-center justify-center bg-black/25">
+                    <LoadingSpinner size="sm" className="text-white" />
+                </div>
+            </StaffFichajeShortcutShell>
+        );
+    }
+
+    if (status === 'working') {
+        return (
+            <StaffFichajeWorkingControl
+                clockIn={todayLog?.clock_in}
+                actionLoading={actionLoading}
+                onClockOut={onClockOut}
+            />
+        );
+    }
+
+    if (status === 'finished') {
+        return (
+            <StaffFichajeShortcutShell
+                label={FICHAJE_LABEL}
+                shortcutFill="var(--color-positivo)"
+            >
+                <StaffElapsedDigits
+                    value={formatStaffElapsedHms(todayLog?.clock_in, todayLog?.clock_out)}
+                    tone="quiet"
+                    compact
+                    mini
+                    inverted
+                />
+            </StaffFichajeShortcutShell>
+        );
+    }
+
+    return (
+        <div data-component="StaffFichajeControl" data-plate="fill">
+            <div data-element="iconWrap">
+                <button
+                    type="button"
+                    data-element="iconBox"
+                    onClick={onClockIn}
+                    disabled={actionLoading}
+                    aria-label="Entrada"
+                    className={cn(
+                        'relative touch-manipulation text-white transition-[filter] active:brightness-[0.99] disabled:opacity-70',
+                        'before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']',
+                    )}
+                    style={{ ['--shortcut-fill' as string]: '#0eab78' }}
+                >
+                    <div data-element="asset" className="flex h-full w-full items-center justify-center bg-gradient-to-b from-emerald-500 to-[#0eab78]">
+                        {actionLoading ? (
+                            <LoadingSpinner size="sm" className="text-white" />
+                        ) : (
+                            <span className="text-[10px] font-black uppercase leading-none tracking-wide">Entrada</span>
+                        )}
+                    </div>
+                </button>
+                <span data-element="rim" aria-hidden />
+            </div>
+            <span data-element="text">{FICHAJE_LABEL}</span>
+        </div>
+    );
+}
+
 export default function StaffDashboardView() {
     const supabase = createClient();
     const router = useRouter();
@@ -113,8 +288,7 @@ export default function StaffDashboardView() {
     const [weekFilterMonth, setWeekFilterMonth] = useState(() => new Date().getMonth());
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
     const [monthShifts, setMonthShifts] = useState<ShiftMock[]>([]);
-    const [nextShifts, setNextShifts] = useState<ShiftMock[]>([]);
-    const [showModal, setShowModal] = useState(false);
+    const [fichajeOverlay, setFichajeOverlay] = useState<'none' | 'confirm' | 'consumption'>('none');
     const [modalAction, setModalAction] = useState<'in' | 'out' | null>(null);
     const [showGiffOverlay, setShowGiffOverlay] = useState(false);
     const [giffOverlaySrc, setGiffOverlaySrc] = useState<string>('/icons/giff.mp4');
@@ -144,9 +318,8 @@ export default function StaffDashboardView() {
     };
 
     useEffect(() => () => clearGiffFadeTimer(), []);
-    const [showConsumptionModal, setShowConsumptionModal] = useState(false);
-    const [activeMenu, setActiveMenu] = useState<'info' | 'pedidos' | null>(null);
-    const [infoSubMenu, setInfoSubMenu] = useState<'contactos' | 'web' | null>(null);
+    const [activeMenu, setActiveMenu] = useState<'info' | null>(null);
+    const [infoSubMenu, setInfoSubMenu] = useState<'contactos' | null>(null);
     const [isManualsModalOpen, setIsManualsModalOpen] = useState(false);
     const [isTpvManualModalOpen, setIsTpvManualModalOpen] = useState(false);
     const [isHornoManualModalOpen, setIsHornoManualModalOpen] = useState(false);
@@ -155,7 +328,6 @@ export default function StaffDashboardView() {
     const [changeBoxInventoryMap, setChangeBoxInventoryMap] = useState<Record<number, number>>({});
     const [liveTickets, setLiveTickets] = useState({ total: 0, count: 0 });
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
-    const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [isDayDetailModalOpen, setIsDayDetailModalOpen] = useState(false);
     const [selectedDayDate, setSelectedDayDate] = useState<Date | null>(null);
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -166,9 +338,7 @@ export default function StaffDashboardView() {
     // NUEVOS ESTADOS PARA CAJA INICIAL ("COMPRA")
     const [operationalBox, setOperationalBox] = useState<any>(null);
     const [allBoxes, setAllBoxes] = useState<any[]>([]);
-    const [isCashOptionsModalOpen, setIsCashOptionsModalOpen] = useState(false);
     const [isCashChangeModalOpen, setIsCashChangeModalOpen] = useState(false);
-    const [cashOptionsCalculatorOpen, setCashOptionsCalculatorOpen] = useState(false);
     const [selectedBox, setSelectedBox] = useState<any>(null);
     const [cashModalMode, setCashModalMode] = useState<'none' | 'out'>('none');
     const [cashCountTotal, setCashCountTotal] = useState(0);
@@ -184,8 +354,6 @@ export default function StaffDashboardView() {
         usageId: `staff-info-menu-${infoSubMenu ?? activeMenu ?? 'root'}`,
         usageLabel:
             infoSubMenu === 'contactos' ? 'Contactos'
-            : infoSubMenu === 'web' ? 'Página web'
-            : activeMenu === 'pedidos' ? 'Pedidos'
             : 'Información',
     });
     useModalUsageTracking({
@@ -208,21 +376,11 @@ export default function StaffDashboardView() {
         usageId: 'staff-manual-media',
         usageLabel: manualMediaViewer?.title ?? 'Visor manual',
     });
-    useModalUsageTracking({
-        open: isCashOptionsModalOpen,
-        usageId: 'staff-cash-options',
-        usageLabel: 'Opciones de caja',
-    });
-    useModalUsageTracking({
-        open: cashModalMode !== 'none',
-        usageId: 'staff-treasury-out',
-        usageLabel: 'Salida de caja',
-    });
 
     const trackStaffClockConfirm = useTrackModalApply('staff-clock-confirm', 'Confirmar fichaje');
-    const trackStaffCashOption = useTrackModalApply('staff-cash-options', 'Opciones de caja');
     const trackStaffPurchaseMulti = useTrackModalApply('staff-purchase-multi-source', 'Compra multiorigen');
     const trackStaffInfoMenu = useTrackModalApply('staff-info-menu', 'Menú información');
+    const trackStaffShortcut = useTrackModalApply('staff-dashboard-shortcut', 'Atajo staff');
 
     useEffect(() => { initialize(); }, []);
 
@@ -250,7 +408,8 @@ export default function StaffDashboardView() {
 
     async function initialize() {
         try {
-            const { data: { user } } = await supabase.auth.getUser();
+            const { data: { session } } = await supabase.auth.getSession();
+            const user = session?.user;
             if (!user) {
                 setClockLoading(false);
                 setWeekLoading(false);
@@ -341,12 +500,8 @@ export default function StaffDashboardView() {
                         };
                     });
                     setMonthShifts(formattedShifts);
-                    const todayStart = new Date(today);
-                    todayStart.setHours(0, 0, 0, 0);
-                    setNextShifts(formattedShifts.filter((s) => s.date >= todayStart).slice(0, 2));
                 } else {
                     setMonthShifts([]);
-                    setNextShifts([]);
                 }
             })().catch(console.error);
 
@@ -443,6 +598,18 @@ export default function StaffDashboardView() {
         setShowPurchaseMultiSourceModal(true);
     };
 
+    const handleOpenCompra = () => {
+        trackStaffShortcut('Compra');
+        const cashBoxes = allBoxes.filter(
+            (b: any) => b.type === 'operational' || b.type === 'change' || b.type === 'tpv',
+        );
+        if (cashBoxes.length === 0) {
+            toast.error('No hay cajas configuradas');
+            return;
+        }
+        void openPurchaseMultiSourceModal();
+    };
+
     const handlePurchaseMultiSourceSubmit = async (payload: PurchaseMultiSourcePayload) => {
         try {
             const baseNotes = payload.notes || 'Compra';
@@ -502,7 +669,7 @@ export default function StaffDashboardView() {
         if (!userId) return;
         const action = forcedAction ?? modalAction;
         trackStaffClockConfirm(action === 'in' ? 'Entrada' : 'Salida', { action: action ?? '' });
-        setShowModal(false);
+        setFichajeOverlay('none');
         setActionLoading(true);
         try {
             let lat: number | null = null;
@@ -604,14 +771,22 @@ export default function StaffDashboardView() {
         } finally { setActionLoading(false); }
     };
 
-    const openConfirmation = () => {
-        if (status !== 'finished' && !actionLoading) {
-            setModalAction(status === 'idle' ? 'in' : 'out');
-            setShowModal(true);
-        }
+    const openConfirmation = (action?: 'in' | 'out') => {
+        if (status === 'finished' || actionLoading) return;
+        setModalAction(action ?? (status === 'idle' ? 'in' : 'out'));
+        setFichajeOverlay('confirm');
     };
 
-    const closeMenus = () => { setActiveMenu(null); setInfoSubMenu(null); setIsProductModalOpen(false); };
+    const handleClockModalConfirm = () => {
+        if (modalAction === 'out') {
+            setFichajeOverlay('consumption');
+            return;
+        }
+        setFichajeOverlay('none');
+        void handleClockAction('in');
+    };
+
+    const closeMenus = () => { setActiveMenu(null); setInfoSubMenu(null); };
     const closeManualsModal = () => {
         setIsManualsModalOpen(false);
         setIsTpvManualModalOpen(false);
@@ -669,208 +844,187 @@ export default function StaffDashboardView() {
     };
 
     return (
-        <div className="pt-3 md:pt-3 animate-in fade-in duration-500 pb-8">
-            <div className="px-4 md:px-0 w-full max-w-lg md:max-w-2xl mx-auto space-y-3 md:space-y-4">
-                <div className="flex flex-col gap-4 md:gap-4 items-center">
-                    <div className="w-full space-y-3 md:space-y-4">
-                        <div className="relative w-full min-h-[200px]">
-                            {weekLoading ? (
-                                <div className="absolute inset-0 flex items-center justify-center z-10" role="status" aria-label="Cargando semana">
-                                    <LoadingSpinner size="md" className="text-white" />
-                                </div>
-                            ) : null}
-                            {historyWeek ? (
-                                <MonthCalendarFrame flush>
-                                    <div className="month-cal-weeks">
-                                        <WeekCard
-                                            week={historyWeek as any}
-                                            filterMonth={weekFilterMonth}
-                                            filterYear={weekFilterYear}
-                                            onDayClick={(ymd) => {
-                                                const [y, m, d] = ymd.split('-').map(Number);
-                                                setSelectedDayDate(new Date(y, m - 1, d));
-                                                setIsDayDetailModalOpen(true);
-                                            }}
-                                            showWeekOverrides={false}
-                                        />
-                                    </div>
-                                </MonthCalendarFrame>
-                            ) : !weekLoading ? (
-                                <EmptyState instance="staff-week-none" variant="none" title="Sin datos" />
-                            ) : null}
-                        </div>
+        <div className="pt-3 animate-in fade-in duration-500 pb-8">
+            <HomeScreen layout="staff">
+                <HomeScreenSlot size="wide" instance="staff-semana">
+                    <div className="relative h-full min-h-0" data-fit="week">
+                        {weekLoading ? (
+                            <div className="absolute inset-0 flex items-center justify-center z-10" role="status" aria-label="Cargando semana">
+                                <LoadingSpinner size="md" className="text-white" />
+                            </div>
+                        ) : null}
+                        {historyWeek ? (
+                            <WeekSummary
+                                flush
+                                dimOtherMonth={false}
+                                weeks={[historyWeek]}
+                                filterMonth={weekFilterMonth}
+                                filterYear={weekFilterYear}
+                                onDayClick={(ymd) => {
+                                    const [y, m, d] = ymd.split('-').map(Number);
+                                    setSelectedDayDate(new Date(y, m - 1, d));
+                                    setIsDayDetailModalOpen(true);
+                                }}
+                            />
+                        ) : !weekLoading ? (
+                            <EmptyState instance="staff-week-none" variant="none" title="Sin datos" />
+                        ) : null}
                     </div>
+                </HomeScreenSlot>
 
-                    <div data-instance="staff-fichaje" className="w-full p-px">
-                        {clockLoading ? (
-                            <div className="flex h-12 w-full items-center justify-center" role="status" aria-label="Cargando fichaje">
-                                <LoadingSpinner size="sm" className="text-white" />
-                            </div>
-                        ) : status === 'working' ? (
-                            <div className="flex h-12 w-full gap-2">
-                                <div className="flex min-w-0 flex-[2] items-center justify-center rounded-xl bg-black/25">
-                                    <WorkTimer clockIn={todayLog?.clock_in || null} />
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowConsumptionModal(true)}
-                                    disabled={actionLoading}
-                                    className={cn(STAFF_CLOCK_ACTION, 'min-w-0 flex-1 from-rose-500 to-[#e8365a]')}
-                                >
-                                    {actionLoading ? (
-                                        <LoadingSpinner size="sm" className="text-white" />
-                                    ) : (
-                                        <span className="text-sm font-black tracking-wide">Salida</span>
-                                    )}
-                                </button>
-                            </div>
-                        ) : status === 'finished' ? (
-                            <div className="flex h-12 w-full items-center justify-center rounded-xl bg-zinc-100">
-                                <StaffElapsedDigits
-                                    value={formatStaffElapsedHms(todayLog?.clock_in, todayLog?.clock_out)}
-                                    tone="quiet"
-                                />
-                            </div>
-                        ) : (
-                            <button
-                                type="button"
-                                onClick={() => openConfirmation()}
-                                disabled={actionLoading}
-                                className={cn(STAFF_CLOCK_ACTION, 'w-full from-emerald-500 to-[#0eab78]')}
-                            >
-                                {actionLoading ? (
-                                    <LoadingSpinner size="sm" className="text-white" />
-                                ) : (
-                                    <span className="text-sm font-black tracking-wide">Entrada</span>
-                                )}
-                            </button>
-                        )}
-                    </div>
+                <HomeScreenSlot size="panel" instance="staff-horarios">
+                    <StaffWeekScheduleWidget
+                        userId={userId}
+                        onOpenNote={(ymd) => {
+                            setScheduleFocusDate(ymd);
+                            setIsScheduleModalOpen(true);
+                        }}
+                    />
+                </HomeScreenSlot>
 
-                    <div className="w-full grid grid-cols-2 gap-3 md:gap-4">
-                        {/* MINI CALENDAR HORARIOS CARD — scaled */}
-                        <div
-                            onClick={() => setIsScheduleModalOpen(true)}
-                            className="bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden aspect-square cursor-pointer hover:shadow-2xl transition-all active:scale-[0.98]"
-                        >
-                            {/* Header compacto */}
-                            <div className="bg-purple-600 px-4 py-1.5 md:py-2 flex items-center justify-between text-white shrink-0">
-                                <h3 className="font-black flex items-center gap-1 text-[10px] md:text-sm uppercase tracking-wider">
-                                    <CalendarDays size={12} className="text-white/80 shrink-0 md:w-4 md:h-4" fill="currentColor" />
-                                    <span>Horarios</span>
-                                </h3>
-                                <div className="bg-white/20 rounded px-1 py-px text-[6px] md:text-[7px] font-black">VER</div>
-                            </div>
+                <HomeScreenSlot size="icon" instance="staff-fichaje">
+                    <StaffFichajeIcon
+                        status={status}
+                        clockLoading={clockLoading}
+                        actionLoading={actionLoading}
+                        todayLog={todayLog}
+                        onClockIn={() => openConfirmation()}
+                        onClockOut={() => openConfirmation('out')}
+                    />
+                </HomeScreenSlot>
 
-                            <div className="flex-1 flex flex-col justify-between px-2 py-1.5 md:py-3 md:px-3 min-h-0">
-                                <div>
-                                    <div className="grid grid-cols-7 mb-1 md:mb-1.5">
-                                        {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
-                                            <div key={d} className="text-center text-[6px] md:text-[9px] font-black text-gray-300 leading-none">{d}</div>
-                                        ))}
-                                    </div>
-                                    <div className="grid grid-cols-7">
-                                        {Array.from({ length: (new Date(new Date().getFullYear(), new Date().getMonth(), 1).getDay() + 6) % 7 }).map((_, i) => (
-                                            <div key={`e-${i}`} />
-                                        ))}
-                                        {Array.from({ length: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() }).map((_, i) => {
-                                            const d = i + 1;
-                                            const day = new Date(new Date().getFullYear(), new Date().getMonth(), d);
-                                            const today = new Date(); today.setHours(0, 0, 0, 0);
-                                            const isToday = d === new Date().getDate() && day.getMonth() === today.getMonth();
-                                            const hasShift = monthShifts.some(s => s.date.getDate() === d && s.date.getMonth() === new Date().getMonth());
+                <HomeScreenSlot size="icon" instance="staff-albaranes">
+                    <DashboardShortcut instance="staff-albaranes" label="Albaranes" img="/icons/scan.png" onClick={() => router.push('/dashboard/albaranes')} />
+                </HomeScreenSlot>
+                <HomeScreenSlot size="icon" instance="staff-recetas">
+                    <DashboardShortcut instance="staff-recetas" label="Recetas" img="/icons/recipes.png" onClick={() => router.push('/recipes?view=staff')} />
+                </HomeScreenSlot>
+                <HomeScreenSlot size="icon" instance="staff-pedidos">
+                    <DashboardShortcut
+                        instance="staff-pedidos"
+                        label="Pedidos"
+                        img="/icons/shipment.png"
+                        onClick={() => {
+                            trackStaffShortcut('Pedidos');
+                            setIsSupplierModalOpen(true);
+                        }}
+                    />
+                </HomeScreenSlot>
+                <HomeScreenSlot size="icon" instance="staff-cambio">
+                    <DashboardShortcut instance="staff-cambio" label="Cambio" img="/icons/change.png" onClick={() => setIsCashChangeModalOpen(true)} />
+                </HomeScreenSlot>
+                <HomeScreenSlot size="icon" instance="staff-propinas">
+                    <DashboardShortcut
+                        instance="staff-propinas"
+                        label="Propinas"
+                        img="/icons/tip.png"
+                        onClick={() => {
+                            trackStaffShortcut('Propinas');
+                            router.push('/staff/propinas');
+                        }}
+                    />
+                </HomeScreenSlot>
+                <HomeScreenSlot size="icon" instance="staff-compra">
+                    <DashboardShortcut instance="staff-compra" label="Compra" img="/icons/shop.png" onClick={handleOpenCompra} />
+                </HomeScreenSlot>
+                <HomeScreenSlot size="icon" instance="staff-carta">
+                    <DashboardShortcut
+                        instance="staff-carta"
+                        label="Carta"
+                        img="/icons/menu.png"
+                        onClick={() => {
+                            trackStaffShortcut('Carta');
+                            router.push('/staff/carta');
+                        }}
+                    />
+                </HomeScreenSlot>
+                <HomeScreenSlot size="icon" instance="staff-reservas">
+                    <DashboardShortcut
+                        instance="staff-reservas"
+                        label="Reservas"
+                        img="/icons/reservas.png"
+                        onClick={() => {
+                            trackStaffShortcut('Reservas');
+                            router.push('/staff/reservas');
+                        }}
+                    />
+                </HomeScreenSlot>
+                <HomeScreenSlot size="icon" instance="staff-cierre">
+                    <DashboardShortcut
+                        instance="staff-cierre"
+                        label="Cierre"
+                        img="/icons/lock.png"
+                        onClick={() => {
+                            trackStaffShortcut('Cierre');
+                            setIsClosingModalOpen(true);
+                        }}
+                    />
+                </HomeScreenSlot>
+                <HomeScreenSlot size="icon" instance="staff-proveedores">
+                    <DashboardShortcut
+                        instance="staff-proveedores"
+                        label="Proveedores"
+                        img="/icons/suplier.png"
+                        onClick={() => {
+                            trackStaffShortcut('Proveedores');
+                            router.push('/suppliers');
+                        }}
+                    />
+                </HomeScreenSlot>
+                <HomeScreenSlot size="icon" instance="staff-inventario">
+                    <DashboardShortcut
+                        instance="staff-inventario"
+                        label="Inventario"
+                        img="/icons/inventory.png"
+                        onClick={() => {
+                            trackStaffShortcut('Inventario');
+                            router.push('/dashboard/inventory');
+                        }}
+                    />
+                </HomeScreenSlot>
+                <HomeScreenSlot size="icon" instance="staff-info">
+                    <DashboardShortcut instance="staff-info" label="Info" img="/icons/information.png" onClick={() => setActiveMenu('info')} />
+                </HomeScreenSlot>
+                <HomeScreenSlot size="icon" instance="staff-web">
+                    <DashboardShortcut
+                        instance="staff-web"
+                        label="Web"
+                        img="/icons/web.png"
+                        onClick={() => {
+                            trackStaffShortcut('Web');
+                            window.open(STAFF_WEB_HREF, '_blank', 'noopener,noreferrer');
+                        }}
+                    />
+                </HomeScreenSlot>
+            </HomeScreen>
 
-                                            return (
-                                                <div key={d} className="flex items-center justify-center py-[1px] md:py-0.5">
-                                                    <span className={`
-                                                            w-3.5 h-3.5 md:w-5 md:h-5 flex items-center justify-center rounded-full text-[7px] md:text-[9px] leading-none transition-colors
-                                                            ${hasShift ? 'bg-emerald-500 text-white font-black' : (isToday ? 'text-blue-600 font-black' : 'text-gray-900')}
-                                                        `}>
-                                                        {d}
-                                                    </span>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-
-                                <div className="border-t border-gray-100 pt-1 px-1 md:pt-2 md:px-1">
-                                    {nextShifts.length === 0 ? (
-                                        <p className="text-[7px] md:text-[10px] text-zinc-400 font-black italic text-center">Sin turnos</p>
-                                    ) : (
-                                        <div className="flex items-center gap-1 overflow-hidden justify-between md:gap-2">
-                                            {nextShifts.slice(0, 2).map((shift, idx) => (
-                                                <div key={idx} className="flex items-center gap-1 md:gap-1.5 flex-1 min-w-0">
-                                                    <div className="flex flex-col items-center bg-purple-50 rounded-lg px-0.5 py-0.5 min-w-[20px] md:min-w-[24px]">
-                                                        <span className="text-[5px] md:text-[8px] font-black text-purple-400 uppercase leading-none">{format(shift.date, "MMM", { locale: es })}</span>
-                                                        <span className="text-[9px] md:text-xs font-black text-purple-700 leading-none">{shift.date.getDate()}</span>
-                                                    </div>
-                                                    <div className="flex flex-col gap-0 min-w-0">
-                                                        <div className="flex items-center gap-0.5 font-black leading-none text-[7px] md:text-[10px]">
-                                                            <span className="text-emerald-600">{shift.startTime}</span>
-                                                            <span className="text-rose-500">{shift.endTime}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Iconos Flotantes - Now in a grid beside horarios */}
-                        <div className="grid grid-cols-2 gap-x-5 gap-y-6 md:gap-x-6 md:gap-y-7">
-                            <DashboardShortcut plate instance="staff-caja" label="Caja" img="/icons/change.png" onClick={() => setIsCashOptionsModalOpen(true)} />
-                            <DashboardShortcut instance="staff-recetas" label="Recetas" img="/icons/recipes.png" onClick={() => router.push('/recipes?view=staff')} />
-                            <DashboardShortcut plate instance="staff-info" label="Info" img="/icons/information.png" onClick={() => setActiveMenu('info')} />
-                            <DashboardShortcut plate instance="staff-stock" label="Stock" img="/icons/suppliers.png" onClick={() => setIsProductModalOpen(true)} />
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {showConsumptionModal && (
+            {fichajeOverlay === 'consumption' ? (
                 <ConsumptionModal
-                    onCancel={() => setShowConsumptionModal(false)}
+                    onCancel={() => setFichajeOverlay('none')}
                     onConfirm={async () => {
-                        setShowConsumptionModal(false);
+                        setFichajeOverlay('none');
                         await handleClockAction('out');
                     }}
                 />
+            ) : (
+                <ConfirmModal
+                    open={fichajeOverlay === 'confirm'}
+                    onClose={() => setFichajeOverlay('none')}
+                    title="Confirmar fichaje"
+                    confirmLabel="Confirmar"
+                    cancelLabel="Cancelar"
+                    confirmVariant={modalAction === 'out' ? 'destructive' : 'primary'}
+                    instance="staff-clock-confirm"
+                    usageLabel="Confirmar fichaje"
+                    scheme="dark"
+                    layer="base"
+                    hideHeader
+                    hideCloseButton
+                    buttonsStretch
+                    confirming={actionLoading && modalAction === 'in'}
+                    onConfirm={handleClockModalConfirm}
+                />
             )}
-            <Modal
-                open={showModal}
-                onClose={() => setShowModal(false)}
-                variant="compact"
-                layer="system"
-                instance="staff-clock-confirm"
-                usageId="staff-clock-confirm"
-                usageLabel="Confirmar fichaje"
-                title={modalAction === 'in' ? 'Iniciar Turno' : 'Finalizar Turno'}
-                footer={
-                    <>
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            instance="staff-clock-confirm-cancel"
-                            onClick={() => setShowModal(false)}
-                        >
-                            Cancelar
-                        </Button>
-                        <Button
-                            type="button"
-                            variant={modalAction === 'out' ? 'destructive' : 'primary'}
-                            instance={modalAction === 'out' ? 'staff-clock-confirm-out' : 'staff-clock-confirm-in'}
-                            onClick={() => void handleClockAction()}
-                        >
-                            Confirmar
-                        </Button>
-                    </>
-                }
-            >
-                <></>
-            </Modal>
 
             {showGiffOverlay && (
                 <div
@@ -920,14 +1074,9 @@ export default function StaffDashboardView() {
                 variant="standard"
                 layer="base"
                 instance="staff-info"
-                title={
-                    infoSubMenu === 'contactos'
-                        ? 'Contactos'
-                        : infoSubMenu === 'web'
-                            ? 'Página web'
-                            : 'Información'
-                }
+                title={infoSubMenu === 'contactos' ? 'Contactos' : 'Información'}
                 headerTone="petroleum"
+                scheme="dark"
                 onBack={infoSubMenu ? () => setInfoSubMenu(null) : undefined}
             >
                 <div className="space-y-2">
@@ -942,11 +1091,6 @@ export default function StaffDashboardView() {
                                         if (item.kind === 'contactos') {
                                             trackStaffInfoMenu(item.title);
                                             setInfoSubMenu('contactos');
-                                            return;
-                                        }
-                                        if (item.kind === 'web') {
-                                            trackStaffInfoMenu(item.title);
-                                            window.open(STAFF_WEB_HREF, '_blank', 'noopener,noreferrer');
                                             return;
                                         }
                                         if (item.kind === 'href') {
@@ -992,6 +1136,7 @@ export default function StaffDashboardView() {
                 instance="staff-manuales"
                 title="Manuales"
                 headerTone="petroleum"
+                scheme="dark"
                 onBack={backToInfoFromManuals}
             >
                 <AccessMenuGrid>
@@ -1015,6 +1160,7 @@ export default function StaffDashboardView() {
                 parentInstance="staff-manuales"
                 title="TPV"
                 headerTone="petroleum"
+                scheme="dark"
             >
                 <AccessMenuGrid>
                     {STAFF_TPV_MANUAL_ITEMS.map((label) => (
@@ -1046,6 +1192,7 @@ export default function StaffDashboardView() {
                 parentInstance="staff-manuales"
                 title="Horno"
                 headerTone="petroleum"
+                scheme="dark"
             >
                 <AccessMenuGrid>
                     {STAFF_HORNO_MANUAL_ITEMS.map((item) => (
@@ -1106,12 +1253,6 @@ export default function StaffDashboardView() {
                 </div>
             </Modal>
 
-            <StaffProductModal
-                isOpen={isProductModalOpen}
-                onClose={() => setIsProductModalOpen(false)}
-                onOpenSupplierModal={() => setIsSupplierModalOpen(true)}
-            />
-
             <StaffScheduleModal
                 isOpen={isScheduleModalOpen}
                 onClose={closeScheduleModal}
@@ -1121,77 +1262,6 @@ export default function StaffDashboardView() {
                 userId={userId}
                 initialFocusDate={scheduleFocusDate}
             />
-
-            {/* MODAL: Opciones de Caja */}
-            <Modal
-                open={isCashOptionsModalOpen}
-                onClose={() => setIsCashOptionsModalOpen(false)}
-                variant="standard"
-                layer="base"
-                instance="staff-cash-options"
-                usageId="staff-cash-options"
-                usageLabel="Opciones de caja"
-                headerTone="petroleum"
-                title="Caja"
-                headerTrailing={(userRole === 'supervisor' || userRole === 'manager') ? (
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setIsCashOptionsModalOpen(false);
-                            setIsCashChangeModalOpen(true);
-                        }}
-                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent p-0 text-white opacity-80 shadow-none outline-none transition-opacity hover:opacity-100 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
-                        aria-label="Cambio entre cajas"
-                    >
-                        <Image src="/icons/change.png" alt="" width={28} height={28} className="h-7 w-7 object-contain" aria-hidden />
-                    </button>
-                ) : undefined}
-            >
-                            <QuickCalculatorModal isOpen={cashOptionsCalculatorOpen} onClose={() => setCashOptionsCalculatorOpen(false)} />
-                            <FloatingCalculatorFab isOpen={cashOptionsCalculatorOpen} onToggle={() => setCashOptionsCalculatorOpen(true)} />
-                            <AccessMenuGrid>
-                                <CatalogTile
-                                    title="Cambio"
-                                    imageSrc="/icons/change.png"
-                                    onClick={() => {
-                                        trackStaffCashOption('Cambio');
-                                        setIsCashOptionsModalOpen(false);
-                                        setIsCashChangeModalOpen(true);
-                                    }}
-                                />
-                                <CatalogTile
-                                    title="Compra"
-                                    imageSrc="/icons/shipment.png"
-                                    onClick={() => {
-                                        trackStaffCashOption('Compra');
-                                        const cashBoxes = allBoxes.filter((b: any) => b.type === 'operational' || b.type === 'change' || b.type === 'tpv');
-                                        if (cashBoxes.length === 0) {
-                                            toast.error('No hay cajas configuradas');
-                                            return;
-                                        }
-                                        setIsCashOptionsModalOpen(false);
-                                        openPurchaseMultiSourceModal();
-                                    }}
-                                />
-                                <CatalogTile
-                                    title="Cierre"
-                                    imageSrc="/icons/lock.png"
-                                    onClick={() => {
-                                        trackStaffCashOption('Cierre de caja');
-                                        setIsCashOptionsModalOpen(false);
-                                        setIsClosingModalOpen(true);
-                                    }}
-                                />
-                                <CatalogTile
-                                    title="Propinas"
-                                    imageSrc="/icons/tip.png"
-                                    onClick={() => {
-                                        setIsCashOptionsModalOpen(false);
-                                        router.push('/staff/propinas');
-                                    }}
-                                />
-                            </AccessMenuGrid>
-            </Modal>
 
             <Modal
                 open={showPurchaseMultiSourceModal}

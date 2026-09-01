@@ -4,13 +4,13 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Calendar, Clock, Home, Package, User, type LucideIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { trackUsageTabSwitch } from '@/lib/usage/client';
 import { createClient } from '@/utils/supabase/client';
 import { getHomeHrefForUser, isMasterDashboardUser } from '@/lib/master-dashboard';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
 import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
 import { useVisualViewportBottomPin } from '@/hooks/useVisualViewportBottomPin';
+import { useChromeScroll } from '@/components/chrome/ChromeScrollProvider';
 
 type NavAction = 'scheduleModal' | 'supplierModal' | 'home';
 
@@ -35,6 +35,8 @@ export default function StaffBottomNav() {
   const router = useRouter();
   const supabase = createClient();
   const navRef = useRef<HTMLElement>(null);
+  const { tabMode } = useChromeScroll();
+  const hidden = tabMode === 'hidden';
 
   useVisualViewportBottomPin(navRef);
 
@@ -58,8 +60,9 @@ export default function StaffBottomNav() {
     let cancelled = false;
     async function loadProfile() {
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
+        data: { session },
+      } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user || cancelled) return;
 
       const authEmail = user.email ?? '';
@@ -155,8 +158,12 @@ export default function StaffBottomNav() {
     <>
       <nav
         ref={navRef}
-        className="marbella-fixed-bottombar fixed bottom-0 left-0 right-0 z-[95] flex h-20 items-center justify-around border-t border-white/10 bg-[#46769c]/90 px-2 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.15)] backdrop-blur-md md:h-16 md:px-8 print:hidden"
-        aria-label="Navegación staff"
+        data-component="TabBar"
+        data-mode={tabMode}
+        data-hidden={hidden ? 'true' : undefined}
+        aria-hidden={hidden || undefined}
+        className="marbella-fixed-bottombar print:hidden"
+        aria-label="Navegación"
       >
         {STAFF_NAV_ITEMS.map((item) => {
           const active = isActive(item);
@@ -169,10 +176,8 @@ export default function StaffBottomNav() {
             <Link
               key={item.name}
               href={linkHref}
-              className={cn(
-                'flex min-h-12 min-w-12 flex-1 flex-col items-center justify-center transition-all duration-200 active:scale-95',
-                active ? 'scale-110 text-white drop-shadow-md' : 'text-blue-200 hover:text-white'
-              )}
+              data-element="item"
+              data-active={active ? 'true' : undefined}
               aria-current={active ? 'page' : undefined}
               onClick={(e) => {
                 if (item.action === 'scheduleModal') {
@@ -192,10 +197,10 @@ export default function StaffBottomNav() {
                 }
               }}
             >
-              <Icon size={20} className="md:h-5 md:w-5" strokeWidth={2.5} />
-              <span className="mt-0.5 text-[7.5px] font-black uppercase tracking-tighter whitespace-nowrap md:mt-1 md:text-[9px] md:tracking-widest">
-                {item.name}
+              <span data-element="icon" aria-hidden>
+                <Icon size={25} strokeWidth={active ? 2 : 1.75} fill="none" />
               </span>
+              <span data-element="label">{item.name}</span>
             </Link>
           );
         })}

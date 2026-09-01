@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
-import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout'
 import { InventoryClient, type ManagerIngredientRow } from './InventoryClient'
 import { InventoryPageShell } from './InventoryPageShell'
 
@@ -73,9 +72,5 @@ export default async function InventoryPage() {
     throw new Error('Fallo al cargar la base de inventario')
   }
 
-  return (
-    <DashboardDetailLayout title="Inventario" maxWidthClass="max-w-7xl">
-      <InventoryClient initialIngredients={ingredients ?? []} />
-    </DashboardDetailLayout>
-  )
+  return <InventoryClient initialIngredients={ingredients ?? []} />
 }

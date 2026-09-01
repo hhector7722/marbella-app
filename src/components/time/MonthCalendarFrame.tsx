@@ -7,7 +7,8 @@ const WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const;
 const MOBILE_HEADERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'] as const;
 
 /**
- * Cromo P3 de Cierres: franja, tarjeta al 97 % y cabecera roja de días.
+ * Cromo P3 de Cierres: cabecera roja de días y tarjeta blanca al 97 %.
+ * En PageScreen calendar PageScreen no envuelve otra ficha. `flush`: mosaico Staff.
  * El contenido de cada celda lo pone el dominio.
  * `flush`: sin franja ni margen; la tarjeta ocupa el ancho del hueco (mosaico Staff).
  */

@@ -305,6 +305,7 @@ export default function ManagerLedgerView() {
                 title="Libro Mayor"
                 showBackButton={false}
                 template="list"
+                work="table"
                 maxWidthClass="max-w-4xl"
                 contentClassName="p-0 flex flex-col min-h-0"
                 periodSlot={
@@ -320,7 +321,7 @@ export default function ManagerLedgerView() {
                     />
                 }
                 rightSlot={
-                    <div className="flex items-center gap-1 md:gap-2 shrink-0 text-white">
+                    <div className="flex items-center gap-1 md:gap-2 shrink-0">
                         <PeriodFilterButton instance="ledger-period-filter" onClick={() => setIsTimeFilterOpen(true)} />
                         <Button
                             type="button"
@@ -332,10 +333,8 @@ export default function ManagerLedgerView() {
                         </Button>
                     </div>
                 }
-            >
-                    {/* CUERPO: resumen 3 columnas (Ingresos, Gastos, Saldo) sin Arqueo ni Diferencia */}
-                    <div className="bg-white">
-                        <div className="py-1.5 px-2 grid grid-cols-3 border-b border-zinc-50">
+                leadSlot={
+                    <div className="grid grid-cols-3">
                             <div className="flex flex-col items-center justify-center text-center px-1">
                                 <span className="text-[13px] md:text-2xl font-black text-emerald-500 line-clamp-1">{periodSummary.income > 0.005 ? `+${periodSummary.income.toFixed(2)}€` : " "}</span>
                                 <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">INGRESOS</span>
@@ -345,14 +344,16 @@ export default function ManagerLedgerView() {
                                 <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">GASTOS</span>
                             </div>
                             <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 px-1">
-                                <span className="text-[13px] md:text-2xl font-black text-[#36606F] line-clamp-1 tabular-nums">{formatMoney(balance)}</span>
+                                <span className="text-[13px] md:text-2xl font-black text-white line-clamp-1 tabular-nums">{formatMoney(balance)}</span>
                                 <span className="text-[7px] md:text-[8px] font-black text-zinc-400 uppercase tracking-tight md:tracking-widest mt-0.5">SALDO ACTUAL</span>
                             </div>
-                        </div>
+                    </div>
+                }
+            >
 
                         {/* TABLA (Fecha, Concepto, Importe, Saldo) como movements */}
-                        <div className="p-1.5 bg-white">
-                            <div className="rounded-lg overflow-hidden border border-zinc-100 shadow-sm">
+                        <div className="p-1.5">
+                            <div data-table-piece className="overflow-hidden">
                                 <div className="w-full min-w-0 overflow-x-hidden">
                                     <table data-component={TABLE_COMPONENT_ID} data-instance="libro-mayor" className="w-full text-left font-sans">
                                         <thead>
@@ -455,7 +456,6 @@ export default function ManagerLedgerView() {
                                 </div>
                             </div>
                         </div>
-                    </div>
             </DashboardDetailLayout>
 
             {/* Modal calendario */}

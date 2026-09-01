@@ -7,14 +7,17 @@ import React, { memo, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, addMonths, subMonths, getISOWeek, addDays, eachDayOfInterval, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { getOvertimeData, togglePaidStatus, togglePreferStockStatus, type WeeklyStats } from '@/app/actions/overtime';
+import { getOvertimeData, togglePaidStatus, togglePreferStockStatus } from '@/app/actions/overtime';
+import type { WeeklyStats } from '@/lib/hours-engine/overtime-weeks-ssot';
 import { cn } from '@/lib/utils';
 import WorkerWeeklyHistoryModal from '@/components/WorkerWeeklyHistoryModal';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { WorkerListSummary, WorkerPersonRow } from '@/components/staff/WorkerPersonRow';
 import { PeriodNav, PeriodFilterButton } from '@/components/time/PeriodNav';
+import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
+import { periodTodayClassName } from '@/components/time/MonthPickerGrid';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { Modal } from '@/components/ui/modal';
@@ -168,7 +171,10 @@ export default function OvertimePage() {
                 title="Horas extras"
                 showBackButton={false}
                 template="list"
-                contentClassName="flex flex-col min-h-0"
+                work="calendar"
+                className="month-cal-shell"
+                cardClassName="month-cal-card"
+                contentClassName="p-0 flex flex-col min-h-0 month-cal-body"
                 periodSlot={
                     <PeriodNav
                         label={format(viewMonth, 'MMMM yyyy', { locale: es })}
@@ -181,87 +187,102 @@ export default function OvertimePage() {
                     <PeriodFilterButton instance="overtime-period-filter" onClick={() => setIsTimeFilterOpen(true)} />
                 }
             >
-                <div className="flex flex-col min-h-0">
+                <div className="flex flex-col min-h-0 min-w-0 flex-1">
                     {loading ? (
                         <div className="flex items-center justify-center py-20">
                             <LoadingSpinner size="lg" className="text-ds-marca" />
                         </div>
                     ) : (
-                        <div className="flex gap-2 md:gap-3">
-                            <div className="shrink-0 flex flex-col gap-[2px]">
-                                {rows.map((rowDays, rowIndex) => (
-                                    <div key={rowIndex} className="grid grid-cols-7 gap-[2px]">
-                                        {rowDays.map((day) => {
-                                            const inMonth = isSameMonth(day, viewMonth);
-                                            const isToday = isSameDay(day, today);
-                                            return (
-                                                <div
-                                                    key={day.getTime()}
-                                                    className={cn(
-                                                        'w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full text-[9px] md:text-[10px] font-bold',
-                                                        !inMonth && 'text-zinc-300',
-                                                        inMonth && !isToday && 'text-zinc-600',
-                                                        isToday && 'bg-ds-marca text-white'
-                                                    )}
-                                                >
-                                                    {format(day, 'd')}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="flex-1 min-w-0 flex flex-col gap-[2px] justify-center">
-                                {rowWeekIds.map((weekId) => {
-                                    if (!isPastCompletedWeek(weekId)) {
-                                        return <div key={weekId} className="h-6 md:h-7 flex-shrink-0" aria-hidden />;
-                                    }
+                        <MonthCalendarFrame>
+                            <div className="month-cal-weeks">
+                                {rows.map((rowDays, rowIndex) => {
+                                    const weekId = rowDays[0] ? format(rowDays[0], 'yyyy-MM-dd') : '';
+                                    const isCompleted = isPastCompletedWeek(weekId);
                                     const week = weeksData.find(w => w.weekId === weekId);
-                                    if (!week) {
-                                        return <div key={weekId} className="h-6 md:h-7 flex-shrink-0 min-h-[24px] md:min-h-[28px]" aria-hidden />;
-                                    }
-                                    const isFullyPaid = week.staff?.every((s: { totalCost?: number; amount?: number; isPaid?: boolean }) => {
+                                    
+                                    const isFullyPaid = week?.staff?.every((s: { totalCost?: number; amount?: number; isPaid?: boolean }) => {
                                         const cost = (s.totalCost ?? s.amount ?? 0);
                                         return cost < 0.05 || !!s.isPaid;
                                     });
-                                    const weekTotal = week.totalAmount ?? 0;
-                                    const weekStart = parseLocalYmd(week.weekId);
+                                    const weekTotal = week?.totalAmount ?? 0;
+                                    const weekStart = weekId ? parseLocalYmd(weekId) : new Date();
+
                                     return (
-                                        <button
-                                            key={week.weekId}
-                                            type="button"
-                                            onClick={() => {
-                                                setWeekDetailModal({ week });
-                                            }}
-                                            className={cn(
-                                                'w-full h-6 md:h-7 min-h-[24px] md:min-h-[28px] flex items-center justify-between gap-2 px-1.5 py-0 rounded-md shadow-sm hover:shadow transition-all text-left flex-shrink-0',
-                                                'bg-transparent border-0 hover:bg-purple-50/50'
-                                            )}
-                                        >
-                                            <div className="flex items-center gap-1 min-w-0 flex-1">
-                                                <div className="shrink-0 flex items-center justify-center w-5 md:w-6">
-                                                    {isFullyPaid ? (
-                                                        <div className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm">
-                                                            <Check className="w-2 h-2 md:w-2.5 md:h-2.5 text-white" strokeWidth={4} />
+                                        <div key={rowIndex} className="grid grid-cols-7 border-b border-gray-100 last:border-b-0 month-cal-week relative min-h-[5.5rem] group">
+                                            {/* Días del calendario */}
+                                            {rowDays.map((day) => {
+                                                const inMonth = isSameMonth(day, viewMonth);
+                                                const isToday = isSameDay(day, today);
+                                                const isPastDay = inMonth && isBefore(day, startOfDay(today));
+                                                const pastDayBg = isPastDay ? 'bg-zinc-50/90' : 'bg-white';
+                                                
+                                                return (
+                                                    <div
+                                                        key={day.getTime()}
+                                                        className={cn(
+                                                            'relative flex flex-col p-1 sm:p-1.5 month-cal-cell',
+                                                            'border-r border-gray-100 last:border-r-0',
+                                                            pastDayBg,
+                                                            !inMonth && 'opacity-25',
+                                                            isToday && inMonth && !isPastDay && 'bg-blue-50/10'
+                                                        )}
+                                                    >
+                                                        <div className="flex items-start justify-between">
+                                                            <span
+                                                                className={cn(
+                                                                    'flex h-5 w-5 items-center justify-center rounded-full text-[10px] sm:text-[11px] font-bold leading-none tabular-nums',
+                                                                    isToday ? periodTodayClassName(true) : 'text-zinc-500'
+                                                                )}
+                                                            >
+                                                                {format(day, 'd')}
+                                                            </span>
                                                         </div>
-                                                    ) : (
-                                                        <div className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full bg-rose-500 flex items-center justify-center shadow-sm">
-                                                            <span className="text-white font-black text-[7px] leading-none">!</span>
+                                                    </div>
+                                                );
+                                            })}
+                                            
+                                            {/* Overlay botón semana */}
+                                            {isCompleted && week && (
+                                                <div className="absolute inset-x-2 sm:inset-x-4 top-8 bottom-1.5 flex items-stretch z-10">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setWeekDetailModal({ week })}
+                                                        className="w-full bg-white border border-zinc-200 shadow-sm rounded-md flex items-center justify-between px-3 hover:border-purple-200 hover:shadow-md transition-all active:scale-[0.99]"
+                                                    >
+                                                        <div className="flex items-center gap-2 min-w-0">
+                                                            <div className="shrink-0 flex items-center justify-center w-6">
+                                                                {isFullyPaid ? (
+                                                                    <div className="w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm">
+                                                                        <Check className="w-3 h-3 text-white" strokeWidth={4} />
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="w-4 h-4 rounded-full bg-rose-500 flex items-center justify-center shadow-sm">
+                                                                        <span className="text-white font-black text-[9px] leading-none">!</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div className="flex flex-col items-start min-w-0">
+                                                                <span className="text-[10px] sm:text-xs font-black text-zinc-800 uppercase truncate">
+                                                                    Semana {getISOWeek(weekStart)}
+                                                                </span>
+                                                                {week.staff?.length > 0 && (
+                                                                    <span className="text-[9px] sm:text-[10px] text-zinc-500 truncate">
+                                                                        {week.staff.length} empleado{week.staff.length !== 1 ? 's' : ''}
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                    )}
+                                                        <span className="text-xs sm:text-sm font-black text-zinc-900 tabular-nums shrink-0 text-right">
+                                                            {weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : '0€'}
+                                                        </span>
+                                                    </button>
                                                 </div>
-                                                <span className="text-[9px] md:text-[10px] font-black text-zinc-600 uppercase truncate">
-                                                    Semana {getISOWeek(weekStart)}
-                                                </span>
-                                            </div>
-                                            <span className="text-[9px] md:text-[10px] font-black text-zinc-900 tabular-nums shrink-0 text-right min-w-[2.5rem]">
-                                                {weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}
-                                            </span>
-                                        </button>
+                                            )}
+                                        </div>
                                     );
                                 })}
                             </div>
-                        </div>
+                        </MonthCalendarFrame>
                     )}
                 </div>
             </DashboardDetailLayout>

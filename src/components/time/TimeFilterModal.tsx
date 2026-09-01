@@ -2,18 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   addDays,
   format,
   startOfWeek,
 } from "date-fns";
-import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import type { TimeFilterKind, TimeFilterValue } from "@/components/time/time-filter-types";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { MiniMonthCalendar } from "@/components/time/MiniMonthCalendar";
+import { MonthPickerGrid, monthCellClassName, periodFilterTabClassName } from "@/components/time/MonthPickerGrid";
 import { trackUsageModalApply } from "@/lib/usage/client";
 import { timeFilterApplySummary } from "@/lib/usage/modal-apply";
 
@@ -35,6 +34,8 @@ const KIND_LABEL: Record<TimeFilterKind, string> = {
   year: "Año",
 };
 
+const KIND_ORDER: TimeFilterKind[] = ["hours", "date", "range", "week", "month", "year"];
+
 export function TimeFilterModal({
   isOpen,
   onClose,
@@ -55,6 +56,11 @@ export function TimeFilterModal({
     const candidate = defaultKind ?? initialValue?.kind ?? allowedKinds[0] ?? "date";
     return allowedKinds.includes(candidate) ? candidate : (allowedKinds[0] ?? "date");
   }, [allowedKinds, defaultKind, initialValue?.kind]);
+
+  const visibleKinds = useMemo(
+    () => KIND_ORDER.filter((k) => allowedKinds.includes(k)),
+    [allowedKinds]
+  );
 
   const [activeKind, setActiveKind] = useState<TimeFilterKind>(initialKind);
 
@@ -128,20 +134,6 @@ export function TimeFilterModal({
     onClose();
   };
 
-  const TabButton = ({ kind }: { kind: TimeFilterKind }) => (
-    <button
-      type="button"
-      onClick={() => setActiveKind(kind)}
-      className={cn(
-        "flex-1 min-h-[36px] px-1 rounded-lg",
-        "text-[9px] font-black uppercase tracking-widest transition-all",
-        activeKind === kind ? "text-white bg-ds-marca" : "text-ds-marca"
-      )}
-    >
-      {KIND_LABEL[kind]}
-    </button>
-  );
-
   const selectCalendarDay = (day: Date) => {
     const dStr = ymd(day);
     if (activeKind === "date") {
@@ -193,25 +185,41 @@ export function TimeFilterModal({
     );
   };
 
+  const showKindTabs = visibleKinds.length > 1;
+
   return (
     <Modal
       open={isOpen}
       onClose={onClose}
       title="Filtro"
-      headerVariant="petroleum"
       variant="compact"
       usageId="time-filter"
       usageLabel="Filtro horario"
     >
         <div className="space-y-3">
-          <div className="grid grid-cols-3 gap-2">
-            {allowedKinds.includes("hours") && <TabButton kind="hours" />}
-            {allowedKinds.includes("date") && <TabButton kind="date" />}
-            {allowedKinds.includes("range") && <TabButton kind="range" />}
-            {allowedKinds.includes("week") && <TabButton kind="week" />}
-            {allowedKinds.includes("month") && <TabButton kind="month" />}
-            {allowedKinds.includes("year") && <TabButton kind="year" />}
-          </div>
+          {showKindTabs ? (
+            <div
+              role="tablist"
+              aria-label="Tipo de periodo"
+              className="flex max-w-full overflow-hidden rounded-ds-control border border-ds-borde bg-ds-superficie shadow-ds-superficie"
+            >
+              {visibleKinds.map((kind) => {
+                const selected = activeKind === kind;
+                return (
+                  <button
+                    key={kind}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    onClick={() => setActiveKind(kind)}
+                    className={periodFilterTabClassName(selected)}
+                  >
+                    {KIND_LABEL[kind]}
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
 
           {activeKind === "hours" && allowedKinds.includes("hours") && (
             <div className="space-y-3">
@@ -268,49 +276,18 @@ export function TimeFilterModal({
           )}
 
           {activeKind === "month" && allowedKinds.includes("month") && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between px-1">
-                <button
-                  type="button"
-                  onClick={() => setPickerYear((y) => y - 1)}
-                  className="p-2 hover:bg-zinc-50 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
-                  aria-label="Año anterior"
-                >
-                  <ChevronLeft size={20} className="text-zinc-400" />
-                </button>
-                <div className="text-xl font-black tracking-tighter text-zinc-900">{pickerYear}</div>
-                <button
-                  type="button"
-                  onClick={() => setPickerYear((y) => y + 1)}
-                  className="p-2 hover:bg-zinc-50 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
-                  aria-label="Año siguiente"
-                >
-                  <ChevronRight size={20} className="text-zinc-400" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                {Array.from({ length: 12 }).map((_, i) => {
-                  const date = new Date(pickerYear, i, 1);
-                  const label = format(date, "MMM", { locale: es });
-                  const isSelected =
-                    initialValue?.kind === "month" && initialValue.year === pickerYear && initialValue.month === i + 1;
-                  return (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => applyAndClose({ kind: "month", year: pickerYear, month: i + 1 })}
-                      className={cn(
-                        "py-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border-2 min-h-[48px]",
-                        isSelected ? "bg-zinc-900 border-zinc-900 text-white shadow-lg" : "bg-zinc-50 border-transparent text-zinc-400 hover:border-zinc-200 hover:text-zinc-900"
-                      )}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            <MonthPickerGrid
+              year={pickerYear}
+              onYearChange={setPickerYear}
+              isSelected={(monthIndex) =>
+                initialValue?.kind === "month" &&
+                initialValue.year === pickerYear &&
+                initialValue.month === monthIndex + 1
+              }
+              onSelectMonth={(monthIndex) =>
+                applyAndClose({ kind: "month", year: pickerYear, month: monthIndex + 1 })
+              }
+            />
           )}
 
           {activeKind === "year" && allowedKinds.includes("year") && (
@@ -325,10 +302,7 @@ export function TimeFilterModal({
                       key={y}
                       type="button"
                       onClick={() => applyAndClose({ kind: "year", year: y })}
-                      className={cn(
-                        "min-h-[48px] rounded-lg text-[11px] font-black tracking-tight border-2 transition-all",
-                        isSelected ? "bg-zinc-900 border-zinc-900 text-white shadow-lg" : "bg-zinc-50 border-transparent text-zinc-500 hover:border-zinc-200 hover:text-zinc-900"
-                      )}
+                      className={monthCellClassName(isSelected)}
                     >
                       {y}
                     </button>
@@ -357,4 +331,3 @@ export function TimeFilterModal({
     </Modal>
   );
 }
-

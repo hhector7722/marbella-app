@@ -7,6 +7,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { SearchField } from '@/components/ui/SearchField';
+import { monthCellDarkClassName } from '@/components/time/MonthPickerGrid';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -110,7 +111,7 @@ export function MultiEmployeeExportModal({
             usageLabel="Exportar empleados"
             title="Exportar empleados"
             subtitle={`${employees.length} empleados activos`}
-            headerTone="petroleum"
+            scheme="dark"
             footer={
                 <>
                     <Button
@@ -136,24 +137,24 @@ export function MultiEmployeeExportModal({
         >
             <div className="flex flex-col max-h-[75dvh]">
                 {/* ── SELECCIÓN DE MESES ── */}
-                <div className="shrink-0 px-4 pt-3 pb-2 border-b border-zinc-100">
+                <div className="shrink-0 px-4 pt-3 pb-2 border-b border-white/10">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">Meses</span>
-                        <span className="text-[10px] font-bold text-zinc-500">{monthsArray.length} seleccionado{monthsArray.length !== 1 ? 's' : ''}</span>
+                        <span className="text-[10px] font-black text-white/55 uppercase tracking-wider">Meses</span>
+                        <span className="text-[10px] font-bold text-white/55">{monthsArray.length} seleccionado{monthsArray.length !== 1 ? 's' : ''}</span>
                     </div>
                     <div className="flex items-center justify-between mb-2">
                         <button
                             type="button"
                             onClick={() => setPickerYear((p) => p - 1)}
-                            className="p-1 hover:bg-zinc-100 rounded-lg transition-colors text-zinc-400"
+                            className="p-1 hover:bg-white/10 rounded-lg transition-colors text-white/40"
                         >
                             <ChevronLeft size={14} />
                         </button>
-                        <span className="text-xs font-black text-zinc-700">{pickerYear}</span>
+                        <span className="text-xs font-black text-white/85">{pickerYear}</span>
                         <button
                             type="button"
                             onClick={() => setPickerYear((p) => p + 1)}
-                            className="p-1 hover:bg-zinc-100 rounded-lg transition-colors text-zinc-400"
+                            className="p-1 hover:bg-white/10 rounded-lg transition-colors text-white/40"
                         >
                             <ChevronRight size={14} />
                         </button>
@@ -167,12 +168,7 @@ export function MultiEmployeeExportModal({
                                     key={key}
                                     type="button"
                                     onClick={() => toggleMonth(i)}
-                                    className={cn(
-                                        'py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all border min-h-[32px]',
-                                        active
-                                            ? 'bg-[#36606F] border-[#36606F] text-white shadow-sm'
-                                            : 'bg-zinc-50 border-zinc-200 text-zinc-500 hover:border-[#36606F]/30 hover:text-zinc-700',
-                                    )}
+                                    className={monthCellDarkClassName(active)}
                                 >
                                     {name}
                                 </button>
@@ -193,11 +189,11 @@ export function MultiEmployeeExportModal({
                         <button
                             type="button"
                             onClick={toggleAll}
-                            className="text-[10px] font-bold text-[#36606F] uppercase tracking-wider hover:underline"
+                            className="text-[10px] font-bold text-white/70 uppercase tracking-wider hover:underline"
                         >
                             {allFilteredSelected ? 'Deseleccionar todos' : 'Seleccionar todos'}
                         </button>
-                        <span className="text-[10px] font-bold text-zinc-500">
+                        <span className="text-[10px] font-bold text-white/55">
                             {selectedCount} seleccionados
                         </span>
                     </div>
@@ -205,7 +201,7 @@ export function MultiEmployeeExportModal({
 
                 <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-3 space-y-1">
                     {filtered.length === 0 ? (
-                        <div className="py-8 text-center text-zinc-400 text-xs font-bold">
+                        <div className="py-8 text-center text-white/40 text-xs font-bold">
                             No hay empleados que coincidan
                         </div>
                     ) : (
@@ -216,18 +212,18 @@ export function MultiEmployeeExportModal({
                                     key={emp.id}
                                     className={cn(
                                         'flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors',
-                                        checked ? 'bg-[#36606F]/5' : 'hover:bg-zinc-50'
+                                        checked ? 'bg-white/10' : 'hover:bg-white/5'
                                     )}
                                 >
                                     <input
                                         type="checkbox"
                                         checked={checked}
                                         onChange={() => toggle(emp.id)}
-                                        className="w-4 h-4 rounded border-zinc-300 text-[#36606F] focus:ring-[#36606F]/30 accent-[#36606F]"
+                                        className="w-4 h-4 rounded border-white/30 text-ds-marca focus:ring-ds-marca/30 accent-ds-marca"
                                     />
                                     <Avatar src={emp.avatar_url} alt={emp.first_name} size="sm" />
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-xs font-black text-zinc-800 uppercase truncate">
+                                        <p className="text-xs font-black text-white/90 uppercase truncate">
                                             {emp.first_name} {emp.last_name}
                                         </p>
                                     </div>

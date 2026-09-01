@@ -39,7 +39,7 @@ Corolario práctico: **añadir una comprobación en el guardián no arregla un a
 - La sesión viaja en cookies y se renueva sola.
 - Recuperación de contraseña con enlace de un solo uso, que aterriza en el perfil.
 
-El guardián lee la sesión **de la cookie, sin ir al servidor de autenticación**. Es una decisión consciente y está comentada en el código: la comprobación completa tarda y llegó a colgar el guardián. Se aceptó porque la barrera real es la base de datos, que sí valida el testigo en cada petición.
+El guardián lee la sesión **de la cookie, sin ir al servidor de autenticación**. Es una decisión consciente y está comentada en el código: la comprobación completa tarda, llegó a colgar el guardián y, en un límite de peticiones, **borraba la sesión**. Se aceptó porque la barrera real es la base de datos, que sí valida el testigo en cada petición.
 
 ---
 
@@ -69,10 +69,11 @@ Vive en `src/proxy.ts`. Su lógica exacta, en orden:
 
 1. **Se aparta de `/api/*`.** Ninguna ruta de máquina pasa por él.
 2. Deja pasar sin sesión: `carta`, `eventos`, `pedido`, `reporte`, `propuestas`.
-3. Sin sesión y ruta protegida → al acceso.
-4. Con sesión, comprueba por correo: acceso maestro, uso, analítica web, contrato.
-5. Solo si hace falta, consulta el rol en la base de datos. Se evita a propósito en la mayoría de navegaciones, porque cada consulta añade latencia.
-6. Con rol `staff` o `supervisor` fuera de las cuatro rutas permitidas → al panel de personal.
+3. Una petición con cabecera `Next-Action` no se redirige a HTML (login o home): Next espera el payload de la acción, no una página.
+4. Sin sesión y ruta protegida → al acceso.
+5. Con sesión, comprueba por correo: acceso maestro, uso, analítica web, contrato.
+6. Solo si hace falta, consulta el rol en la base de datos. Se evita a propósito en la mayoría de navegaciones, porque cada consulta añade latencia.
+7. Con rol `staff` o `supervisor` fuera de las cuatro rutas permitidas → al panel de personal.
 
 **Falla hacia adentro, no hacia afuera.** Si la consulta del rol supera 1,2 segundos, asume `staff`. La consecuencia de un fallo de red es que un responsable acabe en la pantalla de personal, no que un miembro del personal entre en la de responsable. Es la dirección correcta.
 

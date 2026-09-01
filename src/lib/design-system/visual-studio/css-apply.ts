@@ -282,7 +282,7 @@ function patchPageHeader(css: string, values: Record<string, string>): string | 
 
     let next = replaceRule(
         css,
-        "[data-component='PageScreen'] [data-element='header'],",
+        "[data-component='PageScreen'] [data-element='header'] {",
         (body) => {
             let out = body;
             out = setDecl(out, 'display', 'flex');

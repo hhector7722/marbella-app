@@ -3,30 +3,22 @@
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { NotificationsBell } from '@/components/NotificationsBell';
 import { ReservationsBell } from '@/components/ReservationsBell';
-import { Modal } from '@/components/ui/modal';
 import { createClient } from "@/utils/supabase/client";
-import { useAIStore } from '@/store/aiStore';
 import { cn } from '@/lib/utils';
-import { getHomeHrefForUser, isMasterDashboardUser } from '@/lib/master-dashboard';
+import { getHomeHrefForUser } from '@/lib/master-dashboard';
 import { isFullscreenCartaPath } from '@/lib/carta-fullscreen-path';
 import { navigateInsideSandbox } from '@/lib/sandbox/client';
-
-const PG_TOOL_LINK_CLASS =
-    'min-h-ds-tactil flex flex-col justify-center px-ds-3 py-ds-2 text-left text-ds-texto-fuerte hover:opacity-80 active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-marca';
+import { useChromeScroll } from '@/components/chrome/ChromeScrollProvider';
 
 export default function Navbar() {
     const pathname = usePathname();
     const router = useRouter();
     const supabase = createClient();
+    const { topHidden } = useChromeScroll();
     const [userData, setUserData] = useState<{ name: string; role: string; email: string; is_supervisor?: boolean } | null>(null);
-    const [pgMenuOpen, setPgMenuOpen] = useState(false);
-
-    // ANÁLISIS CRÍTICO: Tienes esta función de Zustand activada en el botón.
-    const toggleChat = useAIStore((state) => state.toggleChat);
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -77,11 +69,13 @@ export default function Navbar() {
     return (
         <>
             <nav
+                data-component="AppNavbar"
+                data-hidden={topHidden ? 'true' : undefined}
                 className={cn(
-                    'marbella-fixed-topbar bg-transparent text-white pt-safe fixed top-0 right-0 left-0 z-[100] border-b border-white/15 backdrop-blur-md shadow-sm h-header-safe flex items-center transition-all duration-300 isolate print:hidden'
+                    'marbella-fixed-topbar bg-[var(--color-envolvente-alto)] text-white pt-safe fixed top-0 right-0 left-0 z-[100] border-b border-white/15 shadow-sm h-header-safe flex items-center isolate print:hidden'
                 )}
             >
-                <div className="max-w-7xl mx-auto flex items-center justify-between px-1 w-full min-w-0">
+                <div className="max-w-7xl lg:max-w-none mx-auto flex items-center justify-between px-1 lg:px-4 w-full min-w-0">
 
                     <div className="flex min-w-0 flex-1 items-center gap-1">
                         {!hideNavbarBack && (
@@ -109,83 +103,12 @@ export default function Navbar() {
                                     {userData ? `Hola, ${userData.name}` : ''}
                                 </span>
                             </div>
-                            {isMasterDashboardUser(userData?.email) && (
-                                <>
-                                    <button
-                                        type="button"
-                                        aria-label="Herramientas internas"
-                                        aria-haspopup="dialog"
-                                        aria-expanded={pgMenuOpen}
-                                        onClick={() => setPgMenuOpen(true)}
-                                        className="ml-2 flex shrink-0 items-center justify-center border-0 bg-transparent p-0 shadow-none"
-                                        data-element="chrome"
-                                    >
-                                        <span className="flex items-center px-2 h-5 bg-white/10 hover:bg-white/20 rounded-md transition-all border border-white/20">
-                                            <span className="text-[7px] font-black tracking-[0.12em] text-white/70">
-                                                PG
-                                            </span>
-                                        </span>
-                                    </button>
-                                    <Modal
-                                        open={pgMenuOpen}
-                                        onClose={() => setPgMenuOpen(false)}
-                                        title="Herramientas internas"
-                                        subtitle="Playground y Design System"
-                                        variant="compact"
-                                        layer="base"
-                                        instance="pg-herramientas"
-                                        headerTone="petroleum"
-                                        usageId="pg-herramientas"
-                                        usageLabel="Herramientas internas"
-                                    >
-                                        <div className="grid grid-cols-1 gap-ds-2">
-                                            <Link
-                                                href="/playground"
-                                                className={PG_TOOL_LINK_CLASS}
-                                                onClick={() => setPgMenuOpen(false)}
-                                            >
-                                                <span className="font-black text-sm">
-                                                    Playground
-                                                </span>
-                                                <span className="text-[12px] font-medium text-ds-texto-tenue">
-                                                    Estéticas y studio
-                                                </span>
-                                            </Link>
-                                            <Link
-                                                href="/design-system"
-                                                className={PG_TOOL_LINK_CLASS}
-                                                onClick={() => setPgMenuOpen(false)}
-                                            >
-                                                <span className="font-black text-sm">
-                                                    Design System
-                                                </span>
-                                                <span className="text-[12px] font-medium text-ds-texto-tenue">
-                                                    Catálogo visual
-                                                </span>
-                                            </Link>
-                                        </div>
-                                    </Modal>
-                                </>
-                            )}
                         </div>
                     </div>
 
-                    <div className="flex shrink-0 items-center gap-2 md:gap-2">
-                        <div className="flex items-center -space-x-2">
-                            <ReservationsBell />
-                            <NotificationsBell />
-                        </div>
-
-                        {/* BOTÓN IA RECTANGULAR - solo texto */}
-                        <button
-                            id="ia-button"
-                            onClick={toggleChat}
-                            className="flex items-center px-2.5 bg-white/10 hover:bg-white/20 rounded-xl transition-all shadow-md border border-white/20 active:scale-95"
-                            data-element="chrome"
-                            data-chrome="ia"
-                        >
-                            <span className="text-[9px] font-black tracking-[0.15em] text-white">IA</span>
-                        </button>
+                    <div className="ml-auto flex shrink-0 items-center -space-x-2">
+                        <ReservationsBell />
+                        <NotificationsBell />
                     </div>
                 </div>
             </nav>

@@ -248,6 +248,7 @@ export default function ActividadesPage() {
       title="Actividades"
       showBackButton={false}
       template="list"
+      work="calendar"
       maxWidthClass="max-w-none"
       className="month-cal-shell"
       cardClassName="month-cal-card"
@@ -274,7 +275,7 @@ export default function ActividadesPage() {
           ) : null}
           <a
             href="/horario"
-            className="shrink-0 text-[11px] font-black text-white uppercase tracking-widest hover:text-white/80 transition-colors min-h-[48px] flex items-center"
+            className="shrink-0 text-[11px] font-black text-ds-texto uppercase tracking-widest hover:opacity-80 transition-colors min-h-[48px] flex items-center"
           >
             Horarios
           </a>

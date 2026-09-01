@@ -16,7 +16,7 @@ import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { SearchField } from '@/components/ui/SearchField';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
-import { CatalogGrid, CatalogTile } from '@/components/catalog/CatalogTile';
+import { CatalogGrid, CatalogTileUnificado } from '@/components/catalog/CatalogTile';
 import { CatalogFilterChip } from '@/components/catalog/CatalogFilterChip';
 
 // Unidades canónicas (sin duplicados tipo lt/l o u/ud)
@@ -219,29 +219,21 @@ export default function IngredientsPage() {
 
             <DashboardDetailLayout
                 title="Ingredientes"
+                titleFace="display"
+                titleBlockClassName="w-full text-center"
                 showBackButton={false}
                 template="list"
                 maxWidthClass="max-w-7xl"
-                rightSlot={
-                    <Button
-                        type="button"
-                        variant="tertiary"
-                        instance="ingredients-crear"
-                        aria-label="Nuevo ingrediente"
-                        icon={<Plus className="h-5 w-5 md:h-6 md:w-6" />}
-                        onClick={() => {
-                            setCreateMode('wizard');
-                            setCreateSettingsOpen(false);
-                            setIsCustomSupplier(false);
-                            setIsCustomSupplier2(false);
-                            setCustomSupplierName('');
-                            setCustomSupplier2Name('');
-                            setShowCreateModal(true);
-                        }}
-                    />
-                }
-            >
+                toolbarSlot={
                 <div className="flex flex-row items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => setShowCreateModal(true)}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm hover:bg-emerald-600 hover:shadow transition-all"
+                        aria-label="Crear nuevo ingrediente"
+                    >
+                        <Plus size={16} strokeWidth={3} />
+                    </button>
                     <div className="min-w-0 flex-1">
                         <SearchField
                             instance="ingredients-search"
@@ -265,26 +257,20 @@ export default function IngredientsPage() {
                         )}
                     </div>
                 </div>
+                }
+            >
 
                 {!loading && (
-                    <div className="pt-4 md:pt-6">
-                        <CatalogGrid columns={3}>
+                    <div className="pt-1">
+                        <CatalogGrid columns={4}>
                             {filteredIngredients.map(ing => (
-                                <CatalogTile
+                                <CatalogTileUnificado
                                     key={ing.id}
                                     title={ing.name}
                                     imageSrc={ing.image_url}
                                     fallback={<Package className="h-8 w-8 md:h-10 md:w-10" />}
-                                    subtitle={
-                                        <span className="text-[#5E35B1]">
-                                            {ing.current_price?.toFixed(2)}€
-                                            {ing.price_locked ? (
-                                                <span className="ml-0.5 rounded bg-zinc-200 px-1 text-[8px] font-black uppercase text-zinc-600" title="Precio fijo">
-                                                    Fijo
-                                                </span>
-                                            ) : null}
-                                        </span>
-                                    }
+                                    price={ing.current_price ?? undefined}
+                                    priceLocked={ing.price_locked ?? false}
                                     onClick={() => setEditingIngredient(ing)}
                                 />
                             ))}

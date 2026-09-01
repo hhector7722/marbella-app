@@ -82,7 +82,7 @@ export default async function RecetasTpvPage() {
   if (ingredientsRes.error) console.error('Error fetching ingredients (recetas-tpv):', ingredientsRes.error)
   if (articlesRes.error) {
     return (
-      <DashboardDetailLayout title="Mapeo TPV" maxWidthClass="max-w-7xl">
+      <DashboardDetailLayout title="Recetas" maxWidthClass="max-w-7xl">
         <Notice instance="recetas-tpv-catalogo-error" variant="negative" title="No se pudo cargar el catálogo TPV">
           {articlesRes.error.message}
         </Notice>
@@ -251,7 +251,7 @@ export default async function RecetasTpvPage() {
   }))
 
   return (
-    <DashboardDetailLayout title="Mapeo TPV" maxWidthClass="max-w-7xl">
+    <DashboardDetailLayout title="Recetas" maxWidthClass="max-w-7xl">
       <div className="space-y-4">
       {mappingsRes.error ? (
         <Notice instance="recetas-tpv-mapeos-aviso" variant="warning" title="Aviso">

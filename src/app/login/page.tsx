@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import { useRouter } from 'next/navigation';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import Image from 'next/image';
@@ -35,7 +34,6 @@ function extractRetrySeconds(errorMessage: string): number | null {
 
 export default function LoginPage() {
     const supabase = createClient();
-    const router = useRouter();
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -45,17 +43,20 @@ export default function LoginPage() {
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-    // Limpieza de tokens zombi: si hay un refresh_token inválido en el navegador
-    // Supabase lanza AuthApiError en cada request. Hacemos signOut silencioso al montar.
     useEffect(() => {
-        const cleanZombieSession = async () => {
+        let cancelled = false;
+        const boot = async () => {
             const { error } = await supabase.auth.getSession();
-            if (error) {
-                console.warn('[LOGIN] Sesión corrupta detectada. Limpiando tokens...');
+            if (cancelled || !error) return;
+            const message = error.message ?? '';
+            if (/refresh token not found|invalid refresh token/i.test(message)) {
                 await supabase.auth.signOut();
             }
         };
-        cleanZombieSession();
+        void boot();
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     useEffect(() => {
@@ -86,17 +87,23 @@ export default function LoginPage() {
         try {
             setLoading(true);
 
-            const { error } = await supabase.auth.signInWithPassword({
+            const { data, error } = await supabase.auth.signInWithPassword({
                 email,
                 password,
             });
 
             if (error) throw error;
+            if (!data.session) {
+                throw new Error('No se pudo abrir la sesión');
+            }
 
+            await supabase.auth.getSession();
             trackUsageLogin('/login');
             toast.success("Acceso concedido");
-            router.push('/');
-            router.refresh(); // Forzar actualización de estado de auth en la app
+            // Recarga completa: las cookies de sesión van en el siguiente request.
+            // En local, la navegación cliente a inicio se queda en /login.
+            window.location.replace('/');
+            return;
 
         } catch (error: unknown) {
             console.error('Login error:', error);

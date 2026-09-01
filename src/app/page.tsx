@@ -2,17 +2,12 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { getHomeHrefForUser, isMasterDashboardUser } from "@/lib/master-dashboard";
 import { withTimeout } from "@/lib/with-timeout";
+import { resolveSessionUser } from "@/lib/auth/resolve-session-user";
 
 /** Respaldo si el proxy no redirigió `/` (p. ej. entorno sin proxy). */
 export default async function HomePage() {
   const supabase = await createClient();
-
-  const sessionResult = await withTimeout(
-    supabase.auth.getSession(),
-    1500,
-    { data: { session: null }, error: null }
-  );
-  const user = sessionResult.data.session?.user ?? null;
+  const user = await resolveSessionUser(supabase);
 
   if (!user) {
     redirect("/login");

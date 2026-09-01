@@ -6,12 +6,13 @@ export type KpiStatProps = {
     label: string;
     children: ReactNode;
     tone?: KpiStatTone;
+    trailing?: ReactNode;
 };
 
 /**
  * Cifra protagonista de dashboard. La cifra la aporta el consumidor (p. ej. PremiumCountUp).
  */
-export function KpiStat({ instance, label, children, tone = 'neutral' }: KpiStatProps) {
+export function KpiStat({ instance, label, children, tone = 'neutral', trailing }: KpiStatProps) {
     return (
         <div
             data-component={KPI_STAT_COMPONENT_ID}
@@ -19,7 +20,10 @@ export function KpiStat({ instance, label, children, tone = 'neutral' }: KpiStat
             data-instance={instance}
         >
             <div data-element="value">{children}</div>
-            <span data-element="label">{label}</span>
+            <span data-element="label">
+                {label}
+                {trailing}
+            </span>
         </div>
     );
 }

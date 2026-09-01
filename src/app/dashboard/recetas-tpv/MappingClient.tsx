@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation';
 import { useMemo, useRef, useState, useTransition, useEffect } from 'react'
 import { toast } from 'sonner'
-import { Check, Filter, Trash2, ChevronDown, X } from 'lucide-react'
+import { Check, Filter, Trash2, ChevronDown, X, ChefHat } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
@@ -263,6 +263,14 @@ export default function MappingClient({
   return (
     <div className="space-y-2">
       <div className="flex w-full min-w-0 items-center gap-2">
+        <button
+            type="button"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm hover:bg-emerald-600 hover:shadow transition-all"
+            aria-label="Añadir nueva receta"
+        >
+            <ChefHat size={16} strokeWidth={3} className="hidden" />
+            <span className="text-lg font-black leading-none">+</span>
+        </button>
         <div className="min-w-0 flex-1">
           <SearchField
             instance="mapping-search"
@@ -351,7 +359,7 @@ export default function MappingClient({
             data-instance="recetas-tpv-header"
             className={cn(
               TABLE_GRID_COLS,
-              'border-b bg-[var(--color-marca)] text-[8px] font-black uppercase tracking-[0.03em] text-[var(--color-texto-invertido)]'
+              'border-b'
             )}
           >
             <div className="px-1 py-2 text-center">TPV</div>

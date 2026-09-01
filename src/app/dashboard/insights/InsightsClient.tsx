@@ -631,7 +631,7 @@ function SectionTitleRow({
           {legend?.map((item) => (
             <span
               key={item.label}
-              className="inline-flex items-center gap-1 text-[8px] lg:text-[10px] font-bold text-white/90 whitespace-nowrap"
+              className="inline-flex items-center gap-1 text-[8px] lg:text-[10px] font-bold text-ds-texto whitespace-nowrap"
             >
               {item.variant === 'line' ? (
                 <span
@@ -1104,97 +1104,51 @@ export default function InsightsClient({
       rightSlot={
         <PeriodFilterButton instance="insights-period-filter" onClick={() => setIsTimeFilterOpen(true)} />
       }
+      leadSlot={
+        financialKpis ? (
+          <div className={cn(filterMode !== 'mes' && 'pointer-events-none opacity-50')}>
+            <div className="grid grid-cols-3 gap-2">
+              <FinancialKpiChip
+                label="Venta neta"
+                value={financialKpis.income}
+                valueClassName={financialKpis.incomeTone}
+                onClick={() => setFinancialModal('income')}
+              />
+              <FinancialKpiChip
+                label="Gastos totales"
+                value={financialKpis.expenses}
+                valueClassName={financialKpis.expensesTone}
+                onClick={() => setFinancialModal('expenses')}
+              />
+              <FinancialKpiChip
+                label="Cobros totales"
+                value={financialKpis.cobrosTotales}
+                valueClassName={financialKpis.cobrosTone}
+                onClick={() => setFinancialModal('cash')}
+              />
+            </div>
+            <div className="mt-2 flex justify-center">
+              <div className="grid w-full max-w-md grid-cols-2 gap-2">
+                <FinancialKpiChip
+                  label="Margen PyG"
+                  value={financialKpis.pygNet}
+                  valueClassName={financialKpis.pygNetTone}
+                  onClick={() => setFinancialModal('margin')}
+                />
+                <FinancialKpiChip
+                  label="Rentabilidad"
+                  value={financialKpis.marginBadge}
+                  valueClassName={financialKpis.rentabilidadTone}
+                  onClick={() => setFinancialModal('margin')}
+                />
+              </div>
+            </div>
+          </div>
+        ) : null
+      }
     >
           <div className="p-1.5 md:p-2 space-y-2 md:space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-3 lg:gap-5">
-              {/* Sección 1 — Resultado del periodo */}
-              <section className={cn(
-                'col-span-1 md:col-span-12 rounded-xl border bg-white shadow-md overflow-hidden',
-                filterMode === 'mes' ? 'border-zinc-200' : 'border-zinc-100 opacity-50'
-              )}>
-                <SectionTitleRow title="Resultado del periodo" />
-                <div className="relative p-2 lg:p-4">
-                {financial.error ? (
-                  <SectionErrorBanner message={financial.error} onRetry={() => {
-                    if (selectedMonths.length > 0) {
-                      const froms = selectedMonths.map(m => monthBounds(m).from).sort()
-                      const tos = selectedMonths.map(m => monthBounds(m).to).sort()
-                      void fetchFinancial(froms[0], tos[tos.length - 1])
-                    }
-                  }} />
-                ) : financial.loading ? (
-                  <SectionSkeleton rows={2} />
-                ) : !financial.data ? (
-                  <SectionErrorBanner
-                    message={financial.error ?? 'No se pudo cargar el estado financiero'}
-                    onRetry={() => {
-                      if (selectedMonths.length > 0) {
-                        const froms = selectedMonths.map(m => monthBounds(m).from).sort()
-                        const tos = selectedMonths.map(m => monthBounds(m).to).sort()
-                        void fetchFinancial(froms[0], tos[tos.length - 1])
-                      }
-                    }}
-                  />
-                ) : financialKpis ? (
-                  <div className={cn('space-y-2', filterMode !== 'mes' && 'pointer-events-none')}>
-                    <div className="grid grid-cols-3 gap-2">
-                      <FinancialKpiChip
-                        label="Venta neta"
-                        value={financialKpis.income}
-                        valueClassName={financialKpis.incomeTone}
-                        onClick={() => setFinancialModal('income')}
-                      />
-                      <FinancialKpiChip
-                        label="Gastos totales"
-                        value={financialKpis.expenses}
-                        valueClassName={financialKpis.expensesTone}
-                        onClick={() => setFinancialModal('expenses')}
-                      />
-                      <FinancialKpiChip
-                        label="Cobros totales"
-                        value={financialKpis.cobrosTotales}
-                        valueClassName={financialKpis.cobrosTone}
-                        onClick={() => setFinancialModal('cash')}
-                      />
-                    </div>
-                    <div className="flex justify-center">
-                      <div className="grid w-full max-w-md grid-cols-2 gap-2">
-                        <FinancialKpiChip
-                          label="Margen PyG"
-                          value={financialKpis.pygNet}
-                          valueClassName={financialKpis.pygNetTone}
-                          onClick={() => setFinancialModal('margin')}
-                        />
-                        <FinancialKpiChip
-                          label="Rentabilidad"
-                          value={financialKpis.marginBadge}
-                          valueClassName={financialKpis.rentabilidadTone}
-                          onClick={() => setFinancialModal('margin')}
-                        />
-                      </div>
-                    </div>
-                    {financialModalContent && (
-                      <FinancialDetailModal
-                        open={financialModal !== null}
-                        title={financialModalContent.title}
-                        footnote={financialModalContent.footnote}
-                        onClose={() => setFinancialModal(null)}
-                      >
-                        {financialModalContent.body}
-                      </FinancialDetailModal>
-                    )}
-                  </div>
-                ) : null}
-                {filterMode !== 'mes' && financial.data && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white/40 rounded-xl">
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400 bg-white/80 px-2 py-1 rounded-lg">
-                      Solo disponible en vista mensual
-                    </span>
-                  </div>
-                )}
-                </div>
-              </section>
-
               {/* Sección 2 — ancho completo, gráfico protagonista */}
               <section className="col-span-1 md:col-span-12 rounded-xl border border-zinc-200 bg-white shadow-md overflow-hidden">
                 <SectionTitleRow
@@ -1643,11 +1597,21 @@ export default function InsightsClient({
                 )}
                 </div>
               </section>
+              </div>
             </div>
 
           </div>
-          </div>
     </DashboardDetailLayout>
+    {financialModalContent ? (
+      <FinancialDetailModal
+        open={financialModal !== null}
+        title={financialModalContent.title}
+        footnote={financialModalContent.footnote}
+        onClose={() => setFinancialModal(null)}
+      >
+        {financialModalContent.body}
+      </FinancialDetailModal>
+    ) : null}
     <ConfirmModal
       open={recipeConfirm != null}
       onClose={() => setRecipeConfirm(null)}

@@ -26,18 +26,18 @@ export function PeriodNav({
     className?: string;
 }) {
     const labelClass =
-        'min-w-0 max-w-[9.5rem] truncate text-center text-[11px] font-black capitalize leading-none text-white sm:max-w-[14rem] sm:text-xs md:text-sm';
+        'text-center text-[11px] font-medium capitalize leading-none sm:text-xs md:text-sm';
 
     return (
-        <div className={cn('flex w-full min-w-0 items-center justify-center', className)}>
-            <div className="inline-flex max-w-full min-w-0 items-center justify-center gap-0.5">
+        <div className={cn('flex w-full items-center justify-center', className)}>
+            <div className="inline-flex items-center justify-center gap-0">
                 <button
                     type="button"
                     onClick={onPrev}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white hover:bg-white/10"
+                    className="flex h-9 px-1 shrink-0 items-center justify-center rounded-lg hover:bg-zinc-100/10 transition-colors"
                     aria-label={prevAriaLabel}
                 >
-                    <ChevronLeft size={18} />
+                    <ChevronLeft size={18} strokeWidth={1.75} />
                 </button>
                 {onLabelClick ? (
                     <button type="button" onClick={onLabelClick} className={cn(labelClass, 'hover:opacity-80')}>
@@ -49,10 +49,10 @@ export function PeriodNav({
                 <button
                     type="button"
                     onClick={onNext}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white hover:bg-white/10"
+                    className="flex h-9 px-1 shrink-0 items-center justify-center rounded-lg hover:bg-zinc-100/10 transition-colors"
                     aria-label={nextAriaLabel}
                 >
-                    <ChevronRight size={18} />
+                    <ChevronRight size={18} strokeWidth={1.75} />
                 </button>
             </div>
         </div>
@@ -73,7 +73,7 @@ export function PeriodFilterButton({
             variant="tertiary"
             instance={instance}
             aria-label="Filtrar"
-            icon={<Calendar size={20} strokeWidth={2.25} />}
+            icon={<Calendar size={20} strokeWidth={1.75} />}
             onClick={onClick}
             className="shrink-0"
         />

@@ -3,15 +3,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { addDays, format, isToday, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { toast } from 'sonner';
 import { createClient } from '@/utils/supabase/client';
 import { cn, getBusinessHourFromTicket } from '@/lib/utils';
-import { TABLE_COMPONENT_ID } from '@/lib/design-system';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { formatTicketTimeMadrid } from '@/utils/date-utils';
 import { BUSINESS_HOURS } from '@/lib/constants';
 import PremiumCountUp from '@/components/ui/PremiumCountUp';
 import LiveClock from '@/components/ui/LiveClock';
@@ -41,12 +37,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
     const [salesChartData, setSalesChartData] = useState<{ hora: number; total: number }[]>(
         initialData?.salesChartData || Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }))
     );
-    const [isSalesExpanded, setIsSalesExpanded] = useState(false);
     const [salesTickets, setSalesTickets] = useState<any[]>([]);
-    const [expandedTicket, setExpandedTicket] = useState<string | null>(null);
-    const [ticketLines, setTicketLines] = useState<any[]>([]);
-    const [loadingTicketLines, setLoadingTicketLines] = useState(false);
-    const [loadingSalesTickets, setLoadingSalesTickets] = useState(false);
     const [salesViewDate, setSalesViewDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
     const salesViewDateRef = useRef(salesViewDate);
     const initialLoadDoneRef = useRef(false);
@@ -205,9 +196,8 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
     }, [selectedChartHour]);
 
     useEffect(() => {
-        if (!isSalesExpanded && filterHourRange === null) return;
+        if (filterHourRange === null) return;
         let cancelled = false;
-        setLoadingSalesTickets(true);
         supabase
             .from('tickets_marbella')
             .select('numero_documento, fecha, hora_cierre, total_documento')
@@ -223,13 +213,12 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     } else {
                         setSalesTickets(data || []);
                     }
-                    setLoadingSalesTickets(false);
                 }
             });
         return () => {
             cancelled = true;
         };
-    }, [isSalesExpanded, salesViewDate, filterHourRange, supabase]);
+    }, [salesViewDate, filterHourRange, supabase]);
 
     const displayTickets =
         filterHourRange === null
@@ -249,38 +238,6 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                   count: displayTickets.length,
               };
 
-    const toggleTicket = async (numero_documento: string) => {
-        if (expandedTicket === numero_documento) {
-            setExpandedTicket(null);
-            return;
-        }
-        setExpandedTicket(numero_documento);
-        setLoadingTicketLines(true);
-        setTicketLines([]);
-        try {
-            const { data, error } = await supabase.rpc('get_ticket_lines', { p_numero_documento: numero_documento });
-            if (error) throw error;
-            const groupedLines = (data || []).reduce((acc: any, line: any) => {
-                const key = `${line.articulo_nombre}-${line.precio_unidad}`;
-                const qty = Number(line.cantidad ?? line.unidades ?? 0);
-                const total = Number(line.importe_total ?? 0);
-                if (!acc[key]) {
-                    acc[key] = { ...line, unidades: qty, importe_total: total };
-                } else {
-                    acc[key].unidades += qty;
-                    acc[key].importe_total += total;
-                }
-                return acc;
-            }, {});
-            setTicketLines(Object.values(groupedLines));
-        } catch (err) {
-            console.error('Error fetching ticket lines:', err);
-            toast.error('Error al cargar detalles del ticket');
-        } finally {
-            setLoadingTicketLines(false);
-        }
-    };
-
     const parseSalesViewDate = () => {
         const [y, m, d] = salesViewDate.split('-').map(Number);
         return new Date(y, (m || 1) - 1, d || 1);
@@ -288,13 +245,13 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
 
     return (
         <>
-            <Surface variant="page" instance="dashboard-ventas" className="flex flex-col overflow-hidden">
-                <div data-element="header" className="flex items-center justify-between gap-2 shrink-0">
+            <Surface variant="page" instance="dashboard-ventas" className="flex h-full min-h-0 flex-col overflow-hidden">
+                <div data-element="header" data-tone="plain" className="flex items-center justify-between gap-2 shrink-0">
                     <Link
                         href="/dashboard/ventas"
                         className={cn(
-                            'py-1 px-2.5 md:py-1.5 md:px-3 flex items-center justify-center rounded-lg text-[11px] font-bold uppercase tracking-widest',
-                            'bg-white/10 text-white hover:bg-white/15 active:scale-[0.98] transition-all cursor-pointer border-0 shadow-none'
+                            'py-0.5 px-2 flex items-center justify-center rounded-md text-[8px] font-medium uppercase tracking-wider',
+                            'bg-zinc-100 text-zinc-700 hover:bg-zinc-200/80 active:scale-[0.98] transition-all cursor-pointer border-0 shadow-none'
                         )}
                     >
                         Ventas
@@ -304,26 +261,26 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                             <button
                                 type="button"
                                 onClick={() => setSalesViewDate(format(subDays(parseSalesViewDate(), 1), 'yyyy-MM-dd'))}
-                                className="shrink-0 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-[0.98] transition-all cursor-pointer touch-manipulation"
+                                className="shrink-0 h-full min-h-0 min-w-[36px] flex items-center justify-center rounded-lg hover:bg-zinc-100 active:scale-[0.98] transition-all cursor-pointer touch-manipulation"
                                 aria-label="Día anterior"
                             >
-                                <ChevronLeft className="w-5 h-5 md:w-5 md:h-5 text-white" />
+                                <ChevronLeft className="w-5 h-5 text-zinc-700" />
                             </button>
                             <button
                                 onClick={() => {
                                     setSalesCalendarBaseDate(parseSalesViewDate());
                                     setIsSalesDateModalOpen(true);
                                 }}
-                                className="shrink-0 min-h-[48px] flex flex-col items-center justify-center py-1 px-2 rounded-lg hover:bg-white/10 active:scale-[0.98] transition-all cursor-pointer"
+                                className="shrink-0 h-full min-h-0 flex flex-col items-center justify-center py-0 px-2 rounded-lg hover:bg-zinc-100 active:scale-[0.98] transition-all cursor-pointer"
                             >
                                 {isToday(parseSalesViewDate()) ? (
                                     <LiveClock />
                                 ) : (
                                     <>
-                                        <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-white/90 whitespace-nowrap">
+                                        <span className="text-[9px] md:text-[10px] font-medium uppercase tracking-widest text-zinc-700 whitespace-nowrap">
                                             {format(parseSalesViewDate(), 'eee d MMM', { locale: es }).replace('.', '')}
                                         </span>
-                                        <span className="text-[8px] font-medium text-white/60">histórico</span>
+                                        <span className="text-[8px] font-medium text-zinc-400">histórico</span>
                                     </>
                                 )}
                             </button>
@@ -335,56 +292,26 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                         setSalesViewDate(format(next, 'yyyy-MM-dd'));
                                     }
                                 }}
-                                className="shrink-0 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-[0.98] transition-all cursor-pointer touch-manipulation disabled:opacity-50 disabled:pointer-events-none"
+                                className="shrink-0 h-full min-h-0 min-w-[36px] flex items-center justify-center rounded-lg hover:bg-zinc-100 active:scale-[0.98] transition-all cursor-pointer touch-manipulation disabled:opacity-50 disabled:pointer-events-none"
                                 aria-label="Día siguiente"
                                 disabled={format(addDays(parseSalesViewDate(), 1), 'yyyy-MM-dd') > format(new Date(), 'yyyy-MM-dd')}
                             >
-                                <ChevronRight className="w-5 h-5 md:w-5 md:h-5 text-white" />
+                                <ChevronRight className="w-5 h-5 text-zinc-700" />
                             </button>
                         </div>
                     </div>
                     <Link
                         href="/dashboard/history"
                         className={cn(
-                            'py-1 px-2.5 md:py-1.5 md:px-3 flex items-center justify-center rounded-lg text-[11px] font-bold uppercase tracking-widest',
-                            'bg-white/10 text-white hover:bg-white/15 active:scale-[0.98] transition-all cursor-pointer border-0 shadow-none'
+                            'py-0.5 px-2 flex items-center justify-center rounded-md text-[8px] font-medium uppercase tracking-wider',
+                            'bg-zinc-100 text-zinc-700 hover:bg-zinc-200/80 active:scale-[0.98] transition-all cursor-pointer border-0 shadow-none'
                         )}
                     >
                         Cierres
                     </Link>
                 </div>
 
-                <div className={cn('p-3 md:p-2.5 grid grid-cols-3 gap-2 md:gap-4 items-center shrink-0 transition-all duration-300 relative min-h-[72px]', isSalesExpanded ? 'pb-1' : 'pb-0')}>
-                    {salesLoading ? (
-                        <div className="col-span-3 flex items-center justify-center py-2" role="status" aria-label="Cargando ventas">
-                            <LoadingSpinner size="md" className="text-ds-marca" />
-                        </div>
-                    ) : (
-                    <>
-                    <button
-                        onClick={() => setIsSalesExpanded(!isSalesExpanded)}
-                        className="flex flex-col items-center justify-center text-center min-h-[48px] w-full rounded-xl hover:bg-zinc-50/50 active:scale-[0.98] transition-all cursor-pointer group"
-                    >
-                        <KpiStat instance="dashboard-ventas-total" label="Ventas">
-                            <PremiumCountUp value={displaySummary.total} suffix="€" decimals={2} />
-                        </KpiStat>
-                        <ChevronDown className={cn('w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-600 transition-transform duration-200 shrink-0 -mt-1', isSalesExpanded && 'rotate-180')} />
-                    </button>
-                    <div className="flex flex-col items-center justify-center text-center">
-                        <KpiStat instance="dashboard-ventas-neta" label="Venta Neta" tone="positive">
-                        <PremiumCountUp value={displaySummary.total > 0 ? displaySummary.total / 1.1 : 0} suffix="€" decimals={2} />
-                        </KpiStat>
-                    </div>
-                    <div className="flex flex-col items-center justify-center text-center">
-                        <KpiStat instance="dashboard-ventas-ticket" label="Ticket Medio" tone="info">
-                        <PremiumCountUp value={displaySummary.count > 0 ? displaySummary.total / displaySummary.count : 0} suffix="€" decimals={2} />
-                        </KpiStat>
-                    </div>
-                    </>
-                    )}
-                </div>
-
-                {salesLoading ? null : (() => {
+                {(() => {
                     const chartData = salesChartData;
                     const rangeData = chartData.slice(BUSINESS_HOURS.start, BUSINESS_HOURS.end + 1);
                     const maxMain = Math.max(...rangeData.map((d) => d.total), 0);
@@ -421,7 +348,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                   0
                               );
                     return (
-                        <div className="w-full pb-1 pt-0 -mt-1 shrink-0">
+                        <div className="w-full shrink-0 px-2 pt-1">
                             <div
                                 ref={chartContainerRef}
                                 className="w-full relative"
@@ -433,13 +360,13 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                     }
                                 }}
                             >
-                                <svg viewBox="0 0 120 24" className="w-full h-8 md:h-10 block select-none" preserveAspectRatio="none">
-                                    <path d={toPath(rangeData)} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="butt" strokeLinejoin="miter" vectorEffect="non-scaling-stroke" className="text-ds-marca" />
+                                <svg viewBox="0 0 120 24" className="w-full h-5 block select-none" preserveAspectRatio="none">
+                                    <path d={toPath(rangeData)} fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="butt" strokeLinejoin="miter" vectorEffect="non-scaling-stroke" className="text-ds-marca" />
                                 </svg>
                             </div>
-                            <div className="flex justify-between px-3 text-[9px] font-mono text-ds-marca leading-none select-none pointer-events-none mt-0.5">
-                                <span>7h</span>
-                                <span>23h</span>
+                            <div className="mt-0.5 flex justify-between px-0 text-[9px] font-mono leading-none text-ds-marca select-none pointer-events-none">
+                                <span>{BUSINESS_HOURS.start} h</span>
+                                <span>{BUSINESS_HOURS.end} h</span>
                             </div>
                             {selectedChartHour !== null &&
                                 (() => {
@@ -465,104 +392,38 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                     );
                 })()}
 
-                <div className={cn('overflow-hidden transition-all duration-300 shrink-0', isSalesExpanded ? 'opacity-100' : 'h-0 opacity-0')}>
-                    <div className={cn('pt-1 pb-1 px-1 space-y-1 transition-all duration-300', expandedTicket ? 'overflow-y-auto no-scrollbar max-h-none' : 'overflow-y-auto no-scrollbar max-h-[200px] md:max-h-[280px]')}>
-                        {loadingSalesTickets ? (
-                            <div className="flex justify-center py-8">
-                                <LoadingSpinner size="sm" className="text-ds-marca/50" />
-                            </div>
-                        ) : salesTickets.length === 0 ? (
-                            <EmptyState
-                                instance="dashboard-ventas-tickets-empty"
-                                variant="none"
-                                title={isToday(parseSalesViewDate()) ? 'Sin tickets hoy' : 'Sin tickets este día'}
-                            />
-                        ) : (
-                            <div className="bg-white rounded-xl shadow-sm border border-zinc-100 overflow-hidden max-md:[&_table_th]:border-r-0 max-md:[&_table_td]:border-r-0 relative">
-                                <table data-component={TABLE_COMPONENT_ID} data-instance="dashboard-ventas-tickets" className="w-full text-left border-collapse">
-                                    <thead>
-                                        <tr>
-                                            <th className="py-2 px-2 md:px-3">Hora</th>
-                                            <th className="py-2 px-2 md:px-3">Doc</th>
-                                            <th className="py-2 px-2 md:px-3 text-right">Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="text-[10px] md:text-xs font-bold text-zinc-600">
-                                        {displayTickets.length === 0 && filterHourRange !== null ? (
-                                            <tr>
-                                                <td colSpan={3}>
-                                                    <EmptyState
-                                                        instance="dashboard-ventas-hour-mismatch"
-                                                        variant="mismatch"
-                                                        title={`Ningún ticket entre ${String(filterHourRange.start).padStart(2, '0')}:00 y ${String(filterHourRange.end).padStart(2, '0')}:00`}
-                                                    />
-                                                </td>
-                                            </tr>
-                                        ) : (
-                                            displayTickets.map((ticket, idx) => {
-                                                const cleanDoc = ticket.numero_documento?.replace(/0+/, '') || '';
-                                                const hora = formatTicketTimeMadrid(ticket.hora_cierre, ticket.fecha);
-                                                return (
-                                                    <React.Fragment key={ticket.numero_documento || idx}>
-                                                        <tr
-                                                            onClick={() => toggleTicket(ticket.numero_documento)}
-                                                            className={cn('cursor-pointer hover:bg-zinc-50 transition-colors active:bg-zinc-100', expandedTicket === ticket.numero_documento && 'bg-zinc-50')}
-                                                        >
-                                                            <td className="py-2 px-2 md:px-3 font-mono text-zinc-500">{hora}</td>
-                                                            <td className="py-2 px-2 md:px-3 font-mono text-zinc-700">{cleanDoc}</td>
-                                                            <td className={cn('py-2 px-2 md:px-3 text-right font-black tabular-nums', (ticket.total_documento || 0) > 0 ? 'text-emerald-500' : 'text-zinc-600')}>
-                                                                {(ticket.total_documento || 0) !== 0 ? `${Number(ticket.total_documento).toFixed(2)}€` : ' '}
-                                                            </td>
-                                                        </tr>
-                                                        {expandedTicket === ticket.numero_documento && (
-                                                            <tr className="bg-zinc-50/50">
-                                                                <td colSpan={3} className="px-2 py-2 md:px-3 md:py-3">
-                                                                    <div className="bg-[#fcfcfc] rounded-xl p-2 md:p-3 animate-in slide-in-from-top-2 duration-200">
-                                                                        {loadingTicketLines ? (
-                                                                            <div className="flex justify-center py-4">
-                                                                                <LoadingSpinner size="sm" className="text-ds-marca/50" />
-                                                                            </div>
-                                                                        ) : ticketLines.length === 0 ? (
-                                                                            <EmptyState instance="dashboard-ventas-ticket-none" variant="none" title="Sin detalles" />
-                                                                        ) : (
-                                                                            <table className="w-full text-left border-collapse table-fixed">
-                                                                                <thead>
-                                                                                    <tr className="text-[7px] md:text-[8px] font-black uppercase tracking-widest text-zinc-400 border-b border-zinc-200">
-                                                                                        <th className="py-1.5 px-1 text-center w-8">Cant</th>
-                                                                                        <th className="py-1.5 px-1 md:px-2 w-[45%]">Producto</th>
-                                                                                        <th className="py-1.5 px-1 text-right">Precio</th>
-                                                                                        <th className="py-1.5 px-1 text-right">Total</th>
-                                                                                    </tr>
-                                                                                </thead>
-                                                                                <tbody className="text-[9px] md:text-[10px] font-bold text-zinc-500">
-                                                                                    {ticketLines.map((line, lIdx) => {
-                                                                                        const isSubItem = line.articulo_nombre?.startsWith('↳') || line.articulo_nombre?.startsWith('?');
-                                                                                        const showUnits = !isSubItem || line.unidades !== 1;
-                                                                                        return (
-                                                                                            <tr key={lIdx} className="border-b border-zinc-100/50 last:border-0">
-                                                                                                <td className="py-1.5 px-1 text-center tabular-nums text-zinc-400">{showUnits && line.unidades !== 0 ? line.unidades : ' '}</td>
-                                                                                                <td className={cn('py-1.5 px-1 md:px-2 text-zinc-700 min-w-0 truncate', isSubItem && 'pl-4 text-zinc-500 font-medium')}>{line.articulo_nombre}</td>
-                                                                                                <td className="py-1.5 px-1 text-right tabular-nums">{line.precio_unidad !== 0 ? line.precio_unidad.toFixed(2) : ' '}</td>
-                                                                                                <td className="py-1.5 px-1 text-right font-black tabular-nums text-emerald-600/70">{line.importe_total !== 0 ? line.importe_total.toFixed(2) : ' '}</td>
-                                                                                            </tr>
-                                                                                        );
-                                                                                    })}
-                                                                                </tbody>
-                                                                            </table>
-                                                                        )}
-                                                                    </div>
-                                                                </td>
-                                                            </tr>
-                                                        )}
-                                                    </React.Fragment>
-                                                );
-                                            })
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
+                <div
+                    className={cn(
+                        'grid shrink-0 grid-cols-3 items-start gap-1 px-2 pb-2',
+                        displaySummary.total > 0 ? 'mt-auto' : 'my-auto'
+                    )}
+                >
+                    {salesLoading ? (
+                        <div className="col-span-3 flex items-center justify-center py-2" role="status" aria-label="Cargando ventas">
+                            <LoadingSpinner size="md" className="text-ds-marca" />
+                        </div>
+                    ) : (
+                    <>
+                    <div className="flex min-h-0 w-full flex-col items-center justify-start text-center">
+                        <KpiStat
+                            instance="dashboard-ventas-total"
+                            label="Ventas"
+                        >
+                            <PremiumCountUp value={displaySummary.total} suffix="€" decimals={2} />
+                        </KpiStat>
                     </div>
+                    <div className="flex flex-col items-center justify-center text-center">
+                        <KpiStat instance="dashboard-ventas-neta" label="Venta Neta" tone="positive">
+                        <PremiumCountUp value={displaySummary.total > 0 ? displaySummary.total / 1.1 : 0} suffix="€" decimals={2} />
+                        </KpiStat>
+                    </div>
+                    <div className="flex flex-col items-center justify-center text-center">
+                        <KpiStat instance="dashboard-ventas-ticket" label="Ticket Medio" tone="info">
+                        <PremiumCountUp value={displaySummary.count > 0 ? displaySummary.total / displaySummary.count : 0} suffix="€" decimals={2} />
+                        </KpiStat>
+                    </div>
+                    </>
+                    )}
                 </div>
             </Surface>
 

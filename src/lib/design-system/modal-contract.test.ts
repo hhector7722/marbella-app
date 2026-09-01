@@ -166,7 +166,8 @@ describe('Modal identidad y variantes', () => {
         assert.match(modalSource, /Botón ad-hoc en body/);
         assert.match(modalSource, /data-subordinate/);
         assert.equal(modalSource.includes("?? 'white'"), false);
-        assert.match(css, /\[data-component='Modal'\]\[data-layer='base'\]/);
+        assert.match(css, /\[data-component='Modal'\]\[data-scheme='dark'\]/);
+        assert.match(modalSource, /scheme = 'work'/);
         assert.match(css, /z-index:\s*var\(--z-modal-base\)/);
         assert.match(css, /z-index:\s*var\(--z-modal-derived\)/);
         assert.match(css, /z-index:\s*var\(--z-modal-system\)/);
@@ -776,7 +777,8 @@ describe('Confirmaciones: Modal compact + system, no window.confirm', () => {
         );
         assert.match(source, /from ['"]@\/components\/ui\/modal['"]/);
         assert.match(source, /variant=["']compact["']/);
-        assert.match(source, /layer=["']system["']/);
+        assert.match(source, /layer=\{layer\}/);
+        assert.match(source, /layer = 'system'/);
         assert.doesNotMatch(source, /createPortal/);
         assert.doesNotMatch(source, /window\.confirm/);
     });

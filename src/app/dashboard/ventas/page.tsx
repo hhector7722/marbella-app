@@ -3,13 +3,12 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { createClient } from "@/utils/supabase/client";
-import { ChevronLeft, ChevronRight, ChartLine } from 'lucide-react';
-import { Modal } from '@/components/ui/modal';
+import { ChartLine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { format, startOfMonth, endOfMonth, isSameDay, addDays, subDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, addDays, subDays, subMonths, isSameMonth, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, getBusinessHourFromTicket } from '@/lib/utils';
 import { TABLE_COMPONENT_ID } from '@/lib/design-system';
@@ -18,15 +17,13 @@ import { formatTicketTimeMadrid } from '@/utils/date-utils';
 import { toast } from 'sonner';
 import { BUSINESS_HOURS } from '@/lib/constants';
 import { PeriodNav, PeriodFilterButton } from '@/components/time/PeriodNav';
-import { MiniMonthCalendar } from '@/components/time/MiniMonthCalendar';
 import { TimeFilterModal } from '@/components/time/TimeFilterModal';
-import { useTrackModalApply } from '@/hooks/useTrackModalApply';
-import { formatMonthYear, formatYmdShort, periodRangeSummary } from '@/lib/usage/modal-apply';
 import type { TimeFilterValue } from '@/components/time/time-filter-types';
 import { SubNavVentas } from '@/components/dashboards/SubNavVentas';
 import { navigateInsideSandbox } from '@/lib/sandbox/client';
 import type { VentasTab } from '@/components/dashboards/SubNavVentas';
 import * as XLSX from 'xlsx';
+import { downloadWorkbook, printHtml } from '@/lib/export/browser-output';
 
 interface TicketSummary {
     numero_documento: string;
@@ -64,10 +61,6 @@ interface HourSlotRow {
 }
 
 export default function VentasPage() {
-    const trackVentasMonthPicker = useTrackModalApply('ventas-month-picker', 'Selector de mes ventas');
-    const trackVentasDateSingle = useTrackModalApply('ventas-date-single', 'Fecha única ventas');
-    const trackVentasDateRange = useTrackModalApply('ventas-date-range', 'Rango fechas ventas');
-
     const supabase = createClient();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -114,20 +107,8 @@ export default function VentasPage() {
     const [rangeStart, setRangeStart] = useState<string | null>(() => format(startOfMonth(new Date()), 'yyyy-MM-dd'));
     const [rangeEnd, setRangeEnd] = useState<string | null>(() => format(endOfMonth(new Date()), 'yyyy-MM-dd'));
 
-    const [showCalendar, setShowCalendar] = useState<'single' | 'range' | null>(null);
-    const [showMonthPicker, setShowMonthPicker] = useState(false);
-
-    const [calendarBaseDate, setCalendarBaseDate] = useState(new Date());
-    const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
     const [isTimeFilterOpen, setIsTimeFilterOpen] = useState(false);
     const [hourFilter, setHourFilter] = useState<{ startTime: string; endTime: string } | null>(null);
-
-    const calendarDays = useMemo(() => {
-        const base = filterMode === 'range' && rangeStart ? new Date(rangeStart) : new Date(selectedDate);
-        const startVisible = startOfWeek(startOfMonth(base), { weekStartsOn: 1 });
-        const endVisible = endOfWeek(endOfMonth(base), { weekStartsOn: 1 });
-        return eachDayOfInterval({ start: startVisible, end: endVisible });
-    }, [filterMode, rangeStart, selectedDate]);
 
     // Estados de Datos
     const [loading, setLoading] = useState(true);
@@ -337,33 +318,6 @@ export default function VentasPage() {
         }
     }
 
-    const handleDateSelect = (picked: Date) => {
-        const dateStr = format(picked, 'yyyy-MM-dd');
-        if (showCalendar === 'single') {
-            setSelectedDate(dateStr);
-            setFilterMode('single');
-            setShowCalendar(null);
-            trackVentasDateSingle(formatYmdShort(dateStr), { selectedDate: dateStr });
-        } else if (showCalendar === 'range') {
-            if (!rangeStart || (rangeStart && rangeEnd)) {
-                setRangeStart(dateStr);
-                setRangeEnd(null);
-            } else {
-                if (new Date(dateStr) < new Date(rangeStart)) {
-                    setRangeStart(dateStr);
-                } else {
-                    setRangeEnd(dateStr);
-                    setFilterMode('range');
-                    setShowCalendar(null);
-                    trackVentasDateRange(periodRangeSummary(rangeStart, dateStr), {
-                        rangeStart,
-                        rangeEnd: dateStr,
-                    });
-                }
-            }
-        }
-    };
-
     const toggleTicket = async (numero_documento: string) => {
         if (expandedTicket === numero_documento) {
             setExpandedTicket(null);
@@ -437,17 +391,17 @@ export default function VentasPage() {
     }, [tickets]);
 
     const getActiveTableEl = (): HTMLTableElement | null => {
-        const table = document.querySelector('.print-table-ventas table') as HTMLTableElement | null;
-        return table;
+        const wrapper = document.querySelector('[data-table-piece]');
+        return (wrapper?.querySelector('table') as HTMLTableElement | null) ?? null;
     };
 
     const getCleanPrintableTableHTML = (): string | null => {
         const table = getActiveTableEl();
         if (!table) return null;
         const clone = table.cloneNode(true) as HTMLTableElement;
-        // El drill-down de tickets se renderiza en un <tr className="... print:hidden">.
-        // Para exportar/imprimir “la tabla activa” sin detalles colapsados, eliminamos esas filas.
-        clone.querySelectorAll('tr.print\\:hidden').forEach((tr) => tr.remove());
+        // Eliminar filas de drill-down marcadas con data-export-skip (más robusto que
+        // seleccionar por clase CSS escapada en nodos no adjuntos al documento).
+        clone.querySelectorAll('[data-export-skip]').forEach((tr) => tr.remove());
         return clone.outerHTML;
     };
 
@@ -479,7 +433,7 @@ export default function VentasPage() {
             const pad = (n: number) => String(n).padStart(2, '0');
             const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
             const fileName = `ventas_${activeTab.toLowerCase()}_${stamp}.xlsx`;
-            XLSX.writeFile(wb, fileName, { compression: true });
+            downloadWorkbook(wb, fileName);
             toast.success('Excel descargado.');
         } catch (e) {
             console.error(e);
@@ -494,70 +448,7 @@ export default function VentasPage() {
                 toast.error('No se ha encontrado la tabla activa para imprimir.');
                 return;
             }
-
-            const iframe = document.createElement('iframe');
-            iframe.setAttribute('aria-hidden', 'true');
-            iframe.style.position = 'fixed';
-            iframe.style.right = '0';
-            iframe.style.bottom = '0';
-            iframe.style.width = '0';
-            iframe.style.height = '0';
-            iframe.style.border = '0';
-            document.body.appendChild(iframe);
-
-            const doc = iframe.contentDocument;
-            if (!doc) {
-                iframe.remove();
-                toast.error('No se pudo preparar la impresión.');
-                return;
-            }
-
-            doc.open();
-            doc.write(`<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Imprimir ventas</title>
-    <style>
-      * { box-sizing: border-box; }
-      body { margin: 24px; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color: #111827; }
-      table { width: 100%; border-collapse: collapse; }
-      thead th {
-        background: #36606F; color: white;
-        text-transform: uppercase; letter-spacing: 0.12em;
-        font-weight: 800; font-size: 11px;
-        padding: 10px 12px; text-align: left;
-      }
-      tbody td {
-        border-top: 1px solid #f4f4f5;
-        padding: 10px 12px;
-        font-size: 12px;
-        vertical-align: top;
-      }
-      tbody tr:nth-child(even) td { background: #fafafa; }
-      @media print {
-        body { margin: 0; padding: 0; }
-        table { page-break-inside: auto; }
-        tr { page-break-inside: avoid; page-break-after: auto; }
-        thead { display: table-header-group; }
-      }
-    </style>
-  </head>
-  <body>
-    ${cleanHTML}
-  </body>
-</html>`);
-            doc.close();
-
-            setTimeout(() => {
-                try {
-                    iframe.contentWindow?.focus();
-                    iframe.contentWindow?.print();
-                } finally {
-                    setTimeout(() => iframe.remove(), 250);
-                }
-            }, 50);
+            printHtml(`<h1>Ventas</h1>${cleanHTML}`);
         } catch (e) {
             console.error(e);
             toast.error('Error al imprimir.');
@@ -570,7 +461,8 @@ export default function VentasPage() {
             title="Ventas"
             showBackButton={false}
             template="list"
-            maxWidthClass="max-w-5xl"
+            work="table"
+            maxWidthClass="max-w-5xl lg:max-w-[56rem]"
             className="print:bg-white print:p-0 print:pb-0"
             cardClassName="print:rounded-none print:shadow-none"
             contentClassName="p-0 flex flex-col min-h-0"
@@ -605,7 +497,7 @@ export default function VentasPage() {
                 />
             }
             rightSlot={
-                <div className="flex items-center gap-1 shrink-0 text-white">
+                <div className="flex items-center gap-1 shrink-0">
                     <PeriodFilterButton instance="ventas-period-filter" onClick={() => setIsTimeFilterOpen(true)} />
                     {canAccessInsights ? (
                         <Button
@@ -622,25 +514,34 @@ export default function VentasPage() {
                     ) : null}
                 </div>
             }
-        >
-                    {/* SECCIÓN DE KPIs */}
-                    <div className="pt-0.5 pb-0.5 px-2 grid grid-cols-3 border-b border-zinc-50 print:hidden">
+            toolbarSlot={
+                <SubNavVentas
+                    activeTab={activeTab}
+                    onTabChange={setActiveTab}
+                    showPrint
+                    onExportExcel={exportActiveTableToExcel}
+                    onPrint={printActiveTable}
+                />
+            }
+            leadSlot={
+                <>
+                    <div className="grid grid-cols-3 print:hidden">
                         <div className="flex flex-col items-center justify-center text-center">
-                            <span className="text-lg md:text-2xl font-black tabular-nums leading-none text-emerald-500">
+                            <span className="text-lg md:text-2xl font-black tabular-nums leading-none text-white">
                                 {summary.totalSales > 0 ? `${summary.totalSales.toFixed(2)}€` : " "}
                             </span>
                             <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1 font-bold">Ventas Totales</span>
                         </div>
 
-                        <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100">
-                            <span className="text-lg md:text-2xl font-black tabular-nums leading-none text-zinc-900">
+                        <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100/20">
+                            <span className="text-lg md:text-2xl font-black tabular-nums leading-none text-white">
                                 {summary.count > 0 ? summary.count : " "}
                             </span>
                             <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1 font-bold">Nº Tickets</span>
                         </div>
 
-                        <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100 italic">
-                            <span className="text-lg md:text-2xl font-black tabular-nums leading-none text-[#36606F]">
+                        <div className="flex flex-col items-center justify-center text-center border-l border-zinc-100/20 italic">
+                            <span className="text-lg md:text-2xl font-black tabular-nums leading-none text-white">
                                 {summary.avgTicket > 0 ? `${summary.avgTicket.toFixed(2)}€` : " "}
                             </span>
                             <span className="text-[7px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5 md:mt-1 font-bold">Ticket Medio</span>
@@ -683,7 +584,7 @@ export default function VentasPage() {
                             (_, i) => chartData[BUSINESS_HOURS.start + i]?.total ?? 0
                         ).reduce((a, b) => a + Number(b), 0);
                         return (
-                            <div className="w-full pb-1 pt-2 px-4 border-b border-zinc-50 shrink-0 print:hidden">
+                            <div className="w-full print:hidden">
                                 <div
                                     ref={chartContainerRef}
                                     className="w-full relative"
@@ -699,7 +600,7 @@ export default function VentasPage() {
                                         <path
                                             d={toPath(rangeData)}
                                             fill="none"
-                                            stroke="#36606F"
+                                            stroke="white"
                                             strokeWidth="2"
                                             strokeLinecap="butt"
                                             strokeLinejoin="miter"
@@ -707,7 +608,7 @@ export default function VentasPage() {
                                         />
                                     </svg>
                                 </div>
-                                <div className="flex justify-between px-0 text-[9px] font-mono text-[#36606F] leading-none select-none pointer-events-none mt-0.5">
+                                <div className="flex justify-between px-0 text-[9px] font-mono text-white/80 leading-none select-none pointer-events-none mt-0.5">
                                     <span>7h</span>
                                     <span>23h</span>
                                 </div>
@@ -733,18 +634,11 @@ export default function VentasPage() {
                             </div>
                         );
                     })()}
-
-                    {/* SUB-NAV: TICKETS | LIVE | PRODUCTOS | HORAS */}
-                    <SubNavVentas
-                        activeTab={activeTab}
-                        onTabChange={setActiveTab}
-                        showPrint
-                        onExportExcel={exportActiveTableToExcel}
-                        onPrint={printActiveTable}
-                    />
-
+                </>
+            }
+        >
                     {/* TABLAS */}
-                    <div className="px-1.5 py-1 md:px-2 md:py-1.5 bg-zinc-50/50 print:bg-white print:p-2 min-w-0">
+                    <div className="px-1.5 py-1 md:px-2 md:py-1.5 print:bg-white print:p-2 min-w-0">
                         <div className="hidden print:block text-lg font-black text-zinc-800 mb-2">
                             Ventas — {activeTab === 'VENTAS' ? 'Ventas' : activeTab === 'PRODUCTOS' ? 'Productos' : 'Horas'}
                         </div>
@@ -761,7 +655,7 @@ export default function VentasPage() {
                                         title="Sin ventas en este periodo"
                                     />
                                 ) : (
-                                    <div className="w-full min-w-0 bg-white rounded-lg shadow-sm border border-zinc-200 overflow-x-hidden print-table-ventas">
+                                    <div data-table-piece className="w-full min-w-0 overflow-x-hidden print-table-ventas">
                                         <table data-component={TABLE_COMPONENT_ID} data-instance="ventas-tickets" className="w-full text-left border-collapse">
                                             <thead>
                                                 <tr>
@@ -804,7 +698,7 @@ export default function VentasPage() {
                                                                 </td>
                                                             </tr>
                                                             {expandedTicket === ticket.numero_documento && (
-                                                                <tr className="bg-zinc-50/30 print:hidden">
+                                                                <tr className="bg-zinc-50/30 print:hidden" data-export-skip="true">
                                                                     <td colSpan={4} className="px-1 py-2 md:p-4">
                                                                         <div className="bg-[#fcfcfc] rounded-lg p-2 md:p-3 animate-in slide-in-from-top-2 duration-200">
                                                                             {loadingLines ? (
@@ -821,7 +715,7 @@ export default function VentasPage() {
                                                                                 <table className="w-full text-left border-collapse table-fixed">
                                                                                     <thead>
                                                                                         <tr className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-zinc-400 border-b border-zinc-200">
-                                                                                            <th className="py-2 px-1 text-center w-8 md:w-12">Cant</th>
+                                                                                            <th className="py-2 px-1 text-center w-8 md:w-12">Cant.</th>
                                                                                             <th className="py-2 px-1 md:px-2 w-[45%]">Producto</th>
                                                                                             <th className="py-2 px-1 md:px-2 text-right">Precio</th>
                                                                                             <th className="py-2 px-1 text-right">Total</th>
@@ -834,7 +728,7 @@ export default function VentasPage() {
 
                                                                                             return (
                                                                                                 <tr key={lIdx} className="border-b border-zinc-100/50 last:border-0">
-                                                                                                    <td className="py-2 px-1 text-center tabular-nums text-zinc-400">
+                                                                                                    <td className="py-2 px-2 text-center tabular-nums text-zinc-400 whitespace-nowrap pl-2 md:pl-4">
                                                                                                         {showUnits && line.unidades !== 0 ? line.unidades : ' '}
                                                                                                     </td>
                                                                                                     <td className={cn(
@@ -843,10 +737,10 @@ export default function VentasPage() {
                                                                                                     )}>
                                                                                                         {line.articulo_nombre}
                                                                                                     </td>
-                                                                                                    <td className="py-2 px-1 md:px-2 text-right tabular-nums">
+                                                                                                    <td className="py-2 px-1 md:px-2 text-right tabular-nums whitespace-nowrap">
                                                                                                         {line.precio_unidad !== 0 ? line.precio_unidad.toFixed(2) : ' '}
                                                                                                     </td>
-                                                                                                    <td className="py-2 px-1 text-right font-black tabular-nums text-emerald-600/70">
+                                                                                                    <td className="py-2 px-2 text-right font-black tabular-nums text-emerald-600/70 whitespace-nowrap pr-2 md:pr-4">
                                                                                                         {line.importe_total !== 0 ? line.importe_total.toFixed(2) : ' '}
                                                                                                     </td>
                                                                                                 </tr>
@@ -903,7 +797,7 @@ export default function VentasPage() {
                                         title="Sin productos en este periodo"
                                     />
                                 ) : (
-                                    <div className="w-full min-w-0 bg-white rounded-lg shadow-sm border border-zinc-200 overflow-x-hidden print-table-ventas">
+                                    <div data-table-piece className="w-full min-w-0 overflow-x-hidden print-table-ventas">
                                         <table data-component={TABLE_COMPONENT_ID} data-instance="ventas-productos" className="w-full text-left border-collapse">
                                             <thead>
                                                 <tr>
@@ -945,7 +839,7 @@ export default function VentasPage() {
                                     title="Sin datos por hora en este periodo"
                                 />
                             ) : (
-                                <div className="w-full min-w-0 bg-white rounded-lg shadow-sm border border-zinc-200 overflow-x-hidden print-table-ventas">
+                                <div data-table-piece className="w-full min-w-0 overflow-x-hidden print-table-ventas">
                                     <table data-component={TABLE_COMPONENT_ID} data-instance="ventas-horas" className="w-full text-left border-collapse">
                                         <thead>
                                             <tr>
@@ -983,99 +877,6 @@ export default function VentasPage() {
                     </div>
 
         </DashboardDetailLayout>
-
-            {/* MODALES REUTILIZADOS DE HISTORY PAGE */}
-            <Modal
-                open={showCalendar !== null}
-                onClose={() => setShowCalendar(null)}
-                title={showCalendar === 'single' ? 'Fecha Única' : 'Rango de Fechas'}
-                variant="compact"
-                layer="base"
-                instance={showCalendar === 'single' ? 'ventas-date-single' : 'ventas-date-range'}
-            >
-                <MiniMonthCalendar
-                    month={calendarBaseDate}
-                    onMonthChange={setCalendarBaseDate}
-                    onSelectDay={handleDateSelect}
-                    isSelected={(day) => {
-                        const dStr = format(day, 'yyyy-MM-dd');
-                        return showCalendar === 'single'
-                            ? selectedDate === dStr
-                            : rangeStart === dStr || rangeEnd === dStr;
-                    }}
-                    isInRange={(day) => {
-                        const dStr = format(day, 'yyyy-MM-dd');
-                        return Boolean(
-                            showCalendar === 'range' &&
-                                rangeStart &&
-                                rangeEnd &&
-                                new Date(dStr) > new Date(rangeStart) &&
-                                new Date(dStr) < new Date(rangeEnd),
-                        );
-                    }}
-                />
-            </Modal>
-
-            <Modal
-                open={showMonthPicker}
-                onClose={() => setShowMonthPicker(false)}
-                title="Seleccionar Mes"
-                variant="compact"
-                layer="base"
-                instance="ventas-month-picker"
-            >
-                <div>
-                    <div className="flex items-center justify-between mb-8 px-2">
-                        <button
-                            type="button"
-                            onClick={() => setPickerYear(pickerYear - 1)}
-                            aria-label="Año anterior"
-                            className="min-h-12 min-w-12 inline-flex items-center justify-center hover:bg-zinc-50 rounded-lg transition-colors"
-                        >
-                            <ChevronLeft size={20} className="text-zinc-400" />
-                        </button>
-                        <span className="font-black text-xl text-zinc-900 tracking-tighter">{pickerYear}</span>
-                        <button
-                            type="button"
-                            onClick={() => setPickerYear(pickerYear + 1)}
-                            aria-label="Año siguiente"
-                            className="min-h-12 min-w-12 inline-flex items-center justify-center hover:bg-zinc-50 rounded-lg transition-colors"
-                        >
-                            <ChevronRight size={20} className="text-zinc-400" />
-                        </button>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-2">
-                        {Array.from({ length: 12 }).map((_, i) => {
-                            const date = new Date(pickerYear, i, 1);
-                            const isSelected = filterMode === 'range' && rangeStart === format(startOfMonth(date), 'yyyy-MM-dd') && rangeEnd === format(endOfMonth(date), 'yyyy-MM-dd');
-
-                            return (
-                                <button
-                                    key={i}
-                                    onClick={() => {
-                                        const s = startOfMonth(date);
-                                        const e = endOfMonth(date);
-                                        setRangeStart(format(s, 'yyyy-MM-dd'));
-                                        setRangeEnd(format(e, 'yyyy-MM-dd'));
-                                        setFilterMode('range');
-                                        setShowMonthPicker(false);
-                                        trackVentasMonthPicker(formatMonthYear(pickerYear, i));
-                                    }}
-                                    className={cn(
-                                        "min-h-12 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border-2",
-                                        isSelected
-                                            ? "bg-zinc-900 border-zinc-900 text-white shadow-lg scale-105"
-                                            : "bg-zinc-50 border-transparent text-zinc-400 hover:border-zinc-200 hover:text-zinc-900"
-                                    )}
-                                >
-                                    {format(date, 'MMM', { locale: es })}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-            </Modal>
 
             <TimeFilterModal
                 isOpen={isTimeFilterOpen}
