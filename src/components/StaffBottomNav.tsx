@@ -198,7 +198,7 @@ export default function StaffBottomNav() {
               }}
             >
               <span data-element="icon" aria-hidden>
-                <Icon size={25} strokeWidth={active ? 2 : 1.75} fill="none" />
+                <Icon strokeWidth={active ? 2 : 1.75} fill="none" />
               </span>
               <span data-element="label">{item.name}</span>
             </Link>

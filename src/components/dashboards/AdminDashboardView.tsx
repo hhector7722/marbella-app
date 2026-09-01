@@ -591,7 +591,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     );
 
     return (
-        <div className="pt-3 animate-in fade-in duration-500 pb-8">
+        <div className="pt-1 animate-in fade-in duration-500 pb-8">
             {dashboardHome}
 
             {cashModalMode !== 'none' && (

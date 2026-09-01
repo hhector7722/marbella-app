@@ -187,7 +187,12 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'el contenido reserva el hueco de cabecera'
         );
         assert.match(css, /--estructura-cabecera:\s*48px/);
-        assert.match(css, /--estructura-barra-inferior:\s*49px/);
+        assert.match(
+            css,
+            /\.pt-header-safe-tight \{[\s\S]*?var\(--app-navbar-height\)/,
+            'el mosaico de inicio reserva menos hueco bajo la cabecera'
+        );
+        assert.match(css, /--estructura-barra-inferior:\s*46px/);
         assert.match(css, /--shell-sidebar-width:\s*0px/, 'sidebar desktop arranca a 0 en smartphone');
         assert.match(
             css,
@@ -221,13 +226,18 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
         assert.match(
             css,
-            /\[data-component='TabBar'\] \[data-element='icon'\] \{[\s\S]*?width:\s*25px/,
+            /\[data-component='TabBar'\] \[data-element='icon'\] \{[\s\S]*?width:\s*var\(--tabbar-icon-size\)/,
             'el icono del tab bar es 25 pt'
         );
         assert.match(
             css,
-            /\[data-component='TabBar'\] \[data-element='label'\] \{[\s\S]*?font-size:\s*10px/,
-            'la etiqueta del tab bar es 10 pt, no mayúsculas black'
+            /\[data-component='TabBar'\] \[data-element='label'\] \{[\s\S]*?font-size:\s*9px/,
+            'etiqueta compacta del tab bar'
+        );
+        assert.match(
+            css,
+            /\[data-component='TabBar'\] \[data-element='label'\] \{[\s\S]*?text-align:\s*center/,
+            'la etiqueta va centrada bajo el icono'
         );
         {
             const tabbar = readFileSync(join(SRC_ROOT, 'components/StaffBottomNav.tsx'), 'utf8');

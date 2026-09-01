@@ -1,3 +1,12 @@
+/** Rutas del mosaico de inicio (Admin / Staff / Master). */
+export function isDashboardMosaicPath(pathname: string): boolean {
+  return (
+    pathname === '/dashboard' ||
+    pathname === '/staff/dashboard' ||
+    pathname === '/master/dashboard'
+  )
+}
+
 /** Rutas que usan la UI a pantalla completa de la carta (sin Navbar ni BottomNav). */
 export function isFullscreenCartaPath(pathname: string): boolean {
   if (pathname === '/carta') return true

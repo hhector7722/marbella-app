@@ -51,8 +51,8 @@
   --espacio-4: 16px;
   --espacio-8: 32px;
   --tactil-minimo: 48px;
-  /* Pista de la cápsula flotante (49 pt). El aire y el home indicator van fuera. */
-  --estructura-barra-inferior: 49px;
+  /* Pista de la cápsula flotante (46 px). El aire y el home indicator van fuera. */
+  --estructura-barra-inferior: 46px;
   /* Shell desktop: 0 en smartphone; en lg+ desplaza topbar/contenido. */
   --shell-sidebar-width: 0px;
   --shell-bottom-inset: calc(
@@ -3620,6 +3620,13 @@ button[data-element='catalog-filter'] {
     padding-top: calc(var(--estructura-cabecera) + env(safe-area-inset-top, 0px));
   }
 
+  /* Mosaicos de inicio: menos aire bajo la cabecera fija (barra + 4 px). */
+  .pt-header-safe-tight {
+    padding-top: calc(
+      var(--app-navbar-height) + var(--espacio-1) + env(safe-area-inset-top, 0px)
+    );
+  }
+
   .top-header-safe {
     top: calc(var(--estructura-cabecera) + env(safe-area-inset-top, 0px));
   }
@@ -3935,6 +3942,9 @@ button[data-element='catalog-filter'] {
  * Position fixed. Inset 16 pt, aire 8 pt sobre el home indicator.
  * overflow visible: el blur no sobrevive a overflow:hidden en Safari.
  */
+[data-component='TabBar'] {
+  --tabbar-icon-size: 22px;
+}
 [data-component='TabBar'].marbella-fixed-bottombar {
   box-sizing: border-box;
   z-index: 95;
@@ -3944,8 +3954,8 @@ button[data-element='catalog-filter'] {
   display: flex;
   align-items: stretch;
   justify-content: space-around;
-  width: min(26rem, calc(100% - (var(--espacio-4) * 2)));
-  max-width: 26rem;
+  width: min(calc(100% - (var(--espacio-2) * 2)), 28rem);
+  max-width: 28rem;
   height: var(--estructura-barra-inferior);
   margin-inline: auto;
   padding: 4px;
@@ -3979,7 +3989,7 @@ button[data-element='catalog-filter'] {
   pointer-events: none;
 }
 [data-component='TabBar'][data-mode='compact'] {
-  height: 41px;
+  height: calc(var(--tabbar-icon-size) + 8px);
 }
 [data-component='TabBar'][data-mode='compact'] [data-element='item'] {
   gap: 0;
@@ -4000,8 +4010,8 @@ button[data-element='catalog-filter'] {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  padding: 2px 4px;
+  gap: 1px;
+  padding: 1px 2px;
   border-radius: 999px;
   color: rgb(255 255 255 / 0.55);
   text-decoration: none;
@@ -4016,28 +4026,32 @@ button[data-element='catalog-filter'] {
 }
 [data-component='TabBar'] [data-element='icon'] {
   display: flex;
-  width: 25px;
-  height: 25px;
+  width: var(--tabbar-icon-size);
+  height: var(--tabbar-icon-size);
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 [data-component='TabBar'] [data-element='icon'] svg {
-  width: 25px;
-  height: 25px;
+  width: var(--tabbar-icon-size);
+  height: var(--tabbar-icon-size);
 }
 [data-component='TabBar'] [data-element='label'] {
+  display: block;
+  width: auto;
   max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  align-self: center;
+  overflow: visible;
+  text-overflow: clip;
   white-space: nowrap;
-  font-size: 10px;
+  text-align: center;
+  font-size: 9px;
   font-weight: 400;
-  line-height: 1.2;
-  letter-spacing: -0.12px;
+  line-height: 1.1;
+  letter-spacing: -0.2px;
   text-transform: none;
   transition: opacity 0.25s cubic-bezier(0.22, 1, 0.36, 1), max-height 0.25s cubic-bezier(0.22, 1, 0.36, 1);
-  max-height: 1.4em;
+  max-height: none;
 }
 [data-component='TabBar'] [data-element='item'][data-active='true'] [data-element='label'] {
   font-weight: 600;

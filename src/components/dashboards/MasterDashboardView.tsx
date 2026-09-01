@@ -333,7 +333,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
     const userRole = (userData?.role as 'staff' | 'manager' | 'supervisor') || 'manager';
 
     return (
-        <div className="pt-3 animate-in fade-in duration-500 pb-8">
+        <div className="pt-1 animate-in fade-in duration-500 pb-8">
             <HomeScreen>
                 <HomeScreenSlot size="wide" instance="dashboard-ventas">
                     <DashboardVentasSection

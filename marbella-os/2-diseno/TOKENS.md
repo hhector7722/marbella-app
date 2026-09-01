@@ -169,7 +169,7 @@ Norma en [EXPERIENCIA §1](EXPERIENCIA.md#1-táctil).
 | Token | Valor | Papel | Estado |
 |---|---|---|---|
 | `estructura.cabecera` | 48 px + área segura superior | Hueco reservado desde el borde superior hasta el contenido. La barra visible mide 40 px (`--app-navbar-height`); la diferencia (8 px) es separación vacía | adoptado (`--estructura-cabecera`) |
-| `estructura.barra-inferior` | 49 px + área segura inferior | Pista del tab bar iOS (icono + nombre). El material sigue bajo el home indicator | adoptado (`--estructura-barra-inferior`) |
+| `estructura.barra-inferior` | 46 px + área segura inferior | Pista del tab bar iOS (icono 22 px + etiqueta 9 pt). El material sigue bajo el home indicator | adoptado (`--estructura-barra-inferior`) |
 | `estructura.fin-de-lista` | 96 px + área segura | Hueco al final de listas táctiles | adoptado |
 | `estructura.fin-de-lista.tarjetas` | 240 px + área segura | Hueco al final de listas con barra de cantidad | adoptado |
 | `estructura.alto-modal` | `min(68dvh, 100dvh − safe − 2.5rem)` en contrato Modal (ref. Albaranes); otros shells pueden conservar 94% documentado históricamente | Alto máximo de un modal de tarea | adoptado (`--modal-max-height`) |
