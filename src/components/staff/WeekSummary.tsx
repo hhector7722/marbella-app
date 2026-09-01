@@ -2,9 +2,10 @@
 
 import { Fragment } from 'react';
 import { MonthCalendarFrame } from '@/components/time/MonthCalendarFrame';
-import { WeekCard, type WeekCardProps } from '@/app/staff/history/WeekCard';
+import { WeekCard } from '@/app/staff/history/WeekCard';
+import type { HistoryWeekDto } from '@/lib/read-models/week-display-from-engine';
 
-export type WeekSummaryWeek = WeekCardProps['week'];
+export type WeekSummaryWeek = HistoryWeekDto;
 
 type WeekSummaryProps = {
     weeks: WeekSummaryWeek[];

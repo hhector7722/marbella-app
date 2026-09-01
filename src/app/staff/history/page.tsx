@@ -9,6 +9,7 @@ import {
     X, Share, User
 } from 'lucide-react';
 import { buildTimesheetPayload, type TimesheetExportPayload, type TimesheetWeekData } from '@/lib/staff/timesheet-export-payload';
+import type { HistoryWeekDto } from '@/lib/read-models/week-display-from-engine';
 import {
     SimulationUnavailableError,
 } from '@/lib/staff/staff-schedule-normalizer';
@@ -62,23 +63,7 @@ import {
 } from '@/lib/staff/plantilla-employees';
 
 // --- TIPOS ---
-interface WeekSummary {
-    totalHours: number;
-    startBalance: number;
-    weeklyBalance: number;
-    finalBalance: number;
-    estimatedValue: number;
-    isPaid: boolean;
-    preferStock?: boolean;
-    bagModeOverride?: boolean | null;
-    hourlyRate?: number;
-    limitHours?: number;
-}
-
-interface WeekData extends TimesheetWeekData {
-    days: (TimesheetWeekData['days'][number] & { clock_out_show_no_registrada?: boolean })[];
-    summary: WeekSummary;
-}
+type WeekData = HistoryWeekDto;
 
 // --- CONSTANTES ---
 const getMonthLabel = (year: number, month: number) =>
@@ -418,7 +403,7 @@ export default function HistoryPage() {
             }
 
             const payload = buildTimesheetPayload(
-                weeksData,
+                weeksData as TimesheetWeekData[],
                 fullName,
                 dni,
                 filterYear,
@@ -466,7 +451,7 @@ export default function HistoryPage() {
                 });
                 if (!res.success) continue;
                 const payload = buildTimesheetPayload(
-                    res.weeks as WeekData[],
+                    res.weeks as TimesheetWeekData[],
                     fullName,
                     dni,
                     filterYear,
@@ -504,7 +489,7 @@ export default function HistoryPage() {
             // DNI opcional
         }
         const payload = buildTimesheetPayload(
-            weeksData,
+            weeksData as TimesheetWeekData[],
             fullName,
             dni,
             filterYear,
@@ -617,7 +602,7 @@ export default function HistoryPage() {
 
             const coordinated = buildCoordinatedPlantillaSimulation(
                 selectedProfiles,
-                weeksByUserId,
+                weeksByUserId as Map<string, TimesheetWeekData[]>,
                 plantillaBounds,
                 todayYmd,
             );
@@ -766,7 +751,7 @@ export default function HistoryPage() {
 
                 if (allWeeks.length === 0) continue;
 
-                const payload = buildTimesheetPayload(allWeeks, fullName, dni, first.year, first.month, periodLabel, contractedHoursWeekly);
+                const payload = buildTimesheetPayload(allWeeks as TimesheetWeekData[], fullName, dni, first.year, first.month, periodLabel, contractedHoursWeekly);
                 if (payload.rows.length === 0) continue;
 
                 exportPayloads.push({ employee: { fullName, dni }, payload });

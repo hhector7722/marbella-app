@@ -1093,12 +1093,6 @@ export default function StaffDashboardView() {
                                             setInfoSubMenu('contactos');
                                             return;
                                         }
-                                        if (item.kind === 'href') {
-                                            trackStaffInfoMenu(item.title);
-                                            closeMenus();
-                                            router.push(item.href);
-                                            return;
-                                        }
                                         trackStaffInfoMenu(item.title);
                                         setInfoSubMenu(null);
                                         setActiveMenu(null);

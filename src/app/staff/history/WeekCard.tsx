@@ -9,6 +9,7 @@ import { SpecialDayLabel } from '@/components/staff/SpecialDayLabel';
 import LaborConditionsView from '@/components/profile/LaborConditionsView';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import type { HistoryWeekDto } from '@/lib/read-models/week-display-from-engine';
 
 const EVENT_TYPES = [
     { value: 'regular', label: 'Regular' },
@@ -35,36 +36,8 @@ const fmtMoney = (val: number): string => {
 
 const fmtDecimal = (val: number): string => fmtHours(val);
 
-interface DayData {
-    date: string;
-    dayName: string;
-    dayNumber: number;
-    hasLog: boolean;
-    clockIn: string | null;
-    clockOut: string | null;
-    clock_out_show_no_registrada?: boolean;
-    totalHours: number;
-    extraHours: number;
-    eventType: string;
-    isToday: boolean;
-    /** Horas personales acreditadas (examen/permiso) en el mismo fichaje. */
-    justifiedHours?: number;
-}
-
-interface WeekSummary {
-    totalHours: number;
-    startBalance: number;
-    weeklyBalance: number;
-    finalBalance: number;
-    estimatedValue: number | null;
-    isPaid: boolean;
-    preferStock?: boolean;
-    limitHours?: number;
-    hourlyRate?: number;
-}
-
 export interface WeekCardProps {
-    week: { weekNumber: number; startDate: string; days: DayData[]; summary: WeekSummary };
+    week: HistoryWeekDto;
     filterMonth: number;
     filterYear: number;
     onDayClick: (date: string) => void;

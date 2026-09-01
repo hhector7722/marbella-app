@@ -27,7 +27,11 @@ export function StaffProductModal({ isOpen, onClose }: StaffProductModalProps) {
             usageLabel="Menú stock (staff)"
             scrollContent={false}
         >
-            <AccessMenuGrid />
+            <AccessMenuGrid>
+                <p className="col-span-full px-2 py-4 text-center text-sm text-zinc-500">
+                    Los atajos de stock están en el mosaico principal.
+                </p>
+            </AccessMenuGrid>
         </Modal>
     );
 }
