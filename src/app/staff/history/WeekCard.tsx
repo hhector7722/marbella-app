@@ -287,7 +287,7 @@ export function WeekCard({
                 data-overrides={overridesEnabled ? 'true' : undefined}
                 className={cn(
                     'relative z-10 flex w-full items-stretch overflow-hidden border-t border-gray-100 bg-white',
-                    overridesEnabled ? 'min-h-[48px]' : 'h-[25px] min-h-[25px] max-h-[25px] py-px',
+                    overridesEnabled ? 'min-h-[48px]' : 'h-[20px] min-h-[20px] max-h-[20px] py-px',
                     stacked && !isLast && 'rounded-none',
                 )}
             >
@@ -300,13 +300,13 @@ export function WeekCard({
                             aria-expanded={managerOverridesOpen}
                             className="flex h-full min-h-0 w-full items-center justify-start text-left rounded-none border-0 bg-transparent hover:bg-zinc-50 active:bg-zinc-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#36606F] focus-visible:ring-inset"
                         >
-                            <span className="whitespace-nowrap text-[9px] font-medium leading-none text-zinc-600">
+                            <span data-week-footer-label className="whitespace-nowrap text-[8px] font-medium leading-none text-zinc-600">
                                 Semana {week.weekNumber}
                             </span>
                         </button>
                     ) : (
                         <div className="flex h-full min-h-0 w-full items-center justify-start">
-                            <span className="whitespace-nowrap text-[9px] font-medium leading-none text-zinc-600">
+                            <span data-week-footer-label className="whitespace-nowrap text-[8px] font-medium leading-none text-zinc-600">
                                 Semana {week.weekNumber}
                             </span>
                         </div>
@@ -315,15 +315,15 @@ export function WeekCard({
                 {/* Métricas: concepto y valor en la misma fila que Semana */}
                 <div className="flex min-h-0 min-w-0 flex-1 items-center self-stretch">
                     <div className="grid w-full min-w-0 grid-cols-4 gap-x-0.5">
-                        <div data-week-metric="horas" className="flex min-w-0 items-center justify-center gap-0.5">
+                        <div data-week-metric="horas" className="flex min-w-0 items-center justify-center gap-1.5">
                             <span data-week-metric-label className="shrink-0 text-[8px] font-medium leading-none text-zinc-400">
                                 Horas
                             </span>
-                            <span data-week-metric-value className="min-w-0 truncate text-[10px] font-semibold leading-none text-black tabular-nums">
+                            <span data-week-metric-value className="min-w-0 truncate text-[9px] font-semibold leading-none text-black tabular-nums">
                                 {week.summary.totalHours > 0.05 ? fmtDecimal(week.summary.totalHours) : '\u00a0'}
                             </span>
                         </div>
-                        <div data-week-metric="pendientes" className="flex min-w-0 items-center justify-center gap-0.5">
+                        <div data-week-metric="pendientes" className="flex min-w-0 items-center justify-center gap-1.5">
                             <span data-week-metric-label className="shrink-0 text-[8px] font-medium leading-none text-zinc-400">
                                 Pendientes
                             </span>
@@ -338,30 +338,30 @@ export function WeekCard({
                                 const colorClass = !showPending ? 'text-transparent' : startBalance >= 0 ? 'text-emerald-600' : 'text-red-600';
                                 const text = showPending ? fmtDecimal(Math.abs(startBalance)) : '\u00a0';
                                 return (
-                                    <span data-week-metric-value className={cn('min-w-0 truncate text-[10px] font-semibold leading-none tabular-nums', colorClass)}>
+                                    <span data-week-metric-value className={cn('min-w-0 truncate text-[9px] font-semibold leading-none tabular-nums', colorClass)}>
                                         {text}
                                     </span>
                                 );
                             })()}
                         </div>
-                        <div data-week-metric="extras" className="flex min-w-0 items-center justify-center gap-0.5">
+                        <div data-week-metric="extras" className="flex min-w-0 items-center justify-center gap-1.5">
                             <span data-week-metric-label className="shrink-0 text-[8px] font-medium leading-none text-zinc-400">
                                 Extras
                             </span>
-                            <span data-week-metric-value className="min-w-0 truncate text-[10px] font-semibold leading-none text-black tabular-nums">
+                            <span data-week-metric-value className="min-w-0 truncate text-[9px] font-semibold leading-none text-black tabular-nums">
                                 {(week.summary.weeklyBalance ?? 0) > 0.05 ? fmtDecimal(Math.abs(week.summary.weeklyBalance)) : '\u00a0'}
                             </span>
                         </div>
-                        <div data-week-metric="importe" className="flex min-w-0 items-center justify-center gap-0.5">
+                        <div data-week-metric="importe" className="flex min-w-0 items-center justify-center gap-1.5">
                             <span data-week-metric-label className="shrink-0 text-[8px] font-medium leading-none text-zinc-400">
                                 Importe
                             </span>
                             <span
                                 data-week-metric-value
                                 className={cn(
-                                    'min-w-0 truncate text-[10px] font-semibold leading-none tabular-nums',
+                                    'min-w-0 truncate text-[9px] font-semibold leading-none tabular-nums',
                                     week.summary.estimatedValue === null || (week.summary as any).hasMissingRate
-                                        ? 'text-[9px] font-bold text-amber-600'
+                                        ? 'text-[8px] font-bold text-amber-600'
                                         : 'text-emerald-600',
                                 )}
                             >

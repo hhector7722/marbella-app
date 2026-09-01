@@ -2788,9 +2788,9 @@ button[data-element='catalog-filter'] {
 }
 [data-week-summary] .month-cal-weeks > [data-week-footer]:not([data-overrides='true']) {
   box-sizing: border-box;
-  height: 25px;
-  min-height: 25px;
-  max-height: 25px;
+  height: 20px;
+  min-height: 20px;
+  max-height: 20px;
   padding-top: 1px;
   padding-bottom: 1px;
   overflow: hidden;
@@ -2802,8 +2802,15 @@ button[data-element='catalog-filter'] {
   white-space: nowrap;
   text-transform: none;
 }
+[data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-footer-label] {
+  font-size: 8px;
+  font-weight: 500;
+}
+[data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric] {
+  gap: 6px;
+}
 [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric-value] {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
 }
 [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric-label] {
@@ -2840,13 +2847,24 @@ button[data-element='catalog-filter'] {
 [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-day-clocks span {
   font-size: 8px;
 }
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-week {
+  flex: 1 1 0;
+  min-height: 62px;
+}
 [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-weeks > [data-week-footer]:not([data-overrides='true']) {
-  height: 23px;
-  min-height: 23px;
-  max-height: 23px;
+  flex: 0 0 auto;
+  height: 17px;
+  min-height: 17px;
+  max-height: 17px;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-footer-label] {
+  font-size: 7px;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric] {
+  gap: 5px;
 }
 [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric-value] {
-  font-size: 9px;
+  font-size: 8px;
 }
 [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric-label] {
   font-size: 7px;

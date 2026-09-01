@@ -141,7 +141,7 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         );
         assert.match(
             home,
-            /\[data-week-summary\][\s\S]*\[data-week-footer\]:not\(\[data-overrides='true'\]\) \{[\s\S]*?height:\s*25px/,
+            /\[data-week-summary\][\s\S]*\[data-week-footer\]:not\(\[data-overrides='true'\]\) \{[\s\S]*?height:\s*20px/,
             'el pie del resumen de persona es el del mosaico Staff'
         );
         assert.match(
