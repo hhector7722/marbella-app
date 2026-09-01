@@ -91,7 +91,7 @@ export default function Navbar() {
                                 data-element="chrome"
                                 aria-label="Ir a inicio"
                             >
-                                <ChevronLeft size={22} strokeWidth={2.5} />
+                                <ChevronLeft strokeWidth={2.5} aria-hidden />
                             </button>
                         )}
                         <div className="flex min-w-0 flex-1 items-center gap-2">

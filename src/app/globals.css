@@ -64,7 +64,8 @@
   --elevacion-modal: 0 25px 50px -12px rgb(0 0 0 / 0.25);
   --elevacion-pagina: 0 25px 50px -12px rgb(0 0 0 / 0.25);
   /* TOKENS estructura.cabecera — offset del contenido bajo la barra */
-  --estructura-cabecera: 56px;
+  --app-navbar-height: 40px;
+  --estructura-cabecera: 48px;
   /* TOKENS estructura.cabecera-modal — altura fija global */
   --modal-header-height: 36px;
   /* Inset horizontal único de cabecera Modal (ref. Albaranes) = espacio.4 */
@@ -2093,7 +2094,7 @@ button[data-element='catalog-filter'] {
  * 4 columnas, 6 filas. La pista es el squircle.
  * El nombre (icono o widget) vive en --home-name-band, bajo el hueco.
  * Sin nombre: el widget tiene la altura de icono + nombre.
- * Entre filas, después de los nombres, va --home-row-gap (el mismo aire que entre columnas).
+ * Entre filas, después de los nombres, va --home-row-gap (más compacto que column-gap).
  * Widget: small 2×2, medium 4×2, large 4×4, wide 4×1, half 2×1, panel 3×2, tile 1×1.
  * Un 2×2 iguala dos iconos + el hueco del medio.
  * El widget es material de sistema (como iOS): cristal que toma el wallpaper,
@@ -2102,9 +2103,9 @@ button[data-element='catalog-filter'] {
 [data-component='HomeScreen'] {
   --home-icon-size: 4.5rem;
   --home-name: 1.65rem;
-  --home-name-band: calc(var(--espacio-2) + var(--home-name));
-  --home-shortcut-label-band: calc(var(--espacio-2) + 11px * 1.2);
-  --home-row-gap: var(--espacio-4);
+  --home-name-band: calc(var(--espacio-1) + var(--home-name));
+  --home-shortcut-label-band: calc(var(--espacio-1) + 11px * 1.2);
+  --home-row-gap: var(--espacio-2);
   --home-wallpaper: var(--color-envolvente);
   --home-widget-radius: var(--radio-superficie);
   --home-widget-fill: rgb(255 255 255 / 0.62);
@@ -2799,7 +2800,7 @@ button[data-element='catalog-filter'] {
   top: 100%;
   left: 0;
   right: 0;
-  margin-top: var(--espacio-2);
+  margin-top: var(--espacio-1);
   pointer-events: none;
   max-width: 100%;
   padding-inline: 2px;
@@ -2841,7 +2842,7 @@ button[data-element='catalog-filter'] {
   min-height: var(--tactil-minimo);
   margin-inline: auto;
   padding: 0;
-  gap: var(--espacio-2);
+  gap: var(--espacio-1);
   background: transparent;
   border: 0;
   box-shadow: none;
@@ -3608,7 +3609,7 @@ button[data-element='catalog-filter'] {
   }
 
   .h-header-safe {
-    height: calc(var(--tactil-minimo) + env(safe-area-inset-top, 0px));
+    height: calc(var(--app-navbar-height) + env(safe-area-inset-top, 0px));
   }
 
   .mt-header-safe {
@@ -4232,7 +4233,6 @@ button[data-element='catalog-filter'] {
 }
 
 .marbella-fixed-topbar {
-  --app-navbar-height: var(--tactil-minimo);
   --app-navbar-scale: calc(var(--app-navbar-height) / var(--tactil-minimo));
   box-sizing: border-box;
   overflow: visible;
@@ -4247,16 +4247,16 @@ button[data-element='catalog-filter'] {
   pointer-events: none;
 }
 .marbella-fixed-topbar [data-element='logo'] {
-  width: calc(32px * var(--app-navbar-scale));
-  height: calc(32px * var(--app-navbar-scale));
+  width: 24px;
+  height: 24px;
 }
 .marbella-fixed-topbar [data-element='chrome'] {
   position: relative;
-  width: calc(var(--tactil-minimo) * var(--app-navbar-scale));
-  min-width: calc(var(--tactil-minimo) * var(--app-navbar-scale));
-  height: calc(var(--tactil-minimo) * var(--app-navbar-scale));
-  min-height: calc(var(--tactil-minimo) * var(--app-navbar-scale));
-  max-height: calc(var(--tactil-minimo) * var(--app-navbar-scale));
+  width: var(--app-navbar-height);
+  min-width: var(--app-navbar-height);
+  height: var(--app-navbar-height);
+  min-height: var(--app-navbar-height);
+  max-height: var(--app-navbar-height);
 }
 .marbella-fixed-topbar [data-element='chrome']::after {
   content: '';
@@ -4268,19 +4268,19 @@ button[data-element='catalog-filter'] {
   transform: translate(-50%, -50%);
 }
 .marbella-fixed-topbar [data-element='chrome'] svg {
-  width: calc(20px * var(--app-navbar-scale));
-  height: calc(20px * var(--app-navbar-scale));
+  width: 18px;
+  height: 18px;
 }
 .marbella-fixed-topbar [data-element='chrome'] span.inline-flex {
-  width: calc(22px * var(--app-navbar-scale));
-  height: calc(22px * var(--app-navbar-scale));
+  width: 18px;
+  height: 18px;
 }
 .marbella-fixed-topbar [data-element='chrome'][data-chrome='ia'] {
   width: auto;
   min-width: 0;
-  height: calc(32px * var(--app-navbar-scale));
-  min-height: calc(32px * var(--app-navbar-scale));
-  max-height: calc(32px * var(--app-navbar-scale));
+  height: 28px;
+  min-height: 28px;
+  max-height: 28px;
 }
 .marbella-fixed-topbar [data-element='greeting-block'] {
   container-type: inline-size;
@@ -4294,14 +4294,14 @@ button[data-element='catalog-filter'] {
   text-overflow: clip;
   white-space: nowrap;
   font-weight: 900;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.2;
   letter-spacing: normal;
   text-transform: none;
   color: inherit;
 }
 .marbella-fixed-topbar [data-element='greeting-block'] [data-element='greeting'] {
-  font-size: clamp(11px, 14cqi, 12px);
+  font-size: clamp(10px, 13cqi, 11px);
 }
 
 html[data-modal-open="true"] .marbella-fixed-topbar,

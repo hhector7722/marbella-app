@@ -366,8 +366,8 @@ export function ReservationsBell() {
         aria-expanded={open}
         aria-haspopup="dialog"
       >
-        <span className="relative inline-flex size-[22px] shrink-0 items-center justify-center">
-          <Calendar size={20} strokeWidth={1.5} className="text-white/95" aria-hidden />
+        <span className="relative inline-flex size-[18px] shrink-0 items-center justify-center">
+          <Calendar size={18} strokeWidth={1.5} className="text-white/95" aria-hidden />
           {badgeLabel ? (
             <span
               className="pointer-events-none absolute right-0 top-0 z-10 translate-x-[42%] -translate-y-[42%]"

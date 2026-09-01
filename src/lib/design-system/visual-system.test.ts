@@ -173,19 +173,20 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
         assert.match(
             css,
-            /\.marbella-fixed-topbar \{[\s\S]*?--app-navbar-height:\s*var\(--tactil-minimo\)/,
-            'la barra visible mide el táctil mínimo'
+            /--app-navbar-height:\s*40px/,
+            'la barra visible es más compacta que el táctil mínimo'
         );
         assert.match(
             css,
-            /\.h-header-safe \{[\s\S]*?var\(--tactil-minimo\)/,
-            'el alto visible de la barra usa táctil mínimo'
+            /\.h-header-safe \{[\s\S]*?var\(--app-navbar-height\)/,
+            'el alto visible de la barra usa app-navbar-height'
         );
         assert.match(
             css,
             /\.pt-header-safe \{[\s\S]*?var\(--estructura-cabecera\)/,
-            'el contenido reserva el hueco de 56 px'
+            'el contenido reserva el hueco de cabecera'
         );
+        assert.match(css, /--estructura-cabecera:\s*48px/);
         assert.match(css, /--estructura-barra-inferior:\s*49px/);
         assert.match(css, /--shell-sidebar-width:\s*0px/, 'sidebar desktop arranca a 0 en smartphone');
         assert.match(

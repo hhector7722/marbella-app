@@ -47,8 +47,8 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.match(home, /\[data-slot='tile'\][\s\S]*?span 1/);
         assert.match(home, /\[data-element='body'\][\s\S]*?position:\s*absolute/);
         assert.match(home, /> \[data-element='slot'\] \{[\s\S]*?max-height:\s*100%/);
-        assert.match(home, /--home-name-band:\s*calc\(var\(--espacio-2\) \+ var\(--home-name\)\)/);
-        assert.match(home, /--home-row-gap:\s*var\(--espacio-4\)/);
+        assert.match(home, /--home-name-band:\s*calc\(var\(--espacio-1\) \+ var\(--home-name\)\)/);
+        assert.match(home, /--home-row-gap:\s*var\(--espacio-2\)/);
         assert.match(
             home,
             /row-gap:\s*calc\(var\(--home-name-band\) \+ var\(--home-row-gap\)\)/
@@ -75,7 +75,7 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         );
         assert.match(
             home,
-            /--home-shortcut-label-band:\s*calc\(var\(--espacio-2\) \+ 11px \* 1\.2\)/,
+            /--home-shortcut-label-band:\s*calc\(var\(--espacio-1\) \+ 11px \* 1\.2\)/,
             'franja de nombre de un atajo de una línea'
         );
         assert.match(
