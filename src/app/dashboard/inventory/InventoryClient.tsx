@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation';
 import { processInventoryCounts, saveIngredientsInventoryVisibility } from './actions'
 import { toast } from 'sonner'
@@ -33,6 +33,8 @@ interface InventoryClientProps {
   managerFullList?: ManagerIngredientRow[]
   visibilityEditMode?: boolean
   onCloseVisibilityEditMode?: () => void
+  /** Acción de cabecera (p. ej. editar lista visible). */
+  rightSlot?: ReactNode
 }
 
 function abbreviateLabel(name: string, maxChars = 22): string {
@@ -169,6 +171,7 @@ export function InventoryClient({
   managerFullList,
   visibilityEditMode = false,
   onCloseVisibilityEditMode,
+  rightSlot,
 }: InventoryClientProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -347,16 +350,19 @@ export function InventoryClient({
 
   if (!visibilityEditMode && initialIngredients.length === 0) {
     return (
-      <EmptyState
-        instance="inventory-no-visible"
-        variant="none"
-        title="No hay artículos visibles en el recuento."
-        description={
-          managerEmptyHint
-            ? 'Pulsa el icono de edición en la cabecera para activar artículos en esta pantalla.'
-            : undefined
-        }
-      />
+      <div className="flex min-h-0 flex-1 flex-col gap-4">
+        {rightSlot ? <div className="flex shrink-0 justify-end">{rightSlot}</div> : null}
+        <EmptyState
+          instance="inventory-no-visible"
+          variant="none"
+          title="No hay artículos visibles en el recuento."
+          description={
+            managerEmptyHint
+              ? 'Pulsa el icono de edición en la cabecera para activar artículos en esta pantalla.'
+              : undefined
+          }
+        />
+      </div>
     )
   }
 
@@ -365,7 +371,10 @@ export function InventoryClient({
       <div className="flex-1 min-h-0 pr-0.5">
         <div className="flex flex-col gap-6 relative">
           <div className="sticky top-0 z-30 bg-zinc-50/95 backdrop-blur-sm pb-4 pt-1 flex flex-col gap-3 -mx-2 px-2 border-b border-zinc-200/50">
-            <h1 className="text-2xl font-black text-zinc-900 mt-2">Ingredientes</h1>
+            <div className="mt-2 flex items-start justify-between gap-2">
+              <h1 className="text-2xl font-black text-zinc-900">Ingredientes</h1>
+              {rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}
+            </div>
             {!visibilityEditMode && (
               <div className="flex items-center gap-2 w-full shrink-0">
                 <div className="flex flex-1 bg-zinc-100 p-1 rounded-xl shrink-0 min-h-[48px] items-center min-w-0">
