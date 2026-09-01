@@ -105,8 +105,8 @@ function chunkWeeks(days: Date[]): Date[][] {
     return weeks;
 }
 
-function formatWeekdayLong(day: Date): string {
-    const raw = format(day, 'EEEE', { locale: es });
+function formatWeekdayHeading(day: Date): string {
+    const raw = format(day, 'EEEE d', { locale: es });
     return raw.charAt(0).toUpperCase() + raw.slice(1);
 }
 
@@ -128,29 +128,30 @@ function WeekendDayColumn({
     const hasNote = Boolean(shift?.notes?.trim());
 
     return (
-        <div data-element="weekend-day" className="flex h-full min-h-0 min-w-0 flex-col">
-            <p data-element="weekend-title" className="shrink-0 text-center text-[7px] font-normal leading-none text-white/75">
-                {formatWeekdayLong(day)}
+        <div data-element="weekend-card">
+            <div data-element="weekend-day" className="flex h-full min-h-0 min-w-0 flex-col">
+            <p data-element="weekend-title" className="shrink-0 text-center text-[7px] font-semibold leading-none">
+                {formatWeekdayHeading(day)}
             </p>
 
             <div data-element="weekend-details" className="flex min-h-0 min-w-0 flex-1 flex-col">
-                <div className="flex min-w-0 items-baseline gap-0.5 border-l border-emerald-400 pl-0.5">
-                    <span className="shrink-0 text-[5px] font-black uppercase leading-none text-emerald-300">
+                <div data-element="weekend-turno" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
+                    <span data-element="weekend-turno-label" className="shrink-0 text-[6px] font-medium leading-none tracking-wide">
                         Turno
                     </span>
                     {turno ? (
-                        <span className="min-w-0 truncate text-[8px] font-black tabular-nums leading-none text-white">
+                        <span data-element="weekend-turno-value" className="min-w-0 truncate text-[8px] font-semibold tabular-nums leading-none">
                             {turno}
                         </span>
                     ) : null}
                 </div>
 
-                <div className="flex min-w-0 items-baseline gap-0.5 border-l border-amber-400 pl-0.5">
-                    <span className="shrink-0 text-[5px] font-black uppercase leading-none text-amber-300">
+                <div data-element="weekend-evento" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
+                    <span data-element="weekend-evento-label" className="shrink-0 text-[6px] font-medium leading-none tracking-wide">
                         Evento
                     </span>
                     {evento ? (
-                        <span className="min-w-0 truncate text-[7px] font-bold leading-none text-white">
+                        <span data-element="weekend-evento-value" className="min-w-0 truncate text-[7px] font-semibold leading-none">
                             {[
                                 evento.timeRange,
                                 evento.title,
@@ -176,14 +177,13 @@ function WeekendDayColumn({
                 className={cn(
                     'relative mt-auto inline-flex w-full shrink-0 items-center justify-center gap-0.5 rounded px-0.5 py-px text-[6px] font-medium leading-none transition-colors',
                     'before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']',
-                    hasNote
-                        ? 'text-emerald-200 hover:text-white'
-                        : 'text-white/55 hover:text-white/80',
                 )}
+                data-has-note={hasNote ? 'true' : undefined}
             >
                 <span aria-hidden>+</span>
                 {hasNote ? 'Ver nota' : 'Añadir nota'}
             </button>
+            </div>
         </div>
     );
 }
@@ -330,7 +330,7 @@ export function StaffWeekScheduleWidget({ userId, onOpenNote }: StaffWeekSchedul
                 <div className="grid shrink-0 grid-cols-7 gap-px">
                     {WEEKDAY_LABELS.map((label) => (
                         <div key={label} className="flex items-center justify-center">
-                            <span className="text-[5px] font-black uppercase leading-none text-white/40">{label}</span>
+                            <span className="text-[5px] font-medium uppercase leading-none text-white/40">{label}</span>
                         </div>
                     ))}
                 </div>
@@ -387,7 +387,7 @@ export function StaffWeekScheduleWidget({ userId, onOpenNote }: StaffWeekSchedul
                                                                 today &&
                                                                     'flex h-[var(--staff-week-day-size)] w-[var(--staff-week-day-size)] items-center justify-center rounded-full bg-emerald-500 font-black text-white',
                                                                 !today && !inMonth && 'font-medium text-white/45',
-                                                                !today && inMonth && 'font-black text-white/90',
+                                                                !today && inMonth && 'font-semibold text-white/90',
                                                             )}
                                                         >
                                                             {format(day, 'd')}

@@ -2303,8 +2303,8 @@ button[data-element='catalog-filter'] {
   --staff-calendar-gap: var(--espacio-2);
   --staff-calendar-inset-bottom: var(--espacio-2);
   --staff-week-day-size: 0.75rem;
-  --staff-week-expansion-min: 2.75rem;
-  --staff-week-expansion-max: 3.75rem;
+  --staff-week-expansion-min: 3.5rem;
+  --staff-week-expansion-max: 4.75rem;
   box-sizing: border-box;
   display: flex;
   flex: 1 1 auto;
@@ -2358,10 +2358,22 @@ button[data-element='catalog-filter'] {
   max-height: var(--staff-week-expansion-max);
   padding-block: var(--espacio-1);
   align-items: stretch;
-  border-block: 1px solid rgb(255 255 255 / 0.1);
 }
 [data-component='StaffWeekSchedule'] [data-week-row] button::before {
   z-index: 0;
+}
+[data-component='StaffWeekSchedule'] [data-element='weekend-card'] {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  padding: var(--espacio-1);
+  border-radius: var(--radio-control);
+  background-color: var(--home-widget-fill-secondary);
+  color: inherit;
+  overflow: hidden;
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-day'] {
   display: flex;
@@ -2369,21 +2381,53 @@ button[data-element='catalog-filter'] {
   gap: 0;
   min-height: 0;
   height: 100%;
+  width: 100%;
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-title'] {
-  margin-bottom: var(--espacio-2);
+  margin-bottom: var(--espacio-1);
+  color: var(--home-widget-ink-secondary);
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-details'] {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  gap: var(--espacio-2);
+  gap: var(--espacio-1);
   min-height: 0;
   overflow: hidden;
+}
+[data-component='StaffWeekSchedule'] [data-element='weekend-turno'] {
+  margin-top: 2px;
+  border-left-color: var(--color-positivo);
+}
+[data-component='StaffWeekSchedule'] [data-element='weekend-turno-label'] {
+  color: var(--home-widget-ink-secondary);
+}
+[data-component='StaffWeekSchedule'] [data-element='weekend-turno-value'] {
+  color: var(--home-widget-ink);
+}
+[data-component='StaffWeekSchedule'] [data-element='weekend-evento'] {
+  margin-top: 2px;
+  border-left-color: var(--color-aviso);
+}
+[data-component='StaffWeekSchedule'] [data-element='weekend-evento-label'] {
+  color: var(--home-widget-ink-secondary);
+}
+[data-component='StaffWeekSchedule'] [data-element='weekend-evento-value'] {
+  color: var(--home-widget-ink);
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-note'] {
   margin-top: auto;
   flex-shrink: 0;
+  color: var(--home-widget-ink-secondary);
+}
+[data-component='StaffWeekSchedule'] [data-element='weekend-note'][data-has-note='true'] {
+  color: rgb(167 243 208);
+}
+[data-component='StaffWeekSchedule'] [data-element='weekend-note']:hover {
+  color: var(--home-widget-ink);
+}
+[data-component='StaffWeekSchedule'] [data-element='weekend-note'][data-has-note='true']:hover {
+  color: rgb(209 250 229);
 }
 [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] {
   grid-area: semana;
