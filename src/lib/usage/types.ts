@@ -8,7 +8,8 @@ export type AppUsageActionKind =
   | 'modal_apply'
   | 'clock_in'
   | 'clock_out'
-  | 'consumption_saved';
+  | 'consumption_saved'
+  | 'geofence_rejected';
 
 export type AppUsageMetadata = {
   action?: AppUsageActionKind;

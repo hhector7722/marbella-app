@@ -5,7 +5,8 @@ import { createClient } from "@/utils/supabase/client";
 import { Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, MAX_DISTANCE_METERS } from '@/lib/location';
+import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, formatGeofenceRejectionMessage, isOutsideGeofence, logGeofenceRejection } from '@/lib/location';
+import { trackGeofenceRejection } from '@/lib/usage/client';
 import { formatMadridHmFromIso, formatYmdInMadrid } from '@/lib/madrid-date-bounds';
 import { syncOvertimeCostAfterTimeLogChange } from '@/app/actions/persist-overtime-cost';
 
@@ -77,8 +78,10 @@ export default function TimeTracker() {
                 }
             }
 
-            if (!exemptLocation && distance !== null && distance > MAX_DISTANCE_METERS) {
-                toast.error(`Estás demasiado lejos (${Math.round(distance)}m)`);
+            if (!exemptLocation && distance !== null && lat !== null && lng !== null && isOutsideGeofence(distance)) {
+                logGeofenceRejection({ action: 'in', lat, lng, distanceMeters: distance });
+                trackGeofenceRejection('in', lat, lng, distance, window.location.pathname);
+                toast.error(formatGeofenceRejectionMessage(distance));
                 setLoading(false);
                 return;
             }

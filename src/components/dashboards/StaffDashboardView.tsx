@@ -25,7 +25,7 @@ import { formatYmdInMadrid, madridDayUtcRangeIso, madridRangeUtcIso } from '@/li
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
-import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, MAX_DISTANCE_METERS } from '@/lib/location';
+import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, formatGeofenceRejectionMessage, isOutsideGeofence, logGeofenceRejection } from '@/lib/location';
 import { FICHAJE_OVERLAY_VIDEOS } from '@/lib/fichaje-overlay-videos';
 import { syncOvertimeCostAfterTimeLogChange } from '@/app/actions/persist-overtime-cost';
 import { getEmployeeHistoryWeek, type HistoryWeekDto } from '@/app/actions/history-read';
@@ -52,6 +52,7 @@ import {
 } from '@/lib/staff-manuals';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { trackGeofenceRejection } from '@/lib/usage/client';
 
 const CONTACTS_DATA = [
     { name: 'Hielo Fenix', phone: '(3461) 028-8888' },
@@ -692,8 +693,11 @@ export default function StaffDashboardView() {
             }
 
             const exemptLocation = userRole === 'manager' || (userEmail?.toLowerCase() === 'marbellaremote@gmail.com');
-            if (!exemptLocation && distance !== null && distance > MAX_DISTANCE_METERS) {
-                toast.error(`Estás demasiado lejos del local (${Math.round(distance)}m)`);
+            if (!exemptLocation && distance !== null && lat !== null && lng !== null && isOutsideGeofence(distance)) {
+                const clockAction = action === 'in' ? 'in' : 'out';
+                logGeofenceRejection({ action: clockAction, lat, lng, distanceMeters: distance });
+                trackGeofenceRejection(clockAction, lat, lng, distance, window.location.pathname);
+                toast.error(formatGeofenceRejectionMessage(distance));
                 setActionLoading(false);
                 return;
             }

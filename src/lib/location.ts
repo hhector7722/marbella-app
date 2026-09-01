@@ -7,7 +7,38 @@ export const MARBELLA_COORDS = {
     lng: 2.2117822
 };
 
-export const MAX_DISTANCE_METERS = 50;
+/** Radio permitido para fichar. Compromiso entre fraude y GPS impreciso en interior. */
+export const MAX_DISTANCE_METERS = 150;
+
+export type GeofenceClockAction = 'in' | 'out';
+
+export type GeofenceRejectionDetails = {
+    action: GeofenceClockAction;
+    lat: number;
+    lng: number;
+    distanceMeters: number;
+};
+
+export function isOutsideGeofence(distanceMeters: number): boolean {
+    return distanceMeters > MAX_DISTANCE_METERS;
+}
+
+export function formatGeofenceRejectionMessage(distanceMeters: number): string {
+    const rounded = Math.round(distanceMeters);
+    return `El GPS indica que estás a ${rounded} m (máx. ${MAX_DISTANCE_METERS} m). Prueba en la terraza o activa ubicación precisa.`;
+}
+
+/** Registro en consola para depuración in situ. */
+export function logGeofenceRejection(details: GeofenceRejectionDetails): void {
+    console.warn('[geofence] Fichaje rechazado por distancia', {
+        action: details.action,
+        lat: details.lat,
+        lng: details.lng,
+        distanceMeters: Math.round(details.distanceMeters),
+        maxDistanceMeters: MAX_DISTANCE_METERS,
+        anchor: MARBELLA_COORDS,
+    });
+}
 
 /**
  * Calculates the distance between two points in meters using the Haversine formula.

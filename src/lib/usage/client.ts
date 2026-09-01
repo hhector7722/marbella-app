@@ -1,3 +1,4 @@
+import { MAX_DISTANCE_METERS, type GeofenceClockAction } from '@/lib/location';
 import type { UsageClientEventPayload } from '@/lib/usage/types';
 
 export async function sendUsageEvent(payload: UsageClientEventPayload): Promise<void> {
@@ -121,6 +122,28 @@ export function trackUsageModalApply(
       modalLabel,
       applySummary: summary,
       ...extra,
+    },
+  });
+}
+
+export function trackGeofenceRejection(
+  action: GeofenceClockAction,
+  lat: number,
+  lng: number,
+  distanceMeters: number,
+  pagePath: string,
+): void {
+  void sendUsageEvent({
+    eventType: 'action',
+    path: pagePath,
+    label: `Fichaje ${action === 'in' ? 'entrada' : 'salida'} rechazado (GPS)`,
+    metadata: {
+      action: 'geofence_rejected',
+      clockAction: action,
+      lat,
+      lng,
+      distanceMeters: Math.round(distanceMeters),
+      maxDistanceMeters: MAX_DISTANCE_METERS,
     },
   });
 }
