@@ -57,7 +57,6 @@ describe('FASE 4: Read Models & Projectors (Coste Laboral V2 SSOT)', () => {
       mockPayrollRepo,
     );
 
-    // Toggle ON para incluir trabajadores con contrato activo
     const dto = await projector.projectDayDetail('2026-07-15', { includeAllContracted: true });
 
     assert.equal(dto.workers.length, 1);
@@ -65,7 +64,6 @@ describe('FASE 4: Read Models & Projectors (Coste Laboral V2 SSOT)', () => {
     assert.equal(dto.workers[0]?.fixed, 100);
     assert.equal(dto.totalFixed, 100);
 
-    // Verificación Inviolable: Ningún trabajador se llama "Nómina empresa"
     const hasSyntheticRow = dto.workers.some((w) => w.name.includes('Nómina empresa'));
     assert.equal(hasSyntheticRow, false);
   });
@@ -108,7 +106,7 @@ describe('FASE 4: Read Models & Projectors (Coste Laboral V2 SSOT)', () => {
     };
 
     const mockContractService: any = {
-      isContractActiveOn: () => Promise.resolve(true), // Ambos tienen contrato
+      isContractActiveOn: () => Promise.resolve(true),
     };
 
     const mockPayrollRepo: any = {
@@ -122,13 +120,9 @@ describe('FASE 4: Read Models & Projectors (Coste Laboral V2 SSOT)', () => {
       mockPayrollRepo,
     );
 
-    // Toggle OFF (includeAllContracted = false)
     const dtoToggleOff = await projector.projectDayDetail('2026-07-15', { includeAllContracted: false });
-
-    // Sin fichajes ni extras simulados, 0 trabajadores en Toggle OFF
     assert.equal(dtoToggleOff.workers.length, 0);
 
-    // Toggle ON (includeAllContracted = true)
     const dtoToggleOn = await projector.projectDayDetail('2026-07-15', { includeAllContracted: true });
     assert.equal(dtoToggleOn.workers.length, 2);
   });
@@ -158,7 +152,6 @@ describe('FASE 4: Read Models & Projectors (Coste Laboral V2 SSOT)', () => {
       isContractActiveOn: () => Promise.resolve(false),
     };
 
-    // Sin hechos contables activos en el mes
     const mockPayrollRepo: any = {
       getActiveFactsForPeriod: () => Promise.resolve([]),
     };
