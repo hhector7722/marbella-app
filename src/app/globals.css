@@ -2170,6 +2170,14 @@ button[data-element='catalog-filter'] {
 [data-component='HomeScreen'] > [data-element='slot']:not([data-slot='icon']):not([data-named='true'])::before {
   bottom: calc(-1 * var(--home-name-band));
 }
+/*
+ * Widget sin etiqueta externa: ocupa la franja de nombre bajo el hueco.
+ * El row-gap siguiente ya incluye esa franja; la anulamos para que solo
+ * quede --home-row-gap, igual que entre el nombre de un icono y el siguiente.
+ */
+[data-component='HomeScreen'] > [data-element='slot']:not([data-slot='icon']):not([data-named='true']) {
+  margin-bottom: calc(-1 * var(--home-name-band));
+}
 [data-component='HomeScreen'] > [data-element='slot'][data-slot='icon'] {
   grid-column: span 1;
   grid-row: span 1;
@@ -2636,6 +2644,10 @@ button[data-element='catalog-filter'] {
   bottom: calc(-1 * var(--home-shortcut-label-band));
   height: auto;
   max-height: none;
+}
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='dashboard-horas-extras'],
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-horarios'] {
+  margin-bottom: calc(-1 * var(--home-shortcut-label-band));
 }
 /* Semana Staff: el mismo WeekSummary que historial y horas extras. */
 [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-fit='week'] [data-component='MonthCalendarFrame'] {

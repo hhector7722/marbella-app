@@ -57,6 +57,11 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
             home,
             /:not\(\[data-named='true'\]\) > \[data-element='body'\][\s\S]*?--home-name-band/
         );
+        assert.match(
+            home,
+            /:not\(\[data-slot='icon'\]\):not\(\[data-named='true'\]\) \{[\s\S]*?margin-bottom:\s*calc\(-1 \* var\(--home-name-band\)\)/,
+            'el widget no duplica la franja de nombre en el row-gap siguiente'
+        );
         assert.match(home, /data-layout='ops-admin'/);
         assert.match(home, /data-layout='staff'/);
         assert.match(
@@ -69,9 +74,10 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
             /2 \* var\(--home-icon-size\) \+ var\(--home-row-gap\)/,
             'H. extras ya no va en una pista doble: son dos filas de icono'
         );
-        assert.doesNotMatch(
+        assert.match(
             home,
-            /dashboard-horas-extras'\][\s\S]*?margin-bottom:\s*calc\(-1 \* var\(--home-name-band\)\)/
+            /dashboard-horas-extras'\][\s\S]*?margin-bottom:\s*calc\(-1 \* var\(--home-shortcut-label-band\)\)/,
+            'H. extras compensa la franja de un atajo de una línea'
         );
         assert.match(
             home,
