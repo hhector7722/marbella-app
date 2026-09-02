@@ -1387,21 +1387,21 @@ export default function HistoryPage() {
                 >
                     <div
                         data-element="history-month-summary"
-                        className="rounded-[var(--radio-control)] bg-[rgb(255_255_255/0.1)] px-2 py-1"
+                        className="rounded-[var(--radio-control)] bg-[rgb(255_255_255/0.1)] px-2 pt-3 pb-4"
                     >
                         <div className="flex items-center justify-start">
                             <span className="text-xs font-black text-zinc-950 leading-none">
                                 Mensual
                             </span>
                         </div>
-                        <div className="mt-1 grid grid-cols-3">
+                        <div className="mt-3 grid grid-cols-3">
                             <div className="flex flex-col items-center justify-center text-center">
                                 <div className="flex items-center justify-center leading-none">
                                     <span className="whitespace-nowrap text-sm sm:text-base md:text-lg font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
                                         {formatValue(summary.totalNet, 'net_sales')}
                                     </span>
                                 </div>
-                                <span className="mt-0 text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest leading-none">
+                                <span className="mt-1 text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest leading-none">
                                     VENTA NETA
                                 </span>
                             </div>
@@ -1421,7 +1421,7 @@ export default function HistoryPage() {
                                         );
                                     })()}
                                 </div>
-                                <span className="mt-0 text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest leading-none">
+                                <span className="mt-1 text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest leading-none">
                                     RENDIMIENTO
                                 </span>
                             </div>
@@ -1431,7 +1431,7 @@ export default function HistoryPage() {
                                         {formatValue(summary.totalGross, 'tpv_sales')}
                                     </span>
                                 </div>
-                                <span className="mt-0 text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest leading-none">
+                                <span className="mt-1 text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest leading-none">
                                     VENTAS
                                 </span>
                             </div>
@@ -1440,12 +1440,19 @@ export default function HistoryPage() {
 
                     <div
                         data-element="history-last-closing-summary"
-                        className="rounded-[var(--radio-control)] bg-[rgb(255_255_255/0.1)] px-2 py-2"
+                        className="rounded-[var(--radio-control)] bg-[rgb(255_255_255/0.1)] px-2 pt-2 pb-4"
                     >
                         <div className="flex items-baseline justify-between gap-2">
-                            <span className="text-xs font-black text-zinc-950 leading-none">
-                                Último cierre
-                            </span>
+                            <div className="flex min-w-0 flex-col gap-1">
+                                <span className="text-xs font-black text-zinc-950 leading-none">
+                                    Último cierre
+                                </span>
+                                {lastClosing && (
+                                    <span className="text-[9px] font-normal text-zinc-400 tabular-nums leading-none">
+                                        {format(parseLocalSafe(lastClosing.closing_date), "eeee d 'de' MMMM 'de' yyyy", { locale: es })}
+                                    </span>
+                                )}
+                            </div>
                             <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-2.5 gap-y-0.5 text-[9px] font-normal text-zinc-400 tabular-nums">
                                 {lastClosingMetrics.weatherLabel ? (
                                     <span className="inline-flex items-center gap-1">
@@ -1517,7 +1524,7 @@ export default function HistoryPage() {
                                 </div>
                             ))}
                         </div>
-                        <div className="mt-4 grid grid-cols-3 gap-0.5">
+                        <div className="mt-8 grid grid-cols-3 gap-0.5">
                             {(
                                 [
                                     {
