@@ -323,22 +323,19 @@
  * cada `1fr` se resuelve al max-content del track más ancho y todos los
  * hijos miden lo mismo (el mayor). Funciona con N botones, sin JS.
  *
- * El contenedor solo cobra caja cuando contiene botones (directos o en
- * un wrapper que solo envuelve botones). Con contenido no-botón (pie de
- * nota, total a la izquierda, aviso + botones) es transparente y el
- * contenido conserva su ancho y layout.
+ * El contenedor solo cobra caja cuando contiene botones y no hay un
+ * componente de pie con layout propio (P14: total a la izquierda, que
+ * iguala sus propios botones). Con contenido no-botón (nota al pie) es
+ * transparente y el contenido conserva su ancho.
  */
 [data-element='footer-actions'] {
   display: contents;
 }
 
-/* Igualador: botones directos o wrapper que solo envuelve botones. */
-[data-element='footer-actions']:has(> [data-component='Button']),
-[data-element='footer-actions']:has(> div:has(> [data-component='Button']):not(:has(> :not([data-component='Button'])))),
-[data-component='Modal'] [data-element='footer'] > [data-element='footer-actions']:has(> [data-component='Button']),
-[data-component='Modal'] [data-element='footer'] > [data-element='footer-actions']:has(> div:has(> [data-component='Button']):not(:has(> :not([data-component='Button'])))),
-[data-component='ConsumptionBottomSheet'] [data-element='footer'] > [data-element='footer-actions']:has(> [data-component='Button']),
-[data-component='ConsumptionBottomSheet'] [data-element='footer'] > [data-element='footer-actions']:has(> div:has(> [data-component='Button']):not(:has(> :not([data-component='Button'])))) {
+/* Igualador: hay botones (descendiente) y no hay sub-footer-actions. */
+[data-element='footer-actions']:has([data-component='Button']):not(:has([data-element='footer-actions'])),
+[data-component='Modal'] [data-element='footer'] > [data-element='footer-actions']:has([data-component='Button']):not(:has([data-element='footer-actions'])),
+[data-component='ConsumptionBottomSheet'] [data-element='footer'] > [data-element='footer-actions']:has([data-component='Button']):not(:has([data-element='footer-actions'])) {
   display: inline-grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
@@ -348,8 +345,12 @@
   max-width: 100%;
 }
 
-/* El Button hug del pie llena su columna (ancho del mayor), no su contenido. */
-[data-element='footer-actions'] > [data-component='Button'][data-layout='hug'] {
+/*
+ * El Button hug del pie llena su columna (ancho del mayor), no su contenido.
+ * Selector descendiente: con `display: contents` en un wrapper ad-hoc, el
+ * botón no es hijo directo del footer-actions sino nieto.
+ */
+[data-element='footer-actions'] [data-component='Button'][data-layout='hug'] {
   width: auto;
   justify-self: stretch;
   min-width: 0;
