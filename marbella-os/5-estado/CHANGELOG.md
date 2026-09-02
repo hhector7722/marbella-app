@@ -38,6 +38,7 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-02
 
+- **Cierres: cards de resumen rediseñadas.** La card del mes añade la cabecera «Mensual» y compacta la rejilla con las etiquetas pegadas al valor. La card «Resumen de ayer» pasa a llamarse «Último cierre» y muestra el cierre más reciente realizado, sea de hoy, de ayer o de hace un mes; se separa la cabecera de las dos filas de métricas.
 - **Pies de acción: botones del mismo ancho.** Los botones que conviven en el pie de un Modal (o en el pie P14 de caja) se igualan al ancho del mayor, sean 2 o más, sin JS. El grupo se encoge al contenido; no ocupa el pie entero. [SISTEMA-DE-COMPONENTES §Button](../2-diseno/SISTEMA-DE-COMPONENTES.md#botón), [P2](../2-diseno/PATRONES.md#p2--modal).
 - **Cierres: agosto no cuenta en el rendimiento.** Venta neta, rendimiento y ventas del resumen del mes quedan siempre alineados en la misma fila, con la etiqueta pegada al valor. El rendimiento —tanto el del resumen como el de cada día— omite agosto (mes cerrado): la comparación salta al periodo anterior.
 - **Cierres: resumen de ayer en tres filas.** La cabecera queda como estaba; las métricas pasan a dos filas (ventas, venta neta, tarjeta, efectivo / pendiente pago, cobros pendientes, diferencia), distribuidas homogéneamente a lo ancho de su fila y con separación entre cabecera y primera fila de métricas.

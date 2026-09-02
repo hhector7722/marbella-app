@@ -20,7 +20,7 @@ import { Modal } from '@/components/ui/modal';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { format, startOfMonth, endOfMonth, isSameDay, addDays, subDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths, isToday, isBefore, startOfDay, subWeeks, differenceInDays } from 'date-fns';
+import { format, startOfMonth, endOfMonth, isSameDay, addDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths, isToday, isBefore, startOfDay, subWeeks, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -703,7 +703,7 @@ export default function HistoryPage() {
 
     const [closings, setClosings] = useState<any[]>([]);
     const [historicalClosings, setHistoricalClosings] = useState<any[]>([]);
-    const [yesterdayClosing, setYesterdayClosing] = useState<any | null>(null);
+    const [lastClosing, setLastClosing] = useState<any | null>(null);
     const [hourlySales, setHourlySales] = useState<Record<string, number[]>>({});
     const [summary, setSummary] = useState({ totalNet: 0, totalGross: 0, avgTicket: 0, count: 0 });
     const [prevSummary, setPrevSummary] = useState({ totalNet: 0, totalGross: 0, avgTicket: 0, count: 0 });
@@ -951,7 +951,7 @@ export default function HistoryPage() {
             } else {
                 if (!rangeStart || !rangeEnd) {
                     setClosings([]);
-                    setYesterdayClosing(null);
+                    setLastClosing(null);
                     setLoading(false);
                     return;
                 }
@@ -969,7 +969,6 @@ export default function HistoryPage() {
             const prevStartISO = format(prevStart, 'yyyy-MM-dd');
             const prevEndISO = format(prevEnd, 'yyyy-MM-dd');
             const histStartISO = format(subMonths(start, 4), 'yyyy-MM-dd');
-            const yesterdayISO = format(subDays(startOfDay(new Date()), 1), 'yyyy-MM-dd');
 
             const closingsPromise = supabase
                 .from('cash_closings')
@@ -984,10 +983,11 @@ export default function HistoryPage() {
                 .gte('closing_date', histStartISO)
                 .lte('closing_date', endISO);
 
-            const yesterdayPromise = supabase
+            const lastClosingPromise = supabase
                 .from('cash_closings')
                 .select('*')
-                .eq('closing_date', yesterdayISO)
+                .order('closing_date', { ascending: false })
+                .limit(1)
                 .maybeSingle();
 
             const summaryPromise = supabase.rpc('get_cash_closings_summary', {
@@ -1000,21 +1000,21 @@ export default function HistoryPage() {
                 p_end_date: prevEndISO
             });
 
-            const [closingsRes, historicalRes, yesterdayRes, summaryRes, prevSummaryRes] = await Promise.all([
+            const [closingsRes, historicalRes, lastClosingRes, summaryRes, prevSummaryRes] = await Promise.all([
                 closingsPromise,
                 historicalPromise,
-                yesterdayPromise,
+                lastClosingPromise,
                 summaryPromise,
                 prevSummaryPromise
             ]);
 
             if (closingsRes.error) throw closingsRes.error;
             if (historicalRes.error) throw historicalRes.error;
-            if (yesterdayRes.error) throw yesterdayRes.error;
+            if (lastClosingRes.error) throw lastClosingRes.error;
 
             setClosings(closingsRes.data || []);
             setHistoricalClosings(historicalRes.data || []);
-            setYesterdayClosing(yesterdayRes.data ?? null);
+            setLastClosing(lastClosingRes.data ?? null);
             setSummary(summaryRes.data || { totalNet: 0, totalGross: 0, avgTicket: 0, count: 0 });
             setPrevSummary(prevSummaryRes.data || { totalNet: 0, totalGross: 0, avgTicket: 0, count: 0 });
 
@@ -1159,8 +1159,8 @@ export default function HistoryPage() {
     /** Descuadre de cero se muestra: CONTENIDO-Y-TONO §3. */
     const formatDifference = (val: number) => formatCurrencySpanish(val);
 
-    const yesterdayMetrics = useMemo(() => {
-        if (!yesterdayClosing) {
+    const lastClosingMetrics = useMemo(() => {
+        if (!lastClosing) {
             return {
                 weatherLabel: null as string | null,
                 weatherIcon: null as string | null,
@@ -1175,24 +1175,24 @@ export default function HistoryPage() {
                 difference: 0,
             };
         }
-        const tickets = Number(yesterdayClosing.tickets_count ?? 0);
-        const tpvSales = Number(yesterdayClosing.tpv_sales ?? 0);
-        const weatherId = weatherIdFromLabel(yesterdayClosing.weather);
+        const tickets = Number(lastClosing.tickets_count ?? 0);
+        const tpvSales = Number(lastClosing.tpv_sales ?? 0);
+        const weatherId = weatherIdFromLabel(lastClosing.weather);
         const weatherOpt = CLOSING_WEATHER_OPTIONS.find((o) => o.id === weatherId);
         return {
-            weatherLabel: yesterdayClosing.weather || null,
+            weatherLabel: lastClosing.weather || null,
             weatherIcon: weatherOpt?.icon ?? null,
             tickets,
             avgTicket: tickets > 0 ? tpvSales / tickets : 0,
             tpvSales,
-            netSales: Number(yesterdayClosing.net_sales ?? 0),
-            salesCard: Number(yesterdayClosing.sales_card ?? 0),
-            cashCounted: Number(yesterdayClosing.cash_counted ?? 0),
-            salesPending: Number(yesterdayClosing.sales_pending ?? 0),
-            debtRecovered: Number(yesterdayClosing.debt_recovered ?? 0),
-            difference: Number(yesterdayClosing.difference ?? 0),
+            netSales: Number(lastClosing.net_sales ?? 0),
+            salesCard: Number(lastClosing.sales_card ?? 0),
+            cashCounted: Number(lastClosing.cash_counted ?? 0),
+            salesPending: Number(lastClosing.sales_pending ?? 0),
+            debtRecovered: Number(lastClosing.debt_recovered ?? 0),
+            difference: Number(lastClosing.difference ?? 0),
         };
-    }, [yesterdayClosing]);
+    }, [lastClosing]);
 
 
     // Solo actualizan estado local; la base de datos no se toca hasta que el usuario pulse "Guardar Cierre".
@@ -1387,24 +1387,29 @@ export default function HistoryPage() {
                 >
                     <div
                         data-element="history-month-summary"
-                        className="rounded-[var(--radio-control)] bg-[rgb(255_255_255/0.1)] px-2 py-2"
+                        className="rounded-[var(--radio-control)] bg-[rgb(255_255_255/0.1)] px-2 py-1"
                     >
-                        <div className="grid grid-cols-3">
+                        <div className="flex items-center justify-start">
+                            <span className="text-xs font-black text-zinc-950 leading-none">
+                                Mensual
+                            </span>
+                        </div>
+                        <div className="mt-1 grid grid-cols-3">
                             <div className="flex flex-col items-center justify-center text-center">
-                                <div className="flex min-h-12 items-center justify-center leading-none">
+                                <div className="flex items-center justify-center leading-none">
                                     <span className="whitespace-nowrap text-sm sm:text-base md:text-lg font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
                                         {formatValue(summary.totalNet, 'net_sales')}
                                     </span>
                                 </div>
-                                <span className="mt-1 text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest leading-none">
+                                <span className="mt-0 text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest leading-none">
                                     VENTA NETA
                                 </span>
                             </div>
                             <div
                                 onClick={() => setShowPeriodPerformanceModal(true)}
-                                className="flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform"
+                                className="relative flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform before:absolute before:inset-0 before:-my-3 before:min-h-12 before:content-['']"
                             >
-                                <div className="flex min-h-12 items-center justify-center gap-1 leading-none">
+                                <div className="flex items-center justify-center gap-1 leading-none">
                                     {(() => {
                                         const isNeutral = popPercent >= -5 && popPercent <= 5;
                                         const triangleSymbol = isNeutral ? '' : (popPercent > 5 ? '▲' : '▼');
@@ -1416,17 +1421,17 @@ export default function HistoryPage() {
                                         );
                                     })()}
                                 </div>
-                                <span className="mt-1 text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest leading-none">
+                                <span className="mt-0 text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest leading-none">
                                     RENDIMIENTO
                                 </span>
                             </div>
                             <div className="flex flex-col items-center justify-center text-center">
-                                <div className="flex min-h-12 items-center justify-center leading-none">
+                                <div className="flex items-center justify-center leading-none">
                                     <span className="whitespace-nowrap text-sm sm:text-base md:text-lg font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
                                         {formatValue(summary.totalGross, 'tpv_sales')}
                                     </span>
                                 </div>
-                                <span className="mt-1 text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest leading-none">
+                                <span className="mt-0 text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest leading-none">
                                     VENTAS
                                 </span>
                             </div>
@@ -1434,67 +1439,67 @@ export default function HistoryPage() {
                     </div>
 
                     <div
-                        data-element="history-yesterday-summary"
+                        data-element="history-last-closing-summary"
                         className="rounded-[var(--radio-control)] bg-[rgb(255_255_255/0.1)] px-2 py-2"
                     >
                         <div className="flex items-baseline justify-between gap-2">
                             <span className="text-xs font-black text-zinc-950 leading-none">
-                                Resumen de ayer
+                                Último cierre
                             </span>
                             <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-2.5 gap-y-0.5 text-[9px] font-normal text-zinc-400 tabular-nums">
-                                {yesterdayMetrics.weatherLabel ? (
+                                {lastClosingMetrics.weatherLabel ? (
                                     <span className="inline-flex items-center gap-1">
-                                        {yesterdayMetrics.weatherIcon ? (
+                                        {lastClosingMetrics.weatherIcon ? (
                                             <img
-                                                src={yesterdayMetrics.weatherIcon}
+                                                src={lastClosingMetrics.weatherIcon}
                                                 alt=""
                                                 className="h-3 w-3 object-contain"
                                             />
                                         ) : (
                                             <CloudSun size={11} className="shrink-0 opacity-70" aria-hidden />
                                         )}
-                                        <span>{yesterdayMetrics.weatherLabel}</span>
+                                        <span>{lastClosingMetrics.weatherLabel}</span>
                                     </span>
                                 ) : (
                                     <span> </span>
                                 )}
                                 <span>
-                                    {yesterdayMetrics.tickets === 0
+                                    {lastClosingMetrics.tickets === 0
                                         ? ' '
-                                        : `${yesterdayMetrics.tickets.toLocaleString('es-ES')} tickets`}
+                                        : `${lastClosingMetrics.tickets.toLocaleString('es-ES')} tickets`}
                                 </span>
                                 <span>
-                                    {yesterdayMetrics.avgTicket === 0
+                                    {lastClosingMetrics.avgTicket === 0
                                         ? ' '
-                                        : `${formatCurrencySpanish(yesterdayMetrics.avgTicket)} ticket medio`}
+                                        : `${formatCurrencySpanish(lastClosingMetrics.avgTicket)} ticket medio`}
                                 </span>
                             </div>
                         </div>
-                        <div className="mt-3 grid grid-cols-4 gap-0.5">
+                        <div className="mt-8 grid grid-cols-4 gap-0.5">
                             {(
                                 [
                                     {
                                         label: 'Ventas',
-                                        value: yesterdayClosing
-                                            ? formatValue(yesterdayMetrics.tpvSales, 'tpv_sales')
+                                        value: lastClosing
+                                            ? formatValue(lastClosingMetrics.tpvSales, 'tpv_sales')
                                             : ' ',
                                     },
                                     {
                                         label: 'Venta neta',
-                                        value: yesterdayClosing
-                                            ? formatValue(yesterdayMetrics.netSales, 'net_sales')
+                                        value: lastClosing
+                                            ? formatValue(lastClosingMetrics.netSales, 'net_sales')
                                             : ' ',
                                     },
                                     {
                                         label: 'Tarjeta',
-                                        value: yesterdayClosing
-                                            ? formatValue(yesterdayMetrics.salesCard, 'tpv_sales')
+                                        value: lastClosing
+                                            ? formatValue(lastClosingMetrics.salesCard, 'tpv_sales')
                                             : ' ',
                                     },
                                     {
                                         label: 'Efectivo',
-                                        value: yesterdayClosing
-                                            ? formatValue(yesterdayMetrics.cashCounted, 'cash_counted')
+                                        value: lastClosing
+                                            ? formatValue(lastClosingMetrics.cashCounted, 'cash_counted')
                                             : ' ',
                                     },
                                 ] as const
@@ -1512,25 +1517,25 @@ export default function HistoryPage() {
                                 </div>
                             ))}
                         </div>
-                        <div className="mt-2 grid grid-cols-3 gap-0.5">
+                        <div className="mt-4 grid grid-cols-3 gap-0.5">
                             {(
                                 [
                                     {
                                         label: 'Pendiente pago',
-                                        value: yesterdayClosing
-                                            ? formatValue(yesterdayMetrics.salesPending, 'tpv_sales')
+                                        value: lastClosing
+                                            ? formatValue(lastClosingMetrics.salesPending, 'tpv_sales')
                                             : ' ',
                                     },
                                     {
                                         label: 'Cobros pendientes',
-                                        value: yesterdayClosing
-                                            ? formatValue(yesterdayMetrics.debtRecovered, 'tpv_sales')
+                                        value: lastClosing
+                                            ? formatValue(lastClosingMetrics.debtRecovered, 'tpv_sales')
                                             : ' ',
                                     },
                                     {
                                         label: 'Diferencia',
-                                        value: yesterdayClosing
-                                            ? formatDifference(yesterdayMetrics.difference)
+                                        value: lastClosing
+                                            ? formatDifference(lastClosingMetrics.difference)
                                             : ' ',
                                     },
                                 ] as const
