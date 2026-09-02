@@ -223,7 +223,7 @@ export default function MasterShortcutGrid({
                 <DashboardShortcut
                     instance="web"
                     label="Web"
-                    img="/icons/link.png"
+                    img="/icons/web.png"
                     plate
                     onClick={() => window.open(WEB_URL, '_blank', 'noopener,noreferrer')}
                 />
