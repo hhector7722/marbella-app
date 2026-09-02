@@ -14,8 +14,8 @@ interface NominasMenuModalProps {
 
 const OPTIONS: { key: NominasMenuAction; label: string; iconPath: string }[] = [
     { key: 'nominas', label: 'Nóminas', iconPath: '/icons/admin2.png' },
-    { key: 'contrato', label: 'Contrato', iconPath: '/icons/contract.png' },
-    { key: 'comunicados', label: 'Comunicados', iconPath: '/icons/contrato.png' },
+    { key: 'contrato', label: 'Contrato', iconPath: '/icons/contrato.png' },
+    { key: 'comunicados', label: 'Comunicados', iconPath: '/icons/contract.png' },
     { key: 'convenio', label: 'Convenio', iconPath: '/icons/convenio.png' },
     { key: 'conducta', label: 'Código de Conducta', iconPath: '/icons/ley.png' },
 ];
@@ -42,6 +42,7 @@ export default function NominasMenuModal({ isOpen, onClose, onSelect }: NominasM
                         key={key}
                         title={label}
                         imageSrc={iconPath}
+                        imageClassName="h-14 w-14 object-contain sm:h-16 sm:w-16"
                         onClick={() => {
                             trackNominasMenu(label);
                             onSelect(key);

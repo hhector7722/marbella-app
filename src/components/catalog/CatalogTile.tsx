@@ -65,6 +65,7 @@ export function CatalogTile({
     title,
     imageSrc,
     imageAlt = '',
+    imageClassName,
     fallback,
     subtitle,
     onClick,
@@ -72,6 +73,7 @@ export function CatalogTile({
     title: string;
     imageSrc?: string | null;
     imageAlt?: string;
+    imageClassName?: string;
     fallback?: ReactNode;
     subtitle?: ReactNode;
     onClick: () => void;
@@ -89,7 +91,9 @@ export function CatalogTile({
                         <img
                             src={withAppIconRev(imageSrc)}
                             alt={imageAlt}
-                            className="max-h-full max-w-full object-contain"
+                            className={cn(
+                                imageClassName ?? 'max-h-full max-w-full object-contain',
+                            )}
                         />
                     ) : fallback ? (
                         <span className="text-gray-200">{fallback}</span>
