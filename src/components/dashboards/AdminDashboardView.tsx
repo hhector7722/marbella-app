@@ -629,7 +629,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             iconMasFunciones={
                 <DashboardShortcut
                     instance="admin-mas-funciones"
-                    label="Más funciones"
+                    label="Otros"
                     img="/icons/more.png"
                     onClick={() => setIsMoreFunctionsModalOpen(true)}
                 />

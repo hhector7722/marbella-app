@@ -373,7 +373,7 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.match(
             ops,
             /dashboard-horas-extras[\s\S]*admin-plantilla[\s\S]*admin-albaranes[\s\S]*dashboard-caja-cambio-1[\s\S]*admin-recetas[\s\S]*admin-mas-funciones/,
-            'H. extras en 3–4; Plantilla y Albaranes a la derecha; Cambio 1/2 con Recetas; Más funciones en última fila'
+            'H. extras en 3–4; Plantilla y Albaranes a la derecha; Cambio 1/2 con Recetas; Otros en última fila'
         );
     });
 

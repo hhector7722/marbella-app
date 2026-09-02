@@ -37,3 +37,34 @@ export function readMasterViewAsCookieFromDocument(): string | null {
     const value = match?.[1]?.trim();
     return value || null;
 }
+
+export type EffectiveDashboardIdentity = {
+    role: string;
+    email: string;
+    isViewingAs: boolean;
+};
+
+/** Resuelve rol/email para UI de dashboard (switcher, permisos) respetando view-as. */
+export function resolveDashboardIdentityFromViewAs(params: {
+    realUserId: string;
+    realEmail: string;
+    realRole: string;
+    realProfileEmail?: string | null;
+    viewAsUserId?: string | null;
+    viewAsProfile?: { role?: string | null; email?: string | null } | null;
+}): EffectiveDashboardIdentity {
+    const viewAsId = params.viewAsUserId?.trim() || null;
+    if (!viewAsId || viewAsId === params.realUserId || !params.viewAsProfile) {
+        return {
+            role: params.realRole,
+            email: params.realProfileEmail ?? params.realEmail,
+            isViewingAs: false,
+        };
+    }
+
+    return {
+        role: params.viewAsProfile.role ?? 'staff',
+        email: params.viewAsProfile.email ?? params.realEmail,
+        isViewingAs: true,
+    };
+}

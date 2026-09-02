@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
+import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
 
 /** Encima de la cápsula (mobile) o del aire inferior (desktop: --shell-bottom-inset). */
 const DASHBOARD_DOTS_BOTTOM =
@@ -46,7 +47,16 @@ export default function DashboardSwitcher({
     initialData,
 }: DashboardSwitcherProps) {
     const router = useRouter();
-    const isTriple = userRole === 'manager' && isMasterDashboardUser(userEmail);
+    const { identity } = useMasterViewAs();
+
+    const resolvedRole = identity?.isViewingAs ? identity.effectiveRole : userRole;
+    const resolvedEmail = identity?.isViewingAs ? identity.effectiveEmail : (userEmail ?? null);
+
+    // Triple panel solo para master en su propia cuenta (manager + email master), nunca en view-as.
+    const isTriple =
+        !identity?.isViewingAs &&
+        resolvedRole === 'manager' &&
+        isMasterDashboardUser(resolvedEmail);
     const [view, setView] = useState<DashboardView>(initialView);
     const [offsetX, setOffsetX] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
@@ -62,7 +72,7 @@ export default function DashboardSwitcher({
 
     const DRAG_DEAD_ZONE = 10;
     const DRAG_MOUNT_DELAY_MS = 150;
-    const isManager = userRole === 'manager';
+    const isManager = resolvedRole === 'manager';
 
     useEffect(() => {
         setView(initialView);

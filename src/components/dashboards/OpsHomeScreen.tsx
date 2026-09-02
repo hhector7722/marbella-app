@@ -22,7 +22,7 @@ export type OpsHomeScreenProps = {
 /**
  * Mosaico Admin. H. extras 3×2 en filas 3–4; Plantilla y Albaranes a la derecha.
  * Fila 5: Cambio 1, Cambio 2, Recetas, Asistencia.
- * Última fila: Más funciones, M obra, Stock, Ingredientes.
+ * Última fila: Otros, M obra, Stock, Ingredientes.
  */
 export function OpsHomeScreen({
     ventas,
