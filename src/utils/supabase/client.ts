@@ -31,6 +31,7 @@ const AUTH_WRITE_METHODS = new Set([
   'linkIdentity',
   'reauthenticate',
   'resetPasswordForEmail',
+  'resetPasswordForEmail',
   'signInWithPassword',
   'signOut',
   'unlinkIdentity',
@@ -168,7 +169,14 @@ declare global {
   }
 }
 
-type BrowserClient = ReturnType<typeof createBrowserClient>
+function createBrowserSupabaseClient() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  )
+}
+
+type BrowserClient = ReturnType<typeof createBrowserSupabaseClient>
 
 // El cliente de navegador es deliberadamente singleton. Varios componentes usan
 // el cliente en dependencias de useEffect; recrearlo en cada render hace que esas
@@ -176,19 +184,18 @@ type BrowserClient = ReturnType<typeof createBrowserClient>
 let browserClient: BrowserClient | null = null
 let sandboxClient: BrowserClient | null = null
 
-export function createClient(): BrowserClient {
+export function createClient() {
   if (!browserClient) {
-    browserClient = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    )
+    browserClient = createBrowserSupabaseClient()
   }
 
-  if (!isSandboxRuntime()) return browserClient
+  const client = browserClient
+
+  if (!isSandboxRuntime()) return client
 
   if (!sandboxClient) {
-    sandboxClient = createSandboxClient(browserClient) as BrowserClient
+    sandboxClient = createSandboxClient(client) as typeof client
   }
 
-  return sandboxClient
+  return sandboxClient as typeof client
 }
