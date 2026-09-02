@@ -168,11 +168,33 @@ declare global {
   }
 }
 
-export function createClient() {
-  const client = createBrowserClient(
+function createBrowserSupabaseClient() {
+  return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   )
+}
 
-  return (isSandboxRuntime() ? createSandboxClient(client) : client) as typeof client
+type BrowserClient = ReturnType<typeof createBrowserSupabaseClient>
+
+// El cliente de navegador es deliberadamente singleton. Varios componentes usan
+// el cliente en dependencias de useEffect; recrearlo en cada render hace que esas
+// dependencias cambien y puede relanzar lecturas innecesariamente.
+let browserClient: BrowserClient | null = null
+let sandboxClient: BrowserClient | null = null
+
+export function createClient() {
+  if (!browserClient) {
+    browserClient = createBrowserSupabaseClient()
+  }
+
+  const client = browserClient
+
+  if (!isSandboxRuntime()) return client
+
+  if (!sandboxClient) {
+    sandboxClient = createSandboxClient(client) as typeof client
+  }
+
+  return sandboxClient as typeof client
 }
