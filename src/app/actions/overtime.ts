@@ -16,6 +16,26 @@ import {
     mondayOnOrBefore,
 } from '@/lib/hours-engine';
 import type { CivilDate } from '@/lib/hours-engine/types';
+import { canManageStaffAttendance } from '@/lib/staff/attendance-access';
+
+async function assertCanManageStaffAttendance(
+    supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { ok: false, error: 'No autenticado' };
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, email')
+        .eq('id', user.id)
+        .single();
+
+    if (!canManageStaffAttendance(profile?.role, profile?.email ?? user.email)) {
+        return { ok: false, error: 'Sin permiso para gestionar asistencia' };
+    }
+
+    return { ok: true };
+}
 
 /** Horas Marbella entre dos instantes ISO (misma regla que fn_round_marbella_hours en BD). */
 function marbellaHoursBetweenClockIso(clockInIso: string, clockOutIso: string): number {
@@ -262,6 +282,9 @@ export async function updateWeeklyWorkerConfig(
     const supabase = await createClient();
 
     try {
+        const auth = await assertCanManageStaffAttendance(supabase);
+        if (!auth.ok) return { success: false, error: auth.error };
+
         const weekMonday = mondayOnOrBefore(weekStart.split('T')[0]! as CivilDate);
         const { weekEnd } = weekBounds(weekMonday);
 
@@ -386,17 +409,14 @@ export async function updateWeeklyWorkerConfig(
 }
 
 /**
- * Crea un fichaje (entrada) en nombre de un empleado. Solo managers.
+ * Crea un fichaje (entrada) en nombre de un empleado. Managers y Master por email.
  */
 export async function createManagerFichaje(userId: string, dateStr: string, timeStr: string): Promise<{ success: boolean; error?: string; simulated?: boolean }> {
     if (await isSandboxRequest()) return { success: true, simulated: true };
     try {
         const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { success: false, error: 'No autenticado' };
-
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-        if (profile?.role !== 'manager') return { success: false, error: 'Solo managers pueden crear fichajes' };
+        const auth = await assertCanManageStaffAttendance(supabase);
+        if (!auth.ok) return { success: false, error: auth.error };
 
         const [y, m, d] = dateStr.split('-').map(Number);
         const [h, min] = timeStr.split(':').map(Number);
@@ -440,11 +460,8 @@ export async function deleteManagerDayLogs(userId: string, dateStr: string): Pro
     if (await isSandboxRequest()) return { success: true, simulated: true };
     try {
         const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { success: false, error: 'No autenticado' };
-
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-        if (profile?.role !== 'manager') return { success: false, error: 'Solo managers pueden eliminar registros' };
+        const auth = await assertCanManageStaffAttendance(supabase);
+        if (!auth.ok) return { success: false, error: auth.error };
 
         const [y, m, d] = dateStr.split('-').map(Number);
         if (!y || !m || !d) return { success: false, error: 'Fecha inválida' };

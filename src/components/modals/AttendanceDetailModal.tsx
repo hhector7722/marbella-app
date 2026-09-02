@@ -18,6 +18,7 @@ import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
 import type { EmployeeOption } from '@/components/modals/DaySummaryModal';
+import { canManageStaffAttendance } from '@/lib/staff/attendance-access';
 
 interface AttendanceDetailModalProps {
     isOpen: boolean;
@@ -25,6 +26,8 @@ interface AttendanceDetailModalProps {
     date: Date | null;
     userId: string | null;
     userRole: string;
+    /** Email del usuario que abre el modal (Master por email puede gestionar aunque role sea staff). */
+    viewerEmail?: string;
     onSuccess: () => void;
     /** Plantilla visible: permite crear fichaje para otro trabajador sin fichaje ese día. */
     employees?: EmployeeOption[];
@@ -338,7 +341,7 @@ function EditWeekModal({ isOpen, onClose, date, userId, onSuccess }: EditWeekMod
     );
 }
 
-export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole, onSuccess, employees = [] }: AttendanceDetailModalProps) {
+export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole, viewerEmail, onSuccess, employees = [] }: AttendanceDetailModalProps) {
     useModalUsageTracking({
         open: isOpen,
         usageId: 'attendance-detail',
@@ -355,7 +358,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
     const [createUserId, setCreateUserId] = useState('');
     const [busyEmployeeIds, setBusyEmployeeIds] = useState<Set<string>>(() => new Set());
     const [creating, setCreating] = useState(false);
-    const isManager = userRole === 'manager';
+    const isManager = canManageStaffAttendance(userRole, viewerEmail);
 
     const availableEmployees = React.useMemo(() => {
         const roster: EmployeeOption[] = employees.length

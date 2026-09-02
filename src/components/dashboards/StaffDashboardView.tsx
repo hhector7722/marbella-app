@@ -34,6 +34,7 @@ import {
     filterVisiblePlantillaEmployees,
     type PlantillaEmployeeRow,
 } from '@/lib/staff/plantilla-employees';
+import { canManageStaffAttendance } from '@/lib/staff/attendance-access';
 import { WeekSummary } from '@/components/staff/WeekSummary';
 import { StaffWeekScheduleWidget } from '@/components/dashboards/staff/StaffWeekScheduleWidget';
 import WorkTimer, { StaffElapsedDigits, formatStaffElapsedHms } from '@/components/ui/WorkTimer';
@@ -435,7 +436,7 @@ export default function StaffDashboardView() {
                 setUserName(profile.first_name || "Personal");
             }
 
-            if (profile?.role === 'manager') {
+            if (canManageStaffAttendance(profile?.role, user.email)) {
                 const { data: emps } = await supabase
                     .from('profiles')
                     .select(PLANTILLA_EMPLOYEE_SELECT)
@@ -1361,6 +1362,7 @@ export default function StaffDashboardView() {
                 date={selectedDayDate}
                 userId={userId}
                 userRole={userRole}
+                viewerEmail={userEmail}
                 onClose={() => setIsDayDetailModalOpen(false)}
                 onSuccess={() => initialize()}
                 employees={plantillaEmployees.map((employee) => ({

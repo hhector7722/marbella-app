@@ -61,6 +61,7 @@ import {
     filterVisiblePlantillaEmployees,
     PLANTILLA_EMPLOYEE_SELECT,
 } from '@/lib/staff/plantilla-employees';
+import { canManageStaffAttendance } from '@/lib/staff/attendance-access';
 
 // --- TIPOS ---
 type WeekData = HistoryWeekDto;
@@ -139,14 +140,16 @@ export default function HistoryPage() {
             .single();
 
         if (profile) setUserRole(profile.role);
-        if (profile?.role === 'manager') {
+
+        const canManage = canManageStaffAttendance(profile?.role, user.email);
+        if (canManage) {
             setSelectedEmployeeId('');
             setSelectedEmployeeLabel('');
         } else {
             setSelectedEmployeeId(user.id);
         }
 
-        if (profile?.role === 'manager') {
+        if (canManage) {
             const { data: emps } = await supabase
                 .from('profiles')
                 .select(PLANTILLA_EMPLOYEE_SELECT)
@@ -161,7 +164,7 @@ export default function HistoryPage() {
     // Manager: si se entra con ?id=xxx (ej. desde /profile?id=xxx), preseleccionar ese trabajador
     useEffect(() => {
         const id = searchParams.get('id');
-        if (userRole !== 'manager' || !id || !currentUserId) return;
+        if (!canManageStaffAttendance(userRole, userEmail) || !id || !currentUserId) return;
 
         setSelectedEmployeeId(id);
         const emp = employees.find((e) => e.id === id);
@@ -179,12 +182,12 @@ export default function HistoryPage() {
                 if (!data) return;
                 setSelectedEmployeeLabel(staffSelectionApplySummary(data as Employee));
             });
-    }, [searchParams, userRole, currentUserId, employees, supabase]);
+    }, [searchParams, userRole, userEmail, currentUserId, employees, supabase]);
 
     useEffect(() => {
         if (!currentUserId) return;
-        const isPlantilla = userRole === 'manager' && selectedEmployeeId === '';
-        if (isPlantilla) {
+        const isPlantillaView = canManageStaffAttendance(userRole, userEmail) && selectedEmployeeId === '';
+        if (isPlantillaView) {
             fetchPlantilla();
         } else {
             fetchCalendar();
@@ -339,7 +342,7 @@ export default function HistoryPage() {
         }
     };
 
-    const isManager = userRole === 'manager';
+    const isManager = canManageStaffAttendance(userRole, userEmail);
     const isPlantilla = isManager && selectedEmployeeId === '';
     const isMaster = isMasterDashboardUser(userEmail);
 
@@ -969,6 +972,7 @@ export default function HistoryPage() {
                     date={editingDate ? new Date(editingDate + 'T12:00:00') : null}
                     userId={editingUserId}
                     userRole={userRole}
+                    viewerEmail={userEmail}
                     onSuccess={handleDetailModalSuccess}
                     employees={employees}
                 />
