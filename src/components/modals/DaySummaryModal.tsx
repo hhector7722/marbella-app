@@ -12,7 +12,6 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { WorkerPersonRow } from '@/components/staff/WorkerPersonRow';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { canManageStaffAttendance } from '@/lib/staff/attendance-access';
-import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import { createClient } from '@/utils/supabase/client';
 import {
     filterVisiblePlantillaEmployees,
@@ -71,13 +70,10 @@ export function DaySummaryModal({
     const [roster, setRoster] = useState<EmployeeOption[]>(employees);
     const [loadingRoster, setLoadingRoster] = useState(false);
 
-    const [sessionCanManage, setSessionCanManage] = useState(false);
-
     const canManage =
         allowCreateFichaje === true ||
         canManageAttendance === true ||
         isManager === true ||
-        sessionCanManage ||
         canManageStaffAttendance(userRole, viewerEmail);
 
     const employeeIdsWithLog = new Set((logs || []).map((l) => l.user_id));
@@ -109,19 +105,6 @@ export function DaySummaryModal({
             setLoadingRoster(false);
         }
     }, []);
-
-    useEffect(() => {
-        if (!isOpen) return;
-        void createClient()
-            .auth.getSession()
-            .then(({ data: { session } }) => {
-                const email = session?.user?.email ?? viewerEmail ?? '';
-                setSessionCanManage(
-                    isMasterDashboardUser(email) ||
-                        canManageStaffAttendance(userRole, email),
-                );
-            });
-    }, [isOpen, userRole, viewerEmail]);
 
     useEffect(() => {
         if (employees.length > 0) {

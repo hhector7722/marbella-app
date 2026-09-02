@@ -61,7 +61,7 @@ import {
     filterVisiblePlantillaEmployees,
     PLANTILLA_EMPLOYEE_SELECT,
 } from '@/lib/staff/plantilla-employees';
-import { canManageStaffAttendance } from '@/lib/staff/attendance-access';
+import { canManageStaffAttendanceForSession } from '@/lib/staff/attendance-access';
 import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
 
 // --- TIPOS ---
@@ -152,12 +152,13 @@ export default function HistoryPage() {
 
         if (profile || identity?.isViewingAs) setUserRole(effectiveRole);
 
-        const canManage = canManageStaffAttendance(effectiveRole, effectiveEmail);
+        const canManage = canManageStaffAttendanceForSession(identity, effectiveRole, effectiveEmail);
         if (canManage) {
             setSelectedEmployeeId('');
             setSelectedEmployeeLabel('');
         } else {
             setSelectedEmployeeId(effectiveUserId);
+            setSelectedEmployeeLabel('');
         }
 
         if (canManage) {
@@ -167,8 +168,10 @@ export default function HistoryPage() {
                 .order('first_name');
 
             setEmployees(filterVisiblePlantillaEmployees((emps || []) as Employee[]));
+        } else {
+            setEmployees([]);
         }
-    }, [supabase, identity?.isViewingAs, identity?.effectiveUserId, identity?.effectiveRole, identity?.effectiveEmail]);
+    }, [supabase, identity, identity?.isViewingAs, identity?.effectiveUserId, identity?.effectiveRole, identity?.effectiveEmail]);
 
     useEffect(() => {
         if (isMasterAccount && !identity) return;
@@ -177,7 +180,7 @@ export default function HistoryPage() {
     // Manager: si se entra con ?id=xxx (ej. desde /profile?id=xxx), preseleccionar ese trabajador
     useEffect(() => {
         const id = searchParams.get('id');
-        if (!canManageStaffAttendance(userRole, userEmail) || !id || !currentUserId) return;
+        if (!canManageStaffAttendanceForSession(identity, userRole, userEmail) || !id || !currentUserId) return;
 
         setSelectedEmployeeId(id);
         const emp = employees.find((e) => e.id === id);
@@ -195,18 +198,20 @@ export default function HistoryPage() {
                 if (!data) return;
                 setSelectedEmployeeLabel(staffSelectionApplySummary(data as Employee));
             });
-    }, [searchParams, userRole, userEmail, currentUserId, employees, supabase]);
+    }, [searchParams, identity, userRole, userEmail, currentUserId, employees, supabase]);
 
     useEffect(() => {
         if (!currentUserId) return;
-        const isPlantillaView = canManageStaffAttendance(userRole, userEmail) && selectedEmployeeId === '';
+        const isPlantillaView =
+            canManageStaffAttendanceForSession(identity, userRole, userEmail) &&
+            selectedEmployeeId === '';
         if (isPlantillaView) {
             fetchPlantilla();
         } else {
             fetchCalendar();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedEmployeeId, currentUserId, filterYear, filterMonth, userRole]);
+    }, [selectedEmployeeId, currentUserId, filterYear, filterMonth, userRole, userEmail, identity?.isViewingAs]);
 
     async function fetchCalendar() {
         setLoading(true);
@@ -355,7 +360,7 @@ export default function HistoryPage() {
         }
     };
 
-    const isManager = canManageStaffAttendance(userRole, userEmail);
+    const isManager = canManageStaffAttendanceForSession(identity, userRole, userEmail);
     const isPlantilla = isManager && selectedEmployeeId === '';
     const isMaster = isMasterDashboardUser(userEmail) && !identity?.isViewingAs;
     const allowCreateFichaje = isMaster || isManager;
@@ -870,11 +875,7 @@ export default function HistoryPage() {
 
     const handleDayClick = (date: string) => {
         void (async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            const email = session?.user?.email ?? userEmail;
-            const canCreate =
-                isMasterDashboardUser(email) ||
-                canManageStaffAttendance(userRole, email);
+            const canCreate = canManageStaffAttendanceForSession(identity, userRole, userEmail);
 
             if (canCreate) {
                 setSummaryDate(date);
