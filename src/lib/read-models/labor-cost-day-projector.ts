@@ -25,6 +25,7 @@ import type { PayrollFactRepository } from '../payroll/payroll-fact-repository.t
 import { Money, LaborCost, Percentage } from '../payroll/value-objects.ts';
 import type { LaborCostDayDTO, WorkerLaborCostDTO } from './labor-cost-dtos.ts';
 import {
+  loadEmployeeBoundaryFacts,
   loadEmployeeBoundaryFactsBatch,
 } from '../hours-engine/load-employee-facts.ts';
 import { liquidateWeekForCard } from '../hours-engine/week-card-from-liquidation.ts';
@@ -120,13 +121,30 @@ export class LaborCostDayReadModelProjector {
     try {
       contractStore = await this.contractTermsService.loadTermsForMonth(profileIds, periodYm);
     } catch {
+      // Fallback excepcional: conserva el comportamiento anterior si la carga en lote falla.
       contractStore = null;
     }
 
     try {
       boundaryFactsByUser = await loadEmployeeBoundaryFactsBatch(this.supabase, profileIds);
     } catch {
-      boundaryFactsByUser = {};
+      // La versión anterior aislaba los fallos por empleado. Solo usamos el lote cuando funciona;
+      // ante un fallo de lote volvemos a la misma carga individual y aislada.
+      const fallbackEntries = await Promise.all(
+        profileIds.map(async (userId) => {
+          try {
+            return [userId, await loadEmployeeBoundaryFacts(this.supabase, userId)] as const;
+          } catch {
+            return null;
+          }
+        }),
+      );
+      boundaryFactsByUser = Object.fromEntries(
+        fallbackEntries.filter(
+          (entry): entry is readonly [string, Awaited<ReturnType<typeof loadEmployeeBoundaryFacts>>] =>
+            entry !== null,
+        ),
+      );
     }
 
     const workerDTOs: WorkerLaborCostDTO[] = [];
