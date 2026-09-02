@@ -70,8 +70,10 @@ export async function loadEmployeeBoundaryFacts(
 }
 
 /**
- * Carga los hechos de frontera de varios empleados en dos consultas totales,
- * conservando exactamente la misma fuente y transformación que la función individual.
+ * Carga los hechos de frontera de varios empleados en dos consultas totales.
+ * Mantiene la misma semántica que loadEmployeeBoundaryFacts(): si falta un tramo
+ * contractual para cualquier empleado, la operación en lote falla y el consumidor
+ * puede aplicar el mismo fallback individual que antes.
  */
 export async function loadEmployeeBoundaryFactsBatch(
   supabase: SupabaseClient,
@@ -121,7 +123,9 @@ export async function loadEmployeeBoundaryFactsBatch(
     const rows = termsByUserId.get(userId) ?? [];
 
     if (rows.length === 0) {
-      continue;
+      throw new Error(
+        `Empleado ${userId} sin tramos en hours_contract_terms. Ejecutar seed/migración.`,
+      );
     }
 
     result[userId] = employeeFactsFromContractTerms(
