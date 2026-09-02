@@ -2566,8 +2566,8 @@ button[data-element='catalog-filter'] {
 [data-component='StaffWeekSchedule'] [data-week-row='expanded'] {
   box-sizing: border-box;
   align-items: center;
-  min-height: calc(var(--staff-week-day-size) + (var(--espacio-1) * 2));
-  padding-block: var(--espacio-1);
+  min-height: calc(var(--staff-week-day-size) + var(--espacio-1));
+  padding-block: calc(var(--espacio-1) / 2);
   border-radius: var(--radio-control);
   background-color: var(--home-widget-fill-secondary);
 }
@@ -2583,8 +2583,7 @@ button[data-element='catalog-filter'] {
   flex: 1 1 auto;
   min-height: var(--staff-week-expansion-min);
   max-height: var(--staff-week-expansion-max);
-  padding-top: 0;
-  padding-bottom: var(--espacio-1);
+  padding-block: var(--espacio-1);
   align-items: stretch;
 }
 [data-component='StaffWeekSchedule'] [data-week-row] button::before {
