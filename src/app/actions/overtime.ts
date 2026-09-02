@@ -30,7 +30,7 @@ async function assertCanManageStaffAttendance(
         .eq('id', user.id)
         .single();
 
-    if (!canManageStaffAttendance(profile?.role, profile?.email ?? user.email)) {
+    if (!canManageStaffAttendance(profile?.role, user.email ?? profile?.email)) {
         return { ok: false, error: 'Sin permiso para gestionar asistencia' };
     }
 

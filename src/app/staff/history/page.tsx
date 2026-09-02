@@ -26,7 +26,7 @@ import {
     eachDayOfInterval,
     isSameDay,
 } from 'date-fns';
-import { formatMadridHmFromIso, formatYmdInMadrid, madridRangeUtcIso } from '@/lib/madrid-date-bounds';
+import { formatMadridHmFromIso, formatYmdInMadrid, madridDayUtcRangeIso, madridRangeUtcIso } from '@/lib/madrid-date-bounds';
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Modal } from '@/components/ui/modal';
@@ -44,7 +44,7 @@ import { staffSelectionApplySummary } from '@/lib/usage/modal-apply';
 import { toast } from 'sonner';
 import { updateWeeklyWorkerConfig } from '@/app/actions/overtime';
 import { AttendanceDetailModal } from '@/components/modals/AttendanceDetailModal';
-import { DaySummaryModal } from '@/components/modals/DaySummaryModal';
+import { DaySummaryModal, type DaySummaryLog } from '@/components/modals/DaySummaryModal';
 import { WeekSummary } from '@/components/staff/WeekSummary';
 import { PlantillaWeekCard, type PlantillaWeek, type PlantillaDay, type PlantillaDayLog } from './PlantillaWeekCard';
 import { MultiEmployeeExportModal } from '@/components/modals/MultiEmployeeExportModal';
@@ -118,6 +118,7 @@ export default function HistoryPage() {
     const [editingUserId, setEditingUserId] = useState<string | null>(null);
     const [plantillaWeeksData, setPlantillaWeeksData] = useState<PlantillaWeek[]>([]);
     const [summaryDate, setSummaryDate] = useState<string | null>(null);
+    const [daySummaryLogs, setDaySummaryLogs] = useState<DaySummaryLog[]>([]);
     const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
@@ -367,14 +368,7 @@ export default function HistoryPage() {
         return parts.slice(0, 2).map((p) => p.charAt(0)).join('').toUpperCase() || '?';
     })();
 
-    const summaryLogs = (() => {
-        if (!summaryDate || !plantillaWeeksData.length) return [];
-        for (const w of plantillaWeeksData) {
-            const d = w.days.find((day) => day.date === summaryDate);
-            if (d) return d.logs.map((l) => ({ ...l, employee_name: l.first_name }));
-        }
-        return [];
-    })();
+    const summaryLogs = daySummaryLogs;
 
     /**
      * Construye el payload de exportación obteniendo el DNI del empleado
@@ -783,15 +777,96 @@ export default function HistoryPage() {
         }
     }
 
-    const handleDayClick = (date: string) => {
+    function getPlantillaDayLogs(date: string): DaySummaryLog[] {
+        for (const w of plantillaWeeksData) {
+            const d = w.days.find((day) => day.date === date);
+            if (d) {
+                return d.logs.map((l) => ({
+                    id: l.id,
+                    user_id: l.user_id,
+                    first_name: l.first_name,
+                    last_name: l.last_name,
+                    employee_name: l.first_name,
+                    in_time: l.in_time,
+                    out_time: l.out_time,
+                    clock_out_show_no_registrada: l.clock_out_show_no_registrada,
+                }));
+            }
+        }
+        return [];
+    }
 
-        if (isPlantilla) {
+    async function loadDaySummaryLogs(date: string) {
+        if (isPlantilla && plantillaWeeksData.length > 0) {
+            setDaySummaryLogs(getPlantillaDayLogs(date));
+            return;
+        }
+
+        const { startIso, endIso } = madridDayUtcRangeIso(date);
+        const { data: logsRaw, error } = await supabase
+            .from('time_logs')
+            .select('id, user_id, clock_in, clock_out, clock_out_show_no_registrada')
+            .gte('clock_in', startIso)
+            .lte('clock_in', endIso);
+
+        if (error) {
+            console.error('loadDaySummaryLogs:', error);
+            setDaySummaryLogs([]);
+            return;
+        }
+
+        const userIds = [...new Set((logsRaw ?? []).map((log) => log.user_id))];
+        let profiles: { id: string; first_name?: string; last_name?: string }[] = [];
+        if (userIds.length > 0) {
+            const { data: profilesData } = await supabase
+                .from('profiles')
+                .select('id, first_name, last_name')
+                .in('id', userIds);
+            profiles = (profilesData ?? []).filter((p) => {
+                const name = (p.first_name || '').trim().toLowerCase();
+                return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
+            });
+        }
+
+        const profileMap = new Map(profiles.map((p) => [p.id, p]));
+        setDaySummaryLogs(
+            (logsRaw ?? []).map((log) => {
+                const p = profileMap.get(log.user_id);
+                return {
+                    id: log.id,
+                    user_id: log.user_id,
+                    first_name: p?.first_name ?? '',
+                    last_name: p?.last_name ?? '',
+                    employee_name: p?.first_name ?? '',
+                    in_time: formatMadridHmFromIso(log.clock_in) ?? '',
+                    out_time: log.clock_out ? (formatMadridHmFromIso(log.clock_out) ?? '') : '',
+                    clock_out_show_no_registrada: log.clock_out_show_no_registrada === true,
+                };
+            }),
+        );
+    }
+
+    async function ensureEmployeesLoaded() {
+        if (employees.length > 0) return;
+        const { data: emps } = await supabase
+            .from('profiles')
+            .select(PLANTILLA_EMPLOYEE_SELECT)
+            .eq('visible_in_plantilla', true)
+            .order('first_name');
+        setEmployees(filterVisiblePlantillaEmployees((emps || []) as Employee[]));
+    }
+
+    const handleDayClick = (date: string) => {
+        if (isManager) {
             setSummaryDate(date);
             setIsSummaryModalOpen(true);
-        } else {
-            setEditingDate(date);
-            setEditingUserId(selectedEmployeeId || currentUserId);
+            void ensureEmployeesLoaded();
+            void loadDaySummaryLogs(date);
+            return;
         }
+
+        setEditingDate(date);
+        setEditingUserId(selectedEmployeeId || currentUserId);
     };
 
     const handleSelectLogFromSummary = (userId: string) => {
@@ -802,11 +877,14 @@ export default function HistoryPage() {
 
     const handleCloseSummary = () => {
         setSummaryDate(null);
+        setDaySummaryLogs([]);
         setIsSummaryModalOpen(false);
     };
 
     const handleDetailModalSuccess = () => {
-        if (isPlantilla) fetchPlantilla(); else fetchCalendar();
+        if (isPlantilla) fetchPlantilla();
+        else fetchCalendar();
+        if (summaryDate) void loadDaySummaryLogs(summaryDate);
     };
 
     const handleCloseDetailModal = () => {
@@ -963,7 +1041,9 @@ export default function HistoryPage() {
                     onSelectLog={handleSelectLogFromSummary}
                     employees={employees}
                     onFichajeCreated={handleDetailModalSuccess}
-                    isManager={isManager}
+                    canManageAttendance={isManager}
+                    userRole={userRole}
+                    viewerEmail={userEmail}
                 />
 
                 <AttendanceDetailModal

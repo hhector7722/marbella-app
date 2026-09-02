@@ -1,9 +1,12 @@
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 
-/** Puede crear, editar o borrar fichajes de la plantilla (manager o Master por email). */
+const MANAGER_ATTENDANCE_ROLES = new Set(['manager', 'admin', 'supervisor']);
+
+/** Puede crear, editar o borrar fichajes de la plantilla (manager/admin/supervisor o Master por email). */
 export function canManageStaffAttendance(
     role: string | null | undefined,
     email?: string | null,
 ): boolean {
-    return role === 'manager' || isMasterDashboardUser(email);
+    if (isMasterDashboardUser(email)) return true;
+    return MANAGER_ATTENDANCE_ROLES.has(String(role ?? ''));
 }

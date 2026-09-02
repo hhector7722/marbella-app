@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -11,32 +11,73 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { WorkerPersonRow } from '@/components/staff/WorkerPersonRow';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
+import { canManageStaffAttendance } from '@/lib/staff/attendance-access';
 
 export type EmployeeOption = { id: string; first_name: string; last_name: string };
+
+export type DaySummaryLog = {
+    id: string;
+    user_id: string;
+    first_name?: string;
+    last_name?: string;
+    employee_name?: string;
+    in_time?: string;
+    out_time?: string;
+    clock_out_show_no_registrada?: boolean;
+};
 
 interface DaySummaryModalProps {
     isOpen: boolean;
     onClose: () => void;
     date: Date | null;
-    logs: any[];
+    logs: DaySummaryLog[];
     onSelectLog: (userId: string) => void;
-    /** Lista de empleados (plantilla). Solo managers ven el botón + y empleados sin fichaje. */
+    /** Lista de empleados (plantilla). */
     employees?: EmployeeOption[];
     /** Llamado tras crear un fichaje para refrescar datos. */
     onFichajeCreated?: () => void;
+    /** @deprecated Usar canManageAttendance */
     isManager?: boolean;
+    canManageAttendance?: boolean;
+    userRole?: string;
+    viewerEmail?: string;
 }
 
-export function DaySummaryModal({ isOpen, onClose, date, logs, onSelectLog, employees = [], onFichajeCreated, isManager }: DaySummaryModalProps) {
+export function DaySummaryModal({
+    isOpen,
+    onClose,
+    date,
+    logs,
+    onSelectLog,
+    employees = [],
+    onFichajeCreated,
+    isManager,
+    canManageAttendance,
+    userRole,
+    viewerEmail,
+}: DaySummaryModalProps) {
     const trackDaySummary = useTrackModalApply('day-summary', 'Resumen de fichajes');
     const [showCreateFichaje, setShowCreateFichaje] = useState(false);
     const [createUserId, setCreateUserId] = useState('');
     const [createTime, setCreateTime] = useState('08:00');
     const [creating, setCreating] = useState(false);
 
-    const employeeIdsWithLog = new Set((logs || []).map((l: { user_id: string }) => l.user_id));
+    const canManage =
+        canManageAttendance ??
+        isManager ??
+        canManageStaffAttendance(userRole, viewerEmail);
+
+    const employeeIdsWithLog = new Set((logs || []).map((l) => l.user_id));
     const availableEmployees = (employees || []).filter((e) => !employeeIdsWithLog.has(e.id));
-    const canAddFichaje = isManager && availableEmployees.length > 0;
+    const canShowAddButton = canManage && employees.length > 0;
+
+    useEffect(() => {
+        if (!isOpen) {
+            setShowCreateFichaje(false);
+            setCreateUserId('');
+            setCreateTime('08:00');
+        }
+    }, [isOpen]);
 
     const resetCreateForm = () => {
         setShowCreateFichaje(false);
@@ -47,6 +88,15 @@ export function DaySummaryModal({ isOpen, onClose, date, logs, onSelectLog, empl
     const handleClose = () => {
         resetCreateForm();
         onClose();
+    };
+
+    const openCreateFichaje = () => {
+        if (availableEmployees.length === 0) {
+            toast.error('Todos los empleados de la plantilla ya tienen fichaje este día');
+            return;
+        }
+        setCreateUserId(availableEmployees[0]?.id ?? '');
+        setShowCreateFichaje(true);
     };
 
     const handleCreateFichaje = async () => {
@@ -65,7 +115,7 @@ export function DaySummaryModal({ isOpen, onClose, date, logs, onSelectLog, empl
             } else {
                 toast.error(result.error ?? 'Error al crear fichaje');
             }
-        } catch (e) {
+        } catch {
             toast.error('Error al crear fichaje');
         } finally {
             setCreating(false);
@@ -88,10 +138,10 @@ export function DaySummaryModal({ isOpen, onClose, date, logs, onSelectLog, empl
                 subtitle={dateLabel}
                 headerTone="petroleum"
                 headerTrailing={
-                    canAddFichaje ? (
+                    canShowAddButton ? (
                         <button
                             type="button"
-                            onClick={() => setShowCreateFichaje(true)}
+                            onClick={openCreateFichaje}
                             className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                             aria-label="Nuevo fichaje"
                         >
