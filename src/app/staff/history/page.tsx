@@ -93,7 +93,7 @@ export default function HistoryPage() {
     const supabase = createClient();
     const searchParams = useSearchParams();
     const pathname = usePathname();
-    const { identity, isMaster } = useMasterViewAs();
+    const { identity, isMaster: isMasterAccount } = useMasterViewAs();
     const [loading, setLoading] = useState(true);
     const [weeksData, setWeeksData] = useState<WeekData[]>([]);
 
@@ -171,9 +171,9 @@ export default function HistoryPage() {
     }, [supabase, identity?.isViewingAs, identity?.effectiveUserId, identity?.effectiveRole, identity?.effectiveEmail]);
 
     useEffect(() => {
-        if (isMaster && !identity) return;
+        if (isMasterAccount && !identity) return;
         void initUser();
-    }, [initUser, isMaster, identity]);
+    }, [initUser, isMasterAccount, identity]);
     // Manager: si se entra con ?id=xxx (ej. desde /profile?id=xxx), preseleccionar ese trabajador
     useEffect(() => {
         const id = searchParams.get('id');

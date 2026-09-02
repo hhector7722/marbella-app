@@ -14,6 +14,7 @@ export interface PlantillaEmployee {
     first_name: string;
     last_name: string;
     role?: string;
+    email?: string | null;
     avatar_url?: string | null;
     end_date?: string | null;
     visible_in_plantilla?: boolean;
