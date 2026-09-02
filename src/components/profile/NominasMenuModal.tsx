@@ -13,7 +13,7 @@ interface NominasMenuModalProps {
 }
 
 const OPTIONS: { key: NominasMenuAction; label: string; iconPath: string }[] = [
-    { key: 'nominas', label: 'Nóminas', iconPath: '/icons/admin.png' },
+    { key: 'nominas', label: 'Nóminas', iconPath: '/icons/admin2.png' },
     { key: 'contrato', label: 'Contrato', iconPath: '/icons/contract.png' },
     { key: 'comunicados', label: 'Comunicados', iconPath: '/icons/contrato.png' },
     { key: 'convenio', label: 'Convenio', iconPath: '/icons/convenio.png' },

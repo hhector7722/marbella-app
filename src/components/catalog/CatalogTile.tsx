@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { withAppIconRev } from '@/lib/app-icons';
 
 const CATALOG_GRID_COLS = {
     3: 'grid-cols-3',
@@ -86,7 +87,7 @@ export function CatalogTile({
                 <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-2 sm:p-3">
                     {imageSrc ? (
                         <img
-                            src={imageSrc}
+                            src={withAppIconRev(imageSrc)}
                             alt={imageAlt}
                             className="max-h-full max-w-full object-contain"
                         />

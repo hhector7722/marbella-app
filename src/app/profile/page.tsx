@@ -26,6 +26,7 @@ import {
     PLANTILLA_EMPLOYEE_SELECT,
     filterVisiblePlantillaEmployees,
 } from '@/lib/staff/plantilla-employees';
+import { withAppIconRev } from '@/lib/app-icons';
 import {
     StaffSelectionModal,
     type PlantillaEmployee,
@@ -54,8 +55,8 @@ const PROFILE_GRID = [
     { id: 'datos-personales', label: 'Datos personales', icon: '/icons/staff-card.png' },
     { id: 'contacto', label: 'Contacto', icon: '/icons/phone.png' },
     { id: 'datos-bancarios', label: 'Datos bancarios', icon: '/icons/visa.png' },
-    { id: 'nominas', label: 'Documentos', icon: '/icons/admin.png' },
-    { id: 'cambiar-password', label: 'Cambiar contraseña', icon: '/icons/lock.png' },
+    { id: 'nominas', label: 'Documentos', icon: '/icons/admin2.png' },
+    { id: 'cambiar-password', label: 'Cambiar contraseña', icon: '/icons/password.png' },
     { id: 'cerrar-sesion', label: 'Cerrar sesión', icon: '/icons/log-out.png' },
 ] as const;
 
@@ -492,7 +493,7 @@ function ProfileContent() {
                                 onClick={() => handleGridAction(item.id)}
                             >
                                 <span data-element="icon-wrap">
-                                    <img src={item.icon} alt="" />
+                                    <img src={withAppIconRev(item.icon)} alt="" />
                                 </span>
                                 <span data-element="label">{item.label}</span>
                             </button>

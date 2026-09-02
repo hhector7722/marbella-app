@@ -527,7 +527,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const quickActionCards = [
         { title: 'Asistencia', img: '/icons/calendar.png', link: '/staff/history', instance: 'admin-asistencia' },
         { title: 'M obra', img: '/icons/overtime.png', link: '/dashboard/labor', instance: 'admin-m-obra' },
-        { title: 'Plantilla', img: '/icons/admin.png', link: '/staff/dashboard', instance: 'admin-plantilla' },
+        { title: 'Plantilla', img: '/icons/admin2.png', link: '/staff/dashboard', instance: 'admin-plantilla' },
         { title: 'Stock', img: '/icons/suppliers.png', link: '/ingredients', instance: 'admin-stock' },
     ] as const;
 

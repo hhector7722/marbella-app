@@ -7,6 +7,7 @@ import {
     resolveDashboardShortcutVariant,
     type DashboardShortcutVariant,
 } from '@/lib/design-system';
+import { withAppIconRev } from '@/lib/app-icons';
 
 export type { DashboardShortcutVariant };
 
@@ -97,7 +98,7 @@ export default function DashboardShortcut({
     const asset = children ?? (
         img ? (
             <img
-                src={img.includes('?') ? img : `${img}?v=20260829f`}
+                src={withAppIconRev(img)}
                 alt=""
                 width={96}
                 height={96}
