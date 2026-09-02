@@ -29,6 +29,11 @@ import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, for
 import { FICHAJE_OVERLAY_VIDEOS } from '@/lib/fichaje-overlay-videos';
 import { syncOvertimeCostAfterTimeLogChange } from '@/app/actions/persist-overtime-cost';
 import { getEmployeeHistoryWeek, type HistoryWeekDto } from '@/app/actions/history-read';
+import {
+    PLANTILLA_EMPLOYEE_SELECT,
+    filterVisiblePlantillaEmployees,
+    type PlantillaEmployeeRow,
+} from '@/lib/staff/plantilla-employees';
 import { WeekSummary } from '@/components/staff/WeekSummary';
 import { StaffWeekScheduleWidget } from '@/components/dashboards/staff/StaffWeekScheduleWidget';
 import WorkTimer, { StaffElapsedDigits, formatStaffElapsedHms } from '@/components/ui/WorkTimer';
@@ -280,6 +285,7 @@ export default function StaffDashboardView() {
     const [actionLoading, setActionLoading] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
     const [userRole, setUserRole] = useState<'staff' | 'manager' | 'supervisor'>('staff');
+    const [plantillaEmployees, setPlantillaEmployees] = useState<PlantillaEmployeeRow[]>([]);
     const [userEmail, setUserEmail] = useState<string>('');
     const [status, setStatus] = useState<WorkStatus>('idle');
     const [todayLog, setTodayLog] = useState<any>(null);
@@ -427,6 +433,17 @@ export default function StaffDashboardView() {
             if (profile) {
                 setUserRole(profile.role as any);
                 setUserName(profile.first_name || "Personal");
+            }
+
+            if (profile?.role === 'manager') {
+                const { data: emps } = await supabase
+                    .from('profiles')
+                    .select(PLANTILLA_EMPLOYEE_SELECT)
+                    .eq('visible_in_plantilla', true)
+                    .order('first_name');
+                setPlantillaEmployees(filterVisiblePlantillaEmployees((emps || []) as PlantillaEmployeeRow[]));
+            } else {
+                setPlantillaEmployees([]);
             }
 
             const today = new Date();
@@ -1346,6 +1363,7 @@ export default function StaffDashboardView() {
                 userRole={userRole}
                 onClose={() => setIsDayDetailModalOpen(false)}
                 onSuccess={() => initialize()}
+                employees={plantillaEmployees}
             />
             {isCashChangeModalOpen && (
                 <CashChangeModal

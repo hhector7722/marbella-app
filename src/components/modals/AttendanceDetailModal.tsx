@@ -17,6 +17,7 @@ import { formatMadridHmFromIso, madridDayUtcRangeIso } from '@/lib/madrid-date-b
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
+import type { EmployeeOption } from '@/components/modals/DaySummaryModal';
 
 interface AttendanceDetailModalProps {
     isOpen: boolean;
@@ -25,6 +26,8 @@ interface AttendanceDetailModalProps {
     userId: string | null;
     userRole: string;
     onSuccess: () => void;
+    /** Plantilla visible: permite crear fichaje para otro trabajador sin fichaje ese día. */
+    employees?: EmployeeOption[];
 }
 
 const EVENT_TYPES = [
@@ -335,7 +338,7 @@ function EditWeekModal({ isOpen, onClose, date, userId, onSuccess }: EditWeekMod
     );
 }
 
-export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole, onSuccess }: AttendanceDetailModalProps) {
+export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole, onSuccess, employees = [] }: AttendanceDetailModalProps) {
     useModalUsageTracking({
         open: isOpen,
         usageId: 'attendance-detail',
@@ -349,14 +352,47 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
     const [editWeekModalOpen, setEditWeekModalOpen] = useState(false);
     const [showCreateFichaje, setShowCreateFichaje] = useState(false);
     const [createTime, setCreateTime] = useState('08:00');
+    const [createUserId, setCreateUserId] = useState('');
+    const [busyEmployeeIds, setBusyEmployeeIds] = useState<Set<string>>(() => new Set());
     const [creating, setCreating] = useState(false);
     const isManager = userRole === 'manager';
 
+    const availableEmployees = React.useMemo(() => {
+        const roster: EmployeeOption[] = employees.length
+            ? employees
+            : userId
+              ? [{ id: userId, first_name: '', last_name: '' }]
+              : [];
+        return roster.filter((employee) => !busyEmployeeIds.has(employee.id));
+    }, [employees, busyEmployeeIds, userId]);
+
+    const canCreateFichaje = isManager && !!date && availableEmployees.length > 0;
+
+    const openCreateFichaje = () => {
+        const preferred =
+            (userId && availableEmployees.some((employee) => employee.id === userId) ? userId : null) ??
+            availableEmployees[0]?.id ??
+            '';
+        setCreateUserId(preferred);
+        setShowCreateFichaje(true);
+    };
+
+    const resetCreateFichaje = () => {
+        setShowCreateFichaje(false);
+        setCreateUserId('');
+        setCreateTime('08:00');
+    };
+
     useEffect(() => {
         if (isOpen && date && userId) {
-            fetchDayLogs();
+            void fetchDayLogs();
+            if (isManager) {
+                void fetchBusyEmployeeIds();
+            } else {
+                setBusyEmployeeIds(new Set());
+            }
         }
-    }, [isOpen, date, userId]);
+    }, [isOpen, date, userId, isManager]);
 
     async function fetchDayLogs() {
         if (!date || !userId) return;
@@ -404,12 +440,32 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
             }) || [];
 
             setLogs(rawLogs);
-            setShowCreateFichaje(false);
+            resetCreateFichaje();
         } catch (err) {
             console.error(err);
             toast.error("Error al cargar registros");
         } finally {
             setLoading(false);
+        }
+    }
+
+    async function fetchBusyEmployeeIds() {
+        if (!date) return;
+        try {
+            const supabase = createClient();
+            const dateStr = format(date, 'yyyy-MM-dd');
+            const { startIso, endIso } = madridDayUtcRangeIso(dateStr);
+            const { data, error } = await supabase
+                .from('time_logs')
+                .select('user_id')
+                .gte('clock_in', startIso)
+                .lte('clock_in', endIso);
+
+            if (error) throw error;
+            setBusyEmployeeIds(new Set((data ?? []).map((row) => row.user_id)));
+        } catch (err) {
+            console.error(err);
+            setBusyEmployeeIds(new Set());
         }
     }
 
@@ -587,21 +643,25 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
     };
 
     const activeLogs = logs.filter((l) => !l.is_deleted);
-    const showAddFichajeButton = isManager && !loading && activeLogs.length === 0 && !!userId && !!date;
+    const showAddFichajeButton = canCreateFichaje && !loading;
     const dayTotalHours = activeLogs.reduce((acc, l) => acc + resolveDraftHours(l), 0);
 
     const handleCreateFichaje = async () => {
-        if (!date || !userId || !createTime.trim()) return;
+        if (!date || !createUserId || !createTime.trim()) return;
         setCreating(true);
         try {
             const dateStr = format(date, 'yyyy-MM-dd');
-            const result = await createManagerFichaje(userId, dateStr, createTime.trim());
+            const result = await createManagerFichaje(createUserId, dateStr, createTime.trim());
             if (result.success) {
                 toast.success('Fichaje creado');
-                setShowCreateFichaje(false);
-                setCreateTime('08:00');
-                fetchDayLogs();
-                onSuccess();
+                resetCreateFichaje();
+                await fetchBusyEmployeeIds();
+                if (createUserId === userId) {
+                    await fetchDayLogs();
+                } else {
+                    onSuccess();
+                    onClose();
+                }
             } else {
                 toast.error(result.error ?? 'Error al crear fichaje');
             }
@@ -647,7 +707,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                 showAddFichajeButton ? (
                     <button
                         type="button"
-                        onClick={() => setShowCreateFichaje(true)}
+                        onClick={() => openCreateFichaje()}
                         className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                         aria-label="Nuevo fichaje"
                     >
@@ -664,8 +724,24 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                             <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Cargando...</p>
                         </div>
                     ) : activeLogs.length === 0 ? (
-                        showCreateFichaje && isManager && userId && date ? (
+                        showCreateFichaje && isManager && createUserId && date ? (
                             <div className="space-y-3">
+                                {availableEmployees.length > 1 ? (
+                                    <div>
+                                        <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-1">Empleado</label>
+                                        <select
+                                            value={createUserId}
+                                            onChange={(e) => setCreateUserId(e.target.value)}
+                                            className="w-full min-h-[48px] h-12 px-3 rounded-xl border-2 border-zinc-200 text-[11px] font-bold text-zinc-800 bg-white focus:ring-2 focus:ring-[#36606F] focus:border-[#36606F] outline-none"
+                                        >
+                                            {availableEmployees.map((employee) => (
+                                                <option key={employee.id} value={employee.id}>
+                                                    {[employee.first_name, employee.last_name].filter(Boolean).join(' ') || 'Empleado'}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                ) : null}
                                 <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block">Nuevo fichaje — Hora entrada</span>
                                 <input
                                     type="time"
@@ -678,7 +754,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                         type="button"
                                         variant="secondary"
                                         instance="attendance-detail-crear-cancelar"
-                                        onClick={() => setShowCreateFichaje(false)}
+                                        onClick={() => resetCreateFichaje()}
                                         className="flex-1"
                                     >
                                         Cancelar
@@ -709,6 +785,16 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                         ) : (
                             <div className="py-6 flex flex-col items-center justify-center gap-3">
                                 <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest text-center">Sin datos</span>
+                                {canCreateFichaje ? (
+                                    <Button
+                                        type="button"
+                                        variant="primary"
+                                        instance="attendance-detail-nuevo-fichaje"
+                                        onClick={openCreateFichaje}
+                                    >
+                                        Nuevo fichaje
+                                    </Button>
+                                ) : null}
                                 {isManager && (
                                     <>
                                         <button

@@ -970,6 +970,7 @@ export default function HistoryPage() {
                     userId={editingUserId}
                     userRole={userRole}
                     onSuccess={handleDetailModalSuccess}
+                    employees={employees}
                 />
 
                 <MultiEmployeeExportModal
