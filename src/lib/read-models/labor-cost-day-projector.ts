@@ -51,6 +51,20 @@ function mondayOf(ymd: string): string {
   return format(dt, 'yyyy-MM-dd');
 }
 
+type HoursHistoryRows = {
+  snapshots: Array<{
+    week_start: string;
+    is_paid: boolean | null;
+    prefer_stock_hours_override: boolean | null;
+    overtime_price_snapshot: number | null;
+  }>;
+  logs: Array<{
+    clock_in: string;
+    clock_out: string | null;
+    total_hours: number | null;
+  }>;
+};
+
 export class LaborCostDayReadModelProjector {
   constructor(
     private readonly supabase: SupabaseClient,
@@ -147,6 +161,72 @@ export class LaborCostDayReadModelProjector {
       );
     }
 
+    // 5. Cargar de una vez el histórico de Hours Engine necesario para todos los empleados.
+    //    Antes se hacían dos consultas por empleado (weekly_snapshots + time_logs).
+    //    El horizonte mínimo conserva el histórico individual exigido por employeeTimelineStartWeek().
+    const hoursHistoryByUser = new Map<string, HoursHistoryRows>();
+    let hoursHistoryBatchFailed = false;
+    const timelineStarts = profileIds
+      .map((userId) => employeeTimelineStartWeek(boundaryFactsByUser[userId]))
+      .filter((value): value is string => Boolean(value));
+    const logsFromYmd = timelineStarts.reduce(
+      (earliest, value) => (value < earliest ? value : earliest),
+      weekStart,
+    );
+
+    if (profileIds.length > 0) {
+      try {
+        const { startIso, endIso } = madridRangeUtcIso(logsFromYmd, weekEnd);
+        const [snapsRes, logsRes] = await Promise.all([
+          this.supabase
+            .from('weekly_snapshots')
+            .select('user_id, week_start, is_paid, prefer_stock_hours_override, overtime_price_snapshot')
+            .in('user_id', profileIds)
+            .gte('week_start', logsFromYmd)
+            .lte('week_start', weekStart),
+          this.supabase
+            .from('time_logs')
+            .select('user_id, clock_in, clock_out, total_hours')
+            .in('user_id', profileIds)
+            .gte('clock_in', startIso)
+            .lte('clock_in', endIso),
+        ]);
+
+        if (snapsRes.error || logsRes.error) {
+          hoursHistoryBatchFailed = true;
+        } else {
+          for (const userId of profileIds) {
+            hoursHistoryByUser.set(userId, { snapshots: [], logs: [] });
+          }
+
+          for (const row of snapsRes.data ?? []) {
+            const bucket = hoursHistoryByUser.get(row.user_id);
+            if (bucket) {
+              bucket.snapshots.push({
+                week_start: row.week_start,
+                is_paid: row.is_paid,
+                prefer_stock_hours_override: row.prefer_stock_hours_override,
+                overtime_price_snapshot: row.overtime_price_snapshot,
+              });
+            }
+          }
+
+          for (const row of logsRes.data ?? []) {
+            const bucket = hoursHistoryByUser.get(row.user_id);
+            if (bucket) {
+              bucket.logs.push({
+                clock_in: row.clock_in,
+                clock_out: row.clock_out,
+                total_hours: row.total_hours,
+              });
+            }
+          }
+        }
+      } catch {
+        hoursHistoryBatchFailed = true;
+      }
+    }
+
     const workerDTOs: WorkerLaborCostDTO[] = [];
     let summaryFixed = Money.zero();
     let summaryOvertime = Money.zero();
@@ -168,26 +248,43 @@ export class LaborCostDayReadModelProjector {
         if (!employee) throw new Error(`Empleado ${profile.id} sin hechos de frontera válidos`);
 
         const timelineStart = employeeTimelineStartWeek(employee);
-        const logsFromYmd =
+        const employeeLogsFromYmd =
           timelineStart && timelineStart < weekStart ? timelineStart : weekStart;
-        const { startIso, endIso } = madridRangeUtcIso(logsFromYmd, weekEnd);
+        const { startIso, endIso } = madridRangeUtcIso(employeeLogsFromYmd, weekEnd);
 
-        const [snapsRes, logsRes] = await Promise.all([
-          this.supabase
-            .from('weekly_snapshots')
-            .select('week_start, is_paid, prefer_stock_hours_override, overtime_price_snapshot')
-            .eq('user_id', profile.id)
-            .gte('week_start', logsFromYmd)
-            .lte('week_start', weekStart),
-          this.supabase
-            .from('time_logs')
-            .select('clock_in, clock_out, total_hours')
-            .eq('user_id', profile.id)
-            .gte('clock_in', startIso)
-            .lte('clock_in', endIso),
-        ]);
+        let snapsRows: HoursHistoryRows['snapshots'];
+        let logRows: HoursHistoryRows['logs'];
 
-        const engineLogs = (logsRes.data ?? []).map((l: any) => ({
+        if (!hoursHistoryBatchFailed) {
+          const history = hoursHistoryByUser.get(profile.id) ?? { snapshots: [], logs: [] };
+          snapsRows = history.snapshots;
+          logRows = history.logs;
+        } else {
+          // Fallback individual: mantiene exactamente el comportamiento anterior si el lote falla.
+          const [snapsRes, logsRes] = await Promise.all([
+            this.supabase
+              .from('weekly_snapshots')
+              .select('week_start, is_paid, prefer_stock_hours_override, overtime_price_snapshot')
+              .eq('user_id', profile.id)
+              .gte('week_start', employeeLogsFromYmd)
+              .lte('week_start', weekStart),
+            this.supabase
+              .from('time_logs')
+              .select('clock_in, clock_out, total_hours')
+              .eq('user_id', profile.id)
+              .gte('clock_in', startIso)
+              .lte('clock_in', endIso),
+          ]);
+
+          snapsRows = snapsRes.data ?? [];
+          logRows = logsRes.data ?? [];
+
+          if (snapsRes.error || logsRes.error) {
+            throw new Error('No se pudo cargar histórico de Hours Engine');
+          }
+        }
+
+        const engineLogs = logRows.map((l) => ({
           clockInIso: l.clock_in as string,
           clockOutIso: l.clock_out as string | null,
           totalHours: l.total_hours as number | null,
@@ -195,38 +292,36 @@ export class LaborCostDayReadModelProjector {
 
         hasClockIns = engineLogs.some((l) => formatYmdInMadrid(l.clockInIso) === day);
 
-        if (!snapsRes.error && !logsRes.error) {
-          const isPaidByWeek = isPaidLookupFromRows(snapsRes.data ?? []);
-          const bagModeOverrideByWeek = bagModeOverrideLookupFromRows(snapsRes.data ?? []);
-          const overtimeRateOverrideByWeek = overtimeRateOverrideLookupFromRows(snapsRes.data ?? []);
+        const isPaidByWeek = isPaidLookupFromRows(snapsRows);
+        const bagModeOverrideByWeek = bagModeOverrideLookupFromRows(snapsRows);
+        const overtimeRateOverrideByWeek = overtimeRateOverrideLookupFromRows(snapsRows);
 
-          const carryIn = resolveOpeningCarryIn({
-            employee,
-            chainStart: weekStart,
-            logs: engineLogs,
-            isPaidByWeek,
-            bagModeOverrideByWeek,
-          });
+        const carryIn = resolveOpeningCarryIn({
+          employee,
+          chainStart: weekStart,
+          logs: engineLogs,
+          isPaidByWeek,
+          bagModeOverrideByWeek,
+        });
 
-          const weekLogs = engineLogs.filter((l) => {
-            const d = formatYmdInMadrid(l.clockInIso);
-            return d >= weekStart && d <= weekEnd;
-          });
+        const weekLogs = engineLogs.filter((l) => {
+          const d = formatYmdInMadrid(l.clockInIso);
+          return d >= weekStart && d <= weekEnd;
+        });
 
-          const { extrasByDay, summary } = liquidateWeekForCard({
-            employee,
-            weekStart,
-            logs: weekLogs,
-            isPaid: isPaidByWeek(weekStart),
-            carryIn,
-            bagModeOverride: bagModeOverrideByWeek(weekStart),
-            overrideRate: overtimeRateOverrideByWeek(weekStart),
-          });
+        const { extrasByDay, summary } = liquidateWeekForCard({
+          employee,
+          weekStart,
+          logs: weekLogs,
+          isPaid: isPaidByWeek(weekStart),
+          carryIn,
+          bagModeOverride: bagModeOverrideByWeek(weekStart),
+          overrideRate: overtimeRateOverrideByWeek(weekStart),
+        });
 
-          const dayOtShare = extrasByDay[day] ?? 0;
-          if (Math.abs(dayOtShare) >= 0.005 && (summary.estimatedValue ?? 0) > 0) {
-            overtimeMoney = Money.from(dayOtShare);
-          }
+        const dayOtShare = extrasByDay[day] ?? 0;
+        if (Math.abs(dayOtShare) >= 0.005 && (summary.estimatedValue ?? 0) > 0) {
+          overtimeMoney = Money.from(dayOtShare);
         }
       } catch {
         // Ignorar trabajadores sin hechos de frontera válidos
