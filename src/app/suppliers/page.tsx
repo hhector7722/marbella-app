@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import { Plus, Phone, Truck, Upload, ImageIcon } from 'lucide-react';
+import { Plus, Truck, Upload, ImageIcon } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import Image from 'next/image';
@@ -659,7 +659,7 @@ export default function SuppliersPage() {
                                         className="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-600 text-white shadow-sm transition-colors hover:bg-emerald-700 active:scale-95"
                                         title="Llamar"
                                     >
-                                        <Phone size={22} />
+                                        <Image src="/icons/phone.png" alt="Llamar" width={22} height={22} className="object-contain" />
                                     </a>
                                     <a
                                         href={`https://wa.me/${detailSupplier.phone.replace(/\D/g, '').startsWith('34') ? detailSupplier.phone.replace(/\D/g, '') : '34' + detailSupplier.phone.replace(/\D/g, '')}`}

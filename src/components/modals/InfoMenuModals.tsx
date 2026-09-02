@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { Phone } from 'lucide-react';
 import { toast } from 'sonner';
 import { Modal } from '@/components/ui/modal';
 import { AccessMenuGrid, CatalogTile } from '@/components/catalog/CatalogTile';
@@ -178,7 +177,7 @@ export function InfoMenuModals({ open, onClose, usagePrefix = 'admin' }: InfoMen
                                         <p className="text-xs font-bold text-gray-800 truncate">{c.name}</p>
                                     </div>
                                     <div className="flex gap-4 items-center">
-                                        <a href={`tel:${cleanPhone(c.phone)}`} className="text-emerald-500 hover:text-emerald-600 transition-colors p-1 active:scale-95"><Phone size={24} /></a>
+                                        <a href={`tel:${cleanPhone(c.phone)}`} className="text-emerald-500 hover:text-emerald-600 transition-colors p-1 active:scale-95"><Image src="/icons/phone.png" alt="Llamar" width={24} height={24} className="object-contain" /></a>
                                         <a href={`https://wa.me/${cleanPhone(c.phone).replace('+', '')}`} target="_blank" rel="noopener noreferrer" className="transition-all hover:scale-110 active:scale-95">
                                             <Image src="/icons/contact.png" alt="Contact" width={24} height={24} className="object-contain" />
                                         </a>

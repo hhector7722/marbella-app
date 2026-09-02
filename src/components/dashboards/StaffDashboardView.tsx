@@ -6,7 +6,7 @@ import { createClient } from "@/utils/supabase/client";
 import {
     Calendar, ArrowLeft,
     Check, Info, Package,
-    Phone, Scale, ShoppingCart, Boxes, MessageCircle,
+    Scale, ShoppingCart, Boxes, MessageCircle,
     ChefHat, Calculator, ArrowRightLeft, Save, ArrowDown, ArrowUp,
     Plus, Minus, BookOpen, CalendarCheck
 } from 'lucide-react';
@@ -1146,7 +1146,7 @@ export default function StaffDashboardView() {
                                         <p className="text-xs font-bold text-gray-800 truncate">{c.name}</p>
                                     </div>
                                     <div className="flex gap-4 items-center">
-                                        <a href={`tel:${cleanPhone(c.phone)}`} className="text-emerald-500 hover:text-emerald-600 transition-colors p-1 active:scale-95"><Phone size={24} /></a>
+                                        <a href={`tel:${cleanPhone(c.phone)}`} className="text-emerald-500 hover:text-emerald-600 transition-colors p-1 active:scale-95"><Image src="/icons/phone.png" alt="Llamar" width={24} height={24} className="object-contain" /></a>
                                         <a href={`https://wa.me/${cleanPhone(c.phone).replace('+', '')}`} target="_blank" rel="noopener noreferrer" className="transition-all hover:scale-110 active:scale-95">
                                             <Image src="/icons/whatsapp.png" alt="WhatsApp" width={24} height={24} className="object-contain" />
                                         </a>
