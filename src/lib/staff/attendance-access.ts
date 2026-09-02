@@ -1,9 +1,9 @@
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import type { MasterViewAsIdentity } from '@/lib/master-view-as';
 
-const MANAGER_ATTENDANCE_ROLES = new Set(['manager', 'admin', 'supervisor']);
+const MANAGER_ATTENDANCE_ROLES = new Set(['manager', 'admin']);
 
-/** Puede crear, editar o borrar fichajes de la plantilla (manager/admin/supervisor o Master por email). */
+/** Puede crear, editar o borrar fichajes de la plantilla (manager/admin o Master por email). */
 export function canManageStaffAttendance(
     role: string | null | undefined,
     email?: string | null,

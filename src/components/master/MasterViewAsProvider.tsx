@@ -28,6 +28,8 @@ import {
 type MasterViewAsContextValue = {
     identity: MasterViewAsIdentity | null;
     isMaster: boolean;
+    /** false hasta que loadIdentity termina (evita permisos master prematuros). */
+    sessionReady: boolean;
     openViewAsPicker: () => void;
     clearViewAs: () => Promise<void>;
 };
@@ -40,6 +42,7 @@ export function useMasterViewAs(): MasterViewAsContextValue {
         ctx ?? {
             identity: null,
             isMaster: false,
+            sessionReady: true,
             openViewAsPicker: () => {},
             clearViewAs: async () => {},
         }
@@ -55,6 +58,7 @@ export function MasterViewAsProvider({ children }: { children: React.ReactNode }
     const supabase = createClient();
     const [identity, setIdentity] = useState<MasterViewAsIdentity | null>(null);
     const [isMaster, setIsMaster] = useState(false);
+    const [sessionReady, setSessionReady] = useState(false);
     const [pickerOpen, setPickerOpen] = useState(false);
     const [showAllEmployees, setShowAllEmployees] = useState(false);
     const [activeEmployees, setActiveEmployees] = useState<PlantillaEmployee[]>([]);
@@ -62,24 +66,26 @@ export function MasterViewAsProvider({ children }: { children: React.ReactNode }
     const [loadingEmployees, setLoadingEmployees] = useState(false);
 
     const loadIdentity = useCallback(async () => {
-        const {
-            data: { session },
-        } = await supabase.auth.getSession();
-        const user = session?.user;
-        if (!user?.email) {
-            setIdentity(null);
-            setIsMaster(false);
-            return;
-        }
+        setSessionReady(false);
+        try {
+            const {
+                data: { session },
+            } = await supabase.auth.getSession();
+            const user = session?.user;
+            if (!user?.email) {
+                setIdentity(null);
+                setIsMaster(false);
+                return;
+            }
 
-        const master = canUseMasterViewAs(user.email);
-        setIsMaster(master);
-        if (!master) {
-            setIdentity(null);
-            return;
-        }
+            const master = canUseMasterViewAs(user.email);
+            setIsMaster(master);
+            if (!master) {
+                setIdentity(null);
+                return;
+            }
 
-        const viewAsId = readMasterViewAsCookieFromDocument();
+            const viewAsId = readMasterViewAsCookieFromDocument();
         const realProfileRes = await supabase
             .from('profiles')
             .select('first_name, role, email, is_supervisor')
@@ -139,6 +145,9 @@ export function MasterViewAsProvider({ children }: { children: React.ReactNode }
             isSupervisor: Boolean(viewedProfile.is_supervisor),
             isViewingAs: true,
         });
+        } finally {
+            setSessionReady(true);
+        }
     }, [supabase]);
 
     useEffect(() => {
@@ -237,10 +246,11 @@ export function MasterViewAsProvider({ children }: { children: React.ReactNode }
         () => ({
             identity,
             isMaster,
+            sessionReady,
             openViewAsPicker,
             clearViewAs,
         }),
-        [identity, isMaster, openViewAsPicker, clearViewAs],
+        [identity, isMaster, sessionReady, openViewAsPicker, clearViewAs],
     );
 
     return (

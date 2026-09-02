@@ -3,6 +3,10 @@
 import { createClient } from '@/utils/supabase/server';
 import { resolveSessionUser } from '@/lib/auth/resolve-session-user';
 import {
+  canReadEmployeeHistory,
+} from '@/lib/staff/history-access';
+import { resolveHistoryAccessScope } from '@/lib/staff/history-access-server';
+import {
   buildEmployeeHistoryMonthFromEngine,
   buildEmployeeHistoryRangeFromEngine,
   buildWeekDetailFromEngine,
@@ -12,18 +16,31 @@ import {
 
 export type { HistoryWeekDto, WeekFooterDto };
 
+async function authorizeEmployeeHistoryRead(targetUserId: string) {
+  const supabase = await createClient();
+  const user = await resolveSessionUser(supabase);
+  if (!user) return { ok: false as const, error: 'No autenticado' };
+
+  const scope = await resolveHistoryAccessScope(supabase, user.id, user.email ?? '');
+  if (!scope) return { ok: false as const, error: 'No autenticado' };
+
+  if (!canReadEmployeeHistory(scope, targetUserId)) {
+    return { ok: false as const, error: 'Sin permiso para ver este historial' };
+  }
+
+  return { ok: true as const, supabase };
+}
+
 export async function getEmployeeHistoryMonth(input: {
   userId: string;
   filterYear: number;
   filterMonth: number;
 }): Promise<{ success: true; weeks: HistoryWeekDto[] } | { success: false; error: string }> {
-  const supabase = await createClient();
-  const user = await resolveSessionUser();
-  if (!user) return { success: false, error: 'No autenticado' };
+  const auth = await authorizeEmployeeHistoryRead(input.userId);
+  if (!auth.ok) return { success: false, error: auth.error };
 
   try {
-    const weeks = await buildEmployeeHistoryMonthFromEngine(supabase, input);
-    console.log(`[DEBUG] getEmployeeHistoryMonth for ${input.userId} - Week 27 Summary:`, weeks.find(w => w.startDate.startsWith('2026-06-29'))?.summary);
+    const weeks = await buildEmployeeHistoryMonthFromEngine(auth.supabase, input);
     return { success: true, weeks };
   } catch (e) {
     return {
@@ -52,12 +69,11 @@ export async function getWeekDetailDto(input: {
     }
   | { success: false; error: string }
 > {
-  const supabase = await createClient();
-  const user = await resolveSessionUser();
-  if (!user) return { success: false, error: 'No autenticado' };
+  const auth = await authorizeEmployeeHistoryRead(input.userId);
+  if (!auth.ok) return { success: false, error: auth.error };
 
   try {
-    const detail = await buildWeekDetailFromEngine(supabase, input);
+    const detail = await buildWeekDetailFromEngine(auth.supabase, input);
     return { success: true, ...detail };
   } catch (e) {
     return {
@@ -84,9 +100,8 @@ export async function getEmployeeHistoryWeek(input: {
     }
   | { success: false; error: string }
 > {
-  const supabase = await createClient();
-  const user = await resolveSessionUser();
-  if (!user) return { success: false, error: 'No autenticado' };
+  const auth = await authorizeEmployeeHistoryRead(input.userId);
+  if (!auth.ok) return { success: false, error: auth.error };
 
   try {
     const monday = input.weekStart.split('T')[0]!;
@@ -102,12 +117,12 @@ export async function getEmployeeHistoryWeek(input: {
       weeks.find((w) => w.startDate.split('T')[0] === monday) ?? null;
 
     const [{ data: profile }, weeksPrimary] = await Promise.all([
-      supabase
+      auth.supabase
         .from('profiles')
         .select('first_name, last_name')
         .eq('id', input.userId)
         .maybeSingle(),
-      buildEmployeeHistoryMonthFromEngine(supabase, {
+      buildEmployeeHistoryMonthFromEngine(auth.supabase, {
         userId: input.userId,
         filterYear,
         filterMonth,
@@ -122,7 +137,7 @@ export async function getEmployeeHistoryWeek(input: {
       const prev = new Date(filterYear, filterMonth - 1, 1);
       filterYear = prev.getFullYear();
       filterMonth = prev.getMonth();
-      weeks = await buildEmployeeHistoryMonthFromEngine(supabase, {
+      weeks = await buildEmployeeHistoryMonthFromEngine(auth.supabase, {
         userId: input.userId,
         filterYear,
         filterMonth,
@@ -157,12 +172,11 @@ export async function getEmployeeHistoryRange(input: {
   rangeStartIso: string;
   rangeEndIso: string;
 }): Promise<{ success: true; weeks: HistoryWeekDto[] } | { success: false; error: string }> {
-  const supabase = await createClient();
-  const user = await resolveSessionUser();
-  if (!user) return { success: false, error: 'No autenticado' };
+  const auth = await authorizeEmployeeHistoryRead(input.userId);
+  if (!auth.ok) return { success: false, error: auth.error };
 
   try {
-    const weeks = await buildEmployeeHistoryRangeFromEngine(supabase, {
+    const weeks = await buildEmployeeHistoryRangeFromEngine(auth.supabase, {
       userId: input.userId,
       rangeStart: new Date(input.rangeStartIso),
       rangeEnd: new Date(input.rangeEndIso),

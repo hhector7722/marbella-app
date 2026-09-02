@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, usePathname } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import {
@@ -61,7 +61,8 @@ import {
     filterVisiblePlantillaEmployees,
     PLANTILLA_EMPLOYEE_SELECT,
 } from '@/lib/staff/plantilla-employees';
-import { canManageStaffAttendanceForSession } from '@/lib/staff/attendance-access';
+import { canManageStaffAttendance, canManageStaffAttendanceForSession } from '@/lib/staff/attendance-access';
+import { resolveAttendanceSession } from '@/lib/staff/history-access';
 import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
 
 // --- TIPOS ---
@@ -93,7 +94,8 @@ export default function HistoryPage() {
     const supabase = createClient();
     const searchParams = useSearchParams();
     const pathname = usePathname();
-    const { identity, isMaster: isMasterAccount } = useMasterViewAs();
+    const { identity, sessionReady } = useMasterViewAs();
+    const initGenerationRef = useRef(0);
     const [loading, setLoading] = useState(true);
     const [weeksData, setWeeksData] = useState<WeekData[]>([]);
 
@@ -129,58 +131,73 @@ export default function HistoryPage() {
     const [showSimulationExportModal, setShowSimulationExportModal] = useState(false);
     const [simulationEmployees, setSimulationEmployees] = useState<SimulationPlantillaEmployee[]>([]);
 
+    const attendance = useMemo(
+        () =>
+            resolveAttendanceSession({
+                identity,
+                sessionUserId: currentUserId,
+                sessionRole: userRole,
+                sessionEmail: userEmail,
+            }),
+        [identity, currentUserId, userRole, userEmail],
+    );
+
     const initUser = useCallback(async () => {
+        const generation = ++initGenerationRef.current;
         const { data: { session } } = await supabase.auth.getSession();
         const user = session?.user ?? null;
         if (!user) return;
 
-        const effectiveUserId = identity?.isViewingAs ? identity.effectiveUserId : user.id;
-        const effectiveEmail = identity?.isViewingAs ? identity.effectiveEmail : (user.email ?? '');
-
-        setCurrentUserId(effectiveUserId);
-        setUserEmail(effectiveEmail);
+        if (identity?.isViewingAs) {
+            if (generation !== initGenerationRef.current) return;
+            setCurrentUserId(identity.effectiveUserId);
+            setUserRole(identity.effectiveRole);
+            setUserEmail(identity.effectiveEmail);
+            setSelectedEmployeeId(identity.effectiveUserId);
+            setSelectedEmployeeLabel('');
+            setEmployees([]);
+            return;
+        }
 
         const { data: profile } = await supabase
             .from('profiles')
             .select('role, email')
-            .eq('id', effectiveUserId)
+            .eq('id', user.id)
             .single();
 
-        const effectiveRole = identity?.isViewingAs
-            ? identity.effectiveRole
-            : (profile?.role ?? 'staff');
+        if (generation !== initGenerationRef.current) return;
 
-        if (profile || identity?.isViewingAs) setUserRole(effectiveRole);
+        const email = profile?.email ?? user.email ?? '';
+        const role = profile?.role ?? 'staff';
+        setCurrentUserId(user.id);
+        setUserEmail(email);
+        setUserRole(role);
 
-        const canManage = canManageStaffAttendanceForSession(identity, effectiveRole, effectiveEmail);
+        const canManage = canManageStaffAttendance(role, email);
         if (canManage) {
             setSelectedEmployeeId('');
             setSelectedEmployeeLabel('');
-        } else {
-            setSelectedEmployeeId(effectiveUserId);
-            setSelectedEmployeeLabel('');
-        }
-
-        if (canManage) {
             const { data: emps } = await supabase
                 .from('profiles')
                 .select(PLANTILLA_EMPLOYEE_SELECT)
                 .order('first_name');
-
+            if (generation !== initGenerationRef.current) return;
             setEmployees(filterVisiblePlantillaEmployees((emps || []) as Employee[]));
         } else {
+            setSelectedEmployeeId(user.id);
+            setSelectedEmployeeLabel('');
             setEmployees([]);
         }
-    }, [supabase, identity, identity?.isViewingAs, identity?.effectiveUserId, identity?.effectiveRole, identity?.effectiveEmail]);
+    }, [supabase, identity]);
 
     useEffect(() => {
-        if (isMasterAccount && !identity) return;
+        if (!sessionReady) return;
         void initUser();
-    }, [initUser, isMasterAccount, identity]);
+    }, [initUser, sessionReady]);
     // Manager: si se entra con ?id=xxx (ej. desde /profile?id=xxx), preseleccionar ese trabajador
     useEffect(() => {
         const id = searchParams.get('id');
-        if (!canManageStaffAttendanceForSession(identity, userRole, userEmail) || !id || !currentUserId) return;
+        if (!canManageStaffAttendanceForSession(identity, userRole, userEmail) || !id || !attendance.userId) return;
 
         setSelectedEmployeeId(id);
         const emp = employees.find((e) => e.id === id);
@@ -198,25 +215,31 @@ export default function HistoryPage() {
                 if (!data) return;
                 setSelectedEmployeeLabel(staffSelectionApplySummary(data as Employee));
             });
-    }, [searchParams, identity, userRole, userEmail, currentUserId, employees, supabase]);
+    }, [searchParams, identity, userRole, userEmail, attendance.userId, employees, supabase]);
 
     useEffect(() => {
-        if (!currentUserId) return;
-        const isPlantillaView =
-            canManageStaffAttendanceForSession(identity, userRole, userEmail) &&
-            selectedEmployeeId === '';
-        if (isPlantillaView) {
-            fetchPlantilla();
+        if (!sessionReady || !attendance.userId) return;
+        const showPlantilla = attendance.canManage && selectedEmployeeId === '';
+        if (showPlantilla) {
+            void fetchPlantilla();
         } else {
-            fetchCalendar();
+            void fetchCalendar();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedEmployeeId, currentUserId, filterYear, filterMonth, userRole, userEmail, identity?.isViewingAs]);
+    }, [
+        sessionReady,
+        attendance.userId,
+        attendance.canManage,
+        attendance.isViewingAs,
+        selectedEmployeeId,
+        filterYear,
+        filterMonth,
+    ]);
 
     async function fetchCalendar() {
         setLoading(true);
         try {
-            const targetUserId = selectedEmployeeId || currentUserId;
+            const targetUserId = selectedEmployeeId || attendance.userId;
             const res = await getEmployeeHistoryMonth({
                 userId: targetUserId,
                 filterYear,
@@ -360,8 +383,8 @@ export default function HistoryPage() {
         }
     };
 
-    const isManager = canManageStaffAttendanceForSession(identity, userRole, userEmail);
-    const isPlantilla = isManager && selectedEmployeeId === '';
+    const isManager = attendance.canManage;
+    const isPlantilla = sessionReady && isManager && selectedEmployeeId === '';
     const isMaster = isMasterDashboardUser(userEmail) && !identity?.isViewingAs;
     const allowCreateFichaje = isMaster || isManager;
 
@@ -396,7 +419,7 @@ export default function HistoryPage() {
         setShowExportMenu(false);
         setIsExporting(true);
         try {
-            const targetId = selectedEmployeeId || currentUserId;
+            const targetId = selectedEmployeeId || attendance.userId;
 
             const targetEmployee = employees.find((e) => e.id === targetId);
             const fullName = targetEmployee
@@ -485,7 +508,7 @@ export default function HistoryPage() {
             return timesheetPdfMultiBlob(exportPayloads);
         }
 
-        const targetId = selectedEmployeeId || currentUserId;
+        const targetId = selectedEmployeeId || attendance.userId;
         const targetEmployee = employees.find((e) => e.id === targetId);
         const fullName = targetEmployee
             ? `${targetEmployee.first_name} ${targetEmployee.last_name}`.trim()
@@ -875,7 +898,7 @@ export default function HistoryPage() {
 
     const handleDayClick = (date: string) => {
         void (async () => {
-            const canCreate = canManageStaffAttendanceForSession(identity, userRole, userEmail);
+            const canCreate = attendance.canManage;
 
             if (canCreate) {
                 setSummaryDate(date);
@@ -886,7 +909,7 @@ export default function HistoryPage() {
             }
 
             setEditingDate(date);
-            setEditingUserId(selectedEmployeeId || currentUserId);
+            setEditingUserId(selectedEmployeeId || attendance.userId);
         })();
     };
 
@@ -996,7 +1019,7 @@ export default function HistoryPage() {
                     </div>
                 }
             >
-                    {loading ? (
+                    {!sessionReady || loading ? (
                         <div className="py-20 flex justify-center">
                             <LoadingSpinner size="md" className="text-ds-marca" />
                         </div>
@@ -1033,9 +1056,9 @@ export default function HistoryPage() {
                             filterYear={filterYear}
                             onDayClick={handleDayClick}
                             showWeekOverrides={isManager}
-                            userId={selectedEmployeeId || currentUserId}
+                            userId={selectedEmployeeId || attendance.userId}
                             onApplyWeekOverrides={async (week, contractedHours, preferStock, overtimeCostPerHour) => {
-                                const uid = selectedEmployeeId || currentUserId;
+                                const uid = selectedEmployeeId || attendance.userId;
                                 const weekStart = typeof week.startDate === 'string' ? week.startDate.split('T')[0] : String(week.startDate);
                                 const result = await updateWeeklyWorkerConfig(uid, weekStart, {
                                     contractedHours,

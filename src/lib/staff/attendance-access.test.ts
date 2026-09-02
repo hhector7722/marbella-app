@@ -5,15 +5,15 @@ import { canManageStaffAttendance, canManageStaffAttendanceForSession } from './
 import type { MasterViewAsIdentity } from '../master-view-as.ts';
 
 describe('canManageStaffAttendance', () => {
-    it('manager, admin, supervisor y Master por email pueden gestionar asistencia', () => {
+    it('manager, admin y Master por email pueden gestionar asistencia', () => {
         assert.equal(canManageStaffAttendance('manager'), true);
         assert.equal(canManageStaffAttendance('admin'), true);
-        assert.equal(canManageStaffAttendance('supervisor'), true);
         assert.equal(canManageStaffAttendance('staff', MASTER_DASHBOARD_EMAIL), true);
         assert.equal(canManageStaffAttendance('staff', 'hhector7722@gmail.com'), true);
     });
 
-    it('staff sin email Master no puede gestionar asistencia', () => {
+    it('supervisor y staff sin email Master no pueden gestionar asistencia', () => {
+        assert.equal(canManageStaffAttendance('supervisor'), false);
         assert.equal(canManageStaffAttendance('staff'), false);
         assert.equal(canManageStaffAttendance('staff', 'otro@gmail.com'), false);
     });
@@ -40,6 +40,17 @@ describe('canManageStaffAttendanceForSession', () => {
                 'hhector7722@gmail.com',
             ),
             true,
+        );
+    });
+
+    it('en view-as supervisor no puede gestionar asistencia', () => {
+        assert.equal(
+            canManageStaffAttendanceForSession(
+                { isViewingAs: true, effectiveRole: 'supervisor' },
+                'staff',
+                'hhector7722@gmail.com',
+            ),
+            false,
         );
     });
 
