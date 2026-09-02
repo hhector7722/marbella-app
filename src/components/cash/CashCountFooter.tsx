@@ -29,7 +29,10 @@ export function CashCountFooter({
     instancePrefix: string;
 }) {
     return (
-        <div className="flex w-full min-w-0 flex-wrap items-center justify-end gap-2">
+        <div
+            data-component="CashCountFooter"
+            className="flex w-full min-w-0 flex-wrap items-center justify-end gap-2"
+        >
             <div className="mr-auto flex shrink-0 items-center gap-2">
                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Total</span>
                 <span className="text-base font-black tabular-nums text-zinc-800">
@@ -37,25 +40,27 @@ export function CashCountFooter({
                 </span>
             </div>
             {extra}
-            <Button
-                type="button"
-                variant="secondary"
-                instance={`${instancePrefix}-cancel`}
-                onClick={onCancel}
-            >
-                {cancelLabel}
-            </Button>
-            <Button
-                type={saveType}
-                variant="primary"
-                instance={`${instancePrefix}-save`}
-                form={saveForm}
-                onClick={saveType === 'submit' ? undefined : onSave}
-                disabled={saveDisabled}
-                loading={saveLoading}
-            >
-                {saveLabel}
-            </Button>
+            <div data-element="footer-actions">
+                <Button
+                    type="button"
+                    variant="secondary"
+                    instance={`${instancePrefix}-cancel`}
+                    onClick={onCancel}
+                >
+                    {cancelLabel}
+                </Button>
+                <Button
+                    type={saveType}
+                    variant="primary"
+                    instance={`${instancePrefix}-save`}
+                    form={saveForm}
+                    onClick={saveType === 'submit' ? undefined : onSave}
+                    disabled={saveDisabled}
+                    loading={saveLoading}
+                >
+                    {saveLabel}
+                </Button>
+            </div>
         </div>
     );
 }

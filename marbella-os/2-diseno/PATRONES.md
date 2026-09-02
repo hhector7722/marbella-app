@@ -52,7 +52,7 @@ El patrón más usado del producto. Sus leyes están en [EXPERIENCIA §8](EXPERI
 
 **Reglas**:
 - La cabecera dice de qué es el modal, no qué debe hacer la persona. Altura fija (`estructura.cabecera-modal`); inset horizontal único (`estructura.modal-cabecera-inset`); título y subtítulo en la misma fila, centrados por el trazo; iconos sin marco/fondo por defecto. Radio único del panel (`radio.superficie`). Separación Header → Body fija (`espacio.3`).
-- El pie de acciones no se desplaza y no se encoge nunca (slot `footer` del componente). No fuerza botones a ancho completo.
+- El pie de acciones no se desplaza y no se encoge nunca (slot `footer` del componente). No fuerza botones a ancho completo. Los botones que conviven en el pie se igualan al ancho del mayor (grid `1fr` en `footer-actions`); no ocupan el pie entero.
 - Un modal no abre otro modal de tarea. Solo se admite **una superficie derivada** auxiliar ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)); el backdrop no acumula blur ([ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md)); el panel cubierto se subordina visualmente ([ADR-0009](../4-decisiones/ADR-0009-modal-subordinacion.md)).
 - La navegación padre→hijo no es nesting de capas ni z-index (`AF-MODAL-NAV-NO-ES-LAYER`). Contrato en [Modal](SISTEMA-DE-COMPONENTES.md#modal).
 - Al abrirse, las barras fijas de la aplicación se atenúan y dejan de responder al toque.
@@ -239,7 +239,7 @@ Contar billetes y monedas: propinas, entradas y salidas, arqueo, cierre, cambio 
 
 **Reglas**:
 - Toda pantalla que cuente efectivo usa esta composición. No se inventa otra rejilla ni otro pie.
-- El total vive **abajo**, a la izquierda del pie. Cancelar y Guardar a la derecha. No hay pastilla a todo el ancho.
+- El total vive **abajo**, a la izquierda del pie. Cancelar y Guardar a la derecha, del mismo ancho (el del mayor, vía `footer-actions`). No hay pastilla a todo el ancho.
 - La caja `- valor +` es más estrecha que la columna, para que las columnas respiren. El número de dígitos visibles no cambia.
 - La fecha, si hace falta, va en la cabecera, no en el cuerpo.
 - Un botón propio de la función (Atrás, Ver resumen, Siguiente, Esperado) cabe en el pie; no sustituye el esqueleto.

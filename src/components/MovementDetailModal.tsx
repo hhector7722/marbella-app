@@ -231,7 +231,7 @@ export function MovementDetailModal({ movement, onClose, onAfterMutation }: Move
                                 <p className="text-[9px] text-rose-400 font-bold">Esta acción es irreversible</p>
                             </div>
                         </div>
-                        <div className="flex gap-2">
+                        <div data-element="footer-actions">
                             <Button
                                 type="button"
                                 variant="secondary"

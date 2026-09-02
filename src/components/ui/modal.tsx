@@ -315,7 +315,7 @@ function ModalPanelShell({
                     data-element="footer"
                     className="flex max-w-full shrink-0 items-center overflow-x-hidden border-t border-ds-borde bg-ds-superficie py-ds-3"
                 >
-                    {footer}
+                    <div data-element="footer-actions">{footer}</div>
                 </div>
             ) : null}
         </div>

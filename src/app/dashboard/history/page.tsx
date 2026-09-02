@@ -1470,7 +1470,7 @@ export default function HistoryPage() {
                                 </span>
                             </div>
                         </div>
-                        <div className="mt-2 grid grid-cols-7 gap-0.5">
+                        <div className="mt-3 grid grid-cols-4 gap-0.5">
                             {(
                                 [
                                     {
@@ -1497,6 +1497,24 @@ export default function HistoryPage() {
                                             ? formatValue(yesterdayMetrics.cashCounted, 'cash_counted')
                                             : ' ',
                                     },
+                                ] as const
+                            ).map((item) => (
+                                <div
+                                    key={item.label}
+                                    className="flex min-w-0 flex-col items-center justify-center text-center"
+                                >
+                                    <span className="text-[9px] sm:text-[10px] md:text-xs font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
+                                        {item.value}
+                                    </span>
+                                    <span className="mt-1 text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-wider leading-tight">
+                                        {item.label}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="mt-2 grid grid-cols-3 gap-0.5">
+                            {(
+                                [
                                     {
                                         label: 'Pendiente pago',
                                         value: yesterdayClosing

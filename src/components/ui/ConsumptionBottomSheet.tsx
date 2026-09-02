@@ -145,7 +145,7 @@ export function ConsumptionBottomSheet({
                         data-element="footer"
                         className="flex max-w-full shrink-0 items-center gap-ds-2 overflow-x-hidden border-t border-ds-borde px-ds-4 py-ds-3"
                     >
-                        {footer}
+                        <div data-element="footer-actions">{footer}</div>
                     </div>
                 ) : null}
             </div>

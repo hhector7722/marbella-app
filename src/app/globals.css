@@ -317,11 +317,84 @@
 }
 
 /*
- * Un Button hug en el pie no absorbe el ancho: si crece, el relleno
- * compacto se lee como pastilla. El fill sigue decidiendo el ancho.
+ * Pie de acciones (footer-actions): los botones que conviven se igualan
+ * al más ancho. `inline-grid` + `grid-auto-flow: column` +
+ * `grid-auto-columns: 1fr`: con el ancho del contenedor indeterminado,
+ * cada `1fr` se resuelve al max-content del track más ancho y todos los
+ * hijos miden lo mismo (el mayor). Funciona con N botones, sin JS.
+ *
+ * El contenedor solo cobra caja cuando contiene botones (directos o en
+ * un wrapper que solo envuelve botones). Con contenido no-botón (pie de
+ * nota, total a la izquierda, aviso + botones) es transparente y el
+ * contenido conserva su ancho y layout.
  */
-[data-component='Modal'] [data-element='footer'] > [data-component='Button'][data-layout='hug'] {
-  flex: 0 0 auto;
+[data-element='footer-actions'] {
+  display: contents;
+}
+
+/* Igualador: botones directos o wrapper que solo envuelve botones. */
+[data-element='footer-actions']:has(> [data-component='Button']),
+[data-element='footer-actions']:has(> div:has(> [data-component='Button']):not(:has(> :not([data-component='Button'])))),
+[data-component='Modal'] [data-element='footer'] > [data-element='footer-actions']:has(> [data-component='Button']),
+[data-component='Modal'] [data-element='footer'] > [data-element='footer-actions']:has(> div:has(> [data-component='Button']):not(:has(> :not([data-component='Button'])))),
+[data-component='ConsumptionBottomSheet'] [data-element='footer'] > [data-element='footer-actions']:has(> [data-component='Button']),
+[data-component='ConsumptionBottomSheet'] [data-element='footer'] > [data-element='footer-actions']:has(> div:has(> [data-component='Button']):not(:has(> :not([data-component='Button'])))) {
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  align-items: center;
+  gap: clamp(var(--espacio-1), 2vw, var(--espacio-2));
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* El Button hug del pie llena su columna (ancho del mayor), no su contenido. */
+[data-element='footer-actions'] > [data-component='Button'][data-layout='hug'] {
+  width: auto;
+  justify-self: stretch;
+  min-width: 0;
+}
+
+/*
+ * El shell del pie del Modal/BottomSheet envuelve el contenido en
+ * footer-actions. Con especificidad mayor que `[data-element='footer'] > *`
+ * (que impone display:flex/flex-grow), aquí queda transparente y alineado
+ * a la derecha; el igualador superior gana cuando hay botones.
+ */
+[data-component='Modal'] [data-element='footer'] > [data-element='footer-actions'],
+[data-component='ConsumptionBottomSheet'] [data-element='footer'] > [data-element='footer-actions'] {
+  display: contents;
+  margin-inline-start: auto;
+  flex: 0 1 auto;
+}
+
+/*
+ * Contenido no-botón del pie del Modal (nota al pie, componente de pie con
+ * total, aviso + botones): conserva el tratamiento flex de antes (`> *`).
+ * Cuando el footer-actions es inline-grid, estos hijos no-botón no existen
+ * (solo hay botones o un wrapper que se vuelve transparente después).
+ */
+[data-component='Modal'] [data-element='footer'] [data-element='footer-actions'] > *:not([data-component='Button']),
+[data-component='ConsumptionBottomSheet'] [data-element='footer'] [data-element='footer-actions'] > *:not([data-component='Button']) {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: inherit;
+  gap: inherit;
+  min-width: 0;
+  max-width: 100%;
+  flex: 1 1 auto;
+}
+
+/*
+ * Pie de acciones: un wrapper de consumidor que solo envuelve botones
+ * (p. ej. `flex ... justify-end gap-2`) es transparente al grid del pie:
+ * sus botones pasan a ser columnas `1fr`. Un componente de pie con
+ * contenido propio (P14: total a la izquierda) no entra aquí.
+ */
+[data-component='Modal'] [data-element='footer'] [data-element='footer-actions'] > div:has(> [data-component='Button']):not(:has(> :not([data-component='Button']))),
+[data-component='ConsumptionBottomSheet'] [data-element='footer'] [data-element='footer-actions'] > div:has(> [data-component='Button']):not(:has(> :not([data-component='Button']))) {
+  display: contents;
 }
 
 /*

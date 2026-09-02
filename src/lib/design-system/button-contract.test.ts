@@ -294,8 +294,13 @@ describe('Button className no escapa del contrato visual', () => {
         assert.match(css, /width:\s*100%/);
         assert.match(
             css,
-            /\[data-element='footer'\] > \[data-component='Button'\]\[data-layout='hug'\] \{[\s\S]*?flex:\s*0 0 auto/,
-            'Siguiente y el resto de CTAs hug del pie no se estiran a pastilla'
+            /data-element='footer-actions'[\s\S]*?display:\s*inline-grid[\s\S]*?grid-auto-columns:\s*1fr/,
+            'el pie de acciones iguala el ancho de los botones (grid 1fr)'
+        );
+        assert.match(
+            css,
+            /\[data-element='footer-actions'\] > \[data-component='Button'\]\[data-layout='hug'\] \{[\s\S]*?width:\s*auto[\s\S]*?justify-self:\s*stretch/,
+            'el Button hug del pie llena su columna (ancho del mayor)'
         );
         assert.match(
             css,

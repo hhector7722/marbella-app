@@ -38,7 +38,9 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-02
 
+- **Pies de acción: botones del mismo ancho.** Los botones que conviven en el pie de un Modal (o en el pie P14 de caja) se igualan al ancho del mayor, sean 2 o más, sin JS. El grupo se encoge al contenido; no ocupa el pie entero. [SISTEMA-DE-COMPONENTES §Button](../2-diseno/SISTEMA-DE-COMPONENTES.md#botón), [P2](../2-diseno/PATRONES.md#p2--modal).
 - **Cierres: agosto no cuenta en el rendimiento.** Venta neta, rendimiento y ventas del resumen del mes quedan siempre alineados en la misma fila, con la etiqueta pegada al valor. El rendimiento —tanto el del resumen como el de cada día— omite agosto (mes cerrado): la comparación salta al periodo anterior.
+- **Cierres: resumen de ayer en tres filas.** La cabecera queda como estaba; las métricas pasan a dos filas (ventas, venta neta, tarjeta, efectivo / pendiente pago, cobros pendientes, diferencia), distribuidas homogéneamente a lo ancho de su fila y con separación entre cabecera y primera fila de métricas.
 - **Cabecera de Modal work: tinta oscura.** Los iconos y fechas de cabecera dejan el `text-white` de la era petróleo; heredan o usan zinc sobre superficie. Defensa CSS igual que en Surface. Los menús `scheme="dark"` no cambian.
 - **TabBar reactiva al papel claro.** Por defecto usa el cristal de los widgets del mosaico. Si debajo hay superficie clara (`data-over="light"`), pasa al cristal del envolvente para que iconos y etiquetas se lean. [P8](../2-diseno/PATRONES.md#p8--navegación-inferior).
 - **Staff propinas: cards como sáb/dom del horario.** En `/staff/propinas` dejan el blanco; usan el relleno secundario del mosaico y tinta acorde. El modal de detalle no cambia.

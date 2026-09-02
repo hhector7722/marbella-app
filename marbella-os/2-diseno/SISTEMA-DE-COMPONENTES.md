@@ -66,7 +66,8 @@ Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`
 - El icono no va a la derecha.
 - No se usa para navegar. Navegar es un enlace, aunque parezca un botón.
 - El chrome close/back de Modal y Navbar no es este componente. Chrome ≠ Button. `TimeFilterButton`, `DashboardShortcut` y `TabBar` no son Button.
-- El Footer de Modal no convierte los botones en `fill`; el consumidor decide.
+- **Los botones que conviven en un pie de acciones se igualan al ancho del mayor.** El grupo de acciones del pie (`footer-actions`) usa grid `1fr`: todos los `<Button>` del pie miden lo mismo, el del texto más ancho, sean 2 o N. El consumidor no declara nada; es la regla del contenedor del pie.
+- El Footer de Modal no convierte los botones en `fill`; el consumidor decide. Igualar al mayor no es `fill`: el grupo se encoge al contenido, no ocupa el pie entero.
 - El Footer de Modal usa Button con texto, sin iconos, hug. Icon-only sigue permitido fuera de ese pie.
 - El radio contractual es 8 px (`espacio.2`). No píldora: el radio es menor que la mitad del alto visual. Distinto de `radio.superficie` del Modal. El consumidor no puede sobrescribirlo.
 - `primary` pinta con `color.positivo`. El petróleo no es el fill de Guardar / Confirmar / Crear. No se inventa variante `confirmar` ni color local en el consumidor.
@@ -244,7 +245,7 @@ Piezas transversales con comportamiento propio y contrato estricto. **Estas sí 
 - Radio único del panel: `radio.superficie` (16 px). El consumidor no puede sobrescribirlo con `className`.
 - **`className` del panel** solo admite composición externa (flex, overflow, tipografía de tono…). `pickModalPanelClassName` descarta max-width/max-height, padding, margin, radio, sombra, fondo y z-index. Ancho y alto los fija la variante / tokens del shell. Deuda de consumidores que aún pasan tokens de shell: allowlist `LEGACY_MODAL_PANEL_CLASSNAME_ALLOWLIST` (el runtime ya filtra).
 - **Inset del Body:** el shell aplica `padding-inline` + `padding-top` contractuales. Un hijo raíz con `p-4`/`px-6`/… (≥ `espacio.4`) **duplica** el inset. Gate de regresión: `findModalRootPaddingClassNames` + allowlist `LEGACY_MODAL_ROOT_PADDING_ALLOWLIST`. No se compensa con CSS inverso.
-- **Footer:** acciones con `<Button>` oficial (texto, sin iconos). Gate: ningún `<button>` nativo nuevo en `footer=`; deuda en `LEGACY_MODAL_FOOTER_NATIVE_BUTTON_ALLOWLIST` (7 rutas).
+- **Footer:** acciones con `<Button>` oficial (texto, sin iconos). Los botones del pie se igualan al ancho del mayor: el shell envuelve el contenido en `footer-actions` (grid `1fr`, sin JS). Un único `<Button>` no cambia. Un componente de pie con layout propio (`CashCountFooter`, total a la izquierda) no se iguala por el shell; iguala sus propios botones. Gate: ningún `<button>` nativo nuevo en `footer=`; deuda en `LEGACY_MODAL_FOOTER_NATIVE_BUTTON_ALLOWLIST` (7 rutas).
 - **`zIndexClass`:** deprecated; allowlist vacía — uso nuevo falla test. Preferir `layer`.
 - **`backdropClassName`:** deprecated salvo excepciones documentadas (`LEGACY_MODAL_BACKDROP_CLASSNAME_ALLOWLIST`: lightbox de carta). El backdrop lo posee la capa ([ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md)).
 - **Nesting:** máximo una superficie derivada sobre el modal base ([ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md)). Backdrop por capa sin blur acumulado ([ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md)).
