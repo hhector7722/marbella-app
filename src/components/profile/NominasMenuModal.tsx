@@ -17,7 +17,7 @@ const OPTIONS: { key: NominasMenuAction; label: string; iconPath: string }[] = [
     { key: 'contrato', label: 'Contrato', iconPath: '/icons/contrato.png' },
     { key: 'comunicados', label: 'Comunicados', iconPath: '/icons/contract.png' },
     { key: 'convenio', label: 'Convenio', iconPath: '/icons/convenio.png' },
-    { key: 'conducta', label: 'Código de Conducta', iconPath: '/icons/ley.png' },
+    { key: 'conducta', label: 'Código conducta', iconPath: '/icons/ley.png' },
 ];
 
 export default function NominasMenuModal({ isOpen, onClose, onSelect }: NominasMenuModalProps) {
@@ -36,7 +36,7 @@ export default function NominasMenuModal({ isOpen, onClose, onSelect }: NominasM
             usageId="documentos-menu"
             usageLabel="Menú documentos"
         >
-            <AccessMenuGrid>
+            <AccessMenuGrid align="center">
                 {OPTIONS.map(({ key, label, iconPath }) => (
                     <CatalogTile
                         key={key}

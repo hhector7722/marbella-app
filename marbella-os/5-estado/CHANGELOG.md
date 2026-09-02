@@ -38,6 +38,7 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-02
 
+- **Cierres: agosto no cuenta en el rendimiento.** Venta neta, rendimiento y ventas del resumen del mes quedan siempre alineados en la misma fila, con la etiqueta pegada al valor. El rendimiento —tanto el del resumen como el de cada día— omite agosto (mes cerrado): la comparación salta al periodo anterior.
 - **Cabecera de Modal work: tinta oscura.** Los iconos y fechas de cabecera dejan el `text-white` de la era petróleo; heredan o usan zinc sobre superficie. Defensa CSS igual que en Surface. Los menús `scheme="dark"` no cambian.
 - **TabBar reactiva al papel claro.** Por defecto usa el cristal de los widgets del mosaico. Si debajo hay superficie clara (`data-over="light"`), pasa al cristal del envolvente para que iconos y etiquetas se lean. [P8](../2-diseno/PATRONES.md#p8--navegación-inferior).
 - **Staff propinas: cards como sáb/dom del horario.** En `/staff/propinas` dejan el blanco; usan el relleno secundario del mosaico y tinta acorde. El modal de detalle no cambia.

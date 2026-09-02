@@ -28,7 +28,7 @@ const CONTACTS_DATA = [
 ];
 
 const INFO_MENU = [
-    { title: 'Contactos', imageSrc: '/icons/whatsapp.png', kind: 'contactos' as const },
+    { title: 'Contactos', imageSrc: '/icons/contact.png', kind: 'contactos' as const },
     { title: 'Manuales', imageSrc: '/icons/guide.png', kind: 'manuales' as const },
 ];
 
@@ -180,7 +180,7 @@ export function InfoMenuModals({ open, onClose, usagePrefix = 'admin' }: InfoMen
                                     <div className="flex gap-4 items-center">
                                         <a href={`tel:${cleanPhone(c.phone)}`} className="text-emerald-500 hover:text-emerald-600 transition-colors p-1 active:scale-95"><Phone size={22} /></a>
                                         <a href={`https://wa.me/${cleanPhone(c.phone).replace('+', '')}`} target="_blank" rel="noopener noreferrer" className="transition-all hover:scale-110 active:scale-95">
-                                            <Image src="/icons/whatsapp.png" alt="WhatsApp" width={28} height={28} className="object-contain" />
+                                            <Image src="/icons/contact.png" alt="Contact" width={28} height={28} className="object-contain" />
                                         </a>
                                     </div>
                                 </div>

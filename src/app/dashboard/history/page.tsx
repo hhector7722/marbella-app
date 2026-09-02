@@ -722,11 +722,17 @@ export default function HistoryPage() {
         let count = 0;
         let daysExcluded = 0;
 
-        for (let i = 1; i <= 8; i++) {
-            const prevDate = subWeeks(targetDate, i);
+        let weekOffset = 1;
+        while (count + daysExcluded < 8 && weekOffset <= 16) {
+            const prevDate = subWeeks(targetDate, weekOffset);
             const key = format(prevDate, 'yyyy-MM-dd');
             const closing = historicalClosingsMap.get(key);
-            
+
+            if (prevDate.getMonth() === 7) {
+                weekOffset++;
+                continue;
+            }
+
             if (closing) {
                 const sales = Number(closing.net_sales ?? 0);
                 if (sales > 0) {
@@ -738,6 +744,7 @@ export default function HistoryPage() {
             } else {
                 daysExcluded++;
             }
+            weekOffset++;
         }
 
         const expectedSales = count > 0 ? sum / count : 0;
@@ -775,7 +782,10 @@ export default function HistoryPage() {
         let prevNetSum = 0;
         closings.forEach((c) => {
             const d = parseLocalSafe(c.closing_date);
-            const prevD = subMonths(d, 1);
+            let prevD = subMonths(d, 1);
+            if (prevD.getMonth() === 7) {
+                prevD = subMonths(d, 2);
+            }
             const key = format(prevD, 'yyyy-MM-dd');
             const prevClosing = historicalClosingsMap.get(key);
             if (prevClosing) {
@@ -958,7 +968,7 @@ export default function HistoryPage() {
             
             const prevStartISO = format(prevStart, 'yyyy-MM-dd');
             const prevEndISO = format(prevEnd, 'yyyy-MM-dd');
-            const histStartISO = format(subMonths(start, 3), 'yyyy-MM-dd');
+            const histStartISO = format(subMonths(start, 4), 'yyyy-MM-dd');
             const yesterdayISO = format(subDays(startOfDay(new Date()), 1), 'yyyy-MM-dd');
 
             const closingsPromise = supabase
@@ -1381,42 +1391,42 @@ export default function HistoryPage() {
                     >
                         <div className="grid grid-cols-3">
                             <div className="flex flex-col items-center justify-center text-center">
-                                <div className="flex min-h-12 items-center justify-center gap-1.5 leading-none">
-                                    <span className="text-sm sm:text-base md:text-lg font-black text-zinc-950 tabular-nums month-cal-kpi-value">
+                                <div className="flex min-h-12 items-center justify-center leading-none">
+                                    <span className="whitespace-nowrap text-sm sm:text-base md:text-lg font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
                                         {formatValue(summary.totalNet, 'net_sales')}
                                     </span>
                                 </div>
-                                <span className="text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest mt-1.5 lg:mt-0.5">
+                                <span className="mt-1 text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest leading-none">
                                     VENTA NETA
                                 </span>
                             </div>
                             <div
                                 onClick={() => setShowPeriodPerformanceModal(true)}
-                                className="flex min-h-12 flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform"
+                                className="flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform"
                             >
-                                <div className="flex items-center gap-1 leading-none">
+                                <div className="flex min-h-12 items-center justify-center gap-1 leading-none">
                                     {(() => {
                                         const isNeutral = popPercent >= -5 && popPercent <= 5;
                                         const triangleSymbol = isNeutral ? '' : (popPercent > 5 ? '▲' : '▼');
                                         return popPercent === 0 ? null : (
-                                            <span className="text-sm sm:text-base md:text-lg font-extrabold tabular-nums flex items-center gap-1 month-cal-kpi-value text-white">
+                                            <span className="whitespace-nowrap text-sm sm:text-base md:text-lg font-extrabold tabular-nums flex items-center gap-1 month-cal-kpi-value text-white leading-none">
                                                 {!isNeutral && <span className="text-[10px] sm:text-xs md:text-sm leading-none">{triangleSymbol}</span>}
                                                 <span>{Math.abs(popPercent).toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 1 })}%</span>
                                             </span>
                                         );
                                     })()}
                                 </div>
-                                <span className="text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest mt-1.5 lg:mt-0.5">
+                                <span className="mt-1 text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest leading-none">
                                     RENDIMIENTO
                                 </span>
                             </div>
                             <div className="flex flex-col items-center justify-center text-center">
-                                <div className="flex min-h-12 items-center justify-center">
-                                    <span className="text-sm sm:text-base md:text-lg font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
+                                <div className="flex min-h-12 items-center justify-center leading-none">
+                                    <span className="whitespace-nowrap text-sm sm:text-base md:text-lg font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
                                         {formatValue(summary.totalGross, 'tpv_sales')}
                                     </span>
                                 </div>
-                                <span className="text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest mt-1.5 lg:mt-0.5">
+                                <span className="mt-1 text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest leading-none">
                                     VENTAS
                                 </span>
                             </div>

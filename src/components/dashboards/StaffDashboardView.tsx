@@ -71,7 +71,7 @@ const CONTACTS_DATA = [
 ];
 
 const STAFF_INFO_MENU = [
-    { title: 'Contactos', imageSrc: '/icons/whatsapp.png', kind: 'contactos' as const },
+    { title: 'Contactos', imageSrc: '/icons/contact.png', kind: 'contactos' as const },
     { title: 'Manuales', imageSrc: '/icons/guide.png', kind: 'manuales' as const },
 ];
 

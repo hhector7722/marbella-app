@@ -3070,8 +3070,8 @@ button[data-element='catalog-filter'] {
 }
 
 /*
- * AccessMenuGrid centrado: pocos iconos (p. ej. Info) alineados al centro
- * con el mismo aire inferior que AccessShortcutGrid.
+ * AccessMenuGrid centrado: filas de 3; si la última tiene 1–2 iconos, el conjunto
+ * queda centrado. Mismo aire inferior que AccessShortcutGrid.
  */
 [data-component='AccessMenuGrid'][data-align='center'] {
   display: flex;
@@ -3084,8 +3084,10 @@ button[data-element='catalog-filter'] {
   padding-bottom: var(--espacio-6);
 }
 [data-component='AccessMenuGrid'][data-align='center'] > * {
-  flex: 0 0 auto;
-  width: min(30%, 7.5rem);
+  box-sizing: border-box;
+  flex: 0 0 calc((100% - 2 * var(--espacio-4)) / 3);
+  width: calc((100% - 2 * var(--espacio-4)) / 3);
+  max-width: 7.5rem;
 }
 
 /*
