@@ -31,7 +31,6 @@ const AUTH_WRITE_METHODS = new Set([
   'linkIdentity',
   'reauthenticate',
   'resetPasswordForEmail',
-  'resetPasswordForEmail',
   'signInWithPassword',
   'signOut',
   'unlinkIdentity',
