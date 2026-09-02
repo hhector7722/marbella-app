@@ -77,7 +77,7 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.match(home, /data-layout='staff'/);
         assert.match(
             home,
-            /hextras hextras hextras plant[\s\S]*hextras hextras hextras albaranes[\s\S]*cambio1 cambio2 recetas asis[\s\S]*mobra stock ingredientes cambio/,
+            /hextras hextras hextras plant[\s\S]*hextras hextras hextras albaranes[\s\S]*cambio1 cambio2 recetas asis[\s\S]*mas mobra stock ingredientes/,
             'H. extras en filas 3–4; Plantilla y Albaranes a la derecha; Cambio 1/2 en la fila de Recetas'
         );
         assert.doesNotMatch(
@@ -368,12 +368,12 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.match(ops, /size="icon" instance="admin-albaranes"/);
         assert.match(ops, /size="tile" instance="dashboard-caja-cambio-1" label="Cambio 1"/);
         assert.match(ops, /size="tile" instance="dashboard-caja-cambio-2" label="Cambio 2"/);
-        assert.match(ops, /size="icon" instance="admin-cambio"/);
+        assert.match(ops, /size="icon" instance="admin-mas-funciones"/);
         assert.match(ops, /size="icon" instance="admin-ingredientes"/);
         assert.match(
             ops,
-            /dashboard-horas-extras[\s\S]*admin-plantilla[\s\S]*admin-albaranes[\s\S]*dashboard-caja-cambio-1[\s\S]*admin-recetas[\s\S]*admin-m-obra/,
-            'H. extras en 3–4; Plantilla y Albaranes a la derecha; Cambio 1/2 con Recetas y Asistencia'
+            /dashboard-horas-extras[\s\S]*admin-plantilla[\s\S]*admin-albaranes[\s\S]*dashboard-caja-cambio-1[\s\S]*admin-recetas[\s\S]*admin-mas-funciones/,
+            'H. extras en 3–4; Plantilla y Albaranes a la derecha; Cambio 1/2 con Recetas; Más funciones en última fila'
         );
     });
 

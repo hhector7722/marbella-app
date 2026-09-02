@@ -1,7 +1,7 @@
 export const HIDDEN_PLANTILLA_FIRST_NAMES = new Set(['ramon', 'ramón', 'empleado']);
 
 export const PLANTILLA_EMPLOYEE_SELECT =
-    'id, first_name, last_name, avatar_url, visible_in_plantilla' as const;
+    'id, first_name, last_name, avatar_url, visible_in_plantilla, role, email, end_date, is_supervisor' as const;
 
 export type PlantillaEmployeeRow = {
     id: string;

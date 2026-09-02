@@ -22,6 +22,7 @@ import ComunicadosModal from '@/components/profile/ComunicadosModal';
 import ContratoModal from '@/components/profile/ContratoModal';
 import { AvatarCropModal } from '@/components/profile/AvatarCropModal';
 import { getHomeHrefForUser, isMasterDashboardUser } from '@/lib/master-dashboard';
+import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
 import {
     PLANTILLA_EMPLOYEE_SELECT,
     filterVisiblePlantillaEmployees,
@@ -65,6 +66,7 @@ function ProfileContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const targetId = searchParams.get('id');
+    const { identity, isMaster } = useMasterViewAs();
 
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -153,8 +155,9 @@ function ProfileContent() {
     }, [clearRecoveryUrl]);
 
     useEffect(() => {
+        if (isMaster && !identity) return;
         fetchInitialData();
-    }, [targetId]);
+    }, [targetId, identity?.isViewingAs, identity?.effectiveUserId, isMaster]);
 
     useEffect(() => {
         if (handledRecoveryRef.current || typeof window === 'undefined') return;
@@ -289,10 +292,16 @@ function ProfileContent() {
             setShouldRedirectToLogin(false);
             setCurrentUser(user);
             const { data: currentProfile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-            const managerStatus = currentProfile?.role === 'manager';
+            const isViewingAs = Boolean(identity?.isViewingAs);
+            const realManagerStatus = currentProfile?.role === 'manager';
+            const managerStatus = isViewingAs ? identity!.effectiveRole === 'manager' : realManagerStatus;
             setIsManager(managerStatus);
-            setViewerRole(currentProfile?.role ?? null);
-            const effectiveId = (targetId && managerStatus) ? targetId : user.id;
+            setViewerRole(
+                isViewingAs ? identity!.effectiveRole : (currentProfile?.role ?? null),
+            );
+            const effectiveId = isViewingAs
+                ? identity!.effectiveUserId
+                : (targetId && realManagerStatus ? targetId : user.id);
             const { data, error } = await supabase.from('profiles').select('*').eq('id', effectiveId).single();
             if (error) throw error;
             const typedProfile = data as UserProfile;

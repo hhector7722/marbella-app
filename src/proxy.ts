@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { getHomeHrefForUser, isMasterDashboardUser } from "@/lib/master-dashboard";
+import { MASTER_VIEW_AS_COOKIE } from "@/lib/master-view-as";
 import { withTimeout } from "@/lib/with-timeout";
 import {
   preserveSessionOnFailedRefresh,
@@ -78,6 +79,65 @@ function pathNeedsProfileRole(path: string): boolean {
  */
 function isServerActionRequest(request: NextRequest): boolean {
   return request.headers.has("next-action");
+}
+
+async function resolveEffectiveRole(
+  supabase: ReturnType<typeof createServerClient>,
+  userId: string,
+  emailFromJwt: string,
+  request: NextRequest
+): Promise<{ role: string | null; email: string; viewAsActive: boolean }> {
+  const viewAsId =
+    isMasterDashboardUser(emailFromJwt) ?
+      request.cookies.get(MASTER_VIEW_AS_COOKIE)?.value?.trim() || null
+    : null;
+
+  if (viewAsId && viewAsId !== userId) {
+    const viewAsProfile = await withTimeout(
+      (async () => {
+        try {
+          return await supabase
+            .from("profiles")
+            .select("role, email")
+            .eq("id", viewAsId)
+            .maybeSingle();
+        } catch {
+          return { data: null, error: null };
+        }
+      })(),
+      PROXY_PROFILE_TIMEOUT_MS,
+      { data: null, error: null }
+    );
+    if (viewAsProfile.data) {
+      return {
+        role: viewAsProfile.data.role ?? "staff",
+        email: viewAsProfile.data.email ?? emailFromJwt,
+        viewAsActive: true,
+      };
+    }
+  }
+
+  const profileResult = await withTimeout(
+    (async () => {
+      try {
+        return await supabase
+          .from("profiles")
+          .select("role, email")
+          .eq("id", userId)
+          .maybeSingle();
+      } catch {
+        return { data: null, error: null };
+      }
+    })(),
+    PROXY_PROFILE_TIMEOUT_MS,
+    { data: null, error: null }
+  );
+
+  return {
+    role: profileResult.data?.role ?? null,
+    email: profileResult.data?.email ?? emailFromJwt,
+    viewAsActive: false,
+  };
 }
 
 export async function proxy(request: NextRequest) {
@@ -178,7 +238,13 @@ export async function proxy(request: NextRequest) {
     }
 
     // Gates solo por email (JWT): sin round-trip a profiles.
-    if (path.startsWith("/master") && !isMasterDashboardUser(emailFromJwt)) {
+    const viewAsCookie =
+      isMasterDashboardUser(emailFromJwt) ?
+        request.cookies.get(MASTER_VIEW_AS_COOKIE)?.value?.trim() || null
+      : null;
+    const isViewingAsWorker = Boolean(viewAsCookie && viewAsCookie !== user.id);
+
+    if (path.startsWith("/master") && (!isMasterDashboardUser(emailFromJwt) || isViewingAsWorker)) {
       const masterRedirect = NextResponse.redirect(new URL("/dashboard", request.url));
       copyResponseCookies(response, masterRedirect);
       return masterRedirect;
@@ -196,19 +262,19 @@ export async function proxy(request: NextRequest) {
       return dsRedirect;
     }
 
-    if (path.startsWith("/dashboard/uso") && !isMasterDashboardUser(emailFromJwt)) {
+    if (path.startsWith("/dashboard/uso") && (!isMasterDashboardUser(emailFromJwt) || isViewingAsWorker)) {
       const usoRedirect = NextResponse.redirect(new URL("/dashboard", request.url));
       copyResponseCookies(response, usoRedirect);
       return usoRedirect;
     }
 
-    if (path.startsWith("/dashboard/web") && !isMasterDashboardUser(emailFromJwt)) {
+    if (path.startsWith("/dashboard/web") && (!isMasterDashboardUser(emailFromJwt) || isViewingAsWorker)) {
       const webRedirect = NextResponse.redirect(new URL("/dashboard", request.url));
       copyResponseCookies(response, webRedirect);
       return webRedirect;
     }
 
-    if (path.startsWith("/profile/contrato") && !isMasterDashboardUser(emailFromJwt)) {
+    if (path.startsWith("/profile/contrato") && (!isMasterDashboardUser(emailFromJwt) || isViewingAsWorker)) {
       const contratoRedirect = NextResponse.redirect(new URL("/profile", request.url));
       copyResponseCookies(response, contratoRedirect);
       return contratoRedirect;
@@ -216,6 +282,15 @@ export async function proxy(request: NextRequest) {
 
     // PWA start_url `/` → home. Master solo con email JWT (caso Héctor: sin profiles).
     if (path === "/" || path.startsWith("/login")) {
+      if (isViewingAsWorker && viewAsCookie) {
+        const effective = await resolveEffectiveRole(supabase, user.id, emailFromJwt, request);
+        const home = getHomeHrefForUser(effective.email, effective.role ?? "staff");
+        const homeRedirect = NextResponse.redirect(new URL(home, request.url));
+        copyResponseCookies(response, homeRedirect);
+        attachUsageTracking(homeRedirect, request, supabase, user.id, path);
+        return homeRedirect;
+      }
+
       if (isMasterDashboardUser(emailFromJwt)) {
         const home = getHomeHrefForUser(emailFromJwt);
         const homeRedirect = NextResponse.redirect(new URL(home, request.url));
@@ -250,22 +325,8 @@ export async function proxy(request: NextRequest) {
     }
 
     if (pathNeedsProfileRole(path)) {
-      const profileResult = await withTimeout(
-        (async () => {
-          try {
-            return await supabase
-              .from("profiles")
-              .select("role, email")
-              .eq("id", user.id)
-              .maybeSingle();
-          } catch {
-            return { data: null, error: null };
-          }
-        })(),
-        PROXY_PROFILE_TIMEOUT_MS,
-        { data: null, error: null }
-      );
-      const role = profileResult.data?.role;
+      const effective = await resolveEffectiveRole(supabase, user.id, emailFromJwt, request);
+      const role = effective.role;
 
       if (
         path.startsWith("/dashboard/insights") &&

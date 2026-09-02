@@ -224,7 +224,6 @@ export default function MasterShortcutGrid({
                     instance="web"
                     label="Web"
                     img="/icons/web.png"
-                    plate
                     onClick={() => window.open(WEB_URL, '_blank', 'noopener,noreferrer')}
                 />
             ),

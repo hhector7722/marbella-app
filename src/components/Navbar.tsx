@@ -12,12 +12,14 @@ import { getHomeHrefForUser } from '@/lib/master-dashboard';
 import { isFullscreenCartaPath } from '@/lib/carta-fullscreen-path';
 import { navigateInsideSandbox } from '@/lib/sandbox/client';
 import { useChromeScroll } from '@/components/chrome/ChromeScrollProvider';
+import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
 
 export default function Navbar() {
     const pathname = usePathname();
     const router = useRouter();
     const supabase = createClient();
     const { topHidden } = useChromeScroll();
+    const { identity, isMaster, openViewAsPicker } = useMasterViewAs();
     const [userData, setUserData] = useState<{ name: string; role: string; email: string; is_supervisor?: boolean } | null>(null);
 
     useEffect(() => {
@@ -61,10 +63,19 @@ export default function Navbar() {
     if (pathname.startsWith('/playground')) return null;
     if (pathname.startsWith('/design-system')) return null;
 
+    const effectiveRole = identity?.isViewingAs ? identity.effectiveRole : userData?.role;
+    // Master: el saludo refleja siempre la identidad efectiva (tuya o la simulada).
+    const displayName =
+        isMaster && identity ? identity.effectiveName : (userData?.name ?? '');
+
     const isDashboard = pathname === '/dashboard' || pathname === '/staff/dashboard' || pathname === '/master/dashboard';
-    const homePath = getHomeHrefForUser(userData?.email, userData?.role);
-    // En /profile el manager usa la flecha del propio perfil (abre plantilla); no duplicar la del Navbar
-    const hideNavbarBack = isDashboard || (pathname === '/profile' && userData?.role === 'manager');
+    const homePath =
+        isMaster && identity?.isViewingAs
+            ? getHomeHrefForUser(identity.effectiveEmail, identity.effectiveRole)
+            : getHomeHrefForUser(userData?.email, userData?.role);
+    const hideNavbarBack = isDashboard || (pathname === '/profile' && effectiveRole === 'manager');
+
+    const greeting = displayName ? `Hola, ${displayName}` : '';
 
     return (
         <>
@@ -99,9 +110,23 @@ export default function Navbar() {
                                 <Image src="/icons/logo-white.png" alt="Logo" fill className="object-contain" priority />
                             </div>
                             <div data-element="greeting-block">
-                                <span data-element="greeting">
-                                    {userData ? `Hola, ${userData.name}` : ''}
-                                </span>
+                                {isMaster ? (
+                                    <button
+                                        type="button"
+                                        data-element="greeting"
+                                        onClick={openViewAsPicker}
+                                        className="border-0 bg-transparent p-0 text-left text-inherit shadow-none outline-none hover:opacity-90 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:content-[''] relative"
+                                        aria-label={
+                                            identity?.isViewingAs
+                                                ? `Viendo como ${identity.effectiveName}. Cambiar usuario`
+                                                : 'Cambiar usuario de vista'
+                                        }
+                                    >
+                                        {greeting}
+                                    </button>
+                                ) : (
+                                    <span data-element="greeting">{greeting}</span>
+                                )}
                             </div>
                         </div>
                     </div>

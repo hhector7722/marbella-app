@@ -11,6 +11,7 @@ import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionMod
 import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
 import { useVisualViewportBottomPin } from '@/hooks/useVisualViewportBottomPin';
 import { useChromeScroll } from '@/components/chrome/ChromeScrollProvider';
+import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
 
 type NavAction = 'scheduleModal' | 'supplierModal' | 'home';
 
@@ -34,6 +35,7 @@ export default function StaffBottomNav() {
   const effectivePathname = pathname;
   const router = useRouter();
   const supabase = createClient();
+  const { identity } = useMasterViewAs();
   const navRef = useRef<HTMLElement>(null);
   const { tabMode } = useChromeScroll();
   const hidden = tabMode === 'hidden';
@@ -65,24 +67,30 @@ export default function StaffBottomNav() {
       const user = session?.user;
       if (!user || cancelled) return;
 
-      const authEmail = user.email ?? '';
-      const roleHint = (user.user_metadata?.role as string | undefined) ?? 'staff';
-      let resolvedHome = getHomeHrefForUser(authEmail, roleHint);
+      const effectiveUserId = identity?.isViewingAs ? identity.effectiveUserId : user.id;
+      const effectiveRole = identity?.isViewingAs ? identity.effectiveRole : undefined;
+      const effectiveEmail = identity?.isViewingAs ? identity.effectiveEmail : undefined;
+      const effectiveName = identity?.isViewingAs ? identity.effectiveName : undefined;
 
+      const authEmail = user.email ?? '';
+      const roleHint = effectiveRole ?? (user.user_metadata?.role as string | undefined) ?? 'staff';
+      let resolvedHome = getHomeHrefForUser(effectiveEmail ?? authEmail, roleHint);
+
+      const profileUserId = identity?.isViewingAs ? identity.effectiveUserId : user.id;
       const { data } = await supabase
         .from('profiles')
         .select('first_name, role, email')
-        .eq('id', user.id)
+        .eq('id', profileUserId)
         .single();
 
       if (data) {
-        const email = data.email || authEmail;
+        const email = data.email || effectiveEmail || authEmail;
         const role = data.role || roleHint;
         resolvedHome = getHomeHrefForUser(email, role);
         if (!cancelled) {
           setUserData({
-            id: user.id,
-            name: data.first_name || 'Empleado',
+            id: effectiveUserId,
+            name: (effectiveName ?? data.first_name) || 'Empleado',
             role,
             email,
           });
@@ -98,7 +106,7 @@ export default function StaffBottomNav() {
       const { data: realShifts } = await supabase
         .from('shifts')
         .select('start_time, end_time, activity, activity_2')
-        .eq('user_id', user.id)
+        .eq('user_id', effectiveUserId)
         .eq('is_published', true)
         .gte('start_time', startOfMonth.toISOString())
         .order('start_time', { ascending: true });
@@ -130,9 +138,9 @@ export default function StaffBottomNav() {
     return () => {
       cancelled = true;
     };
-  }, [supabase]);
+  }, [supabase, identity?.isViewingAs, identity?.effectiveUserId, identity?.effectiveRole, identity?.effectiveEmail, identity?.effectiveName]);
 
-  const isMasterUser = isMasterDashboardUser(userData?.email);
+  const isMasterUser = isMasterDashboardUser(userData?.email) && !identity?.isViewingAs;
 
   const isHomeActive = (href: string) => {
     if (href !== homeHref) return false;

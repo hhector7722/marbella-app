@@ -2221,7 +2221,7 @@ button[data-element='catalog-filter'] {
  * Admin (/dashboard): áreas fijas.
  * H. extras 3×2 en filas 3–4; Plantilla y Albaranes a la derecha.
  * Fila 5: Cambio 1, Cambio 2, Recetas, Asistencia.
- * Última fila: M obra, Stock, Ingredientes, Cambio.
+ * Última fila: Más funciones, M obra, Stock, Ingredientes.
  */
 [data-component='HomeScreen'][data-layout='ops-admin'] {
   grid-template-areas:
@@ -2230,7 +2230,7 @@ button[data-element='catalog-filter'] {
     'hextras hextras hextras plant'
     'hextras hextras hextras albaranes'
     'cambio1 cambio2 recetas asis'
-    'mobra stock ingredientes cambio';
+    'mas mobra stock ingredientes';
   grid-template-rows: repeat(6, var(--home-row-track));
   grid-auto-flow: row;
 }
@@ -2270,8 +2270,8 @@ button[data-element='catalog-filter'] {
 [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-albaranes'] {
   grid-area: albaranes;
 }
-[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-cambio'] {
-  grid-area: cambio;
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-mas-funciones'] {
+  grid-area: mas;
 }
 [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-ingredientes'] {
   grid-area: ingredientes;
@@ -3090,11 +3090,18 @@ button[data-element='catalog-filter'] {
   left: -6%;
   top: -6%;
 }
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='web'] [data-element='asset'] img,
 [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='staff-web'] [data-element='asset'] img {
-  width: 118%;
-  height: 118%;
-  left: -9%;
-  top: -9%;
+  width: 132%;
+  height: 132%;
+  left: -16%;
+  top: -16%;
+}
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='admin-mas-funciones'] [data-element='asset'] img {
+  width: 132%;
+  height: 132%;
+  left: -16%;
+  top: -16%;
 }
 [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='staff-inventario'] [data-element='asset'] img {
   width: 122%;
@@ -4270,8 +4277,8 @@ button[data-element='catalog-filter'] {
     grid-template-areas:
       'ventas  ventas  ventas  ventas  plant   albaranes'
       'caja    caja    caja    caja    recetas asis'
-      'hextras hextras hextras hextras mobra   stock'
-      'hextras hextras hextras hextras ingredientes cambio'
+      'hextras hextras hextras hextras mas     mobra'
+      'hextras hextras hextras hextras stock   ingredientes'
       'cambio1 cambio1 cambio2 cambio2 .      .';
     grid-template-rows: repeat(5, var(--home-row-track));
     column-gap: var(--espacio-3);

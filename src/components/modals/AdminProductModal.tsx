@@ -10,27 +10,16 @@ import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 interface AdminProductModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onOpenSupplierModal: () => void;
 }
 
-type AdminMenuItem =
-    | { title: string; special: 'pedidos'; img: string }
-    | { title: string; href: string; img: string };
-
-const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
-    { title: 'Recetas', href: '/recipes', img: '/icons/recipes.png' },
-    { title: 'Ingredientes', href: '/ingredients', img: '/icons/ingrediente.png' },
-    { title: 'Pedidos', special: 'pedidos', img: '/icons/shipment.png' },
+const ADMIN_MENU_ITEMS = [
     { title: 'Inventario', href: '/dashboard/inventory', img: '/icons/inventory.png' },
     { title: 'Mermas', href: '/dashboard/inventory/waste', img: '/icons/bin.png' },
     { title: 'Stock', href: '/dashboard/inventory/ledger', img: '/icons/productes.png' },
-    { title: 'Carta', href: '/staff/carta', img: '/icons/menu.png' },
-    { title: 'Albaranes', href: '/dashboard/albaranes', img: '/icons/scan.png' },
-    { title: 'Consumo Personal', href: '/dashboard/consumo-personal', img: '/icons/consum.png' },
     { title: 'Proveedores', href: '/suppliers', img: '/icons/suplier.png' },
-];
+] as const;
 
-export function AdminProductModal({ isOpen, onClose, onOpenSupplierModal }: AdminProductModalProps) {
+export function AdminProductModal({ isOpen, onClose }: AdminProductModalProps) {
     const router = useRouter();
     const [isNavigating, setIsNavigating] = useState(false);
 
@@ -55,37 +44,18 @@ export function AdminProductModal({ isOpen, onClose, onOpenSupplierModal }: Admi
         >
             <div className="relative overflow-y-auto">
                 <AccessMenuGrid>
-                    {ADMIN_MENU_ITEMS.map((item) => {
-                        if ('special' in item && item.special === 'pedidos') {
-                            return (
-                                <CatalogTile
-                                    key={item.title}
-                                    title={item.title}
-                                    imageSrc={item.img}
-                                    onClick={() => {
-                                        trackAdminProduct(item.title);
-                                        onClose();
-                                        setTimeout(() => onOpenSupplierModal(), 150);
-                                    }}
-                                />
-                            );
-                        }
-
-                        if (!('href' in item)) return null;
-
-                        return (
-                            <CatalogTile
-                                key={item.title}
-                                title={item.title}
-                                imageSrc={item.img}
-                                onClick={() => {
-                                    trackAdminProduct(item.title);
-                                    setIsNavigating(true);
-                                    router.push(item.href);
-                                }}
-                            />
-                        );
-                    })}
+                    {ADMIN_MENU_ITEMS.map((item) => (
+                        <CatalogTile
+                            key={item.title}
+                            title={item.title}
+                            imageSrc={item.img}
+                            onClick={() => {
+                                trackAdminProduct(item.title);
+                                setIsNavigating(true);
+                                router.push(item.href);
+                            }}
+                        />
+                    ))}
                 </AccessMenuGrid>
 
                 {isNavigating && (

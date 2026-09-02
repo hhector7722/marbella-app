@@ -13,8 +13,12 @@ import {
 } from 'lucide-react';
 
 import { CashChangeModal, type BoxOption } from '@/components/CashChangeModal';
+import CashClosingModal from '@/components/CashClosingModal';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
 import { AdminProductModal } from '@/components/modals/AdminProductModal';
+import { AdminMoreFunctionsModal } from '@/components/modals/AdminMoreFunctionsModal';
+import { InfoMenuModals } from '@/components/modals/InfoMenuModals';
+import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
 import Link from 'next/link';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { updateProfile } from '@/app/actions/profile';
@@ -165,6 +169,12 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const [paidStatus, setPaidStatus] = useState<Record<string, boolean>>(initialData?.paidStatus || {});
     const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+    const [isMoreFunctionsModalOpen, setIsMoreFunctionsModalOpen] = useState(false);
+    const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+    const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+    const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
+    const [userData, setUserData] = useState<{ id: string; name: string; role: string } | null>(null);
+    const [monthShifts, setMonthShifts] = useState<any[]>([]);
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
     const [allEmployees, setAllEmployees] = useState<any[]>(initialData?.allEmployees || []);
     const [allEmployeesIncludingInactive, setAllEmployeesIncludingInactive] = useState<any[] | null>(null);
@@ -219,6 +229,53 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         };
         getUser();
     }, []);
+
+    useEffect(() => {
+        async function loadProfileAndShifts() {
+            const { data: { session } } = await supabase.auth.getSession();
+            const user = session?.user;
+            if (!user) return;
+
+            const { data } = await supabase
+                .from('profiles')
+                .select('first_name, role')
+                .eq('id', user.id)
+                .single();
+
+            setUserData({
+                id: user.id,
+                name: data?.first_name || 'Empleado',
+                role: data?.role || 'manager',
+            });
+
+            const today = new Date();
+            const startOfMonthDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            const { data: realShifts } = await supabase
+                .from('shifts')
+                .select('start_time, end_time, activity, activity_2')
+                .eq('user_id', user.id)
+                .eq('is_published', true)
+                .gte('start_time', startOfMonthDate.toISOString())
+                .order('start_time', { ascending: true });
+
+            if (realShifts && realShifts.length > 0) {
+                setMonthShifts(
+                    realShifts.map((s) => {
+                        const start = new Date(s.start_time);
+                        const end = new Date(s.end_time);
+                        return {
+                            date: start,
+                            startTime: start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                            endTime: end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                            activity: s.activity || s.activity_2 || undefined,
+                        };
+                    })
+                );
+            }
+        }
+
+        void loadProfileAndShifts();
+    }, [supabase]);
 
     const ensureAllEmployeesIncludingInactive = async () => {
         if (allEmployeesIncludingInactive) return allEmployeesIncludingInactive;
@@ -544,6 +601,23 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         />
     );
 
+    const userRole = (userData?.role as 'staff' | 'manager' | 'supervisor') || 'manager';
+    const closingSalesSummary = {
+        total: dailyStats?.total ?? dailyStats?.liveTickets?.total ?? 0,
+        count: dailyStats?.count ?? dailyStats?.liveTickets?.count ?? 0,
+    };
+
+    const handleOpenCompra = () => {
+        const cashBoxes = boxes.filter(
+            (b: any) => b.type === 'operational' || b.type === 'change' || b.type === 'tpv',
+        );
+        if (cashBoxes.length === 0) {
+            toast.error('No hay cajas configuradas');
+            return;
+        }
+        void openPurchaseMultiSourceModal();
+    };
+
     const dashboardHome = (
         <OpsHomeScreen
             ventas={ventasSection}
@@ -552,6 +626,14 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             cajaCambio1={renderDashboardChangeCard('Cambio 1', 0)}
             cajaCambio2={renderDashboardChangeCard('Cambio 2', 1)}
             iconAsistencia={renderQuickActionSquare(quickActionCards[0])}
+            iconMasFunciones={
+                <DashboardShortcut
+                    instance="admin-mas-funciones"
+                    label="Más funciones"
+                    img="/icons/more.png"
+                    onClick={() => setIsMoreFunctionsModalOpen(true)}
+                />
+            }
             iconMObra={renderQuickActionSquare(quickActionCards[1])}
             iconPlantilla={renderQuickActionSquare(quickActionCards[2])}
             iconStock={renderQuickActionSquare(quickActionCards[3])}
@@ -569,14 +651,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                     label="Albaranes"
                     img="/icons/scan.png"
                     onClick={() => router.push('/dashboard/albaranes')}
-                />
-            }
-            iconCambio={
-                <DashboardShortcut
-                    instance="admin-cambio"
-                    label="Cambio"
-                    img="/icons/change.png"
-                    onClick={() => setCashModalMode('swap')}
                 />
             }
             iconIngredientes={
@@ -736,8 +810,43 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             <AdminProductModal
                 isOpen={isProductModalOpen}
                 onClose={() => setIsProductModalOpen(false)}
-                onOpenSupplierModal={() => { setIsProductModalOpen(false); setTimeout(() => setIsSupplierModalOpen(true), 150); }}
             />
+
+            <AdminMoreFunctionsModal
+                isOpen={isMoreFunctionsModalOpen}
+                onClose={() => setIsMoreFunctionsModalOpen(false)}
+                onOpenPedidos={() => setIsSupplierModalOpen(true)}
+                onOpenCambio={() => setCashModalMode('swap')}
+                onOpenHorarios={() => setIsScheduleModalOpen(true)}
+                onOpenCierre={() => setIsClosingModalOpen(true)}
+                onOpenInfo={() => setIsInfoModalOpen(true)}
+                onOpenCompra={handleOpenCompra}
+            />
+
+            <InfoMenuModals
+                open={isInfoModalOpen}
+                onClose={() => setIsInfoModalOpen(false)}
+                usagePrefix="admin"
+            />
+
+            <StaffScheduleModal
+                isOpen={isScheduleModalOpen}
+                onClose={() => setIsScheduleModalOpen(false)}
+                shifts={monthShifts}
+                userName={userData?.name}
+                userRole={userRole}
+                userId={userData?.id}
+            />
+
+            <CashClosingModal
+                isOpen={isClosingModalOpen}
+                onClose={() => setIsClosingModalOpen(false)}
+                onSuccess={() => { void fetchData(); }}
+                initialTotalSales={closingSalesSummary.total}
+                initialTicketsCount={closingSalesSummary.count}
+            />
+
+            <SupplierSelectionModal isOpen={isSupplierModalOpen} onClose={() => setIsSupplierModalOpen(false)} />
 
             {weekDetailModal && (() => {
                 const weekStaff = (weekDetailModal.week.staff ?? []).filter((s: any) => {
@@ -835,7 +944,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 layer="derived"
                 parentInstance="admin-overtime-week-detail"
             />
-            <SupplierSelectionModal isOpen={isSupplierModalOpen} onClose={() => setIsSupplierModalOpen(false)} />
         </div>
     );
 }

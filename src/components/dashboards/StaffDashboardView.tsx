@@ -35,6 +35,7 @@ import {
     type PlantillaEmployeeRow,
 } from '@/lib/staff/plantilla-employees';
 import { canManageStaffAttendance } from '@/lib/staff/attendance-access';
+import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
 import { WeekSummary } from '@/components/staff/WeekSummary';
 import { StaffWeekScheduleWidget } from '@/components/dashboards/staff/StaffWeekScheduleWidget';
 import WorkTimer, { StaffElapsedDigits, formatStaffElapsedHms } from '@/components/ui/WorkTimer';
@@ -281,6 +282,7 @@ function StaffFichajeIcon({
 export default function StaffDashboardView() {
     const supabase = createClient();
     const router = useRouter();
+    const { identity, isMaster } = useMasterViewAs();
     const [weekLoading, setWeekLoading] = useState(true);
     const [clockLoading, setClockLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
@@ -390,7 +392,10 @@ export default function StaffDashboardView() {
     const trackStaffInfoMenu = useTrackModalApply('staff-info-menu', 'Menú información');
     const trackStaffShortcut = useTrackModalApply('staff-dashboard-shortcut', 'Atajo staff');
 
-    useEffect(() => { initialize(); }, []);
+    useEffect(() => {
+        if (isMaster && !identity) return;
+        initialize();
+    }, [isMaster, identity?.isViewingAs, identity?.effectiveUserId]);
 
     useEffect(() => {
         const d = searchParams.get('scheduleDate')?.trim();
@@ -423,20 +428,30 @@ export default function StaffDashboardView() {
                 setWeekLoading(false);
                 return;
             }
-            setUserId(user.id);
-            setUserEmail(user.email ?? '');
+            const effectiveUserId = identity?.isViewingAs ? identity.effectiveUserId : user.id;
+
+            setUserId(effectiveUserId);
+            setUserEmail(
+                identity?.isViewingAs ? identity.effectiveEmail : (user.email ?? ''),
+            );
 
             const { data: profile } = await supabase.from('profiles')
-                .select('first_name, role')
-                .eq('id', user.id)
+                .select('first_name, role, email')
+                .eq('id', effectiveUserId)
                 .single();
 
             if (profile) {
                 setUserRole(profile.role as any);
                 setUserName(profile.first_name || "Personal");
+            } else if (identity?.isViewingAs) {
+                setUserRole(identity.effectiveRole as any);
+                setUserName(identity.effectiveName || "Personal");
             }
 
-            if (canManageStaffAttendance(profile?.role, user.email)) {
+            const manageRole = identity?.isViewingAs ? identity.effectiveRole : profile?.role;
+            const manageEmail = identity?.isViewingAs ? identity.effectiveEmail : user.email;
+
+            if (canManageStaffAttendance(manageRole, manageEmail)) {
                 const { data: emps } = await supabase
                     .from('profiles')
                     .select(PLANTILLA_EMPLOYEE_SELECT)
@@ -452,7 +467,7 @@ export default function StaffDashboardView() {
 
             const { data: log } = await supabase.from('time_logs')
                 .select('*')
-                .eq('user_id', user.id)
+                .eq('user_id', effectiveUserId)
                 .gte('clock_in', startOfDay)
                 .lte('clock_in', endOfDay)
                 .maybeSingle();
@@ -470,7 +485,7 @@ export default function StaffDashboardView() {
             const weekStartYmd = format(weekStart, 'yyyy-MM-dd');
 
             const weekTask = (async () => {
-                const res = await getEmployeeHistoryWeek({ userId: user.id, weekStart: weekStartYmd });
+                const res = await getEmployeeHistoryWeek({ userId: effectiveUserId, weekStart: weekStartYmd });
                 if (!res.success) {
                     toast.error(res.error || 'No se pudo cargar el resumen semanal');
                     setHistoryWeek(null);
@@ -501,7 +516,7 @@ export default function StaffDashboardView() {
                 const { data: realShifts } = await supabase
                     .from('shifts')
                     .select('start_time, end_time, activity, activity_2')
-                    .eq('user_id', user.id)
+                    .eq('user_id', effectiveUserId)
                     .eq('is_published', true)
                     .gte('start_time', startOfMonthDate.toISOString())
                     .order('start_time', { ascending: true });

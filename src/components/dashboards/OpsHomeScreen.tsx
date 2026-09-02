@@ -10,19 +10,19 @@ export type OpsHomeScreenProps = {
     cajaCambio1: ReactNode;
     cajaCambio2: ReactNode;
     iconAsistencia: ReactNode;
+    iconMasFunciones: ReactNode;
     iconMObra: ReactNode;
     iconPlantilla: ReactNode;
     iconStock: ReactNode;
     iconRecetas: ReactNode;
     iconAlbaranes: ReactNode;
-    iconCambio: ReactNode;
     iconIngredientes: ReactNode;
 };
 
 /**
  * Mosaico Admin. H. extras 3×2 en filas 3–4; Plantilla y Albaranes a la derecha.
  * Fila 5: Cambio 1, Cambio 2, Recetas, Asistencia.
- * Última fila: M obra, Stock, Ingredientes, Cambio.
+ * Última fila: Más funciones, M obra, Stock, Ingredientes.
  */
 export function OpsHomeScreen({
     ventas,
@@ -31,12 +31,12 @@ export function OpsHomeScreen({
     cajaCambio1,
     cajaCambio2,
     iconAsistencia,
+    iconMasFunciones,
     iconMObra,
     iconPlantilla,
     iconStock,
     iconRecetas,
     iconAlbaranes,
-    iconCambio,
     iconIngredientes,
 }: OpsHomeScreenProps) {
     return (
@@ -68,17 +68,17 @@ export function OpsHomeScreen({
             <HomeScreenSlot size="icon" instance="admin-asistencia" column={4}>
                 {iconAsistencia}
             </HomeScreenSlot>
-            <HomeScreenSlot size="icon" instance="admin-m-obra" column={1}>
+            <HomeScreenSlot size="icon" instance="admin-mas-funciones" column={1}>
+                {iconMasFunciones}
+            </HomeScreenSlot>
+            <HomeScreenSlot size="icon" instance="admin-m-obra" column={2}>
                 {iconMObra}
             </HomeScreenSlot>
-            <HomeScreenSlot size="icon" instance="admin-stock" column={2}>
+            <HomeScreenSlot size="icon" instance="admin-stock" column={3}>
                 {iconStock}
             </HomeScreenSlot>
-            <HomeScreenSlot size="icon" instance="admin-ingredientes" column={3}>
+            <HomeScreenSlot size="icon" instance="admin-ingredientes" column={4}>
                 {iconIngredientes}
-            </HomeScreenSlot>
-            <HomeScreenSlot size="icon" instance="admin-cambio" column={4}>
-                {iconCambio}
             </HomeScreenSlot>
         </HomeScreen>
     );

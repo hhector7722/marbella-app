@@ -13,6 +13,7 @@ import ChatMarbellaLazy from "@/components/chat/ChatMarbellaLazy";
 import { UsageAuthenticatedTracker } from "@/components/usage/UsageAuthenticatedTracker";
 import { StudioPreviewClient } from "@/components/studio/StudioPreviewClient";
 import { ChromeScrollProvider } from "@/components/chrome/ChromeScrollProvider";
+import { MasterViewAsProvider } from "@/components/master/MasterViewAsProvider";
 import { catalogTitleFont } from "@/lib/fonts/catalog-title";
 import { cn } from "@/lib/utils";
 
@@ -80,6 +81,7 @@ export default function RootLayout({
           <PushNotificationsPrompt />
           
           <StudioPreviewClient>
+            <MasterViewAsProvider>
             <ChromeScrollProvider>
             <Navbar />
             <MainWrapper>{children}</MainWrapper>
@@ -89,6 +91,7 @@ export default function RootLayout({
             {/* LÓGICA DEL ASISTENTE (INVISIBLE HASTA QUE PULSES TU BOTÓN IA) */}
             <ChatMarbellaLazy />
             </ChromeScrollProvider>
+            </MasterViewAsProvider>
           </StudioPreviewClient>
         </UnreadNotificationsShell>
       </body>

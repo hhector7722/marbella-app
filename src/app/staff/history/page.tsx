@@ -62,6 +62,7 @@ import {
     PLANTILLA_EMPLOYEE_SELECT,
 } from '@/lib/staff/plantilla-employees';
 import { canManageStaffAttendance } from '@/lib/staff/attendance-access';
+import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
 
 // --- TIPOS ---
 type WeekData = HistoryWeekDto;
@@ -92,6 +93,7 @@ export default function HistoryPage() {
     const supabase = createClient();
     const searchParams = useSearchParams();
     const pathname = usePathname();
+    const { identity, isMaster } = useMasterViewAs();
     const [loading, setLoading] = useState(true);
     const [weeksData, setWeeksData] = useState<WeekData[]>([]);
 
@@ -131,23 +133,31 @@ export default function HistoryPage() {
         const { data: { session } } = await supabase.auth.getSession();
         const user = session?.user ?? null;
         if (!user) return;
-        setCurrentUserId(user.id);
-        setUserEmail(user.email ?? '');
+
+        const effectiveUserId = identity?.isViewingAs ? identity.effectiveUserId : user.id;
+        const effectiveEmail = identity?.isViewingAs ? identity.effectiveEmail : (user.email ?? '');
+
+        setCurrentUserId(effectiveUserId);
+        setUserEmail(effectiveEmail);
 
         const { data: profile } = await supabase
             .from('profiles')
-            .select('role')
-            .eq('id', user.id)
+            .select('role, email')
+            .eq('id', effectiveUserId)
             .single();
 
-        if (profile) setUserRole(profile.role);
+        const effectiveRole = identity?.isViewingAs
+            ? identity.effectiveRole
+            : (profile?.role ?? 'staff');
 
-        const canManage = canManageStaffAttendance(profile?.role, user.email);
+        if (profile || identity?.isViewingAs) setUserRole(effectiveRole);
+
+        const canManage = canManageStaffAttendance(effectiveRole, effectiveEmail);
         if (canManage) {
             setSelectedEmployeeId('');
             setSelectedEmployeeLabel('');
         } else {
-            setSelectedEmployeeId(user.id);
+            setSelectedEmployeeId(effectiveUserId);
         }
 
         if (canManage) {
@@ -158,9 +168,12 @@ export default function HistoryPage() {
 
             setEmployees(filterVisiblePlantillaEmployees((emps || []) as Employee[]));
         }
-    }, [supabase]);
+    }, [supabase, identity?.isViewingAs, identity?.effectiveUserId, identity?.effectiveRole, identity?.effectiveEmail]);
 
-    useEffect(() => { void initUser(); }, [initUser]);
+    useEffect(() => {
+        if (isMaster && !identity) return;
+        void initUser();
+    }, [initUser, isMaster, identity]);
     // Manager: si se entra con ?id=xxx (ej. desde /profile?id=xxx), preseleccionar ese trabajador
     useEffect(() => {
         const id = searchParams.get('id');
@@ -344,7 +357,7 @@ export default function HistoryPage() {
 
     const isManager = canManageStaffAttendance(userRole, userEmail);
     const isPlantilla = isManager && selectedEmployeeId === '';
-    const isMaster = isMasterDashboardUser(userEmail);
+    const isMaster = isMasterDashboardUser(userEmail) && !identity?.isViewingAs;
     const allowCreateFichaje = isMaster || isManager;
 
     const headerLabel = isPlantilla
