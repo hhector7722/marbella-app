@@ -54,7 +54,7 @@ Es la fuente única de esta correspondencia. La regla de agente de `.cursor/rule
 | Roles o quién puede hacer qué | [ACTORES-Y-ROLES](1-producto/ACTORES-Y-ROLES.md) |
 | Pruebas o verificación de un cambio | [CALIDAD](3-ingenieria/CALIDAD.md) |
 | Una fórmula de negocio | [dominio/](3-ingenieria/dominio/README.md), [4-decisiones/](4-decisiones/README.md) |
-| Horas, nóminas o coste laboral | [ADR-0001](4-decisiones/ADR-0001-hours-engine-productor-unico.md), [COSTE-LABORAL](3-ingenieria/dominio/COSTE-LABORAL.md), [JORNADA-FIJA](3-ingenieria/dominio/JORNADA-FIJA.md) |
+| Horas, nóminas o coste laboral | [ADR-0001](4-decisiones/ADR-0001-hours-engine-productor-unico.md), [HORAS](3-ingenieria/dominio/HORAS.md), [COSTE-LABORAL](3-ingenieria/dominio/COSTE-LABORAL.md), [JORNADA-FIJA](3-ingenieria/dominio/JORNADA-FIJA.md) |
 | Precios de ingredientes o albaranes | [PRECIOS-Y-COMPRAS](3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md) |
 | Un sistema externo | [integraciones/](3-ingenieria/integraciones/README.md) |
 | Un despliegue o una tarea programada | [operacion/](3-ingenieria/operacion/README.md) |
@@ -99,7 +99,7 @@ Dos comprobaciones que no dependen de la materia: que la dirección que vas a pr
 | [CALIDAD](3-ingenieria/CALIDAD.md) | vivo | vigente | Qué se prueba, qué se comprueba a mano y qué no existe |
 | [FRONTEND](3-ingenieria/FRONTEND.md) | vivo | vigente | Reglas de construcción de la interfaz |
 | [PROTOCOLO-AGENTES](3-ingenieria/PROTOCOLO-AGENTES.md) | vivo | vigente | Protocolo operativo de lectura y modificación para agentes de IA |
-| [dominio/](3-ingenieria/dominio/README.md) | vivo | vigente | Fórmulas de negocio: coste laboral, jornada fija, precios y compras |
+| [dominio/](3-ingenieria/dominio/README.md) | vivo | vigente | Fórmulas de negocio: horas, coste laboral, jornada fija, precios y compras |
 | [contratos/](3-ingenieria/contratos/README.md) | inmutable | vigente | Contratos formales versionados entre partes del sistema |
 | [integraciones/](3-ingenieria/integraciones/README.md) | vivo | vigente | Una por sistema externo: punto de venta y nóminas |
 | [operacion/](3-ingenieria/operacion/README.md) | vivo | vigente | Despliegues, tareas programadas y recuperación |

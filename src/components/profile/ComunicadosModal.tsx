@@ -193,14 +193,14 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
             <label
                 htmlFor="comunicado-upload"
                 className={cn(
-                    'relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 cursor-pointer items-center justify-center rounded-ds-control border-0 bg-white/20 text-white shadow-none outline-none transition-colors hover:bg-white/30 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-[""]',
+                    'relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 cursor-pointer items-center justify-center rounded-ds-control border-0 bg-zinc-100 text-zinc-700 shadow-none outline-none transition-colors hover:bg-zinc-200 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-[""]',
                     uploading && uploadKind === 'comunicado' && 'opacity-60 cursor-wait'
                 )}
                 title="Subir comunicado"
                 aria-label="Subir comunicado"
             >
                 {uploading && uploadKind === 'comunicado' ? (
-                    <LoadingSpinner size="sm" className="text-white" />
+                    <LoadingSpinner size="sm" className="text-zinc-700" />
                 ) : (
                     <Plus size={22} strokeWidth={2.5} />
                 )}
@@ -216,14 +216,14 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
             <label
                 htmlFor="sancion-upload"
                 className={cn(
-                    'relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 cursor-pointer items-center justify-center rounded-ds-control border-0 bg-white/20 text-white shadow-none outline-none transition-colors hover:bg-white/30 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-[""]',
+                    'relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 cursor-pointer items-center justify-center rounded-ds-control border-0 bg-zinc-100 text-zinc-700 shadow-none outline-none transition-colors hover:bg-zinc-200 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-[""]',
                     uploading && uploadKind === 'sancion' && 'opacity-60 cursor-wait'
                 )}
                 title="Subir sanción"
                 aria-label="Subir sanción"
             >
                 {uploading && uploadKind === 'sancion' ? (
-                    <LoadingSpinner size="sm" className="text-white" />
+                    <LoadingSpinner size="sm" className="text-zinc-700" />
                 ) : (
                     <Plus size={22} strokeWidth={2.5} />
                 )}

@@ -20,21 +20,26 @@ import {
     fetchActivitiesForRangeAction,
     type BarActivity,
 } from '@/app/staff/actividades/actions';
+import { PavilionDayModal } from '@/components/pavilion/PavilionDayModal';
 import { createClient } from '@/utils/supabase/client';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+
+function parseLocalSafe(dateStr: string): Date {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, d);
+}
 
 const WEEKDAY_LABELS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'] as const;
 
 type ShiftRow = {
     start_time: string;
     end_time: string;
-    notes: string | null;
 };
 
 type StaffWeekScheduleWidgetProps = {
     userId: string | null;
-    /** Solo para «Añadir nota» / «Ver nota»; pulsar un día del mes no lo invoca. */
+    /** Abre el modal de horario del día (nota); solo desde el pie del modal de día. */
     onOpenNote?: (ymd: string) => void;
 };
 
@@ -146,69 +151,60 @@ function WeekendDayColumn({
     day,
     shift,
     eventLabel,
-    onOpenNote,
+    onOpenDay,
 }: {
     day: Date;
     shift: ShiftRow | null;
     eventLabel: string | null;
-    onOpenNote?: (ymd: string) => void;
+    onOpenDay?: (ymd: string) => void;
 }) {
     const ymd = format(day, 'yyyy-MM-dd');
     const turno =
         shift != null
             ? `${formatClockTime(shift.start_time)} – ${formatClockTime(shift.end_time)}`
             : null;
-    const hasNote = Boolean(shift?.notes?.trim());
 
     return (
-        <div data-element="weekend-card">
+        <button
+            type="button"
+            data-element="weekend-card"
+            onClick={(e) => {
+                e.stopPropagation();
+                onOpenDay?.(ymd);
+            }}
+            aria-label={`Ver ${formatWeekdayHeading(day)}`}
+            className="relative text-left outline-none transition-opacity hover:opacity-90 active:opacity-80 before:absolute before:inset-0 before:-m-0.5 before:min-h-[var(--tactil-minimo)] before:content-['']"
+        >
             <div data-element="weekend-day" className="flex h-full min-h-0 min-w-0 flex-col">
-            <p data-element="weekend-title" className="shrink-0 text-center text-[7px] font-semibold leading-none">
-                {formatWeekdayHeading(day)}
-            </p>
+                <p data-element="weekend-title" className="shrink-0 text-center text-[7px] font-semibold leading-none">
+                    {formatWeekdayHeading(day)}
+                </p>
 
-            <div data-element="weekend-details" className="flex min-h-0 min-w-0 flex-1 flex-col">
-                <div data-element="weekend-turno" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
-                    <span data-element="weekend-turno-label" className="shrink-0 text-[6px] font-medium leading-none tracking-wide">
-                        Turno
-                    </span>
-                    {turno ? (
-                        <span data-element="weekend-turno-value" className="min-w-0 truncate text-[8px] font-semibold tabular-nums leading-none">
-                            {turno}
+                <div data-element="weekend-details" className="flex min-h-0 min-w-0 flex-1 flex-col">
+                    <div data-element="weekend-turno" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
+                        <span data-element="weekend-turno-label" className="shrink-0 text-[6px] font-medium leading-none tracking-wide">
+                            Turno
                         </span>
-                    ) : null}
-                </div>
+                        {turno ? (
+                            <span data-element="weekend-turno-value" className="min-w-0 truncate text-[8px] font-semibold tabular-nums leading-none">
+                                {turno}
+                            </span>
+                        ) : null}
+                    </div>
 
-                <div data-element="weekend-evento" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
-                    <span data-element="weekend-evento-label" className="shrink-0 text-[6px] font-medium leading-none tracking-wide">
-                        Evento
-                    </span>
-                    {eventLabel ? (
-                        <span data-element="weekend-evento-value" className="min-w-0 truncate text-[7px] font-semibold leading-none">
-                            {eventLabel}
+                    <div data-element="weekend-evento" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
+                        <span data-element="weekend-evento-label" className="shrink-0 text-[6px] font-medium leading-none tracking-wide">
+                            Evento
                         </span>
-                    ) : null}
+                        {eventLabel ? (
+                            <span data-element="weekend-evento-value" className="min-w-0 truncate text-[6px] font-medium leading-none">
+                                {eventLabel}
+                            </span>
+                        ) : null}
+                    </div>
                 </div>
             </div>
-
-            <button
-                type="button"
-                data-element="weekend-note"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onOpenNote?.(ymd);
-                }}
-                className={cn(
-                    'relative mt-auto inline-flex w-full shrink-0 items-center justify-center gap-0.5 rounded px-0.5 py-px text-[6px] font-medium leading-none transition-colors',
-                    'before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']',
-                )}
-                data-has-note={hasNote ? 'true' : undefined}
-            >
-                <span aria-hidden>+</span>
-                {hasNote ? 'Ver nota' : 'Añadir nota'}
-            </button>
-            </div>
-        </div>
+        </button>
     );
 }
 
@@ -216,12 +212,12 @@ function WeekExpansion({
     weekDays,
     shifts,
     eventsByDate,
-    onOpenNote,
+    onOpenDay,
 }: {
     weekDays: Date[];
     shifts: ShiftRow[];
     eventsByDate: Record<string, BarActivity[]>;
-    onOpenNote?: (ymd: string) => void;
+    onOpenDay?: (ymd: string) => void;
 }) {
     const saturday = weekDays[5];
     const sunday = weekDays[6];
@@ -237,13 +233,13 @@ function WeekExpansion({
                 day={saturday}
                 shift={shiftForDay(shifts, saturday)}
                 eventLabel={formatDayEvents(eventsByDate[satKey])}
-                onOpenNote={onOpenNote}
+                onOpenDay={onOpenDay}
             />
             <WeekendDayColumn
                 day={sunday}
                 shift={shiftForDay(shifts, sunday)}
                 eventLabel={formatDayEvents(eventsByDate[sunKey])}
-                onOpenNote={onOpenNote}
+                onOpenDay={onOpenDay}
             />
         </div>
     );
@@ -255,6 +251,7 @@ export function StaffWeekScheduleWidget({ userId, onOpenNote }: StaffWeekSchedul
     const [shifts, setShifts] = useState<ShiftRow[]>([]);
     const [eventsByDate, setEventsByDate] = useState<Record<string, BarActivity[]>>({});
     const [loading, setLoading] = useState(true);
+    const [dayModalDate, setDayModalDate] = useState<string | null>(null);
 
     const visibleRange = useMemo(() => {
         const start = startOfWeek(startOfMonth(monthAnchor), { weekStartsOn: 1 });
@@ -288,7 +285,7 @@ export function StaffWeekScheduleWidget({ userId, onOpenNote }: StaffWeekSchedul
             const [shiftsResult, activitiesResult] = await Promise.all([
                 supabase
                     .from('shifts')
-                    .select('start_time, end_time, notes')
+                    .select('start_time, end_time')
                     .eq('user_id', userId)
                     .eq('is_published', true)
                     .gte('start_time', startIso)
@@ -404,10 +401,7 @@ export function StaffWeekScheduleWidget({ userId, onOpenNote }: StaffWeekSchedul
                                         data-expanded={isExpanded ? 'true' : undefined}
                                     >
                                         <div
-                                            className={cn(
-                                                'grid grid-cols-7 gap-px',
-                                                isExpanded && 'border-l-2 border-emerald-400/70 pl-px',
-                                            )}
+                                            className="grid grid-cols-7 gap-px"
                                             data-week-row={isExpanded ? 'expanded' : undefined}
                                         >
                                             {weekDays.map((day) => {
@@ -452,7 +446,7 @@ export function StaffWeekScheduleWidget({ userId, onOpenNote }: StaffWeekSchedul
                                                 weekDays={weekDays}
                                                 shifts={shifts}
                                                 eventsByDate={eventsByDate}
-                                                onOpenNote={onOpenNote}
+                                                onOpenDay={setDayModalDate}
                                             />
                                         ) : null}
                                     </div>
@@ -462,6 +456,27 @@ export function StaffWeekScheduleWidget({ userId, onOpenNote }: StaffWeekSchedul
                     )}
                 </div>
             </div>
+
+            <PavilionDayModal
+                open={dayModalDate != null}
+                onClose={() => setDayModalDate(null)}
+                date={dayModalDate}
+                userId={userId}
+                onOpenNote={
+                    onOpenNote
+                        ? (ymd) => {
+                            setDayModalDate(null);
+                            onOpenNote(ymd);
+                        }
+                        : undefined
+                }
+                onNavigateDay={(delta) => {
+                    if (!dayModalDate) return;
+                    const next = parseLocalSafe(dayModalDate);
+                    next.setDate(next.getDate() + delta);
+                    setDayModalDate(format(next, 'yyyy-MM-dd'));
+                }}
+            />
         </div>
     );
 }

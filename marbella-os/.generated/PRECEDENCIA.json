@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "98e2bd44a9bfece1",
+  "_huella": "4cade9c0f24ba551",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -310,7 +310,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-03-01",
+      "vence": "2027-03-02",
       "depende_de": []
     },
     {
@@ -322,7 +322,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-03-01",
+      "vence": "2027-03-02",
       "depende_de": []
     },
     {
@@ -371,6 +371,18 @@
       "citable": true,
       "precedencia": 20,
       "vence": "2027-01-29",
+      "depende_de": []
+    },
+    {
+      "ruta": "marbella-os/3-ingenieria/dominio/HORAS.md",
+      "documento": "DOMINIO-HORAS",
+      "clase": "vivo",
+      "estado": "vigente",
+      "capa": "ingenieria",
+      "normativo": true,
+      "citable": true,
+      "precedencia": 20,
+      "vence": "2027-03-02",
       "depende_de": []
     },
     {
@@ -576,7 +588,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2026-09-25",
+      "vence": "2026-10-02",
       "depende_de": []
     },
     {

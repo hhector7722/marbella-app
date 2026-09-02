@@ -6,12 +6,12 @@ capa: estado
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-25
+revisado: 2026-09-02
 caducidad: 1 mes
 supersede: PROJECT_STATUS.md §ESTADO GENERAL
 ---
 
-# ESTADO — Fotografía del 25 de agosto de 2026
+# ESTADO — Fotografía del 2 de septiembre de 2026
 
 Dónde está Marbella hoy. **Este documento se reescribe, no se acumula**: el historial vive en [CHANGELOG](CHANGELOG.md) y en git.
 
@@ -30,7 +30,7 @@ El producto está en producción y sostiene la operación diaria del negocio. El
 - **Fichaje y asistencia.** Fichaje, historial propio, vista de equipo y edición por día. La semana de una persona es la misma en Asistencia, mosaico Staff y horas extras, con el cromo de Cierres y un pie semanal. En el mosaico Staff flota sobre el petróleo, sin cabecera. La vista de plantilla comparte el cromo y no el pie.
 - **Venta y sala.** Radar de sala en vivo y análisis de ventas. Los documentos que no son venta se excluyen correctamente de ventas, pendientes y cierre.
 - **Cocina.** Pantalla de cocina con tandas, color por tiempo de espera y cierre manual.
-- **Caja y tesorería.** Cierre diario con recuento por denominación, historial de cierres, movimientos, arqueo, cambio entre cajas y libro mayor con saldo acumulado.
+- **Caja y tesorería.** Cierre diario con recuento por denominación, historial de cierres (resumen del mes y de ayer sobre el calendario), movimientos, arqueo, cambio entre cajas y libro mayor con saldo acumulado.
 - **Compras y albaranes.** Captura de albarán, interpretación automática, mapeo aprendido, aplicación a stock, rectificación y control de precios. Incluye compras no inventariables como gasto sin stock.
 - **Recetas y escandallos.** Recetas, ingredientes, coste por ración y mapeo con los artículos del terminal de venta.
 - **Carta.** Carta pública, carta interna y editor.
@@ -41,7 +41,7 @@ El producto está en producción y sostiene la operación diaria del negocio. El
 
 ## En movimiento
 
-- **Dominio de horas.** El motor de cálculo es desde hace poco el único productor de las magnitudes de liquidación, con arrastre encadenado real entre semanas. La proyección persistida ya no calcula. La transición dejó una deuda declarada: parte de las lecturas todavía ejecutan el motor en carga en lugar de leer la proyección, lo cual está previsto en la decisión que lo gobierna como paso intermedio.
+- **Dominio de horas.** El motor de cálculo es desde hace poco el único productor de las magnitudes de liquidación, con arrastre encadenado real entre semanas. La proyección persistida ya no calcula. Agosto no genera deuda de asistencia en semanas staff cuyo lunes cae en ese mes ([HORAS](../3-ingenieria/dominio/HORAS.md)). La transición dejó una deuda declarada: parte de las lecturas todavía ejecutan el motor en carga en lugar de leer la proyección, lo cual está previsto en la decisión que lo gobierna como paso intermedio.
 - **Coste laboral.** El coste ordinario procede del resumen mensual de la gestoría. El productor mensual está endurecido con versionado de intérprete y registro de importaciones; parte del diseño documentado todavía no está implementado.
 - **Pabellón.** Importación e interpretación automática de la programación, con revisión humana. En estabilización.
 - **Análisis de negocio.** Indicadores en evolución.

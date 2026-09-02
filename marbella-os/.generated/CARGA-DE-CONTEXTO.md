@@ -1,5 +1,5 @@
-<!-- Generado desde 54 documentos de marbella-os/.
-     Huella del origen: c657bed229d99cc6
+<!-- Generado desde 55 documentos de marbella-os/.
+     Huella del origen: ba1b6451a89ea1a3
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -24,7 +24,7 @@ corpus, gana el corpus.
 | Roles o quién puede hacer qué | `marbella-os/1-producto/ACTORES-Y-ROLES.md` |
 | Pruebas o verificación de un cambio | `marbella-os/3-ingenieria/CALIDAD.md` |
 | Una fórmula de negocio | `marbella-os/3-ingenieria/dominio/README.md`, `marbella-os/4-decisiones/README.md` |
-| Horas, nóminas o coste laboral | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md`, `marbella-os/3-ingenieria/dominio/COSTE-LABORAL.md`, `marbella-os/3-ingenieria/dominio/JORNADA-FIJA.md` |
+| Horas, nóminas o coste laboral | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md`, `marbella-os/3-ingenieria/dominio/HORAS.md`, `marbella-os/3-ingenieria/dominio/COSTE-LABORAL.md`, `marbella-os/3-ingenieria/dominio/JORNADA-FIJA.md` |
 | Precios de ingredientes o albaranes | `marbella-os/3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md` |
 | Un sistema externo | `marbella-os/3-ingenieria/integraciones/README.md` |
 | Un despliegue o una tarea programada | `marbella-os/3-ingenieria/operacion/README.md` |
@@ -65,6 +65,7 @@ es `CANON §5`.
 | 20 | `marbella-os/3-ingenieria/ARQUITECTURA.md` |
 | 20 | `marbella-os/3-ingenieria/CALIDAD.md` |
 | 20 | `marbella-os/3-ingenieria/dominio/COSTE-LABORAL.md` |
+| 20 | `marbella-os/3-ingenieria/dominio/HORAS.md` |
 | 20 | `marbella-os/3-ingenieria/dominio/JORNADA-FIJA.md` |
 | 20 | `marbella-os/3-ingenieria/dominio/PRECIOS-Y-COMPRAS.md` |
 | 20 | `marbella-os/3-ingenieria/FRONTEND.md` |

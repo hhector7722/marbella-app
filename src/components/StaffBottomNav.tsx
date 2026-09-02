@@ -10,6 +10,7 @@ import { getHomeHrefForUser, isMasterDashboardUser } from '@/lib/master-dashboar
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
 import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
 import { useVisualViewportBottomPin } from '@/hooks/useVisualViewportBottomPin';
+import { useTabBarOverSurface } from '@/hooks/useTabBarOverSurface';
 import { useChromeScroll } from '@/components/chrome/ChromeScrollProvider';
 import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
 
@@ -38,6 +39,7 @@ export default function StaffBottomNav() {
   const { identity } = useMasterViewAs();
   const navRef = useRef<HTMLElement>(null);
   const { tabMode } = useChromeScroll();
+  const overSurface = useTabBarOverSurface(navRef);
   const hidden = tabMode === 'hidden';
 
   useVisualViewportBottomPin(navRef);
@@ -168,6 +170,7 @@ export default function StaffBottomNav() {
         ref={navRef}
         data-component="TabBar"
         data-mode={tabMode}
+        data-over={overSurface}
         data-hidden={hidden ? 'true' : undefined}
         aria-hidden={hidden || undefined}
         className="marbella-fixed-bottombar print:hidden"

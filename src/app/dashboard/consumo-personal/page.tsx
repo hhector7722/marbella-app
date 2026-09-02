@@ -437,7 +437,7 @@ export default function ConsumoPersonalDashboardPage() {
   };
 
   const consumoHeaderChromeBtn =
-    'relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-[""]';
+    'relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-[""]';
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
 

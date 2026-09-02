@@ -24,6 +24,7 @@ Un documento de dominio se distingue de una capacidad en [1-producto/capacidades
 | Documento | Qué gobierna |
 |---|---|
 | [COSTE-LABORAL](./COSTE-LABORAL.md) | Fórmula del coste de personal por día |
+| [HORAS](./HORAS.md) | Balance semanal, deuda de asistencia y exención de agosto |
 | [JORNADA-FIJA](./JORNADA-FIJA.md) | Política de jornada completa independiente de fichajes |
 | [PRECIOS-Y-COMPRAS](./PRECIOS-Y-COMPRAS.md) | Precio de ingrediente y su actualización desde albaranes |
 
@@ -31,7 +32,6 @@ Un documento de dominio se distingue de una capacidad en [1-producto/capacidades
 
 Se escriben cuando se trabaje sobre ellos, no antes:
 
-- **HORAS** — Redondeos, clasificación de tipos de día, cálculo de balance y liquidación. La decisión de arquitectura está en [ADR-0001](../../4-decisiones/ADR-0001-hours-engine-productor-unico.md); falta la especificación de las reglas de cálculo.
 - **TESORERIA** — Cuadre de caja, saldo objetivo, tratamiento del descuadre.
 - **PROPINAS** — Base de reparto y su relación con [JORNADA-FIJA](./JORNADA-FIJA.md).
 

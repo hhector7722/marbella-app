@@ -8,7 +8,6 @@ import {
     ChevronLeft,
     ChevronRight,
     X,
-    TrendingUp,
     Pencil,
     Trash2,
     ChevronRight as ChevronRightIcon,
@@ -21,7 +20,7 @@ import { Modal } from '@/components/ui/modal';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { format, startOfMonth, endOfMonth, isSameDay, addDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths, isToday, isBefore, startOfDay, subWeeks, differenceInDays } from 'date-fns';
+import { format, startOfMonth, endOfMonth, isSameDay, addDays, subDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths, isToday, isBefore, startOfDay, subWeeks, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -465,7 +464,7 @@ const CashBreakdownModal = ({
     );
 };
 
-// --- HELPERS & CHARTS ---
+// --- HELPERS ---
 
 /** Shows an animated skeleton while the browser downloads the photo, then reveals it. */
 function PhotoWithSpinner({ src, alt }: { src: string | null; alt: string }) {
@@ -493,163 +492,6 @@ const parseLocalSafe = (dateStr: string | null) => {
     const [y, m, d] = dateStr.split('T')[0].split('-').map(Number);
     return new Date(y, m - 1, d);
 };
-
-function DailySalesChart({
-    closings,
-    historicalClosingsMap,
-}: {
-    closings: any[];
-    historicalClosingsMap: Map<string, any>;
-}) {
-    const sortedActual = useMemo(() => {
-        return [...closings].sort((a, b) => new Date(a.closing_date).getTime() - new Date(b.closing_date).getTime());
-    }, [closings]);
-
-    if (sortedActual.length === 0) return null;
-
-    const dataPoints = sortedActual.map((c) => {
-        const actualDate = parseLocalSafe(c.closing_date);
-        const actualNet = Number(c.net_sales ?? 0);
-        const prevMonthDate = subMonths(actualDate, 1);
-        const prevKey = format(prevMonthDate, 'yyyy-MM-dd');
-        const prevClosing = historicalClosingsMap.get(prevKey);
-        const prevNet = prevClosing ? Number(prevClosing.net_sales ?? 0) : 0;
-
-        return {
-            dateLabel: format(actualDate, 'dd/MM'),
-            actual: actualNet,
-            comparison: prevNet,
-        };
-    });
-
-    const width = 800;
-    const height = 65;
-    const paddingX = 52;  // wider left margin so y-axis labels are visible
-    const paddingY = 5;
-
-    const allValues = dataPoints.flatMap((d) => [d.actual, d.comparison]);
-    const maxVal = Math.max(...allValues, 100);
-    const minVal = Math.min(...allValues, 0);
-    const range = maxVal - minVal || 1;
-
-    const getX = (index: number) => {
-        if (dataPoints.length <= 1) return paddingX;
-        return paddingX + (index / (dataPoints.length - 1)) * (width - 2 * paddingX);
-    };
-
-    const getY = (val: number) => {
-        return height - paddingY - ((val - minVal) / range) * (height - 2 * paddingY);
-    };
-
-    const actualPath = dataPoints.reduce((acc, pt, i) => {
-        const x = getX(i);
-        const y = getY(pt.actual);
-        return acc + (i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`);
-    }, '');
-
-    const comparisonPath = dataPoints.reduce((acc, pt, i) => {
-        const x = getX(i);
-        const y = getY(pt.comparison);
-        return acc + (i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`);
-    }, '');
-
-    const firstDate = parseLocalSafe(sortedActual[0].closing_date);
-    const currentMonthLabel = format(firstDate, 'MMMM', { locale: es });
-    const prevMonthLabel = format(subMonths(firstDate, 1), 'MMMM', { locale: es });
-
-    const y1k = getY(1000);
-    const y3k = getY(3000);
-    const y6k = getY(6000);
-
-    const show1k = maxVal >= 1000;
-    const show3k = maxVal >= 3000;
-    const show6k = maxVal >= 6000;
-
-    return (
-        <div className="py-1 print:hidden">
-            <div className="max-w-[97%] mx-auto flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1.5">
-                            <svg className="w-4 h-2 shrink-0" viewBox="0 0 16 8" aria-hidden="true">
-                                <line x1="0" y1="4" x2="16" y2="4" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
-                            </svg>
-                            <span className="text-[10px] font-black text-zinc-900 uppercase tracking-wider">{currentMonthLabel}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <svg className="w-4 h-2 shrink-0" viewBox="0 0 16 8" aria-hidden="true">
-                                <line x1="0" y1="4" x2="16" y2="4" stroke="#3b82f6" strokeWidth="2.5" strokeDasharray="3 2" strokeLinecap="round" />
-                            </svg>
-                            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-wider">{prevMonthLabel}</span>
-                        </div>
-                    </div>
-                    <span className="text-[7.5px] font-bold tracking-widest text-zinc-400 uppercase">
-                        EVOLUCIÓN DIARIA VENTA NETA
-                    </span>
-                </div>
-                <div className="relative w-full h-[65px] mt-1">
-                    <svg viewBox={`0 0 ${width} 65`} className="w-full h-full" preserveAspectRatio="none">
-                        {comparisonPath && (
-                            <path
-                                d={comparisonPath}
-                                fill="none"
-                                stroke="#3b82f6"
-                                strokeWidth="2.5"
-                                strokeDasharray="4 3"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                        )}
-                        {actualPath && (
-                            <path
-                                d={actualPath}
-                                fill="none"
-                                stroke="#ffffff"
-                                strokeWidth="1.5"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className="drop-shadow-[0_1.5px_3px_rgba(255,255,255,0.2)]"
-                            />
-                        )}
-                    </svg>
-                </div>
-                {/* Eje X (Días) sin deformación */}
-                <div className="relative w-full h-3.5 mt-0.5">
-                    {(() => {
-                        const len = dataPoints.length;
-                        if (len === 0) return null;
-                        const indices = new Set<number>();
-                        indices.add(0);
-                        indices.add(len - 1);
-                        if (len > 2) {
-                            indices.add(Math.floor(len / 2));
-                        }
-                        if (len > 4) {
-                            indices.add(Math.floor(len / 4));
-                            indices.add(Math.floor(3 * len / 4));
-                        }
-                        const sortedIndices = Array.from(indices).sort((a, b) => a - b);
-                        return sortedIndices.map((idx) => {
-                            const pt = sortedActual[idx];
-                            const actualDate = parseLocalSafe(pt.closing_date);
-                            const dayStr = format(actualDate, 'd');
-                            const leftPct = (getX(idx) / width) * 100;
-                            return (
-                                <span
-                                    key={idx}
-                                    style={{ left: `${leftPct}%` }}
-                                    className="absolute top-0 -translate-x-1/2 text-[9px] font-medium text-zinc-400 font-sans whitespace-nowrap leading-none"
-                                >
-                                    {dayStr}
-                                </span>
-                            );
-                        });
-                    })()}
-                </div>
-            </div>
-        </div>
-    );
-}
 
 // --- MAIN PAGE ---
 
@@ -861,6 +703,7 @@ export default function HistoryPage() {
 
     const [closings, setClosings] = useState<any[]>([]);
     const [historicalClosings, setHistoricalClosings] = useState<any[]>([]);
+    const [yesterdayClosing, setYesterdayClosing] = useState<any | null>(null);
     const [hourlySales, setHourlySales] = useState<Record<string, number[]>>({});
     const [summary, setSummary] = useState({ totalNet: 0, totalGross: 0, avgTicket: 0, count: 0 });
     const [prevSummary, setPrevSummary] = useState({ totalNet: 0, totalGross: 0, avgTicket: 0, count: 0 });
@@ -1098,6 +941,7 @@ export default function HistoryPage() {
             } else {
                 if (!rangeStart || !rangeEnd) {
                     setClosings([]);
+                    setYesterdayClosing(null);
                     setLoading(false);
                     return;
                 }
@@ -1115,6 +959,7 @@ export default function HistoryPage() {
             const prevStartISO = format(prevStart, 'yyyy-MM-dd');
             const prevEndISO = format(prevEnd, 'yyyy-MM-dd');
             const histStartISO = format(subMonths(start, 3), 'yyyy-MM-dd');
+            const yesterdayISO = format(subDays(startOfDay(new Date()), 1), 'yyyy-MM-dd');
 
             const closingsPromise = supabase
                 .from('cash_closings')
@@ -1129,6 +974,12 @@ export default function HistoryPage() {
                 .gte('closing_date', histStartISO)
                 .lte('closing_date', endISO);
 
+            const yesterdayPromise = supabase
+                .from('cash_closings')
+                .select('*')
+                .eq('closing_date', yesterdayISO)
+                .maybeSingle();
+
             const summaryPromise = supabase.rpc('get_cash_closings_summary', {
                 p_start_date: startISO,
                 p_end_date: endISO
@@ -1139,18 +990,21 @@ export default function HistoryPage() {
                 p_end_date: prevEndISO
             });
 
-            const [closingsRes, historicalRes, summaryRes, prevSummaryRes] = await Promise.all([
+            const [closingsRes, historicalRes, yesterdayRes, summaryRes, prevSummaryRes] = await Promise.all([
                 closingsPromise,
                 historicalPromise,
+                yesterdayPromise,
                 summaryPromise,
                 prevSummaryPromise
             ]);
 
             if (closingsRes.error) throw closingsRes.error;
             if (historicalRes.error) throw historicalRes.error;
+            if (yesterdayRes.error) throw yesterdayRes.error;
 
             setClosings(closingsRes.data || []);
             setHistoricalClosings(historicalRes.data || []);
+            setYesterdayClosing(yesterdayRes.data ?? null);
             setSummary(summaryRes.data || { totalNet: 0, totalGross: 0, avgTicket: 0, count: 0 });
             setPrevSummary(prevSummaryRes.data || { totalNet: 0, totalGross: 0, avgTicket: 0, count: 0 });
 
@@ -1287,10 +1141,49 @@ export default function HistoryPage() {
     };
 
     const formatValue = (val: number, type: MetricType) => {
-        if (type === 'tickets_count') return val.toLocaleString('es-ES');
+        if (type === 'tickets_count') return val === 0 ? ' ' : val.toLocaleString('es-ES');
         if (val === 0) return " ";
         return formatCurrencySpanish(val);
     };
+
+    /** Descuadre de cero se muestra: CONTENIDO-Y-TONO §3. */
+    const formatDifference = (val: number) => formatCurrencySpanish(val);
+
+    const yesterdayMetrics = useMemo(() => {
+        if (!yesterdayClosing) {
+            return {
+                weatherLabel: null as string | null,
+                weatherIcon: null as string | null,
+                tickets: 0,
+                avgTicket: 0,
+                tpvSales: 0,
+                netSales: 0,
+                salesCard: 0,
+                cashCounted: 0,
+                salesPending: 0,
+                debtRecovered: 0,
+                difference: 0,
+            };
+        }
+        const tickets = Number(yesterdayClosing.tickets_count ?? 0);
+        const tpvSales = Number(yesterdayClosing.tpv_sales ?? 0);
+        const weatherId = weatherIdFromLabel(yesterdayClosing.weather);
+        const weatherOpt = CLOSING_WEATHER_OPTIONS.find((o) => o.id === weatherId);
+        return {
+            weatherLabel: yesterdayClosing.weather || null,
+            weatherIcon: weatherOpt?.icon ?? null,
+            tickets,
+            avgTicket: tickets > 0 ? tpvSales / tickets : 0,
+            tpvSales,
+            netSales: Number(yesterdayClosing.net_sales ?? 0),
+            salesCard: Number(yesterdayClosing.sales_card ?? 0),
+            cashCounted: Number(yesterdayClosing.cash_counted ?? 0),
+            salesPending: Number(yesterdayClosing.sales_pending ?? 0),
+            debtRecovered: Number(yesterdayClosing.debt_recovered ?? 0),
+            difference: Number(yesterdayClosing.difference ?? 0),
+        };
+    }, [yesterdayClosing]);
+
 
     // Solo actualizan estado local; la base de datos no se toca hasta que el usuario pulse "Guardar Cierre".
     const handleFieldUpdate = (field: string, value: number) => {
@@ -1478,10 +1371,17 @@ export default function HistoryPage() {
                 </div>
             }
             leadSlot={
-                <>
-                        <div className="grid grid-cols-3 print:hidden">
+                <div
+                    data-element="history-lead-cards"
+                    className="flex w-full flex-col gap-2 print:hidden"
+                >
+                    <div
+                        data-element="history-month-summary"
+                        className="rounded-[var(--radio-control)] bg-[rgb(255_255_255/0.1)] px-2 py-2"
+                    >
+                        <div className="grid grid-cols-3">
                             <div className="flex flex-col items-center justify-center text-center">
-                                <div className="flex items-center gap-1.5 leading-none">
+                                <div className="flex min-h-12 items-center justify-center gap-1.5 leading-none">
                                     <span className="text-sm sm:text-base md:text-lg font-black text-zinc-950 tabular-nums month-cal-kpi-value">
                                         {formatValue(summary.totalNet, 'net_sales')}
                                     </span>
@@ -1490,9 +1390,9 @@ export default function HistoryPage() {
                                     VENTA NETA
                                 </span>
                             </div>
-                            <div 
+                            <div
                                 onClick={() => setShowPeriodPerformanceModal(true)}
-                                className="flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform"
+                                className="flex min-h-12 flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform"
                             >
                                 <div className="flex items-center gap-1 leading-none">
                                     {(() => {
@@ -1511,22 +1411,117 @@ export default function HistoryPage() {
                                 </span>
                             </div>
                             <div className="flex flex-col items-center justify-center text-center">
-                                <span className="text-sm sm:text-base md:text-lg font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
-                                    {formatValue(summary.totalGross, 'tpv_sales')}
-                                </span>
+                                <div className="flex min-h-12 items-center justify-center">
+                                    <span className="text-sm sm:text-base md:text-lg font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
+                                        {formatValue(summary.totalGross, 'tpv_sales')}
+                                    </span>
+                                </div>
                                 <span className="text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest mt-1.5 lg:mt-0.5">
                                     VENTAS
                                 </span>
                             </div>
                         </div>
+                    </div>
 
-                        {/* En calendario escritorio el gráfico sobra: el mes ya muestra cada día */}
-                        {!loading && closings.length > 0 ? (
-                            <div className={cn(viewMode === 'calendar' && 'lg:hidden')}>
-                                <DailySalesChart closings={closings} historicalClosingsMap={historicalClosingsMap} />
+                    <div
+                        data-element="history-yesterday-summary"
+                        className="rounded-[var(--radio-control)] bg-[rgb(255_255_255/0.1)] px-2 py-2"
+                    >
+                        <div className="flex items-baseline justify-between gap-2">
+                            <span className="text-xs font-black text-zinc-950 leading-none">
+                                Resumen de ayer
+                            </span>
+                            <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-2.5 gap-y-0.5 text-[9px] font-normal text-zinc-400 tabular-nums">
+                                {yesterdayMetrics.weatherLabel ? (
+                                    <span className="inline-flex items-center gap-1">
+                                        {yesterdayMetrics.weatherIcon ? (
+                                            <img
+                                                src={yesterdayMetrics.weatherIcon}
+                                                alt=""
+                                                className="h-3 w-3 object-contain"
+                                            />
+                                        ) : (
+                                            <CloudSun size={11} className="shrink-0 opacity-70" aria-hidden />
+                                        )}
+                                        <span>{yesterdayMetrics.weatherLabel}</span>
+                                    </span>
+                                ) : (
+                                    <span> </span>
+                                )}
+                                <span>
+                                    {yesterdayMetrics.tickets === 0
+                                        ? ' '
+                                        : `${yesterdayMetrics.tickets.toLocaleString('es-ES')} tickets`}
+                                </span>
+                                <span>
+                                    {yesterdayMetrics.avgTicket === 0
+                                        ? ' '
+                                        : `${formatCurrencySpanish(yesterdayMetrics.avgTicket)} ticket medio`}
+                                </span>
                             </div>
-                        ) : null}
-                </>
+                        </div>
+                        <div className="mt-2 grid grid-cols-7 gap-0.5">
+                            {(
+                                [
+                                    {
+                                        label: 'Ventas',
+                                        value: yesterdayClosing
+                                            ? formatValue(yesterdayMetrics.tpvSales, 'tpv_sales')
+                                            : ' ',
+                                    },
+                                    {
+                                        label: 'Venta neta',
+                                        value: yesterdayClosing
+                                            ? formatValue(yesterdayMetrics.netSales, 'net_sales')
+                                            : ' ',
+                                    },
+                                    {
+                                        label: 'Tarjeta',
+                                        value: yesterdayClosing
+                                            ? formatValue(yesterdayMetrics.salesCard, 'tpv_sales')
+                                            : ' ',
+                                    },
+                                    {
+                                        label: 'Efectivo',
+                                        value: yesterdayClosing
+                                            ? formatValue(yesterdayMetrics.cashCounted, 'cash_counted')
+                                            : ' ',
+                                    },
+                                    {
+                                        label: 'Pendiente pago',
+                                        value: yesterdayClosing
+                                            ? formatValue(yesterdayMetrics.salesPending, 'tpv_sales')
+                                            : ' ',
+                                    },
+                                    {
+                                        label: 'Cobros pendientes',
+                                        value: yesterdayClosing
+                                            ? formatValue(yesterdayMetrics.debtRecovered, 'tpv_sales')
+                                            : ' ',
+                                    },
+                                    {
+                                        label: 'Diferencia',
+                                        value: yesterdayClosing
+                                            ? formatDifference(yesterdayMetrics.difference)
+                                            : ' ',
+                                    },
+                                ] as const
+                            ).map((item) => (
+                                <div
+                                    key={item.label}
+                                    className="flex min-w-0 flex-col items-center justify-center text-center"
+                                >
+                                    <span className="text-[9px] sm:text-[10px] md:text-xs font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
+                                        {item.value}
+                                    </span>
+                                    <span className="mt-1 text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-wider leading-tight">
+                                        {item.label}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
             }
         >
                         <div className={cn(
@@ -1731,7 +1726,7 @@ export default function HistoryPage() {
                                     <button
                                         type="button"
                                         onClick={handleDeleteClosing}
-                                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+                                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                                         aria-label="Eliminar cierre"
                                     >
                                         <Trash2 size={18} strokeWidth={2.5} />
@@ -1740,7 +1735,7 @@ export default function HistoryPage() {
                                     <button
                                         type="button"
                                         onClick={() => { setEditData({ ...selectedClosing, breakdown: selectedClosing.breakdown ?? {} }); setIsEditing(true); }}
-                                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+                                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                                         aria-label="Editar cierre"
                                     >
                                         <Pencil size={18} strokeWidth={2.5} />

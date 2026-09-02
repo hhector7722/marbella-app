@@ -200,12 +200,12 @@ export default function NominasModal({ isOpen, onClose, targetUserId, isManager 
             <label
                 htmlFor="nomina-upload"
                 className={cn(
-                    'relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 cursor-pointer items-center justify-center rounded-ds-control border-0 bg-white/20 text-white shadow-none outline-none transition-colors hover:bg-white/30 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-[""]',
+                    'relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 cursor-pointer items-center justify-center rounded-ds-control border-0 bg-zinc-100 text-zinc-700 shadow-none outline-none transition-colors hover:bg-zinc-200 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-[""]',
                     uploading && 'opacity-60 cursor-wait'
                 )}
                 aria-label="Subir nómina"
             >
-                {uploading ? <LoadingSpinner size="sm" className="text-white" /> : <Plus size={22} strokeWidth={2.5} />}
+                {uploading ? <LoadingSpinner size="sm" className="text-zinc-700" /> : <Plus size={22} strokeWidth={2.5} />}
             </label>
         </>
     ) : null;

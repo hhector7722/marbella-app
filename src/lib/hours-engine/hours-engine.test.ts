@@ -318,19 +318,36 @@ describe('Liquidation Engine', () => {
     assert.equal(r.carryOut, -12);
   });
 
-  it('semana mixta julio/agosto: solo los días de agosto eximen deuda', () => {
-    // Lun 27 jul – Dom 2 ago 2026. Sin fichajes: julio 5/7×40 → deuda; agosto 2/7×40 → suelo 0.
-    const r = liquidateWeek(
+  it('semana mixta julio/agosto: el suelo sigue el lunes (week_start) en agosto', () => {
+    // Lun 27 jul – Dom 2 ago: lunes en julio → deuda normal.
+    const mixed = liquidateWeek(
       input({
         weekStart: '2026-07-27',
         logs: [],
       }),
     );
-    assert.equal(r.contractedHoursEffective, 40);
-    // 5/7×40 ≈ 28.571 → Marbella 28.5 de deuda (solo julio)
-    assert.equal(r.weeklyBalance, -28.5);
-    assert.equal(r.ordinaryHours, 0);
-    assert.equal(r.overtimeHours, 0);
+    assert.equal(mixed.contractedHoursEffective, 40);
+    assert.equal(mixed.weeklyBalance, -40);
+
+    // Semana íntegramente de agosto → suelo.
+    const august = liquidateWeek(
+      input({
+        weekStart: '2026-08-03',
+        logs: [],
+      }),
+    );
+    assert.equal(august.weeklyBalance, 0);
+    assert.equal(august.carryOut, 0);
+
+    // Lun 31 ago – Dom 6 sep: lunes en agosto → suelo (vacaciones).
+    const spill = liquidateWeek(
+      input({
+        weekStart: '2026-08-31',
+        logs: [],
+      }),
+    );
+    assert.equal(spill.weeklyBalance, 0);
+    assert.equal(spill.carryOut, 0);
   });
 
   it('manager: sin tope staff', () => {

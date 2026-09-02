@@ -71,7 +71,7 @@ const CONTACTS_DATA = [
 ];
 
 const STAFF_INFO_MENU = [
-    { title: 'Contactos de Interés', imageSrc: '/icons/whatsapp.png', kind: 'contactos' as const },
+    { title: 'Contactos', imageSrc: '/icons/whatsapp.png', kind: 'contactos' as const },
     { title: 'Manuales', imageSrc: '/icons/guide.png', kind: 'manuales' as const },
 ];
 
@@ -1117,7 +1117,7 @@ export default function StaffDashboardView() {
             >
                 <div className="space-y-2">
                     {!infoSubMenu && (
-                        <AccessMenuGrid>
+                        <AccessMenuGrid align="center">
                             {STAFF_INFO_MENU.map((item) => (
                                 <CatalogTile
                                     key={item.title}

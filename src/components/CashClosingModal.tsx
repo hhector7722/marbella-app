@@ -546,7 +546,7 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
                         else { el.focus(); el.click(); }
                     }}
                 >
-                    <Calendar size={16} className="shrink-0 text-white/80" aria-hidden />
+                    <Calendar size={16} className="shrink-0 text-zinc-500" aria-hidden />
                     <span>
                         {format(parseDateTimeLocal(selectedDateTime), "eeee d 'de' MMMM, HH:mm", { locale: es })}
                     </span>
@@ -561,9 +561,9 @@ export default function CashClosingModal({ isOpen, onClose, onSuccess, initialTo
             }
             subtitle={
                 <div className="flex items-center gap-3">
-                    <span className={step === 'tpv_data' ? 'text-white' : 'text-white/40'}>1. Datos</span>
-                    <span className={step === 'count' ? 'text-white' : 'text-white/40'}>2. Arqueo</span>
-                    <span className={step === 'summary' ? 'text-white' : 'text-white/40'}>3. Resumen</span>
+                    <span className={step === 'tpv_data' ? 'text-zinc-900' : 'text-zinc-400'}>1. Datos</span>
+                    <span className={step === 'count' ? 'text-zinc-900' : 'text-zinc-400'}>2. Arqueo</span>
+                    <span className={step === 'summary' ? 'text-zinc-900' : 'text-zinc-400'}>3. Resumen</span>
                 </div>
             }
             footer={

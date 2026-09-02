@@ -38,6 +38,14 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-02
 
+- **Cabecera de Modal work: tinta oscura.** Los iconos y fechas de cabecera dejan el `text-white` de la era petróleo; heredan o usan zinc sobre superficie. Defensa CSS igual que en Surface. Los menús `scheme="dark"` no cambian.
+- **TabBar reactiva al papel claro.** Por defecto usa el cristal de los widgets del mosaico. Si debajo hay superficie clara (`data-over="light"`), pasa al cristal del envolvente para que iconos y etiquetas se lean. [P8](../2-diseno/PATRONES.md#p8--navegación-inferior).
+- **Staff propinas: cards como sáb/dom del horario.** En `/staff/propinas` dejan el blanco; usan el relleno secundario del mosaico y tinta acorde. El modal de detalle no cambia.
+- **Horario: el modal de día deja el petróleo.** Cabecera de superficie, chrome en zinc y tabla sin `#36606F`; misma pieza en `/horario` y el mosaico Staff.
+- **Staff: «Añadir nota» solo en el modal de día.** Sale del widget de horario; aparece en el pie de `PavilionDayModal` y abre el horario de ese día.
+- **Staff: sáb/dom del widget abren el modal de día de Horario.** Misma pieza y estética que Actividades en `/horario` (`PavilionDayModal`). El valor de Evento usa el mismo tamaño de tipo que la etiqueta.
+- **Cierres: resumen en dos cards, sin gráfica.** Sale la evolución diaria. Quedan el resumen del mes filtrado y el de ayer (clima, tickets, ticket medio y desglose de cobros), al ancho del calendario.
+- **Agosto no genera deuda de asistencia.** En semanas staff cuyo lunes cae en agosto, el balance semanal no baja de cero (vacaciones), incluida la última semana que desborda a septiembre. Las extras por encima del contrato siguen contando. Regla en [dominio/HORAS](../3-ingenieria/dominio/HORAS.md).
 - **Staff: Evento del widget de horario sale de `/horario`.** El mosaico ya no lee `shifts.activity`; usa las mismas actividades de pabellón que la vista Actividades de Horario (hora, nombre, pax, categorías).
 
 ## 2026-09-01

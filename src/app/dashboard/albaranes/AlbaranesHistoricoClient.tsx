@@ -1507,7 +1507,7 @@ export default function AlbaranesHistoricoClient({
                   setSupplierResults([])
                   setSupplierError(null)
                 }}
-                className="text-left w-full min-w-0 font-black uppercase tracking-wider text-white hover:opacity-80 transition-opacity text-[clamp(0.5625rem,2.4vw,0.75rem)] leading-none break-words"
+                className="text-left w-full min-w-0 font-black uppercase tracking-wider text-zinc-700 hover:opacity-80 transition-opacity text-[clamp(0.5625rem,2.4vw,0.75rem)] leading-none break-words"
                 title="Cambiar proveedor"
               >
                 {detail.supplier_name ?? 'Añadir proveedor'}
@@ -1523,7 +1523,7 @@ export default function AlbaranesHistoricoClient({
                         type="button"
                         onClick={() => void runAutoMap(detail.id)}
                         disabled={autoMapLoading}
-                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                         aria-label="Auto-mapear aprendidos"
                       >
                         {autoMapLoading ? (
@@ -1538,7 +1538,7 @@ export default function AlbaranesHistoricoClient({
                         type="button"
                         onClick={() => setDestructiveConfirm({ kind: 'deleteInvoice', invoiceId: detail.id })}
                         disabled={deletingInvoice}
-                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 disabled:opacity-40 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                         aria-label="Eliminar albarán"
                       >
                         {deletingInvoice ? (

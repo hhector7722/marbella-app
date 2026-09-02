@@ -27,7 +27,7 @@ export function ModalDateButton({
     return (
         <button
             type="button"
-            className="relative flex h-full min-h-ds-tactil items-center gap-1.5 border-0 bg-transparent p-0 text-left text-white outline-none hover:opacity-90"
+            className="relative flex h-full min-h-ds-tactil items-center gap-1.5 border-0 bg-transparent p-0 text-left text-inherit outline-none hover:opacity-90"
             onClick={() => {
                 const el = ref.current;
                 if (!el) return;
@@ -39,7 +39,7 @@ export function ModalDateButton({
                 }
             }}
         >
-            <Calendar size={14} className="shrink-0 text-white/80" aria-hidden />
+            <Calendar size={14} className="shrink-0 opacity-80" aria-hidden />
             <span className="max-w-[9.5rem] truncate text-[10px] font-black uppercase tracking-wide sm:max-w-none">
                 {format(parsed, 'd MMM yyyy', { locale: es })}
             </span>

@@ -237,7 +237,12 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(
             css,
             /\[data-component='TabBar'\]\.marbella-fixed-bottombar \{[\s\S]*?background-color:\s*var\(--chrome-glass-fallback\)/,
-            'la cápsula comparte el cristal de los widgets HomeScreen'
+            'por defecto la cápsula usa el cristal de los widgets HomeScreen'
+        );
+        assert.match(
+            css,
+            /\[data-component='TabBar'\]\[data-over='light'\]\.marbella-fixed-bottombar \{[\s\S]*?background-color:\s*color-mix\(in srgb, var\(--color-envolvente-bajo\) 55%, transparent\)/,
+            'sobre papel claro la cápsula pasa al cristal del envolvente'
         );
         assert.match(
             css,
@@ -258,6 +263,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             const tabbar = readFileSync(join(SRC_ROOT, 'components/StaffBottomNav.tsx'), 'utf8');
             assert.match(tabbar, /data-component="TabBar"/);
             assert.match(tabbar, /data-mode=\{tabMode\}/, 'el tab bar tiene paso compacto de solo iconos');
+            assert.match(tabbar, /data-over=\{overSurface\}/, 'el tab bar reacciona al papel claro debajo');
             assert.match(tabbar, /data-hidden=\{hidden/, 'el tab bar se oculta al hacer scroll hacia abajo');
             assert.doesNotMatch(tabbar, /uppercase/);
             assert.doesNotMatch(tabbar, /scale-110/);

@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-29
+revisado: 2026-09-02
 caducidad: 6 meses
 supersede: —
 ---
@@ -63,7 +63,7 @@ Es el único token con implementación centralizada real: existe como utilidad �
 | `color.superficie.hundida` | `#FAFAFA` | Fondo de zonas agrupadas dentro de una superficie | declarado |
 | `color.superficie.inactiva` | `#F4F4F5` | Elementos deshabilitados, cabeceras de tabla | adoptado (piloto Button vía `--color-superficie-inactiva`) |
 
-`color.superficie` no pinta el cuerpo del widget de HomeScreen. Ese hueco es material de sistema (`--home-widget-fill` + blur del `--color-envolvente`). Claro u oscuro según la luminancia del wallpaper. PageScreen, Modal y Surface fuera del mosaico siguen blancos.
+`color.superficie` no pinta el cuerpo del widget de HomeScreen. Ese hueco es material de sistema (`--home-widget-fill` + blur del `--color-envolvente`). Claro u oscuro según la luminancia del wallpaper. PageScreen, Modal y Surface fuera del mosaico siguen blancos, salvo la excepción documentada en [SISTEMA-DE-COMPONENTES](SISTEMA-DE-COMPONENTES.md) Tarjeta: en `/staff/propinas` los `Surface` `block` usan el relleno secundario del mosaico (`--home-widget-fill-secondary`, el mismo que sáb/dom del widget de horario).
 
 ## 4. Texto
 
@@ -131,7 +131,7 @@ Escala de cuatro píxeles. **No existen valores intermedios.**
 | `espacio.8` | 32 px | Separación mayor y márgenes de página |
 | `espacio.12` | 48 px | Separación de zonas independientes |
 
-Estado: `espacio.1`–`espacio.4` adoptados en Design System (`--espacio-*`, clases `*-ds-*`) vía pilotos `DashboardShortcut` y Modal. `espacio.8` adoptado (`--espacio-8`, piloto EmptyState). `espacio.6` y `espacio.12` permanecen en la escala documental, sin variable CSS todavía.
+Estado: `espacio.1`–`espacio.4` adoptados en Design System (`--espacio-*`, clases `*-ds-*`) vía pilotos `DashboardShortcut` y Modal. `espacio.6` adoptado (`--espacio-6`, piloto márgenes inferiores de menús de acceso en modal). `espacio.8` adoptado (`--espacio-8`, piloto EmptyState). `espacio.12` permanece en la escala documental, sin variable CSS todavía.
 
 ## 9. Forma
 

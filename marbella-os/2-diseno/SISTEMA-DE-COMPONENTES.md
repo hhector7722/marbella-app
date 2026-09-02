@@ -6,7 +6,7 @@ capa: diseno
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-29
+revisado: 2026-09-02
 caducidad: 6 meses
 supersede: —
 ---
@@ -123,7 +123,7 @@ Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`
 
 **Código**: `src/components/ui/Surface.tsx`.
 
-**Estado**: existe. Piloto: `PageScreen`, dashboard caja/ventas, Staff (semana y fichaje), matriz de propinas, Sala LIVE.
+**Estado**: existe. Piloto: `PageScreen`, dashboard caja/ventas, Staff (semana y fichaje), matriz de propinas, Sala LIVE. En `/staff/propinas`, los `Surface` `block` (`staff-propinas-last`, `staff-propinas-history`) no usan `color.superficie`: llevan `--home-widget-fill-secondary` y tinta invertida, igual que las cards de sáb/dom del widget de horario. El modal de detalle del reparto sigue en papel.
 
 ### Insignia de estado
 
@@ -320,7 +320,7 @@ Piezas transversales con comportamiento propio y contrato estricto. **Estas sí 
 
 **Propósito**: navegación principal en la aplicación instalada.
 
-**Anatomía**: tab bar de iPhone. Isla flotante, pista 49 pt (icono 25 pt + etiqueta 10 pt). Cristal translúcido del envolvente: se ve el fondo y sobre el papel de trabajo no desaparece. Iconos blancos. Inactivo al 55 % blanco; activo, blanco y semibold. El icono va siempre en trazo, sin relleno. Al scrollear hacia abajo, primero se ocultan los nombres (`data-mode="compact"`); si se sigue, se oculta (`data-hidden`). Al scrollear hacia arriba vuelve.
+**Anatomía**: tab bar de iPhone. Isla flotante, pista 49 pt (icono 25 pt + etiqueta 10 pt). Por defecto, mismo cristal frosted que los widgets HomeScreen (`--chrome-glass-*`). Si debajo hay papel claro (`data-over="light"`), pasa al cristal del envolvente para que no desaparezca. Iconos blancos. Inactivo al 55 % blanco; activo, blanco y semibold. El icono va siempre en trazo, sin relleno. Al scrollear hacia abajo, primero se ocultan los nombres (`data-mode="compact"`); si se sigue, se oculta (`data-hidden`). Al scrollear hacia arriba vuelve.
 
 **Identidad**: `data-component="TabBar"`. Ítem: `data-element="item"` + `data-active`.
 

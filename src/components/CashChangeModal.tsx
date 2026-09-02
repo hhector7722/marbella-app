@@ -572,7 +572,7 @@ export const CashChangeModal = ({
                             setZoomDenom(null);
                             setShowExchangeHistoryModal(true);
                         }}
-                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white opacity-90 shadow-none outline-none transition-opacity hover:opacity-100 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 opacity-90 shadow-none outline-none transition-opacity hover:opacity-100 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                         aria-label="Histórico de intercambios"
                     >
                         <Eye size={22} strokeWidth={2.5} className="stroke-current fill-none" />
@@ -686,12 +686,12 @@ export const CashChangeModal = ({
                                 const y = prev.month === 1 ? prev.year - 1 : prev.year;
                                 return { year: y, month: m };
                             })}
-                            className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+                            className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                             aria-label="Mes anterior"
                         >
                             <ChevronLeft size={20} strokeWidth={3} />
                         </button>
-                        <span className="text-white font-bold text-sm min-w-[7.5rem] text-center">
+                        <span className="text-zinc-700 font-bold text-sm min-w-[7.5rem] text-center">
                             {new Date(exchangeHistoryYearMonth.year, exchangeHistoryYearMonth.month - 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase())}
                         </span>
                         <button
@@ -701,7 +701,7 @@ export const CashChangeModal = ({
                                 const y = prev.month === 12 ? prev.year + 1 : prev.year;
                                 return { year: y, month: m };
                             })}
-                            className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+                            className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                             aria-label="Mes siguiente"
                         >
                             <ChevronRight size={20} strokeWidth={3} />

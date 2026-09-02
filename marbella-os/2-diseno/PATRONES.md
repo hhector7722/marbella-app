@@ -149,7 +149,7 @@ La navegación principal en la aplicación instalada.
 **Reglas**:
 - Cinco destinos como máximo. El sexto obliga a repensar la información, no a añadir un botón.
 - Los destinos dependen del rol y cada rol tiene su conjunto propio.
-- Es el tab bar de iPhone: isla flotante, pista de 49 pt. Cristal translúcido del envolvente: se ve el fondo y sobre el papel no desaparece. Icono y nombre van en blanco.
+- Es el tab bar de iPhone: isla flotante, pista de 49 pt. Por defecto, cristal frosted de los widgets del mosaico. Si debajo hay papel claro, pasa al cristal del envolvente para no desaparecer. Icono y nombre van en blanco.
 - El destino activo se distingue por color y peso, no por escala ni mayúsculas.
 - Al scrollear hacia abajo, primero se ocultan los nombres y quedan los iconos; si se sigue, se oculta del todo. Al scrollear hacia arriba vuelve. El teclado también la oculta.
 - La cabecera fija superior se oculta al scrollear hacia abajo y vuelve al scrollear hacia arriba, también si estás al fondo de la página.

@@ -167,6 +167,11 @@ describe('Modal identidad y variantes', () => {
         assert.match(modalSource, /data-subordinate/);
         assert.equal(modalSource.includes("?? 'white'"), false);
         assert.match(css, /\[data-component='Modal'\]\[data-scheme='dark'\]/);
+        assert.match(
+            css,
+            /\[data-component='Modal'\]:not\(\[data-scheme='dark'\]\)[\s\S]*?\.text-white[\s\S]*?color:\s*var\(--color-texto-fuerte\)/,
+            'cabecera work remapea text-white legacy a tinta fuerte'
+        );
         assert.match(modalSource, /scheme = 'work'/);
         assert.match(css, /z-index:\s*var\(--z-modal-base\)/);
         assert.match(css, /z-index:\s*var\(--z-modal-derived\)/);

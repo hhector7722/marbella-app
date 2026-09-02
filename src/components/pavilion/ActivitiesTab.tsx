@@ -236,10 +236,10 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center px-4 h-full flex-1 day-modal-activities">
         <span className="text-2xl mb-2">{'🌞'}</span>
-        <p className="text-sm font-black text-zinc-500">
+        <p className="text-sm font-medium text-zinc-500">
           No hi ha activitats que afectin el bar avui
         </p>
-        <p className={cn("mt-1 text-xs font-bold text-zinc-400", isHector && date ? "mb-6" : "")}>
+        <p className={cn("mt-1 text-xs font-medium text-zinc-400", isHector && date ? "mb-6" : "")}>
           Totes les activitats són en espais sense impacte al bar
         </p>
         {isHector && date && (
@@ -261,13 +261,13 @@ export function ActivitiesTab({ activities, date, isHector }: Props) {
       <table className="w-full table-fixed border-collapse">
         <thead>
           <tr style={{ height: ROW_H }}>
-            <th className="w-8 sm:w-10 border-b-2 border-[#36606F] pr-1 text-center text-[8px] font-black uppercase tracking-wider text-zinc-400">
+            <th className="w-8 sm:w-10 border-b border-ds-borde pr-1 text-center text-[8px] font-medium uppercase tracking-wider text-zinc-400">
               Hora
             </th>
             {venues.map((v) => (
               <th
                 key={v}
-                className="border-b-2 border-[#36606F] px-1 text-center text-[8px] font-black uppercase tracking-wider text-[#36606F]"
+                className="border-b border-ds-borde px-1 text-center text-[8px] font-medium uppercase tracking-wider text-zinc-500"
               >
                 {v.replace(/^P(\d)$/, 'PISTA $1')}
               </th>

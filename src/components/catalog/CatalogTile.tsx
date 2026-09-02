@@ -50,14 +50,24 @@ export function CatalogGrid({
 /**
  * Rejilla de accesos en modal: otras páginas o submodales.
  * Misma celda que el catálogo. Por defecto 3 columnas; más si se especifica.
+ * `align="center"`: pocos ítems centrados en el ancho del modal (p. ej. Info).
  */
 export function AccessMenuGrid({
     children,
     columns = 3,
+    align = 'stretch',
 }: {
     children: ReactNode;
     columns?: CatalogGridColumns;
+    align?: 'stretch' | 'center';
 }) {
+    if (align === 'center') {
+        return (
+            <div data-component="AccessMenuGrid" data-align="center">
+                {children}
+            </div>
+        );
+    }
     return <CatalogGrid columns={columns}>{children}</CatalogGrid>;
 }
 

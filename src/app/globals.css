@@ -49,6 +49,7 @@
   --espacio-2: 8px;
   --espacio-3: 12px;
   --espacio-4: 16px;
+  --espacio-6: 24px;
   --espacio-8: 32px;
   --tactil-minimo: 48px;
   /* Pista de la cápsula flotante (54 px). El aire y el home indicator van fuera. */
@@ -96,7 +97,7 @@
   /* Cabecera cromo de tablas (recipe-panel / PageScreen / Modal) */
   --table-chrome-fill: color-mix(in srgb, white 16%, var(--color-envolvente-bajo));
   --home-widget-separator: rgb(255 255 255 / 0.16);
-  /* Cristal compartido: widgets HomeScreen (oscuro) y TabBar sobre el envolvente */
+  /* Cristal compartido: widgets HomeScreen (oscuro). TabBar lo usa salvo sobre papel claro. */
   --chrome-glass-fill: rgb(255 255 255 / 0.16);
   --chrome-glass-fallback: rgb(255 255 255 / 0.16);
   --chrome-glass-blur: var(--espacio-8);
@@ -237,6 +238,34 @@
  */
 [data-component='Modal'] [data-element='header'] {
   padding-inline: var(--modal-header-inset);
+}
+
+/*
+ * Cromo legacy de cabecera petróleo: text-white no sobrevive en cabecera
+ * de trabajo (scheme work). En scheme dark la tinta invertida es correcta.
+ * Misma defensa que Surface page/block.
+ */
+[data-component='Modal']:not([data-scheme='dark'])
+  [data-element='header']
+  :is(
+    .text-white,
+    .text-white\/90,
+    .text-white\/80,
+    .text-white\/70,
+    .text-white\/55,
+    .text-white\/40
+  ):not([class*='bg-red']):not([class*='bg-rose']):not([class*='bg-emerald']):not([class*='bg-orange']):not(
+      [class*='bg-blue']
+    ):not([class*='bg-yellow']):not([class*='bg-amber']) {
+  color: var(--color-texto-fuerte);
+}
+[data-component='Modal']:not([data-scheme='dark']) [data-element='header'] :is(.hover\:bg-white\/10):hover,
+[data-component='Modal']:not([data-scheme='dark']) [data-element='header'] :is(.hover\:bg-white\/20):hover,
+[data-component='Modal']:not([data-scheme='dark']) [data-element='header'] :is(.hover\:bg-white\/30):hover {
+  background-color: var(--color-superficie-inactiva);
+}
+[data-component='Modal']:not([data-scheme='dark']) [data-element='header'] :is(.bg-white\/10, .bg-white\/20) {
+  background-color: var(--color-superficie-inactiva);
 }
 
 /*
@@ -1151,6 +1180,110 @@
   text-transform: uppercase;
   color: var(--color-texto);
 }
+/*
+ * /staff/propinas — mismas cards que sáb/dom del widget de horario:
+ * --home-widget-fill-secondary sobre el envolvente; tinta invertida.
+ * El modal de detalle sigue en papel (StaffTipRepartoPanel sin estos selectores).
+ */
+[data-component='Surface'][data-instance='staff-propinas-last'],
+[data-component='Surface'][data-instance='staff-propinas-history'] {
+  --home-widget-fill-secondary: rgb(255 255 255 / 0.1);
+  --home-widget-ink: var(--color-texto-invertido);
+  --home-widget-ink-secondary: color-mix(in srgb, var(--color-texto-invertido) 72%, transparent);
+  --home-widget-separator: var(--chrome-glass-fill);
+  background-color: var(--home-widget-fill-secondary);
+  border-color: transparent;
+  box-shadow: none;
+  color: var(--home-widget-ink);
+}
+[data-component='Surface'][data-instance='staff-propinas-last'] > [data-element='header'],
+[data-component='Surface'][data-instance='staff-propinas-history'] > [data-element='header'] {
+  border-bottom-color: var(--home-widget-separator);
+  color: var(--home-widget-ink);
+}
+[data-component='Surface'][data-instance='staff-propinas-last'] > [data-element='header'] [data-element='title'],
+[data-component='Surface'][data-instance='staff-propinas-history'] > [data-element='header'] [data-element='title'] {
+  color: var(--home-widget-ink-secondary);
+}
+[data-component='Surface'][data-instance='staff-propinas-last'] :is(
+  .text-zinc-900,
+  .text-zinc-800,
+  .text-zinc-700,
+  .text-zinc-600,
+  .text-gray-900,
+  .text-gray-800,
+  .text-gray-700
+),
+[data-component='Surface'][data-instance='staff-propinas-history'] :is(
+  .text-zinc-900,
+  .text-zinc-800,
+  .text-zinc-700,
+  .text-zinc-600,
+  .text-gray-900,
+  .text-gray-800,
+  .text-gray-700
+) {
+  color: var(--home-widget-ink);
+}
+[data-component='Surface'][data-instance='staff-propinas-last'] :is(
+  .text-zinc-500,
+  .text-zinc-400,
+  .text-zinc-300,
+  .text-gray-500,
+  .text-gray-400,
+  .text-gray-300
+),
+[data-component='Surface'][data-instance='staff-propinas-history'] :is(
+  .text-zinc-500,
+  .text-zinc-400,
+  .text-zinc-300,
+  .text-gray-500,
+  .text-gray-400,
+  .text-gray-300
+) {
+  color: var(--home-widget-ink-secondary);
+}
+[data-component='Surface'][data-instance='staff-propinas-last'] :is(
+  .text-\[\#36606F\],
+  .text-ds-marca
+),
+[data-component='Surface'][data-instance='staff-propinas-history'] :is(
+  .text-\[\#36606F\],
+  .text-ds-marca
+) {
+  color: var(--home-widget-ink);
+}
+[data-component='Surface'][data-instance='staff-propinas-last'] :is(.text-emerald-600, .text-emerald-700),
+[data-component='Surface'][data-instance='staff-propinas-history'] :is(.text-emerald-600, .text-emerald-700) {
+  color: var(--color-positivo);
+}
+[data-component='Surface'][data-instance='staff-propinas-last'] :is(.text-rose-600, .text-rose-700, .text-rose-800),
+[data-component='Surface'][data-instance='staff-propinas-history'] :is(.text-rose-600, .text-rose-700, .text-rose-800) {
+  color: var(--color-negativo);
+}
+[data-component='Surface'][data-instance='staff-propinas-last'] :is(.border-zinc-100, .border-rose-200),
+[data-component='Surface'][data-instance='staff-propinas-history'] :is(.border-zinc-100) {
+  border-color: var(--home-widget-separator);
+}
+[data-component='Surface'][data-instance='staff-propinas-history'] .divide-zinc-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--home-widget-separator);
+}
+[data-component='Surface'][data-instance='staff-propinas-last'] :is(.hover\:bg-zinc-50\/80:hover, .hover\:bg-zinc-50:hover),
+[data-component='Surface'][data-instance='staff-propinas-history'] :is(.hover\:bg-zinc-50\/80:hover, .hover\:bg-zinc-50:hover) {
+  background-color: rgb(255 255 255 / 0.08);
+}
+[data-component='Surface'][data-instance='staff-propinas-last'] [data-component='EmptyState'] :is([data-element='title'], [data-element='description']),
+[data-component='Surface'][data-instance='staff-propinas-history'] [data-component='EmptyState'] :is([data-element='title'], [data-element='description']) {
+  color: var(--home-widget-ink-secondary);
+}
+[data-component='Surface'][data-instance='staff-propinas-last'] [role='alert'].bg-rose-50,
+[data-component='Surface'][data-instance='staff-propinas-last'] [role='alert'].bg-rose-50 * {
+  color: var(--color-negativo);
+}
+[data-component='Surface'][data-instance='staff-propinas-last'] [role='alert'].bg-rose-50 {
+  background-color: color-mix(in srgb, var(--color-negativo) 18%, transparent);
+  border-color: color-mix(in srgb, var(--color-negativo) 45%, transparent);
+}
 [data-component='PageScreen'] [data-element='period'] {
   min-width: 0;
   pointer-events: none;
@@ -1367,6 +1500,18 @@
     max-width: 100%;
   }
   [data-component='PageScreen'][data-work='table'] [data-element='lead'] > .grid.grid-cols-4 {
+    max-width: 100%;
+  }
+
+  /* Cierres: cards de resumen al mismo ancho que el calendario (97 %). */
+  [data-component='PageScreen'] [data-element='lead'] > [data-element='history-lead-cards'] {
+    width: 97%;
+    max-width: 100%;
+    margin-inline: auto;
+    grid-column: 1 / -1;
+  }
+  [data-component='PageScreen'][data-work='table'] [data-element='lead']:has(> [data-element='history-lead-cards']) {
+    grid-template-columns: minmax(0, 1fr);
     max-width: 100%;
   }
 
@@ -2344,6 +2489,14 @@ button[data-element='catalog-filter'] {
 [data-component='StaffWeekSchedule'] [data-week-row] {
   flex-shrink: 0;
 }
+[data-component='StaffWeekSchedule'] [data-week-row='expanded'] {
+  box-sizing: border-box;
+  align-items: center;
+  min-height: calc(var(--staff-week-day-size) + (var(--espacio-1) * 2));
+  padding-block: var(--espacio-1);
+  border-radius: var(--radio-control);
+  background-color: var(--home-widget-fill-secondary);
+}
 [data-component='StaffWeekSchedule'] [data-week-row] button {
   height: var(--staff-week-day-size);
 }
@@ -2369,11 +2522,18 @@ button[data-element='catalog-filter'] {
   min-width: 0;
   min-height: 0;
   height: 100%;
+  width: 100%;
   padding: var(--espacio-1);
+  border: 0;
   border-radius: var(--radio-control);
   background-color: var(--home-widget-fill-secondary);
   color: inherit;
+  cursor: pointer;
   overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+[data-component='StaffWeekSchedule'] [data-element='weekend-card']::before {
+  z-index: 0;
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-day'] {
   display: flex;
@@ -2414,20 +2574,6 @@ button[data-element='catalog-filter'] {
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-evento-value'] {
   color: var(--home-widget-ink);
-}
-[data-component='StaffWeekSchedule'] [data-element='weekend-note'] {
-  margin-top: auto;
-  flex-shrink: 0;
-  color: var(--home-widget-ink-secondary);
-}
-[data-component='StaffWeekSchedule'] [data-element='weekend-note'][data-has-note='true'] {
-  color: rgb(167 243 208);
-}
-[data-component='StaffWeekSchedule'] [data-element='weekend-note']:hover {
-  color: var(--home-widget-ink);
-}
-[data-component='StaffWeekSchedule'] [data-element='weekend-note'][data-has-note='true']:hover {
-  color: rgb(209 250 229);
 }
 [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] {
   grid-area: semana;
@@ -2913,6 +3059,7 @@ button[data-element='catalog-filter'] {
   row-gap: var(--home-row-gap);
   width: 100%;
   justify-items: center;
+  padding-bottom: var(--espacio-6);
 }
 [data-component='AccessShortcutGrid'] [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'] {
   width: var(--home-icon-size);
@@ -2920,6 +3067,25 @@ button[data-element='catalog-filter'] {
 }
 [data-component='AccessShortcutGrid'] [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'] [data-element='text'] {
   color: var(--color-texto-invertido);
+}
+
+/*
+ * AccessMenuGrid centrado: pocos iconos (p. ej. Info) alineados al centro
+ * con el mismo aire inferior que AccessShortcutGrid.
+ */
+[data-component='AccessMenuGrid'][data-align='center'] {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  column-gap: var(--espacio-4);
+  row-gap: var(--espacio-4);
+  width: 100%;
+  padding-bottom: var(--espacio-6);
+}
+[data-component='AccessMenuGrid'][data-align='center'] > * {
+  flex: 0 0 auto;
+  width: min(30%, 7.5rem);
 }
 
 /*
@@ -3113,10 +3279,10 @@ button[data-element='catalog-filter'] {
 }
 [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='web'] [data-element='asset'] img,
 [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='staff-web'] [data-element='asset'] img {
-  width: 132%;
-  height: 132%;
-  left: -16%;
-  top: -16%;
+  width: 106%;
+  height: 106%;
+  left: -3%;
+  top: -3%;
 }
 [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='admin-mas-funciones'] [data-element='asset'] img {
   width: 132%;
@@ -4045,8 +4211,9 @@ button[data-element='catalog-filter'] {
 
 /*
  * TabBar — UITabBar iOS 26 Liquid Glass. Isla que flota sobre el contenido,
- * no losa a sangre. Mismo cristal que los widgets HomeScreen (--chrome-glass-*):
- * translúcido sobre iconos y contenido al hacer scroll.
+ * no losa a sangre. Por defecto: mismo cristal que widgets HomeScreen
+ * (--chrome-glass-*). Si debajo hay papel claro (`data-over="light"`), pasa
+ * al cristal del envolvente para que iconos blancos se lean.
  * Position fixed. Inset 16 pt, aire 8 pt sobre el home indicator.
  * overflow visible: el blur no sobrevive a overflow:hidden en Safari.
  */
@@ -4082,11 +4249,25 @@ button[data-element='catalog-filter'] {
   transition:
     transform 0.35s cubic-bezier(0.32, 0.72, 0, 1),
     opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1),
-    height 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+    height 0.25s cubic-bezier(0.32, 0.72, 0, 1),
+    background-color 0.25s cubic-bezier(0.32, 0.72, 0, 1),
+    box-shadow 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+[data-component='TabBar'][data-over='light'].marbella-fixed-bottombar {
+  background-color: color-mix(in srgb, var(--color-envolvente-bajo) 55%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(32px);
+  backdrop-filter: saturate(180%) blur(32px);
+  box-shadow:
+    inset 0 0.5px 0 rgb(255 255 255 / 0.22),
+    0 0 0 1px rgb(255 255 255 / 0.18),
+    0 8px 24px rgb(0 0 0 / 0.28);
 }
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
   [data-component='TabBar'] {
     background-color: var(--chrome-glass-fallback);
+  }
+  [data-component='TabBar'][data-over='light'] {
+    background-color: color-mix(in srgb, var(--color-envolvente-bajo) 82%, white 18%);
   }
 }
 [data-component='TabBar'][data-hidden='true'] {

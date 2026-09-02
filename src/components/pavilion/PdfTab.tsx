@@ -40,7 +40,7 @@ export function PdfTab({ filePath }: Props) {
   if (!filePath) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <p className="text-sm font-black text-zinc-400">
+        <p className="text-sm font-medium text-zinc-400">
           No hi ha PDF per aquest dia
         </p>
       </div>
@@ -50,7 +50,7 @@ export function PdfTab({ filePath }: Props) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <LoadingSpinner className="text-[#36606F]" />
+        <LoadingSpinner className="text-ds-marca" />
       </div>
     );
   }
@@ -58,8 +58,8 @@ export function PdfTab({ filePath }: Props) {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
-        <p className="text-sm font-black text-zinc-700">Error en carregar el PDF</p>
-        <p className="text-xs font-bold text-zinc-400">{error}</p>
+        <p className="text-sm font-medium text-zinc-700">Error en carregar el PDF</p>
+        <p className="text-xs font-medium text-zinc-400">{error}</p>
       </div>
     );
   }
