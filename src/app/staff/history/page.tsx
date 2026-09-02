@@ -154,7 +154,6 @@ export default function HistoryPage() {
             const { data: emps } = await supabase
                 .from('profiles')
                 .select(PLANTILLA_EMPLOYEE_SELECT)
-                .eq('visible_in_plantilla', true)
                 .order('first_name');
 
             setEmployees(filterVisiblePlantillaEmployees((emps || []) as Employee[]));
@@ -346,6 +345,7 @@ export default function HistoryPage() {
     const isManager = canManageStaffAttendance(userRole, userEmail);
     const isPlantilla = isManager && selectedEmployeeId === '';
     const isMaster = isMasterDashboardUser(userEmail);
+    const allowCreateFichaje = isMaster || isManager;
 
     const headerLabel = isPlantilla
         ? 'Plantilla'
@@ -851,22 +851,29 @@ export default function HistoryPage() {
         const { data: emps } = await supabase
             .from('profiles')
             .select(PLANTILLA_EMPLOYEE_SELECT)
-            .eq('visible_in_plantilla', true)
             .order('first_name');
         setEmployees(filterVisiblePlantillaEmployees((emps || []) as Employee[]));
     }
 
     const handleDayClick = (date: string) => {
-        if (isManager) {
-            setSummaryDate(date);
-            setIsSummaryModalOpen(true);
-            void ensureEmployeesLoaded();
-            void loadDaySummaryLogs(date);
-            return;
-        }
+        void (async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            const email = session?.user?.email ?? userEmail;
+            const canCreate =
+                isMasterDashboardUser(email) ||
+                canManageStaffAttendance(userRole, email);
 
-        setEditingDate(date);
-        setEditingUserId(selectedEmployeeId || currentUserId);
+            if (canCreate) {
+                setSummaryDate(date);
+                setIsSummaryModalOpen(true);
+                void ensureEmployeesLoaded();
+                void loadDaySummaryLogs(date);
+                return;
+            }
+
+            setEditingDate(date);
+            setEditingUserId(selectedEmployeeId || currentUserId);
+        })();
     };
 
     const handleSelectLogFromSummary = (userId: string) => {
@@ -1041,7 +1048,7 @@ export default function HistoryPage() {
                     onSelectLog={handleSelectLogFromSummary}
                     employees={employees}
                     onFichajeCreated={handleDetailModalSuccess}
-                    canManageAttendance={isManager}
+                    allowCreateFichaje={allowCreateFichaje}
                     userRole={userRole}
                     viewerEmail={userEmail}
                 />

@@ -440,7 +440,6 @@ export default function StaffDashboardView() {
                 const { data: emps } = await supabase
                     .from('profiles')
                     .select(PLANTILLA_EMPLOYEE_SELECT)
-                    .eq('visible_in_plantilla', true)
                     .order('first_name');
                 setPlantillaEmployees(filterVisiblePlantillaEmployees((emps || []) as PlantillaEmployeeRow[]));
             } else {

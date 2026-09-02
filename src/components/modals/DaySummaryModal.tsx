@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -12,6 +12,12 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { WorkerPersonRow } from '@/components/staff/WorkerPersonRow';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { canManageStaffAttendance } from '@/lib/staff/attendance-access';
+import { isMasterDashboardUser } from '@/lib/master-dashboard';
+import { createClient } from '@/utils/supabase/client';
+import {
+    filterVisiblePlantillaEmployees,
+    PLANTILLA_EMPLOYEE_SELECT,
+} from '@/lib/staff/plantilla-employees';
 
 export type EmployeeOption = { id: string; first_name: string; last_name: string };
 
@@ -32,11 +38,11 @@ interface DaySummaryModalProps {
     date: Date | null;
     logs: DaySummaryLog[];
     onSelectLog: (userId: string) => void;
-    /** Lista de empleados (plantilla). */
     employees?: EmployeeOption[];
-    /** Llamado tras crear un fichaje para refrescar datos. */
     onFichajeCreated?: () => void;
-    /** @deprecated Usar canManageAttendance */
+    /** Fuerza el botón de crear fichaje (p. ej. Master por email). */
+    allowCreateFichaje?: boolean;
+    /** @deprecated Usar allowCreateFichaje */
     isManager?: boolean;
     canManageAttendance?: boolean;
     userRole?: string;
@@ -51,6 +57,7 @@ export function DaySummaryModal({
     onSelectLog,
     employees = [],
     onFichajeCreated,
+    allowCreateFichaje,
     isManager,
     canManageAttendance,
     userRole,
@@ -61,15 +68,72 @@ export function DaySummaryModal({
     const [createUserId, setCreateUserId] = useState('');
     const [createTime, setCreateTime] = useState('08:00');
     const [creating, setCreating] = useState(false);
+    const [roster, setRoster] = useState<EmployeeOption[]>(employees);
+    const [loadingRoster, setLoadingRoster] = useState(false);
+
+    const [sessionCanManage, setSessionCanManage] = useState(false);
 
     const canManage =
-        canManageAttendance ??
-        isManager ??
+        allowCreateFichaje === true ||
+        canManageAttendance === true ||
+        isManager === true ||
+        sessionCanManage ||
         canManageStaffAttendance(userRole, viewerEmail);
 
     const employeeIdsWithLog = new Set((logs || []).map((l) => l.user_id));
-    const availableEmployees = (employees || []).filter((e) => !employeeIdsWithLog.has(e.id));
-    const canShowAddButton = canManage && employees.length > 0;
+    const availableEmployees = roster.filter((e) => !employeeIdsWithLog.has(e.id));
+
+    const loadRoster = useCallback(async () => {
+        setLoadingRoster(true);
+        try {
+            const supabase = createClient();
+            const { data, error } = await supabase
+                .from('profiles')
+                .select(PLANTILLA_EMPLOYEE_SELECT)
+                .order('first_name');
+
+            if (error) throw error;
+
+            const visible = filterVisiblePlantillaEmployees(data ?? []);
+            setRoster(
+                visible.map((emp) => ({
+                    id: emp.id,
+                    first_name: emp.first_name ?? '',
+                    last_name: emp.last_name ?? '',
+                })),
+            );
+        } catch (err) {
+            console.error('DaySummaryModal loadRoster:', err);
+            toast.error('No se pudo cargar la plantilla');
+        } finally {
+            setLoadingRoster(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        void createClient()
+            .auth.getSession()
+            .then(({ data: { session } }) => {
+                const email = session?.user?.email ?? viewerEmail ?? '';
+                setSessionCanManage(
+                    isMasterDashboardUser(email) ||
+                        canManageStaffAttendance(userRole, email),
+                );
+            });
+    }, [isOpen, userRole, viewerEmail]);
+
+    useEffect(() => {
+        if (employees.length > 0) {
+            setRoster(employees);
+        }
+    }, [employees]);
+
+    useEffect(() => {
+        if (!isOpen || !canManage) return;
+        if (roster.length > 0) return;
+        void loadRoster();
+    }, [isOpen, canManage, roster.length, loadRoster]);
 
     useEffect(() => {
         if (!isOpen) {
@@ -78,6 +142,12 @@ export function DaySummaryModal({
             setCreateTime('08:00');
         }
     }, [isOpen]);
+
+    useEffect(() => {
+        if (!showCreateFichaje || createUserId) return;
+        const first = availableEmployees[0]?.id;
+        if (first) setCreateUserId(first);
+    }, [showCreateFichaje, availableEmployees, createUserId]);
 
     const resetCreateForm = () => {
         setShowCreateFichaje(false);
@@ -91,6 +161,12 @@ export function DaySummaryModal({
     };
 
     const openCreateFichaje = () => {
+        if (roster.length === 0 && !loadingRoster) {
+            void loadRoster().then(() => {
+                setShowCreateFichaje(true);
+            });
+            return;
+        }
         if (availableEmployees.length === 0) {
             toast.error('Todos los empleados de la plantilla ya tienen fichaje este día');
             return;
@@ -124,6 +200,17 @@ export function DaySummaryModal({
 
     const dateLabel = date ? format(date, "EEEE d 'de' MMMM", { locale: es }) : '';
 
+    const addButton = (
+        <button
+            type="button"
+            onClick={openCreateFichaje}
+            className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+            aria-label="Nuevo fichaje"
+        >
+            <Plus size={18} strokeWidth={2.5} />
+        </button>
+    );
+
     return (
         <>
             <Modal
@@ -137,27 +224,34 @@ export function DaySummaryModal({
                 title="Resumen de Fichajes"
                 subtitle={dateLabel}
                 headerTone="petroleum"
-                headerTrailing={
-                    canShowAddButton ? (
-                        <button
-                            type="button"
-                            onClick={openCreateFichaje}
-                            className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white shadow-none outline-none hover:bg-white/10 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
-                            aria-label="Nuevo fichaje"
-                        >
-                            <Plus size={18} strokeWidth={2.5} />
-                        </button>
-                    ) : undefined
-                }
+                headerTrailing={canManage ? addButton : undefined}
                 footer={
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        instance="attendance-day-summary-close"
-                        onClick={handleClose}
-                    >
-                        Cerrar
-                    </Button>
+                    <div className="flex w-full gap-2 px-ds-4">
+                        {canManage ? (
+                            <Button
+                                type="button"
+                                variant="primary"
+                                instance="attendance-day-summary-create"
+                                onClick={openCreateFichaje}
+                                disabled={loadingRoster}
+                                loading={loadingRoster}
+                                loadingLabel="Cargando"
+                                icon={<Plus size={16} strokeWidth={2.5} />}
+                                className="flex-1"
+                            >
+                                Nuevo fichaje
+                            </Button>
+                        ) : null}
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            instance="attendance-day-summary-close"
+                            onClick={handleClose}
+                            className={canManage ? 'flex-1' : 'w-full'}
+                        >
+                            Cerrar
+                        </Button>
+                    </div>
                 }
             >
                 <div>
