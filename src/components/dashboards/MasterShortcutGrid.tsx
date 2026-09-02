@@ -190,7 +190,7 @@ export default function MasterShortcutGrid({
                 <DashboardShortcut
                     instance="plantilla"
                     label="Plantilla"
-                    img="/icons/admin2.png"
+                    img="/icons/admin.png"
                     onClick={onOpenPlantilla}
                 />
             ),
