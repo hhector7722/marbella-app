@@ -81,3 +81,8 @@ export function nextWeekStart(weekStart: CivilDate): CivilDate {
 export function previousWeekStart(weekStart: CivilDate): CivilDate {
   return addCivilDays(weekStart, -7);
 }
+
+/** Día civil de agosto (mes 8). Gobierna la exención de deuda de asistencia. */
+export function isAugustCivilDate(day: CivilDate): boolean {
+  return civilDateToParts(day).m === 8;
+}

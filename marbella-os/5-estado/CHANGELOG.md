@@ -36,6 +36,10 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
 
+## 2026-09-02
+
+- **Staff: Evento del widget de horario sale de `/horario`.** El mosaico ya no lee `shifts.activity`; usa las mismas actividades de pabellón que la vista Actividades de Horario (hora, nombre, pax, categorías).
+
 ## 2026-09-01
 
 - **Un solo filtro de fecha.** Pulsar el mes o el icono de calendario abre el mismo `TimeFilterModal`. Sale el selector de mes petróleo de Asistencia y los pickers muertos de Ventas/Cierres. [PATRONES P7](../2-diseno/PATRONES.md#p7--filtro-temporal).

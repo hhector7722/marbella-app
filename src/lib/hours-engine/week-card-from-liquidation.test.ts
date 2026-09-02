@@ -191,7 +191,7 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
     assertCardCoherent(summary, result, employee, Object.values(extrasByDay));
   });
 
-  it('agosto: aplica reglas de contrato estándar (40h trabajadas / 40h contrato → extras = 0)', () => {
+  it('agosto: 40h trabajadas / 40h contrato → extras = 0; infraasistencia no crea deuda', () => {
     const employee = emp([term('2026-01-01', null, 40, { bagMode: false })]);
     const logs = [
       dayLog('2026-08-03', 8),
@@ -211,6 +211,16 @@ describe('week-card-from-liquidation — tarjeta = LiquidationResult', () => {
     assert.equal(result.ordinaryHours, 40);
     assert.equal(result.overtimeHours, 0);
     assertCardCoherent(summary, result, employee, Object.values(extrasByDay));
+
+    const vacation = liquidateWeekForCard({
+      carryIn: 0,
+      employee,
+      weekStart: '2026-08-10',
+      logs: [],
+    });
+    assert.equal(vacation.result.weeklyBalance, 0);
+    assert.equal(vacation.result.carryOut, 0);
+    assert.equal(vacation.summary.weeklyBalance, 0);
   });
 
   it('manager: jornada 0, extras = trabajado', () => {

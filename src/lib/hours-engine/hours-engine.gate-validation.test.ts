@@ -396,16 +396,27 @@ describe('Gate V1 — Golden Tests (especificación v1.0)', () => {
     assert.equal(reopened.carryOut, 8);
   });
 
-  it('GT-15 Agosto — reglas estándar de contrato (contrato 40h, trabajadas 50h → balance = 10)', () => {
-    const r = liquidateWeek(
+  it('GT-15 Agosto — exceso de contrato genera extras; infraasistencia no genera deuda', () => {
+    const over = liquidateWeek(
       liq({
         weekStart: '2026-08-03',
         logs: [{ clockInIso: '2026-08-03T08:00:00.000Z', totalHours: 50 }],
       }),
     );
-    assert.equal(r.weeklyBalance, 10);
-    assert.equal(r.ordinaryHours, 40);
-    assert.equal(r.overtimeHours, 10);
+    assert.equal(over.weeklyBalance, 10);
+    assert.equal(over.ordinaryHours, 40);
+    assert.equal(over.overtimeHours, 10);
+
+    const under = liquidateWeek(
+      liq({
+        weekStart: '2026-08-03',
+        logs: [{ clockInIso: '2026-08-03T08:00:00.000Z', totalHours: 10 }],
+      }),
+    );
+    assert.equal(under.weeklyBalance, 0);
+    assert.equal(under.ordinaryHours, 10);
+    assert.equal(under.overtimeHours, 0);
+    assert.equal(under.carryOut, 0);
   });
 
   it('GT-16 Fixed — régimen fijo sin tope staff', () => {

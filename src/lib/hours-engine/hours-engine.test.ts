@@ -265,7 +265,7 @@ describe('Liquidation Engine', () => {
     assert.equal(gapSeg.hoursWorked, 10);
   });
 
-  it('agosto: aplica reglas estándar de contrato (no genera automáticamente extras)', () => {
+  it('agosto: extras por encima de contrato (no convierte todo en extras)', () => {
     // Lunes 3 agosto 2026: contrato 40h, trabajadas 50h -> 40 ord, 10 ext, balance = 10
     const r = liquidateWeek(
       input({
@@ -277,6 +277,60 @@ describe('Liquidation Engine', () => {
     assert.equal(r.ordinaryHours, 40);
     assert.equal(r.overtimeHours, 10);
     assert.equal(r.weeklyBalance, 10);
+  });
+
+  it('agosto: infraasistencia no genera deuda (vacaciones)', () => {
+    const r = liquidateWeek(
+      input({
+        weekStart: '2026-08-03',
+        logs: [{ clockInIso: '2026-08-03T08:00:00.000Z', totalHours: 10 }],
+      }),
+    );
+    assert.equal(r.contractedHoursEffective, 40);
+    assert.equal(r.ordinaryHours, 10);
+    assert.equal(r.overtimeHours, 0);
+    assert.equal(r.weeklyBalance, 0);
+    assert.equal(r.carryOut, 0);
+  });
+
+  it('agosto: semana sin fichajes no genera deuda', () => {
+    const r = liquidateWeek(
+      input({
+        weekStart: '2026-08-03',
+        logs: [],
+      }),
+    );
+    assert.equal(r.contractedHoursEffective, 40);
+    assert.equal(r.weeklyBalance, 0);
+    assert.equal(r.carryOut, 0);
+  });
+
+  it('agosto: arrastre de deuda previa permanece; agosto no suma más', () => {
+    const r = liquidateWeek(
+      input({
+        weekStart: '2026-08-03',
+        carryIn: -12,
+        logs: [{ clockInIso: '2026-08-03T08:00:00.000Z', totalHours: 8 }],
+      }),
+    );
+    assert.equal(r.weeklyBalance, 0);
+    assert.equal(r.balanceFinal, -12);
+    assert.equal(r.carryOut, -12);
+  });
+
+  it('semana mixta julio/agosto: solo los días de agosto eximen deuda', () => {
+    // Lun 27 jul – Dom 2 ago 2026. Sin fichajes: julio 5/7×40 → deuda; agosto 2/7×40 → suelo 0.
+    const r = liquidateWeek(
+      input({
+        weekStart: '2026-07-27',
+        logs: [],
+      }),
+    );
+    assert.equal(r.contractedHoursEffective, 40);
+    // 5/7×40 ≈ 28.571 → Marbella 28.5 de deuda (solo julio)
+    assert.equal(r.weeklyBalance, -28.5);
+    assert.equal(r.ordinaryHours, 0);
+    assert.equal(r.overtimeHours, 0);
   });
 
   it('manager: sin tope staff', () => {
@@ -367,7 +421,7 @@ describe('Liquidation Engine', () => {
   });
 });
 
-describe('Nueva Política Funcional — Eliminación Régimen Agosto (Invariantes INV-R01 a INV-R06)', () => {
+describe('Política agosto — sin deuda de asistencia; extras solo por exceso de contrato', () => {
   it('Caso 1: Contrato 40h, trabajadas 40.5h en semana julio/agosto -> 40 ordinarias, 0.5 extras', () => {
     const r = liquidateWeek(
       input({

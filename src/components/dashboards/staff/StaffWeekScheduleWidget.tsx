@@ -3,13 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
-    addDays,
     addMonths,
     eachDayOfInterval,
     endOfMonth,
     endOfWeek,
     format,
-    isSameDay,
     isSameMonth,
     isSameWeek,
     isToday,
@@ -18,6 +16,10 @@ import {
     subMonths,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
+import {
+    fetchActivitiesForRangeAction,
+    type BarActivity,
+} from '@/app/staff/actividades/actions';
 import { createClient } from '@/utils/supabase/client';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -27,16 +29,6 @@ const WEEKDAY_LABELS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'] as co
 type ShiftRow = {
     start_time: string;
     end_time: string;
-    activity: string | null;
-    activity_2: string | null;
-    categoria: string | null;
-    categoria_2: string | null;
-    event_start_time: string | null;
-    event_end_time: string | null;
-    event_participants: number | null;
-    event_start_time_2: string | null;
-    event_end_time_2: string | null;
-    event_participants_2: number | null;
     notes: string | null;
 };
 
@@ -59,42 +51,82 @@ function formatClockTime(iso: string): string {
     });
 }
 
-function formatEventClock(value: string | null): string | null {
-    if (!value) return null;
-    const trimmed = value.trim();
-    if (!trimmed) return null;
-    return trimmed.slice(0, 5);
+/** Misma presentación de hora que `/horario` (vista Actividades). */
+function fmtHour(time: string): string {
+    const parts = time.split(':');
+    if (parts.length < 2) return time;
+    return `${parseInt(parts[0], 10)}:${parts[1]}`;
 }
 
-function formatEventRange(start: string | null, end: string | null): string | null {
-    const s = formatEventClock(start);
-    const e = formatEventClock(end);
-    if (!s || !e) return null;
-    return `${s} – ${e}`;
+/** Agrupa por nombre como en `/horario` y `/staff/actividades`. */
+function groupActivities(acts: BarActivity[]): BarActivity[] {
+    if (acts.length === 0) return acts;
+    const map = new Map<string, BarActivity>();
+    for (const a of acts) {
+        const name = a.activityName.trim();
+        if (!map.has(name)) {
+            map.set(name, {
+                ...a,
+                venueCodes: [...a.venueCodes],
+                categories: a.categories ? [...a.categories] : [],
+            });
+        } else {
+            const existing = map.get(name)!;
+            if (a.startTime < existing.startTime) existing.startTime = a.startTime;
+            if (a.endTime > existing.endTime) existing.endTime = a.endTime;
+
+            if (a.formStartTime && (!existing.formStartTime || a.formStartTime < existing.formStartTime)) {
+                existing.formStartTime = a.formStartTime;
+            }
+            if (a.formEndTime && (!existing.formEndTime || a.formEndTime > existing.formEndTime)) {
+                existing.formEndTime = a.formEndTime;
+            }
+
+            if (a.totalParticipants) {
+                existing.totalParticipants = (existing.totalParticipants || 0) + a.totalParticipants;
+            }
+
+            if (a.categories) {
+                if (!existing.categories) existing.categories = [];
+                for (const c of a.categories) {
+                    if (!existing.categories.includes(c)) existing.categories.push(c);
+                }
+            }
+
+            for (const v of a.venueCodes) {
+                if (!existing.venueCodes.includes(v)) existing.venueCodes.push(v);
+            }
+        }
+    }
+    return Array.from(map.values()).sort((a, b) => a.startTime.localeCompare(b.startTime));
 }
 
-function pickMainActivity(shift: ShiftRow) {
-    if (shift.activity?.trim()) {
-        return {
-            title: shift.activity.trim(),
-            timeRange: formatEventRange(shift.event_start_time, shift.event_end_time),
-            participants: shift.event_participants,
-            category: shift.categoria?.trim() || null,
-        };
-    }
-    if (shift.activity_2?.trim()) {
-        return {
-            title: shift.activity_2.trim(),
-            timeRange: formatEventRange(shift.event_start_time_2, shift.event_end_time_2),
-            participants: shift.event_participants_2,
-            category: shift.categoria_2?.trim() || null,
-        };
-    }
-    return null;
+function formatActivityLine(act: BarActivity): string {
+    const parts = [
+        `${fmtHour(act.startTime)} - ${fmtHour(act.endTime)}`,
+        act.activityName,
+        act.totalParticipants != null && act.totalParticipants > 0
+            ? `${act.totalParticipants} pax`
+            : null,
+        act.categories?.length ? act.categories.join(', ') : null,
+    ];
+    return parts.filter(Boolean).join(' · ');
+}
+
+function formatDayEvents(acts: BarActivity[] | undefined): string | null {
+    const grouped = groupActivities(acts ?? []);
+    if (grouped.length === 0) return null;
+    return grouped.map(formatActivityLine).join(' · ');
 }
 
 function shiftForDay(shifts: ShiftRow[], day: Date): ShiftRow | null {
-    return shifts.find((s) => isSameDay(new Date(s.start_time), day)) ?? null;
+    const key = format(day, 'yyyy-MM-dd');
+    return (
+        shifts.find((s) => {
+            const start = new Date(s.start_time);
+            return format(start, 'yyyy-MM-dd') === key;
+        }) ?? null
+    );
 }
 
 function chunkWeeks(days: Date[]): Date[][] {
@@ -113,10 +145,12 @@ function formatWeekdayHeading(day: Date): string {
 function WeekendDayColumn({
     day,
     shift,
+    eventLabel,
     onOpenNote,
 }: {
     day: Date;
     shift: ShiftRow | null;
+    eventLabel: string | null;
     onOpenNote?: (ymd: string) => void;
 }) {
     const ymd = format(day, 'yyyy-MM-dd');
@@ -124,7 +158,6 @@ function WeekendDayColumn({
         shift != null
             ? `${formatClockTime(shift.start_time)} – ${formatClockTime(shift.end_time)}`
             : null;
-    const evento = shift != null ? pickMainActivity(shift) : null;
     const hasNote = Boolean(shift?.notes?.trim());
 
     return (
@@ -150,18 +183,9 @@ function WeekendDayColumn({
                     <span data-element="weekend-evento-label" className="shrink-0 text-[6px] font-medium leading-none tracking-wide">
                         Evento
                     </span>
-                    {evento ? (
+                    {eventLabel ? (
                         <span data-element="weekend-evento-value" className="min-w-0 truncate text-[7px] font-semibold leading-none">
-                            {[
-                                evento.timeRange,
-                                evento.title,
-                                evento.participants != null && evento.participants > 0
-                                    ? `${evento.participants} pax`
-                                    : null,
-                                evento.category,
-                            ]
-                                .filter(Boolean)
-                                .join(' · ')}
+                            {eventLabel}
                         </span>
                     ) : null}
                 </div>
@@ -191,14 +215,18 @@ function WeekendDayColumn({
 function WeekExpansion({
     weekDays,
     shifts,
+    eventsByDate,
     onOpenNote,
 }: {
     weekDays: Date[];
     shifts: ShiftRow[];
+    eventsByDate: Record<string, BarActivity[]>;
     onOpenNote?: (ymd: string) => void;
 }) {
     const saturday = weekDays[5];
     const sunday = weekDays[6];
+    const satKey = format(saturday, 'yyyy-MM-dd');
+    const sunKey = format(sunday, 'yyyy-MM-dd');
 
     return (
         <div
@@ -208,11 +236,13 @@ function WeekExpansion({
             <WeekendDayColumn
                 day={saturday}
                 shift={shiftForDay(shifts, saturday)}
+                eventLabel={formatDayEvents(eventsByDate[satKey])}
                 onOpenNote={onOpenNote}
             />
             <WeekendDayColumn
                 day={sunday}
                 shift={shiftForDay(shifts, sunday)}
+                eventLabel={formatDayEvents(eventsByDate[sunKey])}
                 onOpenNote={onOpenNote}
             />
         </div>
@@ -223,6 +253,7 @@ export function StaffWeekScheduleWidget({ userId, onOpenNote }: StaffWeekSchedul
     const [monthAnchor, setMonthAnchor] = useState(() => startOfMonth(new Date()));
     const [expandedWeekStart, setExpandedWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
     const [shifts, setShifts] = useState<ShiftRow[]>([]);
+    const [eventsByDate, setEventsByDate] = useState<Record<string, BarActivity[]>>({});
     const [loading, setLoading] = useState(true);
 
     const visibleRange = useMemo(() => {
@@ -231,6 +262,9 @@ export function StaffWeekScheduleWidget({ userId, onOpenNote }: StaffWeekSchedul
         return { start, end };
     }, [monthAnchor]);
 
+    const rangeStart = format(visibleRange.start, 'yyyy-MM-dd');
+    const rangeEnd = format(visibleRange.end, 'yyyy-MM-dd');
+
     const monthDays = useMemo(
         () => eachDayOfInterval({ start: visibleRange.start, end: visibleRange.end }),
         [visibleRange],
@@ -238,39 +272,55 @@ export function StaffWeekScheduleWidget({ userId, onOpenNote }: StaffWeekSchedul
 
     const monthWeeks = useMemo(() => chunkWeeks(monthDays), [monthDays]);
 
-    const loadMonthShifts = useCallback(async () => {
+    const loadMonthData = useCallback(async () => {
         if (!userId) {
             setShifts([]);
+            setEventsByDate({});
             setLoading(false);
             return;
         }
         setLoading(true);
         try {
             const supabase = createClient();
-            const { data, error } = await supabase
-                .from('shifts')
-                .select(
-                    'start_time, end_time, activity, activity_2, categoria, categoria_2, event_start_time, event_end_time, event_participants, event_start_time_2, event_end_time_2, event_participants_2, notes',
-                )
-                .eq('user_id', userId)
-                .eq('is_published', true)
-                .gte('start_time', visibleRange.start.toISOString())
-                .lte('start_time', visibleRange.end.toISOString())
-                .order('start_time', { ascending: true });
+            const startIso = `${rangeStart}T00:00:00`;
+            const endIso = `${rangeEnd}T23:59:59`;
 
-            if (error) throw error;
-            setShifts(data ?? []);
+            const [shiftsResult, activitiesResult] = await Promise.all([
+                supabase
+                    .from('shifts')
+                    .select('start_time, end_time, notes')
+                    .eq('user_id', userId)
+                    .eq('is_published', true)
+                    .gte('start_time', startIso)
+                    .lte('start_time', endIso)
+                    .order('start_time', { ascending: true }),
+                fetchActivitiesForRangeAction({ startDate: rangeStart, endDate: rangeEnd }),
+            ]);
+
+            if (shiftsResult.error) throw shiftsResult.error;
+            setShifts(shiftsResult.data ?? []);
+
+            if (activitiesResult.success) {
+                const next: Record<string, BarActivity[]> = {};
+                for (const [date, day] of Object.entries(activitiesResult.byDate)) {
+                    next[date] = day.barActivities;
+                }
+                setEventsByDate(next);
+            } else {
+                setEventsByDate({});
+            }
         } catch (error) {
             console.error(error);
             setShifts([]);
+            setEventsByDate({});
         } finally {
             setLoading(false);
         }
-    }, [userId, visibleRange.end, visibleRange.start]);
+    }, [userId, rangeEnd, rangeStart]);
 
     useEffect(() => {
-        void loadMonthShifts();
-    }, [loadMonthShifts]);
+        void loadMonthData();
+    }, [loadMonthData]);
 
     const handleDaySelect = (day: Date) => {
         setExpandedWeekStart(startOfWeek(day, { weekStartsOn: 1 }));
@@ -401,6 +451,7 @@ export function StaffWeekScheduleWidget({ userId, onOpenNote }: StaffWeekSchedul
                                             <WeekExpansion
                                                 weekDays={weekDays}
                                                 shifts={shifts}
+                                                eventsByDate={eventsByDate}
                                                 onOpenNote={onOpenNote}
                                             />
                                         ) : null}

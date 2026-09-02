@@ -2919,7 +2919,7 @@ button[data-element='catalog-filter'] {
   max-width: var(--home-icon-size);
 }
 [data-component='AccessShortcutGrid'] [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'] [data-element='text'] {
-  color: var(--color-texto);
+  color: var(--color-texto-invertido);
 }
 
 /*

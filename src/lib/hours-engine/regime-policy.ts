@@ -5,6 +5,7 @@ import type {
   SegmentRegime,
 } from './types.ts';
 import { roundMarbellaSigned } from './marbella-round.ts';
+import { isAugustCivilDate } from './week-dates.ts';
 
 export type RegimeSegmentInput = {
   days: readonly CivilDate[];
@@ -26,17 +27,27 @@ function hoursOnDays(
   return days.reduce((acc, d) => acc + (hoursByDay[d] ?? 0), 0);
 }
 
+type BalancePart = {
+  weeklyBalancePart: number;
+  ordinaryHours: number;
+  overtimeHours: number;
+  contractedHours: number;
+};
+
 /**
  * Balance de un segmento homogéneo (mismo régimen contractual o pre_alta).
  * Staff: horas − contrato (ya resuelto). Sin tope: balance = horas.
+ * `floorDebt`: no genera deuda de asistencia (agosto / vacaciones).
  */
 function balanceForRegime(
   regime: SegmentRegime,
   hours: number,
   contractedHours: number,
-): { weeklyBalancePart: number; ordinaryHours: number; overtimeHours: number; contractedHours: number } {
+  floorDebt = false,
+): BalancePart {
   if (regime === 'staff') {
-    const weeklyBalancePart = hours - contractedHours;
+    const rawBalance = hours - contractedHours;
+    const weeklyBalancePart = floorDebt ? Math.max(0, rawBalance) : rawBalance;
     const ordinaryHours = Math.min(hours, contractedHours);
     const overtimeHours = Math.max(0, hours - contractedHours);
     return { weeklyBalancePart, ordinaryHours, overtimeHours, contractedHours };
@@ -51,8 +62,58 @@ function balanceForRegime(
 }
 
 /**
+ * Staff con días de agosto: el contrato se reparte por días; la parte de
+ * agosto no genera deuda (suelo en 0). Ordinarias/extras siguen el contrato.
+ * No restaura el régimen histórico que convertía todo agosto en extras.
+ */
+function balanceStaffWithAugustFloor(
+  days: readonly CivilDate[],
+  hoursByDay: Readonly<Record<CivilDate, number>>,
+  contractedHours: number,
+): BalancePart {
+  const augustDays = days.filter(isAugustCivilDate);
+  const otherDays = days.filter((d) => !isAugustCivilDate(d));
+
+  if (augustDays.length === 0) {
+    return balanceForRegime('staff', hoursOnDays(days, hoursByDay), contractedHours);
+  }
+  if (otherDays.length === 0) {
+    return balanceForRegime(
+      'staff',
+      hoursOnDays(days, hoursByDay),
+      contractedHours,
+      true,
+    );
+  }
+
+  const segmentDayCount = days.length;
+  const augustContracted = (augustDays.length / segmentDayCount) * contractedHours;
+  const otherContracted = (otherDays.length / segmentDayCount) * contractedHours;
+
+  const augustPart = balanceForRegime(
+    'staff',
+    hoursOnDays(augustDays, hoursByDay),
+    augustContracted,
+    true,
+  );
+  const otherPart = balanceForRegime(
+    'staff',
+    hoursOnDays(otherDays, hoursByDay),
+    otherContracted,
+    false,
+  );
+
+  return {
+    weeklyBalancePart: augustPart.weeklyBalancePart + otherPart.weeklyBalancePart,
+    ordinaryHours: augustPart.ordinaryHours + otherPart.ordinaryHours,
+    overtimeHours: augustPart.overtimeHours + otherPart.overtimeHours,
+    contractedHours: augustPart.contractedHours + otherPart.contractedHours,
+  };
+}
+
+/**
  * Única política de régimen. Aplica el régimen contractual del segmento
- * (manager/fixed/staff o pre_alta).
+ * (manager/fixed/staff o pre_alta). Staff en agosto: sin deuda de asistencia.
  * El contrato efectivo llega resuelto por Contract Resolver.
  */
 export function applyRegimeToSegment(input: RegimeSegmentInput): SegmentLiquidation {
@@ -77,7 +138,10 @@ export function applyRegimeToSegment(input: RegimeSegmentInput): SegmentLiquidat
   }
 
   const hoursWorked = hoursOnDays(days, hoursByDay);
-  const part = balanceForRegime(regimeApplied, hoursWorked, contractedHours);
+  const part =
+    regimeApplied === 'staff'
+      ? balanceStaffWithAugustFloor(days, hoursByDay, contractedHours)
+      : balanceForRegime(regimeApplied, hoursWorked, contractedHours);
 
   return {
     days,
