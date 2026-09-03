@@ -31,7 +31,6 @@ import {
 } from '@/lib/staff/plantilla-employees';
 import { canManageStaffAttendance } from '@/lib/staff/attendance-access';
 import { PurchaseMultiSourceForm, type PaymentSourceOption, type PurchaseMultiSourcePayload } from '@/components/PurchaseMultiSourceForm';
-import { AccessMenuGrid, CatalogTile } from '@/components/catalog/CatalogTile';
 
 type MasterDashboardViewProps = {
     initialData?: {
@@ -599,28 +598,53 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                 title="Caja Inicial"
                 ariaLabel="Caja inicial: acciones"
             >
-                <AccessMenuGrid align="center">
-                    <CatalogTile
-                        title="Entrada"
-                        fallback={<Plus className="h-8 w-8 text-emerald-500" strokeWidth={2.5} />}
-                        onClick={() => handleCajaInicialAccion('in')}
-                    />
-                    <CatalogTile
-                        title="Salida"
-                        fallback={<Minus className="h-8 w-8 text-rose-500" strokeWidth={2.5} />}
-                        onClick={() => handleCajaInicialAccion('out')}
-                    />
-                    <CatalogTile
-                        title="Compra"
-                        fallback={<ShoppingCart className="h-8 w-8 text-[#5B8FB9]" strokeWidth={2.5} />}
-                        onClick={() => handleCajaInicialAccion('compra')}
-                    />
-                    <CatalogTile
-                        title="Arqueo"
-                        fallback={<RefreshCw className="h-8 w-8 text-orange-500" strokeWidth={2.5} />}
-                        onClick={() => handleCajaInicialAccion('arqueo')}
-                    />
-                </AccessMenuGrid>
+                <div className="grid grid-cols-4 items-start gap-2 pb-6 pt-1">
+                    {(
+                        [
+                            {
+                                label: 'Entrada',
+                                accion: 'in' as const,
+                                color: 'bg-emerald-500',
+                                icon: <Plus size={16} strokeWidth={1.75} fill="none" className="text-white" />,
+                            },
+                            {
+                                label: 'Salida',
+                                accion: 'out' as const,
+                                color: 'bg-rose-500',
+                                icon: <Minus size={16} strokeWidth={1.75} fill="none" className="text-white" />,
+                            },
+                            {
+                                label: 'Compra',
+                                accion: 'compra' as const,
+                                color: 'bg-[#5B8FB9]',
+                                icon: <ShoppingCart size={16} strokeWidth={1.75} fill="none" className="text-white" />,
+                            },
+                            {
+                                label: 'Arqueo',
+                                accion: 'arqueo' as const,
+                                color: 'bg-orange-400',
+                                icon: <RefreshCw size={16} strokeWidth={1.75} fill="none" className="text-white" />,
+                            },
+                        ] as const
+                    ).map((opcion) => (
+                        <button
+                            key={opcion.accion}
+                            type="button"
+                            onClick={() => handleCajaInicialAccion(opcion.accion)}
+                            aria-label={opcion.label}
+                            className="group flex min-h-[4.5rem] min-w-0 flex-col items-center justify-center gap-1.5 px-1 transition-all active:scale-95"
+                        >
+                            <div
+                                className={`flex h-9 w-9 items-center justify-center self-end rounded-full ${opcion.color} shadow-sm transition-transform group-hover:scale-110`}
+                            >
+                                {opcion.icon}
+                            </div>
+                            <span className="flex items-center self-center text-[9px] font-black uppercase leading-none tracking-widest text-zinc-500">
+                                {opcion.label}
+                            </span>
+                        </button>
+                    ))}
+                </div>
             </Modal>
 
             <Modal

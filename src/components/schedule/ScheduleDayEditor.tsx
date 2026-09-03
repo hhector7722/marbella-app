@@ -769,8 +769,11 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                 <ChevronLeft size={24} />
                             </button>
                             <button type="button" onClick={() => setShowCalendarModal(true)} aria-label="Abrir calendario" className="flex items-center gap-1 group cursor-pointer hover:bg-zinc-100 px-1 py-1 sm:py-1.5 rounded-xl transition-all">
-                                <h2 className="text-[13px] sm:text-[15px] md:text-xl font-black text-zinc-800 uppercase tracking-widest whitespace-nowrap capitalize">
-                                    {date && format(new Date(date), "EEE d MMMM", { locale: es }).replace(/^(\w{3})\./, '$1')}
+                                <h2 className="text-[13px] sm:text-[15px] md:text-xl font-black text-zinc-800 tracking-widest whitespace-nowrap">
+                                    {date && (() => {
+                                        const raw = format(new Date(date), "EEEE d 'de' MMMM", { locale: es });
+                                        return raw.charAt(0).toUpperCase() + raw.slice(1);
+                                    })()}
                                 </h2>
                             </button>
                             <button type="button" onClick={() => navigateDay(1)} aria-label="Día siguiente" className="p-1 sm:p-1.5 hover:bg-zinc-100 rounded-xl transition-colors text-zinc-500 active:scale-95 flex-shrink-0">

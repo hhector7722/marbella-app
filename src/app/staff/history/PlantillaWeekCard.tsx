@@ -53,10 +53,10 @@ interface PlantillaWeekCardProps {
     maxRows?: number;
 }
 
-function getInitials(log: PlantillaDayLog): string {
-    const f = (log.first_name || '').trim().charAt(0).toUpperCase() || '?';
-    const l = (log.last_name || '').trim().charAt(0).toUpperCase() || '';
-    return f + l;
+/** Solo el primer nombre: identifica al empleado sin ocupar la celda. */
+function getFirstName(log: PlantillaDayLog): string {
+    const first = (log.first_name || '').trim();
+    return first.split(/\s+/)[0] || '?';
 }
 
 /** "08:30" → "8" · "14:00" → "14". Solo la hora, sin minutos ni cero inicial. */
@@ -114,7 +114,7 @@ export function PlantillaWeekCard({ week, onDayClick, maxRows = MAX_ROWS_DEFAULT
                                                     const special = SPECIAL_EVENTS[log.event_type || 'regular'];
                                                     const isNoRegistered =
                                                         log.event_type === 'no_registered' || log.clock_out_show_no_registrada === true;
-                                                    const initials = getInitials(log);
+                                                    const name = getFirstName(log);
                                                     const inHour = formatHourOnly(log.in_time);
                                                     const outHour = formatHourOnly(log.out_time);
                                                     const needsLineBelow = idx < displayLogs.length - 1 || overflow > 0;
@@ -125,8 +125,8 @@ export function PlantillaWeekCard({ week, onDayClick, maxRows = MAX_ROWS_DEFAULT
                                                                 key={log.id}
                                                                 className="relative flex w-full min-w-0 flex-row items-center"
                                                             >
-                                                                <span className="shrink-0 text-[7px] font-bold leading-none text-zinc-600">
-                                                                    {initials}
+                                                                <span className="min-w-0 max-w-[66%] flex-1 truncate text-[6px] font-normal leading-none text-zinc-600">
+                                                                    {name}
                                                                 </span>
                                                                 <span className={cn("absolute left-3/4 -translate-x-1/2 text-[7px] font-black leading-none", special.text)}>
                                                                     {special.label}
@@ -141,10 +141,10 @@ export function PlantillaWeekCard({ week, onDayClick, maxRows = MAX_ROWS_DEFAULT
                                                     return (
                                                         <div
                                                             key={log.id}
-                                                            className="relative flex w-full min-w-0 flex-row items-center justify-between"
+                                                            className="relative flex w-full min-w-0 flex-row items-center justify-between gap-1"
                                                         >
-                                                            <span className="shrink-0 text-[7px] font-bold leading-none text-zinc-600">
-                                                                {initials}
+                                                            <span className="min-w-0 flex-1 truncate text-[6px] font-normal leading-none text-zinc-600">
+                                                                {name}
                                                             </span>
                                                             <span className="flex shrink-0 items-center gap-0 font-mono text-[7px] font-bold leading-none">
                                                                 <span className={cn("", isNoRegistered ? "text-rose-600" : "text-emerald-600")}>

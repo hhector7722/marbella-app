@@ -966,7 +966,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
 
         assert.doesNotMatch(plantilla, /from ['"].*\/WeekCard['"]/);
-        assert.match(plantilla, /getInitials/);
+        assert.match(plantilla, /getFirstName/);
         assert.match(plantilla, /month-cal-cell/);
         assert.doesNotMatch(plantilla, /Pendiente|Importe/);
         assert.doesNotMatch(

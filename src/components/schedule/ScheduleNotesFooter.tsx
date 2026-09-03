@@ -148,10 +148,7 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
 
     return (
         <div className="flex w-full min-w-0 flex-col">
-            <div className="flex items-center justify-between gap-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                    Notas del día
-                </span>
+            <div className="flex items-center justify-center">
                 <Button
                     type="button"
                     variant="tertiary"
@@ -198,13 +195,9 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
                 </div>
             ) : null}
 
-            <div className="mt-2 flex flex-col gap-1.5">
-                {notes.length === 0 ? (
-                    <p className="text-[11px] font-medium text-zinc-400">
-                        No hay notas para este día.
-                    </p>
-                ) : (
-                    notes.map((note) => {
+            {notes.length > 0 ? (
+                <div className="mt-2 flex flex-col gap-1.5">
+                    {notes.map((note) => {
                         const expanded = expandedId === note.id;
                         const needsToggle = note.content.length > 80;
                         return (
@@ -237,9 +230,9 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
                                 ) : null}
                             </button>
                         );
-                    })
-                )}
-            </div>
+                    })}
+                </div>
+            ) : null}
         </div>
     );
 }

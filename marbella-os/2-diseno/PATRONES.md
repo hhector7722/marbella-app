@@ -117,7 +117,7 @@ El patrón propio del dominio de horas: una semana de negocio como unidad, **den
 - La cabecera de días es la de P3, una sola vez por calendario. No se pinta otra LUN–DOM en cada semana.
 - **La semana de una persona es una.** Asistencia de un trabajador, el mosaico Staff y el historial al pulsar un trabajador en horas extras pintan la misma pieza: cromo P3, celdas de día y pie Horas / Pendientes / Extras / Importe.
 - En el mosaico Staff la semana flota sobre el petróleo, al ancho del hueco, sin cabecera de bloque. Es papel blanco y cabecera roja, no cristal.
-- **La vista de plantilla (todos los trabajadores) comparte el cromo y no el pie.** Iniciales y fichajes por día. No se unifica el contenido de celda con el de una persona.
+- **La vista de plantilla (todos los trabajadores) comparte el cromo y no el pie.** Primer nombre y fichajes por día. No se unifica el contenido de celda con el de una persona.
 - Las celdas miden lo mismo que P3 en una semana vacía (68 / 76 / 84 px) y crecen si el contenido no cabe.
 - El pie de resumen mantiene su altura aunque no tenga contenido, para no romper el ritmo vertical.
 - Los controles de decisión de la semana (modo bolsa o pago, contrato, aplicar) viven en el pie, no en un modo aparte.

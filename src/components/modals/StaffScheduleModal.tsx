@@ -31,6 +31,12 @@ const timeToPercent = (timeStr: string) => {
     return ((hours - START_HOUR) + (minutes / 60)) / TOTAL_HOURS * 100;
 };
 
+/** Fecha en formato largo («Domingo 6 de septiembre») con la primera letra en mayúscula. */
+function formatDateTitle(date: Date, pattern: string): string {
+    const raw = format(date, pattern, { locale: es });
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
+}
+
 /* ─── Read-Only ShiftBar: barra completa en gradiente difuminado ── */
 const ReadOnlyShiftBar = ({ start, end }: { start: string; end: string }) => {
     const barRef = useRef<HTMLDivElement>(null);
@@ -329,9 +335,15 @@ export const StaffScheduleModal = ({
                 open={isOpen}
                 onClose={handleClose}
                 title={
-                    selectedDate
-                        ? format(selectedDate, "EEE d MMMM", { locale: es }).replace(/^(\w{3})\./, '$1')
-                        : format(currentDate, "MMMM yyyy", { locale: es })
+                    selectedDate ? (
+                        <span className="normal-case">
+                            {formatDateTitle(selectedDate, "EEEE d 'de' MMMM")}
+                        </span>
+                    ) : (
+                        <span className="normal-case">
+                            {formatDateTitle(currentDate, 'MMMM yyyy')}
+                        </span>
+                    )
                 }
                 instance="staff-schedule"
                 variant="work"
@@ -518,7 +530,7 @@ export const StaffScheduleModal = ({
                             </div>
                         ) : dayShifts.length === 0 ? (
                             <div className="flex-1 flex items-center justify-center py-16 px-4">
-                                <p className="text-zinc-500 text-sm font-black uppercase tracking-wider">Sin turno</p>
+                                <p className="text-xs font-medium text-zinc-400">Sin turno</p>
                             </div>
                         ) : (
                             <>
