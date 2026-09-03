@@ -100,27 +100,26 @@ function groupActivities(acts: BarActivity[]): BarActivity[] {
     return Array.from(map.values()).sort((a, b) => a.startTime.localeCompare(b.startTime));
 }
 
-function formatActivityDetailLine(act: BarActivity): string {
-    const parts = [
-        `${fmtHour(act.startTime)} - ${fmtHour(act.endTime)}`,
-        act.totalParticipants != null && act.totalParticipants > 0
-            ? `${act.totalParticipants} pax`
-            : null,
-        act.categories?.length ? act.categories.join(', ') : null,
-    ];
-    return parts.filter(Boolean).join(' · ');
-}
-
 function formatDayEventNames(acts: BarActivity[] | undefined): string | null {
     const grouped = groupActivities(acts ?? []);
     if (grouped.length === 0) return null;
     return grouped.map((a) => a.activityName).join(' · ');
 }
 
-function formatDayEventDetails(acts: BarActivity[] | undefined): string | null {
+function formatDayEventDetailSegments(acts: BarActivity[] | undefined): string[] {
     const grouped = groupActivities(acts ?? []);
-    if (grouped.length === 0) return null;
-    return grouped.map(formatActivityDetailLine).join(' · ');
+    if (grouped.length === 0) return [];
+    const segments: string[] = [];
+    for (const act of grouped) {
+        segments.push(`${fmtHour(act.startTime)} - ${fmtHour(act.endTime)}`);
+        if (act.totalParticipants != null && act.totalParticipants > 0) {
+            segments.push(`${act.totalParticipants} pax`);
+        }
+        if (act.categories?.length) {
+            segments.push(act.categories.join(', '));
+        }
+    }
+    return segments;
 }
 
 function shiftForDay(shifts: ShiftRow[], day: Date): ShiftRow | null {
@@ -150,13 +149,13 @@ function WeekendDayColumn({
     day,
     shift,
     eventLabel,
-    eventDetail,
+    eventDetailSegments,
     onOpenDay,
 }: {
     day: Date;
     shift: ShiftRow | null;
     eventLabel: string | null;
-    eventDetail: string | null;
+    eventDetailSegments: string[];
     onOpenDay?: (ymd: string) => void;
 }) {
     const ymd = format(day, 'yyyy-MM-dd');
@@ -205,11 +204,18 @@ function WeekendDayColumn({
                         )}
                     </div>
                     <div data-element="weekend-evento-detail" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
-                        {eventDetail ? (
-                            <span data-element="weekend-evento-detail-value" className="min-w-0 truncate text-[6px] font-medium leading-none opacity-80">
-                                {eventDetail}
+                        {eventDetailSegments.map((segment, i) => (
+                            <span
+                                key={`${i}-${segment}`}
+                                data-element="weekend-evento-detail-value"
+                                className={cn(
+                                    'min-w-0 truncate text-[6px] font-medium leading-none opacity-80',
+                                    i > 0 && 'border-l-2 pl-0.5',
+                                )}
+                            >
+                                {segment}
                             </span>
-                        ) : null}
+                        ))}
                     </div>
                 </div>
             </div>
@@ -242,14 +248,14 @@ function WeekExpansion({
                 day={saturday}
                 shift={shiftForDay(shifts, saturday)}
                 eventLabel={formatDayEventNames(eventsByDate[satKey])}
-                eventDetail={formatDayEventDetails(eventsByDate[satKey])}
+                eventDetailSegments={formatDayEventDetailSegments(eventsByDate[satKey])}
                 onOpenDay={onOpenDay}
             />
             <WeekendDayColumn
                 day={sunday}
                 shift={shiftForDay(shifts, sunday)}
                 eventLabel={formatDayEventNames(eventsByDate[sunKey])}
-                eventDetail={formatDayEventDetails(eventsByDate[sunKey])}
+                eventDetailSegments={formatDayEventDetailSegments(eventsByDate[sunKey])}
                 onOpenDay={onOpenDay}
             />
         </div>
