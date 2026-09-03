@@ -75,6 +75,7 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         );
         assert.match(home, /data-layout='ops-admin'/);
         assert.match(home, /data-layout='staff'/);
+        assert.match(home, /data-layout='master'/);
         assert.match(
             home,
             /hextras hextras hextras plant[\s\S]*hextras hextras hextras albaranes[\s\S]*cambio1 cambio2 recetas asis[\s\S]*mas mobra stock ingredientes/,
@@ -98,6 +99,36 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.match(
             home,
             /grid-template-areas:[\s\S]*hextras hextras hextras plant[\s\S]*hextras hextras hextras albaranes/
+        );
+        assert.match(
+            home,
+            /\[data-layout='master'\][\s\S]*grid-template-rows:[\s\S]*repeat\(6, var\(--home-row-track\)\)/,
+            'el Master fija sus seis filas en la misma rejilla'
+        );
+        assert.match(
+            home,
+            /grid-template-areas:[\s\S]*asis     asis     asis     asis[\s\S]*horario  horario  horario  caja[\s\S]*horario  horario  horario  hextras/,
+            'Master: asistencia 4×1 y horarios 3×2 (filas 3–4, columnas 1–3)'
+        );
+        assert.match(
+            home,
+            /\[data-instance='master-asistencia'\][\s\S]*month-cal-grid-wrap[\s\S]*border:\s*0/,
+            'la semana Master llena el hueco como la de Staff: un solo canto'
+        );
+        assert.match(
+            home,
+            /\[data-instance='master-asistencia'\][\s\S]*month-cal-day-clocks span[\s\S]*?font-size:\s*8px/,
+            'en el mosaico Master las horas de fichaje bajan un punto'
+        );
+        assert.match(
+            home,
+            /\[data-instance='master-asistencia'\][\s\S]*month-cal-weeks > \[data-week-footer\][\s\S]*?font-size:\s*7px/,
+            'en el mosaico Master los conceptos del pie bajan un punto'
+        );
+        assert.match(
+            home,
+            /\[data-instance='master-asistencia'\] > \[data-element='body'\] \{[\s\S]*?background:\s*var\(--color-superficie\)/,
+            'la semana Master es papel blanco, no cristal'
         );
         assert.match(
             home,
@@ -217,7 +248,7 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         );
         assert.match(
             home,
-            /\[data-widget-scheme='dark'\] > \[data-element='slot'\]:not\(\[data-instance='staff-semana'\]\) > \[data-element='body'\] \* \{[\s\S]*?color:\s*var\(--color-texto-invertido\)/,
+            /\[data-widget-scheme='dark'\] > \[data-element='slot'\]:not\(\[data-instance='staff-semana'\], \[data-instance='master-asistencia'\]\) > \[data-element='body'\] \* \{[\s\S]*?color:\s*var\(--color-texto-invertido\)/,
             'zinc, marca y azules no sobreviven: el cuerpo y sus descendientes son blanco'
         );
         assert.match(
@@ -330,28 +361,44 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
             join(SRC_ROOT, 'components/dashboards/OpsHomeScreen.tsx'),
             'utf8'
         );
+        const weekWidget = readFileSync(
+            join(SRC_ROOT, 'components/dashboards/staff/StaffAttendanceSummaryWidget.tsx'),
+            'utf8'
+        );
         assert.match(staff, /layout="staff"/);
         assert.match(staff, /size="wide" instance="staff-semana"/);
-        assert.match(staff, /<WeekSummary/);
-        assert.match(staff, /data-fit="week"/);
+        assert.match(staff, /<StaffAttendanceSummaryWidget/);
         assert.doesNotMatch(staff, /instance="staff-semana"[^>]*label=/);
         assert.match(staff, /size="icon" instance="staff-fichaje"/);
         assert.match(staff, /label="Entrada"/);
         assert.match(staff, /size="panel" instance="staff-horarios"/);
-        assert.match(staff, /<StaffWeekScheduleWidget/);
+        assert.match(staff, /<StaffWeekScheduleBlock/);
         assert.doesNotMatch(staff, /instance="staff-horarios"[^>]*label=/);
+        assert.match(weekWidget, /data-fit="week"/);
+        assert.match(weekWidget, /<WeekSummary/);
         assert.match(staff, /instance="staff-albaranes"/);
         assert.match(staff, /instance="staff-cambio"/);
         assert.match(admin, /<OpsHomeScreen/);
         assert.match(master, /<HomeScreen/);
         assert.doesNotMatch(master, /<OpsHomeScreen/);
         assert.doesNotMatch(master, /CajaInicialWidget|HorasExtrasWidget|CajaCambioWidget/);
+        assert.match(master, /layout="master"/);
         assert.match(master, /size="wide" instance="dashboard-ventas"/);
+        assert.match(master, /size="wide" instance="master-asistencia"/);
+        assert.match(master, /<StaffAttendanceSummaryWidget/);
+        assert.match(master, /size="panel" instance="master-horarios"/);
+        assert.match(master, /<StaffWeekScheduleBlock/);
         assert.match(grid, /size=\{size\} instance=\{key\} label=\{label\}/);
         assert.match(grid, /size: 'tile'[\s\S]*label: 'H\. extras'/);
         assert.match(grid, /size: 'tile'[\s\S]*label: 'Cambio 1'/);
         assert.match(grid, /size: 'tile'[\s\S]*label: 'Cambio 2'/);
         assert.match(grid, /<CajaCambioWidget/);
+        assert.match(grid, /label="Otros"/);
+        assert.doesNotMatch(grid, /label="Proveedores"/);
+        assert.doesNotMatch(grid, /label="Asistencia"/);
+        assert.doesNotMatch(grid, /label="Recetas"/);
+        assert.doesNotMatch(grid, /label="Web"/);
+        assert.doesNotMatch(grid, /label="Carta"/);
         assert.match(
             grid,
             /overtimeAmount != null \?[\s\S]*toFixed\(0\)[\s\S]*<Check /,

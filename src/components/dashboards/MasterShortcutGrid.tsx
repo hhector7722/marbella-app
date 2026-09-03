@@ -10,8 +10,6 @@ import { CajaCambioWidget } from '@/components/dashboards/ops-widgets';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { OvertimeWeekSnapshot } from '@/lib/master-overtime-snapshot';
 
-const WEB_URL = 'https://marbella-web.vercel.app';
-
 type MasterShortcutGridProps = {
     actualBalance: number;
     changeBoxes: any[];
@@ -20,9 +18,8 @@ type MasterShortcutGridProps = {
     overtimeLoading?: boolean;
     onOpenCambio: () => void;
     onOpenReservas: () => void;
-    onOpenPlantilla: () => void;
-    onOpenCierre: () => void;
     onOpenChangeBoxAudit: (box: any) => void;
+    onOpenOtros: () => void;
     pendingReservationsCount?: number;
 };
 
@@ -34,9 +31,8 @@ export default function MasterShortcutGrid({
     overtimeLoading = false,
     onOpenCambio,
     onOpenReservas,
-    onOpenPlantilla,
-    onOpenCierre,
     onOpenChangeBoxAudit,
+    onOpenOtros,
     pendingReservationsCount = 0,
 }: MasterShortcutGridProps) {
     const router = useRouter();
@@ -72,28 +68,6 @@ export default function MasterShortcutGrid({
             ),
         },
         {
-            key: 'asistencia',
-            node: (
-                <DashboardShortcut
-                    instance="asistencia"
-                    label="Asistencia"
-                    img="/icons/calendar.png"
-                    onClick={() => router.push('/staff/history')}
-                />
-            ),
-        },
-        {
-            key: 'recetas',
-            node: (
-                <DashboardShortcut
-                    instance="recetas"
-                    label="Recetas"
-                    img="/icons/recipes.png"
-                    onClick={() => router.push('/recipes')}
-                />
-            ),
-        },
-        {
             key: 'ingredientes',
             node: (
                 <DashboardShortcut
@@ -116,46 +90,13 @@ export default function MasterShortcutGrid({
             ),
         },
         {
-            key: 'carta',
+            key: 'cambio',
             node: (
                 <DashboardShortcut
-                    instance="carta"
-                    label="Carta"
-                    img="/icons/menu.png"
-                    onClick={() => router.push('/staff/carta')}
-                />
-            ),
-        },
-        {
-            key: 'consumo',
-            node: (
-                <DashboardShortcut
-                    instance="consumo"
-                    label="Consumo"
-                    img="/icons/consum.png"
-                    onClick={() => router.push('/dashboard/consumo-personal')}
-                />
-            ),
-        },
-        {
-            key: 'rentabilidad',
-            node: (
-                <DashboardShortcut
-                    instance="rentabilidad"
-                    label="Rentabilidad"
-                    img="/icons/rent.png"
-                    onClick={() => router.push('/dashboard/insights')}
-                />
-            ),
-        },
-        {
-            key: 'horarios',
-            node: (
-                <DashboardShortcut
-                    instance="horarios"
-                    label="Horarios"
-                    img="/icons/schedule.png"
-                    onClick={() => router.push('/horario')}
+                    instance="cambio"
+                    label="Cambio"
+                    img="/icons/change.png"
+                    onClick={onOpenCambio}
                 />
             ),
         },
@@ -183,50 +124,6 @@ export default function MasterShortcutGrid({
             ),
         },
         {
-            key: 'plantilla',
-            node: (
-                <DashboardShortcut
-                    instance="plantilla"
-                    label="Plantilla"
-                    img="/icons/admin.png"
-                    onClick={onOpenPlantilla}
-                />
-            ),
-        },
-        {
-            key: 'cierre',
-            node: (
-                <DashboardShortcut
-                    instance="cierre"
-                    label="Cierre"
-                    img="/icons/lock.png"
-                    onClick={onOpenCierre}
-                />
-            ),
-        },
-        {
-            key: 'cambio',
-            node: (
-                <DashboardShortcut
-                    instance="cambio"
-                    label="Cambio"
-                    img="/icons/change.png"
-                    onClick={onOpenCambio}
-                />
-            ),
-        },
-        {
-            key: 'web',
-            node: (
-                <DashboardShortcut
-                    instance="web"
-                    label="Web"
-                    img="/icons/web.png"
-                    onClick={() => window.open(WEB_URL, '_blank', 'noopener,noreferrer')}
-                />
-            ),
-        },
-        {
             key: 'reservas',
             node: (
                 <DashboardShortcut
@@ -239,17 +136,6 @@ export default function MasterShortcutGrid({
             ),
         },
         {
-            key: 'propinas',
-            node: (
-                <DashboardShortcut
-                    instance="propinas"
-                    label="Propinas"
-                    img="/icons/tip.png"
-                    onClick={() => router.push('/dashboard/propinas')}
-                />
-            ),
-        },
-        {
             key: 'uso-app',
             node: (
                 <DashboardShortcut
@@ -257,6 +143,17 @@ export default function MasterShortcutGrid({
                     label="Uso app"
                     img="/icons/uso.png"
                     onClick={() => router.push('/dashboard/uso')}
+                />
+            ),
+        },
+        {
+            key: 'otros',
+            node: (
+                <DashboardShortcut
+                    instance="master-otros"
+                    label="Otros"
+                    img="/icons/more.png"
+                    onClick={onOpenOtros}
                 />
             ),
         },
@@ -295,18 +192,6 @@ export default function MasterShortcutGrid({
             ),
         });
     }
-
-    items.push({
-        key: 'proveedores',
-        node: (
-            <DashboardShortcut
-                instance="proveedores"
-                label="Proveedores"
-                img="/icons/suplier.png"
-                onClick={() => router.push('/suppliers')}
-            />
-        ),
-    });
 
     return (
         <>

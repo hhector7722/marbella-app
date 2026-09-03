@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import {
@@ -14,21 +14,18 @@ import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal } from '@/components/CashChangeModal';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
 import { AttendanceDetailModal } from '@/components/modals/AttendanceDetailModal';
-import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
 import { CashDenominationForm, CASH_COUNT_FORM_ID } from '@/components/CashDenominationForm';
 import { CashCountFooter } from '@/components/cash/CashCountFooter';
 import { CashCountDateButton, formatCashCountDateInput } from '@/components/cash/CashCountDateButton';
 import { PurchaseMultiSourceForm, type PaymentSourceOption, type PurchaseMultiSourcePayload } from '@/components/PurchaseMultiSourceForm';
 import { toast } from 'sonner';
-import { differenceInMinutes, startOfWeek, format } from 'date-fns';
+import { differenceInMinutes } from 'date-fns';
 import { formatYmdInMadrid, madridDayUtcRangeIso, madridRangeUtcIso } from '@/lib/madrid-date-bounds';
-import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { getCurrentPosition, getDistanceFromLatLonInMeters, MARBELLA_COORDS, formatGeofenceRejectionMessage, isOutsideGeofence, logGeofenceRejection } from '@/lib/location';
 import { FICHAJE_OVERLAY_VIDEOS } from '@/lib/fichaje-overlay-videos';
 import { syncOvertimeCostAfterTimeLogChange } from '@/app/actions/persist-overtime-cost';
-import { getEmployeeHistoryWeek, type HistoryWeekDto } from '@/app/actions/history-read';
 import {
     PLANTILLA_EMPLOYEE_SELECT,
     filterVisiblePlantillaEmployees,
@@ -36,11 +33,10 @@ import {
 } from '@/lib/staff/plantilla-employees';
 import { canManageStaffAttendance } from '@/lib/staff/attendance-access';
 import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
-import { WeekSummary } from '@/components/staff/WeekSummary';
-import { StaffWeekScheduleWidget } from '@/components/dashboards/staff/StaffWeekScheduleWidget';
+import { StaffAttendanceSummaryWidget } from '@/components/dashboards/staff/StaffAttendanceSummaryWidget';
+import { StaffWeekScheduleBlock } from '@/components/dashboards/staff/StaffWeekScheduleBlock';
 import WorkTimer, { StaffElapsedDigits, formatStaffElapsedHms } from '@/components/ui/WorkTimer';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
@@ -78,13 +74,6 @@ const STAFF_INFO_MENU = [
 const STAFF_WEB_HREF = 'https://marbella-web.vercel.app';
 
 type WorkStatus = 'idle' | 'working' | 'finished';
-
-interface ShiftMock {
-    date: Date;
-    startTime: string;
-    endTime: string;
-    activity?: string;
-}
 
 type ManualMediaViewerState = { type: 'video' | 'image'; src: string; title: string } | null;
 
@@ -283,7 +272,6 @@ export default function StaffDashboardView() {
     const supabase = createClient();
     const router = useRouter();
     const { identity, isMaster } = useMasterViewAs();
-    const [weekLoading, setWeekLoading] = useState(true);
     const [clockLoading, setClockLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
@@ -292,12 +280,9 @@ export default function StaffDashboardView() {
     const [userEmail, setUserEmail] = useState<string>('');
     const [status, setStatus] = useState<WorkStatus>('idle');
     const [todayLog, setTodayLog] = useState<any>(null);
+    const [attendanceRefreshKey, setAttendanceRefreshKey] = useState(0);
 
-    const [historyWeek, setHistoryWeek] = useState<HistoryWeekDto | null>(null);
-    const [weekFilterYear, setWeekFilterYear] = useState(() => new Date().getFullYear());
-    const [weekFilterMonth, setWeekFilterMonth] = useState(() => new Date().getMonth());
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
-    const [monthShifts, setMonthShifts] = useState<ShiftMock[]>([]);
     const [fichajeOverlay, setFichajeOverlay] = useState<'none' | 'confirm' | 'consumption'>('none');
     const [modalAction, setModalAction] = useState<'in' | 'out' | null>(null);
     const [showGiffOverlay, setShowGiffOverlay] = useState(false);
@@ -340,10 +325,7 @@ export default function StaffDashboardView() {
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
     const [isDayDetailModalOpen, setIsDayDetailModalOpen] = useState(false);
     const [selectedDayDate, setSelectedDayDate] = useState<Date | null>(null);
-    const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
-    const [scheduleFocusDate, setScheduleFocusDate] = useState<string | null>(null);
     const searchParams = useSearchParams();
-    const [userName, setUserName] = useState("");
 
     // NUEVOS ESTADOS PARA CAJA INICIAL ("COMPRA")
     const [operationalBox, setOperationalBox] = useState<any>(null);
@@ -397,27 +379,11 @@ export default function StaffDashboardView() {
         initialize();
     }, [isMaster, identity?.isViewingAs, identity?.effectiveUserId]);
 
-    useEffect(() => {
-        const d = searchParams.get('scheduleDate')?.trim();
-        if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
-        setScheduleFocusDate(d);
-        setIsScheduleModalOpen(true);
-    }, [searchParams]);
-
-    const closeScheduleModal = () => {
-        setIsScheduleModalOpen(false);
-        setScheduleFocusDate(null);
-        if (searchParams.get('scheduleDate')) {
-            router.replace('/staff/dashboard');
-        }
-    };
-
-    const handleOpenScheduleNote = useCallback((ymd: string) => {
-        setScheduleFocusDate(ymd);
-        setIsScheduleModalOpen(true);
-    }, []);
-
-
+    const scheduleDateParam = searchParams.get('scheduleDate')?.trim();
+    const scheduleInitialFocus =
+        scheduleDateParam && /^\d{4}-\d{2}-\d{2}$/.test(scheduleDateParam)
+            ? scheduleDateParam
+            : null;
 
     const cleanPhone = (phone: string) => {
         const cleaned = phone.replace(/\D/g, '');
@@ -430,7 +396,6 @@ export default function StaffDashboardView() {
             const user = session?.user;
             if (!user) {
                 setClockLoading(false);
-                setWeekLoading(false);
                 return;
             }
             const effectiveUserId = identity?.isViewingAs ? identity.effectiveUserId : user.id;
@@ -447,10 +412,8 @@ export default function StaffDashboardView() {
 
             if (profile) {
                 setUserRole(profile.role as any);
-                setUserName(profile.first_name || "Personal");
             } else if (identity?.isViewingAs) {
                 setUserRole(identity.effectiveRole as any);
-                setUserName(identity.effectiveName || "Personal");
             }
 
             const manageRole = identity?.isViewingAs ? identity.effectiveRole : profile?.role;
@@ -486,24 +449,6 @@ export default function StaffDashboardView() {
             }
             setClockLoading(false);
 
-            const weekStart = startOfWeek(today, { weekStartsOn: 1 });
-            const weekStartYmd = format(weekStart, 'yyyy-MM-dd');
-
-            const weekTask = (async () => {
-                const res = await getEmployeeHistoryWeek({ userId: effectiveUserId, weekStart: weekStartYmd });
-                if (!res.success) {
-                    toast.error(res.error || 'No se pudo cargar el resumen semanal');
-                    setHistoryWeek(null);
-                    return;
-                }
-                setHistoryWeek(res.week);
-                setWeekFilterYear(res.filterYear);
-                setWeekFilterMonth(res.filterMonth);
-            })().catch((e) => {
-                console.error(e);
-                toast.error('No se pudo cargar el resumen semanal');
-            }).finally(() => setWeekLoading(false));
-
             const boxesTask = (async () => {
                 const { data: allBoxesData, error: boxError } = await supabase.from('cash_boxes').select('*').order('name');
                 if (boxError) console.error("Initialize Boxes Error:", boxError);
@@ -513,33 +458,6 @@ export default function StaffDashboardView() {
                     const oBox = allBoxesData.find((b: any) => b.type === 'operational') || allBoxesData[0];
                     setChangeBox(cBox);
                     setOperationalBox(oBox);
-                }
-            })().catch(console.error);
-
-            const shiftsTask = (async () => {
-                const startOfMonthDate = new Date(today.getFullYear(), today.getMonth(), 1);
-                const { data: realShifts } = await supabase
-                    .from('shifts')
-                    .select('start_time, end_time, activity, activity_2')
-                    .eq('user_id', effectiveUserId)
-                    .eq('is_published', true)
-                    .gte('start_time', startOfMonthDate.toISOString())
-                    .order('start_time', { ascending: true });
-
-                if (realShifts && realShifts.length > 0) {
-                    const formattedShifts: ShiftMock[] = realShifts.map((s) => {
-                        const start = new Date(s.start_time);
-                        const end = new Date(s.end_time);
-                        return {
-                            date: start,
-                            startTime: start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-                            endTime: end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-                            activity: s.activity || s.activity_2 || undefined,
-                        };
-                    });
-                    setMonthShifts(formattedShifts);
-                } else {
-                    setMonthShifts([]);
                 }
             })().catch(console.error);
 
@@ -557,11 +475,10 @@ export default function StaffDashboardView() {
                 setLiveTickets({ total: totalVentas, count: Math.max(0, countVentas) });
             })().catch(console.error);
 
-            await Promise.all([weekTask, boxesTask, shiftsTask, ticketsTask]);
+            await Promise.all([boxesTask, ticketsTask]);
         } catch (error) {
             console.error(error);
             setClockLoading(false);
-            setWeekLoading(false);
         }
     }
 
@@ -888,35 +805,24 @@ export default function StaffDashboardView() {
         <div className="pt-1 animate-in fade-in duration-500 pb-8">
             <HomeScreen layout="staff">
                 <HomeScreenSlot size="wide" instance="staff-semana">
-                    <div className="relative h-full min-h-0" data-fit="week">
-                        {weekLoading ? (
-                            <div className="absolute inset-0 flex items-center justify-center z-10" role="status" aria-label="Cargando semana">
-                                <LoadingSpinner size="md" className="text-white" />
-                            </div>
-                        ) : null}
-                        {historyWeek ? (
-                            <WeekSummary
-                                flush
-                                dimOtherMonth={false}
-                                weeks={[historyWeek]}
-                                filterMonth={weekFilterMonth}
-                                filterYear={weekFilterYear}
-                                onDayClick={(ymd) => {
-                                    const [y, m, d] = ymd.split('-').map(Number);
-                                    setSelectedDayDate(new Date(y, m - 1, d));
-                                    setIsDayDetailModalOpen(true);
-                                }}
-                            />
-                        ) : !weekLoading ? (
-                            <EmptyState instance="staff-week-none" variant="none" title="Sin datos" />
-                        ) : null}
-                    </div>
+                    <StaffAttendanceSummaryWidget
+                        userId={userId}
+                        refreshKey={attendanceRefreshKey}
+                        onDayClick={(ymd) => {
+                            const [y, m, d] = ymd.split('-').map(Number);
+                            setSelectedDayDate(new Date(y, m - 1, d));
+                            setIsDayDetailModalOpen(true);
+                        }}
+                    />
                 </HomeScreenSlot>
 
                 <HomeScreenSlot size="panel" instance="staff-horarios">
-                    <StaffWeekScheduleWidget
+                    <StaffWeekScheduleBlock
                         userId={userId}
-                        onOpenNote={handleOpenScheduleNote}
+                        userRole={userRole}
+                        userEmail={userEmail}
+                        initialFocusDate={scheduleInitialFocus}
+                        onClearFocus={() => router.replace('/staff/dashboard')}
                     />
                 </HomeScreenSlot>
 
@@ -1285,16 +1191,6 @@ export default function StaffDashboardView() {
                 </div>
             </Modal>
 
-            <StaffScheduleModal
-                isOpen={isScheduleModalOpen}
-                onClose={closeScheduleModal}
-                shifts={monthShifts}
-                userName={userName}
-                userRole={userRole}
-                userId={userId}
-                initialFocusDate={scheduleFocusDate}
-            />
-
             <Modal
                 open={showPurchaseMultiSourceModal}
                 onClose={() => { setShowPurchaseMultiSourceModal(false); setPurchaseInventoriesByBoxId({}); }}
@@ -1380,7 +1276,7 @@ export default function StaffDashboardView() {
                 userRole={userRole}
                 viewerEmail={userEmail}
                 onClose={() => setIsDayDetailModalOpen(false)}
-                onSuccess={() => initialize()}
+                onSuccess={() => setAttendanceRefreshKey((k) => k + 1)}
                 employees={plantillaEmployees.map((employee) => ({
                     id: employee.id,
                     first_name: employee.first_name ?? '',

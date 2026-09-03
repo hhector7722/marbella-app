@@ -9,6 +9,10 @@ import { getOvertimeData } from '@/app/actions/overtime';
 import DashboardVentasSection from '@/components/dashboards/DashboardVentasSection';
 import MasterShortcutGrid from '@/components/dashboards/MasterShortcutGrid';
 import { HomeScreen, HomeScreenSlot } from '@/components/dashboards/HomeScreen';
+import { StaffAttendanceSummaryWidget } from '@/components/dashboards/staff/StaffAttendanceSummaryWidget';
+import { StaffWeekScheduleBlock } from '@/components/dashboards/staff/StaffWeekScheduleBlock';
+import { AttendanceDetailModal } from '@/components/modals/AttendanceDetailModal';
+import { MasterMoreFunctionsModal } from '@/components/modals/MasterMoreFunctionsModal';
 import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal, type BoxOption } from '@/components/CashChangeModal';
 import { CashDenominationForm, CASH_COUNT_FORM_ID } from '@/components/CashDenominationForm';
@@ -20,7 +24,12 @@ import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { updateProfile } from '@/app/actions/profile';
 import { useMasterTreasuryLive } from '@/hooks/useMasterTreasuryLive';
 import { pickLatestOvertimeWeekSnapshot, type OvertimeWeekSnapshot } from '@/lib/master-overtime-snapshot';
-import { filterVisiblePlantillaEmployees } from '@/lib/staff/plantilla-employees';
+import {
+    PLANTILLA_EMPLOYEE_SELECT,
+    filterVisiblePlantillaEmployees,
+    type PlantillaEmployeeRow,
+} from '@/lib/staff/plantilla-employees';
+import { canManageStaffAttendance } from '@/lib/staff/attendance-access';
 
 type MasterDashboardViewProps = {
     initialData?: {
@@ -58,6 +67,15 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
     const [overtimeSnapshot, setOvertimeSnapshot] = useState<OvertimeWeekSnapshot | null>(null);
     const [overtimeLoading, setOvertimeLoading] = useState(true);
     const [pendingReservationsCount, setPendingReservationsCount] = useState(0);
+
+    const [userId, setUserId] = useState<string | null>(null);
+    const [userRole, setUserRole] = useState<'staff' | 'manager' | 'supervisor'>('manager');
+    const [userEmail, setUserEmail] = useState('');
+    const [plantillaEmployees, setPlantillaEmployees] = useState<PlantillaEmployeeRow[]>([]);
+    const [attendanceRefreshKey, setAttendanceRefreshKey] = useState(0);
+    const [isDayDetailModalOpen, setIsDayDetailModalOpen] = useState(false);
+    const [selectedDayDate, setSelectedDayDate] = useState<Date | null>(null);
+    const [isMoreFunctionsModalOpen, setIsMoreFunctionsModalOpen] = useState(false);
 
     const changeBoxes = useMemo(
         () => boxes.filter((b) => b.type === 'change').sort((a, b) => (a.name || '').localeCompare(b.name || '')),
@@ -149,6 +167,43 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
             cancelled = true;
         };
     }, []);
+
+    // Identidad del maestro: widgets de asistencia y horario usan su userId real.
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                const user = session?.user;
+                if (!user || cancelled) return;
+                setUserId(user.id);
+                setUserEmail(user.email ?? '');
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('first_name, role, email')
+                    .eq('id', user.id)
+                    .single();
+                if (cancelled) return;
+                if (profile) {
+                    setUserRole((profile.role as 'staff' | 'manager' | 'supervisor') || 'manager');
+                    setUserEmail(profile.email || user.email || '');
+                }
+                if (canManageStaffAttendance(profile?.role || 'manager', profile?.email || user.email)) {
+                    const { data: emps } = await supabase
+                        .from('profiles')
+                        .select(PLANTILLA_EMPLOYEE_SELECT)
+                        .order('first_name');
+                    if (cancelled) return;
+                    setPlantillaEmployees(filterVisiblePlantillaEmployees((emps || []) as PlantillaEmployeeRow[]));
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [supabase]);
 
     // Plantilla: no llega por SSR. Se carga solo al abrir el modal (no al montar).
     const ensureActivePlantillaEmployees = async () => {
@@ -264,13 +319,31 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
 
     return (
         <div className="pt-1 animate-in fade-in duration-500 pb-8">
-            <HomeScreen>
+            <HomeScreen layout="master">
                 <HomeScreenSlot size="wide" instance="dashboard-ventas">
                     <DashboardVentasSection
                         initialData={{
                             liveTickets: initialData?.liveTickets,
                             salesChartData: initialData?.salesChartData,
                         }}
+                    />
+                </HomeScreenSlot>
+                <HomeScreenSlot size="wide" instance="master-asistencia">
+                    <StaffAttendanceSummaryWidget
+                        userId={userId}
+                        refreshKey={attendanceRefreshKey}
+                        onDayClick={(ymd) => {
+                            const [y, m, d] = ymd.split('-').map(Number);
+                            setSelectedDayDate(new Date(y, m - 1, d));
+                            setIsDayDetailModalOpen(true);
+                        }}
+                    />
+                </HomeScreenSlot>
+                <HomeScreenSlot size="panel" instance="master-horarios">
+                    <StaffWeekScheduleBlock
+                        userId={userId}
+                        userRole={userRole}
+                        userEmail={userEmail}
                     />
                 </HomeScreenSlot>
                 <MasterShortcutGrid
@@ -281,12 +354,8 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                     overtimeLoading={overtimeLoading}
                     onOpenCambio={() => setIsSwapModalOpen(true)}
                     onOpenReservas={() => router.push('/staff/reservas')}
-                    onOpenPlantilla={() => {
-                        setIsStaffModalOpen(true);
-                        void ensureActivePlantillaEmployees();
-                    }}
-                    onOpenCierre={() => setIsClosingModalOpen(true)}
                     onOpenChangeBoxAudit={openChangeBoxAudit}
+                    onOpenOtros={() => setIsMoreFunctionsModalOpen(true)}
                     pendingReservationsCount={pendingReservationsCount}
                 />
             </HomeScreen>
@@ -379,6 +448,31 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                     />
                 ) : null}
             </Modal>
+
+            <MasterMoreFunctionsModal
+                isOpen={isMoreFunctionsModalOpen}
+                onClose={() => setIsMoreFunctionsModalOpen(false)}
+                onOpenCierre={() => setIsClosingModalOpen(true)}
+                onOpenPlantilla={() => {
+                    setIsStaffModalOpen(true);
+                    void ensureActivePlantillaEmployees();
+                }}
+            />
+
+            <AttendanceDetailModal
+                isOpen={isDayDetailModalOpen}
+                date={selectedDayDate}
+                userId={userId}
+                userRole={userRole}
+                viewerEmail={userEmail}
+                onClose={() => setIsDayDetailModalOpen(false)}
+                onSuccess={() => setAttendanceRefreshKey((k) => k + 1)}
+                employees={plantillaEmployees.map((employee) => ({
+                    id: employee.id,
+                    first_name: employee.first_name ?? '',
+                    last_name: employee.last_name ?? '',
+                }))}
+            />
         </div>
     );
 }

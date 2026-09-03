@@ -2776,6 +2776,176 @@ button[data-element='catalog-filter'] {
 [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-inventario'] {
   grid-area: invent;
 }
+/*
+ * Master (/master/dashboard): ventas 4×1; resumen de asistencia 4×1;
+ * horarios 3×2 (filas 3–4, columnas 1–3); iconos reposicionados.
+ * «Otros» abre el modal de accesos (proveedores, web, carta, consumo,
+ * horarios, asistencia, cierre, propinas, recetas, rentabilidad, plantilla).
+ */
+[data-component='HomeScreen'][data-layout='master'] {
+  grid-template-areas:
+    'ventas   ventas   ventas   ventas'
+    'asis     asis     asis     asis'
+    'horario  horario  horario  caja'
+    'horario  horario  horario  hextras'
+    'ingred   albaran  cambio   reservas'
+    'uso      cambio1  cambio2  otros';
+  grid-template-rows: repeat(6, var(--home-row-track));
+  grid-auto-flow: row;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='dashboard-ventas'] {
+  grid-area: ventas;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] {
+  grid-area: asis;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-horarios'] {
+  grid-area: horario;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='caja-inicial'] {
+  grid-area: caja;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='hextras'] {
+  grid-area: hextras;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='ingredientes'] {
+  grid-area: ingred;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='albaranes'] {
+  grid-area: albaran;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='cambio'] {
+  grid-area: cambio;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='reservas'] {
+  grid-area: reservas;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='uso-app'] {
+  grid-area: uso;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='cambio-1'] {
+  grid-area: cambio1;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='cambio-2'] {
+  grid-area: cambio2;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-otros'] {
+  grid-area: otros;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-horarios'] > [data-element='body'] {
+  color: var(--color-texto-invertido);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-horarios'] > [data-element='body'] > [data-component='StaffWeekSchedule'] {
+  --staff-calendar-gap: var(--espacio-2);
+  --staff-calendar-inset-bottom: var(--espacio-2);
+  --staff-week-day-size: 0.75rem;
+  --staff-week-expansion-min: 3.5rem;
+  --staff-week-expansion-max: 4.75rem;
+  box-sizing: border-box;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--staff-calendar-gap);
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding-bottom: var(--staff-calendar-inset-bottom);
+}
+/*
+ * Semana Master: mismo papel blanco y cabecera roja que el mosaico Staff.
+ * El resumen de asistencia no es cristal; su tinta es la de historial.
+ */
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia']::before {
+  display: none;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] > [data-element='body'] {
+  color: var(--color-texto);
+  background: var(--color-superficie);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.12);
+}
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] > [data-element='body'] {
+    background: var(--color-superficie);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] > [data-element='body'] :is(.border-gray-100, .border-gray-50, .border-zinc-100) {
+  border-color: var(--color-borde-marcado);
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-fit='week'] [data-component='MonthCalendarFrame'] {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  transform: none;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] .month-cal-chrome--flush .month-cal-grid-wrap {
+  display: flex;
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  border: 0;
+  box-shadow: none;
+  background-color: var(--color-superficie);
+  border-radius: var(--home-widget-radius);
+  flex-direction: column;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] .month-cal-chrome--flush .month-cal-weeks {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] .month-cal-chrome--flush .month-cal-week {
+  display: grid;
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: stretch;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0,
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0 > div {
+  height: 13px;
+  min-height: 13px;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0 span {
+  font-size: 6px;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-week-summary] .month-cal-day-clocks > div {
+  height: 12px;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-week-summary] .month-cal-day-clocks span {
+  font-size: 8px;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-week-summary] .month-cal-week {
+  flex: 1 1 0;
+  min-height: 62px;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-week-summary] .month-cal-weeks > [data-week-footer]:not([data-overrides='true']) {
+  flex: 0 0 auto;
+  height: 17px;
+  min-height: 17px;
+  max-height: 17px;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-footer-label] {
+  font-size: 7px;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric] {
+  gap: 5px;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric-value] {
+  font-size: 8px;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric-label] {
+  font-size: 7px;
+}
 [data-component='HomeScreen'] > [data-element='slot'] > [data-element='body'] {
   box-sizing: border-box;
   position: absolute;
@@ -2821,7 +2991,7 @@ button[data-element='catalog-filter'] {
  * El contenido vive en el cristal: pastillas y celdas de papel no tapan el material.
  * Los popovers (sombra fuerte) siguen siendo ficha, para leerse encima.
  */
-[data-component='HomeScreen'] > [data-element='slot']:not([data-instance='staff-semana']) > [data-element='body'] :is(.bg-white, .bg-gray-50, .bg-blue-50\/10) {
+[data-component='HomeScreen'] > [data-element='slot']:not([data-instance='staff-semana'], [data-instance='master-asistencia']) > [data-element='body'] :is(.bg-white, .bg-gray-50, .bg-blue-50\/10) {
   background-color: transparent;
   box-shadow: none;
 }
@@ -2835,10 +3005,10 @@ button[data-element='catalog-filter'] {
 [data-component='HomeScreen'] > [data-element='slot'] > [data-element='body'] :is(.border-gray-100, .border-gray-50, .border-zinc-100) {
   border-color: var(--home-widget-separator);
 }
-[data-component='HomeScreen'] > [data-element='slot']:not([data-instance='staff-semana']) > [data-element='body'] :is(.text-gray-400, .text-gray-300, .text-zinc-400, .text-zinc-500, .text-gray-500) {
+[data-component='HomeScreen'] > [data-element='slot']:not([data-instance='staff-semana'], [data-instance='master-asistencia']) > [data-element='body'] :is(.text-gray-400, .text-gray-300, .text-zinc-400, .text-zinc-500, .text-gray-500) {
   color: var(--home-widget-ink-secondary);
 }
-[data-component='HomeScreen'][data-widget-scheme='dark'] > [data-element='slot']:not([data-instance='staff-semana']) > [data-element='body'] :is(.text-gray-900, .text-gray-800, .text-gray-700, .text-zinc-900, .text-zinc-800, .text-zinc-700, .text-zinc-600) {
+[data-component='HomeScreen'][data-widget-scheme='dark'] > [data-element='slot']:not([data-instance='staff-semana'], [data-instance='master-asistencia']) > [data-element='body'] :is(.text-gray-900, .text-gray-800, .text-gray-700, .text-zinc-900, .text-zinc-800, .text-zinc-700, .text-zinc-600) {
   color: var(--home-widget-ink);
 }
 /*
@@ -2846,8 +3016,8 @@ button[data-element='catalog-filter'] {
  * no sobreviven. Los popovers de papel y el texto transparente (huecos
  * de maquetación) se restauran. El canto es solo la hairline del cuerpo.
  */
-[data-component='HomeScreen'][data-widget-scheme='dark'] > [data-element='slot']:not([data-instance='staff-semana']) > [data-element='body'],
-[data-component='HomeScreen'][data-widget-scheme='dark'] > [data-element='slot']:not([data-instance='staff-semana']) > [data-element='body'] * {
+[data-component='HomeScreen'][data-widget-scheme='dark'] > [data-element='slot']:not([data-instance='staff-semana'], [data-instance='master-asistencia']) > [data-element='body'],
+[data-component='HomeScreen'][data-widget-scheme='dark'] > [data-element='slot']:not([data-instance='staff-semana'], [data-instance='master-asistencia']) > [data-element='body'] * {
   color: var(--color-texto-invertido);
 }
 [data-component='HomeScreen'][data-widget-scheme='dark'] > [data-element='slot'] > [data-element='body'] .text-transparent {

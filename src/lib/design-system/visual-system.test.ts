@@ -822,7 +822,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(opsWidgets, /col-start-1[\s\S]*Compra[\s\S]*col-start-2[\s\S]*Arqueo[\s\S]*col-start-3[\s\S]*Caja Inicial[\s\S]*col-start-4[\s\S]*Salida[\s\S]*col-start-5[\s\S]*Entrada/, 'Caja inicial: Compra, Arqueo, card, Salida, Entrada');
         assert.match(opsWidgets, /WEEKDAY_INITIALS/, 'H. extras lleva las iniciales de la semana');
         assert.match(opsWidgets, /!inMonth && !isToday && 'opacity-25'/, 'los días de otro mes se apagan');
-        assert.match(staff, /<WeekSummary/);
+        assert.match(staff, /<StaffAttendanceSummaryWidget/);
         assert.match(staff, /instance="staff-semana"/);
         assert.doesNotMatch(
             staff,
@@ -835,7 +835,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'el mosaico Staff ya no envuelve semana ni fichaje en Surface'
         );
         assert.match(staff, /instance="staff-horarios"/);
-        assert.match(staff, /<StaffWeekScheduleWidget/);
+        assert.match(staff, /<StaffWeekScheduleBlock/);
         assert.doesNotMatch(staff, /label="Horarios"/);
         assert.doesNotMatch(staff, /bg-purple-600/);
         assert.match(staff, /instance="staff-fichaje"/);
@@ -861,10 +861,6 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
     });
 
     it('el resumen semanal es WeekSummary en historial, mosaico y horas extras', () => {
-        const staff = readFileSync(
-            join(SRC_ROOT, 'components/dashboards/StaffDashboardView.tsx'),
-            'utf8'
-        );
         const overtimeModal = readFileSync(
             join(SRC_ROOT, 'components/WorkerWeeklyHistoryModal.tsx'),
             'utf8'
@@ -893,14 +889,18 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'WeekSummary no clona la cabecera L–D'
         );
 
-        assert.match(staff, /from '@\/components\/staff\/WeekSummary'/);
-        assert.match(staff, /<WeekSummary/);
-        assert.match(staff, /getEmployeeHistoryWeek/);
-        assert.doesNotMatch(staff, /from '@\/app\/staff\/history\/WeekCard'/);
-        assert.doesNotMatch(staff, /<WeekCard/);
-        assert.doesNotMatch(staff, /<MonthCalendarFrame/);
+        const staffWeekWidget = readFileSync(
+            join(SRC_ROOT, 'components/dashboards/staff/StaffAttendanceSummaryWidget.tsx'),
+            'utf8'
+        );
+        assert.match(staffWeekWidget, /from '@\/components\/staff\/WeekSummary'/);
+        assert.match(staffWeekWidget, /<WeekSummary/);
+        assert.match(staffWeekWidget, /getEmployeeHistoryWeek/);
+        assert.doesNotMatch(staffWeekWidget, /from '@\/app\/staff\/history\/WeekCard'/);
+        assert.doesNotMatch(staffWeekWidget, /<WeekCard/);
+        assert.doesNotMatch(staffWeekWidget, /<MonthCalendarFrame/);
         assert.doesNotMatch(
-            staff,
+            staffWeekWidget,
             /from-red-500 to-red-600/,
             'el mosaico Staff no clona la cabecera de días de la semana'
         );

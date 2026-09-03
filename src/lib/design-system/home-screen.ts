@@ -12,8 +12,8 @@ export const HOME_SCREEN_SLOT_SIZES = ['icon', 'small', 'medium', 'large', 'wide
 
 export type HomeScreenSlotSize = (typeof HOME_SCREEN_SLOT_SIZES)[number];
 
-/** Mosaicos con áreas fijas. `ops-admin`: Cambio 1/2 son widgets 1×1. `staff`: semana 4×1. */
-export const HOME_SCREEN_LAYOUTS = ['ops-admin', 'staff'] as const;
+/** Mosaicos con áreas fijas. `ops-admin`: Cambio 1/2 son widgets 1×1. `staff`: semana 4×1. `master`: semana y horarios. */
+export const HOME_SCREEN_LAYOUTS = ['ops-admin', 'staff', 'master'] as const;
 
 export type HomeScreenLayout = (typeof HOME_SCREEN_LAYOUTS)[number];
 
