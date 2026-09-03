@@ -20,15 +20,9 @@ import {
     fetchActivitiesForRangeAction,
     type BarActivity,
 } from '@/app/staff/actividades/actions';
-import { PavilionDayModal } from '@/components/pavilion/PavilionDayModal';
 import { createClient } from '@/utils/supabase/client';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-
-function parseLocalSafe(dateStr: string): Date {
-    const [y, m, d] = dateStr.split('-').map(Number);
-    return new Date(y, m - 1, d);
-}
 
 const WEEKDAY_LABELS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'] as const;
 
@@ -39,7 +33,7 @@ type ShiftRow = {
 
 type StaffWeekScheduleWidgetProps = {
     userId: string | null;
-    /** Abre el modal de horario del día (nota); solo desde el pie del modal de día. */
+    /** Abre el modal de horario del día (StaffScheduleModal) al pulsar una tarjeta de fin de semana. */
     onOpenNote?: (ymd: string) => void;
 };
 
@@ -200,14 +194,15 @@ function WeekendDayColumn({
                     </div>
 
                     <div data-element="weekend-evento" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
-                        <span data-element="weekend-evento-label" className="shrink-0 text-[6px] font-medium leading-none tracking-wide">
-                            Evento
-                        </span>
                         {eventLabel ? (
                             <span data-element="weekend-evento-value" className="min-w-0 truncate text-[6px] font-medium leading-none">
                                 {eventLabel}
                             </span>
-                        ) : null}
+                        ) : (
+                            <span data-element="weekend-evento-label" className="shrink-0 text-[6px] font-medium leading-none tracking-wide">
+                                Evento
+                            </span>
+                        )}
                     </div>
                     <div data-element="weekend-evento-detail" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
                         {eventDetail ? (
@@ -267,7 +262,6 @@ export function StaffWeekScheduleWidget({ userId, onOpenNote }: StaffWeekSchedul
     const [shifts, setShifts] = useState<ShiftRow[]>([]);
     const [eventsByDate, setEventsByDate] = useState<Record<string, BarActivity[]>>({});
     const [loading, setLoading] = useState(true);
-    const [dayModalDate, setDayModalDate] = useState<string | null>(null);
 
     const visibleRange = useMemo(() => {
         const start = startOfWeek(startOfMonth(monthAnchor), { weekStartsOn: 1 });
@@ -354,15 +348,6 @@ export function StaffWeekScheduleWidget({ userId, onOpenNote }: StaffWeekSchedul
             return startOfMonth(next);
         });
     };
-
-    const handleOpenNoteFromDay = useCallback(
-        (ymd: string) => {
-            if (!onOpenNote) return;
-            setDayModalDate(null);
-            onOpenNote(ymd);
-        },
-        [onOpenNote],
-    );
 
     return (
         <div
@@ -471,7 +456,7 @@ export function StaffWeekScheduleWidget({ userId, onOpenNote }: StaffWeekSchedul
                                                 weekDays={weekDays}
                                                 shifts={shifts}
                                                 eventsByDate={eventsByDate}
-                                                onOpenDay={setDayModalDate}
+                                                onOpenDay={onOpenNote}
                                             />
                                         ) : null}
                                     </div>
@@ -481,20 +466,6 @@ export function StaffWeekScheduleWidget({ userId, onOpenNote }: StaffWeekSchedul
                     )}
                 </div>
             </div>
-
-            <PavilionDayModal
-                open={dayModalDate != null}
-                onClose={() => setDayModalDate(null)}
-                date={dayModalDate}
-                userId={userId}
-                onOpenNote={onOpenNote ? handleOpenNoteFromDay : undefined}
-                onNavigateDay={(delta) => {
-                    if (!dayModalDate) return;
-                    const next = parseLocalSafe(dayModalDate);
-                    next.setDate(next.getDate() + delta);
-                    setDayModalDate(format(next, 'yyyy-MM-dd'));
-                }}
-            />
         </div>
     );
 }
