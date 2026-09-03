@@ -46,16 +46,6 @@ export function ScannerClient({
   const carouselRef = useRef<HTMLDivElement>(null)
   const prevBatchLenRef = useRef(0)
 
-  /** Android: cámara directa (desde la UI nativa se puede ir a galería). iOS: selector nativo del SO. */
-  const [fileInputCapture, setFileInputCapture] = useState<'environment' | undefined>('environment')
-
-  useEffect(() => {
-    const isIOS =
-      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-    if (isIOS) setFileInputCapture(undefined)
-  }, [])
-
   const effectiveSupplierId = pendingBatch?.supplierId ?? selectedSupplierId
 
   const removePendingItemById = (itemId: string) => {
@@ -295,7 +285,7 @@ export function ScannerClient({
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        capture={fileInputCapture}
+        capture="environment"
         onChange={handleCapture}
         className="hidden"
       />
