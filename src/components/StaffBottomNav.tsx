@@ -8,7 +8,6 @@ import { trackUsageTabSwitch } from '@/lib/usage/client';
 import { createClient } from '@/utils/supabase/client';
 import { getHomeHrefForUser, isMasterDashboardUser } from '@/lib/master-dashboard';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
-import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
 import { useVisualViewportBottomPin } from '@/hooks/useVisualViewportBottomPin';
 import { useTabBarOverSurface } from '@/hooks/useTabBarOverSurface';
 import { useChromeScroll } from '@/components/chrome/ChromeScrollProvider';
@@ -46,10 +45,6 @@ export default function StaffBottomNav() {
 
   const [homeHref, setHomeHref] = useState('/staff/dashboard');
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
-  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
-  const [monthShifts, setMonthShifts] = useState<
-    { date: Date; startTime: string; endTime: string; activity?: string }[]
-  >([]);
   const [userData, setUserData] = useState<{
     id: string;
     name: string;
@@ -59,7 +54,7 @@ export default function StaffBottomNav() {
 
 
 
-  // Load profile and shifts
+  // Load profile
   useEffect(() => {
     let cancelled = false;
     async function loadProfile() {
@@ -101,39 +96,6 @@ export default function StaffBottomNav() {
 
       if (!cancelled) {
         setHomeHref(resolvedHome);
-      }
-
-      const today = new Date();
-      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-      const { data: realShifts } = await supabase
-        .from('shifts')
-        .select('start_time, end_time, activity, activity_2')
-        .eq('user_id', effectiveUserId)
-        .eq('is_published', true)
-        .gte('start_time', startOfMonth.toISOString())
-        .order('start_time', { ascending: true });
-
-      if (!cancelled && realShifts?.length) {
-        setMonthShifts(
-          realShifts.map((s) => {
-            const start = new Date(s.start_time);
-            const end = new Date(s.end_time);
-            return {
-              date: start,
-              startTime: start.toLocaleTimeString('es-ES', {
-                hour: '2-digit',
-                minute: '2-digit',
-              }),
-              endTime: end.toLocaleTimeString('es-ES', {
-                hour: '2-digit',
-                minute: '2-digit',
-              }),
-              activity: s.activity || s.activity_2 || undefined,
-            };
-          })
-        );
-      } else if (!cancelled) {
-        setMonthShifts([]);
       }
     }
     void loadProfile();
@@ -215,11 +177,6 @@ export default function StaffBottomNav() {
             </Link>
           );
         })}
-        <StaffScheduleModal
-          isOpen={isScheduleModalOpen}
-          onClose={() => setIsScheduleModalOpen(false)}
-          shifts={monthShifts}
-        />
       </nav>
       <SupplierSelectionModal
         isOpen={isSupplierModalOpen}

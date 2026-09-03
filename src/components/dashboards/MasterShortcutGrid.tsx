@@ -20,7 +20,6 @@ type MasterShortcutGridProps = {
     overtimeLoading?: boolean;
     onOpenCambio: () => void;
     onOpenReservas: () => void;
-    onOpenHorarios: () => void;
     onOpenPlantilla: () => void;
     onOpenCierre: () => void;
     onOpenChangeBoxAudit: (box: any) => void;
@@ -35,7 +34,6 @@ export default function MasterShortcutGrid({
     overtimeLoading = false,
     onOpenCambio,
     onOpenReservas,
-    onOpenHorarios,
     onOpenPlantilla,
     onOpenCierre,
     onOpenChangeBoxAudit,
@@ -157,7 +155,7 @@ export default function MasterShortcutGrid({
                     instance="horarios"
                     label="Horarios"
                     img="/icons/schedule.png"
-                    onClick={onOpenHorarios}
+                    onClick={() => router.push('/horario')}
                 />
             ),
         },

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { endOfWeek, format, startOfWeek, subWeeks } from 'date-fns';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'sonner';
@@ -18,7 +18,6 @@ import { randomId } from '@/lib/random-id';
 import { CashCountDateButton, formatCashCountDateInput } from '@/components/cash/CashCountDateButton';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { updateProfile } from '@/app/actions/profile';
-import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
 import { useMasterTreasuryLive } from '@/hooks/useMasterTreasuryLive';
 import { pickLatestOvertimeWeekSnapshot, type OvertimeWeekSnapshot } from '@/lib/master-overtime-snapshot';
 import { filterVisiblePlantillaEmployees } from '@/lib/staff/plantilla-employees';
@@ -42,9 +41,6 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
     });
 
     const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
-    const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
-    const [scheduleFocusDate, setScheduleFocusDate] = useState<string | null>(null);
-    const searchParams = useSearchParams();
     const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
     const [auditBox, setAuditBox] = useState<any>(null);
@@ -59,8 +55,6 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
     const [allEmployeesIncludingInactive, setAllEmployeesIncludingInactive] = useState<any[] | null>(null);
     const [showAllEmployeesInPlantilla, setShowAllEmployeesInPlantilla] = useState(false);
 
-    const [userData, setUserData] = useState<{ id: string; name: string; role: string } | null>(null);
-    const [monthShifts, setMonthShifts] = useState<any[]>([]);
     const [overtimeSnapshot, setOvertimeSnapshot] = useState<OvertimeWeekSnapshot | null>(null);
     const [overtimeLoading, setOvertimeLoading] = useState(true);
     const [pendingReservationsCount, setPendingReservationsCount] = useState(0);
@@ -69,68 +63,6 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
         () => boxes.filter((b) => b.type === 'change').sort((a, b) => (a.name || '').localeCompare(b.name || '')),
         [boxes]
     );
-
-    useEffect(() => {
-        async function loadProfileAndShifts() {
-            const { data: { session } } = await supabase.auth.getSession();
-            const user = session?.user;
-            if (!user) return;
-
-            const { data } = await supabase
-                .from('profiles')
-                .select('first_name, role')
-                .eq('id', user.id)
-                .single();
-
-            setUserData({
-                id: user.id,
-                name: data?.first_name || 'Empleado',
-                role: data?.role || 'manager',
-            });
-
-            const today = new Date();
-            const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-            const { data: realShifts } = await supabase
-                .from('shifts')
-                .select('start_time, end_time, activity, activity_2')
-                .eq('user_id', user.id)
-                .eq('is_published', true)
-                .gte('start_time', startOfMonth.toISOString())
-                .order('start_time', { ascending: true });
-
-            if (realShifts && realShifts.length > 0) {
-                setMonthShifts(
-                    realShifts.map((s) => {
-                        const start = new Date(s.start_time);
-                        const end = new Date(s.end_time);
-                        return {
-                            date: start,
-                            startTime: start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-                            endTime: end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-                            activity: s.activity || s.activity_2 || undefined,
-                        };
-                    })
-                );
-            }
-        }
-
-        void loadProfileAndShifts();
-    }, [supabase]);
-
-    useEffect(() => {
-        const d = searchParams.get('scheduleDate')?.trim();
-        if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
-        setScheduleFocusDate(d);
-        setIsScheduleModalOpen(true);
-    }, [searchParams]);
-
-    const closeScheduleModal = () => {
-        setIsScheduleModalOpen(false);
-        setScheduleFocusDate(null);
-        if (searchParams.get('scheduleDate')) {
-            router.replace('/master/dashboard');
-        }
-    };
 
     useEffect(() => {
         let cancelled = false;
@@ -330,8 +262,6 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
         }
     };
 
-    const userRole = (userData?.role as 'staff' | 'manager' | 'supervisor') || 'manager';
-
     return (
         <div className="pt-1 animate-in fade-in duration-500 pb-8">
             <HomeScreen>
@@ -351,7 +281,6 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                     overtimeLoading={overtimeLoading}
                     onOpenCambio={() => setIsSwapModalOpen(true)}
                     onOpenReservas={() => router.push('/staff/reservas')}
-                    onOpenHorarios={() => setIsScheduleModalOpen(true)}
                     onOpenPlantilla={() => {
                         setIsStaffModalOpen(true);
                         void ensureActivePlantillaEmployees();
@@ -361,16 +290,6 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                     pendingReservationsCount={pendingReservationsCount}
                 />
             </HomeScreen>
-
-            <StaffScheduleModal
-                isOpen={isScheduleModalOpen}
-                onClose={closeScheduleModal}
-                shifts={monthShifts}
-                userName={userData?.name}
-                userRole={userRole}
-                userId={userData?.id}
-                initialFocusDate={scheduleFocusDate}
-            />
 
             <StaffSelectionModal
                 isOpen={isStaffModalOpen}

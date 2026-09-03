@@ -18,7 +18,6 @@ import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionMod
 import { AdminProductModal } from '@/components/modals/AdminProductModal';
 import { AdminMoreFunctionsModal } from '@/components/modals/AdminMoreFunctionsModal';
 import { InfoMenuModals } from '@/components/modals/InfoMenuModals';
-import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
 import Link from 'next/link';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { updateProfile } from '@/app/actions/profile';
@@ -171,10 +170,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [isMoreFunctionsModalOpen, setIsMoreFunctionsModalOpen] = useState(false);
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
-    const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
-    const [userData, setUserData] = useState<{ id: string; name: string; role: string } | null>(null);
-    const [monthShifts, setMonthShifts] = useState<any[]>([]);
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
     const [allEmployees, setAllEmployees] = useState<any[]>(initialData?.allEmployees || []);
     const [allEmployeesIncludingInactive, setAllEmployeesIncludingInactive] = useState<any[] | null>(null);
@@ -229,53 +225,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         };
         getUser();
     }, []);
-
-    useEffect(() => {
-        async function loadProfileAndShifts() {
-            const { data: { session } } = await supabase.auth.getSession();
-            const user = session?.user;
-            if (!user) return;
-
-            const { data } = await supabase
-                .from('profiles')
-                .select('first_name, role')
-                .eq('id', user.id)
-                .single();
-
-            setUserData({
-                id: user.id,
-                name: data?.first_name || 'Empleado',
-                role: data?.role || 'manager',
-            });
-
-            const today = new Date();
-            const startOfMonthDate = new Date(today.getFullYear(), today.getMonth(), 1);
-            const { data: realShifts } = await supabase
-                .from('shifts')
-                .select('start_time, end_time, activity, activity_2')
-                .eq('user_id', user.id)
-                .eq('is_published', true)
-                .gte('start_time', startOfMonthDate.toISOString())
-                .order('start_time', { ascending: true });
-
-            if (realShifts && realShifts.length > 0) {
-                setMonthShifts(
-                    realShifts.map((s) => {
-                        const start = new Date(s.start_time);
-                        const end = new Date(s.end_time);
-                        return {
-                            date: start,
-                            startTime: start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-                            endTime: end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-                            activity: s.activity || s.activity_2 || undefined,
-                        };
-                    })
-                );
-            }
-        }
-
-        void loadProfileAndShifts();
-    }, [supabase]);
 
     const ensureAllEmployeesIncludingInactive = async () => {
         if (allEmployeesIncludingInactive) return allEmployeesIncludingInactive;
@@ -601,7 +550,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         />
     );
 
-    const userRole = (userData?.role as 'staff' | 'manager' | 'supervisor') || 'manager';
     const closingSalesSummary = {
         total: dailyStats?.total ?? dailyStats?.liveTickets?.total ?? 0,
         count: dailyStats?.count ?? dailyStats?.liveTickets?.count ?? 0,
@@ -817,7 +765,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 onClose={() => setIsMoreFunctionsModalOpen(false)}
                 onOpenPedidos={() => setIsSupplierModalOpen(true)}
                 onOpenCambio={() => setCashModalMode('swap')}
-                onOpenHorarios={() => setIsScheduleModalOpen(true)}
                 onOpenCierre={() => setIsClosingModalOpen(true)}
                 onOpenInfo={() => setIsInfoModalOpen(true)}
                 onOpenCompra={handleOpenCompra}
@@ -827,15 +774,6 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
                 open={isInfoModalOpen}
                 onClose={() => setIsInfoModalOpen(false)}
                 usagePrefix="admin"
-            />
-
-            <StaffScheduleModal
-                isOpen={isScheduleModalOpen}
-                onClose={() => setIsScheduleModalOpen(false)}
-                shifts={monthShifts}
-                userName={userData?.name}
-                userRole={userRole}
-                userId={userData?.id}
             />
 
             <CashClosingModal

@@ -15,7 +15,6 @@ interface AdminMoreFunctionsModalProps {
     onClose: () => void;
     onOpenPedidos: () => void;
     onOpenCambio: () => void;
-    onOpenHorarios: () => void;
     onOpenCierre: () => void;
     onOpenInfo: () => void;
     onOpenCompra: () => void;
@@ -27,7 +26,7 @@ type MoreFunctionsItem = {
     img: string;
 } & (
     | { href: string }
-    | { action: 'pedidos' | 'cambio' | 'horarios' | 'cierre' | 'info' | 'compra' | 'web' }
+    | { action: 'pedidos' | 'cambio' | 'cierre' | 'info' | 'compra' | 'web' }
 );
 
 const MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
@@ -35,7 +34,7 @@ const MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
     { label: 'Pedidos', instance: 'staff-pedidos', action: 'pedidos', img: '/icons/shipment.png' },
     { label: 'Consumo', instance: 'consumo', href: '/dashboard/consumo-personal', img: '/icons/consum.png' },
     { label: 'Cambio', instance: 'cambio', action: 'cambio', img: '/icons/change.png' },
-    { label: 'Horarios', instance: 'horarios', action: 'horarios', img: '/icons/schedule.png' },
+    { label: 'Horarios', instance: 'horarios', href: '/horario', img: '/icons/schedule.png' },
     { label: 'Cierre', instance: 'staff-cierre', action: 'cierre', img: '/icons/lock.png' },
     { label: 'Reservas', instance: 'reservas', href: '/staff/reservas', img: '/icons/reservas.png' },
     { label: 'Propinas', instance: 'propinas', href: '/dashboard/propinas', img: '/icons/tip.png' },
@@ -50,7 +49,6 @@ export function AdminMoreFunctionsModal({
     onClose,
     onOpenPedidos,
     onOpenCambio,
-    onOpenHorarios,
     onOpenCierre,
     onOpenInfo,
     onOpenCompra,
@@ -71,12 +69,11 @@ export function AdminMoreFunctionsModal({
     };
 
     const actionHandlers: Record<
-        'pedidos' | 'cambio' | 'horarios' | 'cierre' | 'info' | 'compra' | 'web',
+        'pedidos' | 'cambio' | 'cierre' | 'info' | 'compra' | 'web',
         () => void
     > = {
         pedidos: onOpenPedidos,
         cambio: onOpenCambio,
-        horarios: onOpenHorarios,
         cierre: onOpenCierre,
         info: onOpenInfo,
         compra: onOpenCompra,

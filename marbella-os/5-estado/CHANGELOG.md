@@ -36,6 +36,10 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
 
+## 2026-09-03
+
+- **Horarios: los accesos de Master y Admin navegan a `/horario`.** El atajo de `/master/dashboard` y el ítem del modal «Otros» de `/dashboard` ya no abren el `StaffScheduleModal` embebido; conducen a la página de calendario, como la navtab inferior. Se retira el `StaffScheduleModal` de los dashboards Master/Admin y de la barra inferior.
+
 ## 2026-09-02
 
 - **Cierres: cards de resumen rediseñadas.** La card del mes añade la cabecera «Mensual» y compacta la rejilla con las etiquetas pegadas al valor. La card «Resumen de ayer» pasa a llamarse «Último cierre» y muestra el cierre más reciente realizado, sea de hoy, de ayer o de hace un mes; se separa la cabecera de las dos filas de métricas.
