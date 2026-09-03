@@ -337,7 +337,6 @@ export const StaffScheduleModal = ({
                 layer="base"
                 hideHeader={Boolean(editModeForDate)}
                 onBack={selectedDate ? handleBack : undefined}
-                headerTone="petroleum"
                 headerTrailing={
                     !editModeForDate ? (
                         <>
@@ -501,7 +500,7 @@ export const StaffScheduleModal = ({
                     <div className="flex flex-col flex-1 overflow-hidden bg-white min-h-0 day-modal-body">
                         {loadingDay ? (
                             <div className="flex-1 flex items-center justify-center py-20">
-                                <div className="w-8 h-8 rounded-full border-4 border-[#36606F] border-t-transparent animate-spin" />
+                                <div className="w-8 h-8 rounded-full border-4 border-ds-marca border-t-transparent animate-spin" />
                             </div>
                         ) : dayShifts.length === 0 ? (
                             <div className="flex-1 flex items-center justify-center py-16 px-4">

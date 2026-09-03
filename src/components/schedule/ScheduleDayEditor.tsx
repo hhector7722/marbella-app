@@ -743,8 +743,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
     if (loading) {
         if (embedded) {
             return (
-                <div className="flex flex-1 min-h-0 items-center justify-center bg-[#36606F] rounded-2xl">
-                    <div className="w-8 h-8 rounded-full border-4 border-white border-t-transparent animate-spin" />
+                <div className="flex flex-1 min-h-0 items-center justify-center bg-white rounded-2xl">
+                    <div className="w-8 h-8 rounded-full border-4 border-ds-marca border-t-transparent animate-spin" />
                 </div>
             );
         }
@@ -753,27 +753,27 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
 
     return (
         <div className={embedded ? 'flex flex-col flex-1 min-h-0 w-full text-gray-800 overflow-hidden' : 'min-h-[100dvh] w-full flex flex-col p-3 sm:p-4 md:p-6 lg:p-8 text-gray-800'} onClick={() => setEditingIndex(null)}>
-            <div className={cn('bg-[#36606F] shadow-xl flex flex-col shrink w-full relative overflow-hidden', embedded ? 'rounded-2xl flex-1 min-h-0' : 'rounded-[32px] max-w-7xl mx-auto')}>
+            <div className={cn('bg-white shadow-sm border border-zinc-200 flex flex-col shrink w-full relative overflow-hidden', embedded ? 'rounded-2xl flex-1 min-h-0' : 'rounded-[32px] max-w-7xl mx-auto')}>
 
                 {/* WRAPPER STICKY GLOBAL PARA TODA LA CABECERA */}
-                <div className="sticky top-[0px] z-30 flex flex-col w-full rounded-t-[32px] shadow-sm bg-[#36606F] -mt-[1px]">
+                <div className={cn('sticky top-[0px] z-30 flex flex-col w-full shadow-sm bg-white -mt-[1px]', embedded ? 'rounded-t-2xl' : 'rounded-t-[32px]')}>
                     {/* CABECERA (Fecha y Botones) */}
                     <div className="flex items-center justify-between px-4 py-3 shrink-0 relative">
                         <div className="flex items-center gap-0 sm:gap-1 mt-2">
                             {embedded && modalParentInstance && (
-                                <button type="button" onClick={onClose} aria-label="Volver al calendario" className="p-1.5 hover:bg-white/10 rounded-xl transition-colors text-white active:scale-95 flex-shrink-0" title="Volver">
+                                <button type="button" onClick={onClose} aria-label="Volver al calendario" className="p-1.5 hover:bg-zinc-100 rounded-xl transition-colors text-zinc-500 active:scale-95 flex-shrink-0" title="Volver">
                                     <ArrowLeft size={22} strokeWidth={2.5} />
                                 </button>
                             )}
-                            <button type="button" onClick={() => navigateDay(-1)} aria-label="Día anterior" className="p-1 sm:p-1.5 hover:bg-white/10 rounded-xl transition-colors text-white active:scale-95 flex-shrink-0">
+                            <button type="button" onClick={() => navigateDay(-1)} aria-label="Día anterior" className="p-1 sm:p-1.5 hover:bg-zinc-100 rounded-xl transition-colors text-zinc-500 active:scale-95 flex-shrink-0">
                                 <ChevronLeft size={24} />
                             </button>
-                            <button type="button" onClick={() => setShowCalendarModal(true)} aria-label="Abrir calendario" className="flex items-center gap-1 group cursor-pointer hover:bg-white/10 px-1 py-1 sm:py-1.5 rounded-xl transition-all">
-                                <h2 className="text-[13px] sm:text-[15px] md:text-xl font-black text-white uppercase tracking-widest whitespace-nowrap capitalize">
+                            <button type="button" onClick={() => setShowCalendarModal(true)} aria-label="Abrir calendario" className="flex items-center gap-1 group cursor-pointer hover:bg-zinc-100 px-1 py-1 sm:py-1.5 rounded-xl transition-all">
+                                <h2 className="text-[13px] sm:text-[15px] md:text-xl font-black text-zinc-800 uppercase tracking-widest whitespace-nowrap capitalize">
                                     {date && format(new Date(date), "EEE d MMMM", { locale: es }).replace(/^(\w{3})\./, '$1')}
                                 </h2>
                             </button>
-                            <button type="button" onClick={() => navigateDay(1)} aria-label="Día siguiente" className="p-1 sm:p-1.5 hover:bg-white/10 rounded-xl transition-colors text-white active:scale-95 flex-shrink-0">
+                            <button type="button" onClick={() => navigateDay(1)} aria-label="Día siguiente" className="p-1 sm:p-1.5 hover:bg-zinc-100 rounded-xl transition-colors text-zinc-500 active:scale-95 flex-shrink-0">
                                 <ChevronRight size={24} />
                             </button>
                         </div>
@@ -793,9 +793,9 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                 type="button"
                                 onClick={() => setShowShareModal(true)}
                                 aria-label="Compartir horario"
-                                className={`relative w-7 h-7 md:w-8 md:h-8 rounded-xl text-white transition-all active:scale-95 shadow-sm flex items-center justify-center bg-[#36606F] hover:bg-[#2a4d59] group ${isDayPublished && hasUnsavedChanges ? 'ring-2 ring-orange-400/80 ring-offset-2 ring-offset-[#36606F]' : ''}`}
+                                className={`relative w-7 h-7 md:w-8 md:h-8 rounded-xl text-zinc-600 transition-all active:scale-95 shadow-sm flex items-center justify-center bg-white border border-zinc-200 hover:bg-zinc-50 group ${isDayPublished && hasUnsavedChanges ? 'ring-2 ring-orange-400/80 ring-offset-2 ring-offset-white' : ''}`}
                             >
-                                <Share2 size={16} strokeWidth={2.5} className="text-white" />
+                                <Share2 size={16} strokeWidth={2.5} className="text-zinc-600" />
                                 {isDayPublished && isDaySent && (
                                     <div className="absolute -top-1.5 -right-1.5 bg-white rounded-full p-0.5 shadow-sm z-10 border border-gray-100">
                                         <Check size={10} className="text-emerald-500" strokeWidth={4} />
@@ -815,7 +815,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
 
                                     {hasTwoActivities && (
                                         <div className="mb-1.5 w-full text-center">
-                                            <span className="text-[9px] font-black tracking-wide text-white/90 uppercase">MAÑANA</span>
+                                            <span className="text-[9px] font-black tracking-wide text-zinc-500 uppercase">MAÑANA</span>
                                         </div>
                                     )}
 
@@ -830,7 +830,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                             )}
                                         >
                                             <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">act</span>
+                                                <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">act</span>
                                                 <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
                                                     <ShrinkToFitInput
                                                         wrapClassName="min-h-0 flex-1"
@@ -852,7 +852,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                             {hasSlot1Activity && (
                                                 <>
                                                     <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                        <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">inicio</span>
+                                                        <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">inicio</span>
                                                         <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
                                                             <ShrinkToFitInput
                                                                 wrapClassName="min-h-0 flex-1"
@@ -871,7 +871,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                     </div>
 
                                                     <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                        <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">final</span>
+                                                        <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">final</span>
                                                         <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
                                                             <ShrinkToFitInput
                                                                 wrapClassName="min-h-0 flex-1"
@@ -890,7 +890,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                     </div>
 
                                                     <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                        <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">part</span>
+                                                        <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">part</span>
                                                         <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
                                                             <ShrinkToFitInput
                                                                 wrapClassName="min-h-0 flex-1"
@@ -909,7 +909,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                     </div>
 
                                                     <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                        <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">cat</span>
+                                                        <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">cat</span>
                                                         <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
                                                             <ShrinkToFitInput
                                                                 wrapClassName="min-h-0 flex-1"
@@ -938,7 +938,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                         type="button"
                                         onClick={() => setSecondSlotExpanded(true)}
                                         className={cn(
-                                            'w-full min-h-12 shrink-0 rounded-xl border border-[#6B98A5] bg-[#4A7A89]/90 text-white text-[10px] font-black uppercase tracking-widest py-3 transition-colors hover:bg-[#4A7A89] active:scale-[0.99]'
+                                            'w-full min-h-12 shrink-0 rounded-xl border border-zinc-200 bg-white text-[#36606F] text-[10px] font-black uppercase tracking-widest py-3 transition-colors hover:bg-zinc-50 active:scale-[0.99]'
                                         )}
                                     >
                                         + Segunda actividad (TARDE)
@@ -947,9 +947,9 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
 
                                 {/* Card actividad 2 — solo si hay texto en act. 2 o el usuario abrió el slot */}
                                 {showSecondActivityCard && (
-                                    <div className="bg-[#4A7A89] rounded-xl border border-[#6B98A5] shadow-sm p-2 sm:p-3 w-full min-w-0">
+                                    <div className="bg-zinc-50 rounded-xl border border-zinc-200 shadow-sm p-2 sm:p-3 w-full min-w-0">
                                         <div className="mb-1.5 flex w-full items-center justify-center gap-2 text-center">
-                                            <span className="text-[9px] font-black tracking-wide text-white/90 uppercase">TARDE</span>
+                                            <span className="text-[9px] font-black tracking-wide text-zinc-500 uppercase">TARDE</span>
                                             {secondSlotExpanded && !hasSlot2Activity && (
                                                 <Button
                                                     type="button"
@@ -972,7 +972,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                 )}
                                             >
                                                 <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                    <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">act</span>
+                                                    <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">act</span>
                                                     <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
                                                         <ShrinkToFitInput
                                                             wrapClassName="min-h-0 flex-1"
@@ -994,7 +994,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                 {hasSlot2Activity && (
                                                     <>
                                                         <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                            <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">inicio</span>
+                                                            <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">inicio</span>
                                                             <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
                                                                 <ShrinkToFitInput
                                                                     wrapClassName="min-h-0 flex-1"
@@ -1013,7 +1013,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                         </div>
 
                                                         <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                            <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">final</span>
+                                                            <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">final</span>
                                                             <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
                                                                 <ShrinkToFitInput
                                                                     type="time"
@@ -1031,7 +1031,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                         </div>
 
                                                         <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                            <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">part</span>
+                                                            <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">part</span>
                                                             <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
                                                                 <ShrinkToFitInput
                                                                     wrapClassName="min-h-0 flex-1"
@@ -1050,7 +1050,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                         </div>
 
                                                         <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                            <span className="text-[7px] sm:text-[8px] font-black text-white/80 uppercase tracking-widest leading-none">cat</span>
+                                                            <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">cat</span>
                                                             <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
                                                                 <ShrinkToFitInput
                                                                     wrapClassName="min-h-0 flex-1"
@@ -1223,7 +1223,6 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                         variant="compact"
                         layer={modalParentInstance ? 'derived' : 'base'}
                         {...(modalParentInstance ? { parentInstance: modalParentInstance } : {})}
-                        headerTone="petroleum"
                     >
                         <div className="flex flex-col gap-2 p-2 bg-zinc-900/95 backdrop-blur-md">
                             {/* Controles de Tiempo */}
@@ -1282,7 +1281,6 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 variant="compact"
                 layer={modalParentInstance ? 'derived' : 'base'}
                 {...(modalParentInstance ? { parentInstance: modalParentInstance } : {})}
-                headerTone="petroleum"
                 headerTrailing={
                     <div className="flex items-center gap-1">
                         <button
@@ -1332,7 +1330,6 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 variant="compact"
                 layer={modalParentInstance ? 'derived' : 'base'}
                 {...(modalParentInstance ? { parentInstance: modalParentInstance } : {})}
-                headerTone="petroleum"
             >
                 <div className="flex flex-col gap-5">
                     <div className="flex flex-col gap-1 text-center">

@@ -44,28 +44,55 @@ export function ChromeScrollProvider({ children }: { children: ReactNode }) {
     }, [pathname]);
 
     useEffect(() => {
+        // El cromo solo responde a un gesto real del usuario. La restauración de
+        // scroll al navegar o recargar, un cambio de layout o un scroll
+        // programático llegan como saltos aislados y no deben ocultar la barra:
+        // se ignora el primer instante tras montar y todo salto que no forma
+        // parte de una secuencia continua de eventos.
+        const mountedAt = performance.now();
+        const STABILIZE_MS = 400;
+        const GESTURE_STALL_MS = 300;
         let lastY = window.scrollY;
+        let lastEventAt = mountedAt;
         let downAcc = 0;
         let upAcc = 0;
         let tabMode: TabBarMode = 'full';
 
         const onScroll = (event: Event) => {
+            const root = (document.scrollingElement ?? document.documentElement) as HTMLElement;
+            const pageScrolls = root.scrollHeight > root.clientHeight + 1;
+
+            let y: number;
             const target = event.target;
-            let y = window.scrollY;
-            if (
+            if (pageScrolls) {
+                y = window.scrollY;
+            } else if (
                 target instanceof HTMLElement &&
-                target !== document.documentElement &&
+                target !== root &&
                 target !== document.body
             ) {
                 y = target.scrollTop;
+            } else {
+                y = window.scrollY;
             }
+
+            const now = performance.now();
 
             if (y < 16) {
                 downAcc = 0;
                 upAcc = 0;
                 tabMode = 'full';
                 lastY = y;
+                lastEventAt = now;
                 setValue(DEFAULT_CHROME);
+                return;
+            }
+
+            if (now - mountedAt < STABILIZE_MS || now - lastEventAt > GESTURE_STALL_MS) {
+                lastY = y;
+                lastEventAt = now;
+                downAcc = 0;
+                upAcc = 0;
                 return;
             }
 
@@ -79,6 +106,7 @@ export function ChromeScrollProvider({ children }: { children: ReactNode }) {
                     tabMode = 'hidden';
                 }
                 lastY = y;
+                lastEventAt = now;
                 setValue({
                     topHidden: true,
                     tabMode,
@@ -97,6 +125,7 @@ export function ChromeScrollProvider({ children }: { children: ReactNode }) {
                     tabMode = 'full';
                 }
                 lastY = y;
+                lastEventAt = now;
                 setValue({
                     topHidden: false,
                     tabMode,
@@ -106,6 +135,7 @@ export function ChromeScrollProvider({ children }: { children: ReactNode }) {
             }
 
             lastY = y;
+            lastEventAt = now;
         };
 
         document.addEventListener('scroll', onScroll, { passive: true, capture: true });

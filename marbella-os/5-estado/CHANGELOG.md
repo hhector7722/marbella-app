@@ -38,6 +38,7 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-03
 
+- **Navtab inferior: ya no se oculta sin gesto.** La barra de navegación desaparecía al entrar en las páginas de inicio sin scrollear: la restauración de scroll, los cambios de layout y los scrolls de contenedores internos se contaban como gesto del usuario. Ahora el cromo solo responde a un scroll continuo hacia abajo sobre la página; vuelve al subir o al llegar arriba. [P8](../2-diseno/PATRONES.md#p8--navegación-inferior).
 - **Notificaciones: Pere sale y entra Fernando.** Los avisos de nueva reserva y de pedido cliente (campana y push) dejan de avisar a Pere y pasan a avisar a Fernando. Destinatarios: alba, hernan, fernando, hector.
 - **Horarios: los accesos de Master y Admin navegan a `/horario`.** El atajo de `/master/dashboard` y el ítem del modal «Otros» de `/dashboard` ya no abren el `StaffScheduleModal` embebido; conducen a la página de calendario, como la navtab inferior. Se retira el `StaffScheduleModal` de los dashboards Master/Admin y de la barra inferior.
 
