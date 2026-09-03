@@ -46,7 +46,7 @@ export {
   resolveOpeningCarryIn,
 } from './opening-carry.ts';
 export { mondayOnOrBefore, nextWeekStart, previousWeekStart, weekBounds } from './week-dates.ts';
-export { loadEmployeeBoundaryFacts } from './load-employee-facts.ts';
+export { loadEmployeeBoundaryFacts, loadEmployeeBoundaryFactsBatch } from './load-employee-facts.ts';
 export {
   persistOvertimeCostForEmployees,
   recalculateAllBalancesAndPersist,
