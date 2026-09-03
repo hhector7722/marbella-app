@@ -2642,7 +2642,7 @@ button[data-element='catalog-filter'] {
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-evento'] {
   margin-top: 2px;
-  border-left-color: var(--color-aviso);
+  border-left-color: #facc15;
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-evento-label'] {
   color: var(--home-widget-ink-secondary);
@@ -2650,11 +2650,18 @@ button[data-element='catalog-filter'] {
 [data-component='StaffWeekSchedule'] [data-element='weekend-evento-value'] {
   color: var(--home-widget-ink);
 }
+[data-component='StaffWeekSchedule'] [data-element='weekend-evento-detail'] {
+  margin-top: 2px;
+  border-left-color: #fb923c;
+}
+[data-component='StaffWeekSchedule'] [data-element='weekend-evento-detail-value'][data-segment-kind='hours'] {
+  border-left-color: #fb923c;
+}
 [data-component='StaffWeekSchedule'] [data-element='weekend-evento-detail-value'][data-segment-kind='pax'] {
-  border-left-color: var(--home-wallpaper);
+  border-left-color: #f472b6;
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-evento-detail-value'][data-segment-kind='categories'] {
-  border-left-color: var(--color-envolvente-alto);
+  border-left-color: #ffffff;
 }
 [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] {
   grid-area: semana;
