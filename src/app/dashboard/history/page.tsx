@@ -5,8 +5,6 @@ import { createClient } from "@/utils/supabase/client";
 import {
     CloudSun,
     Receipt,
-    ChevronLeft,
-    ChevronRight,
     X,
     Pencil,
     Trash2,
@@ -417,37 +415,29 @@ const CashBreakdownModal = ({
                 ) : (
                 <div className="flex min-h-0 flex-1 flex-col">
                     <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar p-6">
-                    <div className="space-y-2">
-                        {Object.entries(displayBreakdown || {}).sort((a, b) => parseFloat(b[0]) - parseFloat(a[0])).map(([den, qty]) => {
-                            const denNum = parseFloat(den);
-                            const qtyNum = Number(qty) || 0;
-                            const lineTotal = denNum * qtyNum;
-                            const imgSrc = CURRENCY_IMAGES[denNum];
+                    <div className="grid grid-cols-3 gap-x-2.5 gap-y-1.5 p-0.5 sm:grid-cols-5">
+                        {DENOMINATIONS.map((denom) => {
+                            const qty = Number(displayBreakdown?.[String(denom)] ?? displayBreakdown?.[denom] ?? 0);
                             return (
-                            <div key={den} className="flex items-center justify-between gap-3 p-3 sm:p-4 bg-gray-50 rounded-[1.5rem] border border-gray-100/50">
-                                <div className="flex items-center gap-3 min-w-0">
-                                    {imgSrc ? (
-                                        <div className="h-10 w-14 shrink-0 flex items-center justify-center">
-                                            <Image
-                                                src={imgSrc}
-                                                alt={denNum < 1 ? `${(denNum * 100).toFixed(0)}c` : `${den}€`}
-                                                width={56}
-                                                height={40}
-                                                className="h-full w-auto object-contain"
-                                            />
-                                        </div>
-                                    ) : null}
-                                    <span className="text-xs font-black text-gray-400 shrink-0">
-                                        {denNum < 1 ? `${(denNum * 100).toFixed(0)}c` : `${den}€`}
-                                    </span>
+                            <div key={denom} className="flex flex-col items-center gap-0.5">
+                                <div className="flex h-8 min-h-[36px] w-full items-center justify-center rounded-lg sm:h-9">
+                                    <Image
+                                        src={CURRENCY_IMAGES[denom]}
+                                        alt={denom < 1 ? `${(denom * 100).toFixed(0)}c` : `${denom}€`}
+                                        width={140}
+                                        height={140}
+                                        className="pointer-events-none h-full w-auto object-contain drop-shadow-lg"
+                                    />
                                 </div>
-                                <div className="flex items-center gap-3 shrink-0">
-                                    <span className="text-xs font-black text-gray-400">
-                                        {qtyNum > 0 ? `x${qtyNum}` : ' '}
+                                <div className="w-full text-center">
+                                    <span className="mb-0 block text-[7px] font-black uppercase tracking-widest text-gray-500">
+                                        {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
                                     </span>
-                                    <span className="text-sm font-black text-[#36606F] min-w-[50px] text-right">
-                                        {lineTotal > 0.005 ? formatCurrencySpanish(lineTotal) : ' '}
-                                    </span>
+                                    <div className="mx-auto flex h-8 w-[86%] items-center justify-center rounded-lg border border-zinc-200 bg-white shadow-sm">
+                                        <span className="text-[9px] font-black tabular-nums tracking-tighter text-zinc-700">
+                                            {qty > 0 ? qty : ' '}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                             );
@@ -1322,16 +1312,6 @@ export default function HistoryPage() {
         }
     };
 
-    const handleNavigateClosing = (direction: 'next' | 'prev') => {
-        if (!selectedClosing) return;
-        const currentIndex = closings.findIndex(c => c.id === selectedClosing.id);
-        const nextIndex = direction === 'next' ? currentIndex - 1 : currentIndex + 1;
-        if (nextIndex >= 0 && nextIndex < closings.length) {
-            const dir = direction === 'next' ? 'left' : 'right';
-            triggerNavigate(closings[nextIndex], dir);
-        }
-    };
-
     return (
         <>
         <DashboardDetailLayout
@@ -1390,18 +1370,18 @@ export default function HistoryPage() {
                         className="rounded-[var(--radio-control)] bg-[rgb(255_255_255/0.1)] px-2 pt-3 pb-4"
                     >
                         <div className="flex items-center justify-start">
-                            <span className="text-xs font-black text-zinc-950 leading-none">
+                            <span className="text-sm font-black text-zinc-950 leading-none">
                                 Mensual
                             </span>
                         </div>
                         <div className="mt-3 grid grid-cols-3">
                             <div className="flex flex-col items-center justify-center text-center">
                                 <div className="flex items-center justify-center leading-none">
-                                    <span className="whitespace-nowrap text-sm sm:text-base md:text-lg font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
+                                    <span className="whitespace-nowrap text-base sm:text-lg md:text-xl font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
                                         {formatValue(summary.totalNet, 'net_sales')}
                                     </span>
                                 </div>
-                                <span className="mt-1 text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest leading-none">
+                                <span className="mt-1 text-[8px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest leading-none">
                                     VENTA NETA
                                 </span>
                             </div>
@@ -1414,24 +1394,24 @@ export default function HistoryPage() {
                                         const isNeutral = popPercent >= -5 && popPercent <= 5;
                                         const triangleSymbol = isNeutral ? '' : (popPercent > 5 ? '▲' : '▼');
                                         return popPercent === 0 ? null : (
-                                            <span className="whitespace-nowrap text-sm sm:text-base md:text-lg font-extrabold tabular-nums flex items-center gap-1 month-cal-kpi-value text-white leading-none">
+                                            <span className="whitespace-nowrap text-base sm:text-lg md:text-xl font-extrabold tabular-nums flex items-center gap-1 month-cal-kpi-value text-white leading-none">
                                                 {!isNeutral && <span className="text-[10px] sm:text-xs md:text-sm leading-none">{triangleSymbol}</span>}
                                                 <span>{Math.abs(popPercent).toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 1 })}%</span>
                                             </span>
                                         );
                                     })()}
                                 </div>
-                                <span className="mt-1 text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest leading-none">
+                                <span className="mt-1 text-[8px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest leading-none">
                                     RENDIMIENTO
                                 </span>
                             </div>
                             <div className="flex flex-col items-center justify-center text-center">
                                 <div className="flex items-center justify-center leading-none">
-                                    <span className="whitespace-nowrap text-sm sm:text-base md:text-lg font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
+                                    <span className="whitespace-nowrap text-base sm:text-lg md:text-xl font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
                                         {formatValue(summary.totalGross, 'tpv_sales')}
                                     </span>
                                 </div>
-                                <span className="mt-1 text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-widest leading-none">
+                                <span className="mt-1 text-[8px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest leading-none">
                                     VENTAS
                                 </span>
                             </div>
@@ -1444,16 +1424,20 @@ export default function HistoryPage() {
                     >
                         <div className="flex items-baseline justify-between gap-2">
                             <div className="flex min-w-0 flex-col gap-1">
-                                <span className="text-xs font-black text-zinc-950 leading-none">
+                                <span className="text-sm font-black text-zinc-950 leading-none">
                                     Último cierre
                                 </span>
-                                {lastClosing && (
-                                    <span className="text-[9px] font-normal text-zinc-400 tabular-nums leading-none">
-                                        {format(parseLocalSafe(lastClosing.closing_date), "eeee d 'de' MMMM 'de' yyyy", { locale: es })}
-                                    </span>
-                                )}
+                                {lastClosing && (() => {
+                                    const fechaRaw = format(parseLocalSafe(lastClosing.closing_date), "eeee d 'de' MMMM", { locale: es });
+                                    const fecha = fechaRaw.charAt(0).toUpperCase() + fechaRaw.slice(1);
+                                    return (
+                                        <span className="text-[9px] font-normal text-zinc-400 tabular-nums leading-none">
+                                            {fecha}
+                                        </span>
+                                    );
+                                })()}
                             </div>
-                            <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-2.5 gap-y-0.5 text-[9px] font-normal text-zinc-400 tabular-nums">
+                            <div className="flex min-w-0 items-center justify-end gap-x-2.5 text-[9px] font-normal text-zinc-400 tabular-nums">
                                 {lastClosingMetrics.weatherLabel ? (
                                     <span className="inline-flex items-center gap-1">
                                         {lastClosingMetrics.weatherIcon ? (
@@ -1515,10 +1499,10 @@ export default function HistoryPage() {
                                     key={item.label}
                                     className="flex min-w-0 flex-col items-center justify-center text-center"
                                 >
-                                    <span className="text-[9px] sm:text-[10px] md:text-xs font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
+                                    <span className="text-[10px] sm:text-xs md:text-sm font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
                                         {item.value}
                                     </span>
-                                    <span className="mt-1 text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-wider leading-tight">
+                                    <span className="mt-1 text-[8px] md:text-[9px] font-black text-zinc-400 uppercase tracking-wider leading-tight">
                                         {item.label}
                                     </span>
                                 </div>
@@ -1551,10 +1535,10 @@ export default function HistoryPage() {
                                     key={item.label}
                                     className="flex min-w-0 flex-col items-center justify-center text-center"
                                 >
-                                    <span className="text-[9px] sm:text-[10px] md:text-xs font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
+                                    <span className="text-[10px] sm:text-xs md:text-sm font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
                                         {item.value}
                                     </span>
-                                    <span className="mt-1 text-[6.5px] md:text-[7.5px] font-black text-zinc-400 uppercase tracking-wider leading-tight">
+                                    <span className="mt-1 text-[8px] md:text-[9px] font-black text-zinc-400 uppercase tracking-wider leading-tight">
                                         {item.label}
                                     </span>
                                 </div>
@@ -1799,49 +1783,29 @@ export default function HistoryPage() {
                             onTouchEnd={handleTouchEnd}
                             onClick={e => e.stopPropagation()}
                         >
-                        <div className="flex items-center justify-center gap-1 px-8 pt-3 md:gap-2">
-                            <button
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); handleNavigateClosing('prev'); }}
-                                className="p-1 transition-all disabled:opacity-30 active:scale-90 text-zinc-400 hover:text-zinc-700 shrink-0 min-h-[32px] min-w-[32px] flex items-center justify-center group"
-                                disabled={closings.findIndex(c => c.id === selectedClosing.id) === closings.length - 1}
-                                aria-label="Día anterior"
-                                title="Día anterior"
-                            >
-                                <ChevronLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
-                            </button>
-                            {isEditing ? (
-                                <input
-                                    type="datetime-local"
-                                    value={(() => {
-                                        const raw = editData?.closed_at ?? selectedClosing.closed_at;
-                                        const d = new Date(raw);
-                                        return isNaN(d.getTime()) ? '' : formatDateTimeLocalInput(d);
-                                    })()}
-                                    onChange={(e) => {
-                                        if (!editData) return;
-                                        const d = parseDateTimeLocal(e.target.value);
-                                        setEditData({
-                                            ...editData,
-                                            closed_at: d.toISOString(),
-                                            closing_date: formatClosingDate(d),
-                                        });
-                                    }}
-                                    className="bg-transparent border border-zinc-200 rounded-xl px-2 py-1 text-[#36606F] font-black text-[10px] sm:text-[11px] uppercase tracking-widest text-center outline-none focus:ring-1 focus:ring-[#36606F]/30 w-auto cursor-pointer min-h-[32px]"
-                                    aria-label="Fecha y hora del cierre"
-                                />
-                            ) : null}
-                            <button
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); handleNavigateClosing('next'); }}
-                                className="p-1 transition-all disabled:opacity-30 active:scale-90 text-zinc-400 hover:text-zinc-700 shrink-0 min-h-[32px] min-w-[32px] flex items-center justify-center group"
-                                disabled={closings.findIndex(c => c.id === selectedClosing.id) === 0}
-                                aria-label="Día siguiente"
-                                title="Día siguiente"
-                            >
-                                <ChevronRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
-                            </button>
+                        {isEditing && (
+                        <div className="flex items-center justify-center px-8 pt-3">
+                            <input
+                                type="datetime-local"
+                                value={(() => {
+                                    const raw = editData?.closed_at ?? selectedClosing.closed_at;
+                                    const d = new Date(raw);
+                                    return isNaN(d.getTime()) ? '' : formatDateTimeLocalInput(d);
+                                })()}
+                                onChange={(e) => {
+                                    if (!editData) return;
+                                    const d = parseDateTimeLocal(e.target.value);
+                                    setEditData({
+                                        ...editData,
+                                        closed_at: d.toISOString(),
+                                        closing_date: formatClosingDate(d),
+                                    });
+                                }}
+                                className="bg-transparent border border-zinc-200 rounded-xl px-2 py-1 text-[#36606F] font-black text-[10px] sm:text-[11px] uppercase tracking-widest text-center outline-none focus:ring-1 focus:ring-[#36606F]/30 w-auto cursor-pointer min-h-[32px]"
+                                aria-label="Fecha y hora del cierre"
+                            />
                         </div>
+                        )}
                         <div className="px-8 pb-8 pt-3 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
                             {(() => {
                                 const current = isEditing ? editData : selectedClosing;
@@ -1947,7 +1911,7 @@ export default function HistoryPage() {
 
                                 return (
                                     <div className="flex flex-col divide-y divide-zinc-100">
-                                        <div className="flex items-center justify-center gap-4 pb-2">
+                                        <div className="flex items-center justify-center gap-2 pb-2">
                                             <div className="flex items-center gap-1 opacity-85">
                                                 {(() => {
                                                     const weatherId = weatherIdFromLabel(selectedClosing.weather);
@@ -1963,17 +1927,17 @@ export default function HistoryPage() {
                                                     }
                                                     return <CloudSun size={13} className="text-amber-500" />;
                                                 })()}
-                                                <span className="text-[9.5px] font-normal uppercase text-zinc-500 tracking-wider">
+                                                <span className="text-[8px] font-normal uppercase text-zinc-500 tracking-wider">
                                                     {selectedClosing.weather || 'Clima N/A'}
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-1 opacity-85">
-                                                <span className="text-[9.5px] font-normal uppercase tracking-wider text-zinc-500">
+                                                <span className="text-[8px] font-normal uppercase tracking-wider text-zinc-500">
                                                     {(selectedClosing.tickets_count || 0).toLocaleString('es-ES')} TICKETS
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-1 opacity-85">
-                                                <span className="text-[9.5px] font-normal uppercase tracking-wider text-zinc-500">
+                                                <span className="text-[8px] font-normal uppercase tracking-wider text-zinc-500">
                                                     {avgTicketVal > 0 
                                                         ? `${formatCurrencyModal(avgTicketVal)} ` 
                                                         : ''}DE TICKET MEDIO
@@ -1981,7 +1945,7 @@ export default function HistoryPage() {
                                             </div>
                                         </div>
 
-                                        <div className="pt-4 pb-2">
+                                        <div className="h-14 flex items-center">
                                             <RowItem
                                                 label="Ventas"
                                                 value={getValue('tpv_sales')}
@@ -1989,13 +1953,13 @@ export default function HistoryPage() {
                                                 editable={true}
                                             />
                                         </div>
-                                        <div className="py-2">
+                                        <div className="h-14 flex items-center">
                                             <RowItem
                                                 label="Venta Neta"
                                                 value={getValue('net_sales')}
                                             />
                                         </div>
-                                        <div className="py-2">
+                                        <div className="h-14 flex items-center">
                                             <RowItem
                                                 label="Tarjeta"
                                                 value={getValue('sales_card')}
@@ -2003,7 +1967,7 @@ export default function HistoryPage() {
                                                 editable={true}
                                             />
                                         </div>
-                                        <div className="py-2">
+                                        <div className="h-14 flex items-center">
                                             <RowItem
                                                 label="Efectivo"
                                                 value={getValue('cash_counted')}
@@ -2011,7 +1975,7 @@ export default function HistoryPage() {
                                                 openEditor={() => setShowCashDetails(true)}
                                             />
                                         </div>
-                                        <div className="py-2">
+                                        <div className="h-14 flex items-center">
                                             <RowItem
                                                 label="Pendiente Pago"
                                                 value={getValue('sales_pending')}
@@ -2019,7 +1983,7 @@ export default function HistoryPage() {
                                                 editable={true}
                                             />
                                         </div>
-                                        <div className="py-2">
+                                        <div className="h-14 flex items-center">
                                             <RowItem
                                                 label="Cobros Pendientes"
                                                 value={collectionsValue}
@@ -2027,7 +1991,7 @@ export default function HistoryPage() {
                                                 editable={true}
                                             />
                                         </div>
-                                        <div className="py-2">
+                                        <div className="h-14 flex items-center">
                                             <RowItem
                                                 label="Diferencia"
                                                 value={getValue('difference')}

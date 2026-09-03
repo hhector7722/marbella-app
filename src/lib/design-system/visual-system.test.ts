@@ -597,7 +597,6 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             'app/dashboard/labor/page.tsx',
             'app/dashboard/consumo-personal/page.tsx',
             'app/dashboard/overtime/page.tsx',
-            'components/modals/DaySummaryModal.tsx',
             'components/dashboards/AdminDashboardView.tsx',
             'components/tips/TipConfirmDistributionModal.tsx',
             'components/tips/TipDistributionHistorySection.tsx',

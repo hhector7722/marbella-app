@@ -830,6 +830,7 @@ export default function HistoryPage() {
                     employee_name: l.first_name,
                     in_time: l.in_time,
                     out_time: l.out_time,
+                    event_type: l.event_type,
                     clock_out_show_no_registrada: l.clock_out_show_no_registrada,
                 }));
             }
@@ -846,7 +847,7 @@ export default function HistoryPage() {
         const { startIso, endIso } = madridDayUtcRangeIso(date);
         const { data: logsRaw, error } = await supabase
             .from('time_logs')
-            .select('id, user_id, clock_in, clock_out, clock_out_show_no_registrada')
+            .select('id, user_id, clock_in, clock_out, event_type, clock_out_show_no_registrada')
             .gte('clock_in', startIso)
             .lte('clock_in', endIso);
 
@@ -881,6 +882,7 @@ export default function HistoryPage() {
                     employee_name: p?.first_name ?? '',
                     in_time: formatMadridHmFromIso(log.clock_in) ?? '',
                     out_time: log.clock_out ? (formatMadridHmFromIso(log.clock_out) ?? '') : '',
+                    event_type: log.event_type || 'regular',
                     clock_out_show_no_registrada: log.clock_out_show_no_registrada === true,
                 };
             }),

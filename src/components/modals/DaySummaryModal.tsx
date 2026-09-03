@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -9,7 +9,6 @@ import { createManagerFichaje } from '@/app/actions/overtime';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { WorkerPersonRow } from '@/components/staff/WorkerPersonRow';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { canManageStaffAttendance } from '@/lib/staff/attendance-access';
 import { createClient } from '@/utils/supabase/client';
@@ -28,6 +27,7 @@ export type DaySummaryLog = {
     employee_name?: string;
     in_time?: string;
     out_time?: string;
+    event_type?: string;
     clock_out_show_no_registrada?: boolean;
 };
 
@@ -246,28 +246,42 @@ export function DaySummaryModal({
                                 const firstName = log.first_name || log.employee_name || '?';
                                 const lastName = log.last_name || '';
                                 const name = `${firstName} ${lastName}`.trim() || '?';
-                                const outLabel = log.clock_out_show_no_registrada
-                                    ? 'Salida no registrada'
-                                    : (log.out_time || '--:--');
+                                const isNoRegistered =
+                                    log.event_type === 'no_registered' ||
+                                    log.clock_out_show_no_registrada === true;
 
                                 return (
-                                    <WorkerPersonRow
+                                    <button
                                         key={log.id}
-                                        name={name}
-                                        subtitle={
-                                            <>
-                                                <span>{log.in_time || '--:--'}</span>
-                                                <span className="text-zinc-300">·</span>
-                                                <span className={log.clock_out_show_no_registrada ? 'text-rose-600' : undefined}>
-                                                    {outLabel}
-                                                </span>
-                                            </>
-                                        }
+                                        type="button"
                                         onClick={() => {
                                             trackDaySummary(name, { selectedUserId: log.user_id });
                                             onSelectLog(log.user_id);
                                         }}
-                                    />
+                                        className="flex w-full min-w-0 items-center justify-between gap-3 border-b border-zinc-50 py-3.5 text-left transition-colors last:border-0 hover:bg-zinc-50/80"
+                                    >
+                                        <span className="min-w-0 truncate text-[15px] font-medium text-zinc-900">
+                                            {name}
+                                        </span>
+                                        <span className="flex shrink-0 items-center gap-1.5 text-[13px] font-semibold tabular-nums">
+                                            <span className="text-emerald-700">
+                                                {log.in_time || '--:--'}
+                                            </span>
+                                            <span className="font-normal text-zinc-400">–</span>
+                                            <span className="text-red-800">
+                                                {log.out_time || '--:--'}
+                                            </span>
+                                            {isNoRegistered ? (
+                                                <span
+                                                    className="inline-flex shrink-0 items-center justify-center overflow-visible"
+                                                    title="Salida no registrada (olvidó fichar)"
+                                                    aria-label="Salida no registrada"
+                                                >
+                                                    <X size={11} strokeWidth={3} className="shrink-0 text-red-500" />
+                                                </span>
+                                            ) : null}
+                                        </span>
+                                    </button>
                                 );
                             })}
                         </div>

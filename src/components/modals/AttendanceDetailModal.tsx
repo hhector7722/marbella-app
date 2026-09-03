@@ -706,6 +706,41 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
             instance="attendance-detail"
             variant="compact"
             layer="base"
+            footer={
+                !loading ? (
+                    isManager ? (
+                        <>
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                instance="attendance-detail-salir"
+                                onClick={onClose}
+                            >
+                                Salir
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="primary"
+                                instance="attendance-detail-guardar"
+                                onClick={handleSave}
+                                loading={isSaving}
+                                loadingLabel="Guardar"
+                            >
+                                Guardar
+                            </Button>
+                        </>
+                    ) : (
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            instance="attendance-detail-cerrar"
+                            onClick={onClose}
+                        >
+                            Cerrar
+                        </Button>
+                    )
+                ) : undefined
+            }
             headerTrailing={
                 showAddFichajeButton ? (
                     <button
@@ -1025,6 +1060,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                             instance="attendance-detail-borrar-dia"
                                             onClick={handleDeleteDay}
                                             disabled={isSaving}
+                                            className="w-full"
                                         >
                                             Borrar día
                                         </Button>
@@ -1032,38 +1068,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                 </div>
                             )}
 
-                            <div className="mt-1 flex gap-1.5 shrink-0">
-                                {isManager ? (
-                                    <>
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                            instance="attendance-detail-salir"
-                                            onClick={onClose}
-                                            className="flex-1"
-                                        >
-                                            Salir
-                                        </Button>
-                                        <button
-                                            onClick={handleSave}
-                                            disabled={isSaving}
-                                            className="flex-[1.5] min-h-[48px] rounded-xl bg-emerald-500 text-white font-black text-[8px] uppercase tracking-widest active:scale-95 transition-all shadow-md flex items-center justify-center disabled:opacity-50"
-                                        >
-                                            {isSaving ? <LoadingSpinner size="sm" /> : 'Guardar'}
-                                        </button>
-                                    </>
-                                ) : (
-                                    <Button
-                                        type="button"
-                                        variant="secondary"
-                                        instance="attendance-detail-cerrar"
-                                        onClick={onClose}
-                                    >
-                                        Cerrar
-                                    </Button>
-                                )}
                             </div>
-                        </div>
                     )}
                 </div>
 

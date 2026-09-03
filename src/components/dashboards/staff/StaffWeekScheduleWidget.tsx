@@ -106,10 +106,9 @@ function groupActivities(acts: BarActivity[]): BarActivity[] {
     return Array.from(map.values()).sort((a, b) => a.startTime.localeCompare(b.startTime));
 }
 
-function formatActivityLine(act: BarActivity): string {
+function formatActivityDetailLine(act: BarActivity): string {
     const parts = [
         `${fmtHour(act.startTime)} - ${fmtHour(act.endTime)}`,
-        act.activityName,
         act.totalParticipants != null && act.totalParticipants > 0
             ? `${act.totalParticipants} pax`
             : null,
@@ -118,10 +117,16 @@ function formatActivityLine(act: BarActivity): string {
     return parts.filter(Boolean).join(' · ');
 }
 
-function formatDayEvents(acts: BarActivity[] | undefined): string | null {
+function formatDayEventNames(acts: BarActivity[] | undefined): string | null {
     const grouped = groupActivities(acts ?? []);
     if (grouped.length === 0) return null;
-    return grouped.map(formatActivityLine).join(' · ');
+    return grouped.map((a) => a.activityName).join(' · ');
+}
+
+function formatDayEventDetails(acts: BarActivity[] | undefined): string | null {
+    const grouped = groupActivities(acts ?? []);
+    if (grouped.length === 0) return null;
+    return grouped.map(formatActivityDetailLine).join(' · ');
 }
 
 function shiftForDay(shifts: ShiftRow[], day: Date): ShiftRow | null {
@@ -151,11 +156,13 @@ function WeekendDayColumn({
     day,
     shift,
     eventLabel,
+    eventDetail,
     onOpenDay,
 }: {
     day: Date;
     shift: ShiftRow | null;
     eventLabel: string | null;
+    eventDetail: string | null;
     onOpenDay?: (ymd: string) => void;
 }) {
     const ymd = format(day, 'yyyy-MM-dd');
@@ -202,6 +209,13 @@ function WeekendDayColumn({
                             </span>
                         ) : null}
                     </div>
+                    <div data-element="weekend-evento-detail" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
+                        {eventDetail ? (
+                            <span data-element="weekend-evento-detail-value" className="min-w-0 truncate text-[6px] font-medium leading-none opacity-80">
+                                {eventDetail}
+                            </span>
+                        ) : null}
+                    </div>
                 </div>
             </div>
         </button>
@@ -232,13 +246,15 @@ function WeekExpansion({
             <WeekendDayColumn
                 day={saturday}
                 shift={shiftForDay(shifts, saturday)}
-                eventLabel={formatDayEvents(eventsByDate[satKey])}
+                eventLabel={formatDayEventNames(eventsByDate[satKey])}
+                eventDetail={formatDayEventDetails(eventsByDate[satKey])}
                 onOpenDay={onOpenDay}
             />
             <WeekendDayColumn
                 day={sunday}
                 shift={shiftForDay(shifts, sunday)}
-                eventLabel={formatDayEvents(eventsByDate[sunKey])}
+                eventLabel={formatDayEventNames(eventsByDate[sunKey])}
+                eventDetail={formatDayEventDetails(eventsByDate[sunKey])}
                 onOpenDay={onOpenDay}
             />
         </div>
@@ -338,6 +354,15 @@ export function StaffWeekScheduleWidget({ userId, onOpenNote }: StaffWeekSchedul
             return startOfMonth(next);
         });
     };
+
+    const handleOpenNoteFromDay = useCallback(
+        (ymd: string) => {
+            if (!onOpenNote) return;
+            setDayModalDate(null);
+            onOpenNote(ymd);
+        },
+        [onOpenNote],
+    );
 
     return (
         <div
@@ -462,14 +487,7 @@ export function StaffWeekScheduleWidget({ userId, onOpenNote }: StaffWeekSchedul
                 onClose={() => setDayModalDate(null)}
                 date={dayModalDate}
                 userId={userId}
-                onOpenNote={
-                    onOpenNote
-                        ? (ymd) => {
-                            setDayModalDate(null);
-                            onOpenNote(ymd);
-                        }
-                        : undefined
-                }
+                onOpenNote={onOpenNote ? handleOpenNoteFromDay : undefined}
                 onNavigateDay={(delta) => {
                     if (!dayModalDate) return;
                     const next = parseLocalSafe(dayModalDate);

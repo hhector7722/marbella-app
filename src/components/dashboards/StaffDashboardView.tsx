@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, useCallback, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from "@/utils/supabase/client";
 import {
@@ -411,6 +411,11 @@ export default function StaffDashboardView() {
             router.replace('/staff/dashboard');
         }
     };
+
+    const handleOpenScheduleNote = useCallback((ymd: string) => {
+        setScheduleFocusDate(ymd);
+        setIsScheduleModalOpen(true);
+    }, []);
 
 
 
@@ -911,10 +916,7 @@ export default function StaffDashboardView() {
                 <HomeScreenSlot size="panel" instance="staff-horarios">
                     <StaffWeekScheduleWidget
                         userId={userId}
-                        onOpenNote={(ymd) => {
-                            setScheduleFocusDate(ymd);
-                            setIsScheduleModalOpen(true);
-                        }}
+                        onOpenNote={handleOpenScheduleNote}
                     />
                 </HomeScreenSlot>
 
