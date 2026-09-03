@@ -10,7 +10,7 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 /** Mismos destinatarios que fn_notify_reservation_insert / save_client_event_order_by_token */
-const ALLOWED_FIRST_NAMES = ['alba', 'hector', 'pere', 'hernan'] as const;
+const ALLOWED_FIRST_NAMES = ['alba', 'hector', 'fernando', 'hernan'] as const;
 
 if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
     webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);

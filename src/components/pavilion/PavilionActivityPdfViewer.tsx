@@ -10,6 +10,7 @@ import {
 import {
   getDocument,
   GlobalWorkerOptions,
+  version as pdfjsVersion,
   type PDFDocumentProxy,
 } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { cn } from '@/lib/utils';
@@ -27,7 +28,7 @@ import {
 
 if (typeof window !== 'undefined' && !GlobalWorkerOptions.workerSrc) {
   GlobalWorkerOptions.workerSrc =
-    'https://unpkg.com/pdfjs-dist@5.5.207/legacy/build/pdf.worker.min.mjs';
+    `https://unpkg.com/pdfjs-dist@${pdfjsVersion}/legacy/build/pdf.worker.min.mjs`;
 }
 
 /** Raster extra para pellizco nítido hasta ~4× sobre el zoom base */

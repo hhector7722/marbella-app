@@ -38,6 +38,7 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-03
 
+- **Notificaciones: Pere sale y entra Fernando.** Los avisos de nueva reserva y de pedido cliente (campana y push) dejan de avisar a Pere y pasan a avisar a Fernando. Destinatarios: alba, hernan, fernando, hector.
 - **Horarios: los accesos de Master y Admin navegan a `/horario`.** El atajo de `/master/dashboard` y el ítem del modal «Otros» de `/dashboard` ya no abren el `StaffScheduleModal` embebido; conducen a la página de calendario, como la navtab inferior. Se retira el `StaffScheduleModal` de los dashboards Master/Admin y de la barra inferior.
 
 ## 2026-09-02
