@@ -5,13 +5,13 @@ import { useRouter } from 'next/navigation';
 import { endOfWeek, format, startOfWeek, subWeeks } from 'date-fns';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'sonner';
+import { Plus, Minus, ShoppingCart, RefreshCw } from 'lucide-react';
 import { getOvertimeData } from '@/app/actions/overtime';
 import DashboardVentasSection from '@/components/dashboards/DashboardVentasSection';
 import MasterShortcutGrid from '@/components/dashboards/MasterShortcutGrid';
 import { HomeScreen, HomeScreenSlot } from '@/components/dashboards/HomeScreen';
-import { StaffAttendanceSummaryWidget } from '@/components/dashboards/staff/StaffAttendanceSummaryWidget';
+import { MasterPlantillaAttendanceWidget } from '@/components/dashboards/MasterPlantillaAttendanceWidget';
 import { StaffWeekScheduleBlock } from '@/components/dashboards/staff/StaffWeekScheduleBlock';
-import { AttendanceDetailModal } from '@/components/modals/AttendanceDetailModal';
 import { MasterMoreFunctionsModal } from '@/components/modals/MasterMoreFunctionsModal';
 import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal, type BoxOption } from '@/components/CashChangeModal';
@@ -30,6 +30,8 @@ import {
     type PlantillaEmployeeRow,
 } from '@/lib/staff/plantilla-employees';
 import { canManageStaffAttendance } from '@/lib/staff/attendance-access';
+import { PurchaseMultiSourceForm, type PaymentSourceOption, type PurchaseMultiSourcePayload } from '@/components/PurchaseMultiSourceForm';
+import { AccessMenuGrid, CatalogTile } from '@/components/catalog/CatalogTile';
 
 type MasterDashboardViewProps = {
     initialData?: {
@@ -57,6 +59,14 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
     const [cashOpDate, setCashOpDate] = useState(formatCashCountDateInput);
     const [boxInventoryMap, setBoxInventoryMap] = useState<Record<number, number>>({});
 
+    // Caja inicial: menú de acciones + procesos (Entrada / Salida / Compra / Arqueo).
+    const [isCajaInicialActionsOpen, setIsCajaInicialActionsOpen] = useState(false);
+    const [cashModalMode, setCashModalMode] = useState<'none' | 'in' | 'out'>('none');
+    const [selectedCashBox, setSelectedCashBox] = useState<any>(null);
+    const [showPurchaseMultiSourceModal, setShowPurchaseMultiSourceModal] = useState(false);
+    const [purchaseDate, setPurchaseDate] = useState(formatCashCountDateInput);
+    const [purchaseInventoriesByBoxId, setPurchaseInventoriesByBoxId] = useState<Record<string, Record<number, number>>>({});
+
     const [closingSalesSummary, setClosingSalesSummary] = useState(
         initialData?.liveTickets || { total: 0, count: 0 }
     );
@@ -72,9 +82,6 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
     const [userRole, setUserRole] = useState<'staff' | 'manager' | 'supervisor'>('manager');
     const [userEmail, setUserEmail] = useState('');
     const [plantillaEmployees, setPlantillaEmployees] = useState<PlantillaEmployeeRow[]>([]);
-    const [attendanceRefreshKey, setAttendanceRefreshKey] = useState(0);
-    const [isDayDetailModalOpen, setIsDayDetailModalOpen] = useState(false);
-    const [selectedDayDate, setSelectedDayDate] = useState<Date | null>(null);
     const [isMoreFunctionsModalOpen, setIsMoreFunctionsModalOpen] = useState(false);
 
     const changeBoxes = useMemo(
@@ -272,20 +279,143 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
         toast.success(visible ? 'Trabajador visible en plantilla' : 'Trabajador oculto en plantilla');
     };
 
-    const buildPaymentSources = (): BoxOption[] => {
-        const list: BoxOption[] = [];
+    const buildPaymentSources = (): (BoxOption & PaymentSourceOption)[] => {
+        const list: (BoxOption & PaymentSourceOption)[] = [];
         const op = boxes.find((b: any) => b.type === 'operational');
         const changes = boxes.filter((b: any) => b.type === 'change').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
         const tpvBoxes = boxes.filter((b: any) => b.type === 'tpv').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
-        if (op) list.push({ id: op.id, name: 'Caja inicial', hasInventory: true, image_url: op.image_url });
-        changes.forEach((b: any, i: number) => list.push({ id: b.id, name: `Caja cambio ${i + 1}`, hasInventory: true, image_url: b.image_url }));
+        if (op) list.push({ id: op.id, name: 'Caja inicial', shortLabel: 'Inicial', hasInventory: true, image_url: op.image_url });
+        changes.forEach((b: any, i: number) => list.push({ id: b.id, name: `Caja cambio ${i + 1}`, shortLabel: `Cambio ${i + 1}`, hasInventory: true, image_url: b.image_url }));
         if (tpvBoxes.length > 0) {
-            tpvBoxes.forEach((b: any) => list.push({ id: b.id, name: b.name, hasInventory: false, image_url: b.image_url }));
+            tpvBoxes.forEach((b: any) => list.push({ id: b.id, name: b.name, shortLabel: b.name, hasInventory: false, image_url: b.image_url }));
         } else {
-            list.push({ id: 'tpv1', name: 'TPV 1', hasInventory: false });
-            list.push({ id: 'tpv2', name: 'TPV 2', hasInventory: false });
+            list.push({ id: 'tpv1', name: 'TPV 1', shortLabel: 'TPV 1', hasInventory: false });
+            list.push({ id: 'tpv2', name: 'TPV 2', shortLabel: 'TPV 2', hasInventory: false });
         }
         return list;
+    };
+
+    const operationalBox = boxes.find((b: any) => b.type === 'operational');
+
+    const openCajaInicialActions = () => setIsCajaInicialActionsOpen(true);
+
+    const openCajaTreasuryModal = async (box: any, mode: 'in' | 'out') => {
+        setSelectedCashBox(box);
+        const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', box.id).gt('quantity', 0);
+        const initial: Record<number, number> = {};
+        data?.forEach((d) => {
+            initial[Number(d.denomination)] = d.quantity;
+        });
+        setBoxInventoryMap(initial);
+        setIsCajaInicialActionsOpen(false);
+        setCashModalMode(mode);
+    };
+
+    const handleCashTransaction = async (total: number, breakdown: any, notesOrOutBreakdown: any, customDate?: string) => {
+        if (!selectedCashBox) return;
+        try {
+            const payload: any = {
+                box_id: selectedCashBox.id,
+                type: cashModalMode === 'in' ? 'IN' : 'OUT',
+                amount: total,
+                breakdown,
+                notes: notesOrOutBreakdown as string,
+            };
+            if (customDate) payload.created_at = customDate;
+            await supabase.from('treasury_log').insert(payload);
+            setCashModalMode('none');
+            setSelectedCashBox(null);
+            await refresh();
+            toast.success(cashModalMode === 'in' ? 'Entrada registrada' : 'Salida registrada');
+        } catch (err) {
+            console.error(err);
+            toast.error('Error al registrar el movimiento');
+        }
+    };
+
+    const openPurchaseMultiSourceModal = async () => {
+        const op = boxes.find((b: any) => b.type === 'operational');
+        const changeBoxes = boxes.filter((b: any) => b.type === 'change').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+        const boxesToLoad = [op, ...changeBoxes].filter(Boolean);
+        const inv: Record<string, Record<number, number>> = {};
+        for (const box of boxesToLoad) {
+            const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', box.id).gt('quantity', 0);
+            const map: Record<number, number> = {};
+            data?.forEach((d: any) => { map[Number(d.denomination)] = d.quantity; });
+            inv[box.id] = map;
+        }
+        setPurchaseInventoriesByBoxId(inv);
+        setIsCajaInicialActionsOpen(false);
+        setShowPurchaseMultiSourceModal(true);
+    };
+
+    const handlePurchaseMultiSourceSubmit = async (payload: PurchaseMultiSourcePayload) => {
+        try {
+            const baseNotes = payload.notes || 'Compra';
+            const tpvParts = payload.sources
+                .filter((s) => s.sourceId === 'tpv1' || s.sourceId === 'tpv2')
+                .filter((s) => s.amount > 0.005)
+                .map((s) => `${s.sourceId === 'tpv1' ? 'TPV 1' : 'TPV 2'}: ${s.amount.toFixed(2)}€`);
+            const notesWithTpv = tpvParts.length > 0 ? `${baseNotes} | ${tpvParts.join(', ')}` : baseNotes;
+            const customDate = payload.customDate;
+
+            for (const entry of payload.sources) {
+                if (entry.sourceId === 'tpv1' || entry.sourceId === 'tpv2') continue;
+                if (entry.amount < 0.005) continue;
+                const breakdownForDb: Record<string, number> = {};
+                Object.entries(entry.breakdown).forEach(([k, v]) => { if (v !== 0) breakdownForDb[String(k)] = v; });
+                const row: any = {
+                    box_id: entry.sourceId,
+                    type: 'OUT',
+                    amount: entry.amount,
+                    breakdown: breakdownForDb,
+                    notes: notesWithTpv,
+                };
+                if (customDate) row.created_at = customDate;
+                await supabase.from('treasury_log').insert(row);
+            }
+
+            if (payload.changeAmount >= 0.01 && payload.changeDestinationBoxId) {
+                const changeBreakdownForDb: Record<string, number> = {};
+                Object.entries(payload.changeBreakdown).forEach(([k, v]) => { if (v !== 0) changeBreakdownForDb[String(k)] = v; });
+                const inRow: any = {
+                    box_id: payload.changeDestinationBoxId,
+                    type: 'IN',
+                    amount: payload.changeAmount,
+                    breakdown: changeBreakdownForDb,
+                    notes: 'Cambio (compra)',
+                };
+                if (customDate) inRow.created_at = customDate;
+                await supabase.from('treasury_log').insert(inRow);
+            }
+
+            setShowPurchaseMultiSourceModal(false);
+            setPurchaseInventoriesByBoxId({});
+            await refresh();
+            toast.success('Compra registrada');
+        } catch (error) {
+            console.error(error);
+            toast.error('Error al registrar la compra');
+        }
+    };
+
+    const handleCajaInicialAccion = (accion: 'in' | 'out' | 'compra' | 'arqueo') => {
+        const box = operationalBox;
+        if (!box) {
+            toast.error('No hay caja operacional configurada');
+            return;
+        }
+        if (accion === 'arqueo') {
+            setIsCajaInicialActionsOpen(false);
+            void openChangeBoxAudit(box);
+            return;
+        }
+        if (accion === 'compra') {
+            setIsCajaInicialActionsOpen(false);
+            void openPurchaseMultiSourceModal();
+            return;
+        }
+        void openCajaTreasuryModal(box, accion);
     };
 
     const openChangeBoxAudit = async (box: any) => {
@@ -329,14 +459,10 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                     />
                 </HomeScreenSlot>
                 <HomeScreenSlot size="wide" instance="master-asistencia">
-                    <StaffAttendanceSummaryWidget
-                        userId={userId}
-                        refreshKey={attendanceRefreshKey}
-                        onDayClick={(ymd) => {
-                            const [y, m, d] = ymd.split('-').map(Number);
-                            setSelectedDayDate(new Date(y, m - 1, d));
-                            setIsDayDetailModalOpen(true);
-                        }}
+                    <MasterPlantillaAttendanceWidget
+                        userRole={userRole}
+                        viewerEmail={userEmail}
+                        employees={plantillaEmployees}
                     />
                 </HomeScreenSlot>
                 <HomeScreenSlot size="panel" instance="master-horarios">
@@ -355,6 +481,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                     onOpenCambio={() => setIsSwapModalOpen(true)}
                     onOpenReservas={() => router.push('/staff/reservas')}
                     onOpenChangeBoxAudit={openChangeBoxAudit}
+                    onOpenCajaInicialAcciones={openCajaInicialActions}
                     onOpenOtros={() => setIsMoreFunctionsModalOpen(true)}
                     pendingReservationsCount={pendingReservationsCount}
                 />
@@ -459,20 +586,109 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                 }}
             />
 
-            <AttendanceDetailModal
-                isOpen={isDayDetailModalOpen}
-                date={selectedDayDate}
-                userId={userId}
-                userRole={userRole}
-                viewerEmail={userEmail}
-                onClose={() => setIsDayDetailModalOpen(false)}
-                onSuccess={() => setAttendanceRefreshKey((k) => k + 1)}
-                employees={plantillaEmployees.map((employee) => ({
-                    id: employee.id,
-                    first_name: employee.first_name ?? '',
-                    last_name: employee.last_name ?? '',
-                }))}
-            />
+            <Modal
+                open={isCajaInicialActionsOpen}
+                onClose={() => setIsCajaInicialActionsOpen(false)}
+                variant="standard"
+                layer="base"
+                instance="master-caja-inicial-acciones"
+                usageId="master-caja-inicial-acciones"
+                usageLabel="Caja inicial: acciones"
+                headerTone="petroleum"
+                scheme="dark"
+                title="Caja Inicial"
+                ariaLabel="Caja inicial: acciones"
+            >
+                <AccessMenuGrid align="center">
+                    <CatalogTile
+                        title="Entrada"
+                        fallback={<Plus className="h-8 w-8 text-emerald-500" strokeWidth={2.5} />}
+                        onClick={() => handleCajaInicialAccion('in')}
+                    />
+                    <CatalogTile
+                        title="Salida"
+                        fallback={<Minus className="h-8 w-8 text-rose-500" strokeWidth={2.5} />}
+                        onClick={() => handleCajaInicialAccion('out')}
+                    />
+                    <CatalogTile
+                        title="Compra"
+                        fallback={<ShoppingCart className="h-8 w-8 text-[#5B8FB9]" strokeWidth={2.5} />}
+                        onClick={() => handleCajaInicialAccion('compra')}
+                    />
+                    <CatalogTile
+                        title="Arqueo"
+                        fallback={<RefreshCw className="h-8 w-8 text-orange-500" strokeWidth={2.5} />}
+                        onClick={() => handleCajaInicialAccion('arqueo')}
+                    />
+                </AccessMenuGrid>
+            </Modal>
+
+            <Modal
+                open={cashModalMode !== 'none'}
+                onClose={() => setCashModalMode('none')}
+                variant="amplify"
+                layer="base"
+                instance="master-cash-in-out"
+                usageId={`master-cash-${cashModalMode}`}
+                usageLabel={cashModalMode === 'in' ? 'Entrada de caja' : 'Salida de caja'}
+                headerTone="petroleum"
+                title={cashModalMode === 'in' ? 'Entrada de caja' : 'Salida de caja'}
+                subtitle={selectedCashBox?.name || 'Caja Inicial'}
+                ariaLabel={cashModalMode === 'in' ? 'Entrada de caja' : 'Salida de caja'}
+                headerTrailing={<CashCountDateButton value={cashOpDate} onChange={setCashOpDate} />}
+                footer={
+                    <CashCountFooter
+                        total={cashCountTotal}
+                        instancePrefix={`master-cash-${cashModalMode}`}
+                        onCancel={() => setCashModalMode('none')}
+                        saveType="submit"
+                        saveForm={CASH_COUNT_FORM_ID}
+                    />
+                }
+            >
+                {selectedCashBox ? (
+                    <CashDenominationForm
+                        key={`${cashModalMode}-${selectedCashBox.id}`}
+                        variant="embedded"
+                        type={cashModalMode as 'in' | 'out'}
+                        boxName={selectedCashBox.name || 'Caja Inicial'}
+                        boxId={selectedCashBox.id}
+                        initialCounts={{}}
+                        availableStock={boxInventoryMap}
+                        onCancel={() => setCashModalMode('none')}
+                        onSubmit={handleCashTransaction}
+                        onTotalChange={setCashCountTotal}
+                        selectedDate={cashOpDate}
+                        onSelectedDateChange={setCashOpDate}
+                    />
+                ) : null}
+            </Modal>
+
+            {showPurchaseMultiSourceModal && (
+                <Modal
+                    open
+                    onClose={() => { setShowPurchaseMultiSourceModal(false); setPurchaseInventoriesByBoxId({}); }}
+                    variant="amplify"
+                    layer="base"
+                    instance="master-purchase-multi-source"
+                    usageId="master-purchase-multi-source"
+                    usageLabel="Compra multiorigen"
+                    title="Compra"
+                    ariaLabel="Compra"
+                    headerTone="petroleum"
+                    headerTrailing={<CashCountDateButton value={purchaseDate} onChange={setPurchaseDate} />}
+                >
+                    <PurchaseMultiSourceForm
+                        embedded
+                        paymentSources={buildPaymentSources()}
+                        inventoriesByBoxId={purchaseInventoriesByBoxId}
+                        selectedDate={purchaseDate}
+                        onSelectedDateChange={setPurchaseDate}
+                        onSubmit={handlePurchaseMultiSourceSubmit}
+                        onCancel={() => { setShowPurchaseMultiSourceModal(false); setPurchaseInventoriesByBoxId({}); }}
+                    />
+                </Modal>
+            )}
         </div>
     );
 }

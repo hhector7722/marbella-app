@@ -106,17 +106,22 @@ function formatDayEventNames(acts: BarActivity[] | undefined): string | null {
     return grouped.map((a) => a.activityName).join(' · ');
 }
 
-function formatDayEventDetailSegments(acts: BarActivity[] | undefined): string[] {
+type EventDetailSegment = {
+    text: string;
+    kind: 'hours' | 'pax' | 'categories';
+};
+
+function formatDayEventDetailSegments(acts: BarActivity[] | undefined): EventDetailSegment[] {
     const grouped = groupActivities(acts ?? []);
     if (grouped.length === 0) return [];
-    const segments: string[] = [];
+    const segments: EventDetailSegment[] = [];
     for (const act of grouped) {
-        segments.push(`${fmtHour(act.startTime)} - ${fmtHour(act.endTime)}`);
+        segments.push({ text: `${fmtHour(act.startTime)} - ${fmtHour(act.endTime)}`, kind: 'hours' });
         if (act.totalParticipants != null && act.totalParticipants > 0) {
-            segments.push(`${act.totalParticipants} pax`);
+            segments.push({ text: `${act.totalParticipants} pax`, kind: 'pax' });
         }
         if (act.categories?.length) {
-            segments.push(act.categories.join(', '));
+            segments.push({ text: act.categories.join(', '), kind: 'categories' });
         }
     }
     return segments;
@@ -155,7 +160,7 @@ function WeekendDayColumn({
     day: Date;
     shift: ShiftRow | null;
     eventLabel: string | null;
-    eventDetailSegments: string[];
+    eventDetailSegments: EventDetailSegment[];
     onOpenDay?: (ymd: string) => void;
 }) {
     const ymd = format(day, 'yyyy-MM-dd');
@@ -206,14 +211,15 @@ function WeekendDayColumn({
                     <div data-element="weekend-evento-detail" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
                         {eventDetailSegments.map((segment, i) => (
                             <span
-                                key={`${i}-${segment}`}
+                                key={`${i}-${segment.text}`}
                                 data-element="weekend-evento-detail-value"
+                                data-segment-kind={segment.kind}
                                 className={cn(
                                     'min-w-0 truncate text-[6px] font-medium leading-none opacity-80',
                                     i > 0 && 'border-l-2 pl-0.5',
                                 )}
                             >
-                                {segment}
+                                {segment.text}
                             </span>
                         ))}
                     </div>

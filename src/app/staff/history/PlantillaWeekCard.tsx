@@ -3,7 +3,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-const MAX_ROWS = 12;
+const MAX_ROWS_DEFAULT = 12;
 const LOG_ROW_HEIGHT = 7;
 const LOG_ROW_GAP = 3;
 const DAY_VERTICAL_PAD = 4;
@@ -49,6 +49,8 @@ export type PlantillaWeek = {
 interface PlantillaWeekCardProps {
     week: PlantillaWeek;
     onDayClick: (date: string) => void;
+    /** Filas por día que entran en el hueco; el resto se resume en «+N más». */
+    maxRows?: number;
 }
 
 function getInitials(log: PlantillaDayLog): string {
@@ -66,10 +68,10 @@ function formatHourOnly(time: string | null | undefined): string {
     return Number.isFinite(hour) ? String(hour) : '';
 }
 
-export function PlantillaWeekCard({ week, onDayClick }: PlantillaWeekCardProps) {
+export function PlantillaWeekCard({ week, onDayClick, maxRows = MAX_ROWS_DEFAULT }: PlantillaWeekCardProps) {
     const maxDisplayedLogs = Math.max(
         0,
-        ...week.days.map((day) => Math.min((day.logs || []).length, MAX_ROWS)),
+        ...week.days.map((day) => Math.min((day.logs || []).length, maxRows)),
     );
     const contentHeight =
         maxDisplayedLogs === 0
@@ -103,8 +105,8 @@ export function PlantillaWeekCard({ week, onDayClick }: PlantillaWeekCardProps) 
                                 <div className="flex flex-col items-stretch justify-center w-full space-y-[3px]">
                                     {(() => {
                                         const logs = day.logs || [];
-                                        const overflow = logs.length > MAX_ROWS ? logs.length - MAX_ROWS + 1 : 0;
-                                        const displayLogs = overflow > 0 ? logs.slice(0, MAX_ROWS - 1) : logs.slice(0, MAX_ROWS);
+                                        const overflow = logs.length > maxRows ? logs.length - maxRows + 1 : 0;
+                                        const displayLogs = overflow > 0 ? logs.slice(0, maxRows - 1) : logs.slice(0, maxRows);
 
                                         return (
                                             <>

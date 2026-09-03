@@ -19,6 +19,7 @@ import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
 import { ShiftBarTimeLabels } from '@/components/schedule/ShiftBarTimeLabels';
+import { ScheduleNotesFooter } from '@/components/schedule/ScheduleNotesFooter';
 
 /* ─── Constants (match editor exactly) ─────────────────── */
 const START_HOUR = 7;
@@ -59,7 +60,7 @@ interface Props {
     onClose: () => void;
     shifts: ShiftMock[];
     userName?: string;
-    userRole?: 'staff' | 'manager' | 'supervisor';
+    userRole?: 'staff' | 'manager' | 'supervisor' | 'admin';
     userId?: string | null;
     /** yyyy-MM-dd desde notificación: abre el detalle de ese día al abrir el modal */
     initialFocusDate?: string | null;
@@ -400,6 +401,19 @@ export const StaffScheduleModal = ({
                             ) : null}
                         </>
                     ) : null
+                }
+                footer={
+                    selectedDate ? (
+                        <ScheduleNotesFooter
+                            key={format(selectedDate, 'yyyy-MM-dd')}
+                            date={format(selectedDate, 'yyyy-MM-dd')}
+                            isManager={
+                                userRole === 'manager' ||
+                                userRole === 'supervisor' ||
+                                userRole === 'admin'
+                            }
+                        />
+                    ) : undefined
                 }
                 scrollContent={false}
             >

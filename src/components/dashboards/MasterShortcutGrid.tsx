@@ -19,9 +19,86 @@ type MasterShortcutGridProps = {
     onOpenCambio: () => void;
     onOpenReservas: () => void;
     onOpenChangeBoxAudit: (box: any) => void;
+    onOpenCajaInicialAcciones: () => void;
     onOpenOtros: () => void;
     pendingReservationsCount?: number;
 };
+
+/**
+ * Caja inicial Master — dos en uno (mismo lenguaje que el fichaje en turno de Staff).
+ * Reparte solo el hueco del icono: el nombre «C Inicial» vive en la franja del slot.
+ * Arriba: importe verde (movimientos). Abajo: Acción (menú Entrada/Salida/Compra/Arqueo).
+ * Composición local del mosaico master; no es pieza de sistema.
+ */
+function CajaInicialControl({
+    treasuryLoading,
+    actualBalance,
+    onOpenMovements,
+    onOpenAcciones,
+}: {
+    treasuryLoading: boolean;
+    actualBalance: number;
+    onOpenMovements: () => void;
+    onOpenAcciones: () => void;
+}) {
+    const iconButtonClassName =
+        'relative touch-manipulation text-white transition-[filter] active:brightness-[0.99] ' +
+        'before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']';
+
+    return (
+        <div data-component="CajaInicialControl" data-layout="dual-stack" data-plate="fill">
+            <div data-element="iconStack">
+                <div data-element="iconWrap">
+                    <button
+                        type="button"
+                        data-element="iconBox"
+                        onClick={onOpenMovements}
+                        aria-label="Caja inicial: ver movimientos"
+                        className={iconButtonClassName}
+                        style={{ ['--shortcut-fill' as string]: 'var(--color-positivo)' }}
+                    >
+                        <div
+                            data-element="asset"
+                            className="flex h-full w-full items-center justify-center bg-emerald-600"
+                        >
+                            {treasuryLoading ? (
+                                <LoadingSpinner size="sm" className="text-white" />
+                            ) : (
+                                <PremiumCountUp
+                                    value={actualBalance}
+                                    suffix="€"
+                                    decimals={2}
+                                    className="text-sm font-black leading-none text-white tabular-nums whitespace-nowrap md:text-[11px]"
+                                />
+                            )}
+                        </div>
+                    </button>
+                    <span data-element="rim" aria-hidden />
+                </div>
+                <div data-element="iconWrap">
+                    <button
+                        type="button"
+                        data-element="iconBox"
+                        onClick={onOpenAcciones}
+                        aria-label="Caja inicial: acciones"
+                        className={iconButtonClassName}
+                        style={{ ['--shortcut-fill' as string]: '#f97316' }}
+                    >
+                        <div
+                            data-element="asset"
+                            className="flex h-full w-full items-center justify-center bg-gradient-to-b from-orange-500 to-orange-600"
+                        >
+                            <span className="text-[10px] font-black uppercase leading-none tracking-wide">
+                                Acción
+                            </span>
+                        </div>
+                    </button>
+                    <span data-element="rim" aria-hidden />
+                </div>
+            </div>
+        </div>
+    );
+}
 
 export default function MasterShortcutGrid({
     actualBalance,
@@ -32,6 +109,7 @@ export default function MasterShortcutGrid({
     onOpenCambio,
     onOpenReservas,
     onOpenChangeBoxAudit,
+    onOpenCajaInicialAcciones,
     onOpenOtros,
     pendingReservationsCount = 0,
 }: MasterShortcutGridProps) {
@@ -46,25 +124,14 @@ export default function MasterShortcutGrid({
     const items: Array<{ key: string; size?: 'icon' | 'tile'; label?: string; node: ReactNode }> = [
         {
             key: 'caja-inicial',
+            label: 'C Inicial',
             node: (
-                <DashboardShortcut
-                    instance="caja-inicial"
-                    label="C INICIAL"
-                    plate
-                    contentClassName="bg-emerald-600"
-                    onClick={() => router.push('/dashboard/movements')}
-                >
-                    {treasuryLoading ? (
-                        <LoadingSpinner size="sm" className="text-white" />
-                    ) : (
-                        <PremiumCountUp
-                            value={actualBalance}
-                            suffix="€"
-                            decimals={2}
-                            className="text-sm font-black leading-none text-white tabular-nums whitespace-nowrap md:text-[11px]"
-                        />
-                    )}
-                </DashboardShortcut>
+                <CajaInicialControl
+                    treasuryLoading={treasuryLoading}
+                    actualBalance={actualBalance}
+                    onOpenMovements={() => router.push('/dashboard/movements')}
+                    onOpenAcciones={onOpenCajaInicialAcciones}
+                />
             ),
         },
         {

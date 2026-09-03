@@ -22,7 +22,7 @@ Verificado el 2026-07-29 contra `src/types/supabase.ts` y las migraciones.
 ## 1. Cifras y una advertencia
 
 - **72 tablas tipadas**, 7 vistas, **107 funciones** de base de datos.
-- **Al menos 15 tablas más existen en migraciones y no están en los tipos**: las siete del módulo de pabellón, las cinco de paridad de sombra, `payroll_import_runs`, `web_analytics_events` y `app_settings`.
+- **Al menos 16 tablas más existen en migraciones y no están en los tipos**: las siete del módulo de pabellón, las cinco de paridad de sombra, `payroll_import_runs`, `web_analytics_events`, `app_settings` y `schedule_day_notes`.
 
 **Advertencia sobre los tipos.** Hay dos definiciones del esquema en el repositorio: la generada (`src/types/supabase.ts`, 72 tablas) y una escrita a mano (`src/types/index.ts`, 3 tablas). **Ninguna de las dos se importa en ningún fichero.** Todo el acceso a la base de datos es, por tanto, sin tipos: cada consulta devuelve un valor sin comprobación en compilación.
 
@@ -36,7 +36,7 @@ Consecuencia práctica para este documento: **es la única defensa que existe co
 
 Las 72 tablas tipadas se agrupan en nueve dominios.
 
-### Personas y jornada — 8 tablas
+### Personas y jornada — 9 tablas
 
 | Tabla | Autoridad sobre |
 |---|---|
@@ -46,6 +46,7 @@ Las 72 tablas tipadas se agrupan en nueve dominios.
 | `profile_labor_cost_terms` | Coste laboral con vigencia temporal |
 | `weekly_snapshots` | **Resultado del motor de horas.** Única lectura válida |
 | `shifts` | Turnos planificados |
+| `schedule_day_notes` | Notas libres por día y por usuario en el horario. Una por usuario y día |
 | `weekly_closings_log` | Registro de cierres semanales |
 | `employee_documents` | Documentos de la persona |
 
