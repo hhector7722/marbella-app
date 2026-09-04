@@ -381,7 +381,7 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.match(admin, /<OpsHomeScreen/);
         assert.match(master, /<HomeScreen/);
         assert.doesNotMatch(master, /<OpsHomeScreen/);
-        assert.doesNotMatch(master, /CajaInicialWidget|HorasExtrasWidget|CajaCambioWidget/);
+        assert.doesNotMatch(master, /CajaInicialWidget|CajaCambioWidget/);
         assert.match(master, /layout="master"/);
         assert.match(master, /size="wide" instance="dashboard-ventas"/);
         assert.match(master, /size="wide" instance="master-asistencia"/);
@@ -390,9 +390,9 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.match(master, /<StaffWeekScheduleBlock/);
         assert.match(grid, /size=\{size\} instance=\{key\} label=\{label\}/);
         assert.match(grid, /size: 'tile'[\s\S]*label: 'H\. extras'/);
-        assert.match(grid, /size: 'tile'[\s\S]*label: 'Cambio 1'/);
-        assert.match(grid, /size: 'tile'[\s\S]*label: 'Cambio 2'/);
-        assert.match(grid, /<CajaCambioWidget/);
+        assert.match(grid, /label: 'Cajas Cambio'/);
+        assert.match(grid, /<MasterCajasCambioWidget/);
+        assert.match(grid, /<MasterOvertimeIconWidget/);
         assert.match(grid, /label="Otros"/);
         assert.doesNotMatch(grid, /label="Proveedores"/);
         assert.doesNotMatch(grid, /label="Asistencia"/);
@@ -401,8 +401,13 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.doesNotMatch(grid, /label="Carta"/);
         assert.match(
             grid,
-            /overtimeAmount != null \?[\s\S]*toFixed\(0\)[\s\S]*<Check /,
-            'H. extras muestra el importe o un tic si no hay valor'
+            /<MasterOvertimeIconWidget[\s\S]*monthLabel=\{overtimeMonthLabel\}/,
+            'H. extras monta el widget del mes'
+        );
+        assert.match(
+            grid,
+            /getISOWeek\(new Date\(week\.weekId\)\)[\s\S]*<X /,
+            'H. extras muestra semana, importe y estado de pago'
         );
         assert.doesNotMatch(grid, /md:grid-cols-7|lg:grid-cols-8/);
         assert.match(ops, /layout="ops-admin"/);

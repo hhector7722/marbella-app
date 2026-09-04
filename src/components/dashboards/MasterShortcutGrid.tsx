@@ -10,13 +10,14 @@ import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
 import { HomeScreenSlot } from '@/components/dashboards/HomeScreen';
 import { formatChangeBoxEur } from '@/components/dashboards/ops-widgets';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import type { StaffWeeklyStats, WeeklyStats } from '@/lib/hours-engine/overtime-weeks-ssot';
 
 type MasterShortcutGridProps = {
     actualBalance: number;
     changeBoxes: any[];
     treasuryLoading?: boolean;
     overtimeViewMonth: Date;
-    overtimeWeeksData: any[];
+    overtimeWeeksData: WeeklyStats[];
     overtimeLoading?: boolean;
     onOpenCambio: () => void;
     onOpenOvertime: () => void;
@@ -115,8 +116,8 @@ function MasterCajasCambioWidget({
     onOpen,
 }: {
     treasuryLoading: boolean;
-    box1: any | undefined;
-    box2: any | undefined;
+    box1: { current_balance?: number | null } | undefined;
+    box2: { current_balance?: number | null } | undefined;
     onOpen: () => void;
 }) {
     return (
@@ -161,7 +162,7 @@ function MasterOvertimeIconWidget({
     onOpen,
 }: {
     monthLabel: string;
-    weeks: any[];
+    weeks: WeeklyStats[];
     loading: boolean;
     onOpen: () => void;
 }) {
@@ -183,11 +184,11 @@ function MasterOvertimeIconWidget({
                     </span>
                     <div className="flex min-h-0 flex-1 flex-col justify-center gap-[3px] pt-1">
                         {weeks.map((week) => {
-                            const isFullyPaid = (week.staff ?? []).every((s: any) => {
-                                const cost = s.totalCost ?? s.amount ?? 0;
+                            const isFullyPaid = (week.staff ?? []).every((s: StaffWeeklyStats) => {
+                                const cost = s.totalCost ?? 0;
                                 return cost < 0.05 || !!s.isPaid || s.preferStock === true;
                             });
-                            const weekTotal = week.totalAmount ?? week.total ?? 0;
+                            const weekTotal = week.totalAmount ?? 0;
                             return (
                                 <div
                                     key={week.weekId}

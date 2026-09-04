@@ -32,11 +32,12 @@ import {
 } from '@/lib/staff/plantilla-employees';
 import { canManageStaffAttendance } from '@/lib/staff/attendance-access';
 import { PurchaseMultiSourceForm, type PaymentSourceOption, type PurchaseMultiSourcePayload } from '@/components/PurchaseMultiSourceForm';
-import type { WeeklyStats } from '@/lib/hours-engine/overtime-weeks-ssot';
+import type { StaffWeeklyStats, WeeklyStats } from '@/lib/hours-engine/overtime-weeks-ssot';
 import { WorkerListSummary, WorkerPersonRow } from '@/components/staff/WorkerPersonRow';
 import WorkerWeeklyHistoryModal from '@/components/WorkerWeeklyHistoryModal';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 type MasterDashboardViewProps = {
     initialData?: {
@@ -56,7 +57,7 @@ function MasterStaffOvertimeRow({
     onTogglePaid,
     onClick,
 }: {
-    staff: any;
+    staff: StaffWeeklyStats;
     weekId: string;
     isPaid: boolean;
     onTogglePaid: (e: React.MouseEvent, weekId: string, staffId: string, status: boolean) => void;
@@ -65,7 +66,7 @@ function MasterStaffOvertimeRow({
     return (
         <WorkerPersonRow
             name={staff.name}
-            value={staff.amount > 0.05 ? `${staff.amount.toFixed(0)}€` : ' '}
+            value={staff.totalCost > 0.05 ? `${staff.totalCost.toFixed(0)}€` : ' '}
             onClick={onClick}
             trailing={
                 <button
@@ -249,8 +250,8 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
             const weekData = overtimeWeeksData.find((w) => w.weekId === weekId);
             const staffData = weekData?.staff?.find((s) => s.id === staffId);
             const result = await togglePaidStatus(staffId, weekId, newStatus, {
-                totalHours: staffData?.totalHours ?? staffData?.hours ?? 0,
-                overtimeHours: staffData?.overtimeHours ?? staffData?.hours ?? 0,
+                totalHours: staffData?.totalHours ?? 0,
+                overtimeHours: staffData?.overtimeHours ?? 0,
             });
             if (!result.success) throw new Error('Error al actualizar pago');
             toast.success(newStatus ? 'Marcado como pagado' : 'Pago cancelado');
@@ -876,18 +877,18 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
 
             {overtimeWeekDetail ? (() => {
                 const week = overtimeWeekDetail;
-                const weekStaff = (week.staff ?? []).filter((s: any) => {
-                    const cost = s.totalCost ?? s.amount ?? 0;
+                const weekStaff = (week.staff ?? []).filter((s: StaffWeeklyStats) => {
+                    const cost = s.totalCost ?? 0;
                     return cost > 0.05 && s.preferStock !== true;
                 });
-                const weekTotal = weekStaff.reduce((sum: number, s: any) => sum + (s.totalCost ?? s.amount ?? 0), 0);
+                const weekTotal = weekStaff.reduce((sum: number, s: StaffWeeklyStats) => sum + (s.totalCost ?? 0), 0);
                 const paidTotal = weekStaff
-                    .filter((s: any) => overtimePaidStatus[`${week.weekId}-${s.id}`] ?? !!s.isPaid)
-                    .reduce((sum: number, s: any) => sum + (s.totalCost ?? s.amount ?? 0), 0);
+                    .filter((s: StaffWeeklyStats) => overtimePaidStatus[`${week.weekId}-${s.id}`] ?? !!s.isPaid)
+                    .reduce((sum: number, s: StaffWeeklyStats) => sum + (s.totalCost ?? 0), 0);
                 const weekNum = getISOWeek(new Date(week.weekId));
                 const periodStr = `${format(new Date(week.weekId), 'd MMM', { locale: es })} - ${format(addDays(new Date(week.weekId), 6), 'd MMM yyyy', { locale: es })}`;
-                const allWeeks = Array.from(new Map((overtimeWeeksData || []).map((w: any) => [w.weekId, w])).values());
-                const sortedWeeks = [...allWeeks].sort((a: any, b: any) => a.weekId.localeCompare(b.weekId));
+                const allWeeks = Array.from(new Map((overtimeWeeksData || []).map((w: WeeklyStats) => [w.weekId, w])).values());
+                const sortedWeeks = [...allWeeks].sort((a: WeeklyStats, b: WeeklyStats) => a.weekId.localeCompare(b.weekId));
                 const currentIdx = sortedWeeks.findIndex((w: any) => w.weekId === week.weekId);
                 const prevWeek = currentIdx > 0 ? sortedWeeks[currentIdx - 1] : null;
                 const nextWeek = currentIdx >= 0 && currentIdx < sortedWeeks.length - 1 ? sortedWeeks[currentIdx + 1] : null;
@@ -939,10 +940,10 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                                 </div>
                             </div>
                             <div>
-                                {weekStaff.map((s: any) => (
+                                {weekStaff.map((s: StaffWeeklyStats) => (
                                     <MasterStaffOvertimeRow
                                         key={s.id}
-                                        staff={{ ...s, name: s.name?.split?.(' ')[0] ?? s.name, amount: s.totalCost ?? s.amount ?? 0 }}
+                                        staff={{ ...s, name: s.name.split(' ')[0] ?? s.name }}
                                         weekId={week.weekId}
                                         isPaid={overtimePaidStatus[`${week.weekId}-${s.id}`] ?? !!s.isPaid}
                                         onTogglePaid={toggleOvertimePaid}
