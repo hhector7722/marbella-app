@@ -92,14 +92,14 @@ const SummaryCell = ({
         <div className="flex min-h-[1.4rem] w-full flex-1 items-end justify-center">
             <span
                 className={cn(
-                    'w-full min-w-0 text-center text-[11px] font-semibold leading-tight text-zinc-800 sm:text-xs',
+                    'w-full min-w-0 text-center text-[11px] font-semibold leading-tight text-white sm:text-xs',
                     valueClassName,
                 )}
             >
                 {value}
             </span>
         </div>
-        <span className="shrink-0 text-[9px] font-semibold uppercase tracking-widest leading-none text-zinc-400">
+        <span className="shrink-0 text-[9px] font-semibold tracking-widest leading-none text-white/60">
             {label}
         </span>
     </div>
@@ -118,7 +118,7 @@ const SummaryGrid = ({
 }) => (
     <div className="grid w-full min-w-0 auto-rows-min gap-x-1.5 gap-y-1 pb-0.5 [grid-template-columns:repeat(4,minmax(0,1fr))]">
         <SummaryCell label="Evento" value={activity} />
-        <SummaryCell label="Horario" value={horario} valueClassName="text-emerald-600 whitespace-nowrap tabular-nums" />
+        <SummaryCell label="Horario" value={horario} valueClassName="text-emerald-300 whitespace-nowrap tabular-nums" />
         <SummaryCell label="Pax" value={pax} />
         <SummaryCell label="Categoria" value={categoria} />
     </div>
@@ -261,7 +261,7 @@ export const StaffScheduleModal = ({
                 setEventEnd(formatHourShort(g1.endTime));
                 setEventParticipants(
                     g1.totalParticipants != null && g1.totalParticipants > 0
-                        ? `${g1.totalParticipants} pax`
+                        ? String(g1.totalParticipants)
                         : '',
                 );
                 setDayActivity2(g2?.activityName ?? '');
@@ -270,7 +270,7 @@ export const StaffScheduleModal = ({
                 setEventEnd2(g2 ? formatHourShort(g2.endTime) : '');
                 setEventParticipants2(
                     g2?.totalParticipants != null && g2.totalParticipants > 0
-                        ? `${g2.totalParticipants} pax`
+                        ? String(g2.totalParticipants)
                         : '',
                 );
             } else {
@@ -430,6 +430,7 @@ export const StaffScheduleModal = ({
                 instance="staff-schedule"
                 variant="work"
                 layer="base"
+                scheme="dark"
                 hideHeader={Boolean(editModeForDate)}
                 onBack={selectedDate ? handleBack : undefined}
                 headerTrailing={
@@ -530,10 +531,10 @@ export const StaffScheduleModal = ({
                 {!selectedDate ? (
                     // VISTA A: CALENDARIO MENSUAL
                     <div className="flex flex-col flex-1 overflow-hidden min-h-0 day-modal-body">
-                        <div className="p-4 pb-3 shrink-0 border-b border-gray-100">
+                        <div className="p-4 pb-3 shrink-0 border-b border-white/15">
                             <div className="grid grid-cols-7 gap-1 mb-1">
                                 {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
-                                    <div key={d} className="text-center text-xs font-black text-gray-300">{d}</div>
+                                    <div key={d} className="text-center text-xs font-black text-white/40">{d}</div>
                                 ))}
                             </div>
                             <div className="grid grid-cols-7 gap-y-0.5">
@@ -543,14 +544,14 @@ export const StaffScheduleModal = ({
                                     const hasShift = shifts.some(s => isSameDay(s.date, day));
                                     return (
                                         <button key={i} type="button" onClick={() => handleDayClick(day)}
-                                            className="aspect-square flex items-center justify-center rounded-xl relative transition-all duration-150 active:scale-95 cursor-pointer hover:bg-white/50">
+                                            className="aspect-square flex items-center justify-center rounded-xl relative transition-all duration-150 active:scale-95 cursor-pointer hover:bg-white/20">
                                             <span className={`
                                                 w-7 h-7 flex items-center justify-center rounded-full text-sm font-black transition-colors
                                                 ${hasShift
                                                     ? 'bg-emerald-500 text-white'
                                                     : isToday
-                                                        ? 'text-blue-600'
-                                                        : 'text-gray-900 font-medium'
+                                                        ? 'text-blue-300'
+                                                        : 'text-white/80 font-medium'
                                                 }
                                             `}>
                                                 {day.getDate()}
@@ -561,9 +562,9 @@ export const StaffScheduleModal = ({
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-4 bg-[#fafafa]">
+                        <div className="flex-1 overflow-y-auto p-4">
                             <div className="flex items-center justify-between gap-3 mb-3 min-h-[48px] shrink-0">
-                                <h4 className="text-[10px] font-black uppercase text-gray-400 tracking-widest leading-none">
+                                <h4 className="text-[10px] font-black uppercase text-white/60 tracking-widest leading-none">
                                     Próximos Turnos
                                 </h4>
                                 <Button
@@ -578,25 +579,25 @@ export const StaffScheduleModal = ({
                                 </Button>
                             </div>
                             {futureShifts.length === 0 ? (
-                                <p className="text-center text-gray-400 text-xs font-bold py-10 italic">No hay más turnos este mes.</p>
+                                <p className="text-center text-white/60 text-xs font-bold py-10 italic">No hay más turnos este mes.</p>
                             ) : (
                                 <div className="flex flex-col gap-2">
                                     {futureShifts.map((shift, idx) => (
                                         <div key={idx} onClick={() => handleDayClick(shift.date)}
-                                            className="flex items-center gap-3 p-3 bg-white rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:border-purple-200 hover:shadow-md transition-all active:scale-[0.98]">
-                                            <div className="bg-purple-100 text-purple-700 rounded-xl px-3 py-2 flex flex-col items-center min-w-[46px]">
+                                            className="flex items-center gap-3 p-3 rounded-2xl bg-white/10 border border-white/10 cursor-pointer hover:border-white/25 hover:bg-white/15 transition-all active:scale-[0.98]">
+                                            <div className="bg-white/10 text-white rounded-xl px-3 py-2 flex flex-col items-center min-w-[46px]">
                                                 <span className="text-[8px] font-black uppercase leading-none">{format(shift.date, "MMM", { locale: es })}</span>
                                                 <span className="text-lg font-black leading-none mt-0.5">{shift.date.getDate()}</span>
                                             </div>
                                             <div className="flex flex-col flex-1 min-w-0">
-                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate">{shift.activity || 'Turno'}</span>
+                                                <span className="text-[10px] font-black text-white/60 uppercase tracking-widest truncate">{shift.activity || 'Turno'}</span>
                                                 <div className="flex items-center gap-1.5 mt-0.5">
-                                                    <span className="text-emerald-600 font-black text-sm">{shift.startTime}</span>
-                                                    <span className="text-gray-300">-</span>
-                                                    <span className="text-rose-500 font-black text-sm">{shift.endTime}</span>
+                                                    <span className="text-emerald-300 font-black text-sm">{shift.startTime}</span>
+                                                    <span className="text-white/30">-</span>
+                                                    <span className="text-rose-300 font-black text-sm">{shift.endTime}</span>
                                                 </div>
                                             </div>
-                                            <ChevronRight size={16} className="text-gray-300 shrink-0" />
+                                            <ChevronRight size={16} className="text-white/30 shrink-0" />
                                         </div>
                                     ))}
                                 </div>
@@ -605,7 +606,7 @@ export const StaffScheduleModal = ({
                     </div>
                 ) : (
                     // VISTA B: TABLA IDÉNTICA AL EDITOR — SÓLO LECTURA
-                    <div className="flex flex-col flex-1 overflow-hidden bg-white min-h-0 day-modal-body">
+                    <div className="flex flex-col flex-1 overflow-hidden min-h-0 day-modal-body">
                         {loadingDay ? (
                             <div className="flex-1 flex items-center justify-center py-20">
                                 <div className="w-8 h-8 rounded-full border-4 border-ds-marca border-t-transparent animate-spin" />
@@ -614,18 +615,16 @@ export const StaffScheduleModal = ({
                             <>
                                 {/* Resumen del evento — siempre visible */}
                                 <div className="p-3 md:p-4 lg:p-2 w-full shrink-0">
-                                    <div className="flex flex-col gap-2 w-full max-w-2xl mx-auto">
+                                    <div className="flex w-full max-w-2xl mx-auto flex-col gap-2 rounded-[var(--radio-control)] bg-white/10 p-2">
                                         {!hasAct1 && !hasAct2 ? (
-                                            <div className="p-2 sm:p-3 lg:p-1">
-                                                <div className="text-center text-zinc-400 text-[10px] font-black uppercase tracking-widest py-3 lg:py-1">Sin actividad</div>
-                                            </div>
+                                            <div className="text-center text-white/50 text-[10px] font-black tracking-widest py-3 lg:py-1">Sin actividad</div>
                                         ) : (
                                             <>
                                                 {hasAct1 && (
-                                                    <div className="p-2 sm:p-3 lg:p-1.5 w-full min-w-0">
+                                                    <div className="w-full min-w-0">
                                                         {hasTwoActivities && (
                                                             <div className="mb-1.5 w-full text-center">
-                                                                <span className="text-[9px] font-black tracking-wide text-zinc-500 uppercase">MAÑANA</span>
+                                                                <span className="text-[9px] font-black tracking-wide text-white/60 uppercase">MAÑANA</span>
                                                             </div>
                                                         )}
                                                         <SummaryGrid
@@ -638,10 +637,10 @@ export const StaffScheduleModal = ({
                                                 )}
 
                                                 {hasAct2 && (
-                                                    <div className="p-2 sm:p-3 lg:p-1.5 w-full min-w-0">
+                                                    <div className="w-full min-w-0">
                                                         {hasTwoActivities && (
                                                             <div className="mb-1.5 w-full text-center">
-                                                                <span className="text-[9px] font-black tracking-wide text-zinc-500 uppercase">TARDE</span>
+                                                                <span className="text-[9px] font-black tracking-wide text-white/60 uppercase">TARDE</span>
                                                             </div>
                                                         )}
                                                         <SummaryGrid
@@ -660,7 +659,7 @@ export const StaffScheduleModal = ({
                                 {/* Tabla o «Sin turno» */}
                                 {dayShifts.length === 0 ? (
                                     <div className="flex-1 flex items-center justify-center py-16 px-4">
-                                        <p className="text-xs font-medium text-zinc-400">Sin turno</p>
+                                        <p className="text-xs font-medium text-white/60">Sin turno</p>
                                     </div>
                                 ) : (
                                 <div className="rounded-2xl border border-zinc-100 shadow-[inset_0_0.5px_0_rgba(255,255,255,0.55),0_1px_1px_rgba(0,0,0,0.04),0_6px_18px_rgba(0,0,0,0.08)] overflow-hidden flex flex-col flex-1 min-h-0">

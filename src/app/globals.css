@@ -407,6 +407,16 @@
   justify-content: center;
   align-items: center;
 }
+/* El pie de notas ocupa todo el ancho del modal: anula el grid inline a la derecha. */
+[data-component='Modal'] [data-element='footer'] [data-element='footer-actions']:has(> [data-schedule-notes-footer]) {
+  display: block;
+  width: 100%;
+  margin-inline-start: 0;
+}
+/* La caja de texto de la nota llega al borde del modal. */
+[data-component='Modal'] [data-element='footer']:has(> [data-element='footer-actions'] [data-schedule-notes-footer]) {
+  padding-inline: 0;
+}
 
 /*
  * Capas superiores: el panel cubierto pierde protagonismo (blur + oscurecimiento).

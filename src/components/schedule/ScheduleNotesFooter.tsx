@@ -152,14 +152,16 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
     return (
         <div className="flex w-full min-w-0 flex-col" data-schedule-notes-footer>
             <div className="flex w-full items-center justify-center">
-                <Button
-                    type="button"
-                    variant="tertiary"
-                    instance="schedule-note-toggle"
-                    onClick={composing ? handleCancel : startCompose}
-                >
-                    {composing ? 'Cancelar' : myNote ? 'Editar nota' : 'Añadir nota'}
-                </Button>
+                {!composing ? (
+                    <Button
+                        type="button"
+                        variant="tertiary"
+                        instance="schedule-note-toggle"
+                        onClick={startCompose}
+                    >
+                        {myNote ? 'Editar nota' : 'Añadir nota'}
+                    </Button>
+                ) : null}
             </div>
 
             {composing ? (
