@@ -96,7 +96,7 @@ export function leerManifiesto(): Manifiesto {
 /** Directorios de primer nivel del repositorio, sin `.git`. */
 export function directoriosDePrimerNivel(): string[] {
   return readdirSync(RAIZ_REPO, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && e.name !== '.git')
+    .filter((e) => e.isDirectory() && e.name !== '.git' && !e.name.startsWith('.'))
     .map((e) => e.name)
     .sort()
 }
