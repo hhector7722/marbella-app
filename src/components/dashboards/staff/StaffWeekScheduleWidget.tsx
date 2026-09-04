@@ -190,7 +190,7 @@ function WeekendDayColumn({
                             Turno
                         </span>
                         {turno ? (
-                            <span data-element="weekend-turno-value" className="min-w-0 truncate text-[8px] font-semibold tabular-nums leading-none">
+                            <span data-element="weekend-turno-value" className="min-w-0 truncate text-[6px] font-medium tabular-nums leading-none">
                                 {turno}
                             </span>
                         ) : null}
