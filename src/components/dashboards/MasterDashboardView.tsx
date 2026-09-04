@@ -2,13 +2,15 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { endOfWeek, format, startOfWeek, subWeeks } from 'date-fns';
+import { addDays, addMonths, endOfMonth, format, getISOWeek, startOfMonth, subMonths } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Minus, ShoppingCart, RefreshCw } from 'lucide-react';
-import { getOvertimeData } from '@/app/actions/overtime';
+import { Check, ChevronLeft, ChevronRight, Circle, Minus, Plus, RefreshCw, ShoppingCart } from 'lucide-react';
+import { getOvertimeData, togglePaidStatus } from '@/app/actions/overtime';
 import DashboardVentasSection from '@/components/dashboards/DashboardVentasSection';
 import MasterShortcutGrid from '@/components/dashboards/MasterShortcutGrid';
+import { HorasExtrasWidget, formatChangeBoxEur } from '@/components/dashboards/ops-widgets';
 import { HomeScreen, HomeScreenSlot } from '@/components/dashboards/HomeScreen';
 import { MasterPlantillaAttendanceWidget } from '@/components/dashboards/MasterPlantillaAttendanceWidget';
 import { StaffWeekScheduleBlock } from '@/components/dashboards/staff/StaffWeekScheduleBlock';
@@ -23,7 +25,6 @@ import { CashCountDateButton, formatCashCountDateInput } from '@/components/cash
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { updateProfile } from '@/app/actions/profile';
 import { useMasterTreasuryLive } from '@/hooks/useMasterTreasuryLive';
-import { pickLatestOvertimeWeekSnapshot, type OvertimeWeekSnapshot } from '@/lib/master-overtime-snapshot';
 import {
     PLANTILLA_EMPLOYEE_SELECT,
     filterVisiblePlantillaEmployees,
@@ -31,6 +32,11 @@ import {
 } from '@/lib/staff/plantilla-employees';
 import { canManageStaffAttendance } from '@/lib/staff/attendance-access';
 import { PurchaseMultiSourceForm, type PaymentSourceOption, type PurchaseMultiSourcePayload } from '@/components/PurchaseMultiSourceForm';
+import type { WeeklyStats } from '@/lib/hours-engine/overtime-weeks-ssot';
+import { WorkerListSummary, WorkerPersonRow } from '@/components/staff/WorkerPersonRow';
+import WorkerWeeklyHistoryModal from '@/components/WorkerWeeklyHistoryModal';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 type MasterDashboardViewProps = {
     initialData?: {
@@ -41,6 +47,48 @@ type MasterDashboardViewProps = {
         allEmployees?: any[];
     };
 };
+
+/** Fila de trabajador en el detalle de semana de horas extras (mismo lenguaje que el dashboard). */
+function MasterStaffOvertimeRow({
+    staff,
+    weekId,
+    isPaid,
+    onTogglePaid,
+    onClick,
+}: {
+    staff: any;
+    weekId: string;
+    isPaid: boolean;
+    onTogglePaid: (e: React.MouseEvent, weekId: string, staffId: string, status: boolean) => void;
+    onClick: () => void;
+}) {
+    return (
+        <WorkerPersonRow
+            name={staff.name}
+            value={staff.amount > 0.05 ? `${staff.amount.toFixed(0)}€` : ' '}
+            onClick={onClick}
+            trailing={
+                <button
+                    type="button"
+                    onClick={(e) => onTogglePaid(e, weekId, staff.id, !isPaid)}
+                    className={cn(
+                        'flex h-8 w-8 items-center justify-center',
+                        isPaid ? '' : 'text-zinc-300 hover:text-zinc-400',
+                    )}
+                    aria-label={isPaid ? 'Marcar no pagado' : 'Marcar pagado'}
+                >
+                    {isPaid ? (
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500">
+                            <Check className="h-3.5 w-3.5 text-white" strokeWidth={4} />
+                        </span>
+                    ) : (
+                        <Circle className="h-5 w-5" />
+                    )}
+                </button>
+            }
+        />
+    );
+}
 
 export default function MasterDashboardView({ initialData }: MasterDashboardViewProps) {
     const router = useRouter();
@@ -73,8 +121,14 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
     const [allEmployeesIncludingInactive, setAllEmployeesIncludingInactive] = useState<any[] | null>(null);
     const [showAllEmployeesInPlantilla, setShowAllEmployeesInPlantilla] = useState(false);
 
-    const [overtimeSnapshot, setOvertimeSnapshot] = useState<OvertimeWeekSnapshot | null>(null);
+    const [overtimeViewMonth, setOvertimeViewMonth] = useState(() => startOfMonth(new Date()));
+    const [overtimeWeeksData, setOvertimeWeeksData] = useState<WeeklyStats[]>([]);
     const [overtimeLoading, setOvertimeLoading] = useState(true);
+    const [isOvertimeModalOpen, setIsOvertimeModalOpen] = useState(false);
+    const [overtimeWeekDetail, setOvertimeWeekDetail] = useState<WeeklyStats | null>(null);
+    const [overtimePaidStatus, setOvertimePaidStatus] = useState<Record<string, boolean>>({});
+    const [overtimeWorkerHistory, setOvertimeWorkerHistory] = useState<{ workerId: string; weekId: string } | null>(null);
+    const [isCajasCambioOpen, setIsCajasCambioOpen] = useState(false);
     const [pendingReservationsCount, setPendingReservationsCount] = useState(0);
 
     const [userId, setUserId] = useState<string | null>(null);
@@ -150,19 +204,25 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
 
     useEffect(() => {
         let cancelled = false;
+        const start = format(startOfMonth(overtimeViewMonth), 'yyyy-MM-dd');
+        const end = format(endOfMonth(overtimeViewMonth), 'yyyy-MM-dd');
         setOvertimeLoading(true);
-        // Solo la última semana completada (el tile muestra ese snapshot).
-        const lastWeekStart = startOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 });
-        const start = format(lastWeekStart, 'yyyy-MM-dd');
-        const end = format(endOfWeek(lastWeekStart, { weekStartsOn: 1 }), 'yyyy-MM-dd');
         getOvertimeData(start, end)
             .then((result) => {
                 if (cancelled) return;
-                setOvertimeSnapshot(pickLatestOvertimeWeekSnapshot(result?.weeksResult ?? []));
+                const weeks = result?.weeksResult ?? [];
+                setOvertimeWeeksData(weeks);
+                const nextPaid: Record<string, boolean> = {};
+                weeks.forEach((week) => {
+                    week.staff?.forEach((s) => {
+                        nextPaid[`${week.weekId}-${s.id}`] = !!s.isPaid;
+                    });
+                });
+                setOvertimePaidStatus(nextPaid);
             })
             .catch(() => {
                 if (!cancelled) {
-                    setOvertimeSnapshot(null);
+                    setOvertimeWeeksData([]);
                     toast.error('No se pudieron cargar las horas extras');
                 }
             })
@@ -172,7 +232,41 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [overtimeViewMonth]);
+
+    const toggleOvertimePaid = async (e: React.MouseEvent, weekId: string, staffId: string, newStatus: boolean) => {
+        e.stopPropagation();
+        const key = `${weekId}-${staffId}`;
+        setOvertimePaidStatus((prev) => ({ ...prev, [key]: newStatus }));
+        setOvertimeWeeksData((prev) =>
+            prev.map((w) =>
+                w.weekId === weekId
+                    ? { ...w, staff: w.staff?.map((s) => (s.id === staffId ? { ...s, isPaid: newStatus } : s)) }
+                    : w
+            )
+        );
+        try {
+            const weekData = overtimeWeeksData.find((w) => w.weekId === weekId);
+            const staffData = weekData?.staff?.find((s) => s.id === staffId);
+            const result = await togglePaidStatus(staffId, weekId, newStatus, {
+                totalHours: staffData?.totalHours ?? staffData?.hours ?? 0,
+                overtimeHours: staffData?.overtimeHours ?? staffData?.hours ?? 0,
+            });
+            if (!result.success) throw new Error('Error al actualizar pago');
+            toast.success(newStatus ? 'Marcado como pagado' : 'Pago cancelado');
+        } catch (error) {
+            console.error(error);
+            setOvertimePaidStatus((prev) => ({ ...prev, [key]: !newStatus }));
+            setOvertimeWeeksData((prev) =>
+                prev.map((w) =>
+                    w.weekId === weekId
+                        ? { ...w, staff: w.staff?.map((s) => (s.id === staffId ? { ...s, isPaid: !newStatus } : s)) }
+                        : w
+                )
+            );
+            toast.error('Error al actualizar pago');
+        }
+    };
 
     // Identidad del maestro: widgets de asistencia y horario usan su userId real.
     useEffect(() => {
@@ -475,11 +569,13 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                     actualBalance={actualBalance}
                     changeBoxes={changeBoxes}
                     treasuryLoading={treasuryLoading}
-                    overtimeSnapshot={overtimeSnapshot}
+                    overtimeViewMonth={overtimeViewMonth}
+                    overtimeWeeksData={overtimeWeeksData}
                     overtimeLoading={overtimeLoading}
                     onOpenCambio={() => setIsSwapModalOpen(true)}
+                    onOpenOvertime={() => setIsOvertimeModalOpen(true)}
+                    onOpenCajasCambio={() => setIsCajasCambioOpen(true)}
                     onOpenReservas={() => router.push('/staff/reservas')}
-                    onOpenChangeBoxAudit={openChangeBoxAudit}
                     onOpenCajaInicialAcciones={openCajaInicialActions}
                     onOpenOtros={() => setIsMoreFunctionsModalOpen(true)}
                     pendingReservationsCount={pendingReservationsCount}
@@ -713,6 +809,163 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                     />
                 </Modal>
             )}
+
+            <Modal
+                open={isCajasCambioOpen}
+                onClose={() => setIsCajasCambioOpen(false)}
+                variant="compact"
+                layer="base"
+                instance="master-cajas-cambio-elegir"
+                usageId="master-cajas-cambio-elegir"
+                usageLabel="Elegir caja cambio"
+                headerTone="petroleum"
+                title="Cajas Cambio"
+                ariaLabel="Cajas Cambio"
+            >
+                <div className="flex flex-col gap-2 p-2">
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        instance="master-cajas-cambio-1"
+                        layout="fill"
+                        onClick={() => {
+                            setIsCajasCambioOpen(false);
+                            const box = changeBoxes[0];
+                            if (box) void openChangeBoxAudit(box);
+                        }}
+                    >
+                        Cambio 1{changeBoxes[0] ? ` · ${formatChangeBoxEur(Number(changeBoxes[0].current_balance ?? 0))}` : ''}
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        instance="master-cajas-cambio-2"
+                        layout="fill"
+                        onClick={() => {
+                            setIsCajasCambioOpen(false);
+                            const box = changeBoxes[1];
+                            if (box) void openChangeBoxAudit(box);
+                        }}
+                    >
+                        Cambio 2{changeBoxes[1] ? ` · ${formatChangeBoxEur(Number(changeBoxes[1].current_balance ?? 0))}` : ''}
+                    </Button>
+                </div>
+            </Modal>
+
+            <Modal
+                open={isOvertimeModalOpen}
+                onClose={() => setIsOvertimeModalOpen(false)}
+                variant="standard"
+                layer="base"
+                instance="master-overtime-month"
+                usageId="master-overtime-month"
+                usageLabel="Horas extras del mes"
+                headerTone="petroleum"
+                title="Horas extras"
+                ariaLabel="Horas extras"
+            >
+                <HorasExtrasWidget
+                    overtimeViewMonth={overtimeViewMonth}
+                    onPrevMonth={() => setOvertimeViewMonth((prev) => subMonths(prev, 1))}
+                    onNextMonth={() => setOvertimeViewMonth((prev) => addMonths(prev, 1))}
+                    overtimeLoading={overtimeLoading}
+                    overtimeWeeksData={overtimeWeeksData}
+                    onWeekClick={(week) => setOvertimeWeekDetail(week)}
+                />
+            </Modal>
+
+            {overtimeWeekDetail ? (() => {
+                const week = overtimeWeekDetail;
+                const weekStaff = (week.staff ?? []).filter((s: any) => {
+                    const cost = s.totalCost ?? s.amount ?? 0;
+                    return cost > 0.05 && s.preferStock !== true;
+                });
+                const weekTotal = weekStaff.reduce((sum: number, s: any) => sum + (s.totalCost ?? s.amount ?? 0), 0);
+                const paidTotal = weekStaff
+                    .filter((s: any) => overtimePaidStatus[`${week.weekId}-${s.id}`] ?? !!s.isPaid)
+                    .reduce((sum: number, s: any) => sum + (s.totalCost ?? s.amount ?? 0), 0);
+                const weekNum = getISOWeek(new Date(week.weekId));
+                const periodStr = `${format(new Date(week.weekId), 'd MMM', { locale: es })} - ${format(addDays(new Date(week.weekId), 6), 'd MMM yyyy', { locale: es })}`;
+                const allWeeks = Array.from(new Map((overtimeWeeksData || []).map((w: any) => [w.weekId, w])).values());
+                const sortedWeeks = [...allWeeks].sort((a: any, b: any) => a.weekId.localeCompare(b.weekId));
+                const currentIdx = sortedWeeks.findIndex((w: any) => w.weekId === week.weekId);
+                const prevWeek = currentIdx > 0 ? sortedWeeks[currentIdx - 1] : null;
+                const nextWeek = currentIdx >= 0 && currentIdx < sortedWeeks.length - 1 ? sortedWeeks[currentIdx + 1] : null;
+                return (
+                    <Modal
+                        open
+                        onClose={() => {
+                            setOvertimeWeekDetail(null);
+                            setOvertimeWorkerHistory(null);
+                        }}
+                        variant="standard"
+                        layer="base"
+                        instance="master-overtime-week-detail"
+                        usageId="master-overtime-week-detail"
+                        usageLabel="Detalle semana horas extras"
+                        headerTone="petroleum"
+                        title={`Semana ${weekNum}`}
+                        subtitle={periodStr}
+                    >
+                        <div>
+                            <WorkerListSummary
+                                metrics={
+                                    paidTotal > 0.05
+                                        ? [{ label: 'Pagado', value: `${paidTotal.toFixed(0)}€` }]
+                                        : []
+                                }
+                                total={weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}
+                            />
+                            <div className="mb-1 flex justify-end">
+                                <div className="inline-flex items-center gap-1.5">
+                                    <button
+                                        type="button"
+                                        onClick={() => { if (prevWeek) setOvertimeWeekDetail(prevWeek); }}
+                                        disabled={!prevWeek}
+                                        className="flex h-12 w-12 items-center justify-center rounded-lg text-zinc-700 hover:bg-zinc-100 disabled:pointer-events-none disabled:opacity-30"
+                                        aria-label="Semana anterior"
+                                    >
+                                        <ChevronLeft className="h-5 w-5" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => { if (nextWeek) setOvertimeWeekDetail(nextWeek); }}
+                                        disabled={!nextWeek}
+                                        className="flex h-12 w-12 items-center justify-center rounded-lg text-zinc-700 hover:bg-zinc-100 disabled:pointer-events-none disabled:opacity-30"
+                                        aria-label="Semana siguiente"
+                                    >
+                                        <ChevronRight className="h-5 w-5" />
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                {weekStaff.map((s: any) => (
+                                    <MasterStaffOvertimeRow
+                                        key={s.id}
+                                        staff={{ ...s, name: s.name?.split?.(' ')[0] ?? s.name, amount: s.totalCost ?? s.amount ?? 0 }}
+                                        weekId={week.weekId}
+                                        isPaid={overtimePaidStatus[`${week.weekId}-${s.id}`] ?? !!s.isPaid}
+                                        onTogglePaid={toggleOvertimePaid}
+                                        onClick={() => setOvertimeWorkerHistory({ workerId: s.id, weekId: week.weekId })}
+                                    />
+                                ))}
+                                {weekStaff.length === 0 && (
+                                    <EmptyState instance="master-overtime-week-none" variant="none" title="Sin importes esta semana" />
+                                )}
+                            </div>
+                        </div>
+                    </Modal>
+                );
+            })() : null}
+
+            <WorkerWeeklyHistoryModal
+                isOpen={!!overtimeWorkerHistory}
+                onClose={() => setOvertimeWorkerHistory(null)}
+                workerId={overtimeWorkerHistory?.workerId || ''}
+                weekStart={overtimeWorkerHistory?.weekId || ''}
+                layer="derived"
+                parentInstance="master-overtime-week-detail"
+            />
         </div>
     );
 }

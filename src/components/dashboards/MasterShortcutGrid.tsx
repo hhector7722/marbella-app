@@ -2,23 +2,26 @@
 
 import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check } from 'lucide-react';
+import { Check, X } from 'lucide-react';
+import { format, getISOWeek } from 'date-fns';
+import { es } from 'date-fns/locale';
 import PremiumCountUp from '@/components/ui/PremiumCountUp';
 import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
 import { HomeScreenSlot } from '@/components/dashboards/HomeScreen';
-import { CajaCambioWidget } from '@/components/dashboards/ops-widgets';
+import { formatChangeBoxEur } from '@/components/dashboards/ops-widgets';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import type { OvertimeWeekSnapshot } from '@/lib/master-overtime-snapshot';
 
 type MasterShortcutGridProps = {
     actualBalance: number;
     changeBoxes: any[];
     treasuryLoading?: boolean;
-    overtimeSnapshot: OvertimeWeekSnapshot | null;
+    overtimeViewMonth: Date;
+    overtimeWeeksData: any[];
     overtimeLoading?: boolean;
     onOpenCambio: () => void;
+    onOpenOvertime: () => void;
+    onOpenCajasCambio: () => void;
     onOpenReservas: () => void;
-    onOpenChangeBoxAudit: (box: any) => void;
     onOpenCajaInicialAcciones: () => void;
     onOpenOtros: () => void;
     pendingReservationsCount?: number;
@@ -100,15 +103,134 @@ function CajaInicialControl({
     );
 }
 
+/**
+ * Cajas Cambio unificadas (Cambio 1 + Cambio 2): dos filas iguales con el
+ * importe de cada caja, centradas en el ancho y alto de su fila.
+ * Pulsar abre el selector de caja (desglose). Composición local del mosaico master.
+ */
+function MasterCajasCambioWidget({
+    treasuryLoading,
+    box1,
+    box2,
+    onOpen,
+}: {
+    treasuryLoading: boolean;
+    box1: any | undefined;
+    box2: any | undefined;
+    onOpen: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            aria-label="Cajas Cambio"
+            onClick={onOpen}
+            className="flex h-full min-h-0 w-full flex-col"
+        >
+            {treasuryLoading ? (
+                <div className="flex h-full items-center justify-center" role="status" aria-label="Cargando cajas">
+                    <LoadingSpinner size="sm" className="text-zinc-500" />
+                </div>
+            ) : (
+                <>
+                    <div className="flex min-h-0 flex-1 items-center justify-center">
+                        <span className="text-sm font-black leading-none tabular-nums text-zinc-800">
+                            {box1 ? formatChangeBoxEur(Number(box1.current_balance ?? 0)) : ' '}
+                        </span>
+                    </div>
+                    <div className="flex min-h-0 flex-1 items-center justify-center">
+                        <span className="text-sm font-black leading-none tabular-nums text-zinc-800">
+                            {box2 ? formatChangeBoxEur(Number(box2.current_balance ?? 0)) : ' '}
+                        </span>
+                    </div>
+                </>
+            )}
+        </button>
+    );
+}
+
+/**
+ * Horas extra del mes: mes actual en cabecera y una fila por semana completada.
+ * Cada fila: número de semana, importe y estado de pago (rojo = falta, verde = pagado).
+ * Pulsar abre el modal de horas extras (mismo widget que el dashboard).
+ * Composición local del mosaico master; no es pieza de sistema.
+ */
+function MasterOvertimeIconWidget({
+    monthLabel,
+    weeks,
+    loading,
+    onOpen,
+}: {
+    monthLabel: string;
+    weeks: any[];
+    loading: boolean;
+    onOpen: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            aria-label="Horas extras"
+            onClick={onOpen}
+            className="flex h-full min-h-0 w-full flex-col items-stretch px-0.5"
+        >
+            {loading ? (
+                <div className="flex h-full items-center justify-center" role="status" aria-label="Cargando horas extras">
+                    <LoadingSpinner size="sm" className="text-zinc-500" />
+                </div>
+            ) : (
+                <>
+                    <span className="shrink-0 text-center text-[6px] font-black uppercase leading-none tracking-widest text-zinc-700">
+                        {monthLabel}
+                    </span>
+                    <div className="flex min-h-0 flex-1 flex-col justify-center gap-[3px] pt-1">
+                        {weeks.map((week) => {
+                            const isFullyPaid = (week.staff ?? []).every((s: any) => {
+                                const cost = s.totalCost ?? s.amount ?? 0;
+                                return cost < 0.05 || !!s.isPaid || s.preferStock === true;
+                            });
+                            const weekTotal = week.totalAmount ?? week.total ?? 0;
+                            return (
+                                <div
+                                    key={week.weekId}
+                                    className="flex w-full min-w-0 items-center justify-between gap-1"
+                                >
+                                    <span className="shrink-0 text-[8px] font-black leading-none tabular-nums text-zinc-800">
+                                        {getISOWeek(new Date(week.weekId))}
+                                    </span>
+                                    <span className="shrink-0 text-[8px] font-normal leading-none tabular-nums text-zinc-600">
+                                        {weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}
+                                    </span>
+                                    <span className="flex shrink-0 items-center">
+                                        {isFullyPaid ? (
+                                            <span className="flex h-2.5 w-2.5 items-center justify-center rounded-full bg-emerald-500 shadow-sm">
+                                                <Check className="h-1.5 w-1.5 text-white" strokeWidth={4} />
+                                            </span>
+                                        ) : (
+                                            <span className="flex h-2.5 w-2.5 items-center justify-center rounded-full bg-rose-500 shadow-sm">
+                                                <X className="h-1.5 w-1.5 text-white" strokeWidth={3.5} />
+                                            </span>
+                                        )}
+                                    </span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </>
+            )}
+        </button>
+    );
+}
+
 export default function MasterShortcutGrid({
     actualBalance,
     changeBoxes,
     treasuryLoading = false,
-    overtimeSnapshot,
+    overtimeViewMonth,
+    overtimeWeeksData,
     overtimeLoading = false,
     onOpenCambio,
+    onOpenOvertime,
+    onOpenCajasCambio,
     onOpenReservas,
-    onOpenChangeBoxAudit,
     onOpenCajaInicialAcciones,
     onOpenOtros,
     pendingReservationsCount = 0,
@@ -117,11 +239,9 @@ export default function MasterShortcutGrid({
 
     const changeBox1 = changeBoxes[0];
     const changeBox2 = changeBoxes[1];
-    const overtimeAmount = overtimeSnapshot && overtimeSnapshot.total > 0.05
-        ? overtimeSnapshot.total
-        : null;
+    const overtimeMonthLabel = format(overtimeViewMonth, 'MMMM', { locale: es });
 
-    const items: Array<{ key: string; size?: 'icon' | 'tile'; label?: string; node: ReactNode }> = [
+    const items: Array<{ key: string; size?: 'icon' | 'tile' | 'half'; label?: string; node: ReactNode }> = [
         {
             key: 'caja-inicial',
             label: 'C Inicial',
@@ -172,22 +292,12 @@ export default function MasterShortcutGrid({
             size: 'tile',
             label: 'H. extras',
             node: (
-                <button
-                    type="button"
-                    aria-label="H. extras"
-                    onClick={() => router.push('/dashboard/overtime')}
-                    className="flex h-full min-h-0 w-full items-center justify-center"
-                >
-                    {overtimeLoading ? (
-                        <LoadingSpinner size="sm" className="text-zinc-500" />
-                    ) : overtimeAmount != null ? (
-                        <span className="text-sm font-black leading-none tabular-nums text-zinc-800">
-                            {`${overtimeAmount.toFixed(0)}€`}
-                        </span>
-                    ) : (
-                        <Check className="h-6 w-6 text-zinc-800" strokeWidth={2.5} aria-hidden />
-                    )}
-                </button>
+                <MasterOvertimeIconWidget
+                    monthLabel={overtimeMonthLabel}
+                    weeks={overtimeWeeksData}
+                    loading={overtimeLoading}
+                    onOpen={onOpenOvertime}
+                />
             ),
         },
         {
@@ -226,39 +336,19 @@ export default function MasterShortcutGrid({
         },
     ];
 
-    if (changeBox1) {
-        items.push({
-            key: 'cambio-1',
-            size: 'tile',
-            label: 'Cambio 1',
-            node: (
-                <CajaCambioWidget
-                    title="Cambio 1"
-                    idx={0}
-                    treasuryLoading={treasuryLoading}
-                    box={changeBox1}
-                    onAudit={onOpenChangeBoxAudit}
-                />
-            ),
-        });
-    }
-
-    if (changeBox2) {
-        items.push({
-            key: 'cambio-2',
-            size: 'tile',
-            label: 'Cambio 2',
-            node: (
-                <CajaCambioWidget
-                    title="Cambio 2"
-                    idx={1}
-                    treasuryLoading={treasuryLoading}
-                    box={changeBox2}
-                    onAudit={onOpenChangeBoxAudit}
-                />
-            ),
-        });
-    }
+    items.push({
+        key: 'cajas-cambio',
+        size: 'half',
+        label: 'Cajas Cambio',
+        node: (
+            <MasterCajasCambioWidget
+                treasuryLoading={treasuryLoading}
+                box1={changeBox1}
+                box2={changeBox2}
+                onOpen={onOpenCajasCambio}
+            />
+        ),
+    });
 
     return (
         <>

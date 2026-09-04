@@ -2875,7 +2875,7 @@ button[data-element='catalog-filter'] {
     'horario  horario  horario  caja'
     'horario  horario  horario  hextras'
     'ingred   albaran  cambio   reservas'
-    'uso      cambio1  cambio2  otros';
+    'uso      cajascambio cajascambio otros';
   grid-template-rows: repeat(6, var(--home-row-track));
   grid-auto-flow: row;
 }
@@ -2909,11 +2909,8 @@ button[data-element='catalog-filter'] {
 [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='uso-app'] {
   grid-area: uso;
 }
-[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='cambio-1'] {
-  grid-area: cambio1;
-}
-[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='cambio-2'] {
-  grid-area: cambio2;
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='cajas-cambio'] {
+  grid-area: cajascambio;
 }
 [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-otros'] {
   grid-area: otros;
