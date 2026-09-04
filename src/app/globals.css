@@ -498,6 +498,21 @@
 }
 
 /*
+ * La tabla del horario del modal de día permanece roja y blanca aunque el
+ * modal sea oscuro: revierte el blanqueo que el scheme dark aplica a .bg-white.
+ */
+[data-component='Modal'][data-scheme='dark'] [data-element='body'] [data-element='schedule-shift-table'] .bg-white,
+[data-component='Modal'][data-scheme='dark'] [data-element='body'] [data-element='schedule-shift-table'] .bg-zinc-50 {
+  background-color: var(--color-superficie);
+}
+[data-component='Modal'][data-scheme='dark'] [data-element='body'] [data-element='schedule-shift-table'] :is(.text-gray-700, .text-gray-800, .text-gray-900, .text-zinc-700, .text-zinc-800, .text-zinc-900) {
+  color: var(--color-texto);
+}
+[data-component='Modal'][data-scheme='dark'] [data-element='body'] [data-element='schedule-shift-table'] :is(.text-gray-300, .text-gray-400, .text-gray-500, .text-zinc-300, .text-zinc-400, .text-zinc-500) {
+  color: var(--color-texto-suave);
+}
+
+/*
  * Fichaje staff: fill reparte el ancho; el relleno visual ocupa todo el host táctil.
  */
 [data-component='Modal'][data-instance='staff-clock-confirm'] [data-element='body']:empty {

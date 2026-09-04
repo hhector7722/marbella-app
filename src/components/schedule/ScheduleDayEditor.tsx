@@ -1087,7 +1087,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 </div>
 
                 {/* ZONA DE TABLA Y FILAS (FUERA DEL PADRE STICKY) */}
-                <div className="flex flex-col shrink min-h-0 w-full bg-white rounded-b-[32px] pt-2">
+                <div data-element="schedule-shift-table" className="flex flex-col shrink min-h-0 w-full bg-white rounded-b-[32px] pt-2">
 
                     {/* FILAS DE EMPLEADOS */}
                     <div className="flex flex-col w-full bg-white relative pb-0 z-10">
