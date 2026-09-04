@@ -96,25 +96,20 @@ export function ScheduleDayProfitabilityBar({ date, shifts }: Props) {
 
     return (
         <div
-            className="mx-3 mb-2 mt-1 shrink-0 rounded-xl border border-zinc-100 bg-zinc-50/90 px-3 py-2"
+            className="mx-auto mb-2 mt-1 flex w-fit max-w-[calc(100%-1.5rem)] shrink-0 overflow-x-auto rounded-xl bg-white/10 px-3 py-2"
             aria-label="Indicador de rentabilidad del día"
         >
-            <div className="flex flex-col gap-1.5">
-                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
-                    Rentabilidad día
-                </p>
-                <div className="flex flex-row flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[10px] font-bold text-zinc-600">
-                    <span className="min-w-0">
-                        Coste personal:{' '}
-                        <span className="font-black text-zinc-800">{formatScheduleEuro(laborCost)}</span>
+            <div className="flex min-w-0 items-center gap-x-4 whitespace-nowrap text-[10px] font-semibold text-white">
+                    <span>
+                        Coste{' '}
+                        <span className="font-semibold text-white">{formatScheduleEuro(laborCost)}</span>
                     </span>
-                    <span className="min-w-0 text-right sm:text-left">
-                        Facturación necesaria:{' '}
-                        <span className="font-black text-zinc-800">
-                            {formatScheduleEuro(requiredBilling)} (35%)
+                    <span>
+                        Facturación rentable{' '}
+                        <span className="font-semibold text-white">
+                            {formatScheduleEuro(requiredBilling)}
                         </span>
                     </span>
-                </div>
             </div>
         </div>
     );

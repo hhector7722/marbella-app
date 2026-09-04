@@ -846,7 +846,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                     <div className={cn('flex flex-col shrink w-full relative', embedded ? 'bg-transparent' : 'bg-white')}>
                         {/* ZONA DE INPUTS SUPERIOR - Sin border-b ni shadow */}
                         <div className={cn('w-full shrink-0', embedded ? 'p-2' : 'p-3 md:p-4')}>
-                            <div className={cn('flex flex-col gap-2 w-full max-w-2xl mx-auto', embedded && 'rounded-[var(--radio-control)] bg-white/10 p-2')}>
+                            <div className={cn('flex flex-col gap-2 w-full max-w-2xl mx-auto', embedded && 'w-fit max-w-full self-center rounded-[var(--radio-control)] bg-white/10 p-2')}>
                                 {/* Card actividad 1 */}
                             
 
@@ -879,11 +879,11 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                                         }}
                                                         maxPx={11}
                                                         minPx={5}
-                                                        placeholder="ARTÍSTICA"
-                                                        className="text-zinc-800 uppercase placeholder:text-zinc-300 focus:outline-none"
+                                                        placeholder="Artística"
+                                                        className="text-zinc-800 font-semibold leading-tight placeholder:text-zinc-300 focus:outline-none"
                                                     />
                                                 </div>
-                                                <span className="text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none">Evento</span>
+                                                <span className="text-[9px] font-semibold tracking-widest text-white/60 leading-none">Evento</span>
                                             </div>
 
                                             {hasSlot1Activity && (
@@ -901,7 +901,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                                                 maxPx={11}
                                                                 minPx={5}
                                                                 singleLine
-                                                                className="font-mono focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0 text-emerald-600"
+                                                                className="font-semibold leading-tight focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0 text-emerald-600"
                                                             />
                                                             <span className="text-zinc-300 select-none">-</span>
                                                             <ShrinkToFitInput
@@ -915,10 +915,10 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                                                 maxPx={11}
                                                                 minPx={5}
                                                                 singleLine
-                                                                className="font-mono text-rose-500 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
+                                                                    className="font-semibold leading-tight text-rose-500 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
                                                             />
                                                         </div>
-                                                        <span className="text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none">Horario</span>
+                                                        <span className="text-[9px] font-semibold tracking-widest text-white/60 leading-none">Horario</span>
                                                     </div>
 
                                                     <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
@@ -934,10 +934,10 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                                                 maxPx={11}
                                                                 minPx={5}
                                                                 singleLine
-                                                                className="text-zinc-800 focus:outline-none"
+                                                                className="text-zinc-800 font-semibold leading-tight focus:outline-none"
                                                             />
                                                         </div>
-                                                        <span className="text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none">Pax</span>
+                                                        <span className="text-[9px] font-semibold tracking-widest text-white/60 leading-none">Pax</span>
                                                     </div>
 
                                                     <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
@@ -953,11 +953,11 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                                                 }}
                                                                 maxPx={11}
                                                                 minPx={5}
-                                                                placeholder="INFANTILES"
-                                                                className="text-zinc-800 uppercase placeholder:text-zinc-300 focus:outline-none"
+                                                                placeholder="Infantiles"
+                                                                className="text-zinc-800 font-semibold leading-tight placeholder:text-zinc-300 focus:outline-none"
                                                             />
                                                         </div>
-                                                        <span className="text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none">Categoria</span>
+                                                        <span className="text-[9px] font-semibold tracking-widest text-white/60 leading-none">Categoría</span>
                                                     </div>
                                                 </>
                                             )}
@@ -970,13 +970,13 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                         type="button"
                                         onClick={() => setSecondSlotExpanded(true)}
                                         className={cn(
-                                            'shrink-0 rounded-xl text-[10px] font-black uppercase tracking-widest py-3 transition-colors active:scale-[0.99]',
+                                            'shrink-0 rounded-xl text-[10px] font-normal py-3 transition-colors active:scale-[0.99]',
                                             embedded
                                                 ? 'self-center border-0 bg-transparent text-white/80 hover:bg-white/10'
                                                 : 'w-full min-h-12 border border-zinc-200 bg-white text-[#36606F] hover:bg-zinc-50'
                                         )}
                                     >
-                                        + Segunda actividad (TARDE)
+                                        + Segunda actividad (tarde)
                                     </button>
                                 )}
 
@@ -1019,11 +1019,11 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                                             }}
                                                             maxPx={11}
                                                             minPx={5}
-                                                            placeholder="ARTÍSTICA"
-                                                            className="text-zinc-800 uppercase placeholder:text-zinc-300 focus:outline-none"
+                                                            placeholder="Artística"
+                                                            className="text-zinc-800 font-semibold leading-tight placeholder:text-zinc-300 focus:outline-none"
                                                         />
                                                     </div>
-                                                    <span className="text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none">Evento</span>
+                                                    <span className="text-[9px] font-semibold tracking-widest text-white/60 leading-none">Evento</span>
                                                 </div>
 
                                                 {hasSlot2Activity && (
@@ -1041,7 +1041,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                                                     maxPx={11}
                                                                     minPx={5}
                                                                     singleLine
-                                                                    className="font-mono focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0 text-emerald-600"
+                                                                    className="font-semibold leading-tight focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0 text-emerald-600"
                                                                 />
                                                                 <span className="text-zinc-300 select-none">-</span>
                                                                 <ShrinkToFitInput
@@ -1054,10 +1054,10 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                                                     maxPx={11}
                                                                     minPx={5}
                                                                     singleLine
-                                                                    className="font-mono text-rose-500 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
+                                                                    className="font-semibold leading-tight text-rose-500 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
                                                                 />
                                                             </div>
-                                                            <span className="text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none">Horario</span>
+                                                            <span className="text-[9px] font-semibold tracking-widest text-white/60 leading-none">Horario</span>
                                                         </div>
 
                                                         <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
@@ -1073,10 +1073,10 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                                                     maxPx={11}
                                                                     minPx={5}
                                                                     singleLine
-                                                                    className="text-zinc-800 focus:outline-none"
+                                                                    className="text-zinc-800 font-semibold leading-tight focus:outline-none"
                                                                 />
                                                             </div>
-                                                            <span className="text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none">Pax</span>
+                                                            <span className="text-[9px] font-semibold tracking-widest text-white/60 leading-none">Pax</span>
                                                         </div>
 
                                                         <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
@@ -1092,11 +1092,11 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                                                     }}
                                                                     maxPx={11}
                                                                     minPx={5}
-                                                                    placeholder="CADETES"
-                                                                    className="text-zinc-800 uppercase placeholder:text-zinc-300 focus:outline-none"
+                                                                    placeholder="Cadetes"
+                                                                    className="text-zinc-800 font-semibold leading-tight placeholder:text-zinc-300 focus:outline-none"
                                                                 />
                                                             </div>
-                                                            <span className="text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none">Categoria</span>
+                                                            <span className="text-[9px] font-semibold tracking-widest text-white/60 leading-none">Categoría</span>
                                                         </div>
                                                     </>
                                                 )}
