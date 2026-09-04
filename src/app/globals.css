@@ -417,6 +417,21 @@
 [data-component='Modal'] [data-element='footer']:has(> [data-element='footer-actions'] [data-schedule-notes-footer]) {
   padding-inline: 0;
 }
+/* Sin línea horizontal sobre el pie de notas. */
+[data-component='Modal'][data-instance='staff-schedule'] [data-element='footer'] {
+  border-top: 0;
+}
+/* «Añadir nota» / «Editar nota» del pie: relleno blanco sobre el modal oscuro. */
+[data-component='Modal'][data-instance='staff-schedule'] [data-element='footer'] [data-component='Button'][data-instance='schedule-note-toggle'] {
+  color: var(--color-texto);
+}
+[data-component='Modal'][data-instance='staff-schedule'] [data-element='footer'] [data-component='Button'][data-instance='schedule-note-toggle']::before {
+  background-color: var(--color-superficie);
+  box-shadow: 0 0 0 1px rgb(24 24 27 / 0.08);
+}
+[data-component='Modal'][data-instance='staff-schedule'] [data-element='footer'] [data-component='Button'][data-instance='schedule-note-toggle']:hover:not(:disabled)::before {
+  background-color: color-mix(in srgb, var(--color-superficie) 84%, var(--color-texto-fuerte));
+}
 
 /*
  * Capas superiores: el panel cubierto pierde protagonismo (blur + oscurecimiento).
