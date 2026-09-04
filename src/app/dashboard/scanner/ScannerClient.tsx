@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useImperativeHandle, useRef, useState, type ReactNode } from 'react'
 import { ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react'
 import { assessScannerImageReadability } from '@/lib/scanner-image-quality'
 import { compressImageFileToDataUri } from '@/lib/scanner-image-compress'
@@ -12,6 +12,13 @@ import { SupplierSelectionModal } from '@/components/suppliers/SupplierSelection
 
 type PendingItem = { id: string; dataUri: string; filename: string }
 
+export type ScannerClientHandle = {
+  /** Añade otra hoja al borrador en curso. Sin borrador, no hace nada. */
+  addSheet: () => void
+  /** Guarda el borrador en curso. Devuelve true si se registró el albarán completo. */
+  saveBatch: () => Promise<boolean>
+}
+
 function newPendingId() {
   return randomId()
 }
@@ -22,6 +29,9 @@ export function ScannerClient({
   embedded = false,
   compactTrigger = false,
   renderTrigger,
+  hideBatchActions = false,
+  onBatchChange,
+  ref,
 }: {
   onSuccess?: () => void
   /** Se invoca tras guardar la cabecera del albarán (processScannerImage). */
@@ -32,6 +42,11 @@ export function ScannerClient({
   compactTrigger?: boolean
   /** Coloca el disparador (p. ej. a la derecha del buscador). El borrador sigue debajo. */
   renderTrigger?: (trigger: ReactNode) => ReactNode
+  /** Oculta las acciones del borrador («Añadir hoja» / «Guardar») para que vivan en un pie externo. */
+  hideBatchActions?: boolean
+  /** Notifica si hay un borrador pendiente de guardar. */
+  onBatchChange?: (hasPending: boolean) => void
+  ref?: React.Ref<ScannerClientHandle>
 }) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [preview, setPreview] = useState<string | null>(null)
@@ -141,8 +156,8 @@ export function ScannerClient({
     setShowSupplierModal(false)
   }
 
-  const commitPendingBatch = async () => {
-    if (!pendingBatch || pendingBatch.items.length === 0) return
+  const commitPendingBatch = async (): Promise<boolean> => {
+    if (!pendingBatch || pendingBatch.items.length === 0) return true
     setIsProcessing(true)
     setMessage(null)
     setPreview(null)
@@ -152,13 +167,13 @@ export function ScannerClient({
       if (!res.success) {
         setMessageTone('error')
         setMessage(res.message)
-        return
+        return false
       }
       const invoiceId = res.invoiceId
       if (!invoiceId) {
         setMessageTone('error')
         setMessage('No se obtuvo el id del albarán. Reintenta con una sola foto.')
-        return
+        return false
       }
       const rest = pendingBatch.items.slice(1)
       for (let i = 0; i < rest.length; i++) {
@@ -177,7 +192,7 @@ export function ScannerClient({
           setPendingBatch(null)
           setSelectedSupplierId(null)
           onSuccess?.()
-          return
+          return false
         }
       }
       setMessageTone('success')
@@ -190,9 +205,11 @@ export function ScannerClient({
       setSelectedSupplierId(null)
       onInvoiceSaved?.(invoiceId)
       onSuccess?.()
+      return true
     } catch (error: unknown) {
       setMessageTone('error')
       setMessage(error instanceof Error ? error.message : 'Error al guardar. Reintenta.')
+      return false
     } finally {
       setIsProcessing(false)
       clearFileInput()
@@ -255,6 +272,18 @@ export function ScannerClient({
     if (!pendingBatch) return
     fileInputRef.current?.click()
   }
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      addSheet: triggerAnotherCapture,
+      saveBatch: () => commitPendingBatch(),
+    })
+  )
+
+  useEffect(() => {
+    onBatchChange?.(pendingBatch != null)
+  }, [pendingBatch, onBatchChange])
 
   const hugTrigger = compactTrigger || Boolean(renderTrigger)
   const triggerButton = !pendingBatch ? (
@@ -404,6 +433,7 @@ export function ScannerClient({
               </div>
             ) : null}
 
+            {!hideBatchActions ? (
             <div className="flex flex-wrap items-center justify-end gap-2">
             <Button
               type="button"
@@ -426,6 +456,7 @@ export function ScannerClient({
               Guardar
             </Button>
             </div>
+            ) : null}
           </div>
         ) : null}
 

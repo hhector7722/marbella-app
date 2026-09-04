@@ -36,6 +36,13 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
 
+## 2026-09-04
+
+- **Compra: confirmación y resumen en un solo paso.** El aviso «Albarán registrado correctamente» sale del paso del escáner y aparece con el resumen de la compra, justo encima del botón que la guarda. El escáner ya no parece el final del proceso.
+- **Compra: pie del escáner con «Añadir hoja».** Tras fotografiar el albarán, las acciones viven solo en el pie: Atrás, Añadir hoja y Siguiente. Desaparece «Guardar»: «Siguiente» guarda el albarán y avanza al resumen en el mismo paso. [P14](../2-diseno/PATRONES.md#p14--recuento-monetario).
+- **Compra: destino del cambio como cajas.** El destino del cambio se elige con las mismas cards que el desglose monetario, no con un desplegable.
+- **Compra: cards del desglose a la altura del contenido.** Las cards de caja («inicial», «cambio 1»…) abrazan su contenido; el área de toque sigue midiendo 48 px ([SISTEMA-DE-COMPONENTES §Botón](../2-diseno/SISTEMA-DE-COMPONENTES.md#botón)).
+
 ## 2026-09-03
 
 - **Horario: detalle del evento en tres columnas.** En el widget de horario de `/staff/dashboard` y `/master/dashboard`, la fila de la card de sáb/dom que muestra el horario del evento, los participantes y la categoría reparte el ancho de la card en tres columnas simétricas, con cada dato centrado en su columna.

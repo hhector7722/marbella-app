@@ -14,6 +14,7 @@ export function CashCountFooter({
     saveType = 'button',
     saveForm,
     extra,
+    middleAction,
     instancePrefix,
 }: {
     total: number;
@@ -26,6 +27,8 @@ export function CashCountFooter({
     saveType?: 'button' | 'submit';
     saveForm?: string;
     extra?: ReactNode;
+    /** Botón de función (p. ej. «Añadir hoja») entre Cancelar y Guardar, dentro de `footer-actions`. */
+    middleAction?: ReactNode;
     instancePrefix: string;
 }) {
     return (
@@ -49,6 +52,7 @@ export function CashCountFooter({
                 >
                     {cancelLabel}
                 </Button>
+                {middleAction}
                 <Button
                     type={saveType}
                     variant="primary"

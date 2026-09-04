@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { DENOMINATIONS } from '@/lib/constants';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
 import { DenominationZoomModal } from '@/components/ui/DenominationZoomModal';
-import { ScannerClient } from '@/app/dashboard/scanner/ScannerClient';
+import { Button } from '@/components/ui/button';
+import { ScannerClient, type ScannerClientHandle } from '@/app/dashboard/scanner/ScannerClient';
 import { ClosingPetrolInput, ClosingStepRow } from '@/components/cash-closing/ClosingStep1Parts';
 import { DenominationCountGrid } from '@/components/cash/DenominationCountGrid';
 import { CashCountFooter } from '@/components/cash/CashCountFooter';
@@ -68,6 +69,40 @@ const nowStr = () => formatCashCountDateInput();
 const calculateTotal = (c: Record<number, number>) =>
     DENOMINATIONS.reduce((acc, val) => acc + (val * (c[val] || 0)), 0);
 
+/** Card compacta de caja para el desglose: la tarjeta abraza el contenido y el área de toque mantiene 48 px transparentes. */
+function SourceChip({
+    label,
+    amount,
+    selected,
+    onClick,
+}: {
+    label: string;
+    amount?: number;
+    selected: boolean;
+    onClick: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={cn(
+                'relative min-w-0 px-2 py-1 rounded-lg border-2 font-black text-[8px] uppercase tracking-tight transition-all flex flex-col items-center justify-center gap-0 shrink-0',
+                selected
+                    ? 'bg-orange-500 border-orange-500 text-white shadow-md'
+                    : 'bg-white border-zinc-200 text-zinc-700 hover:border-orange-300 hover:bg-orange-50'
+            )}
+        >
+            <span aria-hidden className="absolute top-1/2 left-0 right-0 min-h-ds-tactil -translate-y-1/2" />
+            <span className="whitespace-nowrap">{label}</span>
+            {typeof amount === 'number' && amount > 0.005 && (
+                <span className={cn('text-[7px] tabular-nums leading-none', selected ? 'text-white/90' : 'text-zinc-500')}>
+                    {amount.toFixed(2)}€
+                </span>
+            )}
+        </button>
+    );
+}
+
 export function PurchaseMultiSourceForm({
     paymentSources,
     inventoriesByBoxId,
@@ -90,6 +125,9 @@ export function PurchaseMultiSourceForm({
     const [changeBreakdown, setChangeBreakdown] = useState<Record<number, number>>({});
     const [scannerCompleted, setScannerCompleted] = useState(false);
     const [scannerInvoiceId, setScannerInvoiceId] = useState<string | null>(null);
+    const [hasPendingBatch, setHasPendingBatch] = useState(false);
+    const [savingBatch, setSavingBatch] = useState(false);
+    const scannerRef = useRef<ScannerClientHandle>(null);
     const [calculatorOpen, setCalculatorOpen] = useState(false);
     const [zoomDenom, setZoomDenom] = useState<number | null>(null);
     const [zoomContext, setZoomContext] = useState<'change' | string | null>(null);
@@ -140,7 +178,7 @@ export function PurchaseMultiSourceForm({
     const needsChangeStep = changeAmount >= 0.01;
     const canAdvanceFromPayment = priceNum > 0 && totalFromSources >= priceNum - 0.01;
     const canAdvanceFromChange = changeOk && !!changeDestinationBoxId;
-    const canAdvanceFromScanner = scannerCompleted;
+    const canAdvanceFromScanner = scannerCompleted || hasPendingBatch;
 
     const computeDefaultChangeDestination = (): string | null => {
         const activeCash = paymentSources
@@ -205,15 +243,27 @@ export function PurchaseMultiSourceForm({
             if (needsChangeStep) goToChangeStep();
             else goToScannerStep();
         } else if (step === 'change') goToScannerStep();
-        else if (step === 'scanner') setStep('summary');
+        else if (step === 'scanner') void handleScannerAdvance();
         else handleConfirm();
+    };
+
+    /** En el paso del escáner, «Siguiente» guarda el albarán pendiente y avanza al resumen. */
+    const handleScannerAdvance = async () => {
+        if (savingBatch) return;
+        if (hasPendingBatch && !scannerCompleted) {
+            setSavingBatch(true);
+            const ok = await scannerRef.current?.saveBatch() ?? false;
+            setSavingBatch(false);
+            if (!ok) return;
+        }
+        setStep('summary');
     };
 
     const footerAdvanceDisabled =
         (step === 'details' && !canGoPayment) ||
         (step === 'payment' && !canAdvanceFromPayment) ||
         (step === 'change' && needsChangeStep && !canAdvanceFromChange) ||
-        (step === 'scanner' && !canAdvanceFromScanner) ||
+        (step === 'scanner' && (!canAdvanceFromScanner || savingBatch)) ||
         (step === 'summary' && !canSubmit);
 
     return (
@@ -296,26 +346,14 @@ export function PurchaseMultiSourceForm({
                             <div className="flex flex-nowrap gap-1.5 overflow-x-auto pb-0.5 items-stretch">
                                 {paymentSources.map(src => {
                                     const amount = getDisplayAmount(src);
-                                    const isSelected = selectedSourceId === src.id;
                                     return (
-                                        <button
+                                        <SourceChip
                                             key={src.id}
-                                            type="button"
+                                            label={src.shortLabel}
+                                            amount={amount}
+                                            selected={selectedSourceId === src.id}
                                             onClick={() => setSelectedSourceId(src.id)}
-                                            className={cn(
-                                                "min-h-[48px] min-w-0 px-2 py-1.5 rounded-lg border-2 font-black text-[8px] uppercase tracking-tight transition-all flex flex-col items-center justify-center gap-0 shrink-0",
-                                                isSelected
-                                                    ? "bg-orange-500 border-orange-500 text-white shadow-md"
-                                                    : "bg-white border-zinc-200 text-zinc-700 hover:border-orange-300 hover:bg-orange-50"
-                                            )}
-                                        >
-                                            <span className="whitespace-nowrap">{src.shortLabel}</span>
-                                            {amount > 0.005 && (
-                                                <span className={cn("text-[7px] tabular-nums leading-none", isSelected ? "text-white/90" : "text-zinc-500")}>
-                                                    {amount.toFixed(2)}€
-                                                </span>
-                                            )}
-                                        </button>
+                                        />
                                     );
                                 })}
                             </div>
@@ -376,19 +414,19 @@ export function PurchaseMultiSourceForm({
                             <div className="space-y-3">
                                 <div>
                                     <label className="block text-[8px] font-black text-gray-500 uppercase mb-1">Destino del cambio</label>
-                                    <select
-                                        value={changeDestinationBoxId ?? ''}
-                                        onChange={e => {
-                                            setChangeDestinationTouched(true);
-                                            setChangeDestinationBoxId(e.target.value || null);
-                                        }}
-                                        className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[11px] font-black outline-none focus:ring-2 focus:ring-[#5B8FB9]/30 min-h-[48px]"
-                                    >
-                                        <option value="">Elige caja</option>
-                                        {cashSources.map(s => (
-                                            <option key={s.id} value={s.id}>{s.shortLabel}</option>
+                                    <div className="flex flex-nowrap gap-1.5 overflow-x-auto pb-0.5 items-stretch">
+                                        {cashSources.map(src => (
+                                            <SourceChip
+                                                key={src.id}
+                                                label={src.shortLabel}
+                                                selected={changeDestinationBoxId === src.id}
+                                                onClick={() => {
+                                                    setChangeDestinationTouched(true);
+                                                    setChangeDestinationBoxId(src.id);
+                                                }}
+                                            />
                                         ))}
-                                    </select>
+                                    </div>
                                     {!changeDestinationBoxId && (
                                         <p className="text-[9px] font-black text-rose-600 mt-1 uppercase tracking-widest">Falta destino</p>
                                     )}
@@ -429,20 +467,11 @@ export function PurchaseMultiSourceForm({
                         <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
                             Escanea el albarán de la compra
                         </p>
-                        {scannerCompleted ? (
-                            <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-3">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800">
-                                    Albarán registrado correctamente
-                                </p>
-                                {scannerInvoiceId ? (
-                                    <p className="text-[9px] font-bold text-emerald-700/80 mt-1">
-                                        Guardado en Albaranes · puedes continuar al resumen
-                                    </p>
-                                ) : null}
-                            </div>
-                        ) : null}
                         <ScannerClient
+                            ref={scannerRef}
                             embedded
+                            hideBatchActions
+                            onBatchChange={setHasPendingBatch}
                             onInvoiceSaved={(invoiceId) => {
                                 setScannerInvoiceId(invoiceId);
                                 setScannerCompleted(true);
@@ -453,6 +482,18 @@ export function PurchaseMultiSourceForm({
 
                 {step === 'summary' && (
                     <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-300">
+                        {scannerCompleted && (
+                            <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-3">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800">
+                                    Albarán registrado correctamente
+                                </p>
+                                {scannerInvoiceId ? (
+                                    <p className="text-[9px] font-bold text-emerald-700/80 mt-1">
+                                        Guardado en Albaranes · falta guardar la compra
+                                    </p>
+                                ) : null}
+                            </div>
+                        )}
                         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                             <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
@@ -520,6 +561,19 @@ export function PurchaseMultiSourceForm({
                     onCancel={handleFooterBack}
                     onSave={handleFooterAdvance}
                     saveDisabled={footerAdvanceDisabled}
+                    saveLoading={step === 'scanner' && savingBatch}
+                    middleAction={
+                        step === 'scanner' && hasPendingBatch ? (
+                            <Button
+                                type="button"
+                                variant="tertiary"
+                                instance="purchase-multi-source-add-sheet"
+                                onClick={() => scannerRef.current?.addSheet()}
+                            >
+                                Añadir hoja
+                            </Button>
+                        ) : undefined
+                    }
                     extra={
                         step === 'change' && changeAmount >= 0.01 ? (
                             <div className="flex items-center gap-1.5">
