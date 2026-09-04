@@ -31,6 +31,14 @@ const timeToPercent = (timeStr: string) => {
     return ((hours - START_HOUR) + (minutes / 60)) / TOTAL_HOURS * 100;
 };
 
+/** Horario del evento: «10:15 - 22:40». Vacío → espacio en blanco (lectura). */
+const formatHorario = (start: string, end: string) => {
+    const s = String(start ?? '').trim();
+    const e = String(end ?? '').trim();
+    if (!s && !e) return ' ';
+    return [s, e].filter(Boolean).join(' - ');
+};
+
 /** Fecha en formato largo («Domingo 6 de septiembre») con la primera letra en mayúscula. */
 function formatDateTitle(date: Date, pattern: string): string {
     const raw = format(date, pattern, { locale: es });
@@ -57,6 +65,47 @@ const ReadOnlyShiftBar = ({ start, end }: { start: string; end: string }) => {
         </div>
     );
 };
+
+/* ─── Resumen del evento: valor encima del nombre, 4 columnas iguales ── */
+const SummaryCell = ({
+    label,
+    value,
+    valueClassName,
+}: {
+    label: string;
+    value: string;
+    valueClassName?: string;
+}) => (
+    <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
+        <div className="flex min-h-[2rem] lg:min-h-8 w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white text-center">
+            <ShrinkToFitText wrapClassName="min-h-0 flex-1" singleLine innerClassName={valueClassName ?? 'text-zinc-800'} maxPx={11} minPx={5}>
+                {value}
+            </ShrinkToFitText>
+        </div>
+        <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">
+            {label}
+        </span>
+    </div>
+);
+
+const SummaryGrid = ({
+    activity,
+    horario,
+    pax,
+    categoria,
+}: {
+    activity: string;
+    horario: string;
+    pax: string;
+    categoria: string;
+}) => (
+    <div className="grid w-full min-w-0 auto-rows-min gap-x-1.5 gap-y-1 pb-0.5 [grid-template-columns:repeat(4,minmax(0,1fr))]">
+        <SummaryCell label="Evento" value={activity} valueClassName="uppercase text-zinc-800" />
+        <SummaryCell label="Horario" value={horario} valueClassName="font-mono font-black text-emerald-600" />
+        <SummaryCell label="Pax" value={pax} />
+        <SummaryCell label="Categoria" value={categoria} valueClassName="uppercase text-zinc-800" />
+    </div>
+);
 
 /* ─── Types ─────────────────────────────────────────────── */
 interface ShiftMock { date: Date; startTime: string; endTime: string; activity?: string; }
@@ -180,38 +229,8 @@ export const StaffScheduleModal = ({
                 return;
             }
 
-            // Manager/supervisor: siempre puede ver la tabla del día (todos los turnos publicados), aunque no tenga turno.
-            // Staff: solo ve la tabla los días que él tenga turno; si hay turnos pero no es su día → "Sin turno"
-            const canViewAnyDay = userRole === 'manager' || userRole === 'supervisor';
-            if (!canViewAnyDay) {
-                const uid = propsUserId ?? (await supabase.auth.getUser()).data.user?.id ?? null;
-                const userHasShiftThisDay = uid && publishedShifts.some((s: any) => s.user_id === uid);
-                if (!userHasShiftThisDay) {
-                    setDayShifts([]);
-                    setDayActivity('');
-                    setDayCategory('');
-                    setEventStart('');
-                    setEventEnd('');
-                    setEventParticipants('');
-                    setDayActivity2('');
-                    setDayCategory2('');
-                    setEventStart2('');
-                    setEventEnd2('');
-                    setEventParticipants2('');
-                    setLoadingDay(false);
-                    return;
-                }
-            }
-
-            const ids = [...new Set(publishedShifts.map((s: any) => s.user_id))];
-            const { data: profiles } = await supabase.from('profiles').select('id, first_name, avatar_url').in('id', ids);
-            const nameMap: Record<string, string> = {};
-            const avatarMap: Record<string, string | null> = {};
-            (profiles || []).forEach((p: any) => {
-                nameMap[p.id] = p.first_name || '?';
-                avatarMap[p.id] = p.avatar_url ?? null;
-            });
-
+            // El resumen del evento (arriba) siempre se muestra cuando hay turnos publicados,
+            // esté quien esté mirando el día.
             setDayActivity(publishedShifts[0]?.activity || '');
             setDayCategory(publishedShifts[0]?.categoria || '');
             setDayActivity2(publishedShifts[0]?.activity_2 || '');
@@ -222,7 +241,32 @@ export const StaffScheduleModal = ({
             setEventStart2(publishedShifts[0]?.event_start_time_2 || '');
             setEventEnd2(publishedShifts[0]?.event_end_time_2 || '');
             setEventParticipants2(publishedShifts[0]?.event_participants_2 || '');
-            setDayShifts(publishedShifts.map((s: any) => ({
+
+            // Solo el manager hhector7722@gmail.com ve la tabla completa del día (todos los turnos publicados),
+            // aunque él no tenga turno. El resto ve solo su propio turno; si hay turnos pero no es su día → "Sin turno".
+            const canViewAnyDay = userEmail === 'hhector7722@gmail.com';
+            const uid = propsUserId ?? (await supabase.auth.getUser()).data.user?.id ?? null;
+
+            const visibleShifts = canViewAnyDay
+                ? publishedShifts
+                : publishedShifts.filter((s: any) => s.user_id === uid);
+
+            if (visibleShifts.length === 0) {
+                setDayShifts([]);
+                setLoadingDay(false);
+                return;
+            }
+
+            const ids = [...new Set(visibleShifts.map((s: any) => s.user_id))];
+            const { data: profiles } = await supabase.from('profiles').select('id, first_name, avatar_url').in('id', ids);
+            const nameMap: Record<string, string> = {};
+            const avatarMap: Record<string, string | null> = {};
+            (profiles || []).forEach((p: any) => {
+                nameMap[p.id] = p.first_name || '?';
+                avatarMap[p.id] = p.avatar_url ?? null;
+            });
+
+            setDayShifts(visibleShifts.map((s: any) => ({
                 name: nameMap[s.user_id] || '?',
                 avatar_url: avatarMap[s.user_id] ?? null,
                 startTime: new Date(s.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
@@ -528,13 +572,9 @@ export const StaffScheduleModal = ({
                             <div className="flex-1 flex items-center justify-center py-20">
                                 <div className="w-8 h-8 rounded-full border-4 border-ds-marca border-t-transparent animate-spin" />
                             </div>
-                        ) : dayShifts.length === 0 ? (
-                            <div className="flex-1 flex items-center justify-center py-16 px-4">
-                                <p className="text-xs font-medium text-zinc-400">Sin turno</p>
-                            </div>
                         ) : (
                             <>
-                                {/* Zona blanca — inputs en lectura (sin forma de edición) */}
+                                {/* Resumen del evento — siempre visible */}
                                 <div className="p-3 md:p-4 lg:p-2 w-full shrink-0">
                                     <div className="flex flex-col gap-2 w-full max-w-2xl mx-auto">
                                         {!hasAct1 && !hasAct2 ? (
@@ -550,48 +590,12 @@ export const StaffScheduleModal = ({
                                                                 <span className="text-[9px] font-black tracking-wide text-zinc-500 uppercase">MAÑANA</span>
                                                             </div>
                                                         )}
-                                                        <div className="grid w-full min-w-0 auto-rows-min gap-x-1.5 gap-y-1 pb-0.5 [grid-template-columns:repeat(5,minmax(0,1fr))]">
-                                                            <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                                <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">act</span>
-                                                                <div className="flex min-h-[2rem] lg:min-h-8 w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white text-center">
-                                                                    <ShrinkToFitText wrapClassName="min-h-0 flex-1" singleLine innerClassName="uppercase text-zinc-800" maxPx={11} minPx={5}>
-                                                                        {displayOrBlank(dayActivity)}
-                                                                    </ShrinkToFitText>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                                <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">inicio</span>
-                                                                <div className="flex min-h-[2rem] lg:min-h-8 w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
-                                                                    <ShrinkToFitText wrapClassName="min-h-0 flex-1" singleLine innerClassName="font-mono font-black text-emerald-600" maxPx={11} minPx={5}>
-                                                                        {displayOrBlank(eventStart)}
-                                                                    </ShrinkToFitText>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                                <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">final</span>
-                                                                <div className="flex min-h-[2rem] lg:min-h-8 w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
-                                                                    <ShrinkToFitText wrapClassName="min-h-0 flex-1" singleLine innerClassName="font-mono font-black text-rose-500" maxPx={11} minPx={5}>
-                                                                        {displayOrBlank(eventEnd)}
-                                                                    </ShrinkToFitText>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                                <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">part</span>
-                                                                <div className="flex min-h-[2rem] lg:min-h-8 w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
-                                                                    <ShrinkToFitText wrapClassName="min-h-0 flex-1" singleLine innerClassName="text-zinc-800" maxPx={11} minPx={5}>
-                                                                        {displayOrBlank(eventParticipants)}
-                                                                    </ShrinkToFitText>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                                <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">cat</span>
-                                                                <div className="flex min-h-[2rem] lg:min-h-8 w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
-                                                                    <ShrinkToFitText wrapClassName="min-h-0 flex-1" singleLine innerClassName="uppercase text-zinc-800" maxPx={11} minPx={5}>
-                                                                        {displayOrBlank(dayCategory)}
-                                                                    </ShrinkToFitText>
-                                                                </div>
-                                                            </div>
-                                                        </div>
+                                                        <SummaryGrid
+                                                            activity={displayOrBlank(dayActivity)}
+                                                            horario={formatHorario(eventStart, eventEnd)}
+                                                            pax={displayOrBlank(eventParticipants)}
+                                                            categoria={displayOrBlank(dayCategory)}
+                                                        />
                                                     </div>
                                                 )}
 
@@ -602,48 +606,12 @@ export const StaffScheduleModal = ({
                                                                 <span className="text-[9px] font-black tracking-wide text-zinc-500 uppercase">TARDE</span>
                                                             </div>
                                                         )}
-                                                        <div className="grid w-full min-w-0 auto-rows-min gap-x-1.5 gap-y-1 pb-0.5 [grid-template-columns:repeat(5,minmax(0,1fr))]">
-                                                            <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                                <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">act</span>
-                                                                <div className="flex min-h-[2rem] lg:min-h-8 w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white text-center">
-                                                                    <ShrinkToFitText wrapClassName="min-h-0 flex-1" singleLine innerClassName="uppercase text-zinc-800" maxPx={11} minPx={5}>
-                                                                        {displayOrBlank(dayActivity2)}
-                                                                    </ShrinkToFitText>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                                <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">inicio</span>
-                                                                <div className="flex min-h-[2rem] lg:min-h-8 w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
-                                                                    <ShrinkToFitText wrapClassName="min-h-0 flex-1" singleLine innerClassName="font-mono font-black text-emerald-600" maxPx={11} minPx={5}>
-                                                                        {displayOrBlank(eventStart2)}
-                                                                    </ShrinkToFitText>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                                <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">final</span>
-                                                                <div className="flex min-h-[2rem] lg:min-h-8 w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
-                                                                    <ShrinkToFitText wrapClassName="min-h-0 flex-1" singleLine innerClassName="font-mono font-black text-rose-500" maxPx={11} minPx={5}>
-                                                                        {displayOrBlank(eventEnd2)}
-                                                                    </ShrinkToFitText>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                                <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">part</span>
-                                                                <div className="flex min-h-[2rem] lg:min-h-8 w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
-                                                                    <ShrinkToFitText wrapClassName="min-h-0 flex-1" singleLine innerClassName="text-zinc-800" maxPx={11} minPx={5}>
-                                                                        {displayOrBlank(eventParticipants2)}
-                                                                    </ShrinkToFitText>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                                <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">cat</span>
-                                                                <div className="flex min-h-[2rem] lg:min-h-8 w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
-                                                                    <ShrinkToFitText wrapClassName="min-h-0 flex-1" singleLine innerClassName="uppercase text-zinc-800" maxPx={11} minPx={5}>
-                                                                        {displayOrBlank(dayCategory2)}
-                                                                    </ShrinkToFitText>
-                                                                </div>
-                                                            </div>
-                                                        </div>
+                                                        <SummaryGrid
+                                                            activity={displayOrBlank(dayActivity2)}
+                                                            horario={formatHorario(eventStart2, eventEnd2)}
+                                                            pax={displayOrBlank(eventParticipants2)}
+                                                            categoria={displayOrBlank(dayCategory2)}
+                                                        />
                                                     </div>
                                                 )}
                                             </>
@@ -651,7 +619,12 @@ export const StaffScheduleModal = ({
                                     </div>
                                 </div>
 
-                                {/* Tabla con contorno blanco y sombra, sin bordes entre columnas */}
+                                {/* Tabla o «Sin turno» */}
+                                {dayShifts.length === 0 ? (
+                                    <div className="flex-1 flex items-center justify-center py-16 px-4">
+                                        <p className="text-xs font-medium text-zinc-400">Sin turno</p>
+                                    </div>
+                                ) : (
                                 <div className="rounded-2xl border border-white shadow-[0_4px_24px_rgba(0,0,0,0.08)] overflow-hidden flex flex-col flex-1 min-h-0">
                                     {/* Encabezado rojo */}
                                     <div className="flex w-full bg-[#E55353] text-white shrink-0">
@@ -701,6 +674,7 @@ export const StaffScheduleModal = ({
                                         </div>
                                     </div>
                                 </div>
+                                )}
                             </>
                         )}
                     </div>

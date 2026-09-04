@@ -33,9 +33,8 @@ import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
 import { PavilionDayModal } from '@/components/pavilion/PavilionDayModal';
 import { createClient } from '@/utils/supabase/client';
 import { usePageView } from '@/lib/usage/usePageView';
+import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
 
-
-const MASTER_EMAIL = 'hhector7722@gmail.com';
 
 const ACTIVIDADES_EMAILS = [
   'hhector7722@gmail.com',
@@ -147,6 +146,8 @@ export default function HorarioPage() {
   usePageView();
 
   const supabase = createClient();
+  const { identity, isMaster: isMasterIdentity } = useMasterViewAs();
+  const viewingAs = Boolean(identity?.isViewingAs);
 
   const [viewMonth, setViewMonth] = useState<Date>(() => startOfMonth(new Date()));
   const [loading, setLoading] = useState(true);
@@ -165,10 +166,10 @@ export default function HorarioPage() {
   const [myEmail, setMyEmail] = useState<string>('');
   const [userRole, setUserRole] = useState<'staff' | 'manager' | 'supervisor'>('staff');
 
-  // Employee filter (master only)
-  const [isMaster, setIsMaster] = useState(false);
+  // Employee filter (master only, cuando no está simulando a otro usuario)
   const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+  const isMaster = isMasterIdentity && !viewingAs;
 
   // Modal
   const [modalOpen, setModalOpen] = useState(false);
@@ -202,10 +203,24 @@ export default function HorarioPage() {
   const rangeStart = format(calendarDays[0]!, 'yyyy-MM-dd');
   const rangeEnd = format(calendarDays[calendarDays.length - 1]!, 'yyyy-MM-dd');
 
-  // Load profile + employee list (master only) once
+  // Load profile (master only) once
   useEffect(() => {
     let cancelled = false;
     async function init() {
+      // Simulando a otro usuario: la identidad efectiva manda.
+      if (identity?.isViewingAs) {
+        if (cancelled) return;
+        setMyUserId(identity.effectiveUserId);
+        setMyEmail(identity.effectiveEmail);
+        const r = identity.effectiveRole as string;
+        if (r === 'manager' || r === 'supervisor') setUserRole(r);
+        setSelectedEmployeeId(null);
+        if (ACTIVIDADES_EMAILS.includes(identity.effectiveEmail)) {
+          setViewMode('actividades');
+        }
+        return;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || cancelled) return;
 
@@ -224,34 +239,34 @@ export default function HorarioPage() {
       }
 
       const email = profile?.email ?? user.email ?? '';
-      const master = email === MASTER_EMAIL;
-      if (!cancelled) {
-        setIsMaster(master);
-        if (ACTIVIDADES_EMAILS.includes(email)) {
-          setViewMode('actividades');
-        }
-      }
-
-      if (master) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, first_name')
-          .eq('visible_in_plantilla', true)
-          .order('first_name', { ascending: true });
-
-        if (!cancelled && profiles) {
-          setEmployees(
-            filterVisiblePlantillaEmployees(profiles).map((p) => ({
-              id: p.id,
-              name: p.first_name || 'Sin nombre',
-            }))
-          );
-        }
+      if (!cancelled && ACTIVIDADES_EMAILS.includes(email)) {
+        setViewMode('actividades');
       }
     }
     void init();
     return () => { cancelled = true; };
-  }, [supabase]);
+  }, [supabase, identity?.isViewingAs, identity?.effectiveUserId, identity?.effectiveEmail, identity?.effectiveRole]);
+
+  // Plantilla para el filtro de trabajador (master directo, no en simulación)
+  useEffect(() => {
+    if (!isMaster) return;
+    let cancelled = false;
+    supabase
+      .from('profiles')
+      .select('id, first_name')
+      .eq('visible_in_plantilla', true)
+      .order('first_name', { ascending: true })
+      .then(({ data: profiles }) => {
+        if (cancelled || !profiles) return;
+        setEmployees(
+          filterVisiblePlantillaEmployees(profiles).map((p) => ({
+            id: p.id,
+            name: p.first_name || 'Sin nombre',
+          }))
+        );
+      });
+    return () => { cancelled = true; };
+  }, [isMaster, supabase]);
 
   // Target user: selected employee (master) or self
   const targetUserId = isMaster && selectedEmployeeId ? selectedEmployeeId : myUserId;

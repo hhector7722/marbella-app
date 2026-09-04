@@ -3032,6 +3032,9 @@ button[data-element='catalog-filter'] {
 [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric-label] {
   font-size: 7px;
 }
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-week-summary] [data-week-log-hours] {
+  font-size: 6px;
+}
 [data-component='HomeScreen'] > [data-element='slot'] > [data-element='body'] {
   box-sizing: border-box;
   position: absolute;

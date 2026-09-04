@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
 
 type NoteRow = {
     id: string;
@@ -48,12 +48,12 @@ function firstNameOnly(name: string | null | undefined): string {
 
 export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProps) {
     const supabase = createClient();
+    const { identity } = useMasterViewAs();
     const [authUserId, setAuthUserId] = useState<string | null>(null);
     const [notes, setNotes] = useState<NoteRow[]>([]);
     const [composing, setComposing] = useState(false);
     const [draft, setDraft] = useState('');
     const [saving, setSaving] = useState(false);
-    const [expandedId, setExpandedId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -69,6 +69,9 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
         };
     }, [supabase]);
 
+    // Con "ver como" (master), el usuario actual es la identidad efectiva, no la sesión real.
+    const effectiveUserId = identity?.isViewingAs ? identity.effectiveUserId : authUserId;
+
     const fetchNotes = useCallback(async (): Promise<NoteRow[]> => {
         if (!date) return [];
         let query = supabase
@@ -76,8 +79,8 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
             .select(isManager ? '*, profiles(first_name)' : '*')
             .eq('date', date)
             .order('created_at', { ascending: true });
-        if (!isManager && authUserId) {
-            query = query.eq('user_id', authUserId);
+        if (!isManager && effectiveUserId) {
+            query = query.eq('user_id', effectiveUserId);
         }
         const { data, error: loadError } = await query;
         if (loadError) return [];
@@ -89,7 +92,7 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
             updated_at: row.updated_at,
             authorName: row.profiles?.first_name ?? null,
         }));
-    }, [date, isManager, authUserId, supabase]);
+    }, [date, isManager, effectiveUserId, supabase]);
 
     useEffect(() => {
         fetchNotes().then((rows) => {
@@ -98,12 +101,12 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
         });
     }, [fetchNotes]);
 
-    const myNote = authUserId
-        ? notes.find((n) => n.user_id === authUserId) ?? null
+    const myNote = effectiveUserId
+        ? notes.find((n) => n.user_id === effectiveUserId) ?? null
         : null;
 
     const handleSave = async () => {
-        if (!date || !authUserId) return;
+        if (!date || !effectiveUserId) return;
         const content = draft.trim();
         if (!content) return;
         setSaving(true);
@@ -118,7 +121,7 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
             } else {
                 const { error: insertError } = await supabase
                     .from('schedule_day_notes')
-                    .insert({ user_id: authUserId, date, content });
+                    .insert({ user_id: effectiveUserId, date, content });
                 if (insertError) throw insertError;
             }
             setComposing(false);
@@ -148,7 +151,7 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
 
     return (
         <div className="flex w-full min-w-0 flex-col">
-            <div className="flex items-center justify-center">
+            <div className="flex w-full items-center justify-center">
                 <Button
                     type="button"
                     variant="tertiary"
@@ -196,41 +199,23 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
             ) : null}
 
             {notes.length > 0 ? (
-                <div className="mt-2 flex flex-col gap-1.5">
-                    {notes.map((note) => {
-                        const expanded = expandedId === note.id;
-                        const needsToggle = note.content.length > 80;
-                        return (
-                            <button
-                                key={note.id}
-                                type="button"
-                                onClick={() => setExpandedId(expanded ? null : note.id)}
-                                className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-left transition-colors hover:bg-zinc-100"
-                            >
-                                <div className="flex items-baseline justify-between gap-2">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600">
-                                        {isManager ? firstNameOnly(note.authorName) : 'Tu nota'}
-                                    </span>
-                                    <span className="text-[9px] font-medium text-zinc-400 tabular-nums">
-                                        {formatNoteTime(note.created_at)}
-                                    </span>
-                                </div>
-                                <p
-                                    className={cn(
-                                        'mt-1 text-[11px] leading-snug text-zinc-700',
-                                        !expanded && 'line-clamp-2',
-                                    )}
-                                >
-                                    {note.content}
-                                </p>
-                                {needsToggle ? (
-                                    <span className="mt-1 inline-block text-[9px] font-bold uppercase tracking-wide text-[var(--color-envolvente-alto)]">
-                                        {expanded ? 'Ver menos' : 'Leer más'}
-                                    </span>
-                                ) : null}
-                            </button>
-                        );
-                    })}
+                <div className="mt-2 flex w-full flex-col items-center gap-1.5">
+                    {notes.map((note) => (
+                        <div
+                            key={note.id}
+                            className="inline-flex w-fit max-w-full min-w-0 items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-left"
+                        >
+                            <span className="shrink-0 text-[10px] font-black uppercase tracking-widest text-zinc-600">
+                                {isManager ? firstNameOnly(note.authorName) : 'Tu nota'}
+                            </span>
+                            <span className="min-w-0 truncate text-[11px] leading-snug text-zinc-700">
+                                {note.content}
+                            </span>
+                            <span className="shrink-0 text-[9px] font-medium text-zinc-400 tabular-nums">
+                                {formatNoteTime(note.created_at)}
+                            </span>
+                        </div>
+                    ))}
                 </div>
             ) : null}
         </div>

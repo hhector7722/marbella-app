@@ -51,6 +51,10 @@ interface PlantillaWeekCardProps {
     onDayClick: (date: string) => void;
     /** Filas por día que entran en el hueco; el resto se resume en «+N más». */
     maxRows?: number;
+    /** Separador entre la hora de entrada y la de salida. */
+    timeSeparator?: string;
+    /** Pinta la línea horizontal que separa registros de trabajadores. */
+    showRowDividers?: boolean;
 }
 
 /** Solo el primer nombre: identifica al empleado sin ocupar la celda. */
@@ -68,7 +72,7 @@ function formatHourOnly(time: string | null | undefined): string {
     return Number.isFinite(hour) ? String(hour) : '';
 }
 
-export function PlantillaWeekCard({ week, onDayClick, maxRows = MAX_ROWS_DEFAULT }: PlantillaWeekCardProps) {
+export function PlantillaWeekCard({ week, onDayClick, maxRows = MAX_ROWS_DEFAULT, timeSeparator = '/', showRowDividers = true }: PlantillaWeekCardProps) {
     const maxDisplayedLogs = Math.max(
         0,
         ...week.days.map((day) => Math.min((day.logs || []).length, maxRows)),
@@ -131,7 +135,7 @@ export function PlantillaWeekCard({ week, onDayClick, maxRows = MAX_ROWS_DEFAULT
                                                                 <span className={cn("absolute left-3/4 -translate-x-1/2 text-[7px] font-black leading-none", special.text)}>
                                                                     {special.label}
                                                                 </span>
-                                                                {needsLineBelow && (
+                                                                {needsLineBelow && showRowDividers && (
                                                                     <div className="absolute h-px bg-gray-100 left-0.5 right-0.5" style={{ top: 'calc(100% + 1px)' }} />
                                                                 )}
                                                             </div>
@@ -146,14 +150,14 @@ export function PlantillaWeekCard({ week, onDayClick, maxRows = MAX_ROWS_DEFAULT
                                                             <span className="min-w-0 flex-1 truncate text-[6px] font-normal leading-none text-zinc-600">
                                                                 {name}
                                                             </span>
-                                                            <span className="flex shrink-0 items-center gap-0 font-mono text-[7px] font-bold leading-none">
+                                                            <span className="flex shrink-0 items-center gap-0 font-mono text-[7px] font-bold leading-none" data-week-log-hours>
                                                                 <span className={cn("", isNoRegistered ? "text-rose-600" : "text-emerald-600")}>
                                                                     {inHour || '—'}
                                                                 </span>
-                                                                <span className="font-normal text-zinc-600">/</span>
+                                                                <span className="font-normal text-zinc-600">{timeSeparator}</span>
                                                                 <span className="text-rose-600">{outHour || ''}</span>
                                                             </span>
-                                                            {needsLineBelow && (
+                                                            {needsLineBelow && showRowDividers && (
                                                                 <div className="absolute h-px bg-gray-100 left-0.5 right-0.5" style={{ top: 'calc(100% + 1px)' }} />
                                                             )}
                                                         </div>

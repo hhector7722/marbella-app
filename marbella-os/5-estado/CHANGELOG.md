@@ -38,6 +38,11 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-04
 
+- **Master: resumen de asistencia más limpio.** En el widget del mosaico, las horas de entrada y salida bajan un punto y se separan con «-» en lugar de «/»; desaparecen las líneas horizontales que separaban los registros de cada trabajador.
+- **Horario: resumen del día en cuatro columnas.** El modal de día del widget de horario muestra el resumen del evento en cuatro columnas simétricas a lo ancho del modal —Evento, Horario, Pax y Categoria— con el valor encima de la etiqueta y ambos centrados. El resumen siempre aparece arriba; debajo va la tabla o «Sin turno».
+- **Horario: solo el manager ve la tabla completa.** En el modal de día, únicamente el manager `hhector7722@gmail.com` ve la tabla con todos los trabajadores si hay al menos un turno publicado; el resto ve solo su propio turno y «Sin turno» si no tiene.
+- **Horario: el modo edición repite el resumen de cuatro columnas.** El editor de día usa la misma fila Evento / Horario / Pax / Categoria con el valor encima de la etiqueta; el horario junta inicio y final en una celda (verde - rojo).
+- **Horario: nota en una sola fila y centrada.** El pie del modal de día centra «Añadir nota»/«Editar nota» en todo el ancho. Una nota existente se muestra en una sola fila dentro de una card cuyo ancho se adapta al contenido, hasta el límite del ancho del modal sin cortarla.
 - **Compra: confirmación y resumen en un solo paso.** El aviso «Albarán registrado correctamente» sale del paso del escáner y aparece con el resumen de la compra, justo encima del botón que la guarda. El escáner ya no parece el final del proceso.
 - **Compra: pie del escáner con «Añadir hoja».** Tras fotografiar el albarán, las acciones viven solo en el pie: Atrás, Añadir hoja y Siguiente. Desaparece «Guardar»: «Siguiente» guarda el albarán y avanza al resumen en el mismo paso. [P14](../2-diseno/PATRONES.md#p14--recuento-monetario).
 - **Compra: destino del cambio como cajas.** El destino del cambio se elige con las mismas cards que el desglose monetario, no con un desplegable.

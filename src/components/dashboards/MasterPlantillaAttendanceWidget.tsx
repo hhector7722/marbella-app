@@ -208,6 +208,8 @@ export function MasterPlantillaAttendanceWidget({
                                 week={week}
                                 maxRows={6}
                                 onDayClick={handleDayClick}
+                                timeSeparator="-"
+                                showRowDividers={false}
                             />
                         </div>
                     </MonthCalendarFrame>
