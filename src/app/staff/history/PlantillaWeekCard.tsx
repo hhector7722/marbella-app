@@ -146,11 +146,11 @@ export function PlantillaWeekCard({ week, onDayClick, maxRows = MAX_ROWS_DEFAULT
                                                             <span className="min-w-0 flex-1 truncate text-[6px] font-normal leading-none text-zinc-600">
                                                                 {name}
                                                             </span>
-                                                            <span className="flex shrink-0 items-center gap-0 font-mono text-[7px] font-bold leading-none">
+                                                            <span className="flex shrink-0 items-center gap-0 font-mono text-[6px] font-bold leading-none">
                                                                 <span className={cn("", isNoRegistered ? "text-rose-600" : "text-emerald-600")}>
                                                                     {inHour || '—'}
                                                                 </span>
-                                                                <span className="font-normal text-zinc-600">/</span>
+                                                                <span className="font-normal text-zinc-600">-</span>
                                                                 <span className="text-rose-600">{outHour || ''}</span>
                                                             </span>
                                                             {needsLineBelow && (
