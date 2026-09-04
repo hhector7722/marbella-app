@@ -21,6 +21,7 @@ import { formatYmdShort } from '@/lib/usage/modal-apply';
 import { ShiftBarTimeLabels } from '@/components/schedule/ShiftBarTimeLabels';
 import { ScheduleNotesFooter } from '@/components/schedule/ScheduleNotesFooter';
 import { fetchDayDetailAction } from '@/app/staff/actividades/actions';
+import { fmtHour, groupActivities } from '@/components/dashboards/staff/StaffWeekScheduleWidget';
 
 /* ─── Constants (match editor exactly) ─────────────────── */
 const START_HOUR = 7;
@@ -240,25 +241,26 @@ export const StaffScheduleModal = ({
             const dayYmd = format(day, 'yyyy-MM-dd');
             const dayDetail = await fetchDayDetailAction({ date: dayYmd });
             const dayActivities = dayDetail.success ? dayDetail.data.barActivities : [];
-            if (dayActivities.length > 0) {
-                const a1 = dayActivities[0];
-                const a2 = dayActivities[1];
-                setDayActivity(a1.activityName);
-                setDayCategory((a1.categories ?? []).join(', '));
-                setEventStart(a1.startTime);
-                setEventEnd(a1.endTime);
+            const groupedActivities = groupActivities(dayActivities);
+            if (groupedActivities.length > 0) {
+                const g1 = groupedActivities[0];
+                const g2 = groupedActivities[1];
+                setDayActivity(g1.activityName);
+                setDayCategory((g1.categories ?? []).join(', '));
+                setEventStart(fmtHour(g1.startTime));
+                setEventEnd(fmtHour(g1.endTime));
                 setEventParticipants(
-                    a1.totalParticipants != null && a1.totalParticipants > 0
-                        ? String(a1.totalParticipants)
+                    g1.totalParticipants != null && g1.totalParticipants > 0
+                        ? `${g1.totalParticipants} pax`
                         : '',
                 );
-                setDayActivity2(a2?.activityName ?? '');
-                setDayCategory2((a2?.categories ?? []).join(', '));
-                setEventStart2(a2?.startTime ?? '');
-                setEventEnd2(a2?.endTime ?? '');
+                setDayActivity2(g2?.activityName ?? '');
+                setDayCategory2((g2?.categories ?? []).join(', '));
+                setEventStart2(g2 ? fmtHour(g2.startTime) : '');
+                setEventEnd2(g2 ? fmtHour(g2.endTime) : '');
                 setEventParticipants2(
-                    a2?.totalParticipants != null && a2.totalParticipants > 0
-                        ? String(a2.totalParticipants)
+                    g2?.totalParticipants != null && g2.totalParticipants > 0
+                        ? `${g2.totalParticipants} pax`
                         : '',
                 );
             } else {

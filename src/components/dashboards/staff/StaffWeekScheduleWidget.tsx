@@ -51,14 +51,14 @@ function formatClockTime(iso: string): string {
 }
 
 /** Misma presentación de hora que `/horario` (vista Actividades). */
-function fmtHour(time: string): string {
+export function fmtHour(time: string): string {
     const parts = time.split(':');
     if (parts.length < 2) return time;
     return `${parseInt(parts[0], 10)}:${parts[1]}`;
 }
 
 /** Agrupa por nombre como en `/horario` y `/staff/actividades`. */
-function groupActivities(acts: BarActivity[]): BarActivity[] {
+export function groupActivities(acts: BarActivity[]): BarActivity[] {
     if (acts.length === 0) return acts;
     const map = new Map<string, BarActivity>();
     for (const a of acts) {
