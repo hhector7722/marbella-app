@@ -210,6 +210,10 @@ export function MasterPlantillaAttendanceWidget({
                                 onDayClick={handleDayClick}
                                 timeSeparator="-"
                                 showRowDividers={false}
+                                inTimeClassName="text-emerald-700"
+                                outTimeClassName="text-rose-700"
+                                timeMono={false}
+                                hideSeparatorWhenNoOut
                             />
                         </div>
                     </MonthCalendarFrame>

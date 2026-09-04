@@ -55,6 +55,14 @@ interface PlantillaWeekCardProps {
     timeSeparator?: string;
     /** Pinta la línea horizontal que separa registros de trabajadores. */
     showRowDividers?: boolean;
+    /** Clase de color de la hora de entrada. */
+    inTimeClassName?: string;
+    /** Clase de color de la hora de salida. */
+    outTimeClassName?: string;
+    /** Fuente monoespaciada para las horas. */
+    timeMono?: boolean;
+    /** No muestra el separador cuando hay entrada pero no salida. */
+    hideSeparatorWhenNoOut?: boolean;
 }
 
 /** Solo el primer nombre: identifica al empleado sin ocupar la celda. */
@@ -72,7 +80,17 @@ function formatHourOnly(time: string | null | undefined): string {
     return Number.isFinite(hour) ? String(hour) : '';
 }
 
-export function PlantillaWeekCard({ week, onDayClick, maxRows = MAX_ROWS_DEFAULT, timeSeparator = '/', showRowDividers = true }: PlantillaWeekCardProps) {
+export function PlantillaWeekCard({
+    week,
+    onDayClick,
+    maxRows = MAX_ROWS_DEFAULT,
+    timeSeparator = '/',
+    showRowDividers = true,
+    inTimeClassName = 'text-emerald-600',
+    outTimeClassName = 'text-rose-600',
+    timeMono = true,
+    hideSeparatorWhenNoOut = false,
+}: PlantillaWeekCardProps) {
     const maxDisplayedLogs = Math.max(
         0,
         ...week.days.map((day) => Math.min((day.logs || []).length, maxRows)),
@@ -106,7 +124,7 @@ export function PlantillaWeekCard({ week, onDayClick, maxRows = MAX_ROWS_DEFAULT
                                 {day.dayNumber}
                             </span>
                             <div className={cn("flex-1 flex flex-col items-stretch justify-center mt-3 w-full overflow-hidden", day.isOtherMonth && "opacity-45")}>
-                                <div className="flex flex-col items-stretch justify-center w-full space-y-[3px]">
+                                <div className="flex h-full w-full flex-col items-stretch justify-evenly gap-[3px]">
                                     {(() => {
                                         const logs = day.logs || [];
                                         const overflow = logs.length > maxRows ? logs.length - maxRows + 1 : 0;
@@ -150,12 +168,18 @@ export function PlantillaWeekCard({ week, onDayClick, maxRows = MAX_ROWS_DEFAULT
                                                             <span className="min-w-0 flex-1 truncate text-[6px] font-normal leading-none text-zinc-600">
                                                                 {name}
                                                             </span>
-                                                            <span className="flex shrink-0 items-center gap-0 font-mono text-[7px] font-bold leading-none" data-week-log-hours>
-                                                                <span className={cn("", isNoRegistered ? "text-rose-600" : "text-emerald-600")}>
+                                                            <span className={cn("flex shrink-0 items-center gap-0 text-[7px] font-bold leading-none", timeMono && "font-mono")} data-week-log-hours>
+                                                                <span className={isNoRegistered ? outTimeClassName : inTimeClassName}>
                                                                     {inHour || '—'}
                                                                 </span>
-                                                                <span className="font-normal text-zinc-600">{timeSeparator}</span>
-                                                                <span className="text-rose-600">{outHour || ''}</span>
+                                                                {outHour ? (
+                                                                    <>
+                                                                        <span className="font-normal text-zinc-600">{timeSeparator}</span>
+                                                                        <span className={outTimeClassName}>{outHour}</span>
+                                                                    </>
+                                                                ) : !hideSeparatorWhenNoOut ? (
+                                                                    <span className="font-normal text-zinc-600">{timeSeparator}</span>
+                                                                ) : null}
                                                             </span>
                                                             {needsLineBelow && showRowDividers && (
                                                                 <div className="absolute h-px bg-gray-100 left-0.5 right-0.5" style={{ top: 'calc(100% + 1px)' }} />
