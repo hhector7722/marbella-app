@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
+import { startTransition, useState, useEffect, useRef, useMemo, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import {
     X,
@@ -27,15 +27,35 @@ import { fetchDayDetailAction, BarActivity } from '@/app/staff/actividades/actio
 import { groupActivities } from '@/components/dashboards/staff/StaffWeekScheduleWidget';
 import { sendScheduleNotifications } from '@/app/actions/notifications';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
+import type { PlantillaEmployee } from '@/components/modals/StaffSelectionModal';
 import { filterVisiblePlantillaEmployees } from '@/lib/staff/plantilla-employees';
 import { ScheduleDayProfitabilityBar } from '@/components/schedule/ScheduleDayProfitabilityBar';
 import { ShiftBarTimeLabels } from '@/components/schedule/ShiftBarTimeLabels';
+import type { Tables, TablesInsert } from '@/types/supabase';
+
+type ScheduleShift = {
+    employeeId: string;
+    name: string | null;
+    start: string;
+    end: string;
+    activity: string;
+    categoria: string;
+    participantsCount: string;
+    activity2: string;
+    start2: string;
+    end2: string;
+    participantsCount2: string;
+    categoria2: string;
+    active: boolean;
+};
+
+type ScheduleShiftRow = Tables<'shifts'>;
+type ScheduleShiftInsert = TablesInsert<'shifts'>;
 
 export interface ScheduleDayEditorProps {
     initialDate: string;
     onClose: () => void;
     onSuccess?: () => void;
-    onRequestCloseModal?: () => void;
     embedded?: boolean;
     /** Instancia del Modal padre vivo; solo cuando el editor está embebido en StaffScheduleModal. */
     modalParentInstance?: string;
@@ -77,8 +97,8 @@ const ShiftBar = ({
     allowMove = true,
     barClass = ''
 }: {
-    shift: any,
-    onUpdate: (s: any) => void,
+    shift: ScheduleShift,
+    onUpdate: (s: ScheduleShift) => void,
     allowMove?: boolean,
     barClass?: string
 }) => {
@@ -122,7 +142,7 @@ const ShiftBar = ({
                 const endPct = timeToPercent(dragStartShift.end);
                 const duration = endPct - startPct;
 
-                let newStartPct = Math.max(0, Math.min(startPct + diffPercent, 100 - duration));
+                const newStartPct = Math.max(0, Math.min(startPct + diffPercent, 100 - duration));
                 const newStart = percentToTime(newStartPct);
                 const actualStartPct = timeToPercent(newStart);
                 const newEnd = percentToTime(actualStartPct + duration);
@@ -172,7 +192,7 @@ export interface ScheduleDayEditorHandle {
 }
 
 export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDayEditorProps>(function ScheduleDayEditor(
-    { initialDate, onClose, onSuccess, onRequestCloseModal, embedded = false, modalParentInstance },
+    { initialDate, onClose, onSuccess, embedded = false, modalParentInstance },
     ref,
 ) {
     const supabase = createClient();
@@ -180,16 +200,15 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
 
     const [date, setDate] = useState('');
     const [activity, setActivity] = useState('');
-    const [shifts, setShifts] = useState<any[]>([]);
+    const [shifts, setShifts] = useState<ScheduleShift[]>([]);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
-    const [availableProfiles, setAvailableProfiles] = useState<any[]>([]);
+    const [availableProfiles, setAvailableProfiles] = useState<PlantillaEmployee[]>([]);
     // Flag to avoid overwriting manual edits after initial autofill
-    const [primaryFetched, setPrimaryFetched] = useState(false);
+    const primaryFetchedRef = useRef(false);
 
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [isDayPublished, setIsDayPublished] = useState(false);
     const [isDaySent, setIsDaySent] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const [defaultStart, setDefaultStart] = useState('');
@@ -236,50 +255,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
     const trackScheduleDayNav = useTrackModalApply('schedule-day-nav', 'Navegación día horarios');
     const trackScheduleShare = useTrackModalApply('schedule-share-apply', 'Acción compartir horario');
 
-    useEffect(() => {
-        if (!loading && hasUnsavedChanges) {
-            setIsSaving(true);
-            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-            saveTimeoutRef.current = setTimeout(async () => {
-                // El autoguardado NUNCA debe publicar, siempre guarda como borrador (false)
-                await handleSave(true, false);
-                setIsSaving(false);
-            }, 1000);
-        }
-        return () => {
-            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-        };
-    }, [
-        shifts,
-        activity,
-        defaultStart,
-        defaultEnd,
-        participantsCount,
-        categoria,
-        activity2,
-        defaultStart2,
-        defaultEnd2,
-        participantsCount2,
-        categoria2,
-        hasUnsavedChanges,
-        loading
-    ]);
-
-    useEffect(() => {
-        const targetDate = initialDate || new Date().toISOString().split('T')[0];
-        setDate(targetDate);
-        setCalendarDate(new Date(targetDate));
-        fetchData(targetDate);
-    }, [initialDate]);
-
-    useEffect(() => {
-        // Reset secondary slot when date changes and refetch data
-        setSecondSlotExpanded(false);
-        setPrimaryFetched(false);
-        fetchData(date);
-    }, [date]);
-
-    const fetchData = async (targetDate: string) => {
+    const fetchData = useCallback(async (targetDate: string) => {
         setLoading(true);
         try {
             const { data: employees } = await supabase
@@ -306,7 +282,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
             }
 
             // DEDUPLICACIÓN: Mapa por user_id, quedándonos con el primero (más reciente)
-            const shiftMap = new Map();
+            const shiftMap = new Map<string, ScheduleShiftRow>();
             existingShifts?.forEach(s => {
                 if (!shiftMap.has(s.user_id)) {
                     shiftMap.set(s.user_id, s);
@@ -355,17 +331,16 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                 };
             }) || [];
 
-            const uniqueShifts = Array.from(shiftMap.values()) as any[];
+            const uniqueShifts = Array.from(shiftMap.values());
 
             if (uniqueShifts.length > 0) {
                 // Keep the first one as day-level fallback/defaults
                 const first = uniqueShifts[0];
-                const fActivity = first.draft_activity || first.activity || '';
                 const fActivity2 = first.draft_activity_2 || first.activity_2 || '';
                 const fNotes = first.draft_notes || first.notes || '{}';
 
                 /** Hora de evento del día: columnas event_* (todas las filas del día deben coincidir). */
-                const pickDayEventField = (pick: (s: any) => string | null | undefined) => {
+                const pickDayEventField = (pick: (s: ScheduleShiftRow) => string | null | undefined) => {
                     for (const s of uniqueShifts) {
                         const v = String(pick(s) ?? '').trim();
                         if (v) return v;
@@ -397,7 +372,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                     if (!pStart2) pStart2 = parsed.defaultStart2 || '';
                     if (!pEnd2) pEnd2 = parsed.defaultEnd2 || '';
                     pPart2 = parsed.participantsCount2 || '';
-                } catch (e) { }
+                } catch { }
 
                 // Fallback to actual times if notes are missing or defaults are empty
                 const fStartTime = first.draft_start_time || first.start_time;
@@ -440,7 +415,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
 
             // El resumen del día refleja las actividades reales del pabellón
             // (misma fuente que el widget de horario), igual que en el modo lectura.
-            if (!primaryFetched) {
+            if (!primaryFetchedRef.current) {
                 const g1 = dayGrouped[0];
                 const g2 = dayGrouped[1];
                 if (g1) {
@@ -465,22 +440,30 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                             : '',
                     );
                 }
-                setPrimaryFetched(true);
+                primaryFetchedRef.current = true;
             }
 
             setShifts(activeShifts);
-            setAvailableProfiles(filterVisiblePlantillaEmployees(employees || []));
+            const profileOptions: PlantillaEmployee[] = (employees || []).map((employee) => ({
+                id: employee.id,
+                first_name: employee.first_name ?? '',
+                last_name: employee.last_name ?? '',
+                end_date: employee.end_date,
+                avatar_url: employee.avatar_url,
+                visible_in_plantilla: employee.visible_in_plantilla ?? undefined,
+            }));
+            setAvailableProfiles(filterVisiblePlantillaEmployees(profileOptions));
             setHasUnsavedChanges(false);
             setIsDaySent(false); // Reinicia estado "enviado" al cambiar día
-        } catch (error) {
+        } catch (error: unknown) {
             console.error(error);
             toast.error('Error al cargar datos');
         } finally {
             setLoading(false);
         }
-    };
+    }, [supabase]);
 
-    const handleUpdateShift = (index: number, newShift: any) => {
+    const handleUpdateShift = (index: number, newShift: ScheduleShift) => {
         const updated = [...shifts];
         updated[index] = newShift;
         setShifts(updated);
@@ -531,7 +514,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
         }
     };
 
-    const handleSave = async (silent = false, publish = false) => {
+    const handleSave = useCallback(async (silent = false, publish = false) => {
         const activeShifts = shifts.filter(s => s.active);
         try {
             const { data: { user } } = await supabase.auth.getUser();
@@ -599,7 +582,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                     participantsCount2: (shift.participantsCount2 || participantsCount2 || ''),
                 });
 
-                const data: any = {
+                const data: ScheduleShiftInsert = {
                     user_id: shift.employeeId,
                     draft_start_time: isoStart,
                     draft_end_time: isoEnd,
@@ -672,57 +655,78 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                 onClose();
             }
             return true;
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
             if (!silent) toast.error('Error al guardar');
             return false;
         }
-    };
+    }, [
+        activity,
+        activity2,
+        categoria,
+        categoria2,
+        date,
+        defaultEnd,
+        defaultEnd2,
+        defaultStart,
+        defaultStart2,
+        fetchData,
+        isDayPublished,
+        onClose,
+        onSuccess,
+        participantsCount,
+        participantsCount2,
+        shifts,
+        supabase,
+    ]);
 
-    const handleSendNotifications = async () => {
-        const saved = await handleSave(true, true);
-        if (!saved) return;
-        // Solo usuarios que tienen turno ese día (activo y con hora inicio/fin)
-        const userShifts = shifts
-            .filter(s => s.active && s.start && s.end)
-            .map(s => ({ userId: s.employeeId, start: s.start, end: s.end }));
-        if (userShifts.length === 0) {
-            toast.info('No hay nadie con horario ese día para notificar');
-            return;
+    useEffect(() => {
+        if (!loading && hasUnsavedChanges) {
+            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+            saveTimeoutRef.current = setTimeout(() => {
+                // El autoguardado NUNCA debe publicar, siempre guarda como borrador (false)
+                void handleSave(true, false);
+            }, 1000);
         }
-        const dateFormatted = format(new Date(date), "EEEE dd/MM", { locale: es });
-        const loadingToast = toast.loading('Enviando notificaciones...');
-        try {
-            const result = await sendScheduleNotifications(dateFormatted, userShifts, date);
-            toast.dismiss(loadingToast);
-            if (result?.error || result?.success === false) {
-                toast.error(result?.error || 'Error al enviar notificaciones');
-                return;
-            }
-                                            const sent = Number(result?.sentCount ?? 0);
-                                            const target = Number(result?.targetCount ?? userShifts.length);
-            const missing = Array.isArray(result?.missingSubscriptionUserIds) ? result.missingSubscriptionUserIds.length : Math.max(0, target - sent);
-            if (sent <= 0) {
-                toast.warning(
-                    result?.message ||
-                        'Aviso guardado en campana. Activa push en el móvil/PC para recibir también fuera de la app.'
-                );
-                onSuccess?.();
-                onClose();
-                return;
-            }
-            if (sent < target) {
-                toast.warning(`Enviadas ${sent}/${target}. Faltan ${missing} sin push activado.`);
-            } else {
-                toast.success('Notificaciones enviadas');
-            }
-            onSuccess?.();
-            onClose();
-        } catch (error) {
-            toast.dismiss(loadingToast);
-            toast.error('Error al enviar');
-        }
-    };
+        return () => {
+            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        };
+    }, [
+        activity,
+        activity2,
+        categoria,
+        categoria2,
+        defaultEnd,
+        defaultEnd2,
+        defaultStart,
+        defaultStart2,
+        handleSave,
+        hasUnsavedChanges,
+        loading,
+        participantsCount,
+        participantsCount2,
+        shifts,
+    ]);
+
+    useEffect(() => {
+        const targetDate = initialDate || new Date().toISOString().split('T')[0];
+        startTransition(() => {
+            setDate(targetDate);
+            setCalendarDate(new Date(targetDate));
+        });
+        startTransition(() => {
+            void fetchData(targetDate);
+        });
+    }, [fetchData, initialDate]);
+
+    useEffect(() => {
+        // Reset secondary slot when date changes and refetch data
+        startTransition(() => setSecondSlotExpanded(false));
+        primaryFetchedRef.current = false;
+        startTransition(() => {
+            void fetchData(date);
+        });
+    }, [date, fetchData]);
 
     const navigateDay = async (direction: -1 | 1) => {
         if (hasUnsavedChanges) {
@@ -1438,7 +1442,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                             toast.success('Notificaciones enviadas');
                                         }
                                         setIsDaySent(true);
-                                    } catch (e) {
+                                    } catch {
                                         toast.dismiss(loadToast);
                                         toast.error('Error al enviar');
                                     }

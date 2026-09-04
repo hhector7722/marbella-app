@@ -80,7 +80,7 @@ export function ScheduleDayProfitabilityBar({ date, shifts }: Props) {
         })();
 
         return () => { cancelled = true; };
-    }, [isHector, date, activeEmployeeIds.join('|'), supabase]);
+    }, [isHector, date, activeEmployeeIds, supabase]);
 
     const laborCost = useMemo(
         () => computeScheduleDayLaborCost(shifts, rateByUserId),

@@ -564,7 +564,6 @@ export const StaffScheduleModal = ({
                             initialDate={editModeForDate}
                             onClose={exitEditModeAndRefresh}
                             onSuccess={exitEditModeAndRefresh}
-                            onRequestCloseModal={handleClose}
                             embedded
                             modalParentInstance="staff-schedule"
                         />
