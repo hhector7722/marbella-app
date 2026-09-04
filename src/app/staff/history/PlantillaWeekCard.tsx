@@ -168,17 +168,17 @@ export function PlantillaWeekCard({
                                                             <span className="min-w-0 flex-1 truncate text-[6px] font-normal leading-none text-zinc-600">
                                                                 {name}
                                                             </span>
-                                                            <span className={cn("flex shrink-0 items-center gap-0 text-[7px] font-bold leading-none", timeMono && "font-mono")} data-week-log-hours>
+                                                            <span className={cn("flex shrink-0 items-center gap-0 text-[6px] font-bold leading-none", timeMono && "font-mono")} data-week-log-hours>
                                                                 <span className={isNoRegistered ? outTimeClassName : inTimeClassName}>
                                                                     {inHour || '—'}
                                                                 </span>
                                                                 {outHour ? (
                                                                     <>
-                                                                        <span className="font-normal text-zinc-600">{timeSeparator}</span>
+                                                                        <span className="font-normal text-zinc-600">-</span>
                                                                         <span className={outTimeClassName}>{outHour}</span>
                                                                     </>
                                                                 ) : !hideSeparatorWhenNoOut ? (
-                                                                    <span className="font-normal text-zinc-600">{timeSeparator}</span>
+                                                                    <span className="font-normal text-zinc-600">-</span>
                                                                 ) : null}
                                                             </span>
                                                             {needsLineBelow && showRowDividers && (
