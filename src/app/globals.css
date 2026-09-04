@@ -526,6 +526,28 @@
 [data-component='Modal'][data-scheme='dark'] [data-element='body'] [data-element='schedule-shift-table'] :is(.text-gray-300, .text-gray-400, .text-gray-500, .text-zinc-300, .text-zinc-400, .text-zinc-500) {
   color: var(--color-texto-suave);
 }
+/*
+ * Editor de día embebido (modo edición del modal de horario): hereda el azul
+ * del modal y adapta los colores que el scheme dark no cubre.
+ */
+[data-component='Modal'][data-scheme='dark'] [data-editor-embedded] :is(.text-emerald-600) {
+  color: #6ee7b7;
+}
+[data-component='Modal'][data-scheme='dark'] [data-editor-embedded] :is(.text-rose-500) {
+  color: #fda4af;
+}
+[data-component='Modal'][data-scheme='dark'] [data-editor-embedded] :is(.text-zinc-300) {
+  color: rgb(255 255 255 / 0.35);
+}
+[data-component='Modal'][data-scheme='dark'] [data-editor-embedded] :is(.text-zinc-600, .text-gray-600) {
+  color: rgb(255 255 255 / 0.7);
+}
+[data-component='Modal'][data-scheme='dark'] [data-editor-embedded] :is(.border-zinc-100, .border-zinc-200) {
+  border-color: rgb(255 255 255 / 0.15);
+}
+[data-component='Modal'][data-scheme='dark'] [data-editor-embedded] .bg-zinc-50\/90 {
+  background-color: rgb(255 255 255 / 0.1);
+}
 
 /*
  * Fichaje staff: fill reparte el ancho; el relleno visual ocupa todo el host táctil.

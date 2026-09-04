@@ -24,6 +24,7 @@ import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
 import { ShrinkToFitInput } from '@/components/ui/ShrinkToFitCell';
 import { fetchDayDetailAction, BarActivity } from '@/app/staff/actividades/actions';
+import { groupActivities } from '@/components/dashboards/staff/StaffWeekScheduleWidget';
 import { sendScheduleNotifications } from '@/app/actions/notifications';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { filterVisiblePlantillaEmployees } from '@/lib/staff/plantilla-employees';
@@ -147,7 +148,7 @@ const ShiftBar = ({
     return (
         <div
             ref={barRef}
-            className={cn('absolute top-1.5 bottom-1.5 flex items-center justify-between rounded-full z-10 touch-none overflow-hidden px-1.5', barClass, allowMove ? 'cursor-grab active:cursor-grabbing' : 'cursor-default')}
+            className={cn('absolute top-2.5 bottom-2.5 flex items-center justify-between rounded-full z-10 touch-none overflow-hidden px-1.5', barClass, allowMove ? 'cursor-grab active:cursor-grabbing' : 'cursor-default')}
             style={{
                 left: `${leftPos}%`,
                 width: `${width}%`,
@@ -282,34 +283,11 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 .lte('start_time', endOfDay)
                 .order('created_at', { ascending: false }); // Mas nuevos primero
 
-            // Fetch bar activities for the day to auto-fill primary activity
+            // Fetch bar activities for the day (misma fuente que el widget de horario)
             const dayDetailRes = await fetchDayDetailAction({ date: targetDate });
-            let autoActivity = '';
+            let dayGrouped: BarActivity[] = [];
             if (dayDetailRes.success) {
-                const barActivities = dayDetailRes.data.barActivities;
-                if (barActivities && barActivities.length > 0) {
-                    // Choose the activity that occupies the most rows * columns in the morning slot (using duration as proxy)
-                    const computeArea = (act: BarActivity) => {
-                      const startH = parseInt(act.startTime.split(':')[0] ?? '0', 10);
-                      const endH = parseInt(act.endTime.split(':')[0] ?? '0', 10);
-                      return Math.max(0, endH - startH);
-                    };
-                    let best = barActivities[0];
-                    let maxArea = computeArea(best);
-                    for (const act of barActivities) {
-                      const area = computeArea(act);
-                      if (area > maxArea) {
-                        best = act;
-                        maxArea = area;
-                      }
-                    }
-                    autoActivity = best.activityName || '';
-                }
-            }
-            // Set primary activity only once per date load (or if user hasn't edited yet)
-            if (!primaryFetched) {
-                setActivity(autoActivity);
-                setPrimaryFetched(true);
+                dayGrouped = groupActivities(dayDetailRes.data.barActivities);
             }
 
             // DEDUPLICACIÓN: Mapa por user_id, quedándonos con el primero (más reciente)
@@ -384,9 +362,6 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 const evStart2 = pickDayEventField((s) => s.event_start_time_2);
                 const evEnd2 = pickDayEventField((s) => s.event_end_time_2);
 
-                // Set primary activity from fetched bar activities (auto) if available
-                setActivity(autoActivity);
-
                 const fCategoria = first.draft_categoria || first.categoria || '';
                 const fCategoria2 = first.draft_categoria_2 || first.categoria_2 || '';
                 setCategoria(fCategoria);
@@ -446,6 +421,36 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 setDefaultEnd2('');
                 setParticipantsCount2('');
                 setCategoria2('');
+            }
+
+            // El resumen del día refleja las actividades reales del pabellón
+            // (misma fuente que el widget de horario), igual que en el modo lectura.
+            if (!primaryFetched) {
+                const g1 = dayGrouped[0];
+                const g2 = dayGrouped[1];
+                if (g1) {
+                    setActivity(g1.activityName);
+                    setCategoria((g1.categories ?? []).join(', '));
+                    setDefaultStart(g1.startTime);
+                    setDefaultEnd(g1.endTime);
+                    setParticipantsCount(
+                        g1.totalParticipants != null && g1.totalParticipants > 0
+                            ? String(g1.totalParticipants)
+                            : '',
+                    );
+                }
+                if (g2) {
+                    setActivity2(g2.activityName);
+                    setCategoria2((g2.categories ?? []).join(', '));
+                    setDefaultStart2(g2.startTime);
+                    setDefaultEnd2(g2.endTime);
+                    setParticipantsCount2(
+                        g2.totalParticipants != null && g2.totalParticipants > 0
+                            ? String(g2.totalParticipants)
+                            : '',
+                    );
+                }
+                setPrimaryFetched(true);
             }
 
             setShifts(activeShifts);
@@ -752,36 +757,46 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
     }
 
     return (
-        <div className={embedded ? 'flex flex-col flex-1 min-h-0 w-full text-gray-800 overflow-hidden' : 'min-h-[100dvh] w-full flex flex-col p-3 sm:p-4 md:p-6 lg:p-8 text-gray-800'} onClick={() => setEditingIndex(null)}>
-            <div className={cn('bg-white shadow-sm border border-zinc-200 flex flex-col shrink w-full relative overflow-hidden', embedded ? 'rounded-2xl flex-1 min-h-0' : 'rounded-[32px] max-w-7xl mx-auto')}>
+        <div
+            data-editor-embedded={embedded ? 'true' : undefined}
+            className={embedded
+                ? 'flex flex-col flex-1 min-h-0 w-full text-white overflow-hidden'
+                : 'min-h-[100dvh] w-full flex flex-col p-3 sm:p-4 md:p-6 lg:p-8 text-gray-800'}
+            onClick={() => setEditingIndex(null)}
+        >
+            <div className={cn('flex flex-col shrink w-full relative overflow-hidden', embedded
+                ? 'rounded-2xl flex-1 min-h-0 bg-transparent'
+                : 'rounded-[32px] max-w-7xl mx-auto bg-white shadow-sm border border-zinc-200')}>
 
                 {/* WRAPPER STICKY GLOBAL PARA TODA LA CABECERA */}
-                <div className={cn('sticky top-[0px] z-30 flex flex-col w-full shadow-sm bg-white -mt-[1px]', embedded ? 'rounded-t-2xl' : 'rounded-t-[32px]')}>
+                <div className={cn('sticky top-[0px] z-30 flex flex-col w-full -mt-[1px]', embedded
+                    ? 'rounded-t-2xl bg-transparent'
+                    : 'rounded-t-[32px] bg-white shadow-sm')}>
                     {/* CABECERA (Fecha y Botones) */}
                     <div className="flex items-center justify-between px-4 py-3 shrink-0 relative">
-                        <div className="flex items-center gap-0 sm:gap-1 mt-2">
+                        <div className={cn('flex items-center gap-0 sm:gap-1', !embedded && 'mt-2')}>
                             {embedded && modalParentInstance && (
-                                <button type="button" onClick={onClose} aria-label="Volver al calendario" className="p-1.5 hover:bg-zinc-100 rounded-xl transition-colors text-zinc-500 active:scale-95 flex-shrink-0" title="Volver">
+                                <button type="button" onClick={onClose} aria-label="Volver al calendario" className={cn('p-1.5 rounded-xl transition-colors active:scale-95 flex-shrink-0', embedded ? 'text-white/70 hover:bg-white/10' : 'text-zinc-500 hover:bg-zinc-100')} title="Volver">
                                     <ArrowLeft size={22} strokeWidth={2.5} />
                                 </button>
                             )}
-                            <button type="button" onClick={() => navigateDay(-1)} aria-label="Día anterior" className="p-1 sm:p-1.5 hover:bg-zinc-100 rounded-xl transition-colors text-zinc-500 active:scale-95 flex-shrink-0">
+                            <button type="button" onClick={() => navigateDay(-1)} aria-label="Día anterior" className={cn('p-1 sm:p-1.5 rounded-xl transition-colors active:scale-95 flex-shrink-0', embedded ? 'text-white/70 hover:bg-white/10' : 'text-zinc-500 hover:bg-zinc-100')}>
                                 <ChevronLeft size={24} />
                             </button>
-                            <button type="button" onClick={() => setShowCalendarModal(true)} aria-label="Abrir calendario" className="flex items-center gap-1 group cursor-pointer hover:bg-zinc-100 px-1 py-1 sm:py-1.5 rounded-xl transition-all">
-                                <h2 className="text-[13px] sm:text-[15px] md:text-xl font-black text-zinc-800 tracking-widest whitespace-nowrap">
+                            <button type="button" onClick={() => setShowCalendarModal(true)} aria-label="Abrir calendario" className={cn('flex items-center gap-1 group cursor-pointer px-1 py-1 sm:py-1.5 rounded-xl transition-all', embedded ? 'hover:bg-white/10' : 'hover:bg-zinc-100')}>
+                                <h2 className={cn('text-[13px] sm:text-[15px] md:text-xl font-black tracking-widest whitespace-nowrap', embedded ? 'text-white' : 'text-zinc-800')}>
                                     {date && (() => {
                                         const raw = format(new Date(date), "EEEE d 'de' MMMM", { locale: es });
                                         return raw.charAt(0).toUpperCase() + raw.slice(1);
                                     })()}
                                 </h2>
                             </button>
-                            <button type="button" onClick={() => navigateDay(1)} aria-label="Día siguiente" className="p-1 sm:p-1.5 hover:bg-zinc-100 rounded-xl transition-colors text-zinc-500 active:scale-95 flex-shrink-0">
+                            <button type="button" onClick={() => navigateDay(1)} aria-label="Día siguiente" className={cn('p-1 sm:p-1.5 rounded-xl transition-colors active:scale-95 flex-shrink-0', embedded ? 'text-white/70 hover:bg-white/10' : 'text-zinc-500 hover:bg-zinc-100')}>
                                 <ChevronRight size={24} />
                             </button>
                         </div>
 
-                        <div className="flex items-center gap-1 mt-2">
+                        <div className={cn('flex items-center gap-1', !embedded && 'mt-2')}>
                             {/* Movemos Botón Agregar Empleado a Cabecera */}
                             <Button
                                 type="button"
@@ -796,9 +811,9 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                 type="button"
                                 onClick={() => setShowShareModal(true)}
                                 aria-label="Compartir horario"
-                                className={`relative w-7 h-7 md:w-8 md:h-8 rounded-xl text-zinc-600 transition-all active:scale-95 shadow-sm flex items-center justify-center bg-white border border-zinc-200 hover:bg-zinc-50 group ${isDayPublished && hasUnsavedChanges ? 'ring-2 ring-orange-400/80 ring-offset-2 ring-offset-white' : ''}`}
+                                className={cn('relative w-7 h-7 md:w-8 md:h-8 rounded-xl transition-all active:scale-95 flex items-center justify-center group', embedded ? 'bg-white/10 border border-white/10 text-white hover:bg-white/15' : 'text-zinc-600 shadow-sm bg-white border border-zinc-200 hover:bg-zinc-50', `${isDayPublished && hasUnsavedChanges ? 'ring-2 ring-orange-400/80 ring-offset-2 ring-offset-white' : ''}`)}
                             >
-                                <Share2 size={16} strokeWidth={2.5} className="text-zinc-600" />
+                                <Share2 size={16} strokeWidth={2.5} className={embedded ? 'text-white' : 'text-zinc-600'} />
                                 {isDayPublished && isDaySent && (
                                     <div className="absolute -top-1.5 -right-1.5 bg-white rounded-full p-0.5 shadow-sm z-10 border border-gray-100">
                                         <Check size={10} className="text-emerald-500" strokeWidth={4} />
@@ -809,10 +824,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                     </div>
 
                     {/* ZONA BLANCA E INFERIOR (INPUTS + ROJA) */}
-                    <div className="flex flex-col shrink w-full bg-white relative">
+                    <div className={cn('flex flex-col shrink w-full relative', embedded ? 'bg-transparent' : 'bg-white')}>
                         {/* ZONA DE INPUTS SUPERIOR - Sin border-b ni shadow */}
-                        <div className="p-3 md:p-4 w-full shrink-0">
-                            <div className="flex flex-col gap-2 w-full max-w-2xl mx-auto">
+                        <div className={cn('w-full shrink-0', embedded ? 'p-2' : 'p-3 md:p-4')}>
+                            <div className={cn('flex flex-col gap-2 w-full max-w-2xl mx-auto', embedded && 'rounded-[var(--radio-control)] bg-white/10 p-2')}>
                                 {/* Card actividad 1 */}
                             
 
@@ -833,7 +848,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                             )}
                                         >
                                             <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden cn('rounded-lg', embedded ? 'border-0 bg-transparent' : 'border border-zinc-100 bg-white')">
                                                     <ShrinkToFitInput
                                                         wrapClassName="min-h-0 flex-1"
                                                         singleLine
@@ -849,13 +864,15 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                         className="text-zinc-800 uppercase placeholder:text-zinc-300 focus:outline-none"
                                                     />
                                                 </div>
-                                                <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">Evento</span>
+                                                <span className="{embedded
+                                                        ? 'text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none'
+                                                        : 'text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none'}">Evento</span>
                                             </div>
 
                                             {hasSlot1Activity && (
                                                 <>
                                                     <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                        <div className="flex min-h-[2rem] w-full min-w-0 max-w-full items-center gap-0.5 overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                        <div className="flex min-h-[2rem] w-full min-w-0 max-w-full items-center gap-0.5 overflow-hidden cn('rounded-lg', embedded ? 'border-0 bg-transparent' : 'border border-zinc-100 bg-white')">
                                                             <ShrinkToFitInput
                                                                 wrapClassName="min-h-0 flex-1"
                                                                 type="time"
@@ -867,7 +884,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                 maxPx={11}
                                                                 minPx={5}
                                                                 singleLine
-                                                                className="font-mono text-emerald-600 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
+                                                                className="font-mono focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0 text-emerald-600"
                                                             />
                                                             <span className="text-zinc-300 select-none">-</span>
                                                             <ShrinkToFitInput
@@ -884,11 +901,13 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                 className="font-mono text-rose-500 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
                                                             />
                                                         </div>
-                                                        <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">Horario</span>
+                                                        <span className="{embedded
+                                                        ? 'text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none'
+                                                        : 'text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none'}">Horario</span>
                                                     </div>
 
                                                     <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                        <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                        <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden cn('rounded-lg', embedded ? 'border-0 bg-transparent' : 'border border-zinc-100 bg-white')">
                                                             <ShrinkToFitInput
                                                                 wrapClassName="min-h-0 flex-1"
                                                                 type="text"
@@ -903,11 +922,13 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                 className="text-zinc-800 focus:outline-none"
                                                             />
                                                         </div>
-                                                        <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">Pax</span>
+                                                        <span className="{embedded
+                                                        ? 'text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none'
+                                                        : 'text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none'}">Pax</span>
                                                     </div>
 
                                                     <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                        <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                        <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden cn('rounded-lg', embedded ? 'border-0 bg-transparent' : 'border border-zinc-100 bg-white')">
                                                             <ShrinkToFitInput
                                                                 wrapClassName="min-h-0 flex-1"
                                                                 singleLine
@@ -923,7 +944,9 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                 className="text-zinc-800 uppercase placeholder:text-zinc-300 focus:outline-none"
                                                             />
                                                         </div>
-                                                        <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">Categoria</span>
+                                                        <span className="{embedded
+                                                        ? 'text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none'
+                                                        : 'text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none'}">Categoria</span>
                                                     </div>
                                                 </>
                                             )}
@@ -936,7 +959,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                         type="button"
                                         onClick={() => setSecondSlotExpanded(true)}
                                         className={cn(
-                                            'w-full min-h-12 shrink-0 rounded-xl border border-zinc-200 bg-white text-[#36606F] text-[10px] font-black uppercase tracking-widest py-3 transition-colors hover:bg-zinc-50 active:scale-[0.99]'
+                                            'shrink-0 rounded-xl text-[10px] font-black uppercase tracking-widest py-3 transition-colors active:scale-[0.99]',
+                                            embedded
+                                                ? 'self-center border-0 bg-transparent text-white/80 hover:bg-white/10'
+                                                : 'w-full min-h-12 border border-zinc-200 bg-white text-[#36606F] hover:bg-zinc-50'
                                         )}
                                     >
                                         + Segunda actividad (TARDE)
@@ -945,7 +971,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
 
                                 {/* Card actividad 2 — solo si hay texto en act. 2 o el usuario abrió el slot */}
                                 {showSecondActivityCard && (
-                                    <div className="bg-zinc-50 rounded-xl border border-zinc-200 shadow-sm p-2 sm:p-3 w-full min-w-0">
+                                    <div className={cn('rounded-xl p-2 sm:p-3 w-full min-w-0', embedded ? 'bg-white/10 border-0 shadow-none' : 'bg-zinc-50 border border-zinc-200 shadow-sm')}>
                                         <div className="mb-1.5 flex w-full items-center justify-center gap-2 text-center">
                                             <span className="text-[9px] font-black tracking-wide text-zinc-500 uppercase">TARDE</span>
                                             {secondSlotExpanded && !hasSlot2Activity && (
@@ -970,7 +996,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                 )}
                                             >
                                                 <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                    <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                    <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden cn('rounded-lg', embedded ? 'border-0 bg-transparent' : 'border border-zinc-100 bg-white')">
                                                         <ShrinkToFitInput
                                                             wrapClassName="min-h-0 flex-1"
                                                             singleLine
@@ -986,13 +1012,15 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                             className="text-zinc-800 uppercase placeholder:text-zinc-300 focus:outline-none"
                                                         />
                                                     </div>
-                                                    <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">Evento</span>
+                                                    <span className="{embedded
+                                                        ? 'text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none'
+                                                        : 'text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none'}">Evento</span>
                                                 </div>
 
                                                 {hasSlot2Activity && (
                                                     <>
                                                         <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                            <div className="flex min-h-[2rem] w-full min-w-0 max-w-full items-center gap-0.5 overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                            <div className="flex min-h-[2rem] w-full min-w-0 max-w-full items-center gap-0.5 overflow-hidden cn('rounded-lg', embedded ? 'border-0 bg-transparent' : 'border border-zinc-100 bg-white')">
                                                                 <ShrinkToFitInput
                                                                     wrapClassName="min-h-0 flex-1"
                                                                     type="time"
@@ -1004,7 +1032,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                     maxPx={11}
                                                                     minPx={5}
                                                                     singleLine
-                                                                    className="font-mono text-emerald-600 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
+                                                                    className="font-mono focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0 text-emerald-600"
                                                                 />
                                                                 <span className="text-zinc-300 select-none">-</span>
                                                                 <ShrinkToFitInput
@@ -1020,11 +1048,13 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                     className="font-mono text-rose-500 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
                                                                 />
                                                             </div>
-                                                            <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">Horario</span>
+                                                            <span className="{embedded
+                                                        ? 'text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none'
+                                                        : 'text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none'}">Horario</span>
                                                         </div>
 
                                                         <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                            <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                            <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden cn('rounded-lg', embedded ? 'border-0 bg-transparent' : 'border border-zinc-100 bg-white')">
                                                                 <ShrinkToFitInput
                                                                     wrapClassName="min-h-0 flex-1"
                                                                     type="text"
@@ -1039,11 +1069,13 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                     className="text-zinc-800 focus:outline-none"
                                                                 />
                                                             </div>
-                                                            <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">Pax</span>
+                                                            <span className="{embedded
+                                                        ? 'text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none'
+                                                        : 'text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none'}">Pax</span>
                                                         </div>
 
                                                         <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                            <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white">
+                                                            <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden cn('rounded-lg', embedded ? 'border-0 bg-transparent' : 'border border-zinc-100 bg-white')">
                                                                 <ShrinkToFitInput
                                                                     wrapClassName="min-h-0 flex-1"
                                                                     singleLine
@@ -1059,7 +1091,9 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                     className="text-zinc-800 uppercase placeholder:text-zinc-300 focus:outline-none"
                                                                 />
                                                             </div>
-                                                            <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">Categoria</span>
+                                                            <span className="{embedded
+                                                        ? 'text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none'
+                                                        : 'text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none'}">Categoria</span>
                                                         </div>
                                                     </>
                                                 )}
@@ -1075,9 +1109,9 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                             <div className="w-24 md:w-32 px-3 flex items-center justify-center shrink-0">
                                 {/* Espacio donde antes estaba el botón de '+' */}
                             </div>
-                            <div className="flex-1 relative h-8 md:h-9 flex">
+                            <div className="flex-1 relative h-5 md:h-6 flex">
                                 {hoursHeader.map((hour) => (
-                                    <div key={hour} className="flex-1 text-[9px] md:text-[10px] font-black flex items-center justify-start -translate-x-1 sm:-translate-x-2 select-none opacity-90">
+                                    <div key={hour} className="flex-1 text-[9px] font-black flex items-center justify-start -translate-x-1 sm:-translate-x-2 select-none opacity-90">
                                         {hour}
                                     </div>
                                 ))}
@@ -1097,12 +1131,17 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                     className="w-24 md:w-32 px-2 flex items-center gap-1 shrink-0 overflow-hidden group/row pl-3 md:pl-4 cursor-pointer hover:bg-blue-50/30 transition-colors"
                                     onClick={(e) => { e.stopPropagation(); setEditingIndex(idx); }}
                                 >
-                                    <span className={`font-black text-[10px] md:text-xs truncate uppercase tracking-tight transition-colors ${editingIndex === idx ? 'text-[#5B8FB9]' : 'text-gray-800'} flex-1 select-none min-w-0`}>
+                                    <span className={`truncate transition-colors flex-1 select-none min-w-0 ${editingIndex === idx ? 'text-[#5B8FB9]' : 'text-gray-800'} ${embedded ? 'text-[11px] font-medium leading-none' : 'font-black text-[10px] md:text-xs uppercase tracking-tight'}`}>
                                         {shift.name}
                                     </span>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }}
-                                        className="w-7 h-7 min-w-[28px] min-h-[28px] rounded-full bg-red-500 text-white flex items-center justify-center shrink-0 hover:bg-red-600 transition-all shadow-sm active:scale-95 opacity-90 group-hover/row:opacity-100"
+                                        className={cn(
+                                            'relative rounded-full bg-red-500 text-white flex items-center justify-center shrink-0 transition-all shadow-sm active:scale-95 opacity-90 group-hover/row:opacity-100',
+                                            embedded
+                                                ? 'w-5 h-5 before:absolute before:inset-0 before:-m-2.5 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\'] hover:bg-red-600'
+                                                : 'w-7 h-7 min-w-[28px] min-h-[28px] hover:bg-red-600'
+                                        )}
                                         title="Quitar del horario"
                                     >
                                         <X size={14} strokeWidth={4} />

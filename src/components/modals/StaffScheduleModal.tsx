@@ -662,7 +662,7 @@ export const StaffScheduleModal = ({
                                         <p className="text-xs font-medium text-white/60">Sin turno</p>
                                     </div>
                                 ) : (
-                                <div data-element="schedule-shift-table" className="rounded-2xl border border-zinc-100 shadow-[inset_0_0.5px_0_rgba(255,255,255,0.55),0_1px_1px_rgba(0,0,0,0.04),0_6px_18px_rgba(0,0,0,0.08)] overflow-hidden flex flex-col flex-1 min-h-0">
+                                <div data-element="schedule-shift-table" className="rounded-2xl border border-zinc-200/60 shadow-[0_1px_2px_rgba(0,0,0,0.05),0_12px_32px_rgba(0,0,0,0.16)] overflow-hidden flex flex-col flex-1 min-h-0">
                                     {/* Encabezado rojo */}
                                     <div className="flex w-full bg-[#E55353] text-white shrink-0">
                                         <div className="w-24 md:w-28 flex items-center justify-center shrink-0 h-5 md:h-6" />
