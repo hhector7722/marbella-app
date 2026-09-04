@@ -635,7 +635,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                             className="group flex min-h-[4.5rem] min-w-0 flex-col items-center justify-center gap-1.5 px-1 transition-all active:scale-95"
                         >
                             <div
-                                className={`flex h-9 w-9 items-center justify-center self-end rounded-full ${opcion.color} shadow-sm transition-transform group-hover:scale-110`}
+                                className={`flex h-9 w-9 items-center justify-center rounded-full ${opcion.color} shadow-sm transition-transform group-hover:scale-110`}
                             >
                                 {opcion.icon}
                             </div>

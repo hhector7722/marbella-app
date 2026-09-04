@@ -106,25 +106,24 @@ function formatDayEventNames(acts: BarActivity[] | undefined): string | null {
     return grouped.map((a) => a.activityName).join(' · ');
 }
 
-type EventDetailSegment = {
-    text: string;
-    kind: 'hours' | 'pax' | 'categories';
+type EventDetailRow = {
+    hours: string;
+    pax: string | null;
+    categories: string | null;
 };
 
-function formatDayEventDetailSegments(acts: BarActivity[] | undefined): EventDetailSegment[] {
+/** Una fila por actividad: tres datos (horas, participantes, categoría) que reparten el ancho en tres columnas. */
+function formatDayEventDetailRows(acts: BarActivity[] | undefined): EventDetailRow[] {
     const grouped = groupActivities(acts ?? []);
     if (grouped.length === 0) return [];
-    const segments: EventDetailSegment[] = [];
-    for (const act of grouped) {
-        segments.push({ text: `${fmtHour(act.startTime)} - ${fmtHour(act.endTime)}`, kind: 'hours' });
-        if (act.totalParticipants != null && act.totalParticipants > 0) {
-            segments.push({ text: `${act.totalParticipants} pax`, kind: 'pax' });
-        }
-        if (act.categories?.length) {
-            segments.push({ text: act.categories.join(', '), kind: 'categories' });
-        }
-    }
-    return segments;
+    return grouped.map((act) => ({
+        hours: `${fmtHour(act.startTime)} - ${fmtHour(act.endTime)}`,
+        pax:
+            act.totalParticipants != null && act.totalParticipants > 0
+                ? `${act.totalParticipants} pax`
+                : null,
+        categories: act.categories?.length ? act.categories.join(', ') : null,
+    }));
 }
 
 function shiftForDay(shifts: ShiftRow[], day: Date): ShiftRow | null {
@@ -154,13 +153,13 @@ function WeekendDayColumn({
     day,
     shift,
     eventLabel,
-    eventDetailSegments,
+    eventDetailRows,
     onOpenDay,
 }: {
     day: Date;
     shift: ShiftRow | null;
     eventLabel: string | null;
-    eventDetailSegments: EventDetailSegment[];
+    eventDetailRows: EventDetailRow[];
     onOpenDay?: (ymd: string) => void;
 }) {
     const ymd = format(day, 'yyyy-MM-dd');
@@ -208,19 +207,26 @@ function WeekendDayColumn({
                             </span>
                         )}
                     </div>
-                    <div data-element="weekend-evento-detail" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
-                        {eventDetailSegments.map((segment, i) => (
-                            <span
-                                key={`${i}-${segment.text}`}
-                                data-element="weekend-evento-detail-value"
-                                data-segment-kind={segment.kind}
-                                className={cn(
-                                    'min-w-0 truncate text-[6px] font-medium leading-none opacity-80',
-                                    i > 0 && 'border-l-2 pl-0.5',
-                                )}
-                            >
-                                {segment.text}
-                            </span>
+                    <div data-element="weekend-evento-detail" className="flex w-full flex-col">
+                        {eventDetailRows.map((row, i) => (
+                            <div key={i} className="grid w-full grid-cols-3">
+                                {(
+                                    [
+                                        { kind: 'hours', text: row.hours },
+                                        { kind: 'pax', text: row.pax },
+                                        { kind: 'categories', text: row.categories },
+                                    ] as const
+                                ).map((cell) => (
+                                    <span
+                                        key={cell.kind}
+                                        data-element="weekend-evento-detail-value"
+                                        data-segment-kind={cell.kind}
+                                        className="min-w-0 truncate text-center text-[6px] font-medium leading-none opacity-80"
+                                    >
+                                        {cell.text}
+                                    </span>
+                                ))}
+                            </div>
                         ))}
                     </div>
                 </div>
@@ -254,14 +260,14 @@ function WeekExpansion({
                 day={saturday}
                 shift={shiftForDay(shifts, saturday)}
                 eventLabel={formatDayEventNames(eventsByDate[satKey])}
-                eventDetailSegments={formatDayEventDetailSegments(eventsByDate[satKey])}
+                eventDetailRows={formatDayEventDetailRows(eventsByDate[satKey])}
                 onOpenDay={onOpenDay}
             />
             <WeekendDayColumn
                 day={sunday}
                 shift={shiftForDay(shifts, sunday)}
                 eventLabel={formatDayEventNames(eventsByDate[sunKey])}
-                eventDetailSegments={formatDayEventDetailSegments(eventsByDate[sunKey])}
+                eventDetailRows={formatDayEventDetailRows(eventsByDate[sunKey])}
                 onOpenDay={onOpenDay}
             />
         </div>

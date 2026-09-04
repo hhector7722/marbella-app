@@ -712,6 +712,15 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                         <>
                             <Button
                                 type="button"
+                                variant="destructive"
+                                instance="attendance-detail-borrar-dia"
+                                onClick={handleDeleteDay}
+                                disabled={isSaving}
+                            >
+                                Borrar día
+                            </Button>
+                            <Button
+                                type="button"
                                 variant="secondary"
                                 instance="attendance-detail-salir"
                                 onClick={onClose}
@@ -979,34 +988,52 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                         </div>
 
                                         {!specialDay && (
-                                            <div className="mt-1.5 bg-blue-50 rounded-xl py-1.5 px-2 border border-blue-100">
-                                                <span className="text-[6px] font-black text-blue-600 uppercase tracking-widest block">
-                                                    Horas justificadas (computan)
-                                                </span>
-                                                {isManager ? (
-                                                    <input
-                                                        type="number"
-                                                        step="0.5"
-                                                        min={0}
-                                                        value={justifiedAmt > 0 ? justifiedAmt : ''}
-                                                        placeholder="0"
-                                                        onChange={(e) => setJustifiedHours(index, parseFloat(e.target.value) || 0)}
-                                                        className="text-[12px] font-black text-blue-800 bg-transparent border-none p-0 focus:ring-0 w-full"
-                                                    />
-                                                ) : (
-                                                    <span className="text-[12px] font-black text-blue-800 block">
-                                                        {justifiedAmt > 0 ? fmtMarbellaHours(justifiedAmt) : ' '}
+                                            <div className={cn('mt-1.5 grid gap-1.5', isManager ? 'grid-cols-2' : 'grid-cols-1')}>
+                                                <div className="bg-blue-50 rounded-xl py-1.5 px-2 border border-blue-100">
+                                                    <span className="text-[6px] font-black text-blue-600 uppercase tracking-widest block">
+                                                        Horas justificadas (computan)
                                                     </span>
+                                                    {isManager ? (
+                                                        <input
+                                                            type="number"
+                                                            step="0.5"
+                                                            min={0}
+                                                            value={justifiedAmt > 0 ? justifiedAmt : ''}
+                                                            placeholder="0"
+                                                            onChange={(e) => setJustifiedHours(index, parseFloat(e.target.value) || 0)}
+                                                            className="text-[12px] font-black text-blue-800 bg-transparent border-none p-0 focus:ring-0 w-full"
+                                                        />
+                                                    ) : (
+                                                        <span className="text-[12px] font-black text-blue-800 block">
+                                                            {justifiedAmt > 0 ? fmtMarbellaHours(justifiedAmt) : ' '}
+                                                        </span>
+                                                    )}
+                                                    {dayTotal > 0 && justifiedAmt > 0 ? (
+                                                        <span className="text-[7px] font-bold text-blue-500 mt-0.5 block">
+                                                            Total día: {fmtMarbellaHours(dayTotal)}
+                                                        </span>
+                                                    ) : null}
+                                                </div>
+                                                {isManager && (
+                                                    <div className="bg-zinc-50 rounded-xl py-1.5 px-2 border border-zinc-100 min-w-0">
+                                                        <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest block">Evento</span>
+                                                        <select
+                                                            value={log.event_type}
+                                                            onChange={(e) => updateLog(index, 'event_type', e.target.value)}
+                                                            className="text-[9px] font-black text-zinc-800 uppercase tracking-widest border-none p-0 focus:ring-0 bg-transparent w-full min-h-[28px]"
+                                                        >
+                                                            {EVENT_TYPES.map((t) => (
+                                                                <option key={t.value} value={t.value} className="text-gray-900 bg-white">
+                                                                    {t.label}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
                                                 )}
-                                                {dayTotal > 0 && justifiedAmt > 0 ? (
-                                                    <span className="text-[7px] font-bold text-blue-500 mt-0.5 block">
-                                                        Total día: {fmtMarbellaHours(dayTotal)}
-                                                    </span>
-                                                ) : null}
                                             </div>
                                         )}
 
-                                        {isManager && (
+                                        {specialDay && isManager && (
                                             <div className="mt-1.5 bg-zinc-50 rounded-xl py-1.5 px-2 border border-zinc-100 min-w-0">
                                                 <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest block">Evento</span>
                                                 <select
@@ -1026,47 +1053,26 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                 );
                             })}
 
-                            {activeLogs.length > 1 || dayTotalHours > 0 ? (
-                                <div className="rounded-xl border border-zinc-100 bg-zinc-50 py-1.5 px-2 flex items-center justify-between">
-                                    <span className="text-[7px] font-black uppercase tracking-widest text-zinc-500">Total día</span>
-                                    <span className="text-[12px] font-black text-zinc-800">
-                                        {dayTotalHours > 0 ? fmtMarbellaHours(dayTotalHours) : ' '}
-                                    </span>
-                                </div>
-                            ) : null}
-
-                            {isManager && (
-                                <div className="flex flex-col gap-1.5 shrink-0">
-                                    <button
-                                        type="button"
-                                        onClick={addJustifiedHours}
-                                        className="w-full min-h-[48px] rounded-xl border border-blue-200 bg-blue-50 text-blue-700 font-black text-[8px] uppercase tracking-widest active:scale-95 flex items-center justify-center gap-1.5"
-                                    >
-                                        <Plus size={14} strokeWidth={2.5} />
-                                        Horas justificadas
-                                    </button>
-                                    <div className="grid grid-cols-2 gap-1.5">
+                            {activeLogs.length > 1 || dayTotalHours > 0 || isManager ? (
+                                <div className="rounded-xl border border-zinc-100 bg-zinc-50 py-1.5 px-2 flex items-center justify-between gap-2">
+                                    <div className="flex items-baseline gap-1.5 min-w-0">
+                                        <span className="text-[7px] font-black uppercase tracking-widest text-zinc-500">Total día</span>
+                                        <span className="text-[12px] font-black text-zinc-800">
+                                            {dayTotalHours > 0 ? fmtMarbellaHours(dayTotalHours) : ' '}
+                                        </span>
+                                    </div>
+                                    {isManager && (
                                         <button
                                             type="button"
                                             onClick={() => setEditWeekModalOpen(true)}
-                                            className="w-full min-h-[48px] rounded-xl border border-[#36606F] bg-[#36606F]/10 text-[#36606F] flex items-center justify-center gap-1.5 py-2 px-2 hover:bg-[#36606F]/20 transition-colors active:scale-95"
+                                            className="min-h-[48px] shrink-0 rounded-xl border border-[#36606F] bg-[#36606F]/10 text-[#36606F] flex items-center justify-center gap-1.5 py-2 px-2 hover:bg-[#36606F]/20 transition-colors active:scale-95"
                                         >
                                             <Calendar size={14} strokeWidth={2.5} />
                                             <span className="text-[8px] font-black uppercase tracking-widest leading-tight">Semana</span>
                                         </button>
-                                        <Button
-                                            type="button"
-                                            variant="destructive"
-                                            instance="attendance-detail-borrar-dia"
-                                            onClick={handleDeleteDay}
-                                            disabled={isSaving}
-                                            className="w-full"
-                                        >
-                                            Borrar día
-                                        </Button>
-                                    </div>
+                                    )}
                                 </div>
-                            )}
+                            ) : null}
 
                             </div>
                     )}

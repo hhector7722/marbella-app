@@ -38,6 +38,7 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-03
 
+- **Horario: detalle del evento en tres columnas.** En el widget de horario de `/staff/dashboard` y `/master/dashboard`, la fila de la card de sáb/dom que muestra el horario del evento, los participantes y la categoría reparte el ancho de la card en tres columnas simétricas, con cada dato centrado en su columna.
 - **Asistencia de plantilla: primer nombre en lugar de iniciales.** En `/staff/history` y en el widget de `/master/dashboard`, cuando el responsable ve los fichajes de todo el equipo, cada registro muestra el primer nombre del empleado en vez de las iniciales, a un tamaño menor y sin negrita para que el tramo horario siga siendo lo que manda. [PATRONES P6](../2-diseno/PATRONES.md#p6--tarjeta-semanal).
 - **Navtab inferior: ya no se oculta sin gesto.** La barra de navegación desaparecía al entrar en las páginas de inicio sin scrollear: la restauración de scroll, los cambios de layout y los scrolls de contenedores internos se contaban como gesto del usuario. Ahora el cromo solo responde a un scroll continuo hacia abajo sobre la página; vuelve al subir o al llegar arriba. [P8](../2-diseno/PATRONES.md#p8--navegación-inferior).
 - **Notificaciones: Pere sale y entra Fernando.** Los avisos de nueva reserva y de pedido cliente (campana y push) dejan de avisar a Pere y pasan a avisar a Fernando. Destinatarios: alba, hernan, fernando, hector.
