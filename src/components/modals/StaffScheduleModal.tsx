@@ -11,7 +11,7 @@ import { es } from 'date-fns/locale';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { ShrinkToFitText } from '@/components/ui/ShrinkToFitCell';
+import { cn } from '@/lib/utils';
 import { ScheduleDayEditor } from '@/components/schedule/ScheduleDayEditor';
 import { Avatar } from '@/components/ui/Avatar';
 import { useScrollLock } from '@/hooks/useScrollLock';
@@ -20,6 +20,7 @@ import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
 import { ShiftBarTimeLabels } from '@/components/schedule/ShiftBarTimeLabels';
 import { ScheduleNotesFooter } from '@/components/schedule/ScheduleNotesFooter';
+import { fetchDayDetailAction } from '@/app/staff/actividades/actions';
 
 /* ─── Constants (match editor exactly) ─────────────────── */
 const START_HOUR = 7;
@@ -53,7 +54,7 @@ const ReadOnlyShiftBar = ({ start, end }: { start: string; end: string }) => {
     return (
         <div
             ref={barRef}
-            className="absolute top-1.5 bottom-1.5 flex items-center justify-between rounded-full z-10 overflow-hidden touch-none px-1.5"
+            className="absolute top-3 bottom-3 flex items-center justify-between rounded-full z-10 overflow-hidden touch-none px-1.5"
             style={{
                 left: `${leftPos}%`,
                 width: `${width}%`,
@@ -76,13 +77,16 @@ const SummaryCell = ({
     value: string;
     valueClassName?: string;
 }) => (
-    <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-        <div className="flex min-h-[2rem] lg:min-h-8 w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white text-center">
-            <ShrinkToFitText wrapClassName="min-h-0 flex-1" singleLine innerClassName={valueClassName ?? 'text-zinc-800'} maxPx={11} minPx={5}>
-                {value}
-            </ShrinkToFitText>
-        </div>
-        <span className="text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">
+    <div className="flex min-w-0 w-full flex-col items-center gap-1">
+        <span
+            className={cn(
+                'w-full min-w-0 truncate text-center text-[11px] font-semibold leading-none text-zinc-800 sm:text-xs',
+                valueClassName,
+            )}
+        >
+            {value}
+        </span>
+        <span className="text-[9px] font-semibold uppercase tracking-widest leading-none text-zinc-400">
             {label}
         </span>
     </div>
@@ -100,10 +104,10 @@ const SummaryGrid = ({
     categoria: string;
 }) => (
     <div className="grid w-full min-w-0 auto-rows-min gap-x-1.5 gap-y-1 pb-0.5 [grid-template-columns:repeat(4,minmax(0,1fr))]">
-        <SummaryCell label="Evento" value={activity} valueClassName="uppercase text-zinc-800" />
-        <SummaryCell label="Horario" value={horario} valueClassName="font-mono font-black text-emerald-600" />
+        <SummaryCell label="Evento" value={activity} />
+        <SummaryCell label="Horario" value={horario} valueClassName="text-emerald-600" />
         <SummaryCell label="Pax" value={pax} />
-        <SummaryCell label="Categoria" value={categoria} valueClassName="uppercase text-zinc-800" />
+        <SummaryCell label="Categoria" value={categoria} />
     </div>
 );
 
@@ -230,17 +234,45 @@ export const StaffScheduleModal = ({
             }
 
             // El resumen del evento (arriba) siempre se muestra cuando hay turnos publicados,
-            // esté quien esté mirando el día.
-            setDayActivity(publishedShifts[0]?.activity || '');
-            setDayCategory(publishedShifts[0]?.categoria || '');
-            setDayActivity2(publishedShifts[0]?.activity_2 || '');
-            setDayCategory2(publishedShifts[0]?.categoria_2 || '');
-            setEventStart(publishedShifts[0]?.event_start_time || '');
-            setEventEnd(publishedShifts[0]?.event_end_time || '');
-            setEventParticipants(publishedShifts[0]?.event_participants || '');
-            setEventStart2(publishedShifts[0]?.event_start_time_2 || '');
-            setEventEnd2(publishedShifts[0]?.event_end_time_2 || '');
-            setEventParticipants2(publishedShifts[0]?.event_participants_2 || '');
+            // esté quien esté mirando el día. Se alimenta de las actividades reales del
+            // pabellón (misma fuente que el widget de horario); si el día no tiene, cae al
+            // primer turno publicado.
+            const dayYmd = format(day, 'yyyy-MM-dd');
+            const dayDetail = await fetchDayDetailAction({ date: dayYmd });
+            const dayActivities = dayDetail.success ? dayDetail.data.barActivities : [];
+            if (dayActivities.length > 0) {
+                const a1 = dayActivities[0];
+                const a2 = dayActivities[1];
+                setDayActivity(a1.activityName);
+                setDayCategory((a1.categories ?? []).join(', '));
+                setEventStart(a1.startTime);
+                setEventEnd(a1.endTime);
+                setEventParticipants(
+                    a1.totalParticipants != null && a1.totalParticipants > 0
+                        ? String(a1.totalParticipants)
+                        : '',
+                );
+                setDayActivity2(a2?.activityName ?? '');
+                setDayCategory2((a2?.categories ?? []).join(', '));
+                setEventStart2(a2?.startTime ?? '');
+                setEventEnd2(a2?.endTime ?? '');
+                setEventParticipants2(
+                    a2?.totalParticipants != null && a2.totalParticipants > 0
+                        ? String(a2.totalParticipants)
+                        : '',
+                );
+            } else {
+                setDayActivity(publishedShifts[0]?.activity || '');
+                setDayCategory(publishedShifts[0]?.categoria || '');
+                setDayActivity2(publishedShifts[0]?.activity_2 || '');
+                setDayCategory2(publishedShifts[0]?.categoria_2 || '');
+                setEventStart(publishedShifts[0]?.event_start_time || '');
+                setEventEnd(publishedShifts[0]?.event_end_time || '');
+                setEventParticipants(publishedShifts[0]?.event_participants || '');
+                setEventStart2(publishedShifts[0]?.event_start_time_2 || '');
+                setEventEnd2(publishedShifts[0]?.event_end_time_2 || '');
+                setEventParticipants2(publishedShifts[0]?.event_participants_2 || '');
+            }
 
             // Solo el manager hhector7722@gmail.com ve la tabla completa del día (todos los turnos publicados),
             // aunque él no tenga turno. El resto ve solo su propio turno; si hay turnos pero no es su día → "Sin turno".
@@ -628,8 +660,8 @@ export const StaffScheduleModal = ({
                                 <div className="rounded-2xl border border-white shadow-[0_4px_24px_rgba(0,0,0,0.08)] overflow-hidden flex flex-col flex-1 min-h-0">
                                     {/* Encabezado rojo */}
                                     <div className="flex w-full bg-[#E55353] text-white shrink-0">
-                                        <div className="w-24 md:w-28 flex items-center justify-center shrink-0 h-8 md:h-9" />
-                                        <div className="flex-1 relative h-8 md:h-9 flex">
+                                        <div className="w-24 md:w-28 flex items-center justify-center shrink-0 h-6 md:h-7" />
+                                        <div className="flex-1 relative h-6 md:h-7 flex">
                                             {hoursHeader.map(hour => (
                                                 <div key={hour} className="flex-1 text-[9px] font-black flex items-center justify-start -translate-x-1 sm:-translate-x-2 select-none opacity-90">
                                                     {hour}
@@ -644,7 +676,7 @@ export const StaffScheduleModal = ({
                                             <div key={idx} className="flex w-full h-9 md:h-10 border-b border-gray-100 last:border-b-0 bg-white day-modal-shift-row">
                                                 <div className="w-24 md:w-28 px-2 flex items-center gap-2 shrink-0 overflow-hidden">
                                                     <Avatar src={shift.avatar_url ?? undefined} alt={shift.name} size="sm" className="shrink-0" />
-                                                    <span className="font-black text-[10px] md:text-xs truncate uppercase tracking-tight text-gray-800 select-none min-w-0">
+                                                    <span className="min-w-0 truncate text-[11px] font-medium leading-none text-zinc-800 select-none">
                                                         {shift.name}
                                                     </span>
                                                 </div>

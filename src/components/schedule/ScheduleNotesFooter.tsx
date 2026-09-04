@@ -150,7 +150,7 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
     if (!date) return null;
 
     return (
-        <div className="flex w-full min-w-0 flex-col">
+        <div className="flex w-full min-w-0 flex-col" data-schedule-notes-footer>
             <div className="flex w-full items-center justify-center">
                 <Button
                     type="button"

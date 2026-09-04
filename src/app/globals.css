@@ -399,6 +399,16 @@
 }
 
 /*
+ * Pie de notas del horario (ScheduleNotesFooter): contenido propio centrado,
+ * no un pie de acciones alineado a la derecha. Neutraliza el justify-content
+ * que el shell del Modal hereda a los hijos de su pie.
+ */
+[data-component='Modal'] [data-element='footer'] [data-element='footer-actions'] > [data-schedule-notes-footer] {
+  justify-content: center;
+  align-items: center;
+}
+
+/*
  * Capas superiores: el panel cubierto pierde protagonismo (blur + oscurecimiento).
  * El backdrop elevated sigue sin acumular blur de fondo (ADR-0008).
  */
@@ -2875,7 +2885,7 @@ button[data-element='catalog-filter'] {
     'horario  horario  horario  caja'
     'horario  horario  horario  hextras'
     'ingred   albaran  cambio   reservas'
-    'uso      cajascambio cajascambio otros';
+    'uso      cajascambio otros    .';
   grid-template-rows: repeat(6, var(--home-row-track));
   grid-auto-flow: row;
 }

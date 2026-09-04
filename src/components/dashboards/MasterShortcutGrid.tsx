@@ -134,12 +134,12 @@ function MasterCajasCambioWidget({
             ) : (
                 <>
                     <div className="flex min-h-0 flex-1 items-center justify-center">
-                        <span className="text-sm font-black leading-none tabular-nums text-zinc-800">
+                        <span className="text-[9px] font-black leading-none tabular-nums text-zinc-800 sm:text-[10px]">
                             {box1 ? formatChangeBoxEur(Number(box1.current_balance ?? 0)) : ' '}
                         </span>
                     </div>
                     <div className="flex min-h-0 flex-1 items-center justify-center">
-                        <span className="text-sm font-black leading-none tabular-nums text-zinc-800">
+                        <span className="text-[9px] font-black leading-none tabular-nums text-zinc-800 sm:text-[10px]">
                             {box2 ? formatChangeBoxEur(Number(box2.current_balance ?? 0)) : ' '}
                         </span>
                     </div>
@@ -182,7 +182,7 @@ function MasterOvertimeIconWidget({
                     <span className="shrink-0 text-center text-[6px] font-black uppercase leading-none tracking-widest text-zinc-700">
                         {monthLabel}
                     </span>
-                    <div className="flex min-h-0 flex-1 flex-col justify-center gap-[3px] pt-1">
+                    <div className="flex min-h-0 flex-1 flex-col justify-center gap-[2px]">
                         {weeks.map((week) => {
                             const isFullyPaid = (week.staff ?? []).every((s: StaffWeeklyStats) => {
                                 const cost = s.totalCost ?? 0;
@@ -339,7 +339,7 @@ export default function MasterShortcutGrid({
 
     items.push({
         key: 'cajas-cambio',
-        size: 'half',
+        size: 'tile',
         label: 'Cajas Cambio',
         node: (
             <MasterCajasCambioWidget
