@@ -21,7 +21,7 @@ import { formatYmdShort } from '@/lib/usage/modal-apply';
 import { ShiftBarTimeLabels } from '@/components/schedule/ShiftBarTimeLabels';
 import { ScheduleNotesFooter } from '@/components/schedule/ScheduleNotesFooter';
 import { fetchDayDetailAction } from '@/app/staff/actividades/actions';
-import { fmtHour, groupActivities } from '@/components/dashboards/staff/StaffWeekScheduleWidget';
+import { groupActivities } from '@/components/dashboards/staff/StaffWeekScheduleWidget';
 
 /* ─── Constants (match editor exactly) ─────────────────── */
 const START_HOUR = 7;
@@ -41,6 +41,16 @@ const formatHorario = (start: string, end: string) => {
     return [s, e].filter(Boolean).join(' - ');
 };
 
+/** «08:00» → «8» · «08:30» → «8:30» · «08:15» → «8:15». Sin segundos; minutos solo si no son en punto. */
+function formatHourShort(time: string | null | undefined): string {
+    const parts = String(time ?? '').split(':');
+    const h = Number.parseInt(parts[0] ?? '', 10);
+    if (!Number.isFinite(h)) return String(time ?? '').trim();
+    const mins = parts[1] ?? '';
+    if (!mins || mins === '00' || mins === '0') return String(h);
+    return `${h}:${mins}`;
+}
+
 /** Fecha en formato largo («Domingo 6 de septiembre») con la primera letra en mayúscula. */
 function formatDateTitle(date: Date, pattern: string): string {
     const raw = format(date, pattern, { locale: es });
@@ -55,7 +65,7 @@ const ReadOnlyShiftBar = ({ start, end }: { start: string; end: string }) => {
     return (
         <div
             ref={barRef}
-            className="absolute top-3 bottom-3 flex items-center justify-between rounded-full z-10 overflow-hidden touch-none px-1.5"
+            className="absolute top-2.5 bottom-2.5 flex items-center justify-between rounded-full z-10 overflow-hidden touch-none px-1.5"
             style={{
                 left: `${leftPos}%`,
                 width: `${width}%`,
@@ -81,7 +91,7 @@ const SummaryCell = ({
     <div className="flex min-w-0 w-full flex-col items-center gap-1">
         <span
             className={cn(
-                'w-full min-w-0 truncate text-center text-[11px] font-semibold leading-none text-zinc-800 sm:text-xs',
+                'w-full min-w-0 text-center text-[11px] font-semibold leading-tight text-zinc-800 sm:text-xs',
                 valueClassName,
             )}
         >
@@ -106,7 +116,7 @@ const SummaryGrid = ({
 }) => (
     <div className="grid w-full min-w-0 auto-rows-min gap-x-1.5 gap-y-1 pb-0.5 [grid-template-columns:repeat(4,minmax(0,1fr))]">
         <SummaryCell label="Evento" value={activity} />
-        <SummaryCell label="Horario" value={horario} valueClassName="text-emerald-600" />
+        <SummaryCell label="Horario" value={horario} valueClassName="text-emerald-600 whitespace-nowrap tabular-nums" />
         <SummaryCell label="Pax" value={pax} />
         <SummaryCell label="Categoria" value={categoria} />
     </div>
@@ -247,8 +257,8 @@ export const StaffScheduleModal = ({
                 const g2 = groupedActivities[1];
                 setDayActivity(g1.activityName);
                 setDayCategory((g1.categories ?? []).join(', '));
-                setEventStart(fmtHour(g1.startTime));
-                setEventEnd(fmtHour(g1.endTime));
+                setEventStart(formatHourShort(g1.startTime));
+                setEventEnd(formatHourShort(g1.endTime));
                 setEventParticipants(
                     g1.totalParticipants != null && g1.totalParticipants > 0
                         ? `${g1.totalParticipants} pax`
@@ -256,8 +266,8 @@ export const StaffScheduleModal = ({
                 );
                 setDayActivity2(g2?.activityName ?? '');
                 setDayCategory2((g2?.categories ?? []).join(', '));
-                setEventStart2(g2 ? fmtHour(g2.startTime) : '');
-                setEventEnd2(g2 ? fmtHour(g2.endTime) : '');
+                setEventStart2(g2 ? formatHourShort(g2.startTime) : '');
+                setEventEnd2(g2 ? formatHourShort(g2.endTime) : '');
                 setEventParticipants2(
                     g2?.totalParticipants != null && g2.totalParticipants > 0
                         ? `${g2.totalParticipants} pax`
@@ -659,11 +669,11 @@ export const StaffScheduleModal = ({
                                         <p className="text-xs font-medium text-zinc-400">Sin turno</p>
                                     </div>
                                 ) : (
-                                <div className="rounded-2xl border border-white shadow-[0_4px_24px_rgba(0,0,0,0.08)] overflow-hidden flex flex-col flex-1 min-h-0">
+                                <div className="rounded-2xl border border-zinc-200/70 shadow-[inset_0_0.5px_0_rgba(255,255,255,0.55),0_1px_1px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.10)] overflow-hidden flex flex-col flex-1 min-h-0">
                                     {/* Encabezado rojo */}
                                     <div className="flex w-full bg-[#E55353] text-white shrink-0">
-                                        <div className="w-24 md:w-28 flex items-center justify-center shrink-0 h-6 md:h-7" />
-                                        <div className="flex-1 relative h-6 md:h-7 flex">
+                                        <div className="w-24 md:w-28 flex items-center justify-center shrink-0 h-5 md:h-6" />
+                                        <div className="flex-1 relative h-5 md:h-6 flex">
                                             {hoursHeader.map(hour => (
                                                 <div key={hour} className="flex-1 text-[9px] font-black flex items-center justify-start -translate-x-1 sm:-translate-x-2 select-none opacity-90">
                                                     {hour}
