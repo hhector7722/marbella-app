@@ -167,6 +167,8 @@ const ShiftBar = ({
 export interface ScheduleDayEditorHandle {
     /** Abre el selector de empleados para añadir un turno al día. */
     openAddEmployee: () => void;
+    /** Abre el modal de guardado (Guardar / Guardar y enviar / Sobreescribir). */
+    openShare: () => void;
 }
 
 export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDayEditorProps>(function ScheduleDayEditor(
@@ -211,6 +213,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
 
     useImperativeHandle(ref, () => ({
         openAddEmployee: () => setShowAddEmployeeModal(true),
+        openShare: () => setShowShareModal(true),
     }));
 
     useModalUsageTracking({

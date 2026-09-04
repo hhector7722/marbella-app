@@ -216,20 +216,20 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
             ) : null}
 
             {notes.length > 0 ? (
-                <div className="mt-2 flex w-full flex-col items-stretch gap-1.5">
+                <div className="mt-2 flex max-h-[45dvh] w-full flex-col items-stretch gap-1.5 overflow-y-auto">
                     {notes.map((note) => {
                         const isOwn = effectiveUserId === note.user_id;
                         return (
                             <div
                                 key={note.id}
-                                className="flex w-full max-w-full min-w-0 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 py-1.5 text-left"
+                                className="flex w-full max-w-full min-w-0 items-center gap-2 rounded-xl bg-white/10 px-3 py-1.5 text-left"
                             >
                                 {isManager ? (
                                     <span className="shrink-0 text-[11px] font-normal leading-none text-white/70">
                                         {firstNameOnly(note.authorName)}
                                     </span>
                                 ) : null}
-                                <span className="min-w-0 flex-1 text-[12px] leading-snug text-white">
+                                <span className="min-w-0 flex-1 whitespace-pre-wrap break-words text-[12px] leading-snug text-white">
                                     {note.content}
                                 </span>
                                 <span className="shrink-0 text-[9px] font-medium text-white/40 tabular-nums">

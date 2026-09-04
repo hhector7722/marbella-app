@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Edit2, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Edit2, Plus } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { format, addMonths, subMonths, isSameMonth, isSameDay } from 'date-fns';
@@ -467,6 +467,14 @@ export const StaffScheduleModal = ({
                                 aria-label="Añadir empleado"
                             >
                                 <Plus size={18} strokeWidth={2.5} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => scheduleEditorRef.current?.openShare()}
+                                className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+                                aria-label="Guardar horario"
+                            >
+                                <Download size={18} strokeWidth={2.5} />
                             </button>
                         </>
                     ) : (
