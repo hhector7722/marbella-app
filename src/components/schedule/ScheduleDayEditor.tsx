@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { createClient } from "@/utils/supabase/client";
 import {
     X,
@@ -164,7 +164,15 @@ const ShiftBar = ({
 };
 
 
-export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCloseModal, embedded = false, modalParentInstance }: ScheduleDayEditorProps) {
+export interface ScheduleDayEditorHandle {
+    /** Abre el selector de empleados para añadir un turno al día. */
+    openAddEmployee: () => void;
+}
+
+export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDayEditorProps>(function ScheduleDayEditor(
+    { initialDate, onClose, onSuccess, onRequestCloseModal, embedded = false, modalParentInstance },
+    ref,
+) {
     const supabase = createClient();
     const [loading, setLoading] = useState(true);
 
@@ -200,6 +208,10 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
     const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
     const [calendarDate, setCalendarDate] = useState(new Date());
+
+    useImperativeHandle(ref, () => ({
+        openAddEmployee: () => setShowAddEmployeeModal(true),
+    }));
 
     useModalUsageTracking({
         open: editingIndex !== null,
@@ -772,6 +784,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                 <div className={cn('sticky top-[0px] z-30 flex flex-col w-full -mt-[1px]', embedded
                     ? 'rounded-t-2xl bg-transparent'
                     : 'rounded-t-[32px] bg-white shadow-sm')}>
+                    {!embedded && (
+                    <>
                     {/* CABECERA (Fecha y Botones) */}
                     <div className="flex items-center justify-between px-4 py-3 shrink-0 relative">
                         <div className={cn('flex items-center gap-0 sm:gap-1', !embedded && 'mt-2')}>
@@ -822,6 +836,8 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                             </button>
                         </div>
                     </div>
+                    </>
+                    )}
 
                     {/* ZONA BLANCA E INFERIOR (INPUTS + ROJA) */}
                     <div className={cn('flex flex-col shrink w-full relative', embedded ? 'bg-transparent' : 'bg-white')}>
@@ -848,7 +864,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                             )}
                                         >
                                             <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden cn('rounded-lg', embedded ? 'border-0 bg-transparent' : 'border border-zinc-100 bg-white')">
+                                                <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border-0 bg-transparent">
                                                     <ShrinkToFitInput
                                                         wrapClassName="min-h-0 flex-1"
                                                         singleLine
@@ -864,15 +880,13 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                         className="text-zinc-800 uppercase placeholder:text-zinc-300 focus:outline-none"
                                                     />
                                                 </div>
-                                                <span className="{embedded
-                                                        ? 'text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none'
-                                                        : 'text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none'}">Evento</span>
+                                                <span className="text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none">Evento</span>
                                             </div>
 
                                             {hasSlot1Activity && (
                                                 <>
                                                     <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                        <div className="flex min-h-[2rem] w-full min-w-0 max-w-full items-center gap-0.5 overflow-hidden cn('rounded-lg', embedded ? 'border-0 bg-transparent' : 'border border-zinc-100 bg-white')">
+                                                        <div className="flex min-h-[2rem] w-full min-w-0 max-w-full items-center gap-0.5 overflow-hidden rounded-lg border-0 bg-transparent">
                                                             <ShrinkToFitInput
                                                                 wrapClassName="min-h-0 flex-1"
                                                                 type="time"
@@ -901,13 +915,11 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                 className="font-mono text-rose-500 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
                                                             />
                                                         </div>
-                                                        <span className="{embedded
-                                                        ? 'text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none'
-                                                        : 'text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none'}">Horario</span>
+                                                        <span className="text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none">Horario</span>
                                                     </div>
 
                                                     <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                        <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden cn('rounded-lg', embedded ? 'border-0 bg-transparent' : 'border border-zinc-100 bg-white')">
+                                                        <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border-0 bg-transparent">
                                                             <ShrinkToFitInput
                                                                 wrapClassName="min-h-0 flex-1"
                                                                 type="text"
@@ -922,13 +934,11 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                 className="text-zinc-800 focus:outline-none"
                                                             />
                                                         </div>
-                                                        <span className="{embedded
-                                                        ? 'text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none'
-                                                        : 'text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none'}">Pax</span>
+                                                        <span className="text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none">Pax</span>
                                                     </div>
 
                                                     <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                        <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden cn('rounded-lg', embedded ? 'border-0 bg-transparent' : 'border border-zinc-100 bg-white')">
+                                                        <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border-0 bg-transparent">
                                                             <ShrinkToFitInput
                                                                 wrapClassName="min-h-0 flex-1"
                                                                 singleLine
@@ -944,9 +954,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                 className="text-zinc-800 uppercase placeholder:text-zinc-300 focus:outline-none"
                                                             />
                                                         </div>
-                                                        <span className="{embedded
-                                                        ? 'text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none'
-                                                        : 'text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none'}">Categoria</span>
+                                                        <span className="text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none">Categoria</span>
                                                     </div>
                                                 </>
                                             )}
@@ -996,7 +1004,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                 )}
                                             >
                                                 <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                    <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden cn('rounded-lg', embedded ? 'border-0 bg-transparent' : 'border border-zinc-100 bg-white')">
+                                                    <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border-0 bg-transparent">
                                                         <ShrinkToFitInput
                                                             wrapClassName="min-h-0 flex-1"
                                                             singleLine
@@ -1012,15 +1020,13 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                             className="text-zinc-800 uppercase placeholder:text-zinc-300 focus:outline-none"
                                                         />
                                                     </div>
-                                                    <span className="{embedded
-                                                        ? 'text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none'
-                                                        : 'text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none'}">Evento</span>
+                                                    <span className="text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none">Evento</span>
                                                 </div>
 
                                                 {hasSlot2Activity && (
                                                     <>
                                                         <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                            <div className="flex min-h-[2rem] w-full min-w-0 max-w-full items-center gap-0.5 overflow-hidden cn('rounded-lg', embedded ? 'border-0 bg-transparent' : 'border border-zinc-100 bg-white')">
+                                                            <div className="flex min-h-[2rem] w-full min-w-0 max-w-full items-center gap-0.5 overflow-hidden rounded-lg border-0 bg-transparent">
                                                                 <ShrinkToFitInput
                                                                     wrapClassName="min-h-0 flex-1"
                                                                     type="time"
@@ -1048,13 +1054,11 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                     className="font-mono text-rose-500 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
                                                                 />
                                                             </div>
-                                                            <span className="{embedded
-                                                        ? 'text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none'
-                                                        : 'text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none'}">Horario</span>
+                                                            <span className="text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none">Horario</span>
                                                         </div>
 
                                                         <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                            <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden cn('rounded-lg', embedded ? 'border-0 bg-transparent' : 'border border-zinc-100 bg-white')">
+                                                            <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border-0 bg-transparent">
                                                                 <ShrinkToFitInput
                                                                     wrapClassName="min-h-0 flex-1"
                                                                     type="text"
@@ -1069,13 +1073,11 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                     className="text-zinc-800 focus:outline-none"
                                                                 />
                                                             </div>
-                                                            <span className="{embedded
-                                                        ? 'text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none'
-                                                        : 'text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none'}">Pax</span>
+                                                            <span className="text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none">Pax</span>
                                                         </div>
 
                                                         <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                            <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden cn('rounded-lg', embedded ? 'border-0 bg-transparent' : 'border border-zinc-100 bg-white')">
+                                                            <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border-0 bg-transparent">
                                                                 <ShrinkToFitInput
                                                                     wrapClassName="min-h-0 flex-1"
                                                                     singleLine
@@ -1091,9 +1093,7 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
                                                                     className="text-zinc-800 uppercase placeholder:text-zinc-300 focus:outline-none"
                                                                 />
                                                             </div>
-                                                            <span className="{embedded
-                                                        ? 'text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none'
-                                                        : 'text-[7px] sm:text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none'}">Categoria</span>
+                                                            <span className="text-[9px] font-semibold text-white/60 uppercase tracking-widest leading-none">Categoria</span>
                                                         </div>
                                                     </>
                                                 )}
@@ -1449,4 +1449,4 @@ export function ScheduleDayEditor({ initialDate, onClose, onSuccess, onRequestCl
             </Modal>
         </div>
     );
-}
+});

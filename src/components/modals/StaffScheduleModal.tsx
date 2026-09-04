@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Edit2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit2, Plus } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { format, addMonths, subMonths, isSameMonth, isSameDay } from 'date-fns';
@@ -12,7 +12,7 @@ import { createClient } from '@/utils/supabase/client';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { cn } from '@/lib/utils';
-import { ScheduleDayEditor } from '@/components/schedule/ScheduleDayEditor';
+import { ScheduleDayEditor, type ScheduleDayEditorHandle } from '@/components/schedule/ScheduleDayEditor';
 import { Avatar } from '@/components/ui/Avatar';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
@@ -162,6 +162,7 @@ export const StaffScheduleModal = ({
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const lastFocusedDateRef = useRef<string | null>(null);
+    const scheduleEditorRef = useRef<ScheduleDayEditorHandle>(null);
     const [editModeForDate, setEditModeForDate] = useState<string | null>(null);
     const [dayShifts, setDayShifts] = useState<DayShiftRow[]>([]);
     const [dayActivity, setDayActivity] = useState('');
@@ -364,6 +365,14 @@ export const StaffScheduleModal = ({
     const handleBack = () => { setSelectedDate(null); setDayShifts([]); setEditModeForDate(null); };
     const handleClose = () => { setSelectedDate(null); setDayShifts([]); setEditModeForDate(null); onClose(); };
 
+    const navigateEditingDay = (delta: number) => {
+        if (!selectedDate) return;
+        const next = new Date(selectedDate);
+        next.setDate(next.getDate() + delta);
+        setSelectedDate(next);
+        setEditModeForDate(format(next, 'yyyy-MM-dd'));
+    };
+
     const openActividades = () => {
         setNavigatingToActividades(true);
         handleClose();
@@ -431,10 +440,36 @@ export const StaffScheduleModal = ({
                 variant="work"
                 layer="base"
                 scheme="dark"
-                hideHeader={Boolean(editModeForDate)}
-                onBack={selectedDate ? handleBack : undefined}
+                onBack={editModeForDate ? exitEditModeAndRefresh : selectedDate ? handleBack : undefined}
                 headerTrailing={
-                    !editModeForDate ? (
+                    editModeForDate ? (
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => navigateEditingDay(-1)}
+                                className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-zinc-500 outline-none transition-opacity hover:opacity-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+                                aria-label="Día anterior"
+                            >
+                                <ChevronLeft size={18} strokeWidth={2.5} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => navigateEditingDay(1)}
+                                className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-zinc-500 outline-none transition-opacity hover:opacity-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+                                aria-label="Día siguiente"
+                            >
+                                <ChevronRight size={18} strokeWidth={2.5} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => scheduleEditorRef.current?.openAddEmployee()}
+                                className="relative flex h-full w-[var(--modal-header-height)] max-h-full min-h-0 shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+                                aria-label="Añadir empleado"
+                            >
+                                <Plus size={18} strokeWidth={2.5} />
+                            </button>
+                        </>
+                    ) : (
                         <>
                             {selectedDate ? (
                                 <button
@@ -495,7 +530,7 @@ export const StaffScheduleModal = ({
                                 </button>
                             ) : null}
                         </>
-                    ) : null
+                    )
                 }
                 footer={
                     selectedDate ? (
@@ -517,6 +552,7 @@ export const StaffScheduleModal = ({
                 {editModeForDate ? (
                     <div className="flex flex-col flex-1 min-h-0 overflow-hidden day-modal-body">
                         <ScheduleDayEditor
+                            ref={scheduleEditorRef}
                             initialDate={editModeForDate}
                             onClose={exitEditModeAndRefresh}
                             onSuccess={exitEditModeAndRefresh}

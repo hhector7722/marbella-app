@@ -147,19 +147,35 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
         setError(null);
     };
 
+    const handleDelete = async (id: string) => {
+        setError(null);
+        try {
+            const { error: deleteError } = await supabase
+                .from('schedule_day_notes')
+                .delete()
+                .eq('id', id);
+            if (deleteError) throw deleteError;
+            const rows = await fetchNotes();
+            setNotes(rows);
+            if (myNote?.id === id) setComposing(false);
+        } catch (e) {
+            setError(e instanceof Error ? e.message : 'Error al eliminar la nota');
+        }
+    };
+
     if (!date) return null;
 
     return (
         <div className="flex w-full min-w-0 flex-col" data-schedule-notes-footer>
             <div className="flex w-full items-center justify-center">
-                {!composing ? (
+                {!composing && !myNote ? (
                     <Button
                         type="button"
                         variant="tertiary"
                         instance="schedule-note-toggle"
                         onClick={startCompose}
                     >
-                        {myNote ? 'Editar nota' : 'Añadir nota'}
+                        Añadir nota
                     </Button>
                 ) : null}
             </div>
@@ -169,14 +185,13 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
                     <textarea
                         value={draft}
                         onChange={(e) => setDraft(e.target.value)}
-                        rows={3}
                         placeholder="Escribe una nota…"
-                        className="w-full min-h-12 resize-none rounded-ds-control border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-800 outline-none focus:border-[var(--color-envolvente-alto)]"
+                        className="w-full resize-none rounded-ds-control border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-800 outline-none focus:border-[var(--color-envolvente-alto)] min-h-9 md:min-h-10"
                     />
                     {error ? (
                         <p className="text-[10px] font-medium text-rose-600">{error}</p>
                     ) : null}
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex items-center justify-center gap-2">
                         <Button
                             type="button"
                             variant="secondary"
@@ -201,23 +216,48 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
             ) : null}
 
             {notes.length > 0 ? (
-                <div className="mt-2 flex w-full flex-col items-center gap-1.5">
-                    {notes.map((note) => (
-                        <div
-                            key={note.id}
-                            className="inline-flex w-fit max-w-full min-w-0 items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-left"
-                        >
-                            <span className="shrink-0 text-[10px] font-black uppercase tracking-widest text-zinc-600">
-                                {isManager ? firstNameOnly(note.authorName) : 'Tu nota'}
-                            </span>
-                            <span className="min-w-0 truncate text-[11px] leading-snug text-zinc-700">
-                                {note.content}
-                            </span>
-                            <span className="shrink-0 text-[9px] font-medium text-zinc-400 tabular-nums">
-                                {formatNoteTime(note.created_at)}
-                            </span>
-                        </div>
-                    ))}
+                <div className="mt-2 flex w-full flex-col items-stretch gap-1.5">
+                    {notes.map((note) => {
+                        const isOwn = effectiveUserId === note.user_id;
+                        return (
+                            <div
+                                key={note.id}
+                                className="flex w-full max-w-full min-w-0 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 py-1.5 text-left"
+                            >
+                                {isManager ? (
+                                    <span className="shrink-0 text-[11px] font-normal leading-none text-white/70">
+                                        {firstNameOnly(note.authorName)}
+                                    </span>
+                                ) : null}
+                                <span className="min-w-0 flex-1 text-[12px] leading-snug text-white">
+                                    {note.content}
+                                </span>
+                                <span className="shrink-0 text-[9px] font-medium text-white/40 tabular-nums">
+                                    {formatNoteTime(note.created_at)}
+                                </span>
+                                {isOwn ? (
+                                    <div className="flex shrink-0 items-center gap-1.5">
+                                        <Button
+                                            type="button"
+                                            variant="tertiary"
+                                            instance="schedule-note-row-edit"
+                                            onClick={startCompose}
+                                        >
+                                            Editar
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                            instance="schedule-note-row-delete"
+                                            onClick={() => void handleDelete(note.id)}
+                                        >
+                                            Eliminar
+                                        </Button>
+                                    </div>
+                                ) : null}
+                            </div>
+                        );
+                    })}
                 </div>
             ) : null}
         </div>
