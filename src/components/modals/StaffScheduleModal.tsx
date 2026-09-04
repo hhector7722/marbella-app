@@ -89,15 +89,17 @@ const SummaryCell = ({
     valueClassName?: string;
 }) => (
     <div className="flex min-w-0 w-full flex-col items-center gap-1">
-        <span
-            className={cn(
-                'w-full min-w-0 text-center text-[11px] font-semibold leading-tight text-zinc-800 sm:text-xs',
-                valueClassName,
-            )}
-        >
-            {value}
-        </span>
-        <span className="text-[9px] font-semibold uppercase tracking-widest leading-none text-zinc-400">
+        <div className="flex min-h-[1.4rem] w-full flex-1 items-end justify-center">
+            <span
+                className={cn(
+                    'w-full min-w-0 text-center text-[11px] font-semibold leading-tight text-zinc-800 sm:text-xs',
+                    valueClassName,
+                )}
+            >
+                {value}
+            </span>
+        </div>
+        <span className="shrink-0 text-[9px] font-semibold uppercase tracking-widest leading-none text-zinc-400">
             {label}
         </span>
     </div>
@@ -131,7 +133,6 @@ interface Props {
     shifts: ShiftMock[];
     userName?: string;
     userRole?: 'staff' | 'manager' | 'supervisor' | 'admin';
-    userId?: string | null;
     /** yyyy-MM-dd desde notificación: abre el detalle de ese día al abrir el modal */
     initialFocusDate?: string | null;
     userEmail?: string;
@@ -143,7 +144,6 @@ export const StaffScheduleModal = ({
     onClose,
     shifts,
     userRole,
-    userId: propsUserId,
     initialFocusDate,
     userEmail,
 }: Props) => {
@@ -286,14 +286,8 @@ export const StaffScheduleModal = ({
                 setEventParticipants2(publishedShifts[0]?.event_participants_2 || '');
             }
 
-            // Solo el manager hhector7722@gmail.com ve la tabla completa del día (todos los turnos publicados),
-            // aunque él no tenga turno. El resto ve solo su propio turno; si hay turnos pero no es su día → "Sin turno".
-            const canViewAnyDay = userEmail === 'hhector7722@gmail.com';
-            const uid = propsUserId ?? (await supabase.auth.getUser()).data.user?.id ?? null;
-
-            const visibleShifts = canViewAnyDay
-                ? publishedShifts
-                : publishedShifts.filter((s: any) => s.user_id === uid);
+            // Todos los usuarios ven la tabla completa del día: quién comparte turno.
+            const visibleShifts = publishedShifts;
 
             if (visibleShifts.length === 0) {
                 setDayShifts([]);
@@ -669,7 +663,7 @@ export const StaffScheduleModal = ({
                                         <p className="text-xs font-medium text-zinc-400">Sin turno</p>
                                     </div>
                                 ) : (
-                                <div className="rounded-2xl border border-zinc-200/70 shadow-[inset_0_0.5px_0_rgba(255,255,255,0.55),0_1px_1px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.10)] overflow-hidden flex flex-col flex-1 min-h-0">
+                                <div className="rounded-2xl border border-zinc-100 shadow-[inset_0_0.5px_0_rgba(255,255,255,0.55),0_1px_1px_rgba(0,0,0,0.04),0_6px_18px_rgba(0,0,0,0.08)] overflow-hidden flex flex-col flex-1 min-h-0">
                                     {/* Encabezado rojo */}
                                     <div className="flex w-full bg-[#E55353] text-white shrink-0">
                                         <div className="w-24 md:w-28 flex items-center justify-center shrink-0 h-5 md:h-6" />

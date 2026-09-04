@@ -599,7 +599,6 @@ export default function HorarioPage() {
           isOpen={modalOpen}
           onClose={() => { setModalOpen(false); setSelectedDayStr(null); }}
           shifts={allShifts}
-          userId={targetUserId}
           userRole={modalRole}
           userEmail={myEmail}
           initialFocusDate={selectedDayStr}

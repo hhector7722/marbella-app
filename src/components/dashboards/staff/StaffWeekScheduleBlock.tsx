@@ -105,7 +105,6 @@ export function StaffWeekScheduleBlock({
                 onClose={handleClose}
                 shifts={monthShifts}
                 userRole={userRole}
-                userId={userId}
                 userEmail={userEmail}
                 initialFocusDate={focusDate}
             />

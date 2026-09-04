@@ -186,14 +186,15 @@ function WeekendDayColumn({
 
                 <div data-element="weekend-details" className="flex min-h-0 min-w-0 flex-1 flex-col">
                     <div data-element="weekend-turno" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
-                        <span data-element="weekend-turno-label" className="shrink-0 text-[6px] font-medium leading-none tracking-wide">
-                            Turno
-                        </span>
                         {turno ? (
                             <span data-element="weekend-turno-value" className="min-w-0 truncate text-[6px] font-medium tabular-nums leading-none">
                                 {turno}
                             </span>
-                        ) : null}
+                        ) : (
+                            <span data-element="weekend-turno-label" className="shrink-0 text-[6px] font-medium leading-none tracking-wide">
+                                Turno
+                            </span>
+                        )}
                     </div>
 
                     <div data-element="weekend-evento" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
