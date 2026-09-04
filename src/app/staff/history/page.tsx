@@ -1040,6 +1040,10 @@ export default function HistoryPage() {
                                         key={week.weekNumber}
                                         week={week}
                                         onDayClick={handleDayClick}
+                                        inTimeClassName="text-emerald-700"
+                                        outTimeClassName="text-rose-700"
+                                        timeMono={false}
+                                        hideSeparatorWhenNoOut
                                     />
                                 ))}
                             </div>
