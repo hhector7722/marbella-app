@@ -26,6 +26,7 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.deepEqual(HOME_SCREEN_SLOT_SPAN.half, { cols: 2, rows: 1 });
         assert.deepEqual(HOME_SCREEN_SLOT_SPAN.panel, { cols: 3, rows: 2 });
         assert.deepEqual(HOME_SCREEN_SLOT_SPAN.tile, { cols: 1, rows: 1 });
+        assert.deepEqual(HOME_SCREEN_SLOT_SPAN.tall, { cols: 1, rows: 2 });
     });
 
     it('el CSS fija una sola rejilla de 4 columnas', () => {
@@ -46,6 +47,7 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.match(home, /\[data-slot='half'\][\s\S]*?span 2/);
         assert.match(home, /\[data-slot='panel'\][\s\S]*?span 3/);
         assert.match(home, /\[data-slot='tile'\][\s\S]*?span 1/);
+        assert.match(home, /\[data-slot='tall'\][\s\S]*?span 2/);
         assert.match(home, /\[data-element='body'\][\s\S]*?position:\s*absolute/);
         assert.match(home, /> \[data-element='slot'\] \{[\s\S]*?max-height:\s*100%/);
         assert.match(home, /--home-name-band:\s*calc\(var\(--espacio-1\) \+ var\(--home-name\)\)/);
@@ -107,28 +109,13 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         );
         assert.match(
             home,
-            /grid-template-areas:[\s\S]*asis     asis     asis     asis[\s\S]*horario  horario  horario  caja[\s\S]*horario  horario  horario  hextras/,
-            'Master: asistencia 4×1 y horarios 3×2 (filas 3–4, columnas 1–3)'
-        );
-        assert.match(
-            home,
-            /\[data-instance='master-asistencia'\][\s\S]*month-cal-grid-wrap[\s\S]*border:\s*0/,
-            'la semana Master llena el hueco como la de Staff: un solo canto'
-        );
-        assert.match(
-            home,
-            /\[data-instance='master-asistencia'\][\s\S]*month-cal-day-clocks span[\s\S]*?font-size:\s*8px/,
-            'en el mosaico Master las horas de fichaje bajan un punto'
-        );
-        assert.match(
-            home,
-            /\[data-instance='master-asistencia'\][\s\S]*month-cal-weeks > \[data-week-footer\][\s\S]*?font-size:\s*7px/,
-            'en el mosaico Master los conceptos del pie bajan un punto'
+            /grid-template-areas:[\s\S]*horario  horario  horario  asis[\s\S]*horario  horario  horario  asis[\s\S]*ingred   albaran  caja     hextras/,
+            'Master: asistencia del día 1×2 (fila 2, columna 4) y horarios 3×2 (filas 2–3, columnas 1–3); Caja y H. extras a la derecha'
         );
         assert.match(
             home,
             /\[data-instance='master-asistencia'\] > \[data-element='body'\] \{[\s\S]*?background:\s*var\(--color-superficie\)/,
-            'la semana Master es papel blanco, no cristal'
+            'la asistencia Master es papel blanco, no cristal'
         );
         assert.match(
             home,
@@ -384,8 +371,8 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.doesNotMatch(master, /CajaInicialWidget|CajaCambioWidget/);
         assert.match(master, /layout="master"/);
         assert.match(master, /size="wide" instance="dashboard-ventas"/);
-        assert.match(master, /size="wide" instance="master-asistencia"/);
-        assert.match(master, /<MasterPlantillaAttendanceWidget/);
+        assert.match(master, /size="tall" instance="master-asistencia"/);
+        assert.match(master, /<MasterTodayAttendanceWidget/);
         assert.match(master, /size="panel" instance="master-horarios"/);
         assert.match(master, /<StaffWeekScheduleBlock/);
         assert.match(grid, /size=\{size\} instance=\{key\} label=\{label\}/);

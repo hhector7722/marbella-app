@@ -8,11 +8,11 @@ export const HOME_SCREEN_COMPONENT_ID = 'HomeScreen' as const;
 export const HOME_SCREEN_COLUMNS = 4;
 export const HOME_SCREEN_ROWS = 6;
 
-export const HOME_SCREEN_SLOT_SIZES = ['icon', 'small', 'medium', 'large', 'wide', 'half', 'panel', 'tile'] as const;
+export const HOME_SCREEN_SLOT_SIZES = ['icon', 'small', 'medium', 'large', 'wide', 'half', 'panel', 'tile', 'tall'] as const;
 
 export type HomeScreenSlotSize = (typeof HOME_SCREEN_SLOT_SIZES)[number];
 
-/** Mosaicos con áreas fijas. `ops-admin`: Cambio 1/2 son widgets 1×1. `staff`: semana 4×1. `master`: semana y horarios. */
+/** Mosaicos con áreas fijas. `ops-admin`: Cambio 1/2 son widgets 1×1. `staff`: semana 4×1. `master`: asistencia del día y horarios. */
 export const HOME_SCREEN_LAYOUTS = ['ops-admin', 'staff', 'master'] as const;
 
 export type HomeScreenLayout = (typeof HOME_SCREEN_LAYOUTS)[number];
@@ -27,6 +27,7 @@ export const HOME_SCREEN_SLOT_SPAN: Record<HomeScreenSlotSize, { cols: number; r
     half: { cols: 2, rows: 1 },
     panel: { cols: 3, rows: 2 },
     tile: { cols: 1, rows: 1 },
+    tall: { cols: 1, rows: 2 },
 };
 
 export function isHomeScreenSlotSize(value: string): value is HomeScreenSlotSize {

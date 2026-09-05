@@ -12,7 +12,7 @@ import DashboardVentasSection from '@/components/dashboards/DashboardVentasSecti
 import MasterShortcutGrid from '@/components/dashboards/MasterShortcutGrid';
 import { HorasExtrasWidget, formatChangeBoxEur } from '@/components/dashboards/ops-widgets';
 import { HomeScreen, HomeScreenSlot } from '@/components/dashboards/HomeScreen';
-import { MasterPlantillaAttendanceWidget } from '@/components/dashboards/MasterPlantillaAttendanceWidget';
+import { MasterTodayAttendanceWidget } from '@/components/dashboards/MasterTodayAttendanceWidget';
 import { StaffWeekScheduleBlock } from '@/components/dashboards/staff/StaffWeekScheduleBlock';
 import { MasterMoreFunctionsModal } from '@/components/modals/MasterMoreFunctionsModal';
 import CashClosingModal from '@/components/CashClosingModal';
@@ -552,8 +552,8 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                         }}
                     />
                 </HomeScreenSlot>
-                <HomeScreenSlot size="wide" instance="master-asistencia">
-                    <MasterPlantillaAttendanceWidget
+                <HomeScreenSlot size="tall" instance="master-asistencia">
+                    <MasterTodayAttendanceWidget
                         userRole={userRole}
                         viewerEmail={userEmail}
                         employees={plantillaEmployees}

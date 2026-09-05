@@ -2530,6 +2530,10 @@ button[data-element='catalog-filter'] {
   grid-column: span 1;
   grid-row: span 1;
 }
+[data-component='HomeScreen'] > [data-element='slot'][data-slot='tall'] {
+  grid-column: span 1;
+  grid-row: span 2;
+}
 /*
  * Admin (/dashboard): áreas fijas.
  * H. extras 3×2 en filas 3–4; Plantilla y Albaranes a la derecha.
@@ -2957,19 +2961,19 @@ button[data-element='catalog-filter'] {
   grid-area: invent;
 }
 /*
- * Master (/master/dashboard): ventas 4×1; resumen de asistencia 4×1;
- * horarios 3×2 (filas 3–4, columnas 1–3); iconos reposicionados.
+ * Master (/master/dashboard): ventas 4×1; horarios 3×2 (filas 2–3, columnas 1–3);
+ * asistencia del día 1×2 (fila 2, columna 4); iconos reposicionados.
  * «Otros» abre el modal de accesos (proveedores, web, carta, consumo,
  * horarios, asistencia, cierre, propinas, recetas, rentabilidad, plantilla).
  */
 [data-component='HomeScreen'][data-layout='master'] {
   grid-template-areas:
     'ventas   ventas   ventas   ventas'
-    'asis     asis     asis     asis'
-    'horario  horario  horario  caja'
-    'horario  horario  horario  hextras'
-    'ingred   albaran  cambio   reservas'
-    'uso      cajascambio otros    .';
+    'horario  horario  horario  asis'
+    'horario  horario  horario  asis'
+    'ingred   albaran  caja     hextras'
+    'cambio   reservas uso      cajascambio'
+    'otros    .        .        .';
   grid-template-rows: repeat(6, var(--home-row-track));
   grid-auto-flow: row;
 }
@@ -3055,76 +3059,9 @@ button[data-element='catalog-filter'] {
 [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] > [data-element='body'] :is(.border-gray-100, .border-gray-50, .border-zinc-100) {
   border-color: var(--color-borde-marcado);
 }
-[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-fit='week'] [data-component='MonthCalendarFrame'] {
-  display: flex;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  transform: none;
-}
-[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] .month-cal-chrome--flush .month-cal-grid-wrap {
-  display: flex;
-  flex: 1 1 auto;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  margin: 0;
-  border: 0;
-  box-shadow: none;
-  background-color: var(--color-superficie);
-  border-radius: var(--home-widget-radius);
-  flex-direction: column;
-}
-[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] .month-cal-chrome--flush .month-cal-weeks {
-  display: flex;
-  flex: 1 1 auto;
-  min-height: 0;
-  flex-direction: column;
-}
-[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] .month-cal-chrome--flush .month-cal-week {
-  display: grid;
-  flex: 1 1 auto;
-  min-height: 0;
-  align-items: stretch;
-}
-[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0,
-[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0 > div {
-  height: 13px;
-  min-height: 13px;
-}
-[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0 span {
-  font-size: 6px;
-}
-[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-week-summary] .month-cal-day-clocks > div {
-  height: 12px;
-}
-[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-week-summary] .month-cal-day-clocks span {
-  font-size: 8px;
-}
-[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-week-summary] .month-cal-week {
-  flex: 1 1 0;
-  min-height: 62px;
-}
-[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-week-summary] .month-cal-weeks > [data-week-footer]:not([data-overrides='true']) {
-  flex: 0 0 auto;
-  height: 17px;
-  min-height: 17px;
-  max-height: 17px;
-}
-[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-footer-label] {
-  font-size: 7px;
-}
-[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric] {
-  gap: 5px;
-}
-[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric-value] {
-  font-size: 8px;
-}
-[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric-label] {
-  font-size: 7px;
-}
-[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-week-summary] [data-week-log-hours] {
-  font-size: 6px;
+/* Asistencia del día Master: franja roja con la fecha y zona blanca de fichajes. */
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-fit='today'] > button {
+  min-height: 22px;
 }
 [data-component='HomeScreen'] > [data-element='slot'] > [data-element='body'] {
   box-sizing: border-box;

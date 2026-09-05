@@ -36,6 +36,10 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
 
+## 2026-09-05
+
+- **Master: asistencia del día en curso.** El widget del mosaico ya no es la semana de plantilla, sino los fichajes del día en curso de todos los trabajadores. Ocupa una columna por dos filas (1×2) en la fila 2, columna 4, con la fecha en la franja roja («Miércoles 3 de septiembre») y bajo ella el nombre, la entrada y la salida de cada uno; la franja abre el resumen de fichajes y un registro abre el detalle del trabajador. El horario sube una fila (filas 2–3, columnas 1–3) y Caja Inicial y H. extras bajan a la fila 4, columnas 3–4. El resumen semanal de `/staff/history` y el del mosaico Staff no cambian.
+
 ## 2026-09-04
 
 - **Master: resumen de asistencia más limpio.** En el widget del mosaico, las horas de entrada y salida bajan un punto y se separan con «-» en lugar de «/»; desaparecen las líneas horizontales que separaban los registros de cada trabajador.
