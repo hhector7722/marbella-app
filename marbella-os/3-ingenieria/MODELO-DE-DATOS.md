@@ -52,6 +52,8 @@ Las 72 tablas tipadas se agrupan en nueve dominios.
 
 **La regla que gobierna este dominio:** `time_logs` es hecho, `weekly_snapshots` es resultado. Nada más produce horas. Ver [ADR-0001](../4-decisiones/ADR-0001-hours-engine-productor-unico.md).
 
+`profiles` conserva además los datos de la ficha de empleado: `dni` (NIF/NIE/Pasaporte), `afiliacion_seguridad_social`, `nacionalidad`, `fecha_nacimiento`, `domicilio`, `phone` y `email`. Son datos introducidos a mano, sin productor que los calcule.
+
 #### La duplicación de condiciones laborales
 
 `profiles` conserva columnas que las tablas con vigencia ya cubren: `contracted_hours_weekly`, `is_fixed_salary`, `prefer_stock_hours`, `monthly_cost`, `overtime_cost_per_hour`, `hours_balance`.

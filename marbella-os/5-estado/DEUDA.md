@@ -412,6 +412,16 @@ Vs PetroleumSegmented: shell borde+fill marca ≠ track+pill. Son dos familias v
 
 ---
 
+## D29 · Documentos de identidad en la carpeta pública
+
+**Prioridad: alta, aceptada.** La ficha de empleado del perfil muestra las imágenes del documento (NIF/DNI, delantera y trasera) desde `/public/personal/`, accesibles sin sesión a cualquiera que conozca o adivine la ruta del archivo. Los nombres siguen un patrón derivado del nombre del empleado (`<primer-nombre>[-<segundo-nombre>]-<primer-apellido>-delantera|trasera`), lo que hace las rutas predecibles.
+
+**Coste**: un documento de identidad real subido a esa carpeta queda expuesto permanentemente. Contradice la regla de [SEGURIDAD §7](../3-ingenieria/SEGURIDAD.md) de proteger los documentos de identidad.
+
+**Disparador de pago**: mover las imágenes al almacenamiento privado (`employee-documents`) y servirlas a través de un manejador que verifique identidad y permiso, como ya hace `/api/employee-documents/open` para las nóminas. Decisión tomada a sabiendas el 2026-09-05.
+
+---
+
 ## Cómo se usa esta lista
 
 - **Antes de empezar algo grande**, se comprueba si su disparador ya se cumplió.

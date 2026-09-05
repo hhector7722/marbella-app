@@ -48,6 +48,10 @@ interface UserProfile {
     prefer_stock_hours?: boolean | null;
     joining_date?: string | null;
     end_date?: string | null;
+    afiliacion_seguridad_social?: string | null;
+    nacionalidad?: string | null;
+    fecha_nacimiento?: string | null;
+    domicilio?: string | null;
     role: string;
     avatar_url: string | null;
 }
@@ -581,10 +585,16 @@ function ProfileContent() {
             <DatosPersonalesModal
                 isOpen={modalDatosPersonales}
                 onClose={() => setModalDatosPersonales(false)}
+                firstName={profile.first_name}
+                lastName={profile.last_name}
                 dni={profile.dni}
                 email={profile.email}
+                phone={profile.phone}
+                afiliacionSeguridadSocial={profile.afiliacion_seguridad_social}
+                nacionalidad={profile.nacionalidad}
+                fechaNacimiento={profile.fecha_nacimiento}
+                domicilio={profile.domicilio}
                 ownerUserId={profile.id}
-                canManageDniImage={viewMode === 'manager-employee'}
             />
             <ContactoModal isOpen={modalContacto} onClose={() => setModalContacto(false)} phone={profile.phone} />
             <DatosBancariosModal isOpen={modalDatosBancarios} onClose={() => setModalDatosBancarios(false)} iban={profile.bank_account} />

@@ -45,6 +45,7 @@ Reglas de uso:
 | **Master** | Acceso total, incluida la analítica de uso. **No es un rol de base de datos**: se determina por correo electrónico. | `isMasterDashboardUser(email)` |
 | **Plantilla** | El conjunto de personas visibles en las vistas operativas del equipo. ⚠ conflicto: también se llama «plantilla» al documento impreso de jornada. En documentación, «plantilla» es siempre el equipo; el documento se llama **hoja de jornada**. | `profiles.visible_in_plantilla` |
 | **Baja** | Fin de la relación laboral de un perfil. Una fecha de baja igual a la de alta indica dato erróneo, no baja real. | `profiles.end_date` |
+| **Ficha de empleado** | Datos personales de una persona en el perfil: documento (NIF/NIE/Pasaporte), afiliación a la Seguridad Social, nacionalidad, fecha de nacimiento, domicilio, teléfono y correo. Se introducen a mano, no se calculan. | `profiles.dni`, `profiles.afiliacion_seguridad_social`, `profiles.nacionalidad`, `profiles.fecha_nacimiento`, `profiles.domicilio` |
 
 ---
 

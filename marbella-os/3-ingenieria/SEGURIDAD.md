@@ -151,6 +151,8 @@ Once contenedores de almacenamiento. Cinco son públicos:
 
 `ai_assets` público es discutible. El borrado a los siete días limita la ventana, pero no justifica que sea legible sin sesión.
 
+**Decisión asumida: `/public/personal/` expone documentos de identidad.** La ficha de empleado del perfil muestra las imágenes del documento desde la carpeta pública del repositorio, sin sesión. Es una decisión de producto asumida a sabiendas y registrada como [D29](../5-estado/DEUDA.md). Quien la revise debe saber que un documento de identidad subido ahí es legible por cualquiera que conozca la ruta.
+
 ---
 
 ## 8. Secretos

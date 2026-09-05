@@ -3060,7 +3060,7 @@ button[data-element='catalog-filter'] {
   border-color: var(--color-borde-marcado);
 }
 /* Asistencia del día Master: franja roja con la fecha y zona blanca de fichajes. */
-[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-fit='today'] > button {
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] [data-fit='today'] > div:first-child {
   min-height: 22px;
 }
 [data-component='HomeScreen'] > [data-element='slot'] > [data-element='body'] {

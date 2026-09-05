@@ -1,49 +1,60 @@
 'use client';
 
-import { Copy, Check, Upload } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Copy, Check } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { Modal } from '@/components/ui/modal';
-import { Button } from '@/components/ui/button';
 
 interface DatosPersonalesModalProps {
     isOpen: boolean;
     onClose: () => void;
+    firstName: string;
+    lastName: string | null;
     dni: string | null;
     email: string;
+    phone: string | null;
+    /** Nº de afiliación a la Seguridad Social. */
+    afiliacionSeguridadSocial?: string | null;
+    nacionalidad?: string | null;
+    /** Fecha de nacimiento en formato YYYY-MM-DD. */
+    fechaNacimiento?: string | null;
+    domicilio?: string | null;
     /** Id del perfil al que pertenecen los datos mostrados (empleado). */
     ownerUserId?: string;
-    /** Solo manager viendo ficha de empleado. */
-    canManageDniImage?: boolean;
 }
 
-type DniDocRow = { id: string; storage_path: string; filename: string };
+interface PersonalDocImages {
+    delantera: string | null;
+    trasera: string | null;
+}
+
+function formatBirthDate(ymd?: string | null): string {
+    if (!ymd) return '—';
+    const [y, m, d] = ymd.split('-').map(Number);
+    if (!y || !m || !d) return ymd;
+    return format(new Date(y, m - 1, d), "d 'de' MMMM 'de' yyyy", { locale: es });
+}
 
 export default function DatosPersonalesModal({
     isOpen,
     onClose,
+    firstName,
+    lastName,
     dni,
     email,
+    phone,
+    afiliacionSeguridadSocial,
+    nacionalidad,
+    fechaNacimiento,
+    domicilio,
     ownerUserId,
-    canManageDniImage,
 }: DatosPersonalesModalProps) {
     const [copied, setCopied] = useState<string | null>(null);
-    const [dniDoc, setDniDoc] = useState<DniDocRow | null>(null);
-    const [dniDocLoading, setDniDocLoading] = useState(false);
-    const [dniUploading, setDniUploading] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [images, setImages] = useState<PersonalDocImages | null>(null);
 
-    const canDni = !!canManageDniImage && !!ownerUserId;
-    const openHref = useMemo(() => {
-        if (!dniDoc || !ownerUserId) return null;
-        const qs = new URLSearchParams({
-            owner: ownerUserId,
-            tipo: 'dni',
-            path: dniDoc.storage_path,
-        });
-        return `/api/employee-documents/open?${qs.toString()}`;
-    }, [dniDoc, ownerUserId]);
+    const fullName = `${firstName} ${lastName || ''}`.trim();
 
     const copy = (text: string, label: string) => {
         if (!text) return;
@@ -55,183 +66,119 @@ export default function DatosPersonalesModal({
 
     useEffect(() => {
         let cancelled = false;
-        async function loadExisting() {
+        async function loadImages() {
             if (!isOpen) return;
-            if (!canDni || !ownerUserId) {
-                setDniDoc(null);
+            if (!ownerUserId) {
+                setImages(null);
                 return;
             }
-            setDniDocLoading(true);
+            setImages(null);
             try {
-                const { createClient } = await import('@/utils/supabase/client');
-                const supabase = createClient();
-                const { data, error } = await supabase
-                    .from('employee_documents')
-                    .select('id, storage_path, filename')
-                    .eq('user_id', ownerUserId)
-                    .eq('tipo', 'dni')
-                    .order('created_at', { ascending: false })
-                    .limit(1);
-                if (cancelled) return;
-                if (error) {
-                    console.error('load dni doc error', error);
-                    toast.error('Error al cargar el DNI');
-                    setDniDoc(null);
+                const res = await fetch(`/api/employee-documents/dni-files?owner=${encodeURIComponent(ownerUserId)}`);
+                if (!res.ok) {
+                    console.error('load dni files error', res.status);
                     return;
                 }
-                setDniDoc((data?.[0] as DniDocRow) ?? null);
+                const data = (await res.json()) as PersonalDocImages;
+                if (cancelled) return;
+                setImages(data);
             } catch (e) {
                 if (cancelled) return;
                 console.error(e);
-                toast.error('Error al cargar el DNI');
-                setDniDoc(null);
-            } finally {
-                if (!cancelled) setDniDocLoading(false);
             }
         }
-        loadExisting();
+        loadImages();
         return () => {
             cancelled = true;
         };
-    }, [isOpen, canDni, ownerUserId]);
+    }, [isOpen, ownerUserId]);
 
-    const handlePickDniImage = () => {
-        if (!canDni) return;
-        fileInputRef.current?.click();
-    };
-
-    const handleDniFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        e.target.value = '';
-        if (!file || !canDni || !ownerUserId) return;
-
-        const allowed = ['image/jpeg', 'image/png', 'image/webp'];
-        if (!allowed.includes(file.type)) {
-            toast.error('Formato no permitido. Usa JPG, PNG o WebP.');
-            return;
-        }
-        if (file.size > 5 * 1024 * 1024) {
-            toast.error('La imagen no puede superar 5 MB');
-            return;
-        }
-
-        setDniUploading(true);
-        try {
-            const fd = new FormData();
-            fd.append('dni_image', file);
-            fd.append('ownerUserId', ownerUserId);
-            const res = await fetch('/api/employee-documents/dni', {
-                method: 'POST',
-                body: fd,
-                credentials: 'same-origin',
-            });
-            let data: { success?: boolean; error?: string; doc?: DniDocRow } = {};
-            try {
-                data = await res.json();
-            } catch {
-                toast.error(res.statusText || 'Error al subir');
-                return;
-            }
-            if (!res.ok || !data.success) {
-                const msg = data.error || res.statusText || 'Error al subir';
-                toast.error(msg);
-                console.error('dni upload failed:', res.status, msg);
-                return;
-            }
-            if (data.doc) setDniDoc(data.doc);
-            toast.success('DNI actualizado');
-        } catch (err) {
-            console.error(err);
-            toast.error('Error al subir');
-        } finally {
-            setDniUploading(false);
-        }
-    };
+    const hasImages = useMemo(() => {
+        return Boolean(images && (images.delantera || images.trasera));
+    }, [images]);
 
     return (
         <Modal
             open={isOpen}
             onClose={onClose}
             title="Datos personales"
-            variant="compact"
+            variant="standard"
             layer="base"
             instance="profile-personal"
             headerTone="petroleum"
             usageId="profile-personal"
             usageLabel="Datos personales"
         >
-            <div className="space-y-5">
-                <div>
-                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">DNI / NIE</p>
-                    <div className="flex items-center gap-2">
-                        <p className="text-zinc-800 font-bold text-sm flex-1 min-w-0 break-words">{dni || '—'}</p>
-                        {dni && (
-                            <button
-                                onClick={() => copy(dni, 'DNI')}
-                                className="shrink-0 min-h-[48px] min-w-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-[#36606F]/10 hover:text-[#36606F] transition-colors"
-                            >
-                                {copied === 'DNI' ? <Check size={20} className="text-emerald-500" /> : <Copy size={18} />}
-                                <span className="text-[10px] text-zinc-400 font-medium leading-tight">copiar</span>
-                            </button>
-                        )}
-                        {canDni && (
-                            <>
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    accept="image/jpeg,image/png,image/webp"
-                                    onChange={handleDniFileChange}
-                                    className="hidden"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={handlePickDniImage}
-                                    disabled={dniUploading}
-                                    className={cn(
-                                        'shrink-0 min-h-[48px] min-w-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl',
-                                        'bg-zinc-100 text-zinc-500 hover:bg-[#36606F]/10 hover:text-[#36606F] transition-colors active:scale-95',
-                                        (dniUploading || dniDocLoading) && 'opacity-60 pointer-events-none'
-                                    )}
-                                    aria-label="Subir imagen DNI"
-                                    title="Subir imagen DNI"
-                                >
-                                    <Upload size={18} />
-                                    <span className="text-[10px] text-zinc-400 font-medium leading-tight">
-                                        {dniUploading ? 'subiendo' : 'imagen'}
-                                    </span>
-                                </button>
-                                {openHref && (
-                                    <Button
-                                        type="button"
-                                        variant="tertiary"
-                                        instance="datos-personales-ver-dni"
-                                        onClick={() => window.open(openHref, '_blank')}
-                                        className="shrink-0"
-                                        aria-label="Ver imagen DNI"
-                                    >
-                                        ver
-                                    </Button>
-                                )}
-                            </>
-                        )}
+            <div className="space-y-4">
+                <Field label="Nombre completo" value={fullName} />
+                <Field label="NIF / NIE / Pasaporte" value={dni} onCopy={dni ? () => copy(dni, 'NIF / NIE / Pasaporte') : undefined} copied={copied === 'NIF / NIE / Pasaporte'} />
+                <Field label="Nº de afiliación a la S.S." value={afiliacionSeguridadSocial} />
+                <Field label="Nacionalidad" value={nacionalidad} />
+                <Field label="Fecha de nacimiento" value={formatBirthDate(fechaNacimiento)} />
+                <Field label="Domicilio" value={domicilio} />
+                <Field label="Teléfono" value={phone} onCopy={phone ? () => copy(phone, 'Teléfono') : undefined} copied={copied === 'Teléfono'} />
+                <Field label="Correo electrónico" value={email} onCopy={email ? () => copy(email, 'Email') : undefined} copied={copied === 'Email'} />
+
+                {hasImages ? (
+                    <div>
+                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">Documento</p>
+                        <div className="space-y-3">
+                            {images!.delantera ? (
+                                <DocImage src={images!.delantera} label="Delantera" />
+                            ) : null}
+                            {images!.trasera ? (
+                                <DocImage src={images!.trasera} label="Trasera" />
+                            ) : null}
+                        </div>
                     </div>
-                </div>
-                <div>
-                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Email</p>
-                    <div className="flex items-center gap-2">
-                        <p className="text-zinc-800 font-bold text-sm flex-1 min-w-0 break-all">{email || '—'}</p>
-                        {email && (
-                            <button
-                                onClick={() => copy(email, 'Email')}
-                                className="shrink-0 min-h-[48px] min-w-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-[#36606F]/10 hover:text-[#36606F] transition-colors"
-                            >
-                                {copied === 'Email' ? <Check size={20} className="text-emerald-500" /> : <Copy size={18} />}
-                                <span className="text-[10px] text-zinc-400 font-medium leading-tight">copiar</span>
-                            </button>
-                        )}
-                    </div>
-                </div>
+                ) : null}
             </div>
         </Modal>
+    );
+}
+
+function Field({
+    label,
+    value,
+    onCopy,
+    copied,
+}: {
+    label: string;
+    value: string | null | undefined;
+    onCopy?: () => void;
+    copied?: boolean;
+}) {
+    const text = value && value.trim() ? value : '—';
+    return (
+        <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">{label}</p>
+                <p className="text-zinc-800 font-bold text-sm min-w-0 break-words">{text}</p>
+            </div>
+            {onCopy && (
+                <button
+                    type="button"
+                    onClick={onCopy}
+                    className="shrink-0 min-h-[48px] min-w-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-[#36606F]/10 hover:text-[#36606F] transition-colors"
+                    aria-label={`Copiar ${label}`}
+                >
+                    {copied ? <Check size={20} className="text-emerald-500" /> : <Copy size={18} />}
+                    <span className="text-[10px] text-zinc-400 font-medium leading-tight">copiar</span>
+                </button>
+            )}
+        </div>
+    );
+}
+
+function DocImage({ src, label }: { src: string; label: string }) {
+    return (
+        <div>
+            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">{label}</p>
+            <img
+                src={src}
+                alt={`${label} del documento`}
+                className="w-full max-h-56 rounded-2xl border border-zinc-200 object-contain bg-white"
+            />
+        </div>
     );
 }

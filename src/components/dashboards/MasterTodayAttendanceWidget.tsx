@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { format } from 'date-fns';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { addDays, format, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { createClient } from '@/utils/supabase/client';
@@ -40,10 +40,11 @@ type MasterTodayAttendanceWidgetProps = {
 };
 
 /**
- * Fichajes del día en curso del Master: franja roja con la fecha y, debajo,
+ * Fichajes del día visible del Master: franja roja con la fecha y, debajo,
  * la zona blanca con un registro por trabajador (nombre, entrada, salida).
- * La franja abre el resumen del día (DaySummaryModal); un registro abre el
- * detalle del trabajador (AttendanceDetailModal).
+ * Arranca en el día en curso; si no tiene fichajes, salta al último día con
+ * registros. Permite navegar entre días (‹ ›) y la franja abre el resumen del
+ * día (DaySummaryModal); un registro abre el detalle del trabajador.
  */
 export function MasterTodayAttendanceWidget({
     userRole,
@@ -55,7 +56,6 @@ export function MasterTodayAttendanceWidget({
     const [logs, setLogs] = useState<EnrichedTodayLog[]>([]);
     const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
     const [editingUserId, setEditingUserId] = useState<string | null>(null);
-    const [reloadKey, setReloadKey] = useState(0);
 
     const employeesOption = useMemo(
         () =>
@@ -73,62 +73,123 @@ export function MasterTodayAttendanceWidget({
         return raw.charAt(0).toUpperCase() + raw.slice(1);
     }, [today]);
 
+    const loadDay = useCallback(async (ymd: string, isCancelled?: () => boolean) => {
+        const supabase = createClient();
+        const { startIso, endIso } = madridDayUtcRangeIso(ymd);
+
+        setLoading(true);
+        try {
+            const { data: logsRaw } = await supabase
+                .from('time_logs')
+                .select('id, user_id, clock_in, clock_out, event_type, clock_out_show_no_registrada')
+                .gte('clock_in', startIso)
+                .lte('clock_in', endIso);
+
+            if (isCancelled?.()) return;
+
+            const rawLogs: TodayLogRow[] = (logsRaw || []) as TodayLogRow[];
+            const userIds = [...new Set(rawLogs.map((log) => log.user_id))];
+            let profiles: { id: string; first_name?: string; last_name?: string }[] = [];
+            if (userIds.length > 0) {
+                const { data: profilesData } = await supabase
+                    .from('profiles')
+                    .select('id, first_name, last_name')
+                    .in('id', userIds);
+                profiles = (profilesData || []).filter((p) => {
+                    const name = (p.first_name || '').trim().toLowerCase();
+                    return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
+                });
+            }
+            if (isCancelled?.()) return;
+
+            const profileMap = new Map(profiles.map((p) => [p.id, p]));
+            const enriched: EnrichedTodayLog[] = rawLogs.map((log: TodayLogRow) => {
+                const p = profileMap.get(log.user_id);
+                return {
+                    ...log,
+                    first_name: p?.first_name ?? '',
+                    last_name: p?.last_name ?? '',
+                    in_time: formatMadridHmFromIso(log.clock_in) ?? '',
+                    out_time: log.clock_out ? (formatMadridHmFromIso(log.clock_out) ?? '') : '',
+                };
+            });
+
+            setToday(ymd);
+            setLogs(enriched);
+        } catch (err) {
+            if (isCancelled?.()) return;
+            console.error(err);
+            toast.error('No se pudo cargar la asistencia del día');
+            setToday(ymd);
+            setLogs([]);
+        } finally {
+            if (!isCancelled?.()) setLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
         let cancelled = false;
         const supabase = createClient();
-        const todayYmd = formatYmdInMadrid(new Date());
-        const { startIso, endIso } = madridDayUtcRangeIso(todayYmd);
 
         (async () => {
             try {
-                const { data: logsRaw } = await supabase
+                const todayYmd = formatYmdInMadrid(new Date());
+                const { startIso, endIso } = madridDayUtcRangeIso(todayYmd);
+
+                const { data: todayRaw } = await supabase
                     .from('time_logs')
-                    .select('id, user_id, clock_in, clock_out, event_type, clock_out_show_no_registrada')
+                    .select('id')
                     .gte('clock_in', startIso)
                     .lte('clock_in', endIso);
 
-                const rawLogs: TodayLogRow[] = (logsRaw || []) as TodayLogRow[];
-                const userIds = [...new Set(rawLogs.map((log) => log.user_id))];
-                let profiles: { id: string; first_name?: string; last_name?: string }[] = [];
-                if (userIds.length > 0) {
-                    const { data: profilesData } = await supabase
-                        .from('profiles')
-                        .select('id, first_name, last_name')
-                        .in('id', userIds);
-                    profiles = (profilesData || []).filter((p) => {
-                        const name = (p.first_name || '').trim().toLowerCase();
-                        return name !== 'ramon' && name !== 'ramón' && name !== 'empleado';
-                    });
-                }
                 if (cancelled) return;
 
-                const profileMap = new Map(profiles.map((p) => [p.id, p]));
-                const enriched: EnrichedTodayLog[] = rawLogs.map((log: TodayLogRow) => {
-                    const p = profileMap.get(log.user_id);
-                    return {
-                        ...log,
-                        first_name: p?.first_name ?? '',
-                        last_name: p?.last_name ?? '',
-                        in_time: formatMadridHmFromIso(log.clock_in) ?? '',
-                        out_time: log.clock_out ? (formatMadridHmFromIso(log.clock_out) ?? '') : '',
-                    };
-                });
+                if ((todayRaw || []).length > 0) {
+                    await loadDay(todayYmd, () => cancelled);
+                    return;
+                }
 
-                setToday(todayYmd);
-                setLogs(enriched);
+                const { data: lastLog } = await supabase
+                    .from('time_logs')
+                    .select('clock_in')
+                    .lte('clock_in', endIso)
+                    .order('clock_in', { ascending: false })
+                    .limit(1);
+
+                if (cancelled) return;
+
+                const lastYmd = lastLog?.[0]?.clock_in ? formatYmdInMadrid(lastLog[0].clock_in) : null;
+                await loadDay(lastYmd ?? todayYmd, () => cancelled);
             } catch (err) {
                 console.error(err);
-                toast.error('No se pudo cargar la asistencia del día');
-                setToday(todayYmd);
-                setLogs([]);
-            } finally {
-                if (!cancelled) setLoading(false);
+                if (!cancelled) {
+                    setLoading(false);
+                    setToday(formatYmdInMadrid(new Date()));
+                    setLogs([]);
+                }
             }
         })();
         return () => {
             cancelled = true;
         };
-    }, [reloadKey]);
+    }, [loadDay]);
+
+    const goPrevDay = useCallback(() => {
+        if (!today) return;
+        const prev = subDays(new Date(`${today}T12:00:00`), 1);
+        void loadDay(format(prev, 'yyyy-MM-dd'));
+    }, [today, loadDay]);
+
+    const goNextDay = useCallback(() => {
+        if (!today) return;
+        const next = addDays(new Date(`${today}T12:00:00`), 1);
+        void loadDay(format(next, 'yyyy-MM-dd'));
+    }, [today, loadDay]);
+
+    const canGoNext = useMemo(() => {
+        if (!today) return false;
+        return today < formatYmdInMadrid(new Date());
+    }, [today]);
 
     const dayLogs: DaySummaryLog[] = useMemo(
         () =>
@@ -147,7 +208,7 @@ export function MasterTodayAttendanceWidget({
     );
 
     const handleRefresh = () => {
-        setReloadKey((key) => key + 1);
+        if (today) void loadDay(today);
     };
 
     return (
@@ -164,19 +225,38 @@ export function MasterTodayAttendanceWidget({
                 ) : null}
                 {today ? (
                     <>
-                        <button
-                            type="button"
-                            onClick={() => setIsSummaryModalOpen(true)}
-                            aria-label={`Resumen de fichajes del ${dateLabel}`}
-                            className="relative flex shrink-0 items-center justify-center bg-gradient-to-b from-red-500 to-red-600 px-1.5 py-1 shadow-sm before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']"
-                        >
-                            <span className="text-center text-[9px] font-bold leading-tight tracking-wide text-white drop-shadow-sm">
-                                {dateLabel}
-                            </span>
-                        </button>
+                        <div className="flex shrink-0 items-stretch bg-gradient-to-b from-red-500 to-red-600 shadow-sm">
+                            <button
+                                type="button"
+                                onClick={goPrevDay}
+                                aria-label="Día anterior"
+                                className="relative flex w-6 shrink-0 items-center justify-center text-white before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']"
+                            >
+                                <span className="text-[11px] font-bold leading-none">‹</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setIsSummaryModalOpen(true)}
+                                aria-label={`Resumen de fichajes del ${dateLabel}`}
+                                className="relative flex min-w-0 flex-1 items-center justify-center px-1 py-1 before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']"
+                            >
+                                <span className="truncate text-[8px] font-bold leading-none tracking-wide text-white drop-shadow-sm">
+                                    {dateLabel}
+                                </span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={goNextDay}
+                                disabled={!canGoNext}
+                                aria-label="Día siguiente"
+                                className="relative flex w-6 shrink-0 items-center justify-center text-white disabled:pointer-events-none disabled:opacity-30 before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']"
+                            >
+                                <span className="text-[11px] font-bold leading-none">›</span>
+                            </button>
+                        </div>
                         <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white">
                             {logs.length === 0 ? (
-                                <EmptyState instance="master-today-none" variant="none" title="Sin fichajes hoy" />
+                                <EmptyState instance="master-today-none" variant="none" title="Sin fichajes" />
                             ) : (
                                 <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
                                     {logs.map((log) => {
@@ -207,6 +287,11 @@ export function MasterTodayAttendanceWidget({
                                     })}
                                 </div>
                             )}
+                            <div className="flex shrink-0 items-center justify-center gap-1.5 py-1">
+                                <div className="h-1 w-1 rounded-full bg-zinc-300 shadow-sm opacity-70" />
+                                <div className="h-1.5 w-1.5 rounded-full bg-zinc-700 shadow-sm" />
+                                <div className="h-1 w-1 rounded-full bg-zinc-300 shadow-sm opacity-70" />
+                            </div>
                         </div>
                     </>
                 ) : !loading ? (
