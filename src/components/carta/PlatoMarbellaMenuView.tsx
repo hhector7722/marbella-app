@@ -1,7 +1,7 @@
 'use client'
 
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowRight, Check } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -38,7 +38,7 @@ type Selection = {
   photoUrl: string | null
 }
 
-/** Indicador de progreso no interactivo: ✓ Entrant → ○ Principal → ○ Guarnició. */
+/** Indicador de progreso discreto: ✓ Entrant · ○ Principal · ○ Guarnició. */
 function BuilderProgress({
   lang,
   activeStep,
@@ -61,30 +61,24 @@ function BuilderProgress({
         const active = activeStep === slot
         return (
           <Fragment key={slot}>
-            {i > 0 ? (
-              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-zinc-300" strokeWidth={2.5} />
-            ) : null}
+            {i > 0 ? <span className="h-px w-3 shrink-0 bg-zinc-200 sm:w-4" /> : null}
             <span
               className={cn(
-                'flex min-h-[34px] shrink-0 items-center gap-1.5 rounded-full border px-2 py-1 sm:px-2.5',
-                done ? 'border-[#36606F]/25 bg-[#36606F]/5' : 'border-zinc-200 bg-white',
-                active && 'ring-1 ring-[#36606F]/40'
+                'flex items-center gap-1',
+                done ? 'text-[#36606F]' : active ? 'text-zinc-700' : 'text-zinc-400'
               )}
             >
-              <span
-                className={cn(
-                  'flex h-4 w-4 items-center justify-center rounded-full',
-                  done ? 'bg-[#36606F] text-white' : 'border border-zinc-300 bg-white'
-                )}
-              >
-                {done ? <Check className="h-2.5 w-2.5" strokeWidth={3.5} /> : null}
-              </span>
-              <span
-                className={cn(
-                  'text-[10px] font-black uppercase tracking-wide sm:text-[11px]',
-                  done ? 'text-[#36606F]' : 'text-zinc-400'
-                )}
-              >
+              {done ? (
+                <Check className="h-3 w-3" strokeWidth={3.5} />
+              ) : (
+                <span
+                  className={cn(
+                    'h-1.5 w-1.5 rounded-full',
+                    active ? 'bg-[#36606F]' : 'bg-zinc-300'
+                  )}
+                />
+              )}
+              <span className="text-[9px] font-bold uppercase tracking-wider">
                 {labels[slot]}
               </span>
             </span>
@@ -205,30 +199,34 @@ function BuilderCompleteSummary({
   const slotLabels = platoMarbellaPlateSlotLabels(lang)
   const priceLabel = menuPrice != null ? formatCartaPrice(menuPrice).trim() : ''
   return (
-    <div className="mx-auto w-full max-w-md space-y-2">
-      {PLATO_MARBELLA_SLOTS.map((slot) => {
-        const sel = selections[slot]
-        return (
-          <button
-            key={slot}
-            type="button"
-            onClick={() => onEditSlot(slot)}
-            className="flex w-full min-h-[48px] items-center justify-between gap-2 rounded-xl border border-zinc-100 bg-white px-3 py-2 text-left touch-manipulation transition-colors active:bg-zinc-50"
-          >
-            <span className="min-w-0">
-              <span className="block text-[9px] font-black uppercase tracking-wide text-zinc-400">
-                {slotLabels[slot]}
+    <div className="mx-auto w-full max-w-md">
+      <div className="overflow-hidden rounded-xl border border-zinc-100 bg-white">
+        {PLATO_MARBELLA_SLOTS.map((slot, i) => {
+          const sel = selections[slot]
+          return (
+            <button
+              key={slot}
+              type="button"
+              onClick={() => onEditSlot(slot)}
+              className={cn(
+                'flex w-full min-h-[48px] items-center justify-between gap-2 px-3 py-2 text-left touch-manipulation transition-colors active:bg-zinc-50',
+                i > 0 && 'border-t border-zinc-100'
+              )}
+            >
+              <span className="min-w-0 truncate text-xs text-zinc-500">
+                <span className="font-black text-zinc-900">{slotLabels[slot]}</span>
+                {' · '}
+                <span className="font-bold text-zinc-700">{sel?.name}</span>
               </span>
-              <span className="block truncate text-sm font-black text-zinc-900">{sel?.name}</span>
-            </span>
-            <span className="flex shrink-0 items-center gap-1 text-[10px] font-black uppercase tracking-wide text-[#36606F]">
-              {ui.editChoice}
-            </span>
-          </button>
-        )
-      })}
+              <span className="flex shrink-0 items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-[#36606F]/80">
+                {ui.editChoice}
+              </span>
+            </button>
+          )
+        })}
+      </div>
       {menuPrice != null ? (
-        <p className="pt-1 text-center text-base font-black tabular-nums leading-none text-[#36606F]">
+        <p className="pt-2 text-center text-sm font-black tabular-nums leading-none text-[#36606F]">
           {priceLabel}
         </p>
       ) : null}
@@ -409,18 +407,18 @@ export function PlatoMarbellaMenuView({
           lang={lang}
           activeStep={activeStep}
           selections={selections}
-          className="mt-2"
+          className="mt-1.5"
         />
         <PlateBuilder
           lang={lang}
           activeSlot={activeStep === 'complete' ? null : activeStep}
-          className="mx-auto mt-2 sm:mt-3"
+          className="mx-auto mt-1.5 sm:mt-2"
         >
           <PlateZone type="entrante" item={zoneItem('entrante')} />
           <PlateZone type="principal" item={zoneItem('principal')} />
           <PlateZone type="guarnicion" item={zoneItem('guarnicion')} />
         </PlateBuilder>
-        <div className="mt-2 pb-1.5 text-center sm:pb-2">
+        <div className="mt-1.5 pb-1.5 text-center sm:pb-2">
           <p className="text-[11px] font-black uppercase tracking-wide text-[#36606F] sm:text-xs">
             {activeStep === 'complete' ? ui.yourPlate : stepTitle[activeStep]}
           </p>
@@ -429,7 +427,7 @@ export function PlatoMarbellaMenuView({
 
       <div
         ref={listRef}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y px-2 pb-2 pt-1.5 custom-scrollbar sm:px-3 sm:pb-2.5"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y border-t border-zinc-100 px-2 pb-2 pt-2 custom-scrollbar sm:px-3 sm:pb-2.5"
       >
         {activeStep === 'complete' ? (
           <BuilderCompleteSummary
@@ -444,15 +442,15 @@ export function PlatoMarbellaMenuView({
               <button
                 type="button"
                 onClick={onConfirmCurrent}
-                className="mb-2 flex w-full min-h-[48px] items-center justify-between gap-2 rounded-xl border border-[#36606F]/25 bg-[#36606F]/5 px-3 py-2 touch-manipulation transition-colors active:bg-[#36606F]/10"
+                className="mb-2 flex w-full min-h-[48px] items-center justify-between gap-2 px-1 py-2 text-left touch-manipulation transition-colors active:opacity-70"
               >
-                <span className="flex min-w-0 items-center gap-2">
-                  <Check className="h-4 w-4 shrink-0 text-[#36606F]" strokeWidth={3} />
-                  <span className="min-w-0 truncate text-xs font-black text-[#36606F]">
+                <span className="flex min-w-0 items-center gap-2 text-[#36606F]">
+                  <Check className="h-4 w-4 shrink-0" strokeWidth={3} />
+                  <span className="min-w-0 truncate text-xs font-black">
                     {selections[activeStep]?.name}
                   </span>
                 </span>
-                <span className="shrink-0 text-[10px] font-black uppercase tracking-wide text-[#36606F]/70">
+                <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-zinc-400">
                   {ui.confirmDone}
                 </span>
               </button>
