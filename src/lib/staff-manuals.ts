@@ -4,7 +4,7 @@
  * Ej.: `checkListPdf` → archivo en disco `public/docs/manuals/check-list.pdf`.
  */
 export const STAFF_MANUAL_ASSETS = {
-    checkListPdf: '/docs/manuals/check-list.pdf',
+    checkListPdf: '/docs/manuals/check-list.pdf?v=20260904',
     /** PDF: Limpieza Horno (submenú desde entrada «Horno»). */
     hornoLimpiezaPdf: '/docs/manuals/horno-limpieza.pdf',
     /** Vídeo: Funcionamiento Horno (visor embebido en modal). */
