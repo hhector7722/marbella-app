@@ -1632,14 +1632,6 @@ export function MenuAccordion({
                                             }
                                             eventOrder={encargoEditActive ? undefined : eventOrder}
                                         />
-                                    ) : eventOrder && !encargoEditActive ? (
-                                        <PlatoMarbellaStaffGridView
-                                            rows={platoBundleRows}
-                                            lang={lang}
-                                            launcherArticuloId={platoLauncherArticuloId ?? null}
-                                            eventOrder={eventOrder}
-                                            lightboxParentInstance="menu-accordion-section"
-                                        />
                                     ) : (
                                         <PlatoMarbellaMenuView
                                             rows={platoBundleRows}
@@ -1650,6 +1642,7 @@ export function MenuAccordion({
                                             onPhotoClick={(src, alt) =>
                                                 setPlatoLightbox({ src, alt })
                                             }
+                                            eventOrder={eventOrder}
                                         />
                                     )}
                                 </div>

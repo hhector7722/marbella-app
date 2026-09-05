@@ -69,6 +69,14 @@ export function tPlatoMarbellaUi(lang: CartaLang) {
   const dict = {
     es: {
       plateTagline: 'Elige un entrante, un principal y una guarnición',
+      builderStepEntrante: 'Elige tu entrante',
+      builderStepPrincipal: 'Elige tu principal',
+      builderStepGuarnicion: 'Elige tu guarnición',
+      yourPlate: 'TU PLATO MARBELLA',
+      editChoice: 'Editar',
+      confirmDone: 'Listo',
+      addToOrder: 'Añadir al pedido',
+      addedToOrder: 'Añadido al pedido',
       intro:
         'Elige un entrante, un plato principal y una guarnición. Solo se sirve el conjunto completo (no por tramos sueltos).',
       schedule: 'De lunes a viernes, de 13:00 a 15:30.',
@@ -114,6 +122,14 @@ export function tPlatoMarbellaUi(lang: CartaLang) {
     },
     ca: {
       plateTagline: 'Tria un entrant, un principal i una guarnició',
+      builderStepEntrante: 'Tria el teu entrant',
+      builderStepPrincipal: 'Tria el teu plat principal',
+      builderStepGuarnicion: 'Tria la teva guarnició',
+      yourPlate: 'EL TEU PLAT MARBELLA',
+      editChoice: 'Edita',
+      confirmDone: 'Llest',
+      addToOrder: 'Afegeix al demanat',
+      addedToOrder: 'Afegit al demanat',
       intro:
         'Tria un entrant, un plat principal i una guarnició. Només es serveix el conjunt complet (no per trams a la carta).',
       schedule: 'De dilluns a divendres, de 13:00 a 15:30.',
@@ -159,6 +175,14 @@ export function tPlatoMarbellaUi(lang: CartaLang) {
     },
     en: {
       plateTagline: 'Pick a starter, a main and a side',
+      builderStepEntrante: 'Choose your starter',
+      builderStepPrincipal: 'Choose your main course',
+      builderStepGuarnicion: 'Choose your side',
+      yourPlate: 'YOUR MARBELLA DISH',
+      editChoice: 'Edit',
+      confirmDone: 'Done',
+      addToOrder: 'Add to order',
+      addedToOrder: 'Added to order',
       intro:
         'Pick a starter, a main course and a side. Only the full set is served (not individual courses).',
       schedule: 'Monday to Friday, 1:00 p.m. to 3:30 p.m.',
