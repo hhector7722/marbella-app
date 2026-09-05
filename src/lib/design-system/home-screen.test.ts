@@ -378,7 +378,7 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.match(grid, /size=\{size\} instance=\{key\} label=\{label\}/);
         assert.match(grid, /size: 'tile'[\s\S]*label: 'H\. extras'/);
         assert.match(grid, /label: 'Cajas Cambio'/);
-        assert.match(grid, /<MasterCajasCambioWidget/);
+        assert.match(grid, /<MasterCajasCambioControl/);
         assert.match(grid, /<MasterOvertimeIconWidget/);
         assert.match(grid, /label="Otros"/);
         assert.doesNotMatch(grid, /label="Proveedores"/);

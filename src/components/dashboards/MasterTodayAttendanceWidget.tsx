@@ -80,7 +80,7 @@ export function MasterTodayAttendanceWidget({
 
     const dateLabel = useMemo(() => {
         if (!today) return '';
-        const raw = format(new Date(`${today}T12:00:00`), "EEEE d 'de' MMMM", { locale: es });
+        const raw = format(new Date(`${today}T12:00:00`), "EEEE d 'de' MMM", { locale: es });
         return raw.charAt(0).toUpperCase() + raw.slice(1);
     }, [today]);
 
@@ -271,10 +271,14 @@ export function MasterTodayAttendanceWidget({
                                                     <span className={isNoRegistered ? 'text-rose-700' : 'text-emerald-700'}>
                                                         {formatCompactHour(log.in_time) || '--:--'}
                                                     </span>
-                                                    <span className="font-normal text-zinc-400">-</span>
-                                                    <span className="text-rose-700">
-                                                        {formatCompactHour(log.out_time) || '--:--'}
-                                                    </span>
+                                                    {log.out_time ? (
+                                                        <>
+                                                            <span className="font-normal text-zinc-400">-</span>
+                                                            <span className="text-rose-700">
+                                                                {formatCompactHour(log.out_time)}
+                                                            </span>
+                                                        </>
+                                                    ) : null}
                                                 </span>
                                             </button>
                                         );

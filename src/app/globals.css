@@ -2834,15 +2834,17 @@ button[data-element='catalog-filter'] {
   padding: 0;
 }
 /*
- * Caja inicial Master — dos en uno. Mismo lenguaje que el fichaje en turno,
- * pero repartiendo solo el hueco del icono: el nombre «C Inicial» vive debajo,
- * en la franja del slot (data-element="name").
+ * Caja inicial y Cajas cambio del Master — dos en uno. Mismo lenguaje que el
+ * fichaje en turno, pero repartiendo solo el hueco del icono: el nombre vive
+ * debajo, en la franja del slot (data-element="name").
  */
-[data-component='CajaInicialControl'][data-layout='dual-stack'] {
+[data-component='CajaInicialControl'][data-layout='dual-stack'],
+[data-component='MasterCajasCambioControl'][data-layout='dual-stack'] {
   gap: 0;
   --caja-dual-stack-height: var(--home-icon-size);
 }
-[data-component='CajaInicialControl'][data-layout='dual-stack'] [data-element='iconStack'] {
+[data-component='CajaInicialControl'][data-layout='dual-stack'],
+[data-component='MasterCajasCambioControl'][data-layout='dual-stack'] [data-element='iconStack'] {
   display: flex;
   width: 100%;
   height: var(--caja-dual-stack-height);
@@ -2850,12 +2852,14 @@ button[data-element='catalog-filter'] {
   flex-direction: column;
   gap: var(--espacio-1);
 }
-[data-component='CajaInicialControl'][data-layout='dual-stack'] [data-element='iconWrap'] {
+[data-component='CajaInicialControl'][data-layout='dual-stack'],
+[data-component='MasterCajasCambioControl'][data-layout='dual-stack'] [data-element='iconWrap'] {
   flex: 1 1 0;
   min-height: 0;
   border-radius: var(--radio-superficie);
 }
-[data-component='CajaInicialControl'][data-layout='dual-stack'] [data-element='iconBox'] {
+[data-component='CajaInicialControl'][data-layout='dual-stack'],
+[data-component='MasterCajasCambioControl'][data-layout='dual-stack'] [data-element='iconBox'] {
   aspect-ratio: auto;
   height: 100%;
   width: 100%;
@@ -2867,13 +2871,15 @@ button[data-element='catalog-filter'] {
   mask-image: none;
   overflow: hidden;
 }
-[data-component='CajaInicialControl'][data-layout='dual-stack'] [data-element='iconBox'] [data-element='asset'] {
+[data-component='CajaInicialControl'][data-layout='dual-stack'],
+[data-component='MasterCajasCambioControl'][data-layout='dual-stack'] [data-element='iconBox'] [data-element='asset'] {
   padding: 0;
   width: 100%;
   height: 100%;
   border-radius: inherit;
 }
-[data-component='CajaInicialControl'][data-layout='dual-stack'] [data-element='rim'] {
+[data-component='CajaInicialControl'][data-layout='dual-stack'],
+[data-component='MasterCajasCambioControl'][data-layout='dual-stack'] [data-element='rim'] {
   border-radius: var(--radio-superficie);
   background: transparent;
   -webkit-mask-image: none;
@@ -2885,7 +2891,8 @@ button[data-element='catalog-filter'] {
     inset 0 -1px 0 0 rgb(0 0 0 / 0.2),
     inset -1px 0 0 0 rgb(0 0 0 / 0.12);
 }
-[data-component='CajaInicialControl'][data-layout='dual-stack'] button[data-element='iconBox'] {
+[data-component='CajaInicialControl'][data-layout='dual-stack'],
+[data-component='MasterCajasCambioControl'][data-layout='dual-stack'] button[data-element='iconBox'] {
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
@@ -2895,7 +2902,8 @@ button[data-element='catalog-filter'] {
   border: 0;
   padding: 0;
 }
-[data-component='CajaInicialControl'] button[data-element='iconBox'] {
+[data-component='CajaInicialControl'] button[data-element='iconBox'],
+[data-component='MasterCajasCambioControl'] button[data-element='iconBox'] {
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;

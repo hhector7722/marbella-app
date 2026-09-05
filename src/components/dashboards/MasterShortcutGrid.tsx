@@ -21,7 +21,8 @@ type MasterShortcutGridProps = {
     overtimeLoading?: boolean;
     onOpenCambio: () => void;
     onOpenOvertime: () => void;
-    onOpenCajasCambio: () => void;
+    onOpenCambio1: () => void;
+    onOpenCambio2: () => void;
     onOpenReservas: () => void;
     onOpenCajaInicialAcciones: () => void;
     onOpenOtros: () => void;
@@ -105,47 +106,89 @@ function CajaInicialControl({
 }
 
 /**
- * Cajas Cambio unificadas (Cambio 1 + Cambio 2): dos filas iguales con el
- * importe de cada caja, centradas en el ancho y alto de su fila.
- * Pulsar abre el selector de caja (desglose). Composición local del mosaico master.
+ * Cajas Cambio Master — dos en uno (mismo lenguaje que Caja Inicial y que el
+ * fichaje en turno de Staff). Reparte solo el hueco del icono: el nombre
+ * «Cajas Cambio» vive en la franja del slot. Arriba: Cambio 1 con su importe.
+ * Abajo: Cambio 2 con su importe. Cada mini icono abre el arqueo de su caja.
+ * Composición local del mosaico master; no es pieza de sistema.
  */
-function MasterCajasCambioWidget({
+function MasterCajasCambioControl({
     treasuryLoading,
     box1,
     box2,
-    onOpen,
+    onOpenCambio1,
+    onOpenCambio2,
 }: {
     treasuryLoading: boolean;
     box1: { current_balance?: number | null } | undefined;
     box2: { current_balance?: number | null } | undefined;
-    onOpen: () => void;
+    onOpenCambio1: () => void;
+    onOpenCambio2: () => void;
 }) {
+    const iconButtonClassName =
+        'relative touch-manipulation text-white transition-[filter] active:brightness-[0.99] ' +
+        'before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']';
+
+    const assetClassName =
+        'flex h-full w-full flex-col items-center justify-center gap-[2px] bg-emerald-600';
+
     return (
-        <button
-            type="button"
-            aria-label="Cajas Cambio"
-            onClick={onOpen}
-            className="flex h-full min-h-0 w-full flex-col"
-        >
-            {treasuryLoading ? (
-                <div className="flex h-full items-center justify-center" role="status" aria-label="Cargando cajas">
-                    <LoadingSpinner size="sm" className="text-zinc-500" />
+        <div data-component="MasterCajasCambioControl" data-layout="dual-stack" data-plate="fill">
+            <div data-element="iconStack">
+                <div data-element="iconWrap">
+                    <button
+                        type="button"
+                        data-element="iconBox"
+                        onClick={onOpenCambio1}
+                        aria-label="Caja cambio 1: arqueo"
+                        className={iconButtonClassName}
+                        style={{ ['--shortcut-fill' as string]: 'var(--color-positivo)' }}
+                    >
+                        <div data-element="asset" className={assetClassName}>
+                            {treasuryLoading ? (
+                                <LoadingSpinner size="sm" className="text-white" />
+                            ) : (
+                                <>
+                                    <span className="text-[9px] font-black leading-none tabular-nums whitespace-nowrap">
+                                        {box1 ? formatChangeBoxEur(Number(box1.current_balance ?? 0)) : ' '}
+                                    </span>
+                                    <span className="text-[6px] font-black uppercase leading-none tracking-widest opacity-80">
+                                        Cambio 1
+                                    </span>
+                                </>
+                            )}
+                        </div>
+                    </button>
+                    <span data-element="rim" aria-hidden />
                 </div>
-            ) : (
-                <>
-                    <div className="flex min-h-0 flex-1 items-center justify-center">
-                        <span className="text-[9px] font-black leading-none tabular-nums text-zinc-800 sm:text-[10px]">
-                            {box1 ? formatChangeBoxEur(Number(box1.current_balance ?? 0)) : ' '}
-                        </span>
-                    </div>
-                    <div className="flex min-h-0 flex-1 items-center justify-center">
-                        <span className="text-[9px] font-black leading-none tabular-nums text-zinc-800 sm:text-[10px]">
-                            {box2 ? formatChangeBoxEur(Number(box2.current_balance ?? 0)) : ' '}
-                        </span>
-                    </div>
-                </>
-            )}
-        </button>
+                <div data-element="iconWrap">
+                    <button
+                        type="button"
+                        data-element="iconBox"
+                        onClick={onOpenCambio2}
+                        aria-label="Caja cambio 2: arqueo"
+                        className={iconButtonClassName}
+                        style={{ ['--shortcut-fill' as string]: 'var(--color-positivo)' }}
+                    >
+                        <div data-element="asset" className={assetClassName}>
+                            {treasuryLoading ? (
+                                <LoadingSpinner size="sm" className="text-white" />
+                            ) : (
+                                <>
+                                    <span className="text-[9px] font-black leading-none tabular-nums whitespace-nowrap">
+                                        {box2 ? formatChangeBoxEur(Number(box2.current_balance ?? 0)) : ' '}
+                                    </span>
+                                    <span className="text-[6px] font-black uppercase leading-none tracking-widest opacity-80">
+                                        Cambio 2
+                                    </span>
+                                </>
+                            )}
+                        </div>
+                    </button>
+                    <span data-element="rim" aria-hidden />
+                </div>
+            </div>
+        </div>
     );
 }
 
@@ -230,7 +273,8 @@ export default function MasterShortcutGrid({
     overtimeLoading = false,
     onOpenCambio,
     onOpenOvertime,
-    onOpenCajasCambio,
+    onOpenCambio1,
+    onOpenCambio2,
     onOpenReservas,
     onOpenCajaInicialAcciones,
     onOpenOtros,
@@ -342,11 +386,12 @@ export default function MasterShortcutGrid({
         size: 'tile',
         label: 'Cajas Cambio',
         node: (
-            <MasterCajasCambioWidget
+            <MasterCajasCambioControl
                 treasuryLoading={treasuryLoading}
                 box1={changeBox1}
                 box2={changeBox2}
-                onOpen={onOpenCajasCambio}
+                onOpenCambio1={onOpenCambio1}
+                onOpenCambio2={onOpenCambio2}
             />
         ),
     });

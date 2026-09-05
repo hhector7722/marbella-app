@@ -10,7 +10,7 @@ import { Check, ChevronLeft, ChevronRight, Circle, Minus, Plus, RefreshCw, Shopp
 import { getOvertimeData, togglePaidStatus } from '@/app/actions/overtime';
 import DashboardVentasSection from '@/components/dashboards/DashboardVentasSection';
 import MasterShortcutGrid from '@/components/dashboards/MasterShortcutGrid';
-import { HorasExtrasWidget, formatChangeBoxEur } from '@/components/dashboards/ops-widgets';
+import { HorasExtrasWidget } from '@/components/dashboards/ops-widgets';
 import { HomeScreen, HomeScreenSlot } from '@/components/dashboards/HomeScreen';
 import { MasterTodayAttendanceWidget } from '@/components/dashboards/MasterTodayAttendanceWidget';
 import { StaffWeekScheduleBlock } from '@/components/dashboards/staff/StaffWeekScheduleBlock';
@@ -129,7 +129,6 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
     const [overtimeWeekDetail, setOvertimeWeekDetail] = useState<WeeklyStats | null>(null);
     const [overtimePaidStatus, setOvertimePaidStatus] = useState<Record<string, boolean>>({});
     const [overtimeWorkerHistory, setOvertimeWorkerHistory] = useState<{ workerId: string; weekId: string } | null>(null);
-    const [isCajasCambioOpen, setIsCajasCambioOpen] = useState(false);
     const [pendingReservationsCount, setPendingReservationsCount] = useState(0);
 
     const [userId, setUserId] = useState<string | null>(null);
@@ -575,7 +574,14 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                     overtimeLoading={overtimeLoading}
                     onOpenCambio={() => setIsSwapModalOpen(true)}
                     onOpenOvertime={() => setIsOvertimeModalOpen(true)}
-                    onOpenCajasCambio={() => setIsCajasCambioOpen(true)}
+                    onOpenCambio1={() => {
+                        const box = changeBoxes[0];
+                        if (box) void openChangeBoxAudit(box);
+                    }}
+                    onOpenCambio2={() => {
+                        const box = changeBoxes[1];
+                        if (box) void openChangeBoxAudit(box);
+                    }}
                     onOpenReservas={() => router.push('/staff/reservas')}
                     onOpenCajaInicialAcciones={openCajaInicialActions}
                     onOpenOtros={() => setIsMoreFunctionsModalOpen(true)}
@@ -810,48 +816,6 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                     />
                 </Modal>
             )}
-
-            <Modal
-                open={isCajasCambioOpen}
-                onClose={() => setIsCajasCambioOpen(false)}
-                variant="compact"
-                layer="base"
-                instance="master-cajas-cambio-elegir"
-                usageId="master-cajas-cambio-elegir"
-                usageLabel="Elegir caja cambio"
-                headerTone="petroleum"
-                title="Cajas Cambio"
-                ariaLabel="Cajas Cambio"
-            >
-                <div className="flex flex-col gap-2 p-2">
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        instance="master-cajas-cambio-1"
-                        layout="fill"
-                        onClick={() => {
-                            setIsCajasCambioOpen(false);
-                            const box = changeBoxes[0];
-                            if (box) void openChangeBoxAudit(box);
-                        }}
-                    >
-                        Cambio 1{changeBoxes[0] ? ` · ${formatChangeBoxEur(Number(changeBoxes[0].current_balance ?? 0))}` : ''}
-                    </Button>
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        instance="master-cajas-cambio-2"
-                        layout="fill"
-                        onClick={() => {
-                            setIsCajasCambioOpen(false);
-                            const box = changeBoxes[1];
-                            if (box) void openChangeBoxAudit(box);
-                        }}
-                    >
-                        Cambio 2{changeBoxes[1] ? ` · ${formatChangeBoxEur(Number(changeBoxes[1].current_balance ?? 0))}` : ''}
-                    </Button>
-                </div>
-            </Modal>
 
             <Modal
                 open={isOvertimeModalOpen}
