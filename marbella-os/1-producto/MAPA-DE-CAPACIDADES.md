@@ -183,7 +183,7 @@ Dar a cada persona acceso a lo suyo.
 
 - **Actores**: persona en turno, responsable de operación, master.
 - **Superficies**: perfil, documentos (nóminas, contratos, comunicados, sanciones), condiciones de contrato.
-- **Reglas propias**: cada persona ve solo sus documentos; las condiciones de contrato se versionan por tramos de vigencia y solo las edita el maestro.
+- **Reglas propias**: cada persona ve solo sus documentos; las condiciones de contrato se versionan por tramos de vigencia y solo las edita el maestro; el maestro edita los datos personales de cualquier trabajador.
 - **Estado**: consolidada.
 - **Especificación**: pendiente.
 

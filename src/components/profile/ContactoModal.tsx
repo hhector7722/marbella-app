@@ -1,8 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-import { Copy, Check } from 'lucide-react';
-import { toast } from 'sonner';
 import { Modal } from '@/components/ui/modal';
 
 interface ContactoModalProps {
@@ -19,18 +16,8 @@ function normalizePhone(phone: string | null): string {
 }
 
 export default function ContactoModal({ isOpen, onClose, phone }: ContactoModalProps) {
-    const [copied, setCopied] = useState(false);
-
     const telNumber = phone ? normalizePhone(phone) : '';
     const waNumber = telNumber;
-
-    const handleCopy = () => {
-        if (!phone) return;
-        navigator.clipboard.writeText(phone);
-        setCopied(true);
-        toast.success('Número copiado');
-        setTimeout(() => setCopied(false), 2000);
-    };
 
     return (
         <Modal
@@ -50,17 +37,6 @@ export default function ContactoModal({ isOpen, onClose, phone }: ContactoModalP
                         <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Teléfono</p>
                         <p className="text-black font-bold text-sm break-all">{phone || '—'}</p>
                     </div>
-                    {phone && (
-                        <button
-                            type="button"
-                            onClick={handleCopy}
-                            className="shrink-0 min-h-[48px] min-w-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-zinc-500 hover:text-black hover:bg-zinc-100 transition-colors"
-                            title="Copiar número"
-                        >
-                            {copied ? <Check size={20} className="text-emerald-600" /> : <Copy size={18} />}
-                            <span className="text-[10px] text-zinc-400 font-medium leading-tight">copiar</span>
-                        </button>
-                    )}
                 </div>
                 {phone && (
                         <div className="flex items-center gap-6 pt-2">

@@ -43,9 +43,20 @@ type MasterTodayAttendanceWidgetProps = {
  * Fichajes del día visible del Master: franja roja con la fecha y, debajo,
  * la zona blanca con un registro por trabajador (nombre, entrada, salida).
  * Arranca en el día en curso; si no tiene fichajes, salta al último día con
- * registros. Permite navegar entre días (‹ ›) y la franja abre el resumen del
- * día (DaySummaryModal); un registro abre el detalle del trabajador.
+ * registros. La navegación entre días se hace por las esquinas inferiores
+ * (izquierda = día anterior, derecha = día siguiente, sin pasar de hoy), sin
+ * indicador. La franja abre el resumen del día (DaySummaryModal); un registro
+ * abre el detalle del trabajador.
  */
+
+/** Hora compacta del mosaico: «H», con minutos solo cuando son :30. */
+function formatCompactHour(hhmm: string): string {
+    if (!hhmm) return hhmm;
+    const [h, m] = hhmm.split(':');
+    const minutes = Number(m);
+    return minutes === 30 ? `${Number(h)}:30` : `${Number(h)}`;
+}
+
 export function MasterTodayAttendanceWidget({
     userRole,
     viewerEmail,
@@ -228,30 +239,13 @@ export function MasterTodayAttendanceWidget({
                         <div className="flex shrink-0 items-stretch bg-gradient-to-b from-red-500 to-red-600 shadow-sm">
                             <button
                                 type="button"
-                                onClick={goPrevDay}
-                                aria-label="Día anterior"
-                                className="relative flex w-6 shrink-0 items-center justify-center text-white before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']"
-                            >
-                                <span className="text-[11px] font-bold leading-none">‹</span>
-                            </button>
-                            <button
-                                type="button"
                                 onClick={() => setIsSummaryModalOpen(true)}
                                 aria-label={`Resumen de fichajes del ${dateLabel}`}
-                                className="relative flex min-w-0 flex-1 items-center justify-center px-1 py-1 before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']"
+                                className="relative flex w-full min-w-0 items-center justify-center px-1 py-1 before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']"
                             >
-                                <span className="truncate text-[8px] font-bold leading-none tracking-wide text-white drop-shadow-sm">
+                                <span className="truncate text-[6px] font-bold leading-none tracking-wide text-white drop-shadow-sm">
                                     {dateLabel}
                                 </span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={goNextDay}
-                                disabled={!canGoNext}
-                                aria-label="Día siguiente"
-                                className="relative flex w-6 shrink-0 items-center justify-center text-white disabled:pointer-events-none disabled:opacity-30 before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']"
-                            >
-                                <span className="text-[11px] font-bold leading-none">›</span>
                             </button>
                         </div>
                         <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white">
@@ -270,16 +264,16 @@ export function MasterTodayAttendanceWidget({
                                                 onClick={() => setEditingUserId(log.user_id)}
                                                 className="relative flex w-full min-w-0 items-center justify-between gap-1 px-2 py-1.5 text-left transition-colors hover:bg-zinc-50 before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:content-['']"
                                             >
-                                                <span className="min-w-0 flex-1 truncate text-[9px] font-medium leading-none text-zinc-700">
+                                                <span className="min-w-0 flex-1 truncate text-[7px] font-medium leading-none text-zinc-700">
                                                     {log.first_name}
                                                 </span>
-                                                <span className="flex shrink-0 items-center gap-0.5 text-[9px] font-bold leading-none tabular-nums">
+                                                <span className="flex shrink-0 items-center gap-0.5 text-[7px] font-bold leading-none tabular-nums">
                                                     <span className={isNoRegistered ? 'text-rose-700' : 'text-emerald-700'}>
-                                                        {log.in_time || '--:--'}
+                                                        {formatCompactHour(log.in_time) || '--:--'}
                                                     </span>
                                                     <span className="font-normal text-zinc-400">-</span>
                                                     <span className="text-rose-700">
-                                                        {log.out_time || '--:--'}
+                                                        {formatCompactHour(log.out_time) || '--:--'}
                                                     </span>
                                                 </span>
                                             </button>
@@ -287,10 +281,20 @@ export function MasterTodayAttendanceWidget({
                                     })}
                                 </div>
                             )}
-                            <div className="flex shrink-0 items-center justify-center gap-1.5 py-1">
-                                <div className="h-1 w-1 rounded-full bg-zinc-300 shadow-sm opacity-70" />
-                                <div className="h-1.5 w-1.5 rounded-full bg-zinc-700 shadow-sm" />
-                                <div className="h-1 w-1 rounded-full bg-zinc-300 shadow-sm opacity-70" />
+                            <div className="flex shrink-0 items-stretch">
+                                <button
+                                    type="button"
+                                    onClick={goPrevDay}
+                                    aria-label="Día anterior"
+                                    className="flex h-12 flex-1 items-start justify-start"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={goNextDay}
+                                    disabled={!canGoNext}
+                                    aria-label="Día siguiente"
+                                    className="flex h-12 flex-1 items-start justify-end disabled:pointer-events-none"
+                                />
                             </div>
                         </div>
                     </>

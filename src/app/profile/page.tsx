@@ -595,6 +595,8 @@ function ProfileContent() {
                 fechaNacimiento={profile.fecha_nacimiento}
                 domicilio={profile.domicilio}
                 ownerUserId={profile.id}
+                canEdit={canManageLaborConditions}
+                onSaved={() => void fetchInitialData()}
             />
             <ContactoModal isOpen={modalContacto} onClose={() => setModalContacto(false)} phone={profile.phone} />
             <DatosBancariosModal isOpen={modalDatosBancarios} onClose={() => setModalDatosBancarios(false)} iban={profile.bank_account} />

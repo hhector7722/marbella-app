@@ -208,3 +208,4 @@ Añadir un token nuevo exige justificar por qué ninguno de los existentes sirve
 - **La marca y la mayoría de colores de pantalla siguen sin centralizar fuera de las primitivas.** PageScreen, Surface, Field, Notice y KpiStat adoptan tokens. El color de marca sigue literal en pantallas no migradas ([D28](../5-estado/DEUDA.md)).
 - **El azul de marca difiere entre pantalla y documento impreso.**
 - **Una tipografía ajena** se introdujo en una superficie pública sin declararse como excepción.
+- **El widget de asistencia del Master usa tipografía por debajo de `tipo.minimo` por excepción.** Datos (nombre y horas) a 7 px y fecha a 6 px, decidido por la propiedad del producto para densidad del mosaico. Documentado en [SISTEMA-DE-COMPONENTES](SISTEMA-DE-COMPONENTES.md); si aparece un segundo uso, la excepción se revisa.

@@ -103,6 +103,7 @@ Distinción crítica: **«vacío» significa cero, nunca «no lo sé»**. Un dat
 - Fecha larga: día, mes en palabra y año. Mes y año en la cabecera del calendario.
 - Fecha corta en tablas densas: día y mes abreviado.
 - Hora: veinticuatro horas, dos dígitos.
+- **Excepción compacta en el widget de asistencia del Master**: la hora va sin cero inicial y los minutos solo se muestran cuando son exactamente :30. Es una regla de densidad del mosaico, no del formato general.
 - **Todas las fechas y horas se muestran en el tiempo local del negocio.** Europa/Madrid.
 - Un rango se escribe con guion y sin repetir el mes cuando coincide.
 - Una fecha relativa («hace 5 min») solo se usa en paneles en vivo, donde el tiempo transcurrido es el dato.

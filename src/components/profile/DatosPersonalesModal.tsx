@@ -1,11 +1,13 @@
 'use client';
 
-import { Copy, Check } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Modal } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
+import { Field } from '@/components/ui/Field';
+import { updateEmployeePersonalData } from '@/app/actions/employee-personal-data';
 
 interface DatosPersonalesModalProps {
     isOpen: boolean;
@@ -23,6 +25,10 @@ interface DatosPersonalesModalProps {
     domicilio?: string | null;
     /** Id del perfil al que pertenecen los datos mostrados (empleado). */
     ownerUserId?: string;
+    /** El responsable puede editar y guardar los datos. */
+    canEdit?: boolean;
+    /** Se llama tras guardar para refrescar la ficha. */
+    onSaved?: () => void;
 }
 
 interface PersonalDocImages {
@@ -50,19 +56,13 @@ export default function DatosPersonalesModal({
     fechaNacimiento,
     domicilio,
     ownerUserId,
+    canEdit = false,
+    onSaved,
 }: DatosPersonalesModalProps) {
-    const [copied, setCopied] = useState<string | null>(null);
     const [images, setImages] = useState<PersonalDocImages | null>(null);
+    const [saving, setSaving] = useState(false);
 
     const fullName = `${firstName} ${lastName || ''}`.trim();
-
-    const copy = (text: string, label: string) => {
-        if (!text) return;
-        navigator.clipboard.writeText(text);
-        setCopied(label);
-        toast.success(`${label} copiado`);
-        setTimeout(() => setCopied(null), 2000);
-    };
 
     useEffect(() => {
         let cancelled = false;
@@ -97,6 +97,38 @@ export default function DatosPersonalesModal({
         return Boolean(images && (images.delantera || images.trasera));
     }, [images]);
 
+    const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!ownerUserId) {
+            toast.error('Empleado no identificado');
+            return;
+        }
+        const data = new FormData(e.currentTarget);
+        const read = (name: string) => String(data.get(name) ?? '').trim();
+        setSaving(true);
+        try {
+            const res = await updateEmployeePersonalData(ownerUserId, {
+                firstName: read('firstName'),
+                lastName: read('lastName'),
+                dni: read('dni'),
+                afiliacionSeguridadSocial: read('afiliacionSeguridadSocial'),
+                nacionalidad: read('nacionalidad'),
+                fechaNacimiento: read('fechaNacimiento'),
+                domicilio: read('domicilio'),
+                phone: read('phone'),
+                email: read('email'),
+            });
+            if (!res.success) {
+                toast.error(res.error ?? 'No se pudo guardar');
+                return;
+            }
+            toast.success(res.simulated ? 'Cambio simulado en sandbox' : 'Datos guardados');
+            onSaved?.();
+        } finally {
+            setSaving(false);
+        }
+    };
+
     return (
         <Modal
             open={isOpen}
@@ -108,46 +140,174 @@ export default function DatosPersonalesModal({
             headerTone="petroleum"
             usageId="profile-personal"
             usageLabel="Datos personales"
-        >
-            <div className="space-y-4">
-                <Field label="Nombre completo" value={fullName} />
-                <Field label="NIF / NIE / Pasaporte" value={dni} onCopy={dni ? () => copy(dni, 'NIF / NIE / Pasaporte') : undefined} copied={copied === 'NIF / NIE / Pasaporte'} />
-                <Field label="Nº de afiliación a la S.S." value={afiliacionSeguridadSocial} />
-                <Field label="Nacionalidad" value={nacionalidad} />
-                <Field label="Fecha de nacimiento" value={formatBirthDate(fechaNacimiento)} />
-                <Field label="Domicilio" value={domicilio} />
-                <Field label="Teléfono" value={phone} onCopy={phone ? () => copy(phone, 'Teléfono') : undefined} copied={copied === 'Teléfono'} />
-                <Field label="Correo electrónico" value={email} onCopy={email ? () => copy(email, 'Email') : undefined} copied={copied === 'Email'} />
-
-                {hasImages ? (
-                    <div>
-                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">Documento</p>
-                        <div className="space-y-3">
-                            {images!.delantera ? (
-                                <DocImage src={images!.delantera} label="Delantera" />
-                            ) : null}
-                            {images!.trasera ? (
-                                <DocImage src={images!.trasera} label="Trasera" />
-                            ) : null}
-                        </div>
+            footer={
+                canEdit ? (
+                    <div className="flex w-full flex-wrap items-center justify-end gap-2">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            instance="profile-personal-cancel"
+                            disabled={saving}
+                            onClick={onClose}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            type="submit"
+                            form="profile-personal-form"
+                            variant="primary"
+                            instance="profile-personal-save"
+                            disabled={saving}
+                            loading={saving}
+                            loadingLabel="Guardando…"
+                        >
+                            Guardar
+                        </Button>
                     </div>
-                ) : null}
-            </div>
+                ) : undefined
+            }
+        >
+            {canEdit ? (
+                <form id="profile-personal-form" onSubmit={handleSave} className="space-y-4">
+                    <Field instance="profile-personal-first-name" label="Nombre" htmlFor="profile-personal-first-name">
+                        <input
+                            id="profile-personal-first-name"
+                            name="firstName"
+                            type="text"
+                            defaultValue={firstName ?? ''}
+                            autoComplete="given-name"
+                            required
+                        />
+                    </Field>
+                    <Field instance="profile-personal-last-name" label="Apellidos" htmlFor="profile-personal-last-name">
+                        <input
+                            id="profile-personal-last-name"
+                            name="lastName"
+                            type="text"
+                            defaultValue={lastName ?? ''}
+                            autoComplete="family-name"
+                        />
+                    </Field>
+                    <Field instance="profile-personal-dni" label="NIF / NIE / Pasaporte" htmlFor="profile-personal-dni">
+                        <input
+                            id="profile-personal-dni"
+                            name="dni"
+                            type="text"
+                            defaultValue={dni ?? ''}
+                            autoComplete="off"
+                        />
+                    </Field>
+                    <Field
+                        instance="profile-personal-afiliacion-ss"
+                        label="Nº de afiliación a la S.S."
+                        htmlFor="profile-personal-afiliacion-ss"
+                    >
+                        <input
+                            id="profile-personal-afiliacion-ss"
+                            name="afiliacionSeguridadSocial"
+                            type="text"
+                            defaultValue={afiliacionSeguridadSocial ?? ''}
+                            autoComplete="off"
+                        />
+                    </Field>
+                    <Field
+                        instance="profile-personal-nacionalidad"
+                        label="Nacionalidad"
+                        htmlFor="profile-personal-nacionalidad"
+                    >
+                        <input
+                            id="profile-personal-nacionalidad"
+                            name="nacionalidad"
+                            type="text"
+                            defaultValue={nacionalidad ?? ''}
+                            autoComplete="off"
+                        />
+                    </Field>
+                    <Field
+                        instance="profile-personal-fecha-nacimiento"
+                        label="Fecha de nacimiento"
+                        htmlFor="profile-personal-fecha-nacimiento"
+                    >
+                        <input
+                            id="profile-personal-fecha-nacimiento"
+                            name="fechaNacimiento"
+                            type="date"
+                            defaultValue={fechaNacimiento ?? ''}
+                        />
+                    </Field>
+                    <Field instance="profile-personal-domicilio" label="Domicilio" htmlFor="profile-personal-domicilio">
+                        <input
+                            id="profile-personal-domicilio"
+                            name="domicilio"
+                            type="text"
+                            defaultValue={domicilio ?? ''}
+                            autoComplete="street-address"
+                        />
+                    </Field>
+                    <Field instance="profile-personal-phone" label="Teléfono" htmlFor="profile-personal-phone">
+                        <input
+                            id="profile-personal-phone"
+                            name="phone"
+                            type="tel"
+                            defaultValue={phone ?? ''}
+                            autoComplete="tel"
+                        />
+                    </Field>
+                    <Field instance="profile-personal-email" label="Correo electrónico" htmlFor="profile-personal-email">
+                        <input
+                            id="profile-personal-email"
+                            name="email"
+                            type="email"
+                            defaultValue={email ?? ''}
+                            autoComplete="email"
+                        />
+                    </Field>
+
+                    {hasImages ? (
+                        <div>
+                            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">Documento</p>
+                            <div className="space-y-3">
+                                {images!.delantera ? (
+                                    <DocImage src={images!.delantera} label="Delantera" />
+                                ) : null}
+                                {images!.trasera ? (
+                                    <DocImage src={images!.trasera} label="Trasera" />
+                                ) : null}
+                            </div>
+                        </div>
+                    ) : null}
+                </form>
+            ) : (
+                <div className="space-y-4">
+                    <FieldRead label="Nombre completo" value={fullName} />
+                    <FieldRead label="NIF / NIE / Pasaporte" value={dni} />
+                    <FieldRead label="Nº de afiliación a la S.S." value={afiliacionSeguridadSocial} />
+                    <FieldRead label="Nacionalidad" value={nacionalidad} />
+                    <FieldRead label="Fecha de nacimiento" value={formatBirthDate(fechaNacimiento)} />
+                    <FieldRead label="Domicilio" value={domicilio} />
+                    <FieldRead label="Teléfono" value={phone} />
+                    <FieldRead label="Correo electrónico" value={email} />
+
+                    {hasImages ? (
+                        <div>
+                            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">Documento</p>
+                            <div className="space-y-3">
+                                {images!.delantera ? (
+                                    <DocImage src={images!.delantera} label="Delantera" />
+                                ) : null}
+                                {images!.trasera ? (
+                                    <DocImage src={images!.trasera} label="Trasera" />
+                                ) : null}
+                            </div>
+                        </div>
+                    ) : null}
+                </div>
+            )}
         </Modal>
     );
 }
 
-function Field({
-    label,
-    value,
-    onCopy,
-    copied,
-}: {
-    label: string;
-    value: string | null | undefined;
-    onCopy?: () => void;
-    copied?: boolean;
-}) {
+function FieldRead({ label, value }: { label: string; value: string | null | undefined }) {
     const text = value && value.trim() ? value : '—';
     return (
         <div className="flex items-start justify-between gap-2">
@@ -155,17 +315,6 @@ function Field({
                 <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">{label}</p>
                 <p className="text-zinc-800 font-bold text-sm min-w-0 break-words">{text}</p>
             </div>
-            {onCopy && (
-                <button
-                    type="button"
-                    onClick={onCopy}
-                    className="shrink-0 min-h-[48px] min-w-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-[#36606F]/10 hover:text-[#36606F] transition-colors"
-                    aria-label={`Copiar ${label}`}
-                >
-                    {copied ? <Check size={20} className="text-emerald-500" /> : <Copy size={18} />}
-                    <span className="text-[10px] text-zinc-400 font-medium leading-tight">copiar</span>
-                </button>
-            )}
         </div>
     );
 }
