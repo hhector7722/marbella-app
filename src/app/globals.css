@@ -3414,7 +3414,8 @@ button[data-element='catalog-filter'] {
 }
 [data-component='HomeScreen'] [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'],
 [data-component='HomeScreen'] [data-component='StaffFichajeControl'],
-[data-component='HomeScreen'] [data-component='CajaInicialControl'] {
+[data-component='HomeScreen'] [data-component='CajaInicialControl'],
+[data-component='HomeScreen'] [data-component='MasterCajasCambioControl'] {
   max-width: var(--home-icon-size);
 }
 
@@ -3471,7 +3472,8 @@ button[data-element='catalog-filter'] {
  */
 [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'],
 [data-component='StaffFichajeControl'],
-[data-component='CajaInicialControl'] {
+[data-component='CajaInicialControl'],
+[data-component='MasterCajasCambioControl'] {
   --shortcut-silhouette: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Crect width='100' height='100' rx='22' ry='22' fill='black'/%3E%3C/svg%3E");
   box-sizing: border-box;
   display: flex;
@@ -3494,7 +3496,8 @@ button[data-element='catalog-filter'] {
 }
 [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'] [data-element='iconWrap'],
 [data-component='StaffFichajeControl'] [data-element='iconWrap'],
-[data-component='CajaInicialControl'] [data-element='iconWrap'] {
+[data-component='CajaInicialControl'] [data-element='iconWrap'],
+[data-component='MasterCajasCambioControl'] [data-element='iconWrap'] {
   position: relative;
   width: 100%;
   flex: 0 0 auto;
@@ -3504,7 +3507,8 @@ button[data-element='catalog-filter'] {
 }
 [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'] [data-element='iconBox'],
 [data-component='StaffFichajeControl'] [data-element='iconBox'],
-[data-component='CajaInicialControl'] [data-element='iconBox'] {
+[data-component='CajaInicialControl'] [data-element='iconBox'],
+[data-component='MasterCajasCambioControl'] [data-element='iconBox'] {
   position: relative;
   box-sizing: border-box;
   width: 100%;
@@ -3524,7 +3528,8 @@ button[data-element='catalog-filter'] {
 }
 [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'] [data-element='rim'],
 [data-component='StaffFichajeControl'] [data-element='rim'],
-[data-component='CajaInicialControl'] [data-element='rim'] {
+[data-component='CajaInicialControl'] [data-element='rim'],
+[data-component='MasterCajasCambioControl'] [data-element='rim'] {
   position: absolute;
   inset: 0;
   z-index: 2;
@@ -3659,10 +3664,10 @@ button[data-element='catalog-filter'] {
 }
 [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='web'] [data-element='asset'] img,
 [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='staff-web'] [data-element='asset'] img {
-  width: 106%;
-  height: 106%;
-  left: -3%;
-  top: -3%;
+  width: 120%;
+  height: 120%;
+  left: -10%;
+  top: -10%;
 }
 [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='admin-mas-funciones'] [data-element='asset'] img {
   width: 132%;
@@ -3714,6 +3719,24 @@ button[data-element='catalog-filter'] {
   height: 146%;
   left: -23%;
   top: -23%;
+}
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='reservas'] [data-element='asset'] img {
+  width: 106%;
+  height: 106%;
+  left: -3%;
+  top: -3%;
+}
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='uso-app'] [data-element='asset'] img {
+  width: 112%;
+  height: 112%;
+  left: -6%;
+  top: -6%;
+}
+[data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'][data-instance='master-otros'] [data-element='asset'] img {
+  width: 123%;
+  height: 123%;
+  left: -11.5%;
+  top: -11.5%;
 }
 [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'] [data-element='text'],
 [data-component='StaffFichajeControl'] [data-element='text'],

@@ -110,6 +110,7 @@ function CajaInicialControl({
  * fichaje en turno de Staff). Reparte solo el hueco del icono: el nombre
  * «Cajas Cambio» vive en la franja del slot. Arriba: Cambio 1 con su importe.
  * Abajo: Cambio 2 con su importe. Cada mini icono abre el arqueo de su caja.
+ * Sin relleno: los importes flotan sobre el fondo con el contorno premium.
  * Composición local del mosaico master; no es pieza de sistema.
  */
 function MasterCajasCambioControl({
@@ -130,10 +131,10 @@ function MasterCajasCambioControl({
         'before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']';
 
     const assetClassName =
-        'flex h-full w-full flex-col items-center justify-center gap-[2px] bg-emerald-600';
+        'flex h-full w-full items-center justify-center bg-transparent';
 
     return (
-        <div data-component="MasterCajasCambioControl" data-layout="dual-stack" data-plate="fill">
+        <div data-component="MasterCajasCambioControl" data-layout="dual-stack">
             <div data-element="iconStack">
                 <div data-element="iconWrap">
                     <button
@@ -142,20 +143,14 @@ function MasterCajasCambioControl({
                         onClick={onOpenCambio1}
                         aria-label="Caja cambio 1: arqueo"
                         className={iconButtonClassName}
-                        style={{ ['--shortcut-fill' as string]: 'var(--color-positivo)' }}
                     >
                         <div data-element="asset" className={assetClassName}>
                             {treasuryLoading ? (
-                                <LoadingSpinner size="sm" className="text-white" />
+                                <LoadingSpinner size="sm" className="text-zinc-500" />
                             ) : (
-                                <>
-                                    <span className="text-[9px] font-black leading-none tabular-nums whitespace-nowrap">
-                                        {box1 ? formatChangeBoxEur(Number(box1.current_balance ?? 0)) : ' '}
-                                    </span>
-                                    <span className="text-[6px] font-black uppercase leading-none tracking-widest opacity-80">
-                                        Cambio 1
-                                    </span>
-                                </>
+                                <span className="text-sm font-black leading-none tabular-nums whitespace-nowrap text-zinc-800 md:text-[11px]">
+                                    {box1 ? formatChangeBoxEur(Number(box1.current_balance ?? 0)) : ' '}
+                                </span>
                             )}
                         </div>
                     </button>
@@ -168,20 +163,14 @@ function MasterCajasCambioControl({
                         onClick={onOpenCambio2}
                         aria-label="Caja cambio 2: arqueo"
                         className={iconButtonClassName}
-                        style={{ ['--shortcut-fill' as string]: 'var(--color-positivo)' }}
                     >
                         <div data-element="asset" className={assetClassName}>
                             {treasuryLoading ? (
-                                <LoadingSpinner size="sm" className="text-white" />
+                                <LoadingSpinner size="sm" className="text-zinc-500" />
                             ) : (
-                                <>
-                                    <span className="text-[9px] font-black leading-none tabular-nums whitespace-nowrap">
-                                        {box2 ? formatChangeBoxEur(Number(box2.current_balance ?? 0)) : ' '}
-                                    </span>
-                                    <span className="text-[6px] font-black uppercase leading-none tracking-widest opacity-80">
-                                        Cambio 2
-                                    </span>
-                                </>
+                                <span className="text-sm font-black leading-none tabular-nums whitespace-nowrap text-zinc-800 md:text-[11px]">
+                                    {box2 ? formatChangeBoxEur(Number(box2.current_balance ?? 0)) : ' '}
+                                </span>
                             )}
                         </div>
                     </button>
