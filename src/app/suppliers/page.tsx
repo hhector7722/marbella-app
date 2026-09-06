@@ -607,6 +607,7 @@ export default function SuppliersPage() {
                 title={detailSupplier?.name ?? 'Proveedor'}
                 subtitle={detailSupplier?.category || ' '}
                 variant="standard"
+                scheme="dark"
                 layer="base"
                 instance="supplier-detail"
                 headerTone="petroleum"
@@ -642,12 +643,12 @@ export default function SuppliersPage() {
                 }
             >
                 {detailSupplier ? (
-                    <div className="flex flex-col items-center text-center">
-                        <div className="mb-3 flex h-32 w-32 items-center justify-center overflow-hidden rounded-3xl">
+                    <div className="flex flex-col items-center px-6 py-6 text-center">
+                        <div className="mb-3 flex h-32 w-32 items-center justify-center overflow-hidden rounded-3xl bg-white/10 ring-1 ring-inset ring-white/15">
                             {getSupplierLogo(detailSupplier.image_url, detailSupplier.name) ? (
                                 <img src={getSupplierLogo(detailSupplier.image_url, detailSupplier.name) || ''} alt="" className="h-full w-full object-contain" />
                             ) : (
-                                <Truck className="h-12 w-12 text-gray-200" />
+                                <Truck className="h-12 w-12 text-white/30" />
                             )}
                         </div>
 

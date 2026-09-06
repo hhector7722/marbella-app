@@ -42,6 +42,7 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 - **Perfil: la ficha personal se rediseña como ficha física.** Cabecera petróleo con foto, nombre y referencia del documento; secciones Identificación, Contacto, Domicilio y Documento a dos columnas con separadores finos. El contenido se compacta para reducir el scroll. [TOKENS](../2-diseno/TOKENS.md), [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 - **Master: H. extras pasa a llamarse «H extras» y el mes respira.** La etiqueta del atajo del mosaico se escribe sin punto («H extras»), y el nombre del mes baja del borde del hueco con un margen de 4 px para no pegarse al inicio del icono.
 - **Master: el icono de H extras es un calendario completo del mes.** El hueco del mosaico muestra la fila de días (L M X J V S D) y los números del mes repartidos por semanas; a la derecha de cada semana, un indicador de abono (verde con tic = semana pagada, rojo con cruz = pendiente) y el importe de las horas extra. Son 9 columnas y 5–6 filas de semana según el mes, con tipografía muy reducida para caber en el hueco.
+- **Master: la asistencia del día recupera dos filas (1×2).** El hueco de una sola fila dejaba ver solo los dos primeros registros del día y el resto quedaba oculto sin indicación de scroll; con dos filas se ven todos los trabajadores que ese día tienen fichajes.
 
 ## 2026-09-05
 

@@ -41,14 +41,14 @@ interface PersonalDocImages {
 }
 
 function formatBirthDate(ymd?: string | null): string {
-    if (!ymd) return '—';
+    if (!ymd) return '';
     const [y, m, d] = ymd.split('-').map(Number);
     if (!y || !m || !d) return ymd;
     return format(new Date(y, m - 1, d), "d 'de' MMMM 'de' yyyy", { locale: es });
 }
 
 function displayValue(value: string | null | undefined): string {
-    return value && value.trim() ? value : '—';
+    return value && value.trim() ? value : '';
 }
 
 export default function DatosPersonalesModal({
@@ -155,20 +155,17 @@ export default function DatosPersonalesModal({
     );
 
     const recordContent = (
-        <div className="overflow-hidden rounded-ds-control border border-ds-borde-marcado bg-ds-superficie">
-            <div className="flex items-center gap-ds-3 bg-ds-marca px-ds-4 py-ds-3">
+        <div>
+            <div className="flex items-center gap-ds-3 px-ds-4 py-ds-3">
                 <Avatar
                     src={avatarUrl}
                     alt={fullName}
                     size="md"
-                    className="ring-2 ring-white/60"
+                    className="ring-2 ring-white/20"
                 />
                 <div className="min-w-0 flex-1">
                     <p className="truncate text-[15px] font-bold leading-tight text-ds-texto-invertido">
                         {fullName}
-                    </p>
-                    <p className="mt-0.5 truncate text-[11px] font-medium text-white/70">
-                        Ficha de datos personales
                     </p>
                 </div>
             </div>
@@ -211,6 +208,7 @@ export default function DatosPersonalesModal({
             layer="base"
             instance="profile-personal"
             headerTone="petroleum"
+            scheme="dark"
             usageId="profile-personal"
             usageLabel="Datos personales"
             headerTrailing={canEdit && !editing ? editButton : undefined}
@@ -364,8 +362,8 @@ export default function DatosPersonalesModal({
 
 function RecordSection({ title, children }: { title: string; children: React.ReactNode }) {
     return (
-        <section className="border-t border-ds-borde first:border-t-0">
-            <h3 className="px-ds-4 pt-ds-3 pb-ds-1 text-[10px] font-black uppercase tracking-widest text-ds-texto-tenue">
+        <section className="border-t border-white/10 first:border-t-0">
+            <h3 className="px-ds-4 pt-ds-3 pb-ds-1 text-[11px] font-medium tracking-wide text-white/60">
                 {title}
             </h3>
             <div className="grid grid-cols-2 gap-x-ds-4 px-ds-4 pb-ds-2">{children}</div>
@@ -384,8 +382,8 @@ function FieldCell({
 }) {
     return (
         <div className={cn('min-w-0 py-ds-1', className)}>
-            <p className="text-[11px] font-medium leading-tight text-ds-texto-tenue">{label}</p>
-            <p className="mt-0.5 text-[14px] font-semibold leading-snug break-words text-ds-texto-fuerte">
+            <p className="text-[10px] font-medium leading-tight text-white/55">{label}</p>
+            <p className="mt-0.5 text-[12px] font-normal leading-snug break-words text-ds-texto-invertido">
                 {displayValue(value)}
             </p>
         </div>

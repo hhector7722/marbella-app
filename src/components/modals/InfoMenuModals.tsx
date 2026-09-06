@@ -229,6 +229,7 @@ export function InfoMenuModals({ open, onClose, usagePrefix = 'admin' }: InfoMen
                             key={label}
                             title={label}
                             imageSrc={STAFF_TPV_MANUAL_ICONS[label]}
+                            imageClassName="h-14 w-14 object-contain"
                             onClick={() => {
                                 const v = STAFF_TPV_MANUAL_VIDEOS[label];
                                 if (!v) {

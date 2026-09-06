@@ -109,8 +109,8 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         );
         assert.match(
             home,
-            /grid-template-areas:[\s\S]*horario  horario  horario  asis[\s\S]*horario  horario  horario  \.[\s\S]*ingred   albaran  caja     hextras/,
-            'Master: asistencia del día 1×1 (fila 2, columna 4) y horarios 3×2 (filas 2–3, columnas 1–3); Caja y H. extras a la derecha'
+            /grid-template-areas:[\s\S]*horario  horario  horario  asis[\s\S]*horario  horario  horario  asis[\s\S]*ingred   albaran  caja     hextras/,
+            'Master: asistencia del día 1×2 (filas 2–3, columna 4) y horarios 3×2 (filas 2–3, columnas 1–3); Caja y H. extras a la derecha'
         );
         assert.match(
             home,
@@ -376,7 +376,7 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.match(master, /size="panel" instance="master-horarios"/);
         assert.match(master, /<StaffWeekScheduleBlock/);
         assert.match(grid, /size=\{size\} instance=\{key\} label=\{label\}/);
-        assert.match(grid, /size: 'tile'[\s\S]*label: 'H\. extras'/);
+        assert.match(grid, /size: 'tile'[\s\S]*label: 'H extras'/);
         assert.match(grid, /label: 'Cajas Cambio'/);
         assert.match(grid, /<MasterCajasCambioControl/);
         assert.match(grid, /<MasterOvertimeIconWidget/);
@@ -393,8 +393,8 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         );
         assert.match(
             grid,
-            /getISOWeek\(new Date\(week\.weekId\)\)[\s\S]*<X /,
-            'H. extras muestra semana, importe y estado de pago'
+            /weekdayHeaders = \['L', 'M', 'X', 'J', 'V', 'S', 'D'\][\s\S]*<X /,
+            'H. extras muestra calendario del mes, estado de abono e importe'
         );
         assert.doesNotMatch(grid, /md:grid-cols-7|lg:grid-cols-8/);
         assert.match(ops, /layout="ops-admin"/);

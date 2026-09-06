@@ -148,11 +148,11 @@ function MasterCajasCambioControl({
                         onClick={onOpenCambio1}
                         aria-label="Caja cambio 1: arqueo"
                         className={iconButtonClassName}
-                        style={{ ['--shortcut-fill' as string]: '#38bdf8' }}
+                        style={{ ['--shortcut-fill' as string]: '#CDBB72' }}
                     >
                         <div
                             data-element="asset"
-                            className="flex h-full w-full items-center justify-center bg-sky-400"
+                            className="flex h-full w-full items-center justify-center bg-[#CDBB72]"
                         >
                             {treasuryLoading ? (
                                 <LoadingSpinner size="sm" className="text-white" />

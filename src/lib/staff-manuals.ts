@@ -47,10 +47,10 @@ export const STAFF_MANUAL_MENU: Array<{
 export const STAFF_TPV_MANUAL_ITEMS = [
     'Anulaciones',
     'Descuentos',
-    'Cobros Pendientes',
-    'Conceptos Botonera',
+    'Cobros',
+    'Botonera',
     'Impresoras Tpv',
-    'Instrucciones Handy',
+    'Handy',
 ] as const;
 
 export type StaffTpvManualItemLabel = (typeof STAFF_TPV_MANUAL_ITEMS)[number];
@@ -58,16 +58,16 @@ export type StaffTpvManualItemLabel = (typeof STAFF_TPV_MANUAL_ITEMS)[number];
 export const STAFF_TPV_MANUAL_ICONS: Record<StaffTpvManualItemLabel, string> = {
     'Anulaciones': '/icons/reverse.png',
     'Descuentos': '/icons/400.2.png',
-    'Cobros Pendientes': '/icons/wallet.png',
-    'Conceptos Botonera': '/icons/pos.png',
+    'Cobros': '/icons/wallet.png',
+    'Botonera': '/icons/pos.png',
     'Impresoras Tpv': '/icons/notas.png',
-    'Instrucciones Handy': '/icons/phone.png',
+    'Handy': '/icons/phone.png',
 };
 
 export const STAFF_TPV_MANUAL_VIDEOS: Partial<Record<StaffTpvManualItemLabel, { src: string; title: string }>> = {
     'Anulaciones': { src: STAFF_MANUAL_ASSETS.tpvAnulacionesVideo, title: 'TPV · Anulaciones' },
     'Descuentos': { src: STAFF_MANUAL_ASSETS.tpvDescuentosVideo, title: 'TPV · Descuentos' },
-    'Cobros Pendientes': { src: STAFF_MANUAL_ASSETS.tpvCobrosPendientesVideo, title: 'TPV · Cobros Pendientes' },
+    'Cobros': { src: STAFF_MANUAL_ASSETS.tpvCobrosPendientesVideo, title: 'TPV · Cobros' },
     'Impresoras Tpv': { src: STAFF_MANUAL_ASSETS.tpvImpresorasVideo, title: 'TPV · Impresoras TPV' },
 };
 
