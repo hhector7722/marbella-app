@@ -3463,6 +3463,25 @@ button[data-element='catalog-filter'] {
 }
 
 /*
+ * Manuales (staff): los PNG llevan aire transparente distinto por fichero, así que
+ * cada icono se escala desde su centro hasta que el dibujo toca el canto de la celda.
+ * Misma normalización que el bleed del mosaico; el recorte lo hace el overflow de la celda.
+ */
+[data-component='Modal'][data-instance='staff-manuales'] img[src*='inventory.png'] { transform: scale(1.06); }
+[data-component='Modal'][data-instance='staff-manuales'] img[src*='altav'] { transform: scale(1.03); }
+[data-component='Modal'][data-instance='staff-manuales'] img[src*='ingrediente'] { transform: scale(1.26); }
+[data-component='Modal'][data-instance='staff-manuales'] img[src*='horno'] { transform: scale(1.05); }
+[data-component='Modal'][data-instance='staff-manuales'] img[src*='lluvia'] { transform: scale(1.12); }
+[data-component='Modal'][data-instance='staff-manuales'] img[src*='electrico'] { transform: scale(1.09); }
+[data-component='Modal'][data-instance='staff-manual-tpv'] img[src*='reverse'] { transform: scale(1.42); }
+[data-component='Modal'][data-instance='staff-manual-tpv'] img[src*='400.2'] { transform: scale(1.16); }
+[data-component='Modal'][data-instance='staff-manual-tpv'] img[src*='wallet'] { transform: scale(1.49); }
+[data-component='Modal'][data-instance='staff-manual-tpv'] img[src*='notas'] { transform: scale(1.09); }
+[data-component='Modal'][data-instance='staff-manual-tpv'] img[src*='phone'] { transform: scale(1.03); }
+[data-component='Modal'][data-instance='staff-manual-horno'] img[src*='bin'] { transform: scale(1.38); }
+[data-component='Modal'][data-instance='staff-manual-horno'] img[src*='horno'] { transform: scale(1.05); }
+
+/*
  * DashboardShortcut — atajo de mosaico. Icono en recuadro, nombre debajo.
  * Misma medida y mismo radio para todos.
  * plate=fill: fondo que completa la forma (Caja, C INICIAL). plate=bleed: el gráfico es el icono (Recetas).
