@@ -46,7 +46,7 @@ Registrar quién trabaja, cuándo y cuánto. Es la capacidad más sensible del p
 Cuadrar el efectivo del día y trazar cada movimiento de dinero.
 
 - **Actores**: responsable de operación, responsable del negocio.
-- **Superficies**: cierre de caja, historial de cierres, movimientos de tesorería, arqueo y cambio de cajas, libro mayor.
+- **Superficies**: cierre de caja, historial de cierres, último cierre en el mosaico del master, movimientos de tesorería, arqueo y cambio de cajas, libro mayor.
 - **Reglas propias**: efectivo esperado a partir de ventas, tarjeta y pendiente; descuadre visible y nunca ajustado en silencio; el cambio entre cajas genera dos apuntes cruzados; recuento por denominación.
 - **Estado**: consolidada, con un punto frágil conocido en el cálculo del esperado cuando los datos del papel y los del terminal no concuerdan.
 - **Especificación**: pendiente.

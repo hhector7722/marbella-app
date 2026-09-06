@@ -13,6 +13,7 @@ import MasterShortcutGrid from '@/components/dashboards/MasterShortcutGrid';
 import { HorasExtrasWidget } from '@/components/dashboards/ops-widgets';
 import { HomeScreen, HomeScreenSlot } from '@/components/dashboards/HomeScreen';
 import { MasterTodayAttendanceWidget } from '@/components/dashboards/MasterTodayAttendanceWidget';
+import { MasterLastClosingWidget } from '@/components/dashboards/MasterLastClosingWidget';
 import { StaffWeekScheduleBlock } from '@/components/dashboards/staff/StaffWeekScheduleBlock';
 import { MasterMoreFunctionsModal } from '@/components/modals/MasterMoreFunctionsModal';
 import CashClosingModal from '@/components/CashClosingModal';
@@ -551,6 +552,9 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                             salesChartData: initialData?.salesChartData,
                         }}
                     />
+                </HomeScreenSlot>
+                <HomeScreenSlot size="wide" instance="master-ultimo-cierre">
+                    <MasterLastClosingWidget />
                 </HomeScreenSlot>
                 <HomeScreenSlot
                     size={attendanceExpanded ? 'tall' : 'tile'}

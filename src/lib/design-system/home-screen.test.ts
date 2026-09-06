@@ -104,18 +104,18 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         );
         assert.match(
             home,
-            /\[data-layout='master'\][\s\S]*grid-template-rows:[\s\S]*repeat\(6, var\(--home-row-track\)\)/,
-            'el Master fija sus seis filas en la misma rejilla'
+            /\[data-layout='master'\][\s\S]*grid-template-rows:[\s\S]*repeat\(7, var\(--home-row-track\)\)/,
+            'el Master fija sus siete filas en la misma rejilla (la séptima la añade el widget 4×1)'
         );
         assert.match(
             home,
-            /grid-template-areas:[\s\S]*horario  horario  horario  asis[\s\S]*horario  horario  horario  \.[\s\S]*ingred   albaran  caja     hextras/,
-            'Master: asistencia del día 1×1 (fila 2, columna 4); horarios 3×2 (filas 2–3, columnas 1–3)'
+            /grid-template-areas:[\s\S]*ultcierre ultcierre ultcierre ultcierre[\s\S]*horario  horario  horario  asis[\s\S]*horario  horario  horario  \.[\s\S]*ingred   albaran  caja     hextras/,
+            'Master: widget «Último cierre» 4×1 en la fila 2; asistencia del día 1×1 (fila 3, columna 4); horarios 3×2 (filas 3–4, columnas 1–3)'
         );
         assert.match(
             home,
             /\[data-layout='master'\]\.asis-expanded[\s\S]*horario  horario  horario  asis[\s\S]*horario  horario  horario  asis/,
-            'Master: la asistencia crece a 1×2 (filas 2–3, columna 4) cuando desborda'
+            'Master: la asistencia crece a 1×2 (filas 3–4, columna 4) cuando desborda'
         );
         assert.match(
             home,
@@ -376,6 +376,8 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.doesNotMatch(master, /CajaInicialWidget|CajaCambioWidget/);
         assert.match(master, /layout="master"/);
         assert.match(master, /size="wide" instance="dashboard-ventas"/);
+        assert.match(master, /size="wide" instance="master-ultimo-cierre"/);
+        assert.match(master, /<MasterLastClosingWidget/);
         assert.match(master, /size=\{attendanceExpanded \? 'tall' : 'tile'\}[\s\S]*?instance="master-asistencia"/);
         assert.match(master, /label=\{attendanceExpanded \? undefined : 'Asistencia'\}/);
         assert.match(master, /<MasterTodayAttendanceWidget/);

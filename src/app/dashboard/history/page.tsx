@@ -38,12 +38,17 @@ import * as XLSX from 'xlsx';
 import { downloadWorkbook, printHtml } from '@/lib/export/browser-output';
 import { deleteCashClosingPhotosAction, getCashClosingPhotoUrlsAction } from '@/app/actions/cash-closing-photos';
 import { CLOSING_WEATHER_OPTIONS, weatherIdFromLabel } from '@/lib/cash-closing-weather';
+import {
+    buildLastClosingMetrics,
+    formatClosingValue,
+    formatClosingDifference,
+    formatCurrencySpanish,
+} from '@/lib/cash-closing-metrics';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 import { DenominationCountGrid } from '@/components/cash/DenominationCountGrid';
 import { CashCountFooter } from '@/components/cash/CashCountFooter';
 
 // --- TYPES & CONSTANTS ---
-type MetricType = 'net_sales' | 'tpv_sales' | 'avg_ticket' | 'tickets_count' | 'cash_counted';
 
 interface RendimientoScale {
     level: 1 | 2 | 3 | 4 | 5;
@@ -69,15 +74,6 @@ function TrendTriangle({ type, className, size = 'md' }: { type: 'up' | 'down' |
         );
     }
     return null;
-}
-
-function formatCurrencySpanish(val: number): string {
-    const isWhole = Math.abs(val - Math.round(val)) < 0.005;
-    const formatted = val.toLocaleString('es-ES', {
-        minimumFractionDigits: isWhole ? 0 : 2,
-        maximumFractionDigits: 2
-    });
-    return `${formatted}€`;
 }
 
 type MonthKey = string;
@@ -1140,49 +1136,10 @@ export default function HistoryPage() {
         }
     };
 
-    const formatValue = (val: number, type: MetricType) => {
-        if (type === 'tickets_count') return val === 0 ? ' ' : val.toLocaleString('es-ES');
-        if (val === 0) return " ";
-        return formatCurrencySpanish(val);
-    };
-
-    /** Descuadre de cero se muestra: CONTENIDO-Y-TONO §3. */
-    const formatDifference = (val: number) => formatCurrencySpanish(val);
-
-    const lastClosingMetrics = useMemo(() => {
-        if (!lastClosing) {
-            return {
-                weatherLabel: null as string | null,
-                weatherIcon: null as string | null,
-                tickets: 0,
-                avgTicket: 0,
-                tpvSales: 0,
-                netSales: 0,
-                salesCard: 0,
-                cashCounted: 0,
-                salesPending: 0,
-                debtRecovered: 0,
-                difference: 0,
-            };
-        }
-        const tickets = Number(lastClosing.tickets_count ?? 0);
-        const tpvSales = Number(lastClosing.tpv_sales ?? 0);
-        const weatherId = weatherIdFromLabel(lastClosing.weather);
-        const weatherOpt = CLOSING_WEATHER_OPTIONS.find((o) => o.id === weatherId);
-        return {
-            weatherLabel: lastClosing.weather || null,
-            weatherIcon: weatherOpt?.icon ?? null,
-            tickets,
-            avgTicket: tickets > 0 ? tpvSales / tickets : 0,
-            tpvSales,
-            netSales: Number(lastClosing.net_sales ?? 0),
-            salesCard: Number(lastClosing.sales_card ?? 0),
-            cashCounted: Number(lastClosing.cash_counted ?? 0),
-            salesPending: Number(lastClosing.sales_pending ?? 0),
-            debtRecovered: Number(lastClosing.debt_recovered ?? 0),
-            difference: Number(lastClosing.difference ?? 0),
-        };
-    }, [lastClosing]);
+    const lastClosingMetrics = useMemo(
+        () => buildLastClosingMetrics((lastClosing as Record<string, unknown>) ?? null),
+        [lastClosing],
+    );
 
 
     // Solo actualizan estado local; la base de datos no se toca hasta que el usuario pulse "Guardar Cierre".
@@ -1316,25 +1273,25 @@ export default function HistoryPage() {
         {
             label: 'Ventas',
             value: lastClosing
-                ? formatValue(lastClosingMetrics.tpvSales, 'tpv_sales')
+                ? formatClosingValue(lastClosingMetrics.tpvSales, 'tpv_sales')
                 : ' ',
         },
         {
             label: 'Venta neta',
             value: lastClosing
-                ? formatValue(lastClosingMetrics.netSales, 'net_sales')
+                ? formatClosingValue(lastClosingMetrics.netSales, 'net_sales')
                 : ' ',
         },
         {
             label: 'Tarjeta',
             value: lastClosing
-                ? formatValue(lastClosingMetrics.salesCard, 'tpv_sales')
+                ? formatClosingValue(lastClosingMetrics.salesCard, 'tpv_sales')
                 : ' ',
         },
         {
             label: 'Efectivo',
             value: lastClosing
-                ? formatValue(lastClosingMetrics.cashCounted, 'cash_counted')
+                ? formatClosingValue(lastClosingMetrics.cashCounted, 'cash_counted')
                 : ' ',
         },
     ] as const;
@@ -1343,19 +1300,19 @@ export default function HistoryPage() {
         {
             label: 'Pendiente pago',
             value: lastClosing
-                ? formatValue(lastClosingMetrics.salesPending, 'tpv_sales')
+                ? formatClosingValue(lastClosingMetrics.salesPending, 'tpv_sales')
                 : ' ',
         },
         {
             label: 'Cobros pendientes',
             value: lastClosing
-                ? formatValue(lastClosingMetrics.debtRecovered, 'tpv_sales')
+                ? formatClosingValue(lastClosingMetrics.debtRecovered, 'tpv_sales')
                 : ' ',
         },
         {
             label: 'Diferencia',
             value: lastClosing
-                ? formatDifference(lastClosingMetrics.difference)
+                ? formatClosingDifference(lastClosingMetrics.difference)
                 : ' ',
         },
     ] as const;
@@ -1426,7 +1383,7 @@ export default function HistoryPage() {
                             <div className="flex flex-col items-center justify-center text-center">
                                 <div className="flex items-center justify-center leading-none">
                                     <span className="whitespace-nowrap text-base sm:text-lg md:text-xl font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
-                                        {formatValue(summary.totalNet, 'net_sales')}
+                                        {formatClosingValue(summary.totalNet, 'net_sales')}
                                     </span>
                                 </div>
                                 <span className="mt-1 text-[8px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest leading-none">
@@ -1456,7 +1413,7 @@ export default function HistoryPage() {
                             <div className="flex flex-col items-center justify-center text-center">
                                 <div className="flex items-center justify-center leading-none">
                                     <span className="whitespace-nowrap text-base sm:text-lg md:text-xl font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
-                                        {formatValue(summary.totalGross, 'tpv_sales')}
+                                        {formatClosingValue(summary.totalGross, 'tpv_sales')}
                                     </span>
                                 </div>
                                 <span className="mt-1 text-[8px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest leading-none">
