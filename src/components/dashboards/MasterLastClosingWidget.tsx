@@ -106,13 +106,13 @@ export function MasterLastClosingWidget() {
     }, [closing]);
 
     const renderKpiGrid = (kpis: readonly LastClosingKpi[], gridClass: 'grid-cols-3' | 'grid-cols-4') => (
-        <div className={`grid gap-x-0.5 ${gridClass}`}>
+        <div className={`grid gap-x-1 ${gridClass}`}>
             {kpis.map((kpi) => (
                 <div key={kpi.label} className="flex min-w-0 flex-col items-center justify-center text-center">
-                    <span className="text-[8px] md:text-[9px] font-black tabular-nums leading-none text-[var(--home-widget-ink)]">
+                    <span className="text-[8px] md:text-[9px] tabular-nums leading-none text-[var(--home-widget-ink)]">
                         {kpi.format(metrics)}
                     </span>
-                    <span className="mt-0.5 text-[5px] md:text-[6px] font-black uppercase tracking-wider leading-none text-[var(--home-widget-ink-secondary)]">
+                    <span className="mt-0.5 text-[6px] md:text-[7px] leading-none text-[var(--home-widget-ink-secondary)]">
                         {kpi.label}
                     </span>
                 </div>
@@ -126,7 +126,7 @@ export function MasterLastClosingWidget() {
                 <Link href="/dashboard/history" className={pillClassName}>
                     Último cierre
                 </Link>
-                <div className="flex min-w-0 items-center justify-end gap-x-1.5 text-[7px] md:text-[8px] font-medium tabular-nums text-[var(--home-widget-ink-secondary)]">
+                <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-1.5 gap-y-0.5 text-[7px] md:text-[8px] font-medium tabular-nums text-[var(--home-widget-ink-secondary)]">
                     {closing ? <span className="shrink-0">{dateLabel}</span> : null}
                     {metrics.weatherLabel ? (
                         <span className="inline-flex shrink-0 items-center gap-1">
@@ -138,19 +138,19 @@ export function MasterLastClosingWidget() {
                             <span>{metrics.weatherLabel}</span>
                         </span>
                     ) : null}
-                    <span className="hidden sm:inline shrink-0">
+                    <span className="shrink-0">
                         {metrics.tickets === 0
                             ? ' '
                             : `${metrics.tickets.toLocaleString('es-ES')} tickets`}
                     </span>
-                    <span className="hidden sm:inline shrink-0">
+                    <span className="shrink-0">
                         {metrics.avgTicket === 0
                             ? ' '
                             : `${formatCurrencySpanish(metrics.avgTicket)} ticket medio`}
                     </span>
                 </div>
             </div>
-            <div className="flex min-h-0 flex-1 flex-col justify-center px-2 pb-1.5">
+            <div className="flex min-h-0 flex-1 flex-col justify-evenly px-2 pb-1.5">
                 {loading ? (
                     <div
                         className="flex flex-1 items-center justify-center"
@@ -164,7 +164,7 @@ export function MasterLastClosingWidget() {
                 ) : (
                     <>
                         {renderKpiGrid(PRIMARY_KPIS, 'grid-cols-4')}
-                        <div className="mt-1">{renderKpiGrid(SECONDARY_KPIS, 'grid-cols-3')}</div>
+                        {renderKpiGrid(SECONDARY_KPIS, 'grid-cols-3')}
                     </>
                 )}
             </div>
