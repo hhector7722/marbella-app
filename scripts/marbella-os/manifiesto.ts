@@ -93,9 +93,9 @@ export function leerManifiesto(): Manifiesto {
   return { categorias, declaradas, error: null }
 }
 
-/** Directorios de primer nivel del repositorio, sin `.git`. */
-export function directoriosDePrimerNivel(): string[] {
-  return readdirSync(RAIZ_REPO, { withFileTypes: true })
+/** Directorios de primer nivel de una raíz, sin `.git`. Por defecto el repo. */
+export function directoriosDePrimerNivel(raiz: string = RAIZ_REPO): string[] {
+  return readdirSync(raiz, { withFileTypes: true })
     .filter((e) => e.isDirectory() && e.name !== '.git' && !e.name.startsWith('.'))
     .map((e) => e.name)
     .sort()
@@ -122,4 +122,60 @@ export function contieneMarkdown(directorio: string): boolean {
     }
   }
   return subdirectorios.some(contieneMarkdown)
+}
+
+/**
+ * Categorías cuyo contenido es inventario real del repositorio. `excluir` queda
+ * fuera: es un catálogo preventivo de espejos de herramientas (INDEXACION.md
+ * «Por qué no se borran los espejos»), y exigirle existencia contradiría su
+ * función.
+ */
+export const CATEGORIAS_CON_INVENTARIO = ['corpus', 'derivados', 'satelites'] as const
+
+export interface HallazgoManifiesto {
+  readonly comprobacion: string
+  readonly documento: string
+  readonly detalle: string
+}
+
+/**
+ * Cobertura del manifiesto, en las dos direcciones que valida CANON §11:
+ *
+ * 1. Un directorio real con markdown que nadie ha clasificado acaba en el
+ *    índice de cualquier agente; el manifiesto obliga a decidirlo por escrito.
+ * 2. Lo declarado como inventario real (corpus, derivados, satélites) debe
+ *    existir: no se declara lo que no hay. Las exclusiones preventivas se
+ *    declaran aunque el espejo aún no esté instalado.
+ */
+export function comprobarManifiesto(
+  manifiesto: Manifiesto,
+  raiz: string = RAIZ_REPO,
+): HallazgoManifiesto[] {
+  const hallazgos: HallazgoManifiesto[] = []
+
+  for (const directorio of directoriosDePrimerNivel(raiz)) {
+    if (manifiesto.declaradas.has(directorio)) continue
+    if (contieneMarkdown(join(raiz, directorio))) {
+      hallazgos.push({
+        comprobacion: '12 · manifiesto',
+        documento: `${directorio}/`,
+        detalle:
+          'contiene markdown y no está clasificado en INDEXACION.md: decide si es corpus, satélite, derivado o ruido',
+      })
+    }
+  }
+
+  for (const categoria of CATEGORIAS_CON_INVENTARIO) {
+    for (const ruta of manifiesto.categorias.get(categoria) ?? []) {
+      if (!existe(resolve(raiz, ruta))) {
+        hallazgos.push({
+          comprobacion: '12 · manifiesto',
+          documento: 'INDEXACION.md',
+          detalle: `clasifica \`${ruta}/\` en \`${categoria}\` y no existe`,
+        })
+      }
+    }
+  }
+
+  return hallazgos
 }

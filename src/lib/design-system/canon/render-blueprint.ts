@@ -75,7 +75,17 @@ export function renderBlueprint(registry: CanonRegistry): string {
         )
         .join('\n');
 
-    return `# Blueprint Visual — Marbella App
+    return `---
+documento: BLUEPRINT-VISUAL
+clase: inmutable
+estado: vigente
+capa: diseno
+normativo: false
+precedencia: 0
+responsable: propiedad del producto
+---
+
+# Blueprint Visual — Marbella App
 
 Este documento es la **documentación humana del canon visual**.
 La fuente técnica editable es \`src/lib/design-system/canon/registry.json\`.

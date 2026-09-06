@@ -241,7 +241,7 @@ export function MasterTodayAttendanceWidget({
                                 type="button"
                                 onClick={() => setIsSummaryModalOpen(true)}
                                 aria-label={`Resumen de fichajes del ${dateLabel}`}
-                                className="relative flex w-full min-w-0 items-center justify-center px-1 py-1 before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']"
+                                className="relative flex w-full min-w-0 items-center justify-center px-1 py-0.5 before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']"
                             >
                                 <span className="truncate text-[6px] font-bold leading-none tracking-wide text-white drop-shadow-sm">
                                     {dateLabel}
@@ -267,7 +267,7 @@ export function MasterTodayAttendanceWidget({
                                                 <span className="min-w-0 flex-1 truncate text-[7px] font-medium leading-none text-zinc-700">
                                                     {log.first_name}
                                                 </span>
-                                                <span className="flex shrink-0 items-center gap-0.5 text-[7px] font-bold leading-none tabular-nums">
+                                                <span className="flex shrink-0 items-center text-[7px] font-bold leading-none tabular-nums">
                                                     <span className={isNoRegistered ? 'text-rose-700' : 'text-emerald-700'}>
                                                         {formatCompactHour(log.in_time) || '--:--'}
                                                     </span>

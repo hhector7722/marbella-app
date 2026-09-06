@@ -551,7 +551,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                         }}
                     />
                 </HomeScreenSlot>
-                <HomeScreenSlot size="tall" instance="master-asistencia">
+                <HomeScreenSlot size="tile" instance="master-asistencia">
                     <MasterTodayAttendanceWidget
                         userRole={userRole}
                         viewerEmail={userEmail}

@@ -435,16 +435,21 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                 setIsDayPublished(uniqueShifts.some(s => s.is_published));
             } else {
                 setIsDayPublished(false);
-                setActivity('');
+                // La cabecera del día la decide el pabellón (misma fuente que el
+                // modal de lectura). Sin turnos ni actividad, se limpia; con
+                // actividad, la repone el bloque de abajo.
+                if (dayGrouped.length === 0) {
+                    setActivity('');
+                    setCategoria('');
+                    setParticipantsCount('');
+                    setActivity2('');
+                    setCategoria2('');
+                    setParticipantsCount2('');
+                }
                 setDefaultStart('08:00');
                 setDefaultEnd('16:00');
-                setParticipantsCount('');
-                setCategoria('');
-                setActivity2('');
                 setDefaultStart2('');
                 setDefaultEnd2('');
-                setParticipantsCount2('');
-                setCategoria2('');
             }
 
             // El resumen del día refleja las actividades reales del pabellón
@@ -745,12 +750,10 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
             setDate(targetDate);
             setCalendarDate(new Date(`${targetDate}T12:00:00`));
         });
-        startTransition(() => {
-            void fetchData(targetDate);
-        });
-    }, [fetchData, initialDate]);
+    }, [initialDate]);
 
     useEffect(() => {
+        if (!date) return;
         // Reset secondary slot when date changes and refetch data
         startTransition(() => setSecondSlotExpanded(false));
         primaryFetchedRef.current = false;
@@ -827,7 +830,6 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
         const newDateStr = newDate.toISOString().split('T')[0];
         trackScheduleDayNav(formatYmdShort(newDateStr), { selectedDate: newDateStr });
         setDate(newDateStr);
-        fetchData(newDateStr);
     };
 
     const handleSelectCalendarDate = async (picked: Date) => {
@@ -838,7 +840,6 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
         setShowCalendarModal(false);
         trackScheduleCalendarDay(formatYmdShort(dateStr), { selectedDate: dateStr });
         setDate(dateStr);
-        fetchData(dateStr);
     };
 
     const hoursHeader = Array.from({ length: TOTAL_HOURS }, (_, i) => i + START_HOUR);
@@ -1095,7 +1096,18 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                 <div className="p-3 md:p-4 lg:p-2 w-full shrink-0">
                     <div className="flex w-full max-w-2xl mx-auto flex-col gap-2 rounded-[var(--radio-control)] bg-white/10 p-2">
                         {!hasSlot1Activity && !showSecondActivityCard ? (
-                            <div className="text-center text-white/50 text-[10px] font-black tracking-widest py-3 lg:py-1">Sin actividad</div>
+                            <div className="w-full min-w-0">
+                                {editableGridSlot1}
+                                <div className="mt-1 flex w-full justify-center">
+                                    <button
+                                        type="button"
+                                        onClick={() => setSecondSlotExpanded(true)}
+                                        className="relative shrink-0 self-center rounded-xl text-[10px] font-normal py-3 text-white/80 hover:bg-white/10 transition-colors active:scale-[0.99] before:absolute before:inset-0 before:min-h-[var(--tactil-minimo)] before:content-['']"
+                                    >
+                                        + Segunda actividad (tarde)
+                                    </button>
+                                </div>
+                            </div>
                         ) : (
                             <>
                                 {hasSlot1Activity && (

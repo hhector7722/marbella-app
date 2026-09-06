@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "70e2ea36a0c5f527",
+  "_huella": "5fea09d858df3de9",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -673,6 +673,18 @@
       "citable": true,
       "precedencia": 20,
       "vence": "2026-11-25",
+      "depende_de": []
+    },
+    {
+      "ruta": "marbella-os/2-diseno/BLUEPRINT-VISUAL.md",
+      "documento": "BLUEPRINT-VISUAL",
+      "clase": "inmutable",
+      "estado": "vigente",
+      "capa": "diseno",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
       "depende_de": []
     },
     {

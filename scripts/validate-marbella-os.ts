@@ -35,8 +35,7 @@ import {
 import { buscarCiclo, construirAristas } from './marbella-os/grafo.ts'
 import {
   RAIZ_REPO,
-  contieneMarkdown,
-  directoriosDePrimerNivel,
+  comprobarManifiesto,
   leerManifiesto,
 } from './marbella-os/manifiesto.ts'
 import { construirDerivados } from './generate-marbella-os-derived.ts'
@@ -446,6 +445,8 @@ if (!existe(GENERATED_DIR)) {
 //
 // Un directorio con markdown que nadie ha clasificado acaba en el índice de
 // cualquier agente. El manifiesto obliga a decidirlo una vez, por escrito.
+// Las exclusiones preventivas (espejos de herramientas) no se comprueban
+// contra el disco: se declaran aunque el espejo aún no esté instalado.
 // ---------------------------------------------------------------------------
 
 const manifiesto = leerManifiesto()
@@ -453,21 +454,8 @@ const manifiesto = leerManifiesto()
 if (manifiesto.error !== null) {
   error('12 · manifiesto', 'INDEXACION.md', manifiesto.error)
 } else {
-  for (const directorio of directoriosDePrimerNivel()) {
-    if (manifiesto.declaradas.has(directorio)) continue
-    if (contieneMarkdown(join(RAIZ_REPO, directorio))) {
-      error(
-        '12 · manifiesto',
-        `${directorio}/`,
-        'contiene markdown y no está clasificado en INDEXACION.md: decide si es corpus, satélite, derivado o ruido',
-      )
-    }
-  }
-
-  for (const ruta of manifiesto.declaradas) {
-    if (!existe(resolve(RAIZ_REPO, ruta))) {
-      error('12 · manifiesto', 'INDEXACION.md', `clasifica \`${ruta}/\` y no existe`)
-    }
+  for (const hallazgo of comprobarManifiesto(manifiesto)) {
+    error(hallazgo.comprobacion, hallazgo.documento, hallazgo.detalle)
   }
 }
 

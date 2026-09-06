@@ -1,3 +1,13 @@
+---
+documento: BLUEPRINT-VISUAL
+clase: inmutable
+estado: vigente
+capa: diseno
+normativo: false
+precedencia: 0
+responsable: propiedad del producto
+---
+
 # Blueprint Visual — Marbella App
 
 Este documento es la **documentación humana del canon visual**.
@@ -115,16 +125,17 @@ Pregunta de cada fila: **¿ya hemos decidido cómo debe ser?**
 
 ### Cabecera de página
 
+- Altura: 36 px · cabecera de modal
 - Alineación: Extremos
 - Vertical: Centro
-- Altura: 36 px · estructura.cabecera-modal
 - Padding horizontal: 16 px · espacio.4
 - Padding vertical: 16 px · espacio.4
 - Título: 18 px · título PageScreen
 
 ### Cabecera de modal
 
-- Altura: 36 px · estructura.cabecera-modal
+- Altura: 36 px · cabecera de modal
+- Hueco horizontal: 16 px · espacio.4
 - Alineación del título: Izquierda
 
 ### Button
@@ -134,6 +145,10 @@ Pregunta de cada fila: **¿ya hemos decidido cómo debe ser?**
 - Padding horizontal: 4 px · espacio.1
 - Foco: Marca
 - Alineación del contenido: Centro
+- Color de guardar: Positivo
+- Color de cancelar: Inactiva
+- Color de filtro: Marca
+- Color de eliminar: Negativo
 
 ## Abierto (no es contrato)
 
@@ -143,7 +158,7 @@ Pregunta de cada fila: **¿ya hemos decidido cómo debe ser?**
 - **Search** (BORRADOR / PROPUESTA): SearchField existe. No es Field. Lupa + input compactos (32 px, 12 px). El contrato visual completo sigue abierto.
 - **Select** (BORRADOR / PROPUESTA): Nativo dentro de Field. No nace primitiva Select de design system.
 - **QuantityStepper** (BORRADOR / PROPUESTA): Pieza existe. Recuento de efectivo sigue en DenominationStepper.
-- **Table / T8** (BORRADOR / PROPUESTA): Composición, no Table.tsx. Thead de marca y tabular-nums siguen abiertos.
+- **Table / T8** (BORRADOR / PROPUESTA): Composición, no Table.tsx. Thead de marca: un cambio pinta todas las tablas operativas.
 - **EmptyState** (BORRADOR / PROPUESTA): Las tres situaciones de producto existen. Cómo se distinguen none y mismatch no está congelado.
 - **LoadingSpinner** (BORRADOR / PROPUESTA): Hay tamaños en código. El contrato (tamaños / currentColor) no está congelado.
 - **Radio / Segmented** (BORRADOR / PROPUESTA): PetroleumSegmented 2–5 está cerrado. Cuándo usar radio nativo sigue abierto.
