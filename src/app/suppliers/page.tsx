@@ -644,11 +644,11 @@ export default function SuppliersPage() {
             >
                 {detailSupplier ? (
                     <div className="flex flex-col items-center px-6 py-6 text-center">
-                        <div className="mb-3 flex h-32 w-32 items-center justify-center overflow-hidden rounded-3xl bg-white/10 ring-1 ring-inset ring-white/15">
+                        <div className="mb-3 flex h-32 w-32 items-center justify-center overflow-hidden rounded-3xl bg-white shadow-sm">
                             {getSupplierLogo(detailSupplier.image_url, detailSupplier.name) ? (
                                 <img src={getSupplierLogo(detailSupplier.image_url, detailSupplier.name) || ''} alt="" className="h-full w-full object-contain" />
                             ) : (
-                                <Truck className="h-12 w-12 text-white/30" />
+                                <Truck className="h-12 w-12 text-gray-300" />
                             )}
                         </div>
 
@@ -657,10 +657,10 @@ export default function SuppliersPage() {
                                 <>
                                     <a
                                         href={`tel:${detailSupplier.phone.replace(/\D/g, '').startsWith('34') ? '+' + detailSupplier.phone.replace(/\D/g, '') : '+34' + detailSupplier.phone.replace(/\D/g, '')}`}
-                                        className="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-600 text-white shadow-sm transition-colors hover:bg-emerald-700 active:scale-95"
+                                        className="transition-all hover:scale-110 active:scale-95"
                                         title="Llamar"
                                     >
-                                        <Image src="/icons/phone.png" alt="Llamar" width={22} height={22} className="object-contain" />
+                                        <Image src="/icons/phone.png" alt="Llamar" width={36} height={36} className="object-contain" />
                                     </a>
                                     <a
                                         href={`https://wa.me/${detailSupplier.phone.replace(/\D/g, '').startsWith('34') ? detailSupplier.phone.replace(/\D/g, '') : '34' + detailSupplier.phone.replace(/\D/g, '')}`}

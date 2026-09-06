@@ -454,6 +454,11 @@
 [data-component='Modal'][data-instance='staff-schedule'] [data-element='footer'] [data-component='Button'][data-instance='schedule-note-row-delete']:hover:not(:disabled)::before {
   background-color: color-mix(in srgb, var(--color-negativo) 82%, var(--color-texto-fuerte));
 }
+/* Detalle de proveedor: contorno blanco en los botones del footer. */
+[data-component='Modal'][data-instance='supplier-detail'] [data-element='footer'] [data-component='Button'][data-instance='supplier-detail-edit']::before,
+[data-component='Modal'][data-instance='supplier-detail'] [data-element='footer'] [data-component='Button'][data-instance='supplier-detail-delete']::before {
+  box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.9);
+}
 
 /*
  * Capas superiores: el panel cubierto pierde protagonismo (blur + oscurecimiento).
