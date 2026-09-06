@@ -130,6 +130,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
     const [overtimeWeekDetail, setOvertimeWeekDetail] = useState<WeeklyStats | null>(null);
     const [overtimePaidStatus, setOvertimePaidStatus] = useState<Record<string, boolean>>({});
     const [overtimeWorkerHistory, setOvertimeWorkerHistory] = useState<{ workerId: string; weekId: string } | null>(null);
+    const [overtimeRefreshKey, setOvertimeRefreshKey] = useState(0);
     const [pendingReservationsCount, setPendingReservationsCount] = useState(0);
 
     const [userId, setUserId] = useState<string | null>(null);
@@ -573,6 +574,9 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                         userId={userId}
                         userRole={userRole}
                         userEmail={userEmail}
+                        masterMode
+                        onOpenWeekDetail={(week) => setOvertimeWeekDetail(week)}
+                        overtimeRefreshKey={overtimeRefreshKey}
                     />
                 </HomeScreenSlot>
                 <MasterShortcutGrid
@@ -870,6 +874,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                         onClose={() => {
                             setOvertimeWeekDetail(null);
                             setOvertimeWorkerHistory(null);
+                            setOvertimeRefreshKey((k) => k + 1);
                         }}
                         variant="standard"
                         layer="base"

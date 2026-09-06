@@ -23,8 +23,14 @@ import {
 import { createClient } from '@/utils/supabase/client';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { getOvertimeData } from '@/app/actions/overtime';
+import { Check, X } from 'lucide-react';
+import type { WeeklyStats } from '@/lib/hours-engine/overtime-weeks-ssot';
 
 const WEEKDAY_LABELS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'] as const;
+
+const WEEK_GRID_COLS = 'grid-cols-7';
+const WEEK_GRID_COLS_EXT = 'grid-cols-8';
 
 type ShiftRow = {
     start_time: string;
@@ -35,6 +41,12 @@ type StaffWeekScheduleWidgetProps = {
     userId: string | null;
     /** Abre el modal de horario del día (StaffScheduleModal) al pulsar una tarjeta de fin de semana. */
     onOpenNote?: (ymd: string) => void;
+    /** Modo Master: pinta la columna «Ext» de horas extra a la derecha del calendario. */
+    masterMode?: boolean;
+    /** Abre el modal de detalle de semana de horas extras (solo modo Master). */
+    onOpenWeekDetail?: (week: WeeklyStats) => void;
+    /** Al cambiar, recarga las horas extra del mes visible (p. ej. tras cerrar el modal de detalle). */
+    overtimeRefreshKey?: number;
 };
 
 function monthTitle(date: Date): string {
@@ -147,6 +159,22 @@ function chunkWeeks(days: Date[]): Date[][] {
 function formatWeekdayHeading(day: Date): string {
     const raw = format(day, 'EEEE d', { locale: es });
     return raw.charAt(0).toUpperCase() + raw.slice(1);
+}
+
+/** Importe de horas extra a abonar de una semana (misma regla que el modal de detalle: excluye stock y sin coste). */
+function weekOvertimeTotal(week: WeeklyStats | undefined): number {
+    if (!week) return 0;
+    return (week.staff ?? [])
+        .filter((s) => (s.totalCost ?? 0) > 0.05 && s.preferStock !== true)
+        .reduce((sum, s) => sum + (s.totalCost ?? 0), 0);
+}
+
+/** Una semana está abonada cuando todos sus trabajadores con importe lo están. */
+function isWeekPaid(week: WeeklyStats | undefined): boolean {
+    if (!week) return false;
+    const chargeable = (week.staff ?? []).filter((s) => (s.totalCost ?? 0) > 0.05 && s.preferStock !== true);
+    if (chargeable.length === 0) return false;
+    return chargeable.every((s) => s.isPaid === true);
 }
 
 function WeekendDayColumn({
@@ -275,12 +303,20 @@ function WeekExpansion({
     );
 }
 
-export function StaffWeekScheduleWidget({ userId, onOpenNote }: StaffWeekScheduleWidgetProps) {
+export function StaffWeekScheduleWidget({
+    userId,
+    onOpenNote,
+    masterMode = false,
+    onOpenWeekDetail,
+    overtimeRefreshKey = 0,
+}: StaffWeekScheduleWidgetProps) {
     const [monthAnchor, setMonthAnchor] = useState(() => startOfMonth(new Date()));
     const [expandedWeekStart, setExpandedWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
     const [shifts, setShifts] = useState<ShiftRow[]>([]);
     const [eventsByDate, setEventsByDate] = useState<Record<string, BarActivity[]>>({});
     const [loading, setLoading] = useState(true);
+    const [overtimeWeeks, setOvertimeWeeks] = useState<Record<string, WeeklyStats>>({});
+    const [overtimeLoading, setOvertimeLoading] = useState(false);
 
     const visibleRange = useMemo(() => {
         const start = startOfWeek(startOfMonth(monthAnchor), { weekStartsOn: 1 });
@@ -297,6 +333,28 @@ export function StaffWeekScheduleWidget({ userId, onOpenNote }: StaffWeekSchedul
     );
 
     const monthWeeks = useMemo(() => chunkWeeks(monthDays), [monthDays]);
+
+    const loadOvertimeData = useCallback(async () => {
+        if (!masterMode) return;
+        setOvertimeLoading(true);
+        try {
+            const result = await getOvertimeData(rangeStart, rangeEnd);
+            const byWeek: Record<string, WeeklyStats> = {};
+            (result?.weeksResult ?? []).forEach((w) => {
+                byWeek[w.weekId] = w;
+            });
+            setOvertimeWeeks(byWeek);
+        } catch (e) {
+            console.error(e);
+            setOvertimeWeeks({});
+        } finally {
+            setOvertimeLoading(false);
+        }
+    }, [masterMode, rangeStart, rangeEnd]);
+
+    useEffect(() => {
+        void loadOvertimeData();
+    }, [loadOvertimeData, overtimeRefreshKey]);
 
     const loadMonthData = useCallback(async () => {
         if (!userId) {
@@ -403,12 +461,17 @@ export function StaffWeekScheduleWidget({ userId, onOpenNote }: StaffWeekSchedul
             </div>
 
             <div data-element="month-scroll" className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                <div className="grid shrink-0 grid-cols-7 gap-px">
+                <div className={cn('grid shrink-0 gap-px', masterMode ? WEEK_GRID_COLS_EXT : WEEK_GRID_COLS)}>
                     {WEEKDAY_LABELS.map((label) => (
                         <div key={label} className="flex items-center justify-center">
                             <span className="text-[5px] font-medium uppercase leading-none text-white/40">{label}</span>
                         </div>
                     ))}
+                    {masterMode ? (
+                        <div className="flex items-center justify-center">
+                            <span className="text-[5px] font-bold uppercase leading-none text-white/60">Ext</span>
+                        </div>
+                    ) : null}
                 </div>
 
                 <div data-element="month-weeks" className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -430,7 +493,7 @@ export function StaffWeekScheduleWidget({ userId, onOpenNote }: StaffWeekSchedul
                                         data-expanded={isExpanded ? 'true' : undefined}
                                     >
                                         <div
-                                            className="grid grid-cols-7 gap-px"
+                                            className={cn('grid gap-px', masterMode ? WEEK_GRID_COLS_EXT : WEEK_GRID_COLS)}
                                             data-week-row={isExpanded ? 'expanded' : undefined}
                                         >
                                             {weekDays.map((day) => {
@@ -468,6 +531,64 @@ export function StaffWeekScheduleWidget({ userId, onOpenNote }: StaffWeekSchedul
                                                     </button>
                                                 );
                                             })}
+
+                                            {masterMode ? (() => {
+                                                const week = overtimeWeeks[weekKey];
+                                                const total = weekOvertimeTotal(week);
+                                                const paid = isWeekPaid(week);
+                                                return (
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if (week) onOpenWeekDetail?.(week);
+                                                        }}
+                                                        aria-label={
+                                                            week
+                                                                ? `Horas extra semana del ${format(weekDays[0], 'd MMM', { locale: es })}: ${total.toFixed(0)}€${paid ? ', pagada' : ', sin pagar'}`
+                                                                : 'Horas extra sin importe esta semana'
+                                                        }
+                                                        className={cn(
+                                                            'relative flex w-full items-center justify-center gap-0.5 transition-colors',
+                                                            'before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']',
+                                                            week && 'hover:bg-white/10',
+                                                            !week && 'cursor-default',
+                                                        )}
+                                                    >
+                                                        {overtimeLoading ? (
+                                                            <LoadingSpinner size="sm" className="text-white/60" />
+                                                        ) : week ? (
+                                                            <>
+                                                                <span
+                                                                    data-element="weekend-ext-value"
+                                                                    className={cn(
+                                                                        'text-[7px] tabular-nums leading-none',
+                                                                        paid ? 'font-semibold text-white/90' : 'font-semibold text-white/70',
+                                                                    )}
+                                                                >
+                                                                    {total.toFixed(0)}€
+                                                                </span>
+                                                                <span
+                                                                    data-element="weekend-ext-paid"
+                                                                    data-paid={paid ? 'true' : 'false'}
+                                                                    className={cn(
+                                                                        'flex h-2.5 w-2.5 shrink-0 items-center justify-center rounded-full',
+                                                                        paid ? 'bg-emerald-500' : 'bg-rose-500',
+                                                                    )}
+                                                                >
+                                                                    {paid ? (
+                                                                        <Check className="h-1.5 w-1.5 text-white" strokeWidth={4} />
+                                                                    ) : (
+                                                                        <X className="h-1.5 w-1.5 text-white" strokeWidth={4} />
+                                                                    )}
+                                                                </span>
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-[7px] leading-none text-white/30">—</span>
+                                                        )}
+                                                    </button>
+                                                );
+                                            })() : null}
                                         </div>
 
                                         {isExpanded ? (

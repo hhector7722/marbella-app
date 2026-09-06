@@ -38,6 +38,9 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-06
 
+- **Master: el widget de horario suma la columna «Ext».**
+  El calendario del mosaico de `/master/dashboard` añade a la derecha una columna con el importe de horas extra a abonar de cada semana y un indicador de abono (círculo verde con tic = pagada, rojo con cruz = pendiente); las siete columnas del mes se compactan para que todas queden iguales. Pulsar el importe o el indicador abre el modal de detalle de la semana (importes por trabajador, marcar como pagado y totales), y pulsar una fila abre el resumen semanal de ese trabajador. Solo en el mosaico Master: `/staff/dashboard` no muestra la columna.
+
 - **Master: nuevo widget «Último cierre» en la fila 2.** El mosaico de `/master/dashboard` gana un widget 4×1 con el cierre de caja más reciente —fecha, tiempo, tickets y las siete métricas de la card de `/dashboard/history` (Ventas, Venta neta, Tarjeta, Efectivo, Pendiente pago, Cobros pendientes y Diferencia), con el cero en blanco—. Enlaza a `/dashboard/history` y se actualiza en vivo al guardar un cierre. Horarios y asistencia bajan una fila (filas 3–4) y el resto del mosaico, una. La card de `/dashboard/history` y el widget comparten el mismo productor de métricas (PRINCIPIOS §3).
 - **Perfil: la ficha de «Datos personales» recupera su fondo blanco.** El esquema oscuro del modal transparentaba cualquier `bg-white` del body, así que la hoja se veía azul aunque el código la pintara blanca. La ficha revierte ahora ese blanqueo (como la tabla del horario) y se muestra como hoja A4 blanca con sus textos oscuros sobre el azul del modal.
 - **Perfil: Convenio y Código de Conducta muestran una miniatura del documento.** Los modales dejan de mostrar un icono sobre una tarjeta y enseñan la primera página real del PDF como imagen en miniatura; clic en la miniatura o «Abrir documento» abre el PDF.

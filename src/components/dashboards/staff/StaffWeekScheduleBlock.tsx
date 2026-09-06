@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { StaffWeekScheduleWidget } from '@/components/dashboards/staff/StaffWeekScheduleWidget';
 import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
+import type { WeeklyStats } from '@/lib/hours-engine/overtime-weeks-ssot';
 
 interface ShiftMock {
     date: Date;
@@ -20,6 +21,12 @@ type StaffWeekScheduleBlockProps = {
     initialFocusDate?: string | null;
     /** Al cerrar un modal abierto por deep link, para limpiar el query param. */
     onClearFocus?: () => void;
+    /** Modo Master: pinta la columna «Ext» de horas extra en el calendario. */
+    masterMode?: boolean;
+    /** Abre el modal de detalle de semana de horas extras (solo modo Master). */
+    onOpenWeekDetail?: (week: WeeklyStats) => void;
+    /** Al cambiar, recarga las horas extra del mes visible. */
+    overtimeRefreshKey?: number;
 };
 
 /**
@@ -33,6 +40,9 @@ export function StaffWeekScheduleBlock({
     userEmail,
     initialFocusDate,
     onClearFocus,
+    masterMode = false,
+    onOpenWeekDetail,
+    overtimeRefreshKey = 0,
 }: StaffWeekScheduleBlockProps) {
     const [monthShifts, setMonthShifts] = useState<ShiftMock[]>([]);
     const [isOpen, setIsOpen] = useState(false);
@@ -99,7 +109,13 @@ export function StaffWeekScheduleBlock({
 
     return (
         <>
-            <StaffWeekScheduleWidget userId={userId} onOpenNote={handleOpenNote} />
+            <StaffWeekScheduleWidget
+                userId={userId}
+                onOpenNote={handleOpenNote}
+                masterMode={masterMode}
+                onOpenWeekDetail={onOpenWeekDetail}
+                overtimeRefreshKey={overtimeRefreshKey}
+            />
             <StaffScheduleModal
                 isOpen={isOpen}
                 onClose={handleClose}
