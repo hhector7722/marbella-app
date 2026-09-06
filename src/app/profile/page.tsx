@@ -370,6 +370,7 @@ function ProfileContent() {
 
     const handleGridAction = (id: string) => {
         if (!profile) return;
+        if (viewingOtherProfile && (id === 'cambiar-password' || id === 'cerrar-sesion')) return;
         switch (id) {
             case 'datos-personales':
                 setModalDatosPersonales(true);
@@ -402,9 +403,7 @@ function ProfileContent() {
         String(profile?.email || '').toLowerCase() === 'hhector7722@gmail.com';
     const canManageLaborConditions = isMasterDashboardUser(currentUser?.email);
 
-    const gridItems = showAccountSection
-        ? PROFILE_GRID
-        : PROFILE_GRID.filter(i => i.id !== 'cambiar-password' && i.id !== 'cerrar-sesion');
+    const gridItems = PROFILE_GRID;
 
     if (loading) {
         return <div className="min-h-screen" />;
@@ -497,20 +496,27 @@ function ProfileContent() {
             >
                 <Surface variant="block" instance="profile-menu">
                     <div data-element="profile-actions">
-                        {gridItems.map((item) => (
-                            <button
-                                key={item.id}
-                                type="button"
-                                data-element="profile-action"
-                                data-instance={`profile-${item.id}`}
-                                onClick={() => handleGridAction(item.id)}
-                            >
-                                <span data-element="icon-wrap">
-                                    <img src={withAppIconRev(item.icon)} alt="" />
-                                </span>
-                                <span data-element="label">{item.label}</span>
-                            </button>
-                        ))}
+                        {gridItems.map((item) => {
+                            const isAccountAction =
+                                item.id === 'cambiar-password' || item.id === 'cerrar-sesion';
+                            const disabled = viewingOtherProfile && isAccountAction;
+                            return (
+                                <button
+                                    key={item.id}
+                                    type="button"
+                                    data-element="profile-action"
+                                    data-instance={`profile-${item.id}`}
+                                    data-disabled={disabled ? 'true' : undefined}
+                                    disabled={disabled}
+                                    onClick={() => handleGridAction(item.id)}
+                                >
+                                    <span data-element="icon-wrap">
+                                        <img src={withAppIconRev(item.icon)} alt="" />
+                                    </span>
+                                    <span data-element="label">{item.label}</span>
+                                </button>
+                            );
+                        })}
                     </div>
                 </Surface>
 
