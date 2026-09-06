@@ -39,8 +39,8 @@ export const STAFF_MANUAL_MENU: Array<{
     { id: 'altavoces', label: 'Altavoces', icon: '/icons/altav.png' },
     { id: 'bebidas', label: 'Bebidas', icon: '/icons/ingrediente.png' },
     { id: 'horno', label: 'Horno', icon: '/icons/horno.png' },
-    { id: 'cambios-lluvia', label: 'Cambios por Lluvia', icon: '/icons/lluvia.png' },
-    { id: 'cuadro-electrico', label: 'Acceso Cuadro Eléctrico', icon: '/icons/electrico.png' },
+    { id: 'cambios-lluvia', label: 'Cambios lluvia', icon: '/icons/lluvia.png' },
+    { id: 'cuadro-electrico', label: 'Cuadro eléctrico', icon: '/icons/electrico.png' },
 ];
 
 /** Sub-entradas del manual TPV (destinos: pendiente de definir). */
