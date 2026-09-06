@@ -45,8 +45,9 @@ type MasterTodayAttendanceWidgetProps = {
  * Arranca en el día en curso; si no tiene fichajes, salta al último día con
  * registros. La navegación entre días se hace por las esquinas inferiores
  * (izquierda = día anterior, derecha = día siguiente, sin pasar de hoy), sin
- * indicador. La franja abre el resumen del día (DaySummaryModal); un registro
- * abre el detalle del trabajador.
+ * indicador. La franja y cualquier registro abren el resumen del día
+ * (DaySummaryModal, el mismo que /staff/history al pulsar un día); desde el
+ * resumen se llega al detalle del trabajador.
  */
 
 /** Hora compacta del mosaico: «H», con minutos solo cuando son :30. */
@@ -261,8 +262,8 @@ export function MasterTodayAttendanceWidget({
                                             <button
                                                 key={log.id}
                                                 type="button"
-                                                onClick={() => setEditingUserId(log.user_id)}
-                                                className="relative flex w-full min-w-0 items-center justify-between gap-1 px-2 py-1.5 text-left transition-colors hover:bg-zinc-50 before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:content-['']"
+                                                onClick={() => setIsSummaryModalOpen(true)}
+                                                className="flex w-full min-w-0 items-center justify-between gap-1 px-2 py-0.5 text-left transition-colors hover:bg-zinc-50"
                                             >
                                                 <span className="min-w-0 flex-1 truncate text-[7px] font-medium leading-none text-zinc-700">
                                                     {log.first_name}

@@ -109,7 +109,7 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         );
         assert.match(
             home,
-            /grid-template-areas:[\s\S]*horario  horario  horario  asis[\s\S]*horario  horario  horario  asis[\s\S]*ingred   albaran  caja     hextras/,
+            /grid-template-areas:[\s\S]*horario  horario  horario  asis[\s\S]*horario  horario  horario  \.[\s\S]*ingred   albaran  caja     hextras/,
             'Master: asistencia del día 1×2 (filas 2–3, columna 4) y horarios 3×2 (filas 2–3, columnas 1–3); Caja y H. extras a la derecha'
         );
         assert.match(
