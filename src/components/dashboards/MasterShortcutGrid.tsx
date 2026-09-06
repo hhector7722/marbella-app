@@ -18,7 +18,7 @@ import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
 import { HomeScreenSlot } from '@/components/dashboards/HomeScreen';
 import { formatChangeBoxEur } from '@/components/dashboards/ops-widgets';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import type { StaffWeeklyStats, WeeklyStats } from '@/lib/hours-engine/overtime-weeks-ssot';
+import type { WeeklyStats } from '@/lib/hours-engine/overtime-weeks-ssot';
 
 type MasterShortcutGridProps = {
     actualBalance: number;
@@ -195,22 +195,52 @@ function MasterCajasCambioControl({
 }
 
 /**
- * Horas extra del mes: mes actual en cabecera y una fila por semana completada.
- * Cada fila: número de semana, importe y estado de pago (rojo = falta, verde = pagado).
+ * Horas extra del mes: calendario completo (L M X J V S D + días repartidos
+ * por semanas) con el estado de abono y el importe de cada semana a la derecha.
+ * 9 columnas (7 días + icono + importe) y 5–6 filas de semana según el mes.
  * Pulsar abre el modal de horas extras (mismo widget que el dashboard).
  * Composición local del mosaico master; no es pieza de sistema.
  */
 function MasterOvertimeIconWidget({
     monthLabel,
+    overtimeViewMonth,
     weeks,
     loading,
     onOpen,
 }: {
     monthLabel: string;
+    overtimeViewMonth: Date;
     weeks: WeeklyStats[];
     loading: boolean;
     onOpen: () => void;
 }) {
+    const weekdayHeaders = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+
+    const weeksByStart = new Map(weeks.map((week) => [week.weekId, week]));
+
+    const gridStart = startOfWeek(startOfMonth(overtimeViewMonth), { weekStartsOn: 1 });
+    const gridEnd = endOfWeek(endOfMonth(overtimeViewMonth), { weekStartsOn: 1 });
+
+    const monthRows = eachWeekOfInterval(
+        { start: gridStart, end: gridEnd },
+        { weekStartsOn: 1 },
+    ).map((weekStart) => {
+        const key = format(weekStart, 'yyyy-MM-dd');
+        const stats = weeksByStart.get(key);
+        const days = Array.from({ length: 7 }, (_, offset) => addDays(weekStart, offset));
+        const isPaid =
+            stats === undefined
+                ? null
+                : (stats.staff ?? []).every(
+                      (s) => (s.totalCost ?? 0) < 0.05 || !!s.isPaid || s.preferStock === true,
+                  );
+        const amountValue = stats?.totalAmount ?? 0;
+        const amount = amountValue > 0.05 ? `${Math.round(amountValue)}€` : '';
+        return { days, isPaid, amount };
+    });
+
+    const gridTemplate = 'grid-cols-[repeat(7,minmax(4px,1fr))_auto_auto]';
+
     return (
         <button
             type="button"
@@ -227,38 +257,50 @@ function MasterOvertimeIconWidget({
                     <span className="mt-1 shrink-0 text-center text-[6px] font-black uppercase leading-none tracking-widest text-zinc-700">
                         {monthLabel}
                     </span>
-                    <div className="flex min-h-0 flex-1 flex-col justify-center gap-[2px]">
-                        {weeks.map((week) => {
-                            const isFullyPaid = (week.staff ?? []).every((s: StaffWeeklyStats) => {
-                                const cost = s.totalCost ?? 0;
-                                return cost < 0.05 || !!s.isPaid || s.preferStock === true;
-                            });
-                            const weekTotal = week.totalAmount ?? 0;
-                            return (
-                                <div
-                                    key={week.weekId}
-                                    className="flex w-full min-w-0 items-center justify-between gap-1"
+                    <div className="flex min-h-0 flex-1 flex-col justify-center">
+                        <div className={`grid ${gridTemplate} items-center gap-x-0.5`}>
+                            {weekdayHeaders.map((header) => (
+                                <span
+                                    key={header}
+                                    className="text-center text-[5px] font-bold uppercase leading-none text-zinc-700"
                                 >
-                                    <span className="shrink-0 text-[8px] font-black leading-none tabular-nums text-zinc-800">
-                                        {getISOWeek(new Date(week.weekId))}
+                                    {header}
+                                </span>
+                            ))}
+                            <span />
+                            <span />
+                        </div>
+                        {monthRows.map((row, rowIndex) => (
+                            <div
+                                key={rowIndex}
+                                className={`grid ${gridTemplate} items-center gap-x-0.5`}
+                            >
+                                {row.days.map((day, dayIndex) => (
+                                    <span
+                                        key={dayIndex}
+                                        className="whitespace-nowrap text-center text-[5px] font-normal leading-none tabular-nums text-zinc-800"
+                                    >
+                                        {day.getMonth() === overtimeViewMonth.getMonth()
+                                            ? day.getDate()
+                                            : ''}
                                     </span>
-                                    <span className="shrink-0 text-[8px] font-normal leading-none tabular-nums text-zinc-600">
-                                        {weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}
+                                ))}
+                                {row.isPaid === null ? (
+                                    <span className="h-[7px] w-[7px] shrink-0" />
+                                ) : row.isPaid ? (
+                                    <span className="flex h-[7px] w-[7px] shrink-0 items-center justify-center rounded-full bg-emerald-500">
+                                        <Check className="h-[4px] w-[4px] text-white" strokeWidth={5} />
                                     </span>
-                                    <span className="flex shrink-0 items-center">
-                                        {isFullyPaid ? (
-                                            <span className="flex h-2.5 w-2.5 items-center justify-center rounded-full bg-emerald-500 shadow-sm">
-                                                <Check className="h-1.5 w-1.5 text-white" strokeWidth={4} />
-                                            </span>
-                                        ) : (
-                                            <span className="flex h-2.5 w-2.5 items-center justify-center rounded-full bg-rose-500 shadow-sm">
-                                                <X className="h-1.5 w-1.5 text-white" strokeWidth={3.5} />
-                                            </span>
-                                        )}
+                                ) : (
+                                    <span className="flex h-[7px] w-[7px] shrink-0 items-center justify-center rounded-full bg-rose-500">
+                                        <X className="h-[4px] w-[4px] text-white" strokeWidth={5} />
                                     </span>
-                                </div>
-                            );
-                        })}
+                                )}
+                                <span className="shrink-0 whitespace-nowrap text-[5px] font-normal leading-none tabular-nums text-zinc-600">
+                                    {row.amount}
+                                </span>
+                            </div>
+                        ))}
                     </div>
                 </>
             )}
@@ -341,6 +383,7 @@ export default function MasterShortcutGrid({
             node: (
                 <MasterOvertimeIconWidget
                     monthLabel={overtimeMonthLabel}
+                    overtimeViewMonth={overtimeViewMonth}
                     weeks={overtimeWeeksData}
                     loading={overtimeLoading}
                     onOpen={onOpenOvertime}
