@@ -257,7 +257,7 @@ function MasterOvertimeIconWidget({
                     <span className="mt-1 shrink-0 text-center text-[6px] font-black uppercase leading-none tracking-widest text-zinc-700">
                         {monthLabel}
                     </span>
-                    <div className={`mt-[3px] grid ${gridTemplate} items-center gap-x-0.5 gap-y-0.5`}>
+                    <div className={`mt-1 grid ${gridTemplate} items-center gap-x-0.5 gap-y-0.5`}>
                         {weekdayHeaders.map((header) => (
                             <span
                                 key={header}
@@ -281,14 +281,14 @@ function MasterOvertimeIconWidget({
                                     </span>
                                 ))}
                                 {row.isPaid === null ? (
-                                    <span className="h-[7px] w-[7px] shrink-0" />
+                                    <span className="h-[6px] w-[6px] shrink-0" />
                                 ) : row.isPaid ? (
-                                    <span className="flex h-[7px] w-[7px] shrink-0 items-center justify-center rounded-full bg-emerald-500">
-                                        <Check className="h-[4px] w-[4px] text-white" strokeWidth={5} />
+                                    <span className="flex h-[6px] w-[6px] shrink-0 items-center justify-center rounded-full bg-emerald-500">
+                                        <Check className="h-[3px] w-[3px] text-white" strokeWidth={5} />
                                     </span>
                                 ) : (
-                                    <span className="flex h-[7px] w-[7px] shrink-0 items-center justify-center rounded-full bg-rose-500">
-                                        <X className="h-[4px] w-[4px] text-white" strokeWidth={5} />
+                                    <span className="flex h-[6px] w-[6px] shrink-0 items-center justify-center rounded-full bg-rose-500">
+                                        <X className="h-[3px] w-[3px] text-white" strokeWidth={5} />
                                     </span>
                                 )}
                                 <span className="shrink-0 whitespace-nowrap text-[5px] font-normal leading-none tabular-nums text-zinc-600">
