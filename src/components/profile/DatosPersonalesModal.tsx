@@ -154,7 +154,7 @@ export default function DatosPersonalesModal({
 
     const recordContent = (
         <div className="p-ds-3">
-            <div className="rounded-2xl bg-white px-ds-4 py-ds-3 shadow-sm">
+            <div className="rounded-2xl bg-white px-ds-4 py-ds-3 shadow-sm" data-element="personal-record">
                 <div className="flex items-center py-ds-1">
                     <div className="min-w-0 flex-1">
                         <p className="truncate text-[15px] font-bold leading-tight text-zinc-900">

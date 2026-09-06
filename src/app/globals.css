@@ -554,6 +554,19 @@
   color: var(--color-texto-suave);
 }
 /*
+ * La ficha de Datos personales es una hoja A4 blanca sobre el modal azul:
+ * revierte el blanqueo que el scheme dark aplica a .bg-white y a los textos.
+ */
+[data-component='Modal'][data-scheme='dark'] [data-element='body'] [data-element='personal-record'] .bg-white {
+  background-color: var(--color-superficie);
+}
+[data-component='Modal'][data-scheme='dark'] [data-element='body'] [data-element='personal-record'] :is(.text-gray-700, .text-gray-800, .text-zinc-700, .text-zinc-800, .text-zinc-900) {
+  color: var(--color-texto);
+}
+[data-component='Modal'][data-scheme='dark'] [data-element='body'] [data-element='personal-record'] :is(.text-gray-400, .text-gray-500, .text-zinc-400, .text-zinc-500) {
+  color: var(--color-texto-suave);
+}
+/*
  * Editor de día embebido (modo edición del modal de horario): hereda el azul
  * del modal y adapta los colores que el scheme dark no cubre.
  */

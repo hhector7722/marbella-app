@@ -38,6 +38,7 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-06
 
+- **Perfil: la ficha de «Datos personales» recupera su fondo blanco.** El esquema oscuro del modal transparentaba cualquier `bg-white` del body, así que la hoja se veía azul aunque el código la pintara blanca. La ficha revierte ahora ese blanqueo (como la tabla del horario) y se muestra como hoja A4 blanca con sus textos oscuros sobre el azul del modal.
 - **Perfil: Convenio y Código de Conducta muestran una miniatura del documento.** Los modales dejan de mostrar un icono sobre una tarjeta y enseñan la primera página real del PDF como imagen en miniatura; clic en la miniatura o «Abrir documento» abre el PDF.
 - **Perfil: las nóminas se ordenan por fecha de periodo, la más reciente primero.** La lista del modal de nóminas deja de ordenarse por nombre de archivo y ordena por periodo (año y mes) descendente, deduciendo el mes de la columna o del nombre del archivo cuando falta; ante empate o periodo desconocido, cae a la fecha de registro.
 - **Perfil: la ficha de «Datos personales» se ve como una hoja A4 sobre el azul del modal.** Sobre el fondo azul marino del modal, los datos del empleado van en una hoja blanca con sombra y separación del borde, imitando una ficha física real. Se mantienen los ajustes previos: sin cabecera petróleo, valores pequeños y sin negrita, títulos sin mayúsculas y campos vacíos sin «—».

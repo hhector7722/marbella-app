@@ -1312,6 +1312,54 @@ export default function HistoryPage() {
         }
     };
 
+    const lastClosingKpis = [
+        {
+            label: 'Ventas',
+            value: lastClosing
+                ? formatValue(lastClosingMetrics.tpvSales, 'tpv_sales')
+                : ' ',
+        },
+        {
+            label: 'Venta neta',
+            value: lastClosing
+                ? formatValue(lastClosingMetrics.netSales, 'net_sales')
+                : ' ',
+        },
+        {
+            label: 'Tarjeta',
+            value: lastClosing
+                ? formatValue(lastClosingMetrics.salesCard, 'tpv_sales')
+                : ' ',
+        },
+        {
+            label: 'Efectivo',
+            value: lastClosing
+                ? formatValue(lastClosingMetrics.cashCounted, 'cash_counted')
+                : ' ',
+        },
+    ] as const;
+
+    const lastClosingKpisSecundarios = [
+        {
+            label: 'Pendiente pago',
+            value: lastClosing
+                ? formatValue(lastClosingMetrics.salesPending, 'tpv_sales')
+                : ' ',
+        },
+        {
+            label: 'Cobros pendientes',
+            value: lastClosing
+                ? formatValue(lastClosingMetrics.debtRecovered, 'tpv_sales')
+                : ' ',
+        },
+        {
+            label: 'Diferencia',
+            value: lastClosing
+                ? formatDifference(lastClosingMetrics.difference)
+                : ' ',
+        },
+    ] as const;
+
     return (
         <>
         <DashboardDetailLayout
@@ -1466,79 +1514,49 @@ export default function HistoryPage() {
                                 </span>
                             </div>
                         </div>
-                        <div className="mt-8 grid grid-cols-4 gap-0.5">
-                            {(
-                                [
-                                    {
-                                        label: 'Ventas',
-                                        value: lastClosing
-                                            ? formatValue(lastClosingMetrics.tpvSales, 'tpv_sales')
-                                            : ' ',
-                                    },
-                                    {
-                                        label: 'Venta neta',
-                                        value: lastClosing
-                                            ? formatValue(lastClosingMetrics.netSales, 'net_sales')
-                                            : ' ',
-                                    },
-                                    {
-                                        label: 'Tarjeta',
-                                        value: lastClosing
-                                            ? formatValue(lastClosingMetrics.salesCard, 'tpv_sales')
-                                            : ' ',
-                                    },
-                                    {
-                                        label: 'Efectivo',
-                                        value: lastClosing
-                                            ? formatValue(lastClosingMetrics.cashCounted, 'cash_counted')
-                                            : ' ',
-                                    },
-                                ] as const
-                            ).map((item) => (
+                        <div className="mt-8 grid grid-cols-4 gap-x-0.5">
+                            {lastClosingKpis.map((item) => (
                                 <div
                                     key={item.label}
-                                    className="flex min-w-0 flex-col items-center justify-center text-center"
+                                    className="flex min-w-0 items-start justify-center text-center"
                                 >
                                     <span className="text-[10px] sm:text-xs md:text-sm font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
                                         {item.value}
                                     </span>
-                                    <span className="mt-1 text-[8px] md:text-[9px] font-black text-zinc-400 uppercase tracking-wider leading-tight">
+                                </div>
+                            ))}
+                        </div>
+                        <div className="mt-1 grid grid-cols-4 gap-x-0.5">
+                            {lastClosingKpis.map((item) => (
+                                <div
+                                    key={item.label}
+                                    className="flex min-w-0 items-start justify-center text-center"
+                                >
+                                    <span className="text-[8px] md:text-[9px] font-black text-zinc-400 uppercase tracking-wider leading-tight">
                                         {item.label}
                                     </span>
                                 </div>
                             ))}
                         </div>
-                        <div className="mt-8 grid grid-cols-3 gap-0.5">
-                            {(
-                                [
-                                    {
-                                        label: 'Pendiente pago',
-                                        value: lastClosing
-                                            ? formatValue(lastClosingMetrics.salesPending, 'tpv_sales')
-                                            : ' ',
-                                    },
-                                    {
-                                        label: 'Cobros pendientes',
-                                        value: lastClosing
-                                            ? formatValue(lastClosingMetrics.debtRecovered, 'tpv_sales')
-                                            : ' ',
-                                    },
-                                    {
-                                        label: 'Diferencia',
-                                        value: lastClosing
-                                            ? formatDifference(lastClosingMetrics.difference)
-                                            : ' ',
-                                    },
-                                ] as const
-                            ).map((item) => (
+                        <div className="mt-8 grid grid-cols-3 gap-x-0.5">
+                            {lastClosingKpisSecundarios.map((item) => (
                                 <div
                                     key={item.label}
-                                    className="flex min-w-0 flex-col items-center justify-center text-center"
+                                    className="flex min-w-0 items-start justify-center text-center"
                                 >
                                     <span className="text-[10px] sm:text-xs md:text-sm font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
                                         {item.value}
                                     </span>
-                                    <span className="mt-1 text-[8px] md:text-[9px] font-black text-zinc-400 uppercase tracking-wider leading-tight">
+                                </div>
+                            ))}
+                        </div>
+                        <div className="mt-1 grid grid-cols-3 gap-x-0.5">
+                            {lastClosingKpisSecundarios.map((item) => (
+                                <div
+                                    key={item.label}
+                                    className="flex min-w-0 items-start justify-center text-center"
+                                >
+                                    <span className="text-[8px] md:text-[9px] font-black text-zinc-400 uppercase tracking-wider leading-tight">
                                         {item.label}
                                     </span>
                                 </div>
