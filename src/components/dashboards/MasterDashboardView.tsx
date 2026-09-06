@@ -136,6 +136,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
     const [userEmail, setUserEmail] = useState('');
     const [plantillaEmployees, setPlantillaEmployees] = useState<PlantillaEmployeeRow[]>([]);
     const [isMoreFunctionsModalOpen, setIsMoreFunctionsModalOpen] = useState(false);
+    const [attendanceExpanded, setAttendanceExpanded] = useState(false);
 
     const changeBoxes = useMemo(
         () => boxes.filter((b) => b.type === 'change').sort((a, b) => (a.name || '').localeCompare(b.name || '')),
@@ -542,7 +543,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
 
     return (
         <div className="pt-1 animate-in fade-in duration-500 pb-8">
-            <HomeScreen layout="master">
+            <HomeScreen layout="master" className={attendanceExpanded ? 'asis-expanded' : undefined}>
                 <HomeScreenSlot size="wide" instance="dashboard-ventas">
                     <DashboardVentasSection
                         initialData={{
@@ -551,11 +552,16 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                         }}
                     />
                 </HomeScreenSlot>
-                <HomeScreenSlot size="tile" instance="master-asistencia">
+                <HomeScreenSlot
+                    size={attendanceExpanded ? 'tall' : 'tile'}
+                    instance="master-asistencia"
+                    label={attendanceExpanded ? undefined : 'Asistencia'}
+                >
                     <MasterTodayAttendanceWidget
                         userRole={userRole}
                         viewerEmail={userEmail}
                         employees={plantillaEmployees}
+                        onExpandChange={setAttendanceExpanded}
                     />
                 </HomeScreenSlot>
                 <HomeScreenSlot size="panel" instance="master-horarios">

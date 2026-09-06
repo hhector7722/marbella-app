@@ -2975,7 +2975,8 @@ button[data-element='catalog-filter'] {
 }
 /*
  * Master (/master/dashboard): ventas 4×1; horarios 3×2 (filas 2–3, columnas 1–3);
- * asistencia del día 1×1 (fila 2, columna 4); iconos reposicionados.
+ * asistencia del día 1×1, del tamaño de icono+nombre (fila 2, columna 4). Si los
+ * registros no caben, `asis-expanded` la crece a 1×2 (filas 2–3, columna 4).
  * «Otros» abre el modal de accesos (proveedores, web, carta, consumo,
  * horarios, asistencia, cierre, propinas, recetas, rentabilidad, plantilla).
  */
@@ -2989,6 +2990,15 @@ button[data-element='catalog-filter'] {
     'otros    .        .        .';
   grid-template-rows: repeat(6, var(--home-row-track));
   grid-auto-flow: row;
+}
+[data-component='HomeScreen'][data-layout='master'].asis-expanded {
+  grid-template-areas:
+    'ventas   ventas   ventas   ventas'
+    'horario  horario  horario  asis'
+    'horario  horario  horario  asis'
+    'ingred   albaran  caja     hextras'
+    'cambio   reservas uso      cajascambio'
+    'otros    .        .        .';
 }
 [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='dashboard-ventas'] {
   grid-area: ventas;

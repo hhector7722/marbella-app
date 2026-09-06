@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { addDays, format, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -37,6 +37,11 @@ type MasterTodayAttendanceWidgetProps = {
     viewerEmail: string;
     /** Plantilla visible: rosters de los modales de día y de asistencia. */
     employees: PlantillaEmployeeRow[];
+    /**
+     * Avisa de si los registros desbordan el alto compacto (1×1 con nombre).
+     * true → el slot debe crecer; false → cabe como icono+nombre.
+     */
+    onExpandChange?: (expanded: boolean) => void;
 };
 
 /**
@@ -62,12 +67,29 @@ export function MasterTodayAttendanceWidget({
     userRole,
     viewerEmail,
     employees,
+    onExpandChange,
 }: MasterTodayAttendanceWidgetProps) {
     const [loading, setLoading] = useState(true);
     const [today, setToday] = useState<string | null>(null);
     const [logs, setLogs] = useState<EnrichedTodayLog[]>([]);
     const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
     const [editingUserId, setEditingUserId] = useState<string | null>(null);
+
+    const redBarRef = useRef<HTMLDivElement>(null);
+    const logsBlockRef = useRef<HTMLDivElement>(null);
+
+    /**
+     * Alto de lista disponible en modo compacto: el cuerpo del slot con nombre
+     * mide `--home-icon-size` (4.5rem = 72 px) menos la franja roja.
+     */
+    useEffect(() => {
+        if (loading) return;
+        const block = logsBlockRef.current;
+        const headerH = redBarRef.current?.offsetHeight ?? 10;
+        const compactListH = 72 - headerH;
+        const contentH = block ? block.scrollHeight : 0;
+        onExpandChange?.(contentH > compactListH + 1);
+    }, [logs, loading, onExpandChange]);
 
     const employeesOption = useMemo(
         () =>
@@ -237,7 +259,7 @@ export function MasterTodayAttendanceWidget({
                 ) : null}
                 {today ? (
                     <>
-                        <div className="flex shrink-0 items-stretch bg-gradient-to-b from-red-500 to-red-600 shadow-sm">
+                        <div className="flex shrink-0 items-stretch bg-gradient-to-b from-red-500 to-red-600 shadow-sm" ref={redBarRef}>
                             <button
                                 type="button"
                                 onClick={() => setIsSummaryModalOpen(true)}
@@ -254,36 +276,38 @@ export function MasterTodayAttendanceWidget({
                                 <EmptyState instance="master-today-none" variant="none" title="Sin fichajes" />
                             ) : (
                                 <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-                                    {logs.map((log) => {
-                                        const isNoRegistered =
-                                            log.event_type === 'no_registered' ||
-                                            log.clock_out_show_no_registrada === true;
-                                        return (
-                                            <button
-                                                key={log.id}
-                                                type="button"
-                                                onClick={() => setIsSummaryModalOpen(true)}
-                                                className="flex w-full min-w-0 items-center justify-between gap-1 px-2 py-0.5 text-left transition-colors hover:bg-zinc-50"
-                                            >
-                                                <span className="min-w-0 flex-1 truncate text-[7px] font-medium leading-none text-zinc-700">
-                                                    {log.first_name}
-                                                </span>
-                                                <span className="flex shrink-0 items-center text-[7px] font-bold leading-none tabular-nums">
-                                                    <span className={isNoRegistered ? 'text-rose-700' : 'text-emerald-700'}>
-                                                        {formatCompactHour(log.in_time) || '--:--'}
+                                    <div className="m-auto flex w-full flex-col" ref={logsBlockRef}>
+                                        {logs.map((log) => {
+                                            const isNoRegistered =
+                                                log.event_type === 'no_registered' ||
+                                                log.clock_out_show_no_registrada === true;
+                                            return (
+                                                <button
+                                                    key={log.id}
+                                                    type="button"
+                                                    onClick={() => setIsSummaryModalOpen(true)}
+                                                    className="flex w-full min-w-0 items-center justify-between gap-1 px-2 py-0.5 text-left transition-colors hover:bg-zinc-50"
+                                                >
+                                                    <span className="min-w-0 flex-1 truncate text-[7px] font-medium leading-none text-zinc-700">
+                                                        {log.first_name}
                                                     </span>
-                                                    {log.out_time ? (
-                                                        <>
-                                                            <span className="font-normal text-zinc-400">-</span>
-                                                            <span className="text-rose-700">
-                                                                {formatCompactHour(log.out_time)}
-                                                            </span>
-                                                        </>
-                                                    ) : null}
-                                                </span>
-                                            </button>
-                                        );
-                                    })}
+                                                    <span className="flex shrink-0 items-center text-[7px] font-bold leading-none tabular-nums">
+                                                        <span className={isNoRegistered ? 'text-rose-700' : 'text-emerald-700'}>
+                                                            {formatCompactHour(log.in_time) || '--:--'}
+                                                        </span>
+                                                        {log.out_time ? (
+                                                            <>
+                                                                <span className="font-normal text-zinc-400">-</span>
+                                                                <span className="text-rose-700">
+                                                                    {formatCompactHour(log.out_time)}
+                                                                </span>
+                                                            </>
+                                                        ) : null}
+                                                    </span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             )}
                             <button
