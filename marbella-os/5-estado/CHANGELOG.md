@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-06
 
+- **Perfil: «Datos personales» se ve en modo lectura.** El modal deja de abrir el formulario de edición para quien tiene permiso: todos lo ven como ficha de solo lectura, también el manager `hhector7722@gmail.com` al entrar. Solo él tiene el botón de edición en la zona derecha de la cabecera, que cambia al modo edición con Cancelar y Guardar en el pie.
+- **Perfil: la ficha personal se rediseña como ficha física.** Cabecera petróleo con foto, nombre y referencia del documento; secciones Identificación, Contacto, Domicilio y Documento a dos columnas con separadores finos. El contenido se compacta para reducir el scroll. [TOKENS](../2-diseno/TOKENS.md), [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 - **Master: H. extras pasa a llamarse «H extras» y el mes respira.** La etiqueta del atajo del mosaico se escribe sin punto («H extras»), y el nombre del mes baja del borde del hueco con un margen de 4 px para no pegarse al inicio del icono.
 - **Master: el icono de H extras es un calendario completo del mes.** El hueco del mosaico muestra la fila de días (L M X J V S D) y los números del mes repartidos por semanas; a la derecha de cada semana, un indicador de abono (verde con tic = semana pagada, rojo con cruz = pendiente) y el importe de las horas extra. Son 9 columnas y 5–6 filas de semana según el mes, con tipografía muy reducida para caber en el hueco.
 
