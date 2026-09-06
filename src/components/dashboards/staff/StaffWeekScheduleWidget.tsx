@@ -303,6 +303,71 @@ function WeekExpansion({
     );
 }
 
+function WeekExtCell({
+    weekDays,
+    week,
+    loading,
+    onOpenWeekDetail,
+}: {
+    weekDays: Date[];
+    week: WeeklyStats | undefined;
+    loading: boolean;
+    onOpenWeekDetail?: (week: WeeklyStats) => void;
+}) {
+    const total = weekOvertimeTotal(week);
+    const paid = isWeekPaid(week);
+    return (
+        <button
+            type="button"
+            onClick={(e) => {
+                e.stopPropagation();
+                if (week) onOpenWeekDetail?.(week);
+            }}
+            aria-label={
+                week
+                    ? `Horas extra semana del ${format(weekDays[0], 'd MMM', { locale: es })}: ${total.toFixed(0)}€${paid ? ', pagada' : ', sin pagar'}`
+                    : 'Horas extra sin importe esta semana'
+            }
+            className={cn(
+                'relative flex w-full items-center justify-center gap-0.5 transition-colors',
+                'before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']',
+                week && 'hover:bg-white/10',
+                !week && 'cursor-default',
+            )}
+        >
+            {loading ? (
+                <LoadingSpinner size="sm" className="text-white/60" />
+            ) : week ? (
+                <>
+                    <span
+                        data-element="weekend-ext-value"
+                        className={cn(
+                            'text-[7px] tabular-nums leading-none',
+                            paid ? 'font-semibold text-white/90' : 'font-semibold text-white/70',
+                        )}
+                    >
+                        {total.toFixed(0)}€
+                    </span>
+                    <span
+                        data-element="weekend-ext-paid"
+                        data-paid={paid ? 'true' : 'false'}
+                        className={cn(
+                            'flex h-2.5 w-2.5 shrink-0 items-center justify-center rounded-full',
+                            paid ? 'bg-emerald-500' : 'bg-rose-500',
+                        )}
+                    >
+                        {paid ? (
+                            <Check className="h-1.5 w-1.5 text-white" strokeWidth={4} />
+                        ) : (
+                            <X className="h-1.5 w-1.5 text-white" strokeWidth={4} />
+                        )}
+                    </span>
+                </>
+            ) : null}
+        </button>
+    );
+}
+
 export function StaffWeekScheduleWidget({
     userId,
     onOpenNote,
@@ -487,109 +552,113 @@ export function StaffWeekScheduleWidget({
                                 const isExpanded = isSameWeek(weekStart, expandedWeekStart, { weekStartsOn: 1 });
 
                                 return (
-                                    <div
-                                        key={weekKey}
-                                        data-element="week-block"
-                                        data-expanded={isExpanded ? 'true' : undefined}
-                                    >
-                                        <div
-                                            className={cn('grid gap-px', masterMode ? WEEK_GRID_COLS_EXT : WEEK_GRID_COLS)}
-                                            data-week-row={isExpanded ? 'expanded' : undefined}
+<div
+                                            key={weekKey}
+                                            data-element="week-block"
+                                            data-expanded={isExpanded ? 'true' : undefined}
                                         >
-                                            {weekDays.map((day) => {
-                                                const inMonth = isSameMonth(day, monthAnchor);
-                                                const today = isToday(day);
-
-                                                return (
-                                                    <button
-                                                        key={day.toISOString()}
-                                                        type="button"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleDaySelect(day);
-                                                        }}
-                                                        aria-label={format(day, "EEEE d 'de' MMMM", { locale: es })}
-                                                        aria-current={today ? 'date' : undefined}
-                                                        className={cn(
-                                                            'relative flex w-full items-center justify-center transition-colors',
-                                                            'before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']',
-                                                            !today && 'hover:bg-white/10',
-                                                        )}
+                                            {masterMode && isExpanded ? (
+                                                <div className="grid grid-cols-8 gap-px">
+                                                    <div
+                                                        className="grid grid-cols-7 gap-px"
+                                                        data-week-row="expanded"
                                                     >
-                                                        <span
-                                                            data-today={today ? 'true' : undefined}
-                                                            className={cn(
-                                                                'text-[7px] tabular-nums leading-none',
-                                                                today &&
-                                                                    'flex h-[var(--staff-week-day-size)] w-[var(--staff-week-day-size)] items-center justify-center rounded-full bg-emerald-500 font-black text-white',
-                                                                !today && !inMonth && 'font-medium text-white/45',
-                                                                !today && inMonth && 'font-semibold text-white/90',
-                                                            )}
-                                                        >
-                                                            {format(day, 'd')}
-                                                        </span>
-                                                    </button>
-                                                );
-                                            })}
+                                                        {weekDays.map((day) => {
+                                                            const inMonth = isSameMonth(day, monthAnchor);
+                                                            const today = isToday(day);
 
-                                            {masterMode ? (() => {
-                                                const week = overtimeWeeks[weekKey];
-                                                const total = weekOvertimeTotal(week);
-                                                const paid = isWeekPaid(week);
-                                                return (
-                                                    <button
-                                                        type="button"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            if (week) onOpenWeekDetail?.(week);
-                                                        }}
-                                                        aria-label={
-                                                            week
-                                                                ? `Horas extra semana del ${format(weekDays[0], 'd MMM', { locale: es })}: ${total.toFixed(0)}€${paid ? ', pagada' : ', sin pagar'}`
-                                                                : 'Horas extra sin importe esta semana'
-                                                        }
-                                                        className={cn(
-                                                            'relative flex w-full items-center justify-center gap-0.5 transition-colors',
-                                                            'before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']',
-                                                            week && 'hover:bg-white/10',
-                                                            !week && 'cursor-default',
-                                                        )}
-                                                    >
-                                                        {overtimeLoading ? (
-                                                            <LoadingSpinner size="sm" className="text-white/60" />
-                                                        ) : week ? (
-                                                            <>
+                                                            return (
+                                                                <button
+                                                                    key={day.toISOString()}
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleDaySelect(day);
+                                                                    }}
+                                                                    aria-label={format(day, "EEEE d 'de' MMMM", { locale: es })}
+                                                                    aria-current={today ? 'date' : undefined}
+                                                                    className={cn(
+                                                                        'relative flex w-full items-center justify-center transition-colors',
+                                                                        'before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']',
+                                                                        !today && 'hover:bg-white/10',
+                                                                    )}
+                                                                >
+                                                                    <span
+                                                                        data-today={today ? 'true' : undefined}
+                                                                        className={cn(
+                                                                            'text-[7px] tabular-nums leading-none',
+                                                                            today &&
+                                                                                'flex h-[var(--staff-week-day-size)] w-[var(--staff-week-day-size)] items-center justify-center rounded-full bg-emerald-500 font-black text-white',
+                                                                            !today && !inMonth && 'font-medium text-white/45',
+                                                                            !today && inMonth && 'font-semibold text-white/90',
+                                                                        )}
+                                                                    >
+                                                                        {format(day, 'd')}
+                                                                    </span>
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                    <div className="col-span-1 flex items-center justify-center" data-element="week-ext-cell">
+                                                        <WeekExtCell
+                                                            weekDays={weekDays}
+                                                            week={overtimeWeeks[weekKey]}
+                                                            loading={overtimeLoading}
+                                                            onOpenWeekDetail={onOpenWeekDetail}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div
+                                                    className={cn('grid gap-px', masterMode ? WEEK_GRID_COLS_EXT : WEEK_GRID_COLS)}
+                                                    data-week-row={isExpanded ? 'expanded' : undefined}
+                                                >
+                                                    {weekDays.map((day) => {
+                                                        const inMonth = isSameMonth(day, monthAnchor);
+                                                        const today = isToday(day);
+
+                                                        return (
+                                                            <button
+                                                                key={day.toISOString()}
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleDaySelect(day);
+                                                                }}
+                                                                aria-label={format(day, "EEEE d 'de' MMMM", { locale: es })}
+                                                                aria-current={today ? 'date' : undefined}
+                                                                className={cn(
+                                                                    'relative flex w-full items-center justify-center transition-colors',
+                                                                    'before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']',
+                                                                    !today && 'hover:bg-white/10',
+                                                                )}
+                                                            >
                                                                 <span
-                                                                    data-element="weekend-ext-value"
+                                                                    data-today={today ? 'true' : undefined}
                                                                     className={cn(
                                                                         'text-[7px] tabular-nums leading-none',
-                                                                        paid ? 'font-semibold text-white/90' : 'font-semibold text-white/70',
+                                                                        today &&
+                                                                            'flex h-[var(--staff-week-day-size)] w-[var(--staff-week-day-size)] items-center justify-center rounded-full bg-emerald-500 font-black text-white',
+                                                                        !today && !inMonth && 'font-medium text-white/45',
+                                                                        !today && inMonth && 'font-semibold text-white/90',
                                                                     )}
                                                                 >
-                                                                    {total.toFixed(0)}€
+                                                                    {format(day, 'd')}
                                                                 </span>
-                                                                <span
-                                                                    data-element="weekend-ext-paid"
-                                                                    data-paid={paid ? 'true' : 'false'}
-                                                                    className={cn(
-                                                                        'flex h-2.5 w-2.5 shrink-0 items-center justify-center rounded-full',
-                                                                        paid ? 'bg-emerald-500' : 'bg-rose-500',
-                                                                    )}
-                                                                >
-                                                                    {paid ? (
-                                                                        <Check className="h-1.5 w-1.5 text-white" strokeWidth={4} />
-                                                                    ) : (
-                                                                        <X className="h-1.5 w-1.5 text-white" strokeWidth={4} />
-                                                                    )}
-                                                                </span>
-                                                            </>
-                                                        ) : (
-                                                            <span className="text-[7px] leading-none text-white/30">—</span>
-                                                        )}
-                                                    </button>
-                                                );
-                                            })() : null}
-                                        </div>
+                                                            </button>
+                                                        );
+                                                    })}
+
+                                                    {masterMode ? (
+                                                        <WeekExtCell
+                                                            weekDays={weekDays}
+                                                            week={overtimeWeeks[weekKey]}
+                                                            loading={overtimeLoading}
+                                                            onOpenWeekDetail={onOpenWeekDetail}
+                                                        />
+                                                    ) : null}
+                                                </div>
+                                            )}
 
                                         {isExpanded ? (
                                             <WeekExpansion

@@ -6,7 +6,7 @@ import { addDays, addMonths, endOfMonth, format, getISOWeek, startOfMonth, subMo
 import { es } from 'date-fns/locale';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'sonner';
-import { Check, ChevronLeft, ChevronRight, Circle, Minus, Plus, RefreshCw, ShoppingCart } from 'lucide-react';
+import { Check, Circle, Minus, Plus, RefreshCw, ShoppingCart } from 'lucide-react';
 import { getOvertimeData, togglePaidStatus } from '@/app/actions/overtime';
 import DashboardVentasSection from '@/components/dashboards/DashboardVentasSection';
 import MasterShortcutGrid from '@/components/dashboards/MasterShortcutGrid';
@@ -34,7 +34,7 @@ import {
 import { canManageStaffAttendance } from '@/lib/staff/attendance-access';
 import { PurchaseMultiSourceForm, type PaymentSourceOption, type PurchaseMultiSourcePayload } from '@/components/PurchaseMultiSourceForm';
 import type { StaffWeeklyStats, WeeklyStats } from '@/lib/hours-engine/overtime-weeks-ssot';
-import { WorkerListSummary, WorkerPersonRow } from '@/components/staff/WorkerPersonRow';
+import { WorkerPersonRow } from '@/components/staff/WorkerPersonRow';
 import WorkerWeeklyHistoryModal from '@/components/WorkerWeeklyHistoryModal';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -863,11 +863,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                     .reduce((sum: number, s: StaffWeeklyStats) => sum + (s.totalCost ?? 0), 0);
                 const weekNum = getISOWeek(new Date(week.weekId));
                 const periodStr = `${format(new Date(week.weekId), 'd MMM', { locale: es })} - ${format(addDays(new Date(week.weekId), 6), 'd MMM yyyy', { locale: es })}`;
-                const allWeeks = Array.from(new Map((overtimeWeeksData || []).map((w: WeeklyStats) => [w.weekId, w])).values());
-                const sortedWeeks = [...allWeeks].sort((a: WeeklyStats, b: WeeklyStats) => a.weekId.localeCompare(b.weekId));
-                const currentIdx = sortedWeeks.findIndex((w: any) => w.weekId === week.weekId);
-                const prevWeek = currentIdx > 0 ? sortedWeeks[currentIdx - 1] : null;
-                const nextWeek = currentIdx >= 0 && currentIdx < sortedWeeks.length - 1 ? sortedWeeks[currentIdx + 1] : null;
+                const fullyPaid = weekTotal > 0.05 && paidTotal >= weekTotal - 0.05;
                 return (
                     <Modal
                         open
@@ -884,53 +880,40 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                         headerTone="petroleum"
                         title={`Semana ${weekNum}`}
                         subtitle={periodStr}
+                        headerTrailing={
+                            weekTotal > 0.05 ? (
+                                <div className="flex h-full shrink-0 items-center gap-1">
+                                    {paidTotal > 0.05 && !fullyPaid ? (
+                                        <span className="flex items-center rounded-full bg-orange-500 px-2 text-[10px] font-bold leading-none tabular-nums text-white">
+                                            {paidTotal.toFixed(0)}€
+                                        </span>
+                                    ) : null}
+                                    <span
+                                        className={cn(
+                                            'flex items-center rounded-full px-2 text-[10px] font-bold leading-none tabular-nums text-white',
+                                            fullyPaid ? 'bg-emerald-500' : 'bg-rose-500',
+                                        )}
+                                    >
+                                        {weekTotal.toFixed(0)}€
+                                    </span>
+                                </div>
+                            ) : undefined
+                        }
                     >
                         <div>
-                            <WorkerListSummary
-                                metrics={
-                                    paidTotal > 0.05
-                                        ? [{ label: 'Pagado', value: `${paidTotal.toFixed(0)}€` }]
-                                        : []
-                                }
-                                total={weekTotal > 0.05 ? `${weekTotal.toFixed(0)}€` : ' '}
-                            />
-                            <div className="mb-1 flex justify-end">
-                                <div className="inline-flex items-center gap-1.5">
-                                    <button
-                                        type="button"
-                                        onClick={() => { if (prevWeek) setOvertimeWeekDetail(prevWeek); }}
-                                        disabled={!prevWeek}
-                                        className="flex h-12 w-12 items-center justify-center rounded-lg text-zinc-700 hover:bg-zinc-100 disabled:pointer-events-none disabled:opacity-30"
-                                        aria-label="Semana anterior"
-                                    >
-                                        <ChevronLeft className="h-5 w-5" />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => { if (nextWeek) setOvertimeWeekDetail(nextWeek); }}
-                                        disabled={!nextWeek}
-                                        className="flex h-12 w-12 items-center justify-center rounded-lg text-zinc-700 hover:bg-zinc-100 disabled:pointer-events-none disabled:opacity-30"
-                                        aria-label="Semana siguiente"
-                                    >
-                                        <ChevronRight className="h-5 w-5" />
-                                    </button>
-                                </div>
-                            </div>
-                            <div>
-                                {weekStaff.map((s: StaffWeeklyStats) => (
-                                    <MasterStaffOvertimeRow
-                                        key={s.id}
-                                        staff={{ ...s, name: s.name.split(' ')[0] ?? s.name }}
-                                        weekId={week.weekId}
-                                        isPaid={overtimePaidStatus[`${week.weekId}-${s.id}`] ?? !!s.isPaid}
-                                        onTogglePaid={toggleOvertimePaid}
-                                        onClick={() => setOvertimeWorkerHistory({ workerId: s.id, weekId: week.weekId })}
-                                    />
-                                ))}
-                                {weekStaff.length === 0 && (
-                                    <EmptyState instance="master-overtime-week-none" variant="none" title="Sin importes esta semana" />
-                                )}
-                            </div>
+                            {weekStaff.map((s: StaffWeeklyStats) => (
+                                <MasterStaffOvertimeRow
+                                    key={s.id}
+                                    staff={{ ...s, name: s.name.split(' ')[0] ?? s.name }}
+                                    weekId={week.weekId}
+                                    isPaid={overtimePaidStatus[`${week.weekId}-${s.id}`] ?? !!s.isPaid}
+                                    onTogglePaid={toggleOvertimePaid}
+                                    onClick={() => setOvertimeWorkerHistory({ workerId: s.id, weekId: week.weekId })}
+                                />
+                            ))}
+                            {weekStaff.length === 0 && (
+                                <EmptyState instance="master-overtime-week-none" variant="none" title="Sin importes esta semana" />
+                            )}
                         </div>
                     </Modal>
                 );
