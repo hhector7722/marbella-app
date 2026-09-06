@@ -41,14 +41,14 @@ const formatHorario = (start: string, end: string) => {
     return [s, e].filter(Boolean).join(' - ');
 };
 
-/** «08:00» → «8» · «08:30» → «8:30» · «08:15» → «8:15». Sin segundos; minutos solo si no son en punto. */
+/** «08:00» → «8» · «08:30» → «8:30». Solo se muestran los minutos si son exactamente «30». */
 function formatHourShort(time: string | null | undefined): string {
     const parts = String(time ?? '').split(':');
     const h = Number.parseInt(parts[0] ?? '', 10);
     if (!Number.isFinite(h)) return String(time ?? '').trim();
     const mins = parts[1] ?? '';
-    if (!mins || mins === '00' || mins === '0') return String(h);
-    return `${h}:${mins}`;
+    if (mins === '30') return `${h}:30`;
+    return String(h);
 }
 
 /** Fecha en formato largo («Domingo 6 de septiembre») con la primera letra en mayúscula. */
@@ -118,7 +118,7 @@ const SummaryGrid = ({
 }) => (
     <div className="grid w-full min-w-0 auto-rows-min gap-x-1.5 gap-y-1 pb-0.5 [grid-template-columns:repeat(4,minmax(0,1fr))]">
         <SummaryCell label="Evento" value={activity} />
-        <SummaryCell label="Horario" value={horario} valueClassName="text-emerald-300 whitespace-nowrap tabular-nums" />
+        <SummaryCell label="Horario" value={horario} valueClassName="text-white whitespace-nowrap tabular-nums" />
         <SummaryCell label="Pax" value={pax} />
         <SummaryCell label="Categoria" value={categoria} />
     </div>

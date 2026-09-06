@@ -110,6 +110,27 @@ const stepTime = (timeStr: string, deltaMinutes: number): string => {
     return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
 };
 
+/** «08:00» → «8» · «08:30» → «8:30». Solo se muestran los minutos si son exactamente «30». */
+function formatHourShort(time: string | null | undefined): string {
+    const parts = String(time ?? '').split(':');
+    const h = Number.parseInt(parts[0] ?? '', 10);
+    if (!Number.isFinite(h)) return String(time ?? '').trim();
+    const mins = parts[1] ?? '';
+    if (mins === '30') return `${h}:30`;
+    return String(h);
+}
+
+/** Convierte el texto tecleado («8», «8:30», «08:00») a «HH:mm». Vacío → ''. */
+function parseHourInput(raw: string): string {
+    const t = String(raw ?? '').trim();
+    if (!t) return '';
+    const m = /^(\d{1,2})(?::(\d{1,2}))?$/.exec(t);
+    if (!m) return raw;
+    const h = Math.min(23, Number(m[1]));
+    const min = m[2] ? Math.min(59, Number(m[2])) : 0;
+    return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+}
+
 // --- BARRA INTERACTIVA: mismo aspecto que el modal (verde #34d399, sombra) ---
 const ShiftBar = ({
     shift,
@@ -188,7 +209,7 @@ const ShiftBar = ({
     return (
         <div
             ref={barRef}
-            className={cn('absolute top-2.5 bottom-2.5 flex items-center justify-between rounded-full z-10 touch-none overflow-hidden px-1.5', barClass, allowMove ? 'cursor-grab active:cursor-grabbing' : 'cursor-default')}
+            className={cn('absolute top-2 bottom-2 flex items-center justify-between rounded-full z-10 touch-none overflow-hidden px-1.5', barClass, allowMove ? 'cursor-grab active:cursor-grabbing' : 'cursor-default')}
             style={{
                 left: `${leftPos}%`,
                 width: `${width}%`,
@@ -895,30 +916,30 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                 <div className="flex w-full items-center gap-0.5">
                     <ShrinkToFitInput
                         wrapClassName="min-h-0 flex-1"
-                        type="time"
-                        value={defaultStart}
+                        type="text"
+                        value={formatHourShort(defaultStart)}
                         onChange={(e) => {
-                            setDefaultStart(e.target.value);
+                            setDefaultStart(parseHourInput(e.target.value));
                             setHasUnsavedChanges(true);
                         }}
                         maxPx={11}
                         minPx={5}
                         singleLine
-                        className="font-semibold leading-tight text-emerald-300 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
+                        className="font-semibold leading-tight text-white focus:outline-none"
                     />
                     <span className="text-white/30 select-none">-</span>
                     <ShrinkToFitInput
                         wrapClassName="min-h-0 flex-1"
-                        type="time"
-                        value={defaultEnd}
+                        type="text"
+                        value={formatHourShort(defaultEnd)}
                         onChange={(e) => {
-                            setDefaultEnd(e.target.value);
+                            setDefaultEnd(parseHourInput(e.target.value));
                             setHasUnsavedChanges(true);
                         }}
                         maxPx={11}
                         minPx={5}
                         singleLine
-                        className="font-semibold leading-tight text-rose-300 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
+                        className="font-semibold leading-tight text-white focus:outline-none"
                     />
                 </div>
             </EditableSummaryCell>
@@ -981,30 +1002,30 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                 <div className="flex w-full items-center gap-0.5">
                     <ShrinkToFitInput
                         wrapClassName="min-h-0 flex-1"
-                        type="time"
-                        value={defaultStart2}
+                        type="text"
+                        value={formatHourShort(defaultStart2)}
                         onChange={(e) => {
-                            setDefaultStart2(e.target.value);
+                            setDefaultStart2(parseHourInput(e.target.value));
                             setHasUnsavedChanges(true);
                         }}
                         maxPx={11}
                         minPx={5}
                         singleLine
-                        className="font-semibold leading-tight text-emerald-300 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
+                        className="font-semibold leading-tight text-white focus:outline-none"
                     />
                     <span className="text-white/30 select-none">-</span>
                     <ShrinkToFitInput
                         wrapClassName="min-h-0 flex-1"
-                        type="time"
-                        value={defaultEnd2}
+                        type="text"
+                        value={formatHourShort(defaultEnd2)}
                         onChange={(e) => {
-                            setDefaultEnd2(e.target.value);
+                            setDefaultEnd2(parseHourInput(e.target.value));
                             setHasUnsavedChanges(true);
                         }}
                         maxPx={11}
                         minPx={5}
                         singleLine
-                        className="font-semibold leading-tight text-rose-300 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
+                        className="font-semibold leading-tight text-white focus:outline-none"
                     />
                 </div>
             </EditableSummaryCell>

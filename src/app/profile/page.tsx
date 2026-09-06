@@ -594,6 +594,7 @@ function ProfileContent() {
                 nacionalidad={profile.nacionalidad}
                 fechaNacimiento={profile.fecha_nacimiento}
                 domicilio={profile.domicilio}
+                avatarUrl={profile.avatar_url}
                 ownerUserId={profile.id}
                 canEdit={canManageLaborConditions}
                 onSaved={() => void fetchInitialData()}
