@@ -3577,13 +3577,15 @@ button[data-element='catalog-filter'] {
 }
 [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='fill'] [data-element='iconBox'],
 [data-component='StaffFichajeControl'][data-plate='fill'] [data-element='iconBox'],
-[data-component='CajaInicialControl'][data-plate='fill'] [data-element='iconBox'] {
+[data-component='CajaInicialControl'][data-plate='fill'] [data-element='iconBox'],
+[data-component='MasterCajasCambioControl'][data-plate='fill'] [data-element='iconBox'] {
   background-color: var(--shortcut-fill, var(--color-superficie));
   padding: 0;
 }
 [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='fill'] [data-element='rim'],
 [data-component='StaffFichajeControl'][data-plate='fill'] [data-element='rim'],
-[data-component='CajaInicialControl'][data-plate='fill'] [data-element='rim'] {
+[data-component='CajaInicialControl'][data-plate='fill'] [data-element='rim'],
+[data-component='MasterCajasCambioControl'][data-plate='fill'] [data-element='rim'] {
   background: linear-gradient(
     145deg,
     rgb(255 255 255 / 0.78) 0%,
@@ -3608,7 +3610,8 @@ button[data-element='catalog-filter'] {
   padding: var(--espacio-2);
 }
 [data-component='StaffFichajeControl'][data-plate='fill'] [data-element='asset'],
-[data-component='CajaInicialControl'][data-plate='fill'] [data-element='asset'] {
+[data-component='CajaInicialControl'][data-plate='fill'] [data-element='asset'],
+[data-component='MasterCajasCambioControl'][data-plate='fill'] [data-element='asset'] {
   padding: var(--espacio-2);
 }
 [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'][data-plate='bleed'] [data-element='iconBox'] {
