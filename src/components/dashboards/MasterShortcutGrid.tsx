@@ -257,7 +257,7 @@ function MasterOvertimeIconWidget({
                     <span className="mt-1 shrink-0 text-center text-[6px] font-black uppercase leading-none tracking-widest text-zinc-700">
                         {monthLabel}
                     </span>
-                    <div className={`mt-1 grid ${gridTemplate} items-center gap-x-0.5 gap-y-0.5`}>
+                    <div className={`mt-[6px] grid ${gridTemplate} items-center gap-x-0.5 gap-y-0.5`}>
                         {weekdayHeaders.map((header) => (
                             <span
                                 key={header}
