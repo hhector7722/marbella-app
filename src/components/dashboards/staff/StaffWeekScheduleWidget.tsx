@@ -551,114 +551,82 @@ export function StaffWeekScheduleWidget({
                                 const weekKey = format(weekStart, 'yyyy-MM-dd');
                                 const isExpanded = isSameWeek(weekStart, expandedWeekStart, { weekStartsOn: 1 });
 
-                                return (
-<div
-                                            key={weekKey}
-                                            data-element="week-block"
-                                            data-expanded={isExpanded ? 'true' : undefined}
-                                        >
-                                            {masterMode && isExpanded ? (
-                                                <div className="grid grid-cols-8 gap-px">
-                                                    <div
-                                                        className="grid grid-cols-7 gap-px"
-                                                        data-week-row="expanded"
-                                                    >
-                                                        {weekDays.map((day) => {
-                                                            const inMonth = isSameMonth(day, monthAnchor);
-                                                            const today = isToday(day);
+                                const dayButtons = weekDays.map((day) => {
+                                    const inMonth = isSameMonth(day, monthAnchor);
+                                    const today = isToday(day);
 
-                                                            return (
-                                                                <button
-                                                                    key={day.toISOString()}
-                                                                    type="button"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        handleDaySelect(day);
-                                                                    }}
-                                                                    aria-label={format(day, "EEEE d 'de' MMMM", { locale: es })}
-                                                                    aria-current={today ? 'date' : undefined}
-                                                                    className={cn(
-                                                                        'relative flex w-full items-center justify-center transition-colors',
-                                                                        'before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']',
-                                                                        !today && 'hover:bg-white/10',
-                                                                    )}
-                                                                >
-                                                                    <span
-                                                                        data-today={today ? 'true' : undefined}
-                                                                        className={cn(
-                                                                            'text-[7px] tabular-nums leading-none',
-                                                                            today &&
-                                                                                'flex h-[var(--staff-week-day-size)] w-[var(--staff-week-day-size)] items-center justify-center rounded-full bg-emerald-500 font-black text-white',
-                                                                            !today && !inMonth && 'font-medium text-white/45',
-                                                                            !today && inMonth && 'font-semibold text-white/90',
-                                                                        )}
-                                                                    >
-                                                                        {format(day, 'd')}
-                                                                    </span>
-                                                                </button>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                    <div className="col-span-1 flex items-center justify-center" data-element="week-ext-cell">
-                                                        <WeekExtCell
-                                                            weekDays={weekDays}
-                                                            week={overtimeWeeks[weekKey]}
-                                                            loading={overtimeLoading}
-                                                            onOpenWeekDetail={onOpenWeekDetail}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div
-                                                    className={cn('grid gap-px', masterMode ? WEEK_GRID_COLS_EXT : WEEK_GRID_COLS)}
-                                                    data-week-row={isExpanded ? 'expanded' : undefined}
-                                                >
-                                                    {weekDays.map((day) => {
-                                                        const inMonth = isSameMonth(day, monthAnchor);
-                                                        const today = isToday(day);
-
-                                                        return (
-                                                            <button
-                                                                key={day.toISOString()}
-                                                                type="button"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleDaySelect(day);
-                                                                }}
-                                                                aria-label={format(day, "EEEE d 'de' MMMM", { locale: es })}
-                                                                aria-current={today ? 'date' : undefined}
-                                                                className={cn(
-                                                                    'relative flex w-full items-center justify-center transition-colors',
-                                                                    'before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']',
-                                                                    !today && 'hover:bg-white/10',
-                                                                )}
-                                                            >
-                                                                <span
-                                                                    data-today={today ? 'true' : undefined}
-                                                                    className={cn(
-                                                                        'text-[7px] tabular-nums leading-none',
-                                                                        today &&
-                                                                            'flex h-[var(--staff-week-day-size)] w-[var(--staff-week-day-size)] items-center justify-center rounded-full bg-emerald-500 font-black text-white',
-                                                                        !today && !inMonth && 'font-medium text-white/45',
-                                                                        !today && inMonth && 'font-semibold text-white/90',
-                                                                    )}
-                                                                >
-                                                                    {format(day, 'd')}
-                                                                </span>
-                                                            </button>
-                                                        );
-                                                    })}
-
-                                                    {masterMode ? (
-                                                        <WeekExtCell
-                                                            weekDays={weekDays}
-                                                            week={overtimeWeeks[weekKey]}
-                                                            loading={overtimeLoading}
-                                                            onOpenWeekDetail={onOpenWeekDetail}
-                                                        />
-                                                    ) : null}
-                                                </div>
+                                    return (
+                                        <button
+                                            key={day.toISOString()}
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDaySelect(day);
+                                            }}
+                                            aria-label={format(day, "EEEE d 'de' MMMM", { locale: es })}
+                                            aria-current={today ? 'date' : undefined}
+                                            className={cn(
+                                                'relative flex w-full items-center justify-center transition-colors',
+                                                'before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']',
+                                                !today && 'hover:bg-white/10',
                                             )}
+                                        >
+                                            <span
+                                                data-today={today ? 'true' : undefined}
+                                                className={cn(
+                                                    'text-[7px] tabular-nums leading-none',
+                                                    today &&
+                                                        'flex h-[var(--staff-week-day-size)] w-[var(--staff-week-day-size)] items-center justify-center rounded-full bg-emerald-500 font-black text-white',
+                                                    !today && !inMonth && 'font-medium text-white/45',
+                                                    !today && inMonth && 'font-semibold text-white/90',
+                                                )}
+                                            >
+                                                {format(day, 'd')}
+                                            </span>
+                                        </button>
+                                    );
+                                });
+
+                                return (
+                                    <div
+                                        key={weekKey}
+                                        data-element="week-block"
+                                        data-expanded={isExpanded ? 'true' : undefined}
+                                    >
+                                        {masterMode && isExpanded ? (
+                                            <div className="grid grid-cols-8 gap-px">
+                                                <div
+                                                    className="col-span-7 grid grid-cols-7 gap-px"
+                                                    data-week-row="expanded"
+                                                >
+                                                    {dayButtons}
+                                                </div>
+                                                <div className="col-span-1 flex items-center justify-center" data-element="week-ext-cell">
+                                                    <WeekExtCell
+                                                        weekDays={weekDays}
+                                                        week={overtimeWeeks[weekKey]}
+                                                        loading={overtimeLoading}
+                                                        onOpenWeekDetail={onOpenWeekDetail}
+                                                    />
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div
+                                                className={cn('grid gap-px', masterMode ? WEEK_GRID_COLS_EXT : WEEK_GRID_COLS)}
+                                                data-week-row={isExpanded ? 'expanded' : undefined}
+                                            >
+                                                {dayButtons}
+
+                                                {masterMode ? (
+                                                    <WeekExtCell
+                                                        weekDays={weekDays}
+                                                        week={overtimeWeeks[weekKey]}
+                                                        loading={overtimeLoading}
+                                                        onOpenWeekDetail={onOpenWeekDetail}
+                                                    />
+                                                ) : null}
+                                            </div>
+                                        )}
 
                                         {isExpanded ? (
                                             <WeekExpansion

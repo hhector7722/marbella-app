@@ -43,8 +43,8 @@ const SECONDARY_KPIS: readonly LastClosingKpi[] = [
 ];
 
 const pillClassName =
-    'relative shrink-0 inline-flex items-center justify-center rounded-md px-2 py-0.5 text-[8px] font-black uppercase tracking-wider ' +
-    'text-[var(--home-widget-ink)] bg-[var(--home-widget-fill-secondary)] transition-all active:scale-[0.98] hover:opacity-80 ' +
+    'relative shrink-0 inline-flex items-center justify-center text-[8px] font-black uppercase tracking-wider ' +
+    'text-[var(--home-widget-ink)] transition-all active:scale-[0.98] hover:opacity-80 ' +
     'before:absolute before:inset-0 before:-m-2 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']';
 
 /**
@@ -106,13 +106,13 @@ export function MasterLastClosingWidget() {
     }, [closing]);
 
     const renderKpiGrid = (kpis: readonly LastClosingKpi[], gridClass: 'grid-cols-3' | 'grid-cols-4') => (
-        <div className={`grid gap-x-1 ${gridClass}`}>
+        <div className={`grid gap-x-1.5 ${gridClass}`}>
             {kpis.map((kpi) => (
                 <div key={kpi.label} className="flex min-w-0 flex-col items-center justify-center text-center">
-                    <span className="text-[8px] md:text-[9px] tabular-nums leading-none text-[var(--home-widget-ink)]">
+                    <span className="text-[9px] md:text-[10px] tabular-nums leading-none text-[var(--home-widget-ink)]">
                         {kpi.format(metrics)}
                     </span>
-                    <span className="mt-0.5 text-[6px] md:text-[7px] leading-none text-[var(--home-widget-ink-secondary)]">
+                    <span className="mt-1 text-[7px] md:text-[8px] leading-none text-[var(--home-widget-ink-secondary)]">
                         {kpi.label}
                     </span>
                 </div>
@@ -146,11 +146,11 @@ export function MasterLastClosingWidget() {
                     <span className="shrink-0">
                         {metrics.avgTicket === 0
                             ? ' '
-                            : `${formatCurrencySpanish(metrics.avgTicket)} ticket medio`}
+                            : `${formatCurrencySpanish(metrics.avgTicket)} t medio`}
                     </span>
                 </div>
             </div>
-            <div className="flex min-h-0 flex-1 flex-col justify-evenly px-2 pb-1.5">
+            <div className="flex min-h-0 flex-1 flex-col justify-center gap-y-3 px-2 pb-1.5">
                 {loading ? (
                     <div
                         className="flex flex-1 items-center justify-center"

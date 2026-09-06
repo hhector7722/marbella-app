@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-06
 
+- **Master: el widget «Último cierre» se reespacia.** La etiqueta «Último cierre» pierde el relleno y flota sobre el widget; la segunda fila de indicadores baja con más separación entre filas; crecen la fuente de los valores y sus nombres, y se amplía el hueco entre valor y etiqueta. «Ticket medio» pasa a llamarse «t medio».
+
 - **Master: el widget de horario suma la columna «Ext».**
   El calendario del mosaico de `/master/dashboard` añade a la derecha una columna con el importe de horas extra a abonar de cada semana y un indicador de abono (círculo verde con tic = pagada, rojo con cruz = pendiente); las siete columnas del mes se compactan para que todas queden iguales. Pulsar el importe o el indicador abre el modal de detalle de la semana (importes por trabajador, marcar como pagado y totales), y pulsar una fila abre el resumen semanal de ese trabajador. Solo en el mosaico Master: `/staff/dashboard` no muestra la columna. La semana sin importe deja la celda vacía, y la card de la semana seleccionada cubre solo hasta la columna DOM, dejando la columna Ext fuera.
 - **Master: el detalle de semana de horas extra lleva el abono a la cabecera.** El modal deja de mostrar las flechas de semana anterior/siguiente y el resumen de totales en el cuerpo; el coste total pasa a la cabecera como píldora —verde si la semana está totalmente abonada, roja si no— y, a su izquierda, una píldora naranja muestra el coste ya abonado solo cuando hay un abono parcial (ni vacío ni completo).
