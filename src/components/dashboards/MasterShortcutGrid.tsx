@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, X } from 'lucide-react';
 import {
@@ -257,24 +257,19 @@ function MasterOvertimeIconWidget({
                     <span className="mt-1 shrink-0 text-center text-[6px] font-black uppercase leading-none tracking-widest text-zinc-700">
                         {monthLabel}
                     </span>
-                    <div className="flex min-h-0 flex-1 flex-col gap-y-0.5">
-                        <div className={`grid ${gridTemplate} items-center gap-x-0.5`}>
-                            {weekdayHeaders.map((header) => (
-                                <span
-                                    key={header}
-                                    className="text-center text-[5px] uppercase leading-none text-zinc-700"
-                                >
-                                    {header}
-                                </span>
-                            ))}
-                            <span />
-                            <span />
-                        </div>
-                        {monthRows.map((row, rowIndex) => (
-                            <div
-                                key={rowIndex}
-                                className={`grid ${gridTemplate} items-center gap-x-0.5`}
+                    <div className={`mt-0.5 grid ${gridTemplate} items-center gap-x-0.5 gap-y-0.5`}>
+                        {weekdayHeaders.map((header) => (
+                            <span
+                                key={header}
+                                className="text-center text-[5px] uppercase leading-none text-zinc-700"
                             >
+                                {header}
+                            </span>
+                        ))}
+                        <span />
+                        <span />
+                        {monthRows.map((row, rowIndex) => (
+                            <Fragment key={rowIndex}>
                                 {row.days.map((day, dayIndex) => (
                                     <span
                                         key={dayIndex}
@@ -299,7 +294,7 @@ function MasterOvertimeIconWidget({
                                 <span className="shrink-0 whitespace-nowrap text-[5px] font-normal leading-none tabular-nums text-zinc-600">
                                     {row.amount}
                                 </span>
-                            </div>
+                            </Fragment>
                         ))}
                     </div>
                 </>
