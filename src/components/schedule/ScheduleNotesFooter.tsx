@@ -222,7 +222,7 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
                         return (
                             <div
                                 key={note.id}
-                                className="flex w-full max-w-full min-w-0 items-center gap-2 rounded-xl bg-white/10 px-3 py-1.5 text-left"
+                                className="mx-auto flex w-fit max-w-[85%] min-w-0 items-center gap-2 rounded-xl bg-white/10 px-3 py-1 text-left"
                             >
                                 {isManager ? (
                                     <span className="shrink-0 text-[11px] font-normal leading-none text-white/70">
@@ -247,7 +247,7 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
                                         </Button>
                                         <Button
                                             type="button"
-                                            variant="secondary"
+                                            variant="destructive"
                                             instance="schedule-note-row-delete"
                                             onClick={() => void handleDelete(note.id)}
                                         >

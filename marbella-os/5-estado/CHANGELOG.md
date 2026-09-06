@@ -36,6 +36,10 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
 
+## 2026-09-06
+
+- **Master: H. extras pasa a llamarse «H extras» y el mes respira.** La etiqueta del atajo del mosaico se escribe sin punto («H extras»), y el nombre del mes baja del borde del hueco con un margen de 4 px para no pegarse al inicio del icono.
+
 ## 2026-09-05
 
 - **Master: Cajas Cambio como dos en uno.** El widget del mosaico deja de ser una celda que abría un selector: ahora se divide en dos mini iconos, como Caja Inicial — Cambio 1 arriba y Cambio 2 abajo, cada uno con su importe sobre verde y abriendo directamente el arqueo de su caja. El modal intermedio de elección desaparece.

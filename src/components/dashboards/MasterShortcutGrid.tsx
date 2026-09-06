@@ -213,7 +213,7 @@ function MasterOvertimeIconWidget({
                 </div>
             ) : (
                 <>
-                    <span className="shrink-0 text-center text-[6px] font-black uppercase leading-none tracking-widest text-zinc-700">
+                    <span className="mt-1 shrink-0 text-center text-[6px] font-black uppercase leading-none tracking-widest text-zinc-700">
                         {monthLabel}
                     </span>
                     <div className="flex min-h-0 flex-1 flex-col justify-center gap-[2px]">
@@ -326,7 +326,7 @@ export default function MasterShortcutGrid({
         {
             key: 'hextras',
             size: 'tile',
-            label: 'H. extras',
+            label: 'H extras',
             node: (
                 <MasterOvertimeIconWidget
                     monthLabel={overtimeMonthLabel}
@@ -374,7 +374,6 @@ export default function MasterShortcutGrid({
 
     items.push({
         key: 'cajas-cambio',
-        size: 'tile',
         label: 'Cajas Cambio',
         node: (
             <MasterCajasCambioControl
