@@ -711,32 +711,32 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                 title="Caja Inicial"
                 ariaLabel="Caja inicial: acciones"
             >
-                <div className="grid grid-cols-4 items-start gap-2 pb-6 pt-1">
+                <div className="grid grid-cols-2 gap-2 pb-6 pt-1">
                     {(
                         [
                             {
                                 label: 'Entrada',
                                 accion: 'in' as const,
                                 color: 'bg-emerald-500',
-                                icon: <Plus size={16} strokeWidth={1.75} fill="none" className="text-white" />,
+                                icon: <Plus size={18} strokeWidth={2} fill="none" className="text-white" />,
                             },
                             {
                                 label: 'Salida',
                                 accion: 'out' as const,
                                 color: 'bg-rose-500',
-                                icon: <Minus size={16} strokeWidth={1.75} fill="none" className="text-white" />,
+                                icon: <Minus size={18} strokeWidth={2} fill="none" className="text-white" />,
                             },
                             {
                                 label: 'Compra',
                                 accion: 'compra' as const,
                                 color: 'bg-[#5B8FB9]',
-                                icon: <ShoppingCart size={16} strokeWidth={1.75} fill="none" className="text-white" />,
+                                icon: <ShoppingCart size={18} strokeWidth={2} fill="none" className="text-white" />,
                             },
                             {
                                 label: 'Arqueo',
                                 accion: 'arqueo' as const,
                                 color: 'bg-orange-400',
-                                icon: <RefreshCw size={16} strokeWidth={1.75} fill="none" className="text-white" />,
+                                icon: <RefreshCw size={18} strokeWidth={2} fill="none" className="text-white" />,
                             },
                         ] as const
                     ).map((opcion) => (
@@ -745,14 +745,12 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                             type="button"
                             onClick={() => handleCajaInicialAccion(opcion.accion)}
                             aria-label={opcion.label}
-                            className="group flex min-h-[4.5rem] min-w-0 flex-col items-center justify-center gap-1.5 px-1 transition-all active:scale-95"
+                            className={`group flex min-h-[5.5rem] min-w-0 flex-col items-center justify-center gap-2 rounded-[16px] ${opcion.color} px-2 py-4 text-white shadow-[inset_0_0_0_1px_rgb(255_255_255/0.24),inset_0_1px_0_0_rgb(255_255_255/0.58),inset_0_-1px_0_0_rgb(0_0_0/0.2)] transition-all active:scale-95`}
                         >
-                            <div
-                                className={`flex h-9 w-9 items-center justify-center rounded-full ${opcion.color} shadow-sm transition-transform group-hover:scale-110`}
-                            >
+                            <span className="flex items-center justify-center transition-transform group-hover:scale-110">
                                 {opcion.icon}
-                            </div>
-                            <span className="flex items-center self-center text-[9px] font-black uppercase leading-none tracking-widest text-zinc-500">
+                            </span>
+                            <span className="text-[10px] font-black uppercase leading-none tracking-widest">
                                 {opcion.label}
                             </span>
                         </button>
