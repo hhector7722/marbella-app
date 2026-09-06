@@ -1,19 +1,19 @@
 'use client';
 
-import { startTransition, useState, useEffect, useRef, useMemo, useCallback, forwardRef, useImperativeHandle } from 'react';
-import { createClient } from "@/utils/supabase/client";
 import {
-    X,
-    Plus,
-    Minus,
-    ChevronLeft,
-    ChevronRight,
-    Share2,
-    Check,
-    ArrowLeft
-} from 'lucide-react';
+    startTransition,
+    useState,
+    useEffect,
+    useRef,
+    useMemo,
+    useCallback,
+    forwardRef,
+    useImperativeHandle,
+    type ReactNode,
+} from 'react';
+import { createClient } from "@/utils/supabase/client";
+import { X, Plus, Minus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
-import { MiniMonthCalendar } from '@/components/time/MiniMonthCalendar';
 import { Button } from '@/components/ui/button';
 import { format, addDays, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -23,19 +23,32 @@ import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
 import { ShrinkToFitInput } from '@/components/ui/ShrinkToFitCell';
-import { fetchDayDetailAction, BarActivity } from '@/app/staff/actividades/actions';
+import { fetchDayDetailAction, type BarActivity } from '@/app/staff/actividades/actions';
 import { groupActivities } from '@/components/dashboards/staff/StaffWeekScheduleWidget';
 import { sendScheduleNotifications } from '@/app/actions/notifications';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import type { PlantillaEmployee } from '@/components/modals/StaffSelectionModal';
 import { filterVisiblePlantillaEmployees } from '@/lib/staff/plantilla-employees';
-import { ScheduleDayProfitabilityBar } from '@/components/schedule/ScheduleDayProfitabilityBar';
+import { Avatar } from '@/components/ui/Avatar';
+import { MiniMonthCalendar } from '@/components/time/MiniMonthCalendar';
 import { ShiftBarTimeLabels } from '@/components/schedule/ShiftBarTimeLabels';
+import { isMasterDashboardUser } from '@/lib/master-dashboard';
+import {
+    getCachedLaborRate,
+    setCachedLaborRate,
+} from '@/lib/labor-rate-session-cache';
+import { getSsotOrdinaryHourlyRate } from '@/app/actions/ssot-ordinary-rate';
+import {
+    computeScheduleDayLaborCost,
+    computeRequiredBilling,
+    formatScheduleEuro,
+} from '@/lib/schedule-day-profitability';
 import type { Tables, TablesInsert } from '@/types/supabase';
 
 type ScheduleShift = {
     employeeId: string;
     name: string | null;
+    avatar_url?: string | null;
     start: string;
     end: string;
     activity: string;
@@ -59,6 +72,13 @@ export interface ScheduleDayEditorProps {
     embedded?: boolean;
     /** Instancia del Modal padre vivo; solo cuando el editor está embebido en StaffScheduleModal. */
     modalParentInstance?: string;
+}
+
+export interface ScheduleDayEditorHandle {
+    /** Abre el selector de empleados para añadir un turno al día. */
+    openAddEmployee: () => void;
+    /** Abre el modal de guardado (Guardar / Guardar y enviar / Sobreescribir). */
+    openShare: () => void;
 }
 
 const START_HOUR = 7; // 7:00 AM
@@ -183,13 +203,23 @@ const ShiftBar = ({
     );
 };
 
-
-export interface ScheduleDayEditorHandle {
-    /** Abre el selector de empleados para añadir un turno al día. */
-    openAddEmployee: () => void;
-    /** Abre el modal de guardado (Guardar / Guardar y enviar / Sobreescribir). */
-    openShare: () => void;
-}
+/* ─── Celda editable del resumen (mismo aspecto que SummaryCell del modal) ─── */
+const EditableSummaryCell = ({
+    label,
+    children,
+}: {
+    label: string;
+    children: ReactNode;
+}) => (
+    <div className="flex min-w-0 w-full flex-col items-center gap-1">
+        <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border-0 bg-transparent">
+            {children}
+        </div>
+        <span className="shrink-0 text-[9px] font-semibold tracking-widest leading-none text-white/60">
+            {label}
+        </span>
+    </div>
+);
 
 export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDayEditorProps>(function ScheduleDayEditor(
     { initialDate, onClose, onSuccess, embedded = false, modalParentInstance },
@@ -209,7 +239,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [isDayPublished, setIsDayPublished] = useState(false);
     const [isDaySent, setIsDaySent] = useState(false);
-    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const [defaultStart, setDefaultStart] = useState('');
     const [defaultEnd, setDefaultEnd] = useState('');
@@ -222,13 +252,16 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
     const [defaultEnd2, setDefaultEnd2] = useState<string>('');
     const [participantsCount2, setParticipantsCount2] = useState<string>('');
     const [categoria2, setCategoria2] = useState<string>('');
-    /** Segunda card solo si hay texto en act. 2 o el usuario elige "añadir segunda actividad". */
     const [secondSlotExpanded, setSecondSlotExpanded] = useState(false);
 
     const [showCalendarModal, setShowCalendarModal] = useState(false);
     const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
     const [calendarDate, setCalendarDate] = useState(new Date());
+
+    // Rentabilidad del día: coste de mano de obra y facturación rentable
+    const [isMaster, setIsMaster] = useState(false);
+    const [rateByUserId, setRateByUserId] = useState<Record<string, number>>({});
 
     useImperativeHandle(ref, () => ({
         openAddEmployee: () => setShowAddEmployeeModal(true),
@@ -317,6 +350,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                 return {
                     employeeId: emp.id,
                     name: displayName,
+                    avatar_url: emp.avatar_url,
                     start: new Date(sTime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
                     end: new Date(eTime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
                     activity: sActivity,
@@ -477,9 +511,10 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
             toast.error('Este empleado ya está en el horario');
             return;
         }
-        const newShift = {
+        const newShift: ScheduleShift = {
             employeeId: profile.id,
             name: profile.first_name?.toLowerCase() === 'fernando' ? 'Fer' : (profile.first_name?.toLowerCase() === 'mamadou' ? 'Mamdou' : profile.first_name),
+            avatar_url: profile.avatar_url,
             start: defaultStart || '08:00',
             end: defaultEnd || '16:00',
             activity: activity || '',
@@ -552,8 +587,6 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
             const shiftsToInsert = activeShifts.map(shift => {
                 const existing = dbShiftMap.get(shift.employeeId);
                 // Al guardar, priorizamos SIEMPRE los valores específicos del turno del trabajador (shift.*).
-                // Los valores por defecto de la cabecera (defaultStart, activity, etc.) ya actúan como inicializadores
-                // en handleAddEmployee, pero una vez creados, el turno del trabajador es independiente.
                 const resolvedStart = (shift.start || defaultStart || '08:00').trim();
                 const resolvedEnd = (shift.end || defaultEnd || '16:00').trim();
                 const startDateTime = new Date(`${date}T${resolvedStart}:00`);
@@ -567,8 +600,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                 const shiftCategory2 = (shift.categoria2 || categoria2 || null);
 
                 const slot2Participants = (shift.participantsCount2 || participantsCount2 || '');
-                // Las horas de cabecera del EVENTO (slot 1 y 2) deben ser las del día, no las del turno del trabajador;
-                // si no, al recargar la UI tomaba defaultStart de una fila cualquiera y parecía que "el evento copiaba" un empleado.
+                // Las horas de cabecera del EVENTO (slot 1 y 2) deben ser las del día, no las del turno del trabajador.
                 const dayEventStart = (defaultStart || '').trim();
                 const dayEventEnd = (defaultEnd || '').trim();
                 const dayEventStart2 = (defaultStart2 || '').trim();
@@ -613,7 +645,6 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                     data.is_published = true;
                 } else if (existing && existing.is_published) {
                     // Si ya está publicado, NO tocamos las columnas principales durante un autoguardado
-                    // Restauramos los valores originales de la DB para las columnas públicas
                     data.start_time = existing.start_time;
                     data.end_time = existing.end_time;
                     data.activity = existing.activity;
@@ -712,7 +743,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
         const targetDate = initialDate || new Date().toISOString().split('T')[0];
         startTransition(() => {
             setDate(targetDate);
-            setCalendarDate(new Date(targetDate));
+            setCalendarDate(new Date(`${targetDate}T12:00:00`));
         });
         startTransition(() => {
             void fetchData(targetDate);
@@ -727,6 +758,65 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
             void fetchData(date);
         });
     }, [date, fetchData]);
+
+    // Identidad de maestro (solo él ve coste laboral)
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (cancelled) return;
+            setIsMaster(isMasterDashboardUser(user?.email));
+        })();
+        return () => { cancelled = true; };
+    }, [supabase]);
+
+    // Tarifas ordinarias por empleado (solo maestro)
+    const activeEmployeeIds = useMemo(() => {
+        const ids = new Set<string>();
+        for (const s of shifts) {
+            if (s.active === false || !s.start || !s.end) continue;
+            ids.add(s.employeeId);
+        }
+        return [...ids];
+    }, [shifts]);
+
+    useEffect(() => {
+        if (!isMaster || !date) return;
+        let cancelled = false;
+
+        (async () => {
+            const next: Record<string, number> = {};
+            const toFetch: string[] = [];
+
+            for (const id of activeEmployeeIds) {
+                const cached = getCachedLaborRate(id, date);
+                if (cached !== undefined) {
+                    next[id] = cached;
+                } else {
+                    toFetch.push(id);
+                }
+            }
+
+            if (toFetch.length > 0) {
+                const fetched = await Promise.all(
+                    toFetch.map(async (userId) => {
+                        const res = await getSsotOrdinaryHourlyRate(userId, date);
+                        const rate = res.success ? res.rate : 0;
+                        setCachedLaborRate(userId, date, rate);
+                        return { userId, rate };
+                    }),
+                );
+                if (cancelled) return;
+                for (const { userId, rate } of fetched) {
+                    next[userId] = rate;
+                }
+            }
+
+            if (!cancelled) setRateByUserId(next);
+        })();
+
+        return () => { cancelled = true; };
+    }, [isMaster, date, activeEmployeeIds, supabase]);
 
     const navigateDay = async (direction: -1 | 1) => {
         if (hasUnsavedChanges) {
@@ -756,6 +846,15 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
         shifts.filter(s => s.active && hour >= parseInt(s.start.split(':')[0]) && hour < parseInt(s.end.split(':')[0])).length
     );
 
+    const laborCost = useMemo(
+        () => computeScheduleDayLaborCost(
+            shifts.map((s) => ({ employeeId: s.employeeId, start: s.start, end: s.end, active: s.active })),
+            rateByUserId,
+        ),
+        [shifts, rateByUserId],
+    );
+    const requiredBilling = useMemo(() => computeRequiredBilling(laborCost), [laborCost]);
+
     // La cabecera superior es de nivel día, no por empleado seleccionado
     const slot1ActivityValue = (activity ?? '').trim();
     const slot2ActivityValue = (activity2 ?? '').trim();
@@ -765,231 +864,261 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
     const showSecondActivityCard = hasSlot2Activity || secondSlotExpanded;
 
     if (loading) {
-        if (embedded) {
-            return (
-                <div className="flex flex-1 min-h-0 items-center justify-center bg-white rounded-2xl">
-                    <div className="w-8 h-8 rounded-full border-4 border-ds-marca border-t-transparent animate-spin" />
-                </div>
-            );
-        }
-        return <div className="min-h-screen" />;
+        return (
+            <div className="flex flex-1 min-h-0 w-full items-center justify-center bg-white rounded-2xl">
+                <div className="w-8 h-8 rounded-full border-4 border-ds-marca border-t-transparent animate-spin" />
+            </div>
+        );
     }
+
+    const editableGridSlot1 = (
+        <div className="grid w-full min-w-0 auto-rows-min gap-x-1.5 gap-y-1 pb-0.5 [grid-template-columns:repeat(4,minmax(0,1fr))]">
+            <EditableSummaryCell label="Evento">
+                <ShrinkToFitInput
+                    wrapClassName="min-h-0 flex-1"
+                    singleLine
+                    type="text"
+                    value={activity}
+                    onChange={(e) => {
+                        setActivity(e.target.value);
+                        setHasUnsavedChanges(true);
+                    }}
+                    maxPx={11}
+                    minPx={5}
+                    placeholder="Artística"
+                    className="text-white font-semibold leading-tight placeholder:text-white/30 focus:outline-none"
+                />
+            </EditableSummaryCell>
+
+            <EditableSummaryCell label="Horario">
+                <div className="flex w-full items-center gap-0.5">
+                    <ShrinkToFitInput
+                        wrapClassName="min-h-0 flex-1"
+                        type="time"
+                        value={defaultStart}
+                        onChange={(e) => {
+                            setDefaultStart(e.target.value);
+                            setHasUnsavedChanges(true);
+                        }}
+                        maxPx={11}
+                        minPx={5}
+                        singleLine
+                        className="font-semibold leading-tight text-emerald-300 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
+                    />
+                    <span className="text-white/30 select-none">-</span>
+                    <ShrinkToFitInput
+                        wrapClassName="min-h-0 flex-1"
+                        type="time"
+                        value={defaultEnd}
+                        onChange={(e) => {
+                            setDefaultEnd(e.target.value);
+                            setHasUnsavedChanges(true);
+                        }}
+                        maxPx={11}
+                        minPx={5}
+                        singleLine
+                        className="font-semibold leading-tight text-rose-300 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
+                    />
+                </div>
+            </EditableSummaryCell>
+
+            <EditableSummaryCell label="Pax">
+                <ShrinkToFitInput
+                    wrapClassName="min-h-0 flex-1"
+                    type="text"
+                    value={participantsCount}
+                    onChange={(e) => {
+                        setParticipantsCount(e.target.value);
+                        setHasUnsavedChanges(true);
+                    }}
+                    maxPx={11}
+                    minPx={5}
+                    singleLine
+                    className="text-white font-semibold leading-tight focus:outline-none"
+                />
+            </EditableSummaryCell>
+
+            <EditableSummaryCell label="Categoria">
+                <ShrinkToFitInput
+                    wrapClassName="min-h-0 flex-1"
+                    singleLine
+                    type="text"
+                    value={categoria}
+                    onChange={(e) => {
+                        setCategoria(e.target.value);
+                        setHasUnsavedChanges(true);
+                    }}
+                    maxPx={11}
+                    minPx={5}
+                    placeholder="Infantiles"
+                    className="text-white font-semibold leading-tight placeholder:text-white/30 focus:outline-none"
+                />
+            </EditableSummaryCell>
+        </div>
+    );
+
+    const editableGridSlot2 = (
+        <div className="grid w-full min-w-0 auto-rows-min gap-x-1.5 gap-y-1 pb-0.5 [grid-template-columns:repeat(4,minmax(0,1fr))]">
+            <EditableSummaryCell label="Evento">
+                <ShrinkToFitInput
+                    wrapClassName="min-h-0 flex-1"
+                    singleLine
+                    type="text"
+                    value={activity2}
+                    onChange={(e) => {
+                        setActivity2(e.target.value);
+                        setHasUnsavedChanges(true);
+                    }}
+                    maxPx={11}
+                    minPx={5}
+                    placeholder="Artística"
+                    className="text-white font-semibold leading-tight placeholder:text-white/30 focus:outline-none"
+                />
+            </EditableSummaryCell>
+
+            <EditableSummaryCell label="Horario">
+                <div className="flex w-full items-center gap-0.5">
+                    <ShrinkToFitInput
+                        wrapClassName="min-h-0 flex-1"
+                        type="time"
+                        value={defaultStart2}
+                        onChange={(e) => {
+                            setDefaultStart2(e.target.value);
+                            setHasUnsavedChanges(true);
+                        }}
+                        maxPx={11}
+                        minPx={5}
+                        singleLine
+                        className="font-semibold leading-tight text-emerald-300 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
+                    />
+                    <span className="text-white/30 select-none">-</span>
+                    <ShrinkToFitInput
+                        wrapClassName="min-h-0 flex-1"
+                        type="time"
+                        value={defaultEnd2}
+                        onChange={(e) => {
+                            setDefaultEnd2(e.target.value);
+                            setHasUnsavedChanges(true);
+                        }}
+                        maxPx={11}
+                        minPx={5}
+                        singleLine
+                        className="font-semibold leading-tight text-rose-300 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
+                    />
+                </div>
+            </EditableSummaryCell>
+
+            <EditableSummaryCell label="Pax">
+                <ShrinkToFitInput
+                    wrapClassName="min-h-0 flex-1"
+                    type="text"
+                    value={participantsCount2}
+                    onChange={(e) => {
+                        setParticipantsCount2(e.target.value);
+                        setHasUnsavedChanges(true);
+                    }}
+                    maxPx={11}
+                    minPx={5}
+                    singleLine
+                    className="text-white font-semibold leading-tight focus:outline-none"
+                />
+            </EditableSummaryCell>
+
+            <EditableSummaryCell label="Categoria">
+                <ShrinkToFitInput
+                    wrapClassName="min-h-0 flex-1"
+                    singleLine
+                    type="text"
+                    value={categoria2}
+                    onChange={(e) => {
+                        setCategoria2(e.target.value);
+                        setHasUnsavedChanges(true);
+                    }}
+                    maxPx={11}
+                    minPx={5}
+                    placeholder="Cadetes"
+                    className="text-white font-semibold leading-tight placeholder:text-white/30 focus:outline-none"
+                />
+            </EditableSummaryCell>
+        </div>
+    );
 
     return (
         <div
             data-editor-embedded={embedded ? 'true' : undefined}
-            className={embedded
-                ? 'flex flex-col flex-1 min-h-0 w-full text-white overflow-hidden'
-                : 'min-h-[100dvh] w-full flex flex-col p-3 sm:p-4 md:p-6 lg:p-8 text-gray-800'}
+            className="flex flex-col flex-1 min-h-0 w-full overflow-hidden"
             onClick={() => setEditingIndex(null)}
         >
-            <div className={cn('flex flex-col shrink w-full relative overflow-hidden', embedded
-                ? 'rounded-2xl flex-1 min-h-0 bg-transparent'
-                : 'rounded-[32px] max-w-7xl mx-auto bg-white shadow-sm border border-zinc-200')}>
+            {/* ── CABECERA SOLO STANDALONE (fuera del Modal padre) ── */}
+            {!modalParentInstance ? (
+                <div className="flex shrink-0 items-center justify-between px-4 py-3">
+                    <div className="flex items-center gap-1">
+                        <button type="button" onClick={() => navigateDay(-1)} aria-label="Día anterior" className="relative flex h-8 w-8 items-center justify-center rounded-xl text-white/70 hover:bg-white/10 active:scale-95 before:absolute before:inset-0 before:-m-2 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']">
+                            <ChevronLeft size={22} />
+                        </button>
+                        <button type="button" onClick={() => setShowCalendarModal(true)} aria-label="Abrir calendario" className="rounded-xl px-2 py-1.5 hover:bg-white/10 active:scale-95">
+                            <h2 className="text-[13px] sm:text-[15px] font-black tracking-widest whitespace-nowrap text-white normal-case">
+                                {date && (() => {
+                                    const raw = format(new Date(date), "EEEE d 'de' MMMM", { locale: es });
+                                    return raw.charAt(0).toUpperCase() + raw.slice(1);
+                                })()}
+                            </h2>
+                        </button>
+                        <button type="button" onClick={() => navigateDay(1)} aria-label="Día siguiente" className="relative flex h-8 w-8 items-center justify-center rounded-xl text-white/70 hover:bg-white/10 active:scale-95 before:absolute before:inset-0 before:-m-2 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']">
+                            <ChevronRight size={22} />
+                        </button>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <Button
+                            type="button"
+                            variant="primary"
+                            instance="schedule-day-add-employee"
+                            onClick={() => setShowAddEmployeeModal(true)}
+                            aria-label="Añadir empleado"
+                            icon={<Plus size={16} strokeWidth={3} />}
+                        />
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            instance="schedule-day-share-open"
+                            onClick={() => setShowShareModal(true)}
+                        >
+                            Guardar
+                        </Button>
+                    </div>
+                </div>
+            ) : null}
 
-                {/* WRAPPER STICKY GLOBAL PARA TODA LA CABECERA */}
-                <div className={cn('sticky top-[0px] z-30 flex flex-col w-full -mt-[1px]', embedded
-                    ? 'rounded-t-2xl bg-transparent'
-                    : 'rounded-t-[32px] bg-white shadow-sm')}>
-                    {!embedded && (
-                    <>
-                    {/* CABECERA (Fecha y Botones) */}
-                    <div className="flex items-center justify-between px-4 py-3 shrink-0 relative">
-                        <div className={cn('flex items-center gap-0 sm:gap-1', !embedded && 'mt-2')}>
-                            {embedded && modalParentInstance && (
-                                <button type="button" onClick={onClose} aria-label="Volver al calendario" className={cn('p-1.5 rounded-xl transition-colors active:scale-95 flex-shrink-0', embedded ? 'text-white/70 hover:bg-white/10' : 'text-zinc-500 hover:bg-zinc-100')} title="Volver">
-                                    <ArrowLeft size={22} strokeWidth={2.5} />
-                                </button>
-                            )}
-                            <button type="button" onClick={() => navigateDay(-1)} aria-label="Día anterior" className={cn('p-1 sm:p-1.5 rounded-xl transition-colors active:scale-95 flex-shrink-0', embedded ? 'text-white/70 hover:bg-white/10' : 'text-zinc-500 hover:bg-zinc-100')}>
-                                <ChevronLeft size={24} />
-                            </button>
-                            <button type="button" onClick={() => setShowCalendarModal(true)} aria-label="Abrir calendario" className={cn('flex items-center gap-1 group cursor-pointer px-1 py-1 sm:py-1.5 rounded-xl transition-all', embedded ? 'hover:bg-white/10' : 'hover:bg-zinc-100')}>
-                                <h2 className={cn('text-[13px] sm:text-[15px] md:text-xl font-black tracking-widest whitespace-nowrap', embedded ? 'text-white' : 'text-zinc-800')}>
-                                    {date && (() => {
-                                        const raw = format(new Date(date), "EEEE d 'de' MMMM", { locale: es });
-                                        return raw.charAt(0).toUpperCase() + raw.slice(1);
-                                    })()}
-                                </h2>
-                            </button>
-                            <button type="button" onClick={() => navigateDay(1)} aria-label="Día siguiente" className={cn('p-1 sm:p-1.5 rounded-xl transition-colors active:scale-95 flex-shrink-0', embedded ? 'text-white/70 hover:bg-white/10' : 'text-zinc-500 hover:bg-zinc-100')}>
-                                <ChevronRight size={24} />
-                            </button>
-                        </div>
-
-                        <div className={cn('flex items-center gap-1', !embedded && 'mt-2')}>
-                            {/* Movemos Botón Agregar Empleado a Cabecera */}
-                            <Button
-                                type="button"
-                                variant="primary"
-                                instance="schedule-day-add-employee"
-                                onClick={() => setShowAddEmployeeModal(true)}
-                                aria-label="Añadir empleado"
-                                icon={<Plus size={16} strokeWidth={3} />}
-                            />
-
-                            <button
-                                type="button"
-                                onClick={() => setShowShareModal(true)}
-                                aria-label="Compartir horario"
-                                className={cn('relative w-7 h-7 md:w-8 md:h-8 rounded-xl transition-all active:scale-95 flex items-center justify-center group', embedded ? 'bg-white/10 border border-white/10 text-white hover:bg-white/15' : 'text-zinc-600 shadow-sm bg-white border border-zinc-200 hover:bg-zinc-50', `${isDayPublished && hasUnsavedChanges ? 'ring-2 ring-orange-400/80 ring-offset-2 ring-offset-white' : ''}`)}
-                            >
-                                <Share2 size={16} strokeWidth={2.5} className={embedded ? 'text-white' : 'text-zinc-600'} />
-                                {isDayPublished && isDaySent && (
-                                    <div className="absolute -top-1.5 -right-1.5 bg-white rounded-full p-0.5 shadow-sm z-10 border border-gray-100">
-                                        <Check size={10} className="text-emerald-500" strokeWidth={4} />
+            {/* ── BODY: copia exacta de la vista de día del modal de lectura ── */}
+            <div className="flex flex-col flex-1 min-h-0 overflow-hidden day-modal-body">
+                {/* Resumen del evento — editable, mismo aspecto que el modal de lectura */}
+                <div className="p-3 md:p-4 lg:p-2 w-full shrink-0">
+                    <div className="flex w-full max-w-2xl mx-auto flex-col gap-2 rounded-[var(--radio-control)] bg-white/10 p-2">
+                        {!hasSlot1Activity && !showSecondActivityCard ? (
+                            <div className="text-center text-white/50 text-[10px] font-black tracking-widest py-3 lg:py-1">Sin actividad</div>
+                        ) : (
+                            <>
+                                {hasSlot1Activity && (
+                                    <div className="w-full min-w-0">
+                                        {hasTwoActivities && (
+                                            <div className="mb-1.5 w-full text-center">
+                                                <span className="text-[9px] font-black tracking-wide text-white/60 uppercase">MAÑANA</span>
+                                            </div>
+                                        )}
+                                        {editableGridSlot1}
                                     </div>
                                 )}
-                            </button>
-                        </div>
-                    </div>
-                    </>
-                    )}
 
-                    {/* ZONA BLANCA E INFERIOR (INPUTS + ROJA) */}
-                    <div className={cn('flex flex-col shrink w-full relative', embedded ? 'bg-transparent' : 'bg-white')}>
-                        {/* ZONA DE INPUTS SUPERIOR - Sin border-b ni shadow */}
-                        <div className={cn('w-full shrink-0', embedded ? 'p-2' : 'p-3 md:p-4')}>
-                            <div className={cn('flex flex-col gap-2 w-full max-w-2xl mx-auto', embedded && 'w-fit max-w-full self-center rounded-[var(--radio-control)] bg-white/10 p-2')}>
-                                {/* Card actividad 1 */}
-                            
-
-                                    {hasTwoActivities && (
-                                        <div className="mb-1.5 w-full text-center">
-                                            <span className="text-[9px] font-black tracking-wide text-zinc-500 uppercase">MAÑANA</span>
-                                        </div>
-                                    )}
-
-                                    {/* SLOT 1 — una fila: EVENTO + HORARIO + PAX + CATEGORIA (salvo solo Evento si aún no hay actividad) */}
-                                    <div className="flex w-full min-w-0 flex-col">
-                                        <div
-                                            className={cn(
-                                                'grid w-full min-w-0 auto-rows-min gap-x-1.5 gap-y-1 pb-0.5',
-                                                hasSlot1Activity
-                                                    ? '[grid-template-columns:repeat(4,minmax(0,1fr))]'
-                                                    : 'justify-items-center [grid-template-columns:minmax(0,min(100%,14rem))]'
-                                            )}
-                                        >
-                                            <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border-0 bg-transparent">
-                                                    <ShrinkToFitInput
-                                                        wrapClassName="min-h-0 flex-1"
-                                                        singleLine
-                                                        type="text"
-                                                        value={activity}
-                                                        onChange={(e) => {
-                                                            setActivity(e.target.value);
-                                                            setHasUnsavedChanges(true);
-                                                        }}
-                                                        maxPx={11}
-                                                        minPx={5}
-                                                        placeholder="Artística"
-                                                        className="text-zinc-800 font-semibold leading-tight placeholder:text-zinc-300 focus:outline-none"
-                                                    />
-                                                </div>
-                                                <span className="text-[9px] font-semibold tracking-widest text-white/60 leading-none">Evento</span>
-                                            </div>
-
-                                            {hasSlot1Activity && (
-                                                <>
-                                                    <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                        <div className="flex min-h-[2rem] w-full min-w-0 max-w-full items-center gap-0.5 overflow-hidden rounded-lg border-0 bg-transparent">
-                                                            <ShrinkToFitInput
-                                                                wrapClassName="min-h-0 flex-1"
-                                                                type="time"
-                                                                value={defaultStart}
-                                                                onChange={(e) => {
-                                                                    setDefaultStart(e.target.value);
-                                                                    setHasUnsavedChanges(true);
-                                                                }}
-                                                                maxPx={11}
-                                                                minPx={5}
-                                                                singleLine
-                                                                className="font-semibold leading-tight focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0 text-emerald-600"
-                                                            />
-                                                            <span className="text-zinc-300 select-none">-</span>
-                                                            <ShrinkToFitInput
-                                                                wrapClassName="min-h-0 flex-1"
-                                                                type="time"
-                                                                value={defaultEnd}
-                                                                onChange={(e) => {
-                                                                    setDefaultEnd(e.target.value);
-                                                                    setHasUnsavedChanges(true);
-                                                                }}
-                                                                maxPx={11}
-                                                                minPx={5}
-                                                                singleLine
-                                                                    className="font-semibold leading-tight text-rose-500 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
-                                                            />
-                                                        </div>
-                                                        <span className="text-[9px] font-semibold tracking-widest text-white/60 leading-none">Horario</span>
-                                                    </div>
-
-                                                    <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                        <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border-0 bg-transparent">
-                                                            <ShrinkToFitInput
-                                                                wrapClassName="min-h-0 flex-1"
-                                                                type="text"
-                                                                value={participantsCount}
-                                                                onChange={(e) => {
-                                                                    setParticipantsCount(e.target.value);
-                                                                    setHasUnsavedChanges(true);
-                                                                }}
-                                                                maxPx={11}
-                                                                minPx={5}
-                                                                singleLine
-                                                                className="text-zinc-800 font-semibold leading-tight focus:outline-none"
-                                                            />
-                                                        </div>
-                                                        <span className="text-[9px] font-semibold tracking-widest text-white/60 leading-none">Pax</span>
-                                                    </div>
-
-                                                    <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                        <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border-0 bg-transparent">
-                                                            <ShrinkToFitInput
-                                                                wrapClassName="min-h-0 flex-1"
-                                                                singleLine
-                                                                type="text"
-                                                                value={categoria}
-                                                                onChange={(e) => {
-                                                                    setCategoria(e.target.value);
-                                                                    setHasUnsavedChanges(true);
-                                                                }}
-                                                                maxPx={11}
-                                                                minPx={5}
-                                                                placeholder="Infantiles"
-                                                                className="text-zinc-800 font-semibold leading-tight placeholder:text-zinc-300 focus:outline-none"
-                                                            />
-                                                        </div>
-                                                        <span className="text-[9px] font-semibold tracking-widest text-white/60 leading-none">Categoría</span>
-                                                    </div>
-                                                </>
-                                            )}
-                                        </div>
-
-                                </div>
-
-                                {hasSlot1Activity && !hasSlot2Activity && !secondSlotExpanded && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setSecondSlotExpanded(true)}
-                                        className={cn(
-                                            'shrink-0 rounded-xl text-[10px] font-normal py-3 transition-colors active:scale-[0.99]',
-                                            embedded
-                                                ? 'self-center border-0 bg-transparent text-white/80 hover:bg-white/10'
-                                                : 'w-full min-h-12 border border-zinc-200 bg-white text-[#36606F] hover:bg-zinc-50'
-                                        )}
-                                    >
-                                        + Segunda actividad (tarde)
-                                    </button>
-                                )}
-
-                                {/* Card actividad 2 — solo si hay texto en act. 2 o el usuario abrió el slot */}
                                 {showSecondActivityCard && (
-                                    <div className={cn('rounded-xl p-2 sm:p-3 w-full min-w-0', embedded ? 'bg-white/10 border-0 shadow-none' : 'bg-zinc-50 border border-zinc-200 shadow-sm')}>
-                                        <div className="mb-1.5 flex w-full items-center justify-center gap-2 text-center">
-                                            <span className="text-[9px] font-black tracking-wide text-zinc-500 uppercase">TARDE</span>
-                                            {secondSlotExpanded && !hasSlot2Activity && (
+                                    <div className="w-full min-w-0">
+                                        {hasTwoActivities && (
+                                            <div className="mb-1.5 w-full text-center">
+                                                <span className="text-[9px] font-black tracking-wide text-white/60 uppercase">TARDE</span>
+                                            </div>
+                                        )}
+                                        {editableGridSlot2}
+                                        {secondSlotExpanded && !hasSlot2Activity && (
+                                            <div className="mt-1 flex w-full justify-center">
                                                 <Button
                                                     type="button"
                                                     variant="tertiary"
@@ -998,230 +1127,80 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                                 >
                                                     Cerrar
                                                 </Button>
-                                            )}
-                                        </div>
-
-                                        <div className="flex w-full min-w-0 flex-col">
-                                            <div
-                                                className={cn(
-                                                    'grid w-full min-w-0 auto-rows-min gap-x-1.5 gap-y-1 pb-0.5',
-                                                    hasSlot2Activity
-                                                        ? '[grid-template-columns:repeat(4,minmax(0,1fr))]'
-                                                        : 'justify-items-center [grid-template-columns:minmax(0,min(100%,14rem))]'
-                                                )}
-                                            >
-                                                <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                    <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border-0 bg-transparent">
-                                                        <ShrinkToFitInput
-                                                            wrapClassName="min-h-0 flex-1"
-                                                            singleLine
-                                                            type="text"
-                                                            value={activity2}
-                                                            onChange={(e) => {
-                                                                setActivity2(e.target.value);
-                                                                setHasUnsavedChanges(true);
-                                                            }}
-                                                            maxPx={11}
-                                                            minPx={5}
-                                                            placeholder="Artística"
-                                                            className="text-zinc-800 font-semibold leading-tight placeholder:text-zinc-300 focus:outline-none"
-                                                        />
-                                                    </div>
-                                                    <span className="text-[9px] font-semibold tracking-widest text-white/60 leading-none">Evento</span>
-                                                </div>
-
-                                                {hasSlot2Activity && (
-                                                    <>
-                                                        <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                            <div className="flex min-h-[2rem] w-full min-w-0 max-w-full items-center gap-0.5 overflow-hidden rounded-lg border-0 bg-transparent">
-                                                                <ShrinkToFitInput
-                                                                    wrapClassName="min-h-0 flex-1"
-                                                                    type="time"
-                                                                    value={defaultStart2}
-                                                                    onChange={(e) => {
-                                                                        setDefaultStart2(e.target.value);
-                                                                        setHasUnsavedChanges(true);
-                                                                    }}
-                                                                    maxPx={11}
-                                                                    minPx={5}
-                                                                    singleLine
-                                                                    className="font-semibold leading-tight focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0 text-emerald-600"
-                                                                />
-                                                                <span className="text-zinc-300 select-none">-</span>
-                                                                <ShrinkToFitInput
-                                                                    type="time"
-                                                                    value={defaultEnd2}
-                                                                    onChange={(e) => {
-                                                                        setDefaultEnd2(e.target.value);
-                                                                        setHasUnsavedChanges(true);
-                                                                    }}
-                                                                    maxPx={11}
-                                                                    minPx={5}
-                                                                    singleLine
-                                                                    className="font-semibold leading-tight text-rose-500 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:opacity-0"
-                                                                />
-                                                            </div>
-                                                            <span className="text-[9px] font-semibold tracking-widest text-white/60 leading-none">Horario</span>
-                                                        </div>
-
-                                                        <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                            <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border-0 bg-transparent">
-                                                                <ShrinkToFitInput
-                                                                    wrapClassName="min-h-0 flex-1"
-                                                                    type="text"
-                                                                    value={participantsCount2}
-                                                                    onChange={(e) => {
-                                                                        setParticipantsCount2(e.target.value);
-                                                                        setHasUnsavedChanges(true);
-                                                                    }}
-                                                                    maxPx={11}
-                                                                    minPx={5}
-                                                                    singleLine
-                                                                    className="text-zinc-800 font-semibold leading-tight focus:outline-none"
-                                                                />
-                                                            </div>
-                                                            <span className="text-[9px] font-semibold tracking-widest text-white/60 leading-none">Pax</span>
-                                                        </div>
-
-                                                        <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
-                                                            <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border-0 bg-transparent">
-                                                                <ShrinkToFitInput
-                                                                    wrapClassName="min-h-0 flex-1"
-                                                                    singleLine
-                                                                    type="text"
-                                                                    value={categoria2}
-                                                                    onChange={(e) => {
-                                                                        setCategoria2(e.target.value);
-                                                                        setHasUnsavedChanges(true);
-                                                                    }}
-                                                                    maxPx={11}
-                                                                    minPx={5}
-                                                                    placeholder="Cadetes"
-                                                                    className="text-zinc-800 font-semibold leading-tight placeholder:text-zinc-300 focus:outline-none"
-                                                                />
-                                                            </div>
-                                                            <span className="text-[9px] font-semibold tracking-widest text-white/60 leading-none">Categoría</span>
-                                                        </div>
-                                                    </>
-                                                )}
                                             </div>
-                                        </div>
+                                        )}
                                     </div>
                                 )}
-                            </div>
-                        </div>
 
-                        {/* ENCABEZADO ROJO (Ancho completo) */}
-                        <div className="flex w-full bg-[#E55353] text-white shrink-0 border-b border-gray-100 rounded-t-[24px]">
-                            <div className="w-24 md:w-32 px-3 flex items-center justify-center shrink-0">
-                                {/* Espacio donde antes estaba el botón de '+' */}
-                            </div>
-                            <div className="flex-1 relative h-5 md:h-6 flex">
-                                {hoursHeader.map((hour) => (
-                                    <div key={hour} className="flex-1 text-[9px] font-black flex items-center justify-start -translate-x-1 sm:-translate-x-2 select-none opacity-90">
-                                        {hour}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                                {hasSlot1Activity && !hasSlot2Activity && !secondSlotExpanded && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSecondSlotExpanded(true)}
+                                        className="shrink-0 self-center rounded-xl text-[10px] font-normal py-3 text-white/80 hover:bg-white/10 transition-colors active:scale-[0.99] before:absolute before:inset-0 before:min-h-[var(--tactil-minimo)] before:content-[''] relative"
+                                    >
+                                        + Segunda actividad (tarde)
+                                    </button>
+                                )}
+                            </>
+                        )}
                     </div>
                 </div>
 
-                {/* ZONA DE TABLA Y FILAS (FUERA DEL PADRE STICKY) */}
-                <div data-element="schedule-shift-table" className="flex flex-col shrink min-h-0 w-full bg-white rounded-b-[32px] pt-2">
+                {/* Tabla o «Sin turno» */}
+                {shifts.length === 0 ? (
+                    <div className="flex-1 flex items-center justify-center py-16 px-4">
+                        <p className="text-xs font-medium text-white/60">Sin turno</p>
+                    </div>
+                ) : (
+                <div data-element="schedule-shift-table" className="rounded-2xl border border-zinc-200/60 shadow-[0_1px_2px_rgba(0,0,0,0.05),0_12px_32px_rgba(0,0,0,0.16)] overflow-hidden flex flex-col flex-1 min-h-0">
+                    {/* Encabezado rojo */}
+                    <div className="flex w-full bg-[#E55353] text-white shrink-0">
+                        <div className="w-24 md:w-28 flex items-center justify-center shrink-0 h-5 md:h-6" />
+                        <div className="flex-1 relative h-5 md:h-6 flex">
+                            {hoursHeader.map(hour => (
+                                <div key={hour} className="flex-1 text-[9px] font-black flex items-center justify-start -translate-x-1 sm:-translate-x-2 select-none opacity-90">
+                                    {hour}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
 
-                    {/* FILAS DE EMPLEADOS */}
-                    <div className="flex flex-col w-full bg-white relative pb-0 z-10">
+                    {/* Filas de empleados — editables */}
+                    <div className="flex flex-col w-full bg-white flex-1 overflow-y-auto min-h-0 day-modal-shift-rows">
                         {shifts.map((shift, idx) => (
-                            <div key={shift.employeeId} className={`flex w-full h-9 md:h-10 border-b border-gray-100 last:border-b-0 transition-colors relative ${editingIndex === idx ? 'bg-blue-50/40 z-50' : 'bg-white z-10'}`} onClick={(e) => { if (editingIndex === idx) e.stopPropagation(); }}>
-                                <div
-                                    className="w-24 md:w-32 px-2 flex items-center gap-1 shrink-0 overflow-hidden group/row pl-3 md:pl-4 cursor-pointer hover:bg-blue-50/30 transition-colors"
-                                    onClick={(e) => { e.stopPropagation(); setEditingIndex(idx); }}
-                                >
-                                    <span className={`truncate transition-colors flex-1 select-none min-w-0 ${editingIndex === idx ? 'text-[#5B8FB9]' : 'text-gray-800'} ${embedded ? 'text-[11px] font-medium leading-none' : 'font-black text-[10px] md:text-xs uppercase tracking-tight'}`}>
-                                        {shift.name}
-                                    </span>
+                            <div key={shift.employeeId} className="flex w-full h-9 md:h-10 border-b border-gray-100 last:border-b-0 bg-white day-modal-shift-row">
+                                <div className="w-24 md:w-28 px-2 flex items-center gap-2 shrink-0 overflow-hidden">
+                                    <Avatar src={shift.avatar_url ?? undefined} alt={shift.name ?? '?'} size="sm" className="shrink-0" />
                                     <button
-                                        onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }}
-                                        className={cn(
-                                            'relative rounded-full bg-red-500 text-white flex items-center justify-center shrink-0 transition-all shadow-sm active:scale-95 opacity-90 group-hover/row:opacity-100',
-                                            embedded
-                                                ? 'w-5 h-5 before:absolute before:inset-0 before:-m-2.5 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\'] hover:bg-red-600'
-                                                : 'w-7 h-7 min-w-[28px] min-h-[28px] hover:bg-red-600'
-                                        )}
-                                        title="Quitar del horario"
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); setEditingIndex(editingIndex === idx ? null : idx); }}
+                                        className="min-w-0 flex-1 truncate text-left text-[11px] font-medium leading-none text-zinc-800 select-none hover:text-[#5B8FB9] transition-colors"
                                     >
-                                        <X size={14} strokeWidth={4} />
+                                        {shift.name}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }}
+                                        className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500 text-white transition-all shadow-sm hover:bg-red-600 active:scale-95 before:absolute before:inset-0 before:-m-2.5 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']"
+                                        title="Quitar del horario"
+                                        aria-label={`Quitar ${shift.name}`}
+                                    >
+                                        <X size={12} strokeWidth={4} />
                                     </button>
                                 </div>
-                                <div className="flex-1 relative">
-                                    <div className="absolute inset-0 flex">
+                                <div className="flex-1 relative min-h-0">
+                                    <div className="absolute inset-0 flex pointer-events-none">
                                         {hoursHeader.map((_, i) => (
-                                            <div key={i} className="flex-1 pointer-events-none" />
+                                            <div key={i} className="flex-1" />
                                         ))}
                                     </div>
                                     {shift.active && <ShiftBar shift={shift} onUpdate={(newS) => handleUpdateShift(idx, newS)} allowMove={editingIndex === idx} />}
                                 </div>
-
-                                {/* BARRA EDICIÓN FLOTANTE: en embebido se pinta por portal; si no, aquí. Tarjeta oscura, + arriba (verde), - abajo (rojo). Cierre tocando fuera. */}
-                                {editingIndex === idx && !embedded && (() => {
-                                    const s = shift;
-                                    const upd = (newS: typeof s) => handleUpdateShift(idx, newS);
-                                    const step = SNAP_MINUTES;
-                                    return (
-                                        <div className="absolute top-[80px] md:top-[90px] left-0 right-0 z-[100] translate-y-2 pointer-events-none flex justify-center w-full px-4" onClick={(e) => e.stopPropagation()}>
-                                            <div className="w-full max-w-md pointer-events-auto flex flex-col gap-2 p-2 bg-zinc-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 animate-in fade-in zoom-in-95 duration-200">
-                                                {/* Controles de Tiempo */}
-                                                <div className="h-14 flex items-center gap-2">
-                                                    <div className="flex flex-col gap-0.5 shrink-0">
-                                                        <button type="button" onClick={(e) => { e.stopPropagation(); upd({ ...s, start: stepTime(s.start, -step) }); }} className="w-8 h-6 flex items-center justify-center rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm active:scale-95" title="Inicio -30 min"><Plus size={14} strokeWidth={3} /></button>
-                                                        <button type="button" onClick={(e) => { e.stopPropagation(); const t = stepTime(s.start, step); if (timeToPercent(t) < timeToPercent(s.end)) upd({ ...s, start: t }); }} className="w-8 h-6 flex items-center justify-center rounded-lg bg-red-500 hover:bg-red-600 text-white shadow-sm active:scale-95" title="Inicio +30 min"><Minus size={14} strokeWidth={3} /></button>
-                                                    </div>
-                                                    <div className="flex-1 relative h-full min-w-0 rounded-xl overflow-hidden">
-                                                        <ShiftBar shift={s} onUpdate={upd} allowMove={true} barClass="bg-[#5B8FB9] border border-white/20" />
-                                                    </div>
-                                                    <div className="flex flex-col gap-0.5 shrink-0">
-                                                        <button type="button" onClick={(e) => { e.stopPropagation(); const t = stepTime(s.end, step); if (timeToPercent(t) > timeToPercent(s.start)) upd({ ...s, end: t }); }} className="w-8 h-6 flex items-center justify-center rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm active:scale-95" title="Final +30 min"><Plus size={14} strokeWidth={3} /></button>
-                                                        <button type="button" onClick={(e) => { e.stopPropagation(); upd({ ...s, end: stepTime(s.end, -step) }); }} className="w-8 h-6 flex items-center justify-center rounded-lg bg-red-500 hover:bg-red-600 text-white shadow-sm active:scale-95" title="Final -30 min"><Minus size={14} strokeWidth={3} /></button>
-                                                    </div>
-                                                </div>
-
-                                                {/* Controles de Actividad y Categoría del Trabajador */}
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    <div className="flex flex-col gap-1">
-                                                        <span className="text-[7px] font-black text-white/60 uppercase tracking-widest pl-1">Actividad Trabajador</span>
-                                                        <div className="h-9 bg-white/10 rounded-xl border border-white/10 overflow-hidden">
-                                                            <input
-                                                                type="text"
-                                                                value={s.activity}
-                                                                onChange={(e) => upd({ ...s, activity: e.target.value })}
-                                                                placeholder="ACT."
-                                                                className="w-full h-full bg-transparent border-none focus:outline-none text-white text-[10px] font-black uppercase px-3 placeholder:text-white/20"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex flex-col gap-1">
-                                                        <span className="text-[7px] font-black text-white/60 uppercase tracking-widest pl-1">Categoría Trabajador</span>
-                                                        <div className="h-9 bg-white/10 rounded-xl border border-white/10 overflow-hidden">
-                                                            <input
-                                                                type="text"
-                                                                value={s.categoria}
-                                                                onChange={(e) => upd({ ...s, categoria: e.target.value })}
-                                                                placeholder="CAT."
-                                                                className="w-full h-full bg-transparent border-none focus:outline-none text-white text-[10px] font-black uppercase px-3 placeholder:text-white/20"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })()}
                             </div>
                         ))}
                     </div>
 
-                    {/* Footer Total — mismo que modal: fondo blanco, texto gris */}
+                    {/* Footer Total — penúltima fila, fondo blanco, texto gris claro descriptivo */}
                     <div className="flex w-full bg-white border-t border-gray-100 shrink-0">
                         <div className="w-24 md:w-28 h-9 md:h-10 font-semibold text-gray-400 text-[10px] md:text-xs flex items-center justify-start pl-3 uppercase tracking-widest shrink-0">
                             Total
@@ -1235,20 +1214,26 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                         </div>
                     </div>
 
-                    <ScheduleDayProfitabilityBar
-                        date={date}
-                        shifts={shifts.map((s) => ({
-                            employeeId: s.employeeId,
-                            start: s.start,
-                            end: s.end,
-                            active: s.active,
-                        }))}
-                    />
+                    {/* Footer Coste | Rentabilidad — última fila, partida en dos */}
+                    <div className="flex w-full bg-white border-t border-gray-100 shrink-0 rounded-b-2xl">
+                        <div className="flex-1 h-9 md:h-10 flex items-center justify-start pl-3 gap-1.5 min-w-0">
+                            <span className="font-semibold text-gray-400 text-[10px] md:text-xs uppercase tracking-widest shrink-0">Coste</span>
+                            <span className="font-semibold text-gray-800 text-[10px] md:text-xs tabular-nums">
+                                {formatScheduleEuro(laborCost)}
+                            </span>
+                        </div>
+                        <div className="flex-1 h-9 md:h-10 flex items-center justify-start pl-3 gap-1.5 min-w-0 border-l border-gray-100">
+                            <span className="font-semibold text-gray-400 text-[10px] md:text-xs uppercase tracking-widest shrink-0">Rentabilidad</span>
+                            <span className="font-semibold text-emerald-600 text-[10px] md:text-xs tabular-nums">
+                                {formatScheduleEuro(requiredBilling)}
+                            </span>
+                        </div>
+                    </div>
                 </div>
-
+                )}
             </div>
 
-            {/* Task surface embebida migrada al Modal oficial. */}
+            {/* ── Edición del turno de un trabajador (task surface embebida) ── */}
             {embedded && editingIndex !== null && shifts[editingIndex] && (() => {
                 const s = shifts[editingIndex];
                 const upd = (newS: typeof s) => handleUpdateShift(editingIndex, newS);
@@ -1271,7 +1256,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                     <button type="button" aria-label="Inicio +30 min" onClick={() => { const t = stepTime(s.start, step); if (timeToPercent(t) < timeToPercent(s.end)) upd({ ...s, start: t }); }} className="w-8 h-6 flex items-center justify-center rounded-lg bg-red-500 hover:bg-red-600 text-white shadow-sm active:scale-95" title="Inicio +30 min"><Minus size={14} strokeWidth={3} /></button>
                                 </div>
                                 <div className="flex-1 relative h-full min-w-0 rounded-xl overflow-hidden">
-                                    <ShiftBar shift={s} onUpdate={upd} allowMove={true} barClass="bg-[#5B8FB9] border border-white/20" />
+                                    <ShiftBar shift={s} onUpdate={upd} allowMove barClass="bg-[#5B8FB9] border border-white/20" />
                                 </div>
                                 <div className="flex flex-col gap-0.5 shrink-0">
                                     <button type="button" aria-label="Final +30 min" onClick={() => { const t = stepTime(s.end, step); if (timeToPercent(t) > timeToPercent(s.start)) upd({ ...s, end: t }); }} className="w-8 h-6 flex items-center justify-center rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm active:scale-95" title="Final +30 min"><Plus size={14} strokeWidth={3} /></button>
@@ -1311,7 +1296,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                 );
             })()}
 
-            {/* MODALES */}
+            {/* ── MODALES ── */}
             <Modal
                 open={showCalendarModal}
                 onClose={() => setShowCalendarModal(false)}

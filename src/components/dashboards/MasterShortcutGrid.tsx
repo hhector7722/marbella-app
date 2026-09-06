@@ -130,9 +130,6 @@ function MasterCajasCambioControl({
         'relative touch-manipulation text-white transition-[filter] active:brightness-[0.99] ' +
         'before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']';
 
-    const assetClassName =
-        'flex h-full w-full items-center justify-center bg-emerald-600';
-
     return (
         <div data-component="MasterCajasCambioControl" data-layout="dual-stack" data-plate="fill">
             <div data-element="iconStack">
@@ -143,9 +140,12 @@ function MasterCajasCambioControl({
                         onClick={onOpenCambio1}
                         aria-label="Caja cambio 1: arqueo"
                         className={iconButtonClassName}
-                        style={{ ['--shortcut-fill' as string]: 'var(--color-positivo)' }}
+                        style={{ ['--shortcut-fill' as string]: '#38bdf8' }}
                     >
-                        <div data-element="asset" className={assetClassName}>
+                        <div
+                            data-element="asset"
+                            className="flex h-full w-full items-center justify-center bg-sky-400"
+                        >
                             {treasuryLoading ? (
                                 <LoadingSpinner size="sm" className="text-white" />
                             ) : (
@@ -164,9 +164,12 @@ function MasterCajasCambioControl({
                         onClick={onOpenCambio2}
                         aria-label="Caja cambio 2: arqueo"
                         className={iconButtonClassName}
-                        style={{ ['--shortcut-fill' as string]: 'var(--color-positivo)' }}
+                        style={{ ['--shortcut-fill' as string]: '#c084fc' }}
                     >
-                        <div data-element="asset" className={assetClassName}>
+                        <div
+                            data-element="asset"
+                            className="flex h-full w-full items-center justify-center bg-purple-400"
+                        >
                             {treasuryLoading ? (
                                 <LoadingSpinner size="sm" className="text-white" />
                             ) : (
