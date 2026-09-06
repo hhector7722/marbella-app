@@ -153,41 +153,43 @@ export default function DatosPersonalesModal({
     );
 
     const recordContent = (
-        <div className="rounded-2xl bg-white px-ds-4 py-ds-3 shadow-sm">
-            <div className="flex items-center py-ds-1">
-                <div className="min-w-0 flex-1">
-                    <p className="truncate text-[15px] font-bold leading-tight text-zinc-900">
-                        {fullName}
-                    </p>
+        <div className="p-ds-3">
+            <div className="rounded-2xl bg-white px-ds-4 py-ds-3 shadow-sm">
+                <div className="flex items-center py-ds-1">
+                    <div className="min-w-0 flex-1">
+                        <p className="truncate text-[15px] font-bold leading-tight text-zinc-900">
+                            {fullName}
+                        </p>
+                    </div>
                 </div>
-            </div>
 
-            <RecordSection title="Identificación">
-                <FieldCell label="NIF / NIE / Pasaporte" value={dni} />
-                <FieldCell label="Nº afiliación S.S." value={afiliacionSeguridadSocial} />
-                <FieldCell label="Nacionalidad" value={nacionalidad} />
-                <FieldCell label="Fecha de nacimiento" value={formatBirthDate(fechaNacimiento)} />
-            </RecordSection>
-
-            <RecordSection title="Contacto">
-                <FieldCell label="Correo electrónico" value={email} valueClassName="truncate text-[11px]" />
-                <FieldCell label="Teléfono" value={phone} />
-            </RecordSection>
-
-            <RecordSection title="Domicilio">
-                <FieldCell label="Dirección" value={domicilio} className="col-span-2" />
-            </RecordSection>
-
-            {hasImages ? (
-                <RecordSection title="Documento">
-                    {images!.delantera ? (
-                        <DocImage src={images!.delantera} label="Delantera" />
-                    ) : null}
-                    {images!.trasera ? (
-                        <DocImage src={images!.trasera} label="Trasera" />
-                    ) : null}
+                <RecordSection title="Identificación">
+                    <FieldCell label="NIF / NIE / Pasaporte" value={dni} />
+                    <FieldCell label="Nº afiliación S.S." value={afiliacionSeguridadSocial} />
+                    <FieldCell label="Nacionalidad" value={nacionalidad} />
+                    <FieldCell label="Fecha de nacimiento" value={formatBirthDate(fechaNacimiento)} />
                 </RecordSection>
-            ) : null}
+
+                <RecordSection title="Contacto">
+                    <FieldCell label="Correo electrónico" value={email} valueClassName="truncate text-[11px]" />
+                    <FieldCell label="Teléfono" value={phone} />
+                </RecordSection>
+
+                <RecordSection title="Domicilio">
+                    <FieldCell label="Dirección" value={domicilio} className="col-span-2" />
+                </RecordSection>
+
+                {hasImages ? (
+                    <RecordSection title="Documento">
+                        {images!.delantera ? (
+                            <DocImage src={images!.delantera} label="Delantera" />
+                        ) : null}
+                        {images!.trasera ? (
+                            <DocImage src={images!.trasera} label="Trasera" />
+                        ) : null}
+                    </RecordSection>
+                ) : null}
+            </div>
         </div>
     );
 
