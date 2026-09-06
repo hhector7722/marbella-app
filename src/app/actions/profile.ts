@@ -778,6 +778,35 @@ export type NominaListItem = {
 
 };
 
+const MESES_ES: Record<string, number> = {
+    enero: 1, febrero: 2, marzo: 3, abril: 4, mayo: 5, junio: 6,
+    julio: 7, agosto: 8, septiembre: 9, octubre: 10, noviembre: 11, diciembre: 12,
+};
+
+function mesNumero(value: string | number | null | undefined): number | null {
+    if (value == null || value === '') return null;
+    if (typeof value === 'number') return value >= 1 && value <= 12 ? value : null;
+    const t = String(value).trim().toLowerCase();
+    const n = parseInt(t, 10);
+    if (!Number.isNaN(n) && n >= 1 && n <= 12) return n;
+    return MESES_ES[t] ?? null;
+}
+
+/** Clave de orden por periodo de la nómina (year*100 + mes) o null si no se puede deducir. */
+function nominaPeriodKey(row: NominaListItem): number | null {
+    const year = row.year && row.year > 0 ? row.year : null;
+    const mes = mesNumero(row.mes);
+    if (year && mes) return year * 100 + mes;
+
+    const fn = (row.filename ?? '').toLowerCase();
+    const mm = fn.match(/\b(0?[1-9]|1[0-2])[-\s/](\d{4})\b/);
+    if (mm) return parseInt(mm[2], 10) * 100 + parseInt(mm[1], 10);
+    const yy = fn.match(/\b(\d{4})\b/);
+    const mesTexto = Object.entries(MESES_ES).find(([nombre]) => fn.includes(nombre));
+    if (yy && mesTexto) return parseInt(yy[1], 10) * 100 + mesTexto[1];
+    return null;
+}
+
 
 
 /**
@@ -956,11 +985,21 @@ export async function fetchNominasListForUser(targetUserId: string): Promise<{ r
 
     rows.sort((a, b) => {
 
-        const nameA = a.storage_path.split('/').pop() || '';
+        const ka = nominaPeriodKey(a);
 
-        const nameB = b.storage_path.split('/').pop() || '';
+        const kb = nominaPeriodKey(b);
 
-        return nameB.localeCompare(nameA, undefined, { numeric: true, sensitivity: 'base' });
+        if (ka != null && kb != null) return kb - ka;
+
+        if (ka != null) return -1;
+
+        if (kb != null) return 1;
+
+        const ta = a.created_at ? Date.parse(a.created_at) : 0;
+
+        const tb = b.created_at ? Date.parse(b.created_at) : 0;
+
+        return tb - ta;
 
     });
 
