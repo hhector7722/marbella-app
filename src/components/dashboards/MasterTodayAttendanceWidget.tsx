@@ -249,7 +249,7 @@ export function MasterTodayAttendanceWidget({
                                 </span>
                             </button>
                         </div>
-                        <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white">
+                        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-white">
                             {logs.length === 0 ? (
                                 <EmptyState instance="master-today-none" variant="none" title="Sin fichajes" />
                             ) : (
@@ -286,21 +286,19 @@ export function MasterTodayAttendanceWidget({
                                     })}
                                 </div>
                             )}
-                            <div className="flex shrink-0 items-stretch">
-                                <button
-                                    type="button"
-                                    onClick={goPrevDay}
-                                    aria-label="Día anterior"
-                                    className="flex h-12 flex-1 items-start justify-start"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={goNextDay}
-                                    disabled={!canGoNext}
-                                    aria-label="Día siguiente"
-                                    className="flex h-12 flex-1 items-start justify-end disabled:pointer-events-none"
-                                />
-                            </div>
+                            <button
+                                type="button"
+                                onClick={goPrevDay}
+                                aria-label="Día anterior"
+                                className="absolute bottom-0 left-0 flex h-12 w-1/2 items-start justify-start"
+                            />
+                            <button
+                                type="button"
+                                onClick={goNextDay}
+                                disabled={!canGoNext}
+                                aria-label="Día siguiente"
+                                className="absolute bottom-0 right-0 flex h-12 w-1/2 items-start justify-end disabled:pointer-events-none"
+                            />
                         </div>
                     </>
                 ) : !loading ? (
