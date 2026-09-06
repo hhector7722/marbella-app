@@ -8,7 +8,6 @@ import { Pencil } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/Field';
-import { Avatar } from '@/components/ui/Avatar';
 import { cn } from '@/lib/utils';
 import { updateEmployeePersonalData } from '@/app/actions/employee-personal-data';
 
@@ -63,7 +62,6 @@ export default function DatosPersonalesModal({
     nacionalidad,
     fechaNacimiento,
     domicilio,
-    avatarUrl,
     ownerUserId,
     canEdit = false,
     onSaved,
@@ -155,16 +153,10 @@ export default function DatosPersonalesModal({
     );
 
     const recordContent = (
-        <div>
-            <div className="flex items-center gap-ds-3 px-ds-4 py-ds-3">
-                <Avatar
-                    src={avatarUrl}
-                    alt={fullName}
-                    size="md"
-                    className="ring-2 ring-white/20"
-                />
+        <div className="rounded-2xl bg-white px-ds-4 py-ds-3 shadow-sm">
+            <div className="flex items-center py-ds-1">
                 <div className="min-w-0 flex-1">
-                    <p className="truncate text-[15px] font-bold leading-tight text-ds-texto-invertido">
+                    <p className="truncate text-[15px] font-bold leading-tight text-zinc-900">
                         {fullName}
                     </p>
                 </div>
@@ -178,8 +170,8 @@ export default function DatosPersonalesModal({
             </RecordSection>
 
             <RecordSection title="Contacto">
+                <FieldCell label="Correo electrónico" value={email} valueClassName="truncate text-[11px]" />
                 <FieldCell label="Teléfono" value={phone} />
-                <FieldCell label="Correo electrónico" value={email} />
             </RecordSection>
 
             <RecordSection title="Domicilio">
@@ -362,11 +354,11 @@ export default function DatosPersonalesModal({
 
 function RecordSection({ title, children }: { title: string; children: React.ReactNode }) {
     return (
-        <section className="border-t border-white/10 first:border-t-0">
-            <h3 className="px-ds-4 pt-ds-3 pb-ds-1 text-[11px] font-medium tracking-wide text-white/60">
+        <section className="mt-ds-3 border-t border-zinc-100 first:mt-ds-1 first:border-t-0">
+            <h3 className="pt-ds-2 pb-ds-1 text-[11px] font-bold tracking-wide text-zinc-900">
                 {title}
             </h3>
-            <div className="grid grid-cols-2 gap-x-ds-4 px-ds-4 pb-ds-2">{children}</div>
+            <div className="grid grid-cols-2 gap-x-ds-4 pb-ds-2">{children}</div>
         </section>
     );
 }
@@ -375,15 +367,17 @@ function FieldCell({
     label,
     value,
     className,
+    valueClassName,
 }: {
     label: string;
     value: string | null | undefined;
     className?: string;
+    valueClassName?: string;
 }) {
     return (
         <div className={cn('min-w-0 py-ds-1', className)}>
-            <p className="text-[10px] font-medium leading-tight text-white/55">{label}</p>
-            <p className="mt-0.5 text-[12px] font-normal leading-snug break-words text-ds-texto-invertido">
+            <p className="text-[10px] font-medium leading-tight text-zinc-500">{label}</p>
+            <p className={cn('mt-1 text-[12px] font-normal leading-snug break-words text-zinc-900', valueClassName)}>
                 {displayValue(value)}
             </p>
         </div>
@@ -393,7 +387,7 @@ function FieldCell({
 function DocImage({ src, label }: { src: string; label: string }) {
     return (
         <div className="min-w-0">
-            <p className="text-[11px] font-medium leading-tight text-ds-texto-tenue">{label}</p>
+            <p className="text-[11px] font-medium leading-tight text-zinc-500">{label}</p>
             <img
                 src={src}
                 alt={`${label} del documento`}

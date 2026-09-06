@@ -39,24 +39,24 @@ export default function ContactoModal({ isOpen, onClose, phone }: ContactoModalP
                     </div>
                 </div>
                 {phone && (
-                        <div className="flex items-center gap-6 pt-2">
-                            <a
-                                href={`tel:+${telNumber}`}
-                                className="min-h-[48px] flex items-center justify-center gap-2 text-black font-black text-[10px] uppercase tracking-widest hover:opacity-70 transition-opacity active:scale-[0.98]"
-                            >
-                                <img src="/icons/contact.png" alt="" className="w-6 h-6 object-contain" />
-                                Llamar
-                            </a>
-                            <a
-                                href={`https://wa.me/${waNumber}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="min-h-[48px] flex items-center justify-center gap-2 text-black font-black text-[10px] uppercase tracking-widest hover:opacity-70 transition-opacity active:scale-[0.98]"
-                            >
-                                <img src="/icons/contact.png" alt="" className="w-6 h-6 object-contain" />
-                                WhatsApp
-                            </a>
-                        </div>
+                    <div className="flex items-start justify-center gap-ds-8 pt-2 pb-ds-8">
+                        <a
+                            href={`tel:+${telNumber}`}
+                            className="min-h-[48px] flex flex-col items-center justify-center gap-1 text-black hover:opacity-70 transition-opacity active:scale-[0.98]"
+                        >
+                            <img src="/icons/phone.png" alt="" className="w-6 h-6 object-contain" />
+                            <span className="text-sm leading-tight">Llamar</span>
+                        </a>
+                        <a
+                            href={`https://wa.me/${waNumber}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="min-h-[48px] flex flex-col items-center justify-center gap-1 text-black hover:opacity-70 transition-opacity active:scale-[0.98]"
+                        >
+                            <img src="/icons/whatsapp.png" alt="" className="w-6 h-6 object-contain" />
+                            <span className="text-sm leading-tight">WhatsApp</span>
+                        </a>
+                    </div>
                 )}
             </div>
         </Modal>
