@@ -14,7 +14,6 @@ interface MasterMoreFunctionsModalProps {
     isOpen: boolean;
     onClose: () => void;
     onOpenCierre: () => void;
-    onOpenPlantilla: () => void;
 }
 
 type MoreFunctionsItem = {
@@ -23,7 +22,7 @@ type MoreFunctionsItem = {
     img: string;
 } & (
     | { href: string }
-    | { action: 'cierre' | 'plantilla' | 'web' }
+    | { action: 'cierre' | 'web' }
 );
 
 const MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
@@ -35,16 +34,14 @@ const MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
     { label: 'Asistencia', instance: 'asistencia', href: '/staff/history', img: '/icons/calendar.png' },
     { label: 'Cierre', instance: 'cierre', action: 'cierre', img: '/icons/lock.png' },
     { label: 'Propinas', instance: 'propinas', href: '/dashboard/propinas', img: '/icons/tip.png' },
-    { label: 'Recetas', instance: 'recetas', href: '/recipes', img: '/icons/recipes.png' },
+    { label: 'Uso app', instance: 'uso-app', href: '/dashboard/uso', img: '/icons/uso.png' },
     { label: 'Rentabilidad', instance: 'rentabilidad', href: '/dashboard/insights', img: '/icons/rent.png' },
-    { label: 'Plantilla', instance: 'plantilla', action: 'plantilla', img: '/icons/admin.png' },
 ];
 
 export function MasterMoreFunctionsModal({
     isOpen,
     onClose,
     onOpenCierre,
-    onOpenPlantilla,
 }: MasterMoreFunctionsModalProps) {
     const router = useRouter();
     const [isNavigating, setIsNavigating] = useState(false);
@@ -61,9 +58,8 @@ export function MasterMoreFunctionsModal({
         setTimeout(action, 150);
     };
 
-    const actionHandlers: Record<'cierre' | 'plantilla' | 'web', () => void> = {
+    const actionHandlers: Record<'cierre' | 'web', () => void> = {
         cierre: onOpenCierre,
-        plantilla: onOpenPlantilla,
         web: () => window.open(WEB_URL, '_blank', 'noopener,noreferrer'),
     };
 

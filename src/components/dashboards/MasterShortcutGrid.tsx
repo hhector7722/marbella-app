@@ -1,39 +1,24 @@
 'use client';
 
-import { Fragment, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, X } from 'lucide-react';
-import {
-    addDays,
-    eachWeekOfInterval,
-    endOfMonth,
-    endOfWeek,
-    format,
-    startOfMonth,
-    startOfWeek,
-} from 'date-fns';
-import { es } from 'date-fns/locale';
 import PremiumCountUp from '@/components/ui/PremiumCountUp';
 import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
 import { HomeScreenSlot } from '@/components/dashboards/HomeScreen';
 import { formatChangeBoxEur } from '@/components/dashboards/ops-widgets';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import type { WeeklyStats } from '@/lib/hours-engine/overtime-weeks-ssot';
 
 type MasterShortcutGridProps = {
     actualBalance: number;
     changeBoxes: any[];
     treasuryLoading?: boolean;
-    overtimeViewMonth: Date;
-    overtimeWeeksData: WeeklyStats[];
-    overtimeLoading?: boolean;
     onOpenCambio: () => void;
-    onOpenOvertime: () => void;
     onOpenCambio1: () => void;
     onOpenCambio2: () => void;
     onOpenReservas: () => void;
     onOpenCajaInicialAcciones: () => void;
     onOpenOtros: () => void;
+    onOpenPlantilla: () => void;
     pendingReservationsCount?: number;
 };
 
@@ -194,136 +179,23 @@ function MasterCajasCambioControl({
     );
 }
 
-/**
- * Horas extra del mes: calendario completo (L M X J V S D + días repartidos
- * por semanas) con el estado de abono y el importe de cada semana a la derecha.
- * 9 columnas (7 días + icono + importe) y 5–6 filas de semana según el mes.
- * Pulsar abre el modal de horas extras (mismo widget que el dashboard).
- * Composición local del mosaico master; no es pieza de sistema.
- */
-function MasterOvertimeIconWidget({
-    monthLabel,
-    overtimeViewMonth,
-    weeks,
-    loading,
-    onOpen,
-}: {
-    monthLabel: string;
-    overtimeViewMonth: Date;
-    weeks: WeeklyStats[];
-    loading: boolean;
-    onOpen: () => void;
-}) {
-    const weekdayHeaders = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
-
-    const weeksByStart = new Map(weeks.map((week) => [week.weekId, week]));
-
-    const gridStart = startOfWeek(startOfMonth(overtimeViewMonth), { weekStartsOn: 1 });
-    const gridEnd = endOfWeek(endOfMonth(overtimeViewMonth), { weekStartsOn: 1 });
-
-    const monthRows = eachWeekOfInterval(
-        { start: gridStart, end: gridEnd },
-        { weekStartsOn: 1 },
-    ).map((weekStart) => {
-        const key = format(weekStart, 'yyyy-MM-dd');
-        const stats = weeksByStart.get(key);
-        const days = Array.from({ length: 7 }, (_, offset) => addDays(weekStart, offset));
-        const isPaid =
-            stats === undefined
-                ? null
-                : (stats.staff ?? []).every(
-                      (s) => (s.totalCost ?? 0) < 0.05 || !!s.isPaid || s.preferStock === true,
-                  );
-        const amountValue = stats?.totalAmount ?? 0;
-        const amount = amountValue > 0.05 ? `${Math.round(amountValue)}€` : '';
-        return { days, isPaid, amount };
-    });
-
-    const gridTemplate = 'grid-cols-[repeat(7,minmax(4px,1fr))_auto_auto]';
-
-    return (
-        <button
-            type="button"
-            aria-label="Horas extras"
-            onClick={onOpen}
-            className="flex h-full min-h-0 w-full flex-col items-stretch px-0.5"
-        >
-            {loading ? (
-                <div className="flex h-full items-center justify-center" role="status" aria-label="Cargando horas extras">
-                    <LoadingSpinner size="sm" className="text-zinc-500" />
-                </div>
-            ) : (
-                <>
-                    <span className="mt-1 shrink-0 text-center text-[6px] font-black uppercase leading-none tracking-widest text-zinc-700">
-                        {monthLabel}
-                    </span>
-                    <div className={`mt-[6px] grid ${gridTemplate} items-center gap-x-0.5 gap-y-0.5`}>
-                        {weekdayHeaders.map((header) => (
-                            <span
-                                key={header}
-                                className="text-center text-[4px] uppercase leading-none text-zinc-700"
-                            >
-                                {header}
-                            </span>
-                        ))}
-                        <span />
-                        <span />
-                        {monthRows.map((row, rowIndex) => (
-                            <Fragment key={rowIndex}>
-                                {row.days.map((day, dayIndex) => (
-                                    <span
-                                        key={dayIndex}
-                                        className="whitespace-nowrap text-center text-[5px] font-normal leading-none tabular-nums text-zinc-800"
-                                    >
-                                        {day.getMonth() === overtimeViewMonth.getMonth()
-                                            ? day.getDate()
-                                            : ''}
-                                    </span>
-                                ))}
-                                {row.isPaid === null ? (
-                                    <span className="h-[6px] w-[6px] shrink-0" />
-                                ) : row.isPaid ? (
-                                    <span className="flex h-[6px] w-[6px] shrink-0 items-center justify-center rounded-full bg-emerald-500">
-                                        <Check className="h-[3px] w-[3px] text-white" strokeWidth={5} />
-                                    </span>
-                                ) : (
-                                    <span className="flex h-[6px] w-[6px] shrink-0 items-center justify-center rounded-full bg-rose-500">
-                                        <X className="h-[3px] w-[3px] text-white" strokeWidth={5} />
-                                    </span>
-                                )}
-                                <span className="shrink-0 whitespace-nowrap text-[5px] font-normal leading-none tabular-nums text-zinc-600">
-                                    {row.amount}
-                                </span>
-                            </Fragment>
-                        ))}
-                    </div>
-                </>
-            )}
-        </button>
-    );
-}
-
 export default function MasterShortcutGrid({
     actualBalance,
     changeBoxes,
     treasuryLoading = false,
-    overtimeViewMonth,
-    overtimeWeeksData,
-    overtimeLoading = false,
     onOpenCambio,
-    onOpenOvertime,
     onOpenCambio1,
     onOpenCambio2,
     onOpenReservas,
     onOpenCajaInicialAcciones,
     onOpenOtros,
+    onOpenPlantilla,
     pendingReservationsCount = 0,
 }: MasterShortcutGridProps) {
     const router = useRouter();
 
     const changeBox1 = changeBoxes[0];
     const changeBox2 = changeBoxes[1];
-    const overtimeMonthLabel = format(overtimeViewMonth, 'MMMM', { locale: es });
 
     const items: Array<{ key: string; size?: 'icon' | 'tile' | 'half'; label?: string; node: ReactNode }> = [
         {
@@ -335,53 +207,6 @@ export default function MasterShortcutGrid({
                     actualBalance={actualBalance}
                     onOpenMovements={() => router.push('/dashboard/movements')}
                     onOpenAcciones={onOpenCajaInicialAcciones}
-                />
-            ),
-        },
-        {
-            key: 'ingredientes',
-            node: (
-                <DashboardShortcut
-                    instance="ingredientes"
-                    label="Ingredientes"
-                    img="/icons/ingrediente.png"
-                    onClick={() => router.push('/ingredients')}
-                />
-            ),
-        },
-        {
-            key: 'albaranes',
-            node: (
-                <DashboardShortcut
-                    instance="albaranes"
-                    label="Albaranes"
-                    img="/icons/scan.png"
-                    onClick={() => router.push('/dashboard/albaranes')}
-                />
-            ),
-        },
-        {
-            key: 'cambio',
-            node: (
-                <DashboardShortcut
-                    instance="cambio"
-                    label="Cambio"
-                    img="/icons/change.png"
-                    onClick={onOpenCambio}
-                />
-            ),
-        },
-        {
-            key: 'hextras',
-            size: 'tile',
-            label: 'H extras',
-            node: (
-                <MasterOvertimeIconWidget
-                    monthLabel={overtimeMonthLabel}
-                    overtimeViewMonth={overtimeViewMonth}
-                    weeks={overtimeWeeksData}
-                    loading={overtimeLoading}
-                    onOpen={onOpenOvertime}
                 />
             ),
         },
@@ -398,18 +223,40 @@ export default function MasterShortcutGrid({
             ),
         },
         {
-            key: 'uso-app',
+            key: 'ingredientes',
             node: (
                 <DashboardShortcut
-                    instance="uso-app"
-                    label="Uso app"
-                    img="/icons/uso.png"
-                    onClick={() => router.push('/dashboard/uso')}
+                    instance="ingredientes"
+                    label="Ingredientes"
+                    img="/icons/ingrediente.png"
+                    onClick={() => router.push('/ingredients')}
                 />
             ),
         },
         {
-            key: 'otros',
+            key: 'recetas',
+            node: (
+                <DashboardShortcut
+                    instance="recetas"
+                    label="Recetas"
+                    img="/icons/recipes.png"
+                    onClick={() => router.push('/recipes')}
+                />
+            ),
+        },
+        {
+            key: 'albaranes',
+            node: (
+                <DashboardShortcut
+                    instance="albaranes"
+                    label="Albaranes"
+                    img="/icons/scan.png"
+                    onClick={() => router.push('/dashboard/albaranes')}
+                />
+            ),
+        },
+        {
+            key: 'master-otros',
             node: (
                 <DashboardShortcut
                     instance="master-otros"
@@ -419,21 +266,45 @@ export default function MasterShortcutGrid({
                 />
             ),
         },
+        {
+            key: 'cambio',
+            node: (
+                <DashboardShortcut
+                    instance="cambio"
+                    label="Cambio"
+                    img="/icons/change.png"
+                    onClick={onOpenCambio}
+                />
+            ),
+        },
     ];
 
-    items.push({
-        key: 'cajas-cambio',
-        label: 'Cajas Cambio',
-        node: (
-            <MasterCajasCambioControl
-                treasuryLoading={treasuryLoading}
-                box1={changeBox1}
-                box2={changeBox2}
-                onOpenCambio1={onOpenCambio1}
-                onOpenCambio2={onOpenCambio2}
-            />
-        ),
-    });
+    items.push(
+        {
+            key: 'cajas-cambio',
+            label: 'Cajas Cambio',
+            node: (
+                <MasterCajasCambioControl
+                    treasuryLoading={treasuryLoading}
+                    box1={changeBox1}
+                    box2={changeBox2}
+                    onOpenCambio1={onOpenCambio1}
+                    onOpenCambio2={onOpenCambio2}
+                />
+            ),
+        },
+        {
+            key: 'plantilla',
+            node: (
+                <DashboardShortcut
+                    instance="plantilla"
+                    label="Plantilla"
+                    img="/icons/admin.png"
+                    onClick={onOpenPlantilla}
+                />
+            ),
+        },
+    );
 
     return (
         <>

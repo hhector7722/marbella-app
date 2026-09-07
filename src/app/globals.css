@@ -2995,21 +2995,23 @@ button[data-element='catalog-filter'] {
 /*
  * Master (/master/dashboard): ventas 4×1; último cierre 4×1 (fila 2);
  * horarios 3×2 (filas 3–4, columnas 1–3); asistencia del día 1×1, del tamaño
- * de icono+nombre (fila 3, columna 4). Si los registros no caben,
- * `asis-expanded` la crece a 1×2 (filas 3–4, columna 4).
+ * de icono+nombre (fila 3, columna 4) con C Inicial debajo (fila 4, columna 4).
+ * Si los registros no caben, `asis-expanded` la crece a 1×2 (filas 3–4,
+ * columna 4) y C Inicial baja a la fila 7.
+ * Fila 5: reservas, ingredientes, recetas, albaranes. Fila 6: otros,
+ * cajas cambio, plantilla, cambio.
  * «Otros» abre el modal de accesos (proveedores, web, carta, consumo,
- * horarios, asistencia, cierre, propinas, recetas, rentabilidad, plantilla).
+ * horarios, asistencia, cierre, propinas, uso app, rentabilidad).
  */
 [data-component='HomeScreen'][data-layout='master'] {
   grid-template-areas:
     'ventas   ventas   ventas   ventas'
     'ultcierre ultcierre ultcierre ultcierre'
     'horario  horario  horario  asis'
-    'horario  horario  horario  .'
-    'ingred   albaran  caja     hextras'
-    'cambio   reservas uso      cajascambio'
-    'otros    .        .        .';
-  grid-template-rows: repeat(7, var(--home-row-track));
+    'horario  horario  horario  caja'
+    'reservas ingred  recetas  albaran'
+    'otros    cajascambio plantilla cambio';
+  grid-template-rows: repeat(6, var(--home-row-track));
   grid-auto-flow: row;
 }
 [data-component='HomeScreen'][data-layout='master'].asis-expanded {
@@ -3018,9 +3020,10 @@ button[data-element='catalog-filter'] {
     'ultcierre ultcierre ultcierre ultcierre'
     'horario  horario  horario  asis'
     'horario  horario  horario  asis'
-    'ingred   albaran  caja     hextras'
-    'cambio   reservas uso      cajascambio'
-    'otros    .        .        .';
+    'reservas ingred  recetas  albaran'
+    'otros    cajascambio plantilla cambio'
+    'caja     .        .        .';
+  grid-template-rows: repeat(7, var(--home-row-track));
 }
 [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='dashboard-ventas'] {
   grid-area: ventas;
@@ -3037,9 +3040,6 @@ button[data-element='catalog-filter'] {
 [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='caja-inicial'] {
   grid-area: caja;
 }
-[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='hextras'] {
-  grid-area: hextras;
-}
 [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='ingredientes'] {
   grid-area: ingred;
 }
@@ -3052,8 +3052,11 @@ button[data-element='catalog-filter'] {
 [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='reservas'] {
   grid-area: reservas;
 }
-[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='uso-app'] {
-  grid-area: uso;
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='recetas'] {
+  grid-area: recetas;
+}
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='plantilla'] {
+  grid-area: plantilla;
 }
 [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='cajas-cambio'] {
   grid-area: cajascambio;

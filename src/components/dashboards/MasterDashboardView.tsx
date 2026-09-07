@@ -584,11 +584,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                     actualBalance={actualBalance}
                     changeBoxes={changeBoxes}
                     treasuryLoading={treasuryLoading}
-                    overtimeViewMonth={overtimeViewMonth}
-                    overtimeWeeksData={overtimeWeeksData}
-                    overtimeLoading={overtimeLoading}
                     onOpenCambio={() => setIsSwapModalOpen(true)}
-                    onOpenOvertime={() => setIsOvertimeModalOpen(true)}
                     onOpenCambio1={() => {
                         const box = changeBoxes[0];
                         if (box) void openChangeBoxAudit(box);
@@ -600,6 +596,10 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                     onOpenReservas={() => router.push('/staff/reservas')}
                     onOpenCajaInicialAcciones={openCajaInicialActions}
                     onOpenOtros={() => setIsMoreFunctionsModalOpen(true)}
+                    onOpenPlantilla={() => {
+                        setIsStaffModalOpen(true);
+                        void ensureActivePlantillaEmployees();
+                    }}
                     pendingReservationsCount={pendingReservationsCount}
                 />
             </HomeScreen>
@@ -697,10 +697,6 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                 isOpen={isMoreFunctionsModalOpen}
                 onClose={() => setIsMoreFunctionsModalOpen(false)}
                 onOpenCierre={() => setIsClosingModalOpen(true)}
-                onOpenPlantilla={() => {
-                    setIsStaffModalOpen(true);
-                    void ensureActivePlantillaEmployees();
-                }}
             />
 
             <Modal

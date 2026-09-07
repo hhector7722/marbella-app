@@ -42,6 +42,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-06
 
+- **Master: el mosaico cambia de iconos y orden.** Desaparece el icono «H extras» del mosaico y entra «Plantilla»; «Uso app» deja el mosaico y entra «Recetas». El orden queda: C Inicial debajo de la asistencia del día, fila 5 (reservas, ingredientes, recetas, albaranes) y fila 6 (otros, cajas cambio, plantilla, cambio). El modal «Otros» pierde Plantilla y Recetas (ahora en el mosaico) y gana Uso app.
+
 - **Master: el menú de acciones de «C Inicial» usa la rejilla de iconos.** El modal que se abre al pulsar «Acción» cambia los rectángulos de color por la rejilla de squircles del mosaico (DashboardShortcut), con el mismo tamaño y forma que los mini iconos de C Inicial: icono de color, canto y nombre debajo.
 
 - **Master: el widget «Último cierre» se reespacia.** La etiqueta «Último cierre» pierde el relleno y flota sobre el widget; la segunda fila de indicadores baja con más separación entre filas; crecen la fuente de los valores y sus nombres, y se amplía el hueco entre valor y etiqueta. «Ticket medio» pasa a llamarse «t medio».
