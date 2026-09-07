@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ArrowLeft } from 'lucide-react';
@@ -52,9 +52,26 @@ type Props = {
   onSaveSuccess?: () => void;
   onClose?: () => void;
   hostedInPageScreen?: boolean;
+  /** Ocultar la sección «Histórico contractual». */
+  showHistory?: boolean;
+  /** Fechas de contrato (inicio/fin) para mostrar en la vista vigente. */
+  contractDates?: { joiningDate?: string | null; endDate?: string | null };
+  /** Cada incremento dispara la edición del tramo vigente desde fuera. */
+  editRequestSignal?: number;
+  /** Ocultar los botones de acción de la vista (el padre pone su propio icono). */
+  hideViewActions?: boolean;
 };
 
-export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose, hostedInPageScreen = false }: Props) {
+export default function LaborConditionsView({
+  employeeId,
+  onSaveSuccess,
+  onClose,
+  hostedInPageScreen = false,
+  showHistory = true,
+  contractDates,
+  editRequestSignal,
+  hideViewActions = false,
+}: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -164,6 +181,15 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
     });
     setEditing(true);
   };
+
+  const editRequestRef = useRef(0);
+  useEffect(() => {
+    if (editRequestSignal == null) return;
+    if (editRequestSignal > editRequestRef.current) {
+      editRequestRef.current = editRequestSignal;
+      startEditVigente();
+    }
+  }, [editRequestSignal]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -300,6 +326,22 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
               <div className="p-4">
                 {vigente ? (
                   <dl className="divide-y divide-zinc-100">
+                    {contractDates?.joiningDate ? (
+                      <div className="flex min-h-12 items-center justify-between gap-3 py-3">
+                        <dt className="text-xs text-zinc-500">Fecha inicio contrato</dt>
+                        <dd className="text-sm font-semibold text-zinc-900">
+                          {formatYmdEs(contractDates.joiningDate)}
+                        </dd>
+                      </div>
+                    ) : null}
+                    {contractDates ? (
+                      <div className="flex min-h-12 items-center justify-between gap-3 py-3">
+                        <dt className="text-xs text-zinc-500">Finalización trabajador</dt>
+                        <dd className="text-sm font-semibold text-zinc-900">
+                          {contractDates.endDate ? formatYmdEs(contractDates.endDate) : 'Activo'}
+                        </dd>
+                      </div>
+                    ) : null}
                     <div className="flex min-h-12 items-center justify-between gap-3 py-3">
                       <dt className="text-xs text-zinc-500">Horas semanales</dt>
                       <dd className="text-sm font-semibold text-zinc-900">
@@ -336,31 +378,36 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
                     Sin condiciones vigentes. Puedes definirlas ahora.
                   </p>
                 )}
-                <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="primary"
-                  instance="labor-conditions-definir"
-                  onClick={startEditVigente}
-                >
-                  {vigente ? 'Editar condiciones vigentes' : 'Definir condiciones'}
-                </Button>
-                </div>
-                {vigente ? (
-                  <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
+                {!hideViewActions ? (
+                  <>
+                    <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
                     <Button
                       type="button"
-                      variant="secondary"
-                      instance="labor-conditions-new-vigencia"
-                      onClick={startNewVigencia}
+                      variant="primary"
+                      instance="labor-conditions-definir"
+                      onClick={startEditVigente}
                     >
-                      Nueva vigencia desde fecha
+                      {vigente ? 'Editar condiciones vigentes' : 'Definir condiciones'}
                     </Button>
-                  </div>
+                    </div>
+                    {vigente ? (
+                      <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          instance="labor-conditions-new-vigencia"
+                          onClick={startNewVigencia}
+                        >
+                          Nueva vigencia desde fecha
+                        </Button>
+                      </div>
+                    ) : null}
+                  </>
                 ) : null}
               </div>
             </section>
 
+            {showHistory ? (
             <section className={hostedInPageScreen ? '' : 'overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm'}>
               {hostedInPageScreen ? (
                 <h2 className="px-1 pb-2 text-sm font-semibold text-zinc-900">Histórico contractual</h2>
@@ -427,6 +474,7 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
                 )}
               </div>
             </section>
+            ) : null}
           </>
         ) : (
           <section className={hostedInPageScreen ? '' : 'overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm'}>

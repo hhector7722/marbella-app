@@ -10,7 +10,7 @@ import { Surface } from '@/components/ui/Surface';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
-import { CreditCard } from 'lucide-react';
+import { CreditCard, Pencil } from 'lucide-react';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
 import NominasModal from '@/components/NominasModal';
 import DatosPersonalesModal from '@/components/profile/DatosPersonalesModal';
@@ -20,6 +20,7 @@ import NominasMenuModal, { NominasMenuAction } from '@/components/profile/Nomina
 import CompanyPdfDocumentModal, { CompanyPdfDocumentKind } from '@/components/profile/CompanyPdfDocumentModal';
 import ComunicadosModal from '@/components/profile/ComunicadosModal';
 import ContratoModal from '@/components/profile/ContratoModal';
+import LaborConditionsView from '@/components/profile/LaborConditionsView';
 import { AvatarCropModal } from '@/components/profile/AvatarCropModal';
 import { getHomeHrefForUser, isMasterDashboardUser } from '@/lib/master-dashboard';
 import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
@@ -104,6 +105,7 @@ function ProfileContent() {
     const [plantillaEmployees, setPlantillaEmployees] = useState<PlantillaEmployee[]>([]);
     const [plantillaLoading, setPlantillaLoading] = useState(false);
     const [viewerRole, setViewerRole] = useState<string | null>(null);
+    const [editContractSignal, setEditContractSignal] = useState(0);
 
     const fullName = profile
         ? `${profile.first_name} ${profile.last_name || ''}`.trim()
@@ -279,7 +281,7 @@ function ProfileContent() {
         [profile, currentUser?.id]
     );
 
-    const fetchInitialData = async () => {
+    async function fetchInitialData() {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) {
@@ -520,67 +522,47 @@ function ProfileContent() {
                     </div>
                 </Surface>
 
-                        {canManageLaborConditions ? (
-                            <div className="mt-8">
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        router.push(
-                                            `/profile/contrato?id=${encodeURIComponent(profile.id)}`,
-                                        )
-                                    }
-                                    className="flex w-full min-h-[48px] items-center justify-center gap-2 rounded-2xl border border-zinc-200 bg-white py-3 font-black text-[10px] uppercase tracking-widest text-zinc-800 hover:bg-zinc-50 active:scale-[0.98]"
-                                >
-                                    Condiciones laborales
-                                </button>
-                            </div>
-                        ) : null}
-
                         {isManager && (
                             <div className="mt-8">
-                                <h2 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-3">
-                                    {viewingOtherProfile ? 'Datos laborales' : 'Mi contrato'}
-                                </h2>
-                                <div className="bg-white rounded-xl border border-zinc-100 shadow-sm p-4 mb-4">
-                                    <div className="grid grid-cols-1 gap-3">
-                                        <div className="min-h-[48px] flex flex-col justify-center gap-1">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                                                Fecha inicio contrato
-                                            </p>
-                                            <p className="text-sm font-bold text-zinc-800">
-                                                {joiningDateYmd ? joiningDateYmd : ' '}
-                                            </p>
-                                        </div>
-                                        <div className="min-h-[48px] flex flex-col justify-center gap-1">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                                                Finalización trabajador
-                                            </p>
-                                            <p className="text-sm font-bold text-zinc-800">
-                                                {endDateYmd ? endDateYmd : 'Activo'}
-                                            </p>
-                                        </div>
-                                        <p className="text-[11px] text-zinc-500 leading-snug">
-                                            Si un empleado empieza a mitad de semana, los días anteriores se computan como{' '}
-                                            <span className="font-black">extras</span>.
-                                        </p>
+                                <div className="overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm">
+                                    <div className="flex items-center justify-between gap-2 border-b border-zinc-100 px-4 py-3">
+                                        <h2 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">
+                                            Condiciones laborales
+                                        </h2>
                                         {canManageLaborConditions ? (
-                                            <p className="text-[11px] text-zinc-500 leading-snug">
-                                                Para editar fechas, jornada o régimen usa{' '}
-                                                <span className="font-black">Condiciones laborales</span>.
-                                            </p>
+                                            <button
+                                                type="button"
+                                                onClick={() => setEditContractSignal((n) => n + 1)}
+                                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 active:scale-[0.98]"
+                                                aria-label="Editar condiciones laborales"
+                                            >
+                                                <Pencil size={16} strokeWidth={2} />
+                                            </button>
                                         ) : null}
                                     </div>
+                                    <LaborConditionsView
+                                        employeeId={profile.id}
+                                        hostedInPageScreen
+                                        showHistory={false}
+                                        hideViewActions
+                                        contractDates={{
+                                            joiningDate: joiningDateYmd,
+                                            endDate: endDateYmd,
+                                        }}
+                                        editRequestSignal={editContractSignal}
+                                        onSaveSuccess={() => void fetchInitialData()}
+                                    />
                                 </div>
                                 {viewingOtherProfile ? (
-                                    <div className="flex flex-wrap items-center justify-end gap-2">
-                                    <Button
-                                        type="button"
-                                        variant="primary"
-                                        instance="profile-view-records"
-                                        onClick={() => router.push(`/staff/history?id=${encodeURIComponent(profile.id)}`)}
-                                    >
-                                        Ver registros
-                                    </Button>
+                                    <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="primary"
+                                            instance="profile-view-records"
+                                            onClick={() => router.push(`/staff/history?id=${encodeURIComponent(profile.id)}`)}
+                                        >
+                                            Ver registros
+                                        </Button>
                                     </div>
                                 ) : null}
                             </div>

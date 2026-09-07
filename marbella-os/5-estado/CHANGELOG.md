@@ -38,6 +38,7 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-07
 
+- **Perfil: condiciones laborales y contrato se unifican en una sola card editable inline.** El botón «Condiciones laborales» que navegaba a otra página y la card separada «Mi contrato» se unifican para manager en una sola card en el perfil. Muestra de forma integrada las fechas de contrato y las condiciones vigentes (horas, régimen, bolsa, tarifa), y cuenta con un icono de lápiz arriba a la derecha para activar la edición inline en pantalla. El resto de usuarios (staff) ya no ven la sección ni tienen botón de acceso. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md).
 - **Horas: al finalizar un contrato la bolsa se salda a cero.** Al cerrar el último tramo en Condiciones laborales, la semana que contiene la fecha de fin (y las posteriores) dejan de arrastrar horas pendientes: el contador «Pendientes» de la tarjeta semanal queda a 0, porque el saldo —crédito o deuda— se liquida en la nómina final. La última semana activa conserva su histórico. Regla en [dominio/HORAS](../3-ingenieria/dominio/HORAS.md).
 
 ## 2026-09-06
