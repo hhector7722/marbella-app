@@ -1,9 +1,11 @@
 import { aggregateWeekAttendance } from './attendance-aggregator.ts';
 import { resolveEffectiveContract } from './contract-resolver.ts';
+import { relationshipEndDate } from './contract-resolver.ts';
 import { computeCarry } from './carry-engine.ts';
 import { buildDailyBreakdown } from './daily-breakdown.ts';
 import { applyRegimeToSegment } from './regime-policy.ts';
 import { roundMarbellaHours } from './marbella-round.ts';
+import { compareCivilDate } from './week-dates.ts';
 import type {
   DailyBreakdown,
   LiquidationInput,
@@ -63,6 +65,12 @@ export function liquidateWeek(input: LiquidationInput): LiquidationResult {
     bagMode: resolveBag(seg.bagMode),
   }));
 
+  // Saldo de fin de contrato: si la relación terminó dentro de esta semana (o
+  // antes), la bolsa se salda a cero. Ya se liquida en la nómina final.
+  const relationshipEnd = relationshipEndDate(employee);
+  const settledAtEnd =
+    relationshipEnd != null && compareCivilDate(weekEnd, relationshipEnd) >= 0;
+
   // Sin tramos (p.ej. post-baja toda la semana): no hay contrato que consumir.
   if (segmentInputs.length === 0) {
     const carry = computeCarry({
@@ -84,12 +92,13 @@ export function liquidateWeek(input: LiquidationInput): LiquidationResult {
       weeklyBalance: 0,
       carryIn: carry.carryIn,
       balanceFinal: carry.balanceFinal,
-      carryOut: carry.carryOut,
+      carryOut: settledAtEnd ? 0 : carry.carryOut,
       isPaid,
       ordinaryHours: 0,
       overtimeHours: 0,
       segments: [],
       dailyBreakdown,
+      settledAtContractEnd: settledAtEnd,
     };
   }
 
@@ -140,11 +149,12 @@ export function liquidateWeek(input: LiquidationInput): LiquidationResult {
     weeklyBalance: carry.weeklyBalance,
     carryIn: carry.carryIn,
     balanceFinal: carry.balanceFinal,
-    carryOut: carry.carryOut,
+    carryOut: settledAtEnd ? 0 : carry.carryOut,
     isPaid,
     ordinaryHours,
     overtimeHours,
     segments,
     dailyBreakdown,
+    settledAtContractEnd: settledAtEnd,
   };
 }

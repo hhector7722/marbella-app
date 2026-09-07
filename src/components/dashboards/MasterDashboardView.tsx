@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { Check, Circle, Minus, Plus, RefreshCw, ShoppingCart } from 'lucide-react';
 import { getOvertimeData, togglePaidStatus } from '@/app/actions/overtime';
 import DashboardVentasSection from '@/components/dashboards/DashboardVentasSection';
+import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
 import MasterShortcutGrid from '@/components/dashboards/MasterShortcutGrid';
 import { HorasExtrasWidget } from '@/components/dashboards/ops-widgets';
 import { HomeScreen, HomeScreenSlot } from '@/components/dashboards/HomeScreen';
@@ -715,7 +716,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                 title="Caja Inicial"
                 ariaLabel="Caja inicial: acciones"
             >
-                <div className="grid grid-cols-2 gap-2 pb-6 pt-1">
+                <div className="grid grid-cols-4 gap-2 pb-6 pt-1">
                     {(
                         [
                             {
@@ -744,20 +745,17 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                             },
                         ] as const
                     ).map((opcion) => (
-                        <button
+                        <DashboardShortcut
                             key={opcion.accion}
-                            type="button"
+                            instance={`master-caja-inicial-${opcion.accion}`}
+                            label={opcion.label}
                             onClick={() => handleCajaInicialAccion(opcion.accion)}
-                            aria-label={opcion.label}
-                            className={`group flex min-h-[5.5rem] min-w-0 flex-col items-center justify-center gap-2 rounded-[16px] ${opcion.color} px-2 py-4 text-white shadow-[inset_0_0_0_1px_rgb(255_255_255/0.24),inset_0_1px_0_0_rgb(255_255_255/0.58),inset_0_-1px_0_0_rgb(0_0_0/0.2)] transition-all active:scale-95`}
+                            plate
                         >
-                            <span className="flex items-center justify-center transition-transform group-hover:scale-110">
+                            <div className={`absolute inset-0 flex items-center justify-center ${opcion.color}`}>
                                 {opcion.icon}
-                            </span>
-                            <span className="text-[10px] font-black uppercase leading-none tracking-widest">
-                                {opcion.label}
-                            </span>
-                        </button>
+                            </div>
+                        </DashboardShortcut>
                     ))}
                 </div>
             </Modal>
@@ -884,13 +882,13 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                             weekTotal > 0.05 ? (
                                 <div className="flex h-full shrink-0 items-center gap-1">
                                     {paidTotal > 0.05 && !fullyPaid ? (
-                                        <span className="flex items-center rounded-full bg-orange-500 px-2 text-[10px] font-bold leading-none tabular-nums text-white">
+                                        <span className="flex items-center rounded-full bg-orange-500 px-2 py-1 text-[10px] font-bold leading-none tabular-nums text-white">
                                             {paidTotal.toFixed(0)}€
                                         </span>
                                     ) : null}
                                     <span
                                         className={cn(
-                                            'flex items-center rounded-full px-2 text-[10px] font-bold leading-none tabular-nums text-white',
+                                            'flex items-center rounded-full px-2 py-1 text-[10px] font-bold leading-none tabular-nums text-white',
                                             fullyPaid ? 'bg-emerald-500' : 'bg-rose-500',
                                         )}
                                     >

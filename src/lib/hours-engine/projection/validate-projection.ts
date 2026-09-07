@@ -152,6 +152,7 @@ export function validateCarryInvariantsOnResult(
   const { carryIn, weeklyBalance, balanceFinal, carryOut, isPaid, segments } =
     liq;
   const ws = liq.weekStart;
+  const settled = liq.settledAtContractEnd === true;
 
   // INV-C03: balanceFinal = R(carryIn + weeklyBalance)
   const expectedFinal = roundMarbellaSigned(carryIn + weeklyBalance);
@@ -162,15 +163,26 @@ export function validateCarryInvariantsOnResult(
     );
   }
 
+  if (settled) {
+    // Regla de dominio (saldo de fin de contrato): la bolsa se salda a cero.
+    if (!close(carryOut, 0)) {
+      return fail(
+        'INV-C05',
+        `INV-C05 (saldo de fin): carryOut=${carryOut} debe ser 0 @ ${ws}`,
+      );
+    }
+  }
+
   // INV-C05…C09 (propiedades observables) antes del oráculo C04.
-  if (balanceFinal <= HOURS_EPS && !isPaid && !close(carryOut, balanceFinal)) {
+  // En la semana de saldo de fin, el saldo a cero sustituye a C05/C06/C08.
+  if (!settled && balanceFinal <= HOURS_EPS && !isPaid && !close(carryOut, balanceFinal)) {
     return fail(
       'INV-C05',
       `INV-C05: balanceFinal≤0 no pagada ⇒ carryOut=balanceFinal @ ${ws}`,
     );
   }
 
-  if (isPaid && !close(carryOut, Math.min(0, balanceFinal))) {
+  if (!settled && isPaid && !close(carryOut, Math.min(0, balanceFinal))) {
     return fail(
       'INV-C06',
       `INV-C06: isPaid ⇒ carryOut=min(0,balanceFinal) @ ${ws}`,
@@ -183,6 +195,7 @@ export function validateCarryInvariantsOnResult(
     segments.length > 0 && segments.every((s) => s.bagMode === true);
 
   if (
+    !settled &&
     !isPaid &&
     balanceFinal > HOURS_EPS &&
     allPay &&
@@ -195,6 +208,7 @@ export function validateCarryInvariantsOnResult(
   }
 
   if (
+    !settled &&
     !isPaid &&
     balanceFinal > HOURS_EPS &&
     allBag &&
@@ -229,14 +243,15 @@ export function validateCarryInvariantsOnResult(
     parts: partsForOracle,
     isPaid,
   });
+  const oracleCarryOut = settled ? 0 : oracle.carryOut;
   if (
-    !close(oracle.carryOut, carryOut) ||
+    !close(oracleCarryOut, carryOut) ||
     !close(oracle.weeklyBalance, weeklyBalance) ||
     !close(oracle.balanceFinal, balanceFinal)
   ) {
     return fail(
       'INV-C04',
-      `INV-C04: resultado ≠ computeCarry(oracle) @ ${ws} (carryOut ${carryOut} vs ${oracle.carryOut})`,
+      `INV-C04: resultado ≠ computeCarry(oracle) @ ${ws} (carryOut ${carryOut} vs ${oracleCarryOut})`,
     );
   }
 

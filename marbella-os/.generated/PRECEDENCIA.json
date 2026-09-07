@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "261f67b7d34a7939",
+  "_huella": "14f5acab776a7c7e",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -382,7 +382,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-03-02",
+      "vence": "2027-03-07",
       "depende_de": []
     },
     {
@@ -660,7 +660,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-02-25",
+      "vence": "2027-03-07",
       "depende_de": []
     },
     {

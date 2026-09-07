@@ -36,7 +36,13 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
 
+## 2026-09-07
+
+- **Horas: al finalizar un contrato la bolsa se salda a cero.** Al cerrar el último tramo en Condiciones laborales, la semana que contiene la fecha de fin (y las posteriores) dejan de arrastrar horas pendientes: el contador «Pendientes» de la tarjeta semanal queda a 0, porque el saldo —crédito o deuda— se liquida en la nómina final. La última semana activa conserva su histórico. Regla en [dominio/HORAS](../3-ingenieria/dominio/HORAS.md).
+
 ## 2026-09-06
+
+- **Master: el menú de acciones de «C Inicial» usa la rejilla de iconos.** El modal que se abre al pulsar «Acción» cambia los rectángulos de color por la rejilla de squircles del mosaico (DashboardShortcut), con el mismo tamaño y forma que los mini iconos de C Inicial: icono de color, canto y nombre debajo.
 
 - **Master: el widget «Último cierre» se reespacia.** La etiqueta «Último cierre» pierde el relleno y flota sobre el widget; la segunda fila de indicadores baja con más separación entre filas; crecen la fuente de los valores y sus nombres, y se amplía el hueco entre valor y etiqueta. «Ticket medio» pasa a llamarse «t medio».
 

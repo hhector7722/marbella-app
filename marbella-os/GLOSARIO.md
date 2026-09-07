@@ -6,7 +6,7 @@ capa: raiz
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-25
+revisado: 2026-09-07
 caducidad: 6 meses
 supersede: —
 ---
@@ -66,6 +66,7 @@ Reglas de uso:
 | **Arrastre** | El acto de trasladar el saldo de bolsa de una semana a la siguiente. Sinónimo interno en código: *carry*. En documentación se dice **arrastre**. | `computeCarry` |
 | **Deuda de horas** | Bolsa negativa. La persona debe horas. Cuando la bolsa de salida es negativa, extras e importe son cero por invariante. | — |
 | **Exención de deuda en agosto** | En segmentos staff cuya Semana Marbella empieza en agosto (lunes en agosto), el balance semanal no puede ser negativo: no se genera deuda de asistencia por vacaciones. Incluye la última semana de agosto aunque desborde a septiembre. Las extras por exceso de contrato siguen igual. Ver [dominio/HORAS](3-ingenieria/dominio/HORAS.md). | — |
+| **Saldo de fin de contrato** | Saldo de bolsa de horas que se pone a cero al terminar la relación laboral (último tramo cerrado, sin tramo «Vigente»): la semana que contiene la fecha de fin y las posteriores no arrastran pendientes, porque el saldo —crédito o deuda— se liquida en la nómina final. Ver [dominio/HORAS](3-ingenieria/dominio/HORAS.md). | `settledAtContractEnd`, `carryOut = 0` |
 | **Modo bolsa** | Las horas extras de la semana se acumulan en la bolsa en lugar de pagarse. | `prefer_stock_hours`, `prefer_stock_hours_override` |
 | **Modo pago** | Las horas extras de la semana se pagan. Es el modo contrario al de bolsa. ⚠ conflicto: el sistema legacy llamaba a este concepto `AcumulaHoras` con la polaridad invertida; ese nombre no debe usarse. | — |
 | **Semana pagada** | Semana cuyas extras ya se han abonado. Marca administrativa, no calculada. | `weekly_snapshots.is_paid` |

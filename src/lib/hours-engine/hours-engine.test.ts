@@ -583,3 +583,95 @@ describe('Política agosto — sin deuda de asistencia; extras solo por exceso d
     assert.equal(gapSeg.ordinaryHours, 0);
   });
 });
+
+describe('Saldo de fin de contrato — la bolsa se salda a cero', () => {
+  const endedEmployee = (
+    overrides: Partial<EmployeeBoundaryFacts> = {},
+  ): EmployeeBoundaryFacts => ({
+    employeeId: 'emp-ended',
+    joiningDate: '2025-01-01',
+    endDate: '2026-06-28',
+    terms: [
+      {
+        effectiveFrom: '2025-01-01',
+        effectiveTo: '2026-06-28',
+        weeklyHours: 40,
+        bagMode: true,
+        regime: 'staff',
+      },
+    ],
+    ...overrides,
+  });
+
+  it('semana que contiene la baja: crédito de bolsa se salda a 0', () => {
+    const r = liquidateWeek(
+      input({
+        employee: endedEmployee(),
+        weekStart: '2026-06-22', // 22–28 jun (domingo = fecha de baja)
+        carryIn: 5,
+        logs: [{ clockInIso: '2026-06-22T08:00:00.000Z', totalHours: 45 }],
+      }),
+    );
+    // 45 − 40 = +5; balanceFinal = 5 + 5 = 10 (bolsa habría arrastrado 10)
+    assert.equal(r.weeklyBalance, 5);
+    assert.equal(r.balanceFinal, 10);
+    assert.equal(r.carryOut, 0);
+    assert.equal(r.settledAtContractEnd, true);
+  });
+
+  it('semana anterior a la baja conserva el arrastre normal', () => {
+    const r = liquidateWeek(
+      input({
+        employee: endedEmployee(),
+        weekStart: '2026-06-15', // 15–21 jun: antes de la baja
+        carryIn: 5,
+        logs: [{ clockInIso: '2026-06-15T08:00:00.000Z', totalHours: 45 }],
+      }),
+    );
+    assert.equal(r.balanceFinal, 10);
+    assert.equal(r.carryOut, 10);
+    assert.equal(r.settledAtContractEnd, false);
+  });
+
+  it('deuda negativa también se salda a 0', () => {
+    const r = liquidateWeek(
+      input({
+        employee: endedEmployee(),
+        weekStart: '2026-06-22',
+        carryIn: -4,
+        logs: [],
+      }),
+    );
+    assert.equal(r.weeklyBalance, -40);
+    assert.equal(r.balanceFinal, -44);
+    assert.equal(r.carryOut, 0);
+    assert.equal(r.settledAtContractEnd, true);
+  });
+
+  it('tramo abierto: no se salda aunque exista fecha de baja', () => {
+    const open = employeeBase({ endDate: '2026-03-08' });
+    const r = liquidateWeek(
+      input({
+        employee: open,
+        weekStart: '2026-03-02',
+        carryIn: 5,
+        logs: [{ clockInIso: '2026-03-02T08:00:00.000Z', totalHours: 45 }],
+      }),
+    );
+    assert.equal(r.carryOut, 10); // bolsa: arrastra
+    assert.equal(r.settledAtContractEnd, false);
+  });
+
+  it('semana posterior a la baja: no reaparecen pendientes', () => {
+    const r = liquidateWeek(
+      input({
+        employee: endedEmployee(),
+        weekStart: '2026-06-29',
+        carryIn: 8,
+        logs: [],
+      }),
+    );
+    assert.equal(r.carryOut, 0);
+    assert.equal(r.settledAtContractEnd, true);
+  });
+});

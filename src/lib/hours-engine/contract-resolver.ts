@@ -38,6 +38,27 @@ function getFirstTermDate(terms: readonly ContractTermFact[]): CivilDate | null 
   return first;
 }
 
+/**
+ * Fecha civil (inclusive) en que termina la relación laboral si está cerrada.
+ * null si existe un tramo abierto (la relación continúa) o no hay tramos.
+ *
+ * Fuente contractual = hours_contract_terms: la relación termina cuando el
+ * último tramo tiene fecha de fin (no hay tramo «Vigente»).
+ */
+export function relationshipEndDate(
+  employee: EmployeeBoundaryFacts,
+): CivilDate | null {
+  if (employee.terms.some((t) => t.effectiveTo == null)) return null;
+  let end: CivilDate | null = null;
+  for (const t of employee.terms) {
+    if (t.effectiveTo == null) continue;
+    if (end === null || compareCivilDate(t.effectiveTo, end) > 0) {
+      end = t.effectiveTo;
+    }
+  }
+  return end;
+}
+
 function segmentKey(term: ContractTermFact | null, kind: 'term' | 'pre_alta' | 'gap'): string {
   if (kind === 'pre_alta' || kind === 'gap') return kind;
   if (!term) return 'none';

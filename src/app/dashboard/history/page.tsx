@@ -1298,13 +1298,13 @@ export default function HistoryPage() {
 
     const lastClosingKpisSecundarios = [
         {
-            label: 'Pendiente pago',
+            label: 'Pendiente',
             value: lastClosing
                 ? formatClosingValue(lastClosingMetrics.salesPending, 'tpv_sales')
                 : ' ',
         },
         {
-            label: 'Cobros pendientes',
+            label: 'Cobros',
             value: lastClosing
                 ? formatClosingValue(lastClosingMetrics.debtRecovered, 'tpv_sales')
                 : ' ',

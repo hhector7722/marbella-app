@@ -1,12 +1,12 @@
-<!-- Generado desde 43 documentos de marbella-os/.
-     Huella del origen: 665e6a3ac61f4822
+<!-- Generado desde 45 documentos de marbella-os/.
+     Huella del origen: ae91f63d65963537
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
 
 # Afirmaciones citables
 
-Los 43 hechos del corpus que tienen identificador estable, con dónde
+Los 45 hechos del corpus que tienen identificador estable, con dónde
 viven y desde cuántos sitios se citan. Derivado. **No es norma**: la norma está
 en el documento de origen, y este índice solo dice dónde.
 
@@ -27,7 +27,7 @@ texto crea un segundo dueño, y eso es exactamente lo que prohíbe `CANON §5`.
 | `INV-C02` | `carryIn(W+1) = carryOut(W)` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 | 5 |
 | `INV-C03` | `balanceFinal(W) = R(carryIn(W) + weeklyBalance(W))` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 | 4 |
 | `INV-C04` | `carryOut(W) = computeCarry(carryIn, parts, isPaid).carryOut` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 |  |
-| `INV-C05` | Si `balanceFinal ≤ 0` y no pagada: `carryOut = balanceFinal` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 |  |
+| `INV-C05` | Si `balanceFinal ≤ 0` y no pagada: `carryOut = balanceFinal` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 | 1 |
 | `INV-C06` | Si `isPaid = true`: `carryOut = min(0, balanceFinal)` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 |  |
 | `INV-C07` | Si régimen **pago puro** y `balanceFinal > 0` y no pagada: `carryOut = 0` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 |  |
 | `INV-C08` | Si régimen **bolsa pura** y `balanceFinal > 0` y no pagada: `carryOut = balanceFinal` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 |  |
@@ -38,6 +38,8 @@ texto crea un segundo dueño, y eso es exactamente lo que prohíbe `CANON §5`.
 | `INV-H02` | En segmento staff con lunes en agosto y horas > contrato: `overtimeHours = horas − contrato` y `weeklyBalancePart = overtimeHours` (tras re… | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
 | `INV-H03` | Ordinarias/extras de un segmento staff no dependen del suelo de agosto: se calculan como `min/max` respecto al contrato efectivo del segmen… | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
 | `INV-H04` | Un segmento staff cuyo lunes de semana no está en agosto no aplica el suelo: `weeklyBalancePart = horas − contrato` | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
+| `INV-H05` | En la semana que contiene la fecha de fin del contrato (y posteriores), `carryOut = 0`, sea el saldo crédito o deuda | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
+| `INV-H06` | Si existe un tramo abierto, no aplica saldo de fin: `carryOut` sigue la cadena normal de [ADR-0001](../../4-decisiones/ADR-0001-hours-engin… | `marbella-os/3-ingenieria/dominio/HORAS.md` | 20 |  |
 | `INV-J01` | Tras writer: `pending_balance = carryIn` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 | 7 |
 | `INV-J02` | Tras writer: `final_balance = balanceFinal` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 | 1 |
 | `INV-J03` | Tras writer: `balance_hours = weeklyBalance` | `marbella-os/4-decisiones/ADR-0001-hours-engine-productor-unico.md` | 80 | 1 |

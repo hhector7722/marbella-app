@@ -564,7 +564,7 @@
   color: var(--color-texto);
 }
 [data-component='Modal'][data-scheme='dark'] [data-element='body'] [data-element='personal-record'] :is(.text-gray-400, .text-gray-500, .text-zinc-400, .text-zinc-500) {
-  color: var(--color-texto-suave);
+  color: var(--color-texto-tenue);
 }
 /*
  * Editor de día embebido (modo edición del modal de horario): hereda el azul
@@ -590,7 +590,9 @@
 }
 
 /*
- * Fichaje staff: fill reparte el ancho; el relleno visual ocupa todo el host táctil.
+ * Fichaje staff: botones al contenido, centrados como conjunto en el ancho del
+ * modal; el relleno visual ocupa todo el host táctil. Sin fill: el texto no se
+ * estrecha ni se recorta (antes la última «r» de Confirmar se cortaba).
  */
 [data-component='Modal'][data-instance='staff-clock-confirm'] [data-element='body']:empty {
   display: none;
@@ -602,10 +604,14 @@
   padding-top: var(--espacio-4);
   padding-bottom: var(--espacio-4);
 }
-[data-component='Modal'][data-instance='staff-clock-confirm'] [data-component='Button'][data-layout='fill'] {
+[data-component='Modal'][data-instance='staff-clock-confirm'] [data-element='footer'] [data-element='footer-actions'] > *:not([data-component='Button']) {
+  justify-content: center;
+  flex-wrap: wrap;
+}
+[data-component='Modal'][data-instance='staff-clock-confirm'] [data-component='Button'][data-layout='hug'] {
   font-size: 1.25rem;
 }
-[data-component='Modal'][data-instance='staff-clock-confirm'] [data-component='Button'][data-layout='fill']::before {
+[data-component='Modal'][data-instance='staff-clock-confirm'] [data-component='Button'][data-layout='hug']::before {
   top: 0;
   bottom: 0;
   height: auto;

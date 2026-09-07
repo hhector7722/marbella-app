@@ -7,6 +7,7 @@ export {
   resolveEffectiveContract,
   resolveEffectiveOvertimeRate,
 } from './contract-resolver.ts';
+export { relationshipEndDate } from './contract-resolver.ts';
 export { aggregateWeekAttendance } from './attendance-aggregator.ts';
 export { applyRegimeToSegment } from './regime-policy.ts';
 export { computeCarry } from './carry-engine.ts';

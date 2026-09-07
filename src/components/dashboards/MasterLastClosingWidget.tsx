@@ -37,8 +37,8 @@ const PRIMARY_KPIS: readonly LastClosingKpi[] = [
 ];
 
 const SECONDARY_KPIS: readonly LastClosingKpi[] = [
-    { label: 'Pendiente pago', format: (m) => formatClosingValue(m.salesPending, 'tpv_sales') },
-    { label: 'Cobros pendientes', format: (m) => formatClosingValue(m.debtRecovered, 'tpv_sales') },
+    { label: 'Pendiente', format: (m) => formatClosingValue(m.salesPending, 'tpv_sales') },
+    { label: 'Cobros', format: (m) => formatClosingValue(m.debtRecovered, 'tpv_sales') },
     { label: 'Diferencia', format: (m) => formatClosingDifference(m.difference) },
 ];
 
@@ -150,7 +150,7 @@ export function MasterLastClosingWidget() {
                     </span>
                 </div>
             </div>
-            <div className="flex min-h-0 flex-1 flex-col justify-center gap-y-3 px-2 pb-1.5">
+            <div className="flex min-h-0 flex-1 flex-col justify-start gap-y-3 px-2 pb-1.5 pt-3">
                 {loading ? (
                     <div
                         className="flex flex-1 items-center justify-center"

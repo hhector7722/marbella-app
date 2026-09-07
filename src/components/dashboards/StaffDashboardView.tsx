@@ -964,7 +964,6 @@ export default function StaffDashboardView() {
                     layer="base"
                     hideHeader
                     hideCloseButton
-                    buttonsStretch
                     confirming={actionLoading && modalAction === 'in'}
                     onConfirm={handleClockModalConfirm}
                 />

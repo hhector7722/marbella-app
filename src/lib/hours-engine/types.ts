@@ -156,4 +156,10 @@ export type LiquidationResult = {
   segments: readonly SegmentLiquidation[];
   /** Ex. diarias / ordinarias por día — única fuente para la UI. */
   dailyBreakdown: DailyBreakdown;
+  /**
+   * Semana de fin de contrato (contiene la fecha de baja) o posterior: la bolsa
+   * de horas se salda a cero (`carryOut = 0`) porque ya se liquida en la nómina.
+   * Dominio: [HORAS](../marbella-os/3-ingenieria/dominio/HORAS.md).
+   */
+  settledAtContractEnd?: boolean;
 };

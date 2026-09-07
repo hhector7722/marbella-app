@@ -437,6 +437,61 @@ describe('Projection Writer — validación de invariantes', () => {
     assert.ok(r!.code === 'INV-C05' || r!.code === 'INV-C09');
   });
 
+  it('INV-C05 (saldo de fin): semana que contiene la baja sella carryOut=0 aunque la bolsa sea positiva', () => {
+    const employee = emp({
+      endDate: '2026-06-28',
+      terms: [
+        {
+          effectiveFrom: '2025-01-01',
+          effectiveTo: '2026-06-28',
+          weeklyHours: 40,
+          bagMode: true,
+          regime: 'staff',
+          overtimeRatePerHour: 10,
+        },
+      ],
+    });
+    const liq = liquidateWeek({
+      employee,
+      weekStart: '2026-06-22', // semana 22–28 jun (baja el domingo)
+      logs: [{ clockInIso: '2026-06-22T08:00:00.000Z', totalHours: 45 }],
+      isPaid: false,
+      carryIn: 0,
+    });
+    assert.ok(liq.balanceFinal > 0);
+    assert.equal(liq.settledAtContractEnd, true);
+    assert.equal(liq.carryOut, 0);
+    // C08 (bolsa ⇒ arrastre) queda sustituido por el saldo de fin.
+    assert.equal(validateCarryInvariantsOnResult(liq, null), null);
+  });
+
+  it('INV-C05 (saldo de fin): falla si la semana sellada arrastra saldo', () => {
+    const employee = emp({
+      endDate: '2026-06-28',
+      terms: [
+        {
+          effectiveFrom: '2025-01-01',
+          effectiveTo: '2026-06-28',
+          weeklyHours: 40,
+          bagMode: true,
+          regime: 'staff',
+          overtimeRatePerHour: 10,
+        },
+      ],
+    });
+    const liq = liquidateWeek({
+      employee,
+      weekStart: '2026-06-22',
+      logs: [{ clockInIso: '2026-06-22T08:00:00.000Z', totalHours: 45 }],
+      isPaid: false,
+      carryIn: 0,
+    });
+    const broken = { ...liq, carryOut: liq.balanceFinal }; // sin sellar
+    const r = validateCarryInvariantsOnResult(broken, null);
+    assert.ok(r);
+    assert.equal(r!.code, 'INV-C05');
+  });
+
   it('INV-L01: falla si hoursWorked ≠ Σ daily.hours', () => {
     const liq = liquidateWeek({
       employee: emp(),

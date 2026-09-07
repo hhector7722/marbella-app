@@ -336,7 +336,7 @@ function WeekExtCell({
             )}
         >
             {loading ? (
-                <LoadingSpinner size="sm" className="text-white/60" />
+                <LoadingSpinner size="sm" className="h-2.5 w-2.5 text-white/60" />
             ) : week ? (
                 <>
                     <span
@@ -381,7 +381,7 @@ export function StaffWeekScheduleWidget({
     const [eventsByDate, setEventsByDate] = useState<Record<string, BarActivity[]>>({});
     const [loading, setLoading] = useState(true);
     const [overtimeWeeks, setOvertimeWeeks] = useState<Record<string, WeeklyStats>>({});
-    const [overtimeLoading, setOvertimeLoading] = useState(false);
+    const [overtimeLoading, setOvertimeLoading] = useState(() => masterMode);
 
     const visibleRange = useMemo(() => {
         const start = startOfWeek(startOfMonth(monthAnchor), { weekStartsOn: 1 });
