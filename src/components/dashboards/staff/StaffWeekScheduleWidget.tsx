@@ -227,12 +227,14 @@ function WeekendDayColumn({
     eventLabel,
     eventDetailRows,
     onOpenDay,
+    masterMode = false,
 }: {
     day: Date;
     shift: ShiftRow | null;
     eventLabel: string | null;
     eventDetailRows: EventDetailRow[];
     onOpenDay?: (ymd: string) => void;
+    masterMode?: boolean;
 }) {
     const ymd = format(day, 'yyyy-MM-dd');
     const turno =
@@ -257,17 +259,19 @@ function WeekendDayColumn({
                 </p>
 
                 <div data-element="weekend-details" className="flex min-h-0 min-w-0 flex-1 flex-col">
-                    <div data-element="weekend-turno" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
-                        {turno ? (
-                            <span data-element="weekend-turno-value" className="min-w-0 truncate text-[6px] font-medium tabular-nums leading-none">
-                                {turno}
-                            </span>
-                        ) : (
-                            <span data-element="weekend-turno-label" className="shrink-0 text-[6px] font-medium leading-none tracking-wide">
-                                Turno
-                            </span>
-                        )}
-                    </div>
+                    {!masterMode && (
+                        <div data-element="weekend-turno" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
+                            {turno ? (
+                                <span data-element="weekend-turno-value" className="min-w-0 truncate text-[6px] font-medium tabular-nums leading-none">
+                                    {turno}
+                                </span>
+                            ) : (
+                                <span data-element="weekend-turno-label" className="shrink-0 text-[6px] font-medium leading-none tracking-wide">
+                                    Turno
+                                </span>
+                            )}
+                        </div>
+                    )}
 
                     <div data-element="weekend-evento" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
                         {eventLabel ? (
@@ -313,11 +317,13 @@ function WeekExpansion({
     shifts,
     eventsByDate,
     onOpenDay,
+    masterMode = false,
 }: {
     weekDays: Date[];
     shifts: ShiftRow[];
     eventsByDate: Record<string, BarActivity[]>;
     onOpenDay?: (ymd: string) => void;
+    masterMode?: boolean;
 }) {
     const saturday = weekDays[5];
     const sunday = weekDays[6];
@@ -335,6 +341,7 @@ function WeekExpansion({
                 eventLabel={formatDayEventNames(eventsByDate[satKey])}
                 eventDetailRows={formatDayEventDetailRows(eventsByDate[satKey])}
                 onOpenDay={onOpenDay}
+                masterMode={masterMode}
             />
             <WeekendDayColumn
                 day={sunday}
@@ -342,6 +349,7 @@ function WeekExpansion({
                 eventLabel={formatDayEventNames(eventsByDate[sunKey])}
                 eventDetailRows={formatDayEventDetailRows(eventsByDate[sunKey])}
                 onOpenDay={onOpenDay}
+                masterMode={masterMode}
             />
         </div>
     );
@@ -666,6 +674,7 @@ export function StaffWeekScheduleWidget({
                                                             shifts={shifts}
                                                             eventsByDate={eventsByDate}
                                                             onOpenDay={onOpenNote}
+                                                            masterMode={masterMode}
                                                         />
                                                     </div>
                                                 ) : null}
@@ -684,6 +693,7 @@ export function StaffWeekScheduleWidget({
                                                         shifts={shifts}
                                                         eventsByDate={eventsByDate}
                                                         onOpenDay={onOpenNote}
+                                                        masterMode={masterMode}
                                                     />
                                                 ) : null}
                                             </>
