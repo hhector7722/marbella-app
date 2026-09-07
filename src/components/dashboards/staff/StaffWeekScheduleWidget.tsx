@@ -353,14 +353,14 @@ function WeekExtCell({
                         data-element="weekend-ext-paid"
                         data-paid={paid ? 'true' : 'false'}
                         className={cn(
-                            'flex h-2.5 w-2.5 shrink-0 items-center justify-center rounded-full',
+                            'flex h-2 w-2 shrink-0 items-center justify-center rounded-full',
                             paid ? 'bg-emerald-500' : 'bg-rose-500',
                         )}
                     >
                         {paid ? (
-                            <Check className="h-1.5 w-1.5 text-white" strokeWidth={4} />
+                            <Check className="h-1 w-1 text-white" strokeWidth={4} />
                         ) : (
-                            <X className="h-1.5 w-1.5 text-white" strokeWidth={4} />
+                            <X className="h-1 w-1 text-white" strokeWidth={4} />
                         )}
                     </span>
                 </>

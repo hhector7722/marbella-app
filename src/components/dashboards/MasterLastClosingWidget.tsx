@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { randomId } from '@/lib/random-id';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { cn } from '@/lib/utils';
 import {
     buildLastClosingMetrics,
     formatClosingValue,
@@ -105,10 +106,17 @@ export function MasterLastClosingWidget() {
         <div className="grid grid-cols-5 gap-x-1">
             {kpis.map((kpi) => (
                 <div key={kpi.label} className="flex min-w-0 flex-col items-center justify-center text-center">
-                    <span className="text-[13px] md:text-[15px] tabular-nums leading-none text-[var(--home-widget-ink)]">
+                    <span
+                        className={cn(
+                            'font-bold tabular-nums leading-none text-[var(--home-widget-ink)]',
+                            kpi.label === 'Venta neta'
+                                ? 'text-[15px] md:text-[17px]'
+                                : 'text-[12px] md:text-[14px]',
+                        )}
+                    >
                         {kpi.format(metrics)}
                     </span>
-                    <span className="mt-1 text-[8px] md:text-[9px] leading-none text-[var(--home-widget-ink-secondary)]">
+                    <span className="mt-1 text-[9px] md:text-[10px] leading-none text-[var(--home-widget-ink-secondary)]">
                         {kpi.label}
                     </span>
                 </div>
@@ -146,7 +154,7 @@ export function MasterLastClosingWidget() {
                     </span>
                 </div>
             </div>
-            <div className="flex min-h-0 flex-1 flex-col justify-center px-2 pb-1.5">
+            <div className="flex min-h-0 flex-1 flex-col justify-end px-2 pb-4">
                 {loading ? (
                     <div
                         className="flex flex-1 items-center justify-center"

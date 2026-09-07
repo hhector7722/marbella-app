@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Pencil } from 'lucide-react';
+import { Pencil, Printer } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/Field';
@@ -152,15 +152,83 @@ export default function DatosPersonalesModal({
         </button>
     );
 
+    const handlePrint = () => {
+        const w = window.open('', '_blank');
+        if (!w) return;
+        const esc = (s: string | null | undefined) =>
+            (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        const field = (label: string, value: string | null | undefined) =>
+            `<tr><td class="label">${esc(label)}</td><td class="value">${esc(value)}</td></tr>`;
+        const imagesHtml = hasImages
+            ? `<h3 class="section">Documento</h3><div class="images">${
+                  images!.delantera ? `<img src="${esc(images!.delantera)}" />` : ''
+              }${images!.trasera ? `<img src="${esc(images!.trasera)}" />` : ''}</div>`
+            : '';
+        const html = `<!doctype html>
+<html lang="es"><head><meta charset="utf-8" />
+<title>Datos personales — ${esc(fullName)}</title>
+<style>
+  @page { size: A4; margin: 14mm; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #18181b; margin: 0; padding: 0; }
+  .sheet { width: 100%; }
+  .head { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #36606f; padding-bottom: 5mm; margin-bottom: 7mm; }
+  .head .name { font-size: 19pt; font-weight: 700; }
+  .head img { height: 11mm; width: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 2.6mm 0; border-bottom: 0.25pt solid #e4e4e7; font-size: 10.5pt; vertical-align: top; }
+  td.label { width: 42%; color: #52525b; }
+  td.value { font-weight: 500; color: #18181b; }
+  h3.section { font-size: 9.5pt; font-weight: 700; color: #36606f; text-transform: uppercase; letter-spacing: 0.06em; margin: 7mm 0 1mm; }
+  .images { display: flex; gap: 5mm; margin-top: 2mm; }
+  .images img { width: 46%; border: 0.5pt solid #d4d4d8; border-radius: 2mm; }
+</style></head>
+<body><div class="sheet">
+  <div class="head">
+    <div class="name">${esc(fullName)}</div>
+    <img src="/icons/logo-white.png" alt="Logo" />
+  </div>
+  <h3 class="section">Identificación</h3>
+  <table>${field('NIF / NIE / Pasaporte', dni)}${field('Nº afiliación S.S.', afiliacionSeguridadSocial)}${field('Nacionalidad', nacionalidad)}${field('Fecha de nacimiento', formatBirthDate(fechaNacimiento))}</table>
+  <h3 class="section">Contacto</h3>
+  <table>${field('Correo electrónico', email)}${field('Teléfono', phone)}</table>
+  <h3 class="section">Domicilio</h3>
+  <table>${field('Dirección', domicilio)}</table>
+  ${imagesHtml}
+</div></body></html>`;
+        w.document.write(html);
+        w.document.close();
+        w.focus();
+        const doPrint = () => w.print();
+        w.onload = doPrint;
+        setTimeout(doPrint, 400);
+    };
+
+    const printButton = (
+        <button
+            type="button"
+            onClick={handlePrint}
+            className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+            aria-label="Imprimir ficha"
+        >
+            <Printer size={16} strokeWidth={2} />
+        </button>
+    );
+
     const recordContent = (
         <div className="px-ds-3 pt-ds-3 pb-ds-6">
             <div className="rounded-2xl bg-white px-ds-4 py-ds-3 shadow-sm" data-element="personal-record">
-                <div className="flex items-center py-ds-1">
+                <div className="flex items-center justify-between gap-ds-3 py-ds-1">
                     <div className="min-w-0 flex-1">
                         <p className="truncate text-[15px] font-bold leading-tight text-zinc-900">
                             {fullName}
                         </p>
                     </div>
+                    <img
+                        src="/icons/logo-white.png"
+                        alt="Logo Marbella"
+                        className="h-8 w-auto shrink-0 object-contain"
+                    />
                 </div>
 
                 <RecordSection title="Identificación">
@@ -205,7 +273,14 @@ export default function DatosPersonalesModal({
             scheme="dark"
             usageId="profile-personal"
             usageLabel="Datos personales"
-            headerTrailing={canEdit && !editing ? editButton : undefined}
+            headerTrailing={
+                !editing ? (
+                    <>
+                        {printButton}
+                        {canEdit ? editButton : null}
+                    </>
+                ) : undefined
+            }
             footer={
                 canEdit && editing ? (
                     <div className="flex w-full flex-wrap items-center justify-end gap-2">
