@@ -60,6 +60,10 @@ type Props = {
   editRequestSignal?: number;
   /** Ocultar los botones de acción de la vista (el padre pone su propio icono). */
   hideViewActions?: boolean;
+  /** Activa el modo acordeón colapsable en dos columnas. */
+  collapsible?: boolean;
+  /** Informa al padre si se está en modo edición. */
+  onEditingChange?: (editing: boolean) => void;
 };
 
 export default function LaborConditionsView({
@@ -71,6 +75,8 @@ export default function LaborConditionsView({
   contractDates,
   editRequestSignal,
   hideViewActions = false,
+  collapsible = false,
+  onEditingChange,
 }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -182,14 +188,24 @@ export default function LaborConditionsView({
     setEditing(true);
   };
 
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    onEditingChange?.(editing);
+  }, [editing, onEditingChange]);
+
   const editRequestRef = useRef(0);
   useEffect(() => {
     if (editRequestSignal == null) return;
     if (editRequestSignal > editRequestRef.current) {
       editRequestRef.current = editRequestSignal;
-      startEditVigente();
+      if (collapsible && expandedIndex !== null && terms[expandedIndex]) {
+        startRewriteTerm(terms[expandedIndex]);
+      } else if (vigente) {
+        startEditVigente();
+      }
     }
-  }, [editRequestSignal]);
+  }, [editRequestSignal, expandedIndex, terms, vigente]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -320,162 +336,235 @@ export default function LaborConditionsView({
     <div className={hostedInPageScreen ? 'flex flex-col gap-4' : 'min-h-screen pb-24 p-4'}>
       <div className={hostedInPageScreen ? 'flex flex-col gap-4' : 'mx-auto flex max-w-2xl flex-col gap-4'}>
         {!editing ? (
-          <>
+          collapsible ? (
             <section className={hostedInPageScreen ? '' : 'overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm'}>
-              {hostedInPageScreen ? null : cardHeader('Condiciones laborales', { withBack: true })}
+              {!hostedInPageScreen && cardHeader('Condiciones laborales', { withBack: true })}
               <div className="p-4">
-                {vigente ? (
-                  <dl className="divide-y divide-zinc-100">
-                    {contractDates?.joiningDate ? (
-                      <div className="flex min-h-12 items-center justify-between gap-3 py-3">
-                        <dt className="text-xs text-zinc-500">Fecha inicio contrato</dt>
-                        <dd className="text-sm font-semibold text-zinc-900">
-                          {formatYmdEs(contractDates.joiningDate)}
-                        </dd>
-                      </div>
-                    ) : null}
-                    {contractDates ? (
-                      <div className="flex min-h-12 items-center justify-between gap-3 py-3">
-                        <dt className="text-xs text-zinc-500">Finalización trabajador</dt>
-                        <dd className="text-sm font-semibold text-zinc-900">
-                          {contractDates.endDate ? formatYmdEs(contractDates.endDate) : 'Activo'}
-                        </dd>
-                      </div>
-                    ) : null}
-                    <div className="flex min-h-12 items-center justify-between gap-3 py-3">
-                      <dt className="text-xs text-zinc-500">Horas semanales</dt>
-                      <dd className="text-sm font-semibold text-zinc-900">
-                        {displayHours(vigente.weeklyHours)}
-                      </dd>
+                {contractDates && (
+                  <div className="grid grid-cols-2 gap-x-ds-4 gap-y-ds-2 border-b border-zinc-100 pb-ds-3 text-xs mb-ds-3">
+                    <div className="flex flex-col justify-center min-h-[40px]">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Fecha inicio contrato</span>
+                      <span className="text-sm font-bold text-zinc-800 mt-1">
+                        {contractDates.joiningDate ? formatYmdEs(contractDates.joiningDate) : '—'}
+                      </span>
                     </div>
-                    <div className="flex min-h-12 items-center justify-between gap-3 py-3">
-                      <dt className="text-xs text-zinc-500">Régimen</dt>
-                      <dd className="text-sm font-semibold text-zinc-900">
-                        {regimeLabel(vigente.regime as ContractRegime)}
-                      </dd>
+                    <div className="flex flex-col justify-center min-h-[40px]">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Finalización trabajador</span>
+                      <span className="text-sm font-bold text-zinc-800 mt-1">
+                        {contractDates.endDate ? formatYmdEs(contractDates.endDate) : 'Activo'}
+                      </span>
                     </div>
-                    <div className="flex min-h-12 items-center justify-between gap-3 py-3">
-                      <dt className="text-xs text-zinc-500">Bolsa / Pago</dt>
-                      <dd className="text-sm font-semibold text-zinc-900">
-                        {bagLabel(vigente.bagMode)}
-                      </dd>
-                    </div>
-                    <div className="flex min-h-12 items-center justify-between gap-3 py-3">
-                      <dt className="text-xs text-zinc-500">Tarifa extras</dt>
-                      <dd className="text-sm font-semibold text-zinc-900">
-                        {displayRate(vigente.overtimeRatePerHour)}
-                      </dd>
-                    </div>
-                    <div className="flex min-h-12 items-center justify-between gap-3 py-3">
-                      <dt className="text-xs text-zinc-500">Vigente desde</dt>
-                      <dd className="text-sm font-semibold text-zinc-900">
-                        {formatYmdEs(vigente.effectiveFrom)}
-                      </dd>
-                    </div>
-                  </dl>
-                ) : (
-                  <p className="text-sm text-zinc-500">
-                    Sin condiciones vigentes. Puedes definirlas ahora.
-                  </p>
+                  </div>
                 )}
-                {!hideViewActions ? (
-                  <>
-                    <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
-                    <Button
-                      type="button"
-                      variant="primary"
-                      instance="labor-conditions-definir"
-                      onClick={startEditVigente}
-                    >
-                      {vigente ? 'Editar condiciones vigentes' : 'Definir condiciones'}
-                    </Button>
-                    </div>
-                    {vigente ? (
-                      <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          instance="labor-conditions-new-vigencia"
-                          onClick={startNewVigencia}
-                        >
-                          Nueva vigencia desde fecha
-                        </Button>
-                      </div>
-                    ) : null}
-                  </>
-                ) : null}
-              </div>
-            </section>
 
-            {showHistory ? (
-            <section className={hostedInPageScreen ? '' : 'overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm'}>
-              {hostedInPageScreen ? (
-                <h2 className="px-1 pb-2 text-sm font-semibold text-zinc-900">Histórico contractual</h2>
-              ) : (
-                <div data-element="block-header">
-                  <h2 data-element="title">Histórico contractual</h2>
-                </div>
-              )}
-              <div className="p-4">
                 {terms.length === 0 ? (
-                  <p className="text-sm text-zinc-500">Sin histórico.</p>
+                  <p className="text-sm text-zinc-500 text-center py-4">Sin condiciones contractuales.</p>
                 ) : (
-                  <>
-                    <p className="mb-3 text-xs text-zinc-500">
-                      Pulsa un tramo para modificarlo (condiciones o fechas) sin crear
-                      otro. Al borrar, dejará un hueco en la historia contractual. Vacío en fin =
-                      vigente.
-                    </p>
-                    <div className="divide-y divide-zinc-100">
-                      {[...terms]
-                        .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))
-                        .map((t) => {
-                          const isOpen = t.effectiveTo === null;
-                          return (
+                  <div className="divide-y divide-zinc-100">
+                    {[...terms]
+                      .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))
+                      .map((t, idx) => {
+                        const isTermExpanded = expandedIndex === idx;
+                        const isVigente = t.effectiveTo === null;
+                        return (
+                          <div key={`${t.effectiveFrom}-${t.effectiveTo ?? 'open'}`} className="py-2.5">
                             <button
-                              key={`${t.effectiveFrom}-${t.effectiveTo ?? 'open'}`}
                               type="button"
-                              onClick={() => startRewriteTerm(t)}
-                              className={cn(
-                                'flex w-full min-h-12 flex-col gap-1 py-3 text-left active:opacity-70',
-                                isOpen && 'bg-emerald-50/60 -mx-1 px-1 rounded-lg',
-                              )}
+                              onClick={() => setExpandedIndex(isTermExpanded ? null : idx)}
+                              className="flex w-full items-center justify-between py-1 text-left active:opacity-70"
                             >
-                              <div className="flex flex-wrap items-center gap-2">
-                                <span className="text-sm font-semibold text-zinc-900">
-                                  {formatYmdEs(t.effectiveFrom)}
-                                  {' → '}
-                                  {t.effectiveTo ? formatYmdEs(t.effectiveTo) : 'Vigente'}
-                                </span>
-                                {isOpen ? (
-                                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">
-                                    Vigente
-                                  </span>
-                                ) : null}
-                              </div>
-                              <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-600">
-                                <span>
-                                  {t.weeklyHours === 0 ? ' ' : `${t.weeklyHours} h`}
-                                </span>
-                                <span>{regimeLabel(t.regime as ContractRegime)}</span>
-                                <span>{bagLabel(t.bagMode)}</span>
-                                <span>
-                                  {t.overtimeRatePerHour == null ||
-                                  t.overtimeRatePerHour === 0
-                                    ? ' '
-                                    : `${t.overtimeRatePerHour} €/h`}
-                                </span>
-                              </div>
+                              <span className="text-xs font-bold text-zinc-800">
+                                {formatYmdEs(t.effectiveFrom)} → {t.effectiveTo ? formatYmdEs(t.effectiveTo) : 'Vigente'}
+                              </span>
+                              <span className="text-[10px] font-black text-zinc-400">
+                                {isTermExpanded ? '▲' : '▼'}
+                              </span>
                             </button>
-                          );
-                        })}
-                    </div>
-                  </>
+                            {isTermExpanded && (
+                              <div className="grid grid-cols-2 gap-x-ds-4 gap-y-ds-2 mt-2 border-t border-zinc-50 pt-2 text-xs">
+                                <div className="flex flex-col justify-center min-h-[36px] py-1 border-b border-zinc-100/50">
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Horas semanales</span>
+                                  <span className="text-xs font-bold text-zinc-800 mt-0.5">{displayHours(t.weeklyHours)}</span>
+                                </div>
+                                <div className="flex flex-col justify-center min-h-[36px] py-1 border-b border-zinc-100/50">
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Régimen</span>
+                                  <span className="text-xs font-bold text-zinc-800 mt-0.5">{regimeLabel(t.regime as ContractRegime)}</span>
+                                </div>
+                                <div className="flex flex-col justify-center min-h-[36px] py-1 border-b border-zinc-100/50">
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Bolsa / Pago</span>
+                                  <span className="text-xs font-bold text-zinc-800 mt-0.5">{bagLabel(t.bagMode)}</span>
+                                </div>
+                                <div className="flex flex-col justify-center min-h-[36px] py-1 border-b border-zinc-100/50">
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Tarifa extras</span>
+                                  <span className="text-xs font-bold text-zinc-800 mt-0.5">{displayRate(t.overtimeRatePerHour)}</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
                 )}
               </div>
             </section>
-            ) : null}
-          </>
+          ) : (
+            <>
+              <section className={hostedInPageScreen ? '' : 'overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm'}>
+                {hostedInPageScreen ? null : cardHeader('Condiciones laborales', { withBack: true })}
+                <div className="p-4">
+                  {vigente ? (
+                    <dl className="divide-y divide-zinc-100">
+                      {contractDates?.joiningDate ? (
+                        <div className="flex min-h-12 items-center justify-between gap-3 py-3">
+                          <dt className="text-xs text-zinc-500">Fecha inicio contrato</dt>
+                          <dd className="text-sm font-semibold text-zinc-900">
+                            {formatYmdEs(contractDates.joiningDate)}
+                          </dd>
+                        </div>
+                      ) : null}
+                      {contractDates ? (
+                        <div className="flex min-h-12 items-center justify-between gap-3 py-3">
+                          <dt className="text-xs text-zinc-500">Finalización trabajador</dt>
+                          <dd className="text-sm font-semibold text-zinc-900">
+                            {contractDates.endDate ? formatYmdEs(contractDates.endDate) : 'Activo'}
+                          </dd>
+                        </div>
+                      ) : null}
+                      <div className="flex min-h-12 items-center justify-between gap-3 py-3">
+                        <dt className="text-xs text-zinc-500">Horas semanales</dt>
+                        <dd className="text-sm font-semibold text-zinc-900">
+                          {displayHours(vigente.weeklyHours)}
+                        </dd>
+                      </div>
+                      <div className="flex min-h-12 items-center justify-between gap-3 py-3">
+                        <dt className="text-xs text-zinc-500">Régimen</dt>
+                        <dd className="text-sm font-semibold text-zinc-900">
+                          {regimeLabel(vigente.regime as ContractRegime)}
+                        </dd>
+                      </div>
+                      <div className="flex min-h-12 items-center justify-between gap-3 py-3">
+                        <dt className="text-xs text-zinc-500">Bolsa / Pago</dt>
+                        <dd className="text-sm font-semibold text-zinc-900">
+                          {bagLabel(vigente.bagMode)}
+                        </dd>
+                      </div>
+                      <div className="flex min-h-12 items-center justify-between gap-3 py-3">
+                        <dt className="text-xs text-zinc-500">Tarifa extras</dt>
+                        <dd className="text-sm font-semibold text-zinc-900">
+                          {displayRate(vigente.overtimeRatePerHour)}
+                        </dd>
+                      </div>
+                      <div className="flex min-h-12 items-center justify-between gap-3 py-3">
+                        <dt className="text-xs text-zinc-500">Vigente desde</dt>
+                        <dd className="text-sm font-semibold text-zinc-900">
+                          {formatYmdEs(vigente.effectiveFrom)}
+                        </dd>
+                      </div>
+                    </dl>
+                  ) : (
+                    <p className="text-sm text-zinc-500">
+                      Sin condiciones vigentes. Puedes definirlas ahora.
+                    </p>
+                  )}
+                  {!hideViewActions ? (
+                    <>
+                      <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="primary"
+                        instance="labor-conditions-definir"
+                        onClick={startEditVigente}
+                      >
+                        {vigente ? 'Editar condiciones vigentes' : 'Definir condiciones'}
+                      </Button>
+                      </div>
+                      {vigente ? (
+                        <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            instance="labor-conditions-new-vigencia"
+                            onClick={startNewVigencia}
+                          >
+                            Nueva vigencia desde fecha
+                          </Button>
+                        </div>
+                      ) : null}
+                    </>
+                  ) : null}
+                </div>
+              </section>
+
+              {showHistory ? (
+              <section className={hostedInPageScreen ? '' : 'overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm'}>
+                {hostedInPageScreen ? (
+                  <h2 className="px-1 pb-2 text-sm font-semibold text-zinc-900">Histórico contractual</h2>
+                ) : (
+                  <div data-element="block-header">
+                    <h2 data-element="title">Histórico contractual</h2>
+                  </div>
+                )}
+                <div className="p-4">
+                  {terms.length === 0 ? (
+                    <p className="text-sm text-zinc-500">Sin histórico.</p>
+                  ) : (
+                    <>
+                      <p className="mb-3 text-xs text-zinc-500">
+                        Pulsa un tramo para modificarlo (condiciones o fechas) sin crear
+                        otro. Al borrar, dejará un hueco en la historia contractual. Vacío en fin =
+                        vigente.
+                      </p>
+                      <div className="divide-y divide-zinc-100">
+                        {[...terms]
+                          .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))
+                          .map((t) => {
+                            const isOpen = t.effectiveTo === null;
+                            return (
+                              <button
+                                key={`${t.effectiveFrom}-${t.effectiveTo ?? 'open'}`}
+                                type="button"
+                                onClick={() => startRewriteTerm(t)}
+                                className={cn(
+                                  'flex w-full min-h-12 flex-col gap-1 py-3 text-left active:opacity-70',
+                                  isOpen && 'bg-emerald-50/60 -mx-1 px-1 rounded-lg',
+                                )}
+                              >
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="text-sm font-semibold text-zinc-900">
+                                    {formatYmdEs(t.effectiveFrom)}
+                                    {' → '}
+                                    {t.effectiveTo ? formatYmdEs(t.effectiveTo) : 'Vigente'}
+                                  </span>
+                                  {isOpen ? (
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">
+                                      Vigente
+                                    </span>
+                                  ) : null}
+                                </div>
+                                <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-600">
+                                  <span>
+                                    {t.weeklyHours === 0 ? ' ' : `${t.weeklyHours} h`}
+                                  </span>
+                                  <span>{regimeLabel(t.regime as ContractRegime)}</span>
+                                  <span>{bagLabel(t.bagMode)}</span>
+                                  <span>
+                                    {t.overtimeRatePerHour == null ||
+                                    t.overtimeRatePerHour === 0
+                                      ? ' '
+                                      : `${t.overtimeRatePerHour} €/h`}
+                                  </span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </section>
+              ) : null}
+            </>
+          )
         ) : (
           <section className={hostedInPageScreen ? '' : 'overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm'}>
             {hostedInPageScreen ? (

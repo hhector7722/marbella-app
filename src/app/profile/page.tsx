@@ -106,6 +106,7 @@ function ProfileContent() {
     const [plantillaLoading, setPlantillaLoading] = useState(false);
     const [viewerRole, setViewerRole] = useState<string | null>(null);
     const [editContractSignal, setEditContractSignal] = useState(0);
+    const [isEditingLabor, setIsEditingLabor] = useState(false);
 
     const fullName = profile
         ? `${profile.first_name} ${profile.last_name || ''}`.trim()
@@ -529,7 +530,7 @@ function ProfileContent() {
                                         <h2 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">
                                             Condiciones laborales
                                         </h2>
-                                        {canManageLaborConditions ? (
+                                        {canManageLaborConditions && !isEditingLabor ? (
                                             <button
                                                 type="button"
                                                 onClick={() => setEditContractSignal((n) => n + 1)}
@@ -543,13 +544,13 @@ function ProfileContent() {
                                     <LaborConditionsView
                                         employeeId={profile.id}
                                         hostedInPageScreen
-                                        showHistory={false}
-                                        hideViewActions
+                                        collapsible
                                         contractDates={{
                                             joiningDate: joiningDateYmd,
                                             endDate: endDateYmd,
                                         }}
                                         editRequestSignal={editContractSignal}
+                                        onEditingChange={setIsEditingLabor}
                                         onSaveSuccess={() => void fetchInitialData()}
                                     />
                                 </div>

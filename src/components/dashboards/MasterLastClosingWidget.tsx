@@ -133,13 +133,16 @@ export function MasterLastClosingWidget() {
         return isNaN(d.getTime()) ? "Fecha Inválida" : format(d, 'eeee d MMM', { locale: es });
     }, [closing]);
 
-    const fetchSalesData = async (closingDate: string) => {
+    const fetchSalesData = async (rawClosingDate: string) => {
+        const closingDate = rawClosingDate.split('T')[0];
         setSalesModalLoading(true);
         try {
             // 1. Fetch top 5 products ranking
             const { data: productsData, error: productsError } = await supabase.rpc('get_product_sales_ranking', {
                 p_start_date: closingDate,
                 p_end_date: closingDate,
+                p_start_time: null,
+                p_end_time: null,
             });
 
             if (productsError) {
@@ -209,52 +212,6 @@ export function MasterLastClosingWidget() {
         }
     };
 
-    const renderKpiGrid = (kpis: readonly LastClosingKpi[], gridClass: 'grid-cols-2' | 'grid-cols-3') => (
-        <div className={`grid ${gridClass} gap-x-1`}>
-            {kpis.map((kpi) => {
-                const isClickable = kpi.label === 'Ventas' || kpi.label === 'Efectivo';
-                const handleClick = () => {
-                    if (kpi.label === 'Ventas') {
-                        if (closing?.closing_date) {
-                            void fetchSalesData(closing.closing_date as string);
-                            setIsSalesModalOpen(true);
-                        }
-                    } else if (kpi.label === 'Efectivo') {
-                        setIsCashModalOpen(true);
-                    }
-                };
-
-                return (
-                    <div
-                        key={kpi.label}
-                        onClick={isClickable ? handleClick : undefined}
-                        className={cn(
-                            "flex min-w-0 flex-col items-center justify-center text-center select-none",
-                            isClickable && "cursor-pointer hover:opacity-80 active:scale-[0.98] transition-all relative before:absolute before:inset-0 before:-m-2 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']"
-                        )}
-                        role={isClickable ? "button" : undefined}
-                        tabIndex={isClickable ? 0 : undefined}
-                        onKeyDown={isClickable ? (e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                handleClick();
-                            }
-                        } : undefined}
-                    >
-                        <span
-                            className="font-bold tabular-nums leading-none text-[12px] md:text-[14px] text-[var(--home-widget-ink)]"
-                        >
-                            {kpi.format(metrics)}
-                        </span>
-                        <span className="mt-1 text-[9px] md:text-[10px] leading-none text-[var(--home-widget-ink-secondary)]">
-                            {kpi.label}
-                        </span>
-                    </div>
-                );
-            })}
-        </div>
-    );
-
     const cashTotal = Number(closing?.cash_counted ?? 0);
     const displayBreakdown = (closing?.breakdown ?? {}) as Record<string, any>;
 
@@ -301,11 +258,92 @@ export function MasterLastClosingWidget() {
                     <EmptyState instance="master-ultimo-cierre-none" variant="none" title="Sin cierre" />
                 ) : (
                     <div className="flex flex-col gap-y-1.5 w-full">
-                        <div className="w-full">
-                            {renderKpiGrid(PRIMARY_KPIS, 'grid-cols-2')}
+                        {/* Primera fila: Ventas y Venta neta alineados matemáticamente con los midpoints de la segunda fila */}
+                        <div className="grid grid-cols-6 gap-x-1 w-full">
+                            {/* Ventas: col-start-2 col-span-2 (centrado a 1/3 del ancho, entre Tarjeta y Efectivo) */}
+                            {(() => {
+                                const kpi = PRIMARY_KPIS[0];
+                                const handleClick = () => {
+                                    if (closing?.closing_date) {
+                                        void fetchSalesData(closing.closing_date as string);
+                                        setIsSalesModalOpen(true);
+                                    }
+                                };
+                                return (
+                                    <div
+                                        onClick={handleClick}
+                                        className="col-start-2 col-span-2 flex min-w-0 flex-col items-center justify-center text-center select-none cursor-pointer hover:opacity-80 active:scale-[0.98] transition-all relative before:absolute before:inset-0 before:-m-2 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']"
+                                        role="button"
+                                        tabIndex={0}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                handleClick();
+                                            }
+                                        }}
+                                    >
+                                        <span className="font-bold tabular-nums leading-none text-[12px] md:text-[14px] text-[var(--home-widget-ink)]">
+                                            {kpi.format(metrics)}
+                                        </span>
+                                        <span className="mt-1 text-[9px] md:text-[10px] leading-none text-[var(--home-widget-ink-secondary)]">
+                                            {kpi.label}
+                                        </span>
+                                    </div>
+                                );
+                            })()}
+
+                            {/* Venta neta: col-start-4 col-span-2 (centrado a 2/3 del ancho, entre Efectivo y Diferencia) */}
+                            {(() => {
+                                const kpi = PRIMARY_KPIS[1];
+                                return (
+                                    <div
+                                        className="col-start-4 col-span-2 flex min-w-0 flex-col items-center justify-center text-center select-none"
+                                    >
+                                        <span className="font-bold tabular-nums leading-none text-[12px] md:text-[14px] text-[var(--home-widget-ink)]">
+                                            {kpi.format(metrics)}
+                                        </span>
+                                        <span className="mt-1 text-[9px] md:text-[10px] leading-none text-[var(--home-widget-ink-secondary)]">
+                                            {kpi.label}
+                                        </span>
+                                    </div>
+                                );
+                            })()}
                         </div>
-                        <div className="w-full">
-                            {renderKpiGrid(SECONDARY_KPIS, 'grid-cols-3')}
+
+                        {/* Segunda fila: Tarjeta, Efectivo, Diferencia inline ("Nombre Valor") en grid de 3 columnas */}
+                        <div className="grid grid-cols-3 gap-x-1 w-full">
+                            {SECONDARY_KPIS.map((kpi) => {
+                                const isClickable = kpi.label === 'Efectivo';
+                                const handleClick = () => {
+                                    if (kpi.label === 'Efectivo') {
+                                        setIsCashModalOpen(true);
+                                    }
+                                };
+
+                                return (
+                                    <div
+                                        key={kpi.label}
+                                        onClick={isClickable ? handleClick : undefined}
+                                        className={cn(
+                                            "flex min-w-0 items-center justify-center text-center select-none",
+                                            isClickable && "cursor-pointer hover:opacity-80 active:scale-[0.98] transition-all relative before:absolute before:inset-0 before:-m-2 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']"
+                                        )}
+                                        role={isClickable ? "button" : undefined}
+                                        tabIndex={isClickable ? 0 : undefined}
+                                        onKeyDown={isClickable ? (e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                handleClick();
+                                            }
+                                        } : undefined}
+                                    >
+                                        <span className="inline-flex items-center text-[9px] md:text-[11px] leading-none select-none">
+                                            <span className="text-[var(--home-widget-ink-secondary)] font-bold">{kpi.label}</span>
+                                            <span className="ml-1 text-[var(--home-widget-ink)] font-black tabular-nums">{kpi.format(metrics)}</span>
+                                        </span>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 )}
@@ -316,7 +354,7 @@ export function MasterLastClosingWidget() {
                 open={isCashModalOpen}
                 onClose={() => setIsCashModalOpen(false)}
                 variant="compact"
-                layer="derived"
+                layer="base"
                 instance="master-last-closing-cash-breakdown"
                 title={titleDate}
                 subtitle="Arqueo de Efectivo"
@@ -373,7 +411,7 @@ export function MasterLastClosingWidget() {
                 scheme="dark"
                 scrollContent={true}
             >
-                <div className="bg-[#5B8FB9] text-white flex flex-col min-h-full select-none">
+                <div className="text-white flex flex-col min-h-full select-none">
                     <div className="p-6 flex flex-col flex-1">
                         {salesModalLoading ? (
                             <div className="flex justify-center items-center py-20 flex-1">
@@ -445,38 +483,38 @@ export function MasterLastClosingWidget() {
                             })()}
 
                             {/* Tables Container */}
-                            <div className="bg-white rounded-2xl p-4 shadow-md text-zinc-800 flex flex-col gap-6">
+                            <div className="flex flex-col gap-8 mt-6">
                                 {/* Top 5 Products */}
                                 <div>
-                                    <h3 className="text-xs font-black uppercase text-[#36606F] tracking-wider mb-3">
+                                    <h3 className="text-xs font-black uppercase text-white/80 tracking-wider mb-3">
                                         Top 5 Productos
                                     </h3>
                                     {salesProducts.length === 0 ? (
-                                        <p className="text-xs text-zinc-500 font-medium italic">No hay productos registrados.</p>
+                                        <p className="text-xs text-white/50 font-medium italic">No hay productos registrados.</p>
                                     ) : (
                                         <table className="w-full text-left border-collapse">
                                             <thead>
-                                                <tr className="border-b border-zinc-100 text-[9px] font-black uppercase text-zinc-400">
+                                                <tr className="border-b border-white/10 text-[9px] font-black uppercase text-white/50">
                                                     <th className="pb-2 w-[50%]">Producto</th>
                                                     <th className="pb-2 text-center w-[15%]">Cant</th>
                                                     <th className="pb-2 text-center w-[15%]">Media</th>
                                                     <th className="pb-2 text-right w-[20%]">Total</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="font-bold text-[11px] text-zinc-600">
+                                            <tbody className="font-bold text-[11px] text-white/80">
                                                 {salesProducts.map((prod, idx) => (
-                                                    <tr key={idx} className="border-b border-zinc-50 last:border-0 hover:bg-zinc-50/50">
-                                                        <td className="py-2 text-zinc-900 truncate max-w-[150px]">
-                                                            <span className="text-zinc-300 tabular-nums">{prod.rank} </span>
+                                                    <tr key={idx} className="border-b border-white/5 last:border-0 hover:bg-white/5">
+                                                        <td className="py-2 text-white truncate max-w-[150px]">
+                                                            <span className="text-white/45 tabular-nums">{prod.rank} </span>
                                                             {prod.nombre_articulo}
                                                         </td>
-                                                        <td className="py-2 text-center text-zinc-500 tabular-nums">
+                                                        <td className="py-2 text-center text-white/70 tabular-nums">
                                                             {Number(prod.cantidad_total).toFixed(0)}
                                                         </td>
-                                                        <td className="py-2 text-center text-zinc-400 tabular-nums">
+                                                        <td className="py-2 text-center text-white/60 tabular-nums">
                                                             {Number(prod.precio_medio).toFixed(2)}€
                                                         </td>
-                                                        <td className="py-2 text-right font-black tabular-nums text-emerald-500">
+                                                        <td className="py-2 text-right font-black tabular-nums text-emerald-400">
                                                             {Number(prod.total_ingresos).toFixed(2)}€
                                                         </td>
                                                     </tr>
@@ -487,35 +525,35 @@ export function MasterLastClosingWidget() {
                                 </div>
 
                                 {/* Top 3 Hours */}
-                                <div className="border-t border-zinc-100 pt-6">
-                                    <h3 className="text-xs font-black uppercase text-[#36606F] tracking-wider mb-3">
+                                <div className="border-t border-white/10 pt-6">
+                                    <h3 className="text-xs font-black uppercase text-white/80 tracking-wider mb-3">
                                         Horas con más Facturación
                                     </h3>
                                     {topHours.length === 0 ? (
-                                        <p className="text-xs text-zinc-500 font-medium italic">No hay registros horarios.</p>
+                                        <p className="text-xs text-white/50 font-medium italic">No hay registros horarios.</p>
                                     ) : (
                                         <table className="w-full text-left border-collapse">
                                             <thead>
-                                                <tr className="border-b border-zinc-100 text-[9px] font-black uppercase text-zinc-400">
+                                                <tr className="border-b border-white/10 text-[9px] font-black uppercase text-white/50">
                                                     <th className="pb-2 w-[40%]">Horas</th>
                                                     <th className="pb-2 text-center w-[20%]">Cant</th>
                                                     <th className="pb-2 text-center w-[20%]">Media</th>
                                                     <th className="pb-2 text-right w-[20%]">Total</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="font-bold text-[11px] text-zinc-600">
+                                            <tbody className="font-bold text-[11px] text-white/80">
                                                 {topHours.map((row, idx) => (
-                                                    <tr key={idx} className="border-b border-zinc-50 last:border-0 hover:bg-zinc-50/50">
-                                                        <td className="py-2 font-mono font-bold text-zinc-900 tabular-nums">
+                                                    <tr key={idx} className="border-b border-white/5 last:border-0 hover:bg-white/5">
+                                                        <td className="py-2 font-mono font-bold text-white tabular-nums">
                                                             {row.label}
                                                         </td>
-                                                        <td className="py-2 text-center text-zinc-500 tabular-nums">
+                                                        <td className="py-2 text-center text-white/70 tabular-nums">
                                                             {row.cant}
                                                         </td>
-                                                        <td className="py-2 text-center text-zinc-400 tabular-nums">
+                                                        <td className="py-2 text-center text-white/60 tabular-nums">
                                                             {row.media.toFixed(2)}€
                                                         </td>
-                                                        <td className="py-2 text-right font-black tabular-nums text-emerald-500">
+                                                        <td className="py-2 text-right font-black tabular-nums text-emerald-400">
                                                             {row.total.toFixed(2)}€
                                                         </td>
                                                     </tr>

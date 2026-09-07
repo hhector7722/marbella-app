@@ -216,7 +216,7 @@ export default function DatosPersonalesModal({
     );
 
     const recordContent = (
-        <div className="px-ds-3 pt-ds-3 pb-ds-6">
+        <div className="px-ds-3 pt-ds-3 pb-12">
             <div className="rounded-2xl bg-white px-ds-4 py-ds-3 shadow-sm" data-element="personal-record">
                 <div className="flex items-center justify-between gap-ds-3 py-ds-1">
                     <div className="min-w-0 flex-1">
