@@ -112,8 +112,51 @@ export function groupActivities(acts: BarActivity[]): BarActivity[] {
     return Array.from(map.values()).sort((a, b) => a.startTime.localeCompare(b.startTime));
 }
 
+function parseTimeToMinutes(timeStr: string): number {
+    const parts = timeStr.split(':');
+    if (parts.length < 2) return 0;
+    const h = parseInt(parts[0] ?? '0', 10);
+    const m = parseInt(parts[1] ?? '0', 10);
+    return h * 60 + m;
+}
+
+function compareActivities(a: BarActivity, b: BarActivity): number {
+    const aPistas = a.venueCodes.filter((c) => ['P1', 'P2', 'P3', 'P4'].includes(c));
+    const bPistas = b.venueCodes.filter((c) => ['P1', 'P2', 'P3', 'P4'].includes(c));
+    const aHasPista = aPistas.length > 0;
+    const bHasPista = bPistas.length > 0;
+
+    if (aHasPista !== bHasPista) {
+        return aHasPista ? -1 : 1;
+    }
+
+    const aDur = parseTimeToMinutes(a.endTime) - parseTimeToMinutes(a.startTime);
+    const bDur = parseTimeToMinutes(b.endTime) - parseTimeToMinutes(b.startTime);
+    if (aDur !== bDur) {
+        return bDur - aDur; // mayor duración primero
+    }
+
+    if (aHasPista && bHasPista) {
+        const aPriority = Math.max(...aPistas.map((c) => (c === 'P1' ? 4 : c === 'P2' ? 3 : c === 'P3' ? 2 : c === 'P4' ? 1 : 0)));
+        const bPriority = Math.max(...bPistas.map((c) => (c === 'P1' ? 4 : c === 'P2' ? 3 : c === 'P3' ? 2 : c === 'P4' ? 1 : 0)));
+        if (aPriority !== bPriority) {
+            return bPriority - aPriority; // mayor prioridad de pista primero
+        }
+    }
+
+    return 0;
+}
+
+function selectPrimaryActivity(acts: BarActivity[]): BarActivity[] {
+    if (acts.length === 0) return [];
+    const sorted = [...acts].sort(compareActivities);
+    const primary = sorted[0];
+    return primary ? [primary] : [];
+}
+
 function formatDayEventNames(acts: BarActivity[] | undefined): string | null {
-    const grouped = groupActivities(acts ?? []);
+    const primary = selectPrimaryActivity(acts ?? []);
+    const grouped = groupActivities(primary);
     if (grouped.length === 0) return null;
     return grouped.map((a) => a.activityName).join(' · ');
 }
@@ -126,7 +169,8 @@ type EventDetailRow = {
 
 /** Una fila por actividad: tres datos (horas, participantes, categoría) que reparten el ancho en tres columnas. */
 function formatDayEventDetailRows(acts: BarActivity[] | undefined): EventDetailRow[] {
-    const grouped = groupActivities(acts ?? []);
+    const primary = selectPrimaryActivity(acts ?? []);
+    const grouped = groupActivities(primary);
     if (grouped.length === 0) return [];
     return grouped.map((act) => ({
         hours: `${fmtHour(act.startTime)} - ${fmtHour(act.endTime)}`,

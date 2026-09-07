@@ -288,7 +288,7 @@ export function MasterLastClosingWidget() {
                     </span>
                 </div>
             </div>
-            <div className="flex min-h-0 flex-1 flex-col justify-start px-2 pb-3.5 pt-8">
+            <div className="flex min-h-0 flex-1 flex-col justify-start px-2 pb-3 pt-4">
                 {loading ? (
                     <div
                         className="flex flex-1 items-center justify-center"
