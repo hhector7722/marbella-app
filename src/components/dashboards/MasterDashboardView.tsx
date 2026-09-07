@@ -9,7 +9,6 @@ import { toast } from 'sonner';
 import { Check, Circle, Minus, Plus, RefreshCw, ShoppingCart } from 'lucide-react';
 import { getOvertimeData, togglePaidStatus } from '@/app/actions/overtime';
 import DashboardVentasSection from '@/components/dashboards/DashboardVentasSection';
-import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
 import MasterShortcutGrid from '@/components/dashboards/MasterShortcutGrid';
 import { HorasExtrasWidget } from '@/components/dashboards/ops-widgets';
 import { HomeScreen, HomeScreenSlot } from '@/components/dashboards/HomeScreen';
@@ -712,7 +711,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                 title="Caja Inicial"
                 ariaLabel="Caja inicial: acciones"
             >
-                <div className="grid grid-cols-4 gap-2 pb-6 pt-1">
+                <div className="grid grid-cols-2 gap-2 pb-6 pt-1">
                     {(
                         [
                             {
@@ -741,17 +740,29 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                             },
                         ] as const
                     ).map((opcion) => (
-                        <DashboardShortcut
+                        <button
                             key={opcion.accion}
-                            instance={`master-caja-inicial-${opcion.accion}`}
-                            label={opcion.label}
+                            type="button"
                             onClick={() => handleCajaInicialAccion(opcion.accion)}
-                            plate
+                            aria-label={opcion.label}
+                            className={`group relative flex h-full min-h-0 w-full flex-col items-center justify-center gap-2 rounded-[var(--radio-superficie)] ${opcion.color} px-2 py-3 text-white transition-transform active:scale-95 touch-manipulation`}
                         >
-                            <div className={`absolute inset-0 flex items-center justify-center ${opcion.color}`}>
+                            <span className="flex items-center justify-center transition-transform group-hover:scale-110">
                                 {opcion.icon}
-                            </div>
-                        </DashboardShortcut>
+                            </span>
+                            <span className="shrink-0 text-[10px] font-black uppercase leading-none tracking-widest">
+                                {opcion.label}
+                            </span>
+                            <span
+                                data-element="rim"
+                                aria-hidden
+                                className="pointer-events-none absolute inset-0 rounded-[var(--radio-superficie)]"
+                                style={{
+                                    boxShadow:
+                                        'inset 0 0 0 1px rgb(255 255 255 / 0.24), inset 0 1px 0 0 rgb(255 255 255 / 0.58), inset 1px 0 0 0 rgb(255 255 255 / 0.38), inset 0 -1px 0 0 rgb(0 0 0 / 0.2), inset -1px 0 0 0 rgb(0 0 0 / 0.12)',
+                                }}
+                            />
+                        </button>
                     ))}
                 </div>
             </Modal>
