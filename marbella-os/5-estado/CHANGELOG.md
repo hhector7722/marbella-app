@@ -42,7 +42,7 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-06
 
-- **Master: la columna «Ext» del horario se aísla en su propia card.** El calendario del widget de horario separa la columna de horas extra del mes: la expansión de sáb/dom y la card de la semana seleccionada quedan dentro del calendario de 7 días, y los valores «Ext» se agrupan en cards verticales a la derecha, sin tocar ni pisar las cards del fin de semana ni la de la semana en curso.
+- **Master: la columna «Ext» del horario queda dentro del calendario sin solaparse.** El widget de horario mantiene las 8 columnas alineadas (7 días + Ext); la card de la semana seleccionada cubre solo hasta DOM y la expansión de sáb/dom se limita a las 7 primeras columnas, de modo que la columna de horas extra no se toca ni se pisa con la de domingo ni con la de la semana en curso. Los valores «Ext» se muestran en cards con fondo, vacías cuando no hay importe.
 
 - **Master: el mosaico cambia de iconos y orden.** Desaparece el icono «H extras» del mosaico y entra «Plantilla»; «Uso app» deja el mosaico y entra «Recetas». El orden queda: C Inicial debajo de la asistencia del día, fila 5 (reservas, ingredientes, recetas, albaranes) y fila 6 (otros, cajas cambio, plantilla, cambio). El modal «Otros» pierde Plantilla y Recetas (ahora en el mosaico) y gana Uso app.
 

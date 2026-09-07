@@ -286,7 +286,7 @@ export function WeekCard({
                 data-week-footer="true"
                 data-overrides={overridesEnabled ? 'true' : undefined}
                 className={cn(
-                    'relative z-10 flex w-full items-stretch overflow-hidden border-t border-gray-100 bg-white',
+                    'relative z-10 flex w-full items-stretch overflow-visible border-t border-gray-100 bg-white',
                     overridesEnabled ? 'min-h-[48px]' : 'h-[20px] min-h-[20px] max-h-[20px] py-px',
                     stacked && !isLast && 'rounded-none',
                 )}
@@ -377,7 +377,7 @@ export function WeekCard({
                 {week.summary.isPaid ? (
                     <div
                         data-week-paid="true"
-                        className="flex h-full shrink-0 items-center justify-center self-stretch"
+                        className="pointer-events-none absolute right-0 bottom-0 z-20 flex items-center justify-center"
                     >
                         <img
                             src="/sello/pagado.png"

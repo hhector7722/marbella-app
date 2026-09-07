@@ -43,7 +43,7 @@ function formatBirthDate(ymd?: string | null): string {
     if (!ymd) return '';
     const [y, m, d] = ymd.split('-').map(Number);
     if (!y || !m || !d) return ymd;
-    return format(new Date(y, m - 1, d), "d 'de' MMMM 'de' yyyy", { locale: es });
+    return format(new Date(y, m - 1, d), 'd MMMM yyyy', { locale: es });
 }
 
 function displayValue(value: string | null | undefined): string {
@@ -153,7 +153,7 @@ export default function DatosPersonalesModal({
     );
 
     const recordContent = (
-        <div className="p-ds-3">
+        <div className="px-ds-3 pt-ds-3 pb-ds-6">
             <div className="rounded-2xl bg-white px-ds-4 py-ds-3 shadow-sm" data-element="personal-record">
                 <div className="flex items-center py-ds-1">
                     <div className="min-w-0 flex-1">
@@ -389,7 +389,6 @@ function FieldCell({
 function DocImage({ src, label }: { src: string; label: string }) {
     return (
         <div className="min-w-0">
-            <p className="text-[11px] font-medium leading-tight text-zinc-500">{label}</p>
             <img
                 src={src}
                 alt={`${label} del documento`}
