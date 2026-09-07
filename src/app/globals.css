@@ -3065,13 +3065,15 @@ button[data-element='catalog-filter'] {
 [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-otros'] {
   grid-area: otros;
 }
-[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-horarios'] > [data-element='body'] {
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-horarios'] > [data-element='body'],
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='master-horarios'] > [data-element='body'] {
   color: var(--color-texto-invertido);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
-[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-horarios'] > [data-element='body'] > [data-component='StaffWeekSchedule'] {
+[data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-horarios'] > [data-element='body'] > [data-component='StaffWeekSchedule'],
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='master-horarios'] > [data-element='body'] > [data-component='StaffWeekSchedule'] {
   --staff-calendar-gap: var(--espacio-2);
   --staff-calendar-inset-bottom: var(--espacio-2);
   --staff-week-day-size: 0.75rem;
