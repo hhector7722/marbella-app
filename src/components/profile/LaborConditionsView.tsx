@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ArrowLeft } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, firstGivenName } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/Field';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
@@ -284,7 +284,7 @@ export default function LaborConditionsView({ employeeId, onSaveSuccess, onClose
       <div className="min-w-0 flex-1">
         <h1 className="truncate text-sm font-semibold text-white">{title}</h1>
         {employeeName ? (
-          <p className="truncate text-xs text-white/80">{employeeName}</p>
+          <p className="truncate text-xs text-white/80">{firstGivenName(employeeName)}</p>
         ) : null}
       </div>
     </div>

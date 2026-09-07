@@ -7,7 +7,7 @@ import { ChevronLeft } from 'lucide-react';
 import { NotificationsBell } from '@/components/NotificationsBell';
 import { ReservationsBell } from '@/components/ReservationsBell';
 import { createClient } from "@/utils/supabase/client";
-import { cn } from '@/lib/utils';
+import { cn, firstGivenName } from '@/lib/utils';
 import { getHomeHrefForUser } from '@/lib/master-dashboard';
 import { isFullscreenCartaPath } from '@/lib/carta-fullscreen-path';
 import { navigateInsideSandbox } from '@/lib/sandbox/client';
@@ -75,7 +75,7 @@ export default function Navbar() {
             : getHomeHrefForUser(userData?.email, userData?.role);
     const hideNavbarBack = isDashboard || (pathname === '/profile' && effectiveRole === 'manager');
 
-    const greeting = displayName ? `Hola, ${displayName}` : '';
+    const greeting = displayName ? `Hola, ${firstGivenName(displayName)}` : '';
 
     return (
         <>

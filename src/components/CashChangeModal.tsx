@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Eye, ChevronLeft, ChevronRight, Wallet } from 'lucide-react';
 import Image from 'next/image';
-import { cn } from '@/lib/utils';
+import { cn, firstGivenName } from '@/lib/utils';
 import { createClient } from "@/utils/supabase/client";
 import { toast } from 'sonner';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
@@ -730,7 +730,7 @@ export const CashChangeModal = ({
                                             <span className="text-[10px] text-zinc-500">
                                                 {new Date(item.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
                                             </span>
-                                            <span className="font-bold text-zinc-800 truncate">{item.first_name}</span>
+                                            <span className="font-bold text-zinc-800 truncate">{firstGivenName(item.first_name)}</span>
                                             <span className="font-black text-zinc-800 tabular-nums">{item.amount.toFixed(2)}€</span>
                                             <span className="text-[10px] text-zinc-600 truncate">{item.from_box_name} → {item.to_box_name}</span>
                                         </li>

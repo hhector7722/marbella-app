@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
     addMonths,
@@ -30,7 +30,6 @@ import type { WeeklyStats } from '@/lib/hours-engine/overtime-weeks-ssot';
 const WEEKDAY_LABELS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'] as const;
 
 const WEEK_GRID_COLS = 'grid-cols-7';
-const WEEK_GRID_COLS_EXT = 'grid-cols-8';
 
 type ShiftRow = {
     start_time: string;
@@ -329,7 +328,8 @@ function WeekExtCell({
                     : 'Horas extra sin importe esta semana'
             }
             className={cn(
-                'relative flex w-full items-center justify-center gap-0.5 transition-colors',
+                'relative flex w-full items-center justify-center gap-0.5 rounded-[var(--radio-control)] transition-colors',
+                (week || loading) && 'bg-[var(--home-widget-fill-secondary)] px-1 py-1',
                 'before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']',
                 week && 'hover:bg-white/10',
                 !week && 'cursor-default',
@@ -496,6 +496,7 @@ export function StaffWeekScheduleWidget({
         <div
             data-component="StaffWeekSchedule"
             data-layout="month-inline"
+            data-ext-layout={masterMode ? 'true' : undefined}
             className="flex h-full min-h-0 w-full flex-col px-1 py-0.5"
         >
             <div className="flex shrink-0 items-center justify-center gap-0.5 pb-px">
@@ -527,20 +528,33 @@ export function StaffWeekScheduleWidget({
             </div>
 
             <div data-element="month-scroll" className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                <div className={cn('grid shrink-0 gap-px', masterMode ? WEEK_GRID_COLS_EXT : WEEK_GRID_COLS)}>
-                    {WEEKDAY_LABELS.map((label) => (
-                        <div key={label} className="flex items-center justify-center">
-                            <span className="text-[5px] font-medium uppercase leading-none text-white/40">{label}</span>
+                {masterMode ? (
+                    <div
+                        className="grid shrink-0"
+                        style={{ gridTemplateColumns: 'minmax(0, 1fr) auto', columnGap: 'var(--staff-calendar-gap)' }}
+                    >
+                        <div className="grid grid-cols-7 gap-px">
+                            {WEEKDAY_LABELS.map((label) => (
+                                <div key={label} className="flex items-center justify-center">
+                                    <span className="text-[5px] font-medium uppercase leading-none text-white/40">{label}</span>
+                                </div>
+                            ))}
                         </div>
-                    ))}
-                    {masterMode ? (
                         <div className="flex items-center justify-center">
                             <span className="text-[5px] font-bold uppercase leading-none text-white/60">Ext</span>
                         </div>
-                    ) : null}
-                </div>
+                    </div>
+                ) : (
+                    <div className={cn('grid shrink-0 gap-px', WEEK_GRID_COLS)}>
+                        {WEEKDAY_LABELS.map((label) => (
+                            <div key={label} className="flex items-center justify-center">
+                                <span className="text-[5px] font-medium uppercase leading-none text-white/40">{label}</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
 
-                <div data-element="month-weeks" className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                <div data-element="month-weeks" className={cn('min-h-0 flex-1 overflow-hidden', !masterMode && 'flex flex-col')}>
                     {loading ? (
                         <div className="flex flex-1 items-center justify-center" role="status" aria-label="Cargando horarios">
                             <LoadingSpinner size="sm" className="text-white" />
@@ -588,46 +602,26 @@ export function StaffWeekScheduleWidget({
                                     );
                                 });
 
-                                return (
+                                const extCell = masterMode ? (
+                                    <WeekExtCell
+                                        weekDays={weekDays}
+                                        week={overtimeWeeks[weekKey]}
+                                        loading={overtimeLoading || loading}
+                                        onOpenWeekDetail={onOpenWeekDetail}
+                                    />
+                                ) : null;
+
+                                const weekBlock = (
                                     <div
-                                        key={weekKey}
                                         data-element="week-block"
                                         data-expanded={isExpanded ? 'true' : undefined}
                                     >
-                                        {masterMode && isExpanded ? (
-                                            <div className="grid grid-cols-8 gap-px">
-                                                <div
-                                                    className="col-span-7 grid grid-cols-7 gap-px"
-                                                    data-week-row="expanded"
-                                                >
-                                                    {dayButtons}
-                                                </div>
-                                                <div className="col-span-1 flex items-center justify-center" data-element="week-ext-cell">
-                                                    <WeekExtCell
-                                                        weekDays={weekDays}
-                                                        week={overtimeWeeks[weekKey]}
-                                                        loading={overtimeLoading || loading}
-                                                        onOpenWeekDetail={onOpenWeekDetail}
-                                                    />
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div
-                                                className={cn('grid gap-px', masterMode ? WEEK_GRID_COLS_EXT : WEEK_GRID_COLS)}
-                                                data-week-row={isExpanded ? 'expanded' : undefined}
-                                            >
-                                                {dayButtons}
-
-                                                {masterMode ? (
-                                                    <WeekExtCell
-                                                        weekDays={weekDays}
-                                                        week={overtimeWeeks[weekKey]}
-                                                        loading={overtimeLoading || loading}
-                                                        onOpenWeekDetail={onOpenWeekDetail}
-                                                    />
-                                                ) : null}
-                                            </div>
-                                        )}
+                                        <div
+                                            className={cn('grid gap-px', WEEK_GRID_COLS)}
+                                            data-week-row={isExpanded ? 'expanded' : undefined}
+                                        >
+                                            {dayButtons}
+                                        </div>
 
                                         {isExpanded ? (
                                             <WeekExpansion
@@ -638,6 +632,15 @@ export function StaffWeekScheduleWidget({
                                             />
                                         ) : null}
                                     </div>
+                                );
+
+                                return masterMode ? (
+                                    <Fragment key={weekKey}>
+                                        {weekBlock}
+                                        <div data-element="ext-cell">{extCell}</div>
+                                    </Fragment>
+                                ) : (
+                                    <div key={weekKey}>{weekBlock}</div>
                                 );
                             })}
                         </>

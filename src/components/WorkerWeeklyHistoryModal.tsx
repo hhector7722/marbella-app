@@ -13,6 +13,7 @@ import {
   type HistoryWeekDto,
 } from '@/app/actions/history-read';
 import { WeekSummary } from '@/components/staff/WeekSummary';
+import { firstGivenName } from '@/lib/utils';
 
 interface WorkerWeeklyHistoryModalProps {
   isOpen: boolean;
@@ -104,7 +105,7 @@ export default function WorkerWeeklyHistoryModal({
       parentInstance={parentInstance}
       usageId="overtime-worker-history"
       usageLabel={trackingLabel}
-      title={workerName || '…'}
+      title={firstGivenName(workerName, '…')}
       subtitle={`Semana ${weekNumber} · ${format(mondayDate, 'd MMM', { locale: es })} – ${format(sundayDate, 'd MMM', { locale: es })}`}
     >
       {loading ? (

@@ -20,7 +20,7 @@ import {
   fetchActivitiesForRangeAction,
   type DayCalendarData,
 } from '@/app/staff/actividades/actions';
-import { cn } from '@/lib/utils';
+import { cn, firstGivenName } from '@/lib/utils';
 import { filterVisiblePlantillaEmployees } from '@/lib/staff/plantilla-employees';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
@@ -261,7 +261,7 @@ export default function HorarioPage() {
         setEmployees(
           filterVisiblePlantillaEmployees(profiles).map((p) => ({
             id: p.id,
-            name: p.first_name || 'Sin nombre',
+            name: firstGivenName(p.first_name, 'Sin nombre'),
           }))
         );
       });

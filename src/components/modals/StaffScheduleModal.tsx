@@ -11,7 +11,7 @@ import { es } from 'date-fns/locale';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { cn } from '@/lib/utils';
+import { cn, firstGivenName } from '@/lib/utils';
 import { ScheduleDayEditor, type ScheduleDayEditorHandle } from '@/components/schedule/ScheduleDayEditor';
 import { Avatar } from '@/components/ui/Avatar';
 import { useScrollLock } from '@/hooks/useScrollLock';
@@ -301,7 +301,7 @@ export const StaffScheduleModal = ({
             const nameMap: Record<string, string> = {};
             const avatarMap: Record<string, string | null> = {};
             (profiles || []).forEach((p: any) => {
-                nameMap[p.id] = p.first_name || '?';
+                nameMap[p.id] = firstGivenName(p.first_name, '?');
                 avatarMap[p.id] = p.avatar_url ?? null;
             });
 

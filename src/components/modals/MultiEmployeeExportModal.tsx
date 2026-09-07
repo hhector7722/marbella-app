@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, firstGivenName } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
@@ -224,7 +224,7 @@ export function MultiEmployeeExportModal({
                                     <Avatar src={emp.avatar_url} alt={emp.first_name} size="sm" />
                                     <div className="min-w-0 flex-1">
                                         <p className="text-xs font-black text-white/90 uppercase truncate">
-                                            {emp.first_name} {emp.last_name}
+                                            {firstGivenName(emp.first_name, 'Sin nombre')}
                                         </p>
                                     </div>
                                 </label>

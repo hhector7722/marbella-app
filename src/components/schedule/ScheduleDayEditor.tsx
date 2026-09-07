@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { format, addDays, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+import { cn, firstGivenName } from '@/lib/utils';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
@@ -346,7 +346,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
             const activeShifts = employees?.filter(emp => shiftMap.has(emp.id)).map(emp => {
                 const existing = shiftMap.get(emp.id);
 
-                let displayName = emp.first_name;
+                let displayName = firstGivenName(emp.first_name);
                 const lowerName = displayName?.toLowerCase() || '';
                 if (lowerName === 'fernando') displayName = 'Fer';
                 if (lowerName === 'mamadou') displayName = 'Mamdou';

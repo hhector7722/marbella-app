@@ -12,7 +12,7 @@ import { createClient } from '@/utils/supabase/client';
 import LaborConditionsView from '@/components/profile/LaborConditionsView';
 import { toast } from 'sonner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { cn, calculateRoundedHours } from '@/lib/utils';
+import { cn, calculateRoundedHours, firstGivenName } from '@/lib/utils';
 import { formatMadridHmFromIso, madridDayUtcRangeIso } from '@/lib/madrid-date-bounds';
 import { useModalUsageTracking } from '@/hooks/useModalUsageTracking';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
@@ -783,7 +783,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                         >
                                             {availableEmployees.map((employee) => (
                                                 <option key={employee.id} value={employee.id}>
-                                                    {[employee.first_name, employee.last_name].filter(Boolean).join(' ') || 'Empleado'}
+                                                    {firstGivenName(employee.first_name, 'Empleado')}
                                                 </option>
                                             ))}
                                         </select>

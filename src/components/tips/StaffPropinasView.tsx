@@ -11,6 +11,7 @@ import {
   PLANTILLA_EMPLOYEE_SELECT,
 } from '@/lib/staff/plantilla-employees';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
+import { firstGivenName } from '@/lib/utils';
 import {
   mapStaffTipHistoryRows,
   STAFF_TIP_HISTORY_SELECT,
@@ -64,8 +65,8 @@ export default function StaffPropinasView({
   const viewingOther = canSelectEmployee && selectedEmployeeId !== viewerUserId;
   const selectedEmployee = employees.find((e) => e.id === selectedEmployeeId);
   const headerEmployeeLabel = viewingOther
-    ? selectedEmployee?.first_name || 'Trabajador'
-    : viewerFirstName.trim() || selectedEmployee?.first_name || 'Mis propinas';
+    ? firstGivenName(selectedEmployee?.first_name, 'Trabajador')
+    : firstGivenName(viewerFirstName) || firstGivenName(selectedEmployee?.first_name, 'Mis propinas');
 
   const fetchHistoryForUser = useCallback(
     async (userId: string) => {

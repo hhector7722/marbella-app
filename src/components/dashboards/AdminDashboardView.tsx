@@ -28,7 +28,7 @@ import { CajaCambioWidget, CajaInicialWidget, HorasExtrasWidget } from '@/compon
 import { getISOWeek, format, addDays, subDays, startOfWeek, parseISO, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isSameDay, isToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { cn, calculateRoundedHours } from '@/lib/utils';
+import { cn, calculateRoundedHours, firstGivenName } from '@/lib/utils';
 import { getOvertimeData, togglePaidStatus, togglePreferStockStatus } from '@/app/actions/overtime';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import DashboardVentasSection from '@/components/dashboards/DashboardVentasSection';
@@ -62,7 +62,7 @@ const StaffOvertimeRow = memo(({
     onClick: () => void
 }) => (
     <WorkerPersonRow
-        name={staff.name}
+        name={firstGivenName(staff.name, 'Trabajador')}
         value={staff.amount > 0.05 ? `${staff.amount.toFixed(0)}€` : ' '}
         onClick={onClick}
         trailing={

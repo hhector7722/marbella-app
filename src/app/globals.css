@@ -2673,6 +2673,19 @@ button[data-element='catalog-filter'] {
   min-height: 0;
   overflow: hidden;
 }
+[data-component='StaffWeekSchedule'][data-ext-layout='true'] [data-element='month-weeks'] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-auto-rows: auto;
+  gap: var(--staff-calendar-gap);
+  align-items: stretch;
+}
+[data-component='StaffWeekSchedule'][data-ext-layout='true'] [data-element='month-weeks'] > [data-element='ext-cell'] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
 [data-component='StaffWeekSchedule'] [data-element='week-block'] {
   display: flex;
   flex-direction: column;

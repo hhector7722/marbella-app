@@ -15,6 +15,7 @@ import {
     madridDayUtcRangeIso,
 } from '@/lib/madrid-date-bounds';
 import type { PlantillaEmployeeRow } from '@/lib/staff/plantilla-employees';
+import { firstGivenName } from '@/lib/utils';
 
 type TodayLogRow = {
     id: string;
@@ -289,7 +290,7 @@ export function MasterTodayAttendanceWidget({
                                                     className="flex w-full min-w-0 items-center justify-between gap-1 px-2 py-0.5 text-left transition-colors hover:bg-zinc-50"
                                                 >
                                                     <span className="min-w-0 flex-1 truncate text-[7px] font-medium leading-none text-zinc-700">
-                                                        {log.first_name}
+                                                        {firstGivenName(log.first_name, 'Trabajador')}
                                                     </span>
                                                     <span className="flex shrink-0 items-center text-[7px] font-bold leading-none tabular-nums">
                                                         <span className={isNoRegistered ? 'text-rose-700' : 'text-emerald-700'}>

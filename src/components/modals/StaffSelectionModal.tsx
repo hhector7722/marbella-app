@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/modal';
 import { isHiddenPlantillaName } from '@/lib/staff/plantilla-employees';
+import { firstGivenName } from '@/lib/utils';
 import { trackUsageModalApply } from '@/lib/usage/client';
 import { staffSelectionApplySummary } from '@/lib/usage/modal-apply';
 
@@ -256,15 +257,15 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                                         onClick={() => handleSelect(emp)}
                                         className="group flex w-full flex-col items-center gap-1 py-2 min-h-[48px] transition-all hover:opacity-80 active:scale-[0.98]"
                                     >
-                                        <Avatar src={emp.avatar_url} alt={emp.first_name} size="md" />
+                                        <Avatar src={emp.avatar_url} alt={firstGivenName(emp.first_name, 'Trabajador')} size="md" />
                                         <p className="text-[10px] font-medium text-zinc-800 leading-tight truncate w-full text-center tracking-tight">
-                                            {emp.first_name || 'Sin nombre'}
+                                            {firstGivenName(emp.first_name, 'Sin nombre')}
                                         </p>
                                     </button>
                                     {manageVisibility ? (
                                         <VisibilityToggle
                                             visible={visible}
-                                            label={emp.first_name || 'Sin nombre'}
+                                            label={firstGivenName(emp.first_name, 'Sin nombre')}
                                             onToggle={() => onToggleVisibility?.(emp.id, !visible)}
                                         />
                                     ) : null}
@@ -285,21 +286,18 @@ export const StaffSelectionModal: React.FC<StaffSelectionModalProps> = ({
                                         className="group flex w-full flex-col items-center gap-1 p-2 rounded-[1.5rem] transition-all hover:bg-blue-50 active:scale-95 min-h-[48px]"
                                     >
                                         <div className="transition-all group-hover:-translate-y-1 shrink-0">
-                                            <Avatar src={emp.avatar_url} alt={emp.first_name} size="md" />
+                                            <Avatar src={emp.avatar_url} alt={firstGivenName(emp.first_name, 'Trabajador')} size="md" />
                                         </div>
                                         <div className="text-center">
                                             <p className="text-[10px] font-medium text-zinc-700 leading-tight truncate w-full max-w-[70px]">
-                                                {emp.first_name}
-                                            </p>
-                                            <p className="text-[8px] font-medium text-zinc-400 tracking-tighter truncate w-full max-w-[70px]">
-                                                {emp.last_name || ' '}
+                                                {firstGivenName(emp.first_name, 'Sin nombre')}
                                             </p>
                                         </div>
                                     </button>
                                     {manageVisibility ? (
                                         <VisibilityToggle
                                             visible={visible}
-                                            label={emp.first_name || 'Sin nombre'}
+                                            label={firstGivenName(emp.first_name, 'Sin nombre')}
                                             onToggle={() => onToggleVisibility?.(emp.id, !visible)}
                                         />
                                     ) : null}

@@ -8,6 +8,16 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Primer nombre de pila de un trabajador (sin apellidos ni segundo nombre).
+ * Muestra solo el primer token en toda la UI. Devuelve el fallback si viene vacío.
+ */
+export function firstGivenName(name: string | null | undefined, fallback = ''): string {
+    const trimmed = (name ?? '').trim();
+    if (!trimmed) return fallback;
+    return trimmed.split(/\s+/)[0] ?? fallback;
+}
+
+/**
  * Formatea un valor numérico o string para visualización.
  * Si el valor es 0 o "0", devuelve un espacio en blanco " ".
  * Cumple con la REGLA ZERO-DISPLAY del protocolo.

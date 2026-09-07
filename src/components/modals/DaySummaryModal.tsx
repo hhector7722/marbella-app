@@ -12,10 +12,10 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { canManageStaffAttendance } from '@/lib/staff/attendance-access';
 import { createClient } from '@/utils/supabase/client';
-import {
-    filterVisiblePlantillaEmployees,
+import { filterVisiblePlantillaEmployees,
     PLANTILLA_EMPLOYEE_SELECT,
 } from '@/lib/staff/plantilla-employees';
+import { firstGivenName } from '@/lib/utils';
 
 export type EmployeeOption = { id: string; first_name: string; last_name: string };
 
@@ -243,9 +243,7 @@ export function DaySummaryModal({
                     ) : (
                         <div>
                             {logs.map((log) => {
-                                const firstName = log.first_name || log.employee_name || '?';
-                                const lastName = log.last_name || '';
-                                const name = `${firstName} ${lastName}`.trim() || '?';
+                                const name = firstGivenName(log.first_name || log.employee_name, '?');
                                 const isNoRegistered =
                                     log.event_type === 'no_registered' ||
                                     log.clock_out_show_no_registrada === true;
@@ -339,7 +337,7 @@ export function DaySummaryModal({
                             <option value="">Seleccionar</option>
                             {availableEmployees.map((emp) => (
                                 <option key={emp.id} value={emp.id}>
-                                    {emp.first_name} {emp.last_name}
+                                    {firstGivenName(emp.first_name, 'Sin nombre')}
                                 </option>
                             ))}
                         </select>
