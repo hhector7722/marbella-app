@@ -245,7 +245,7 @@ export function MasterLastClosingWidget() {
                     </span>
                 </div>
             </div>
-            <div className="flex min-h-0 flex-1 flex-col justify-start px-2 pb-5 pt-3">
+            <div className="flex min-h-0 flex-1 flex-col justify-start px-2 pb-3.5 pt-3">
                 {loading ? (
                     <div
                         className="flex flex-1 items-center justify-center"
@@ -257,7 +257,7 @@ export function MasterLastClosingWidget() {
                 ) : !closing ? (
                     <EmptyState instance="master-ultimo-cierre-none" variant="none" title="Sin cierre" />
                 ) : (
-                    <div className="flex flex-col gap-y-1.5 w-full">
+                    <div className="flex flex-col gap-y-2.5 w-full">
                         {/* Primera fila: Ventas y Venta neta alineados matemáticamente con los midpoints de la segunda fila */}
                         <div className="grid grid-cols-6 gap-x-1 w-full">
                             {/* Ventas: col-start-2 col-span-2 (centrado a 1/3 del ancho, entre Tarjeta y Efectivo) */}
@@ -412,34 +412,34 @@ export function MasterLastClosingWidget() {
                 scrollContent={true}
             >
                 <div className="text-white flex flex-col min-h-full select-none">
-                    <div className="p-6 flex flex-col flex-1">
+                    <div className="p-4 flex flex-col flex-1">
                         {salesModalLoading ? (
-                            <div className="flex justify-center items-center py-20 flex-1">
+                            <div className="flex justify-center items-center py-16 flex-1">
                                 <LoadingSpinner size="lg" className="text-white" />
                             </div>
                         ) : (
                         <>
                             {/* KPIs */}
-                            <div className="grid grid-cols-3 mb-6">
+                            <div className="grid grid-cols-3 mb-3 shrink-0">
                                 <div className="flex flex-col items-center justify-center text-center">
-                                    <span className="text-lg md:text-2xl font-black tabular-nums leading-none text-white">
+                                    <span className="text-base md:text-xl font-black tabular-nums leading-none text-white">
                                         {salesSummary.totalSales > 0 ? `${salesSummary.totalSales.toFixed(2)}€` : " "}
                                     </span>
-                                    <span className="text-[7px] md:text-[9px] font-black text-white/70 uppercase tracking-widest mt-1">Ventas Totales</span>
+                                    <span className="text-[6.5px] md:text-[8px] font-black text-white/60 uppercase tracking-widest mt-0.5">Ventas Totales</span>
                                 </div>
 
-                                <div className="flex flex-col items-center justify-center text-center border-l border-white/20">
-                                    <span className="text-lg md:text-2xl font-black tabular-nums leading-none text-white">
+                                <div className="flex flex-col items-center justify-center text-center border-l border-white/10">
+                                    <span className="text-base md:text-xl font-black tabular-nums leading-none text-white">
                                         {salesSummary.count > 0 ? salesSummary.count : " "}
                                     </span>
-                                    <span className="text-[7px] md:text-[9px] font-black text-white/70 uppercase tracking-widest mt-1">Nº Tickets</span>
+                                    <span className="text-[6.5px] md:text-[8px] font-black text-white/60 uppercase tracking-widest mt-0.5">Nº Tickets</span>
                                 </div>
 
-                                <div className="flex flex-col items-center justify-center text-center border-l border-white/20 italic">
-                                    <span className="text-lg md:text-2xl font-black tabular-nums leading-none text-white">
+                                <div className="flex flex-col items-center justify-center text-center border-l border-white/10 italic">
+                                    <span className="text-base md:text-xl font-black tabular-nums leading-none text-white">
                                         {salesSummary.avgTicket > 0 ? `${salesSummary.avgTicket.toFixed(2)}€` : " "}
                                     </span>
-                                    <span className="text-[7px] md:text-[9px] font-black text-white/70 uppercase tracking-widest mt-1">Ticket Medio</span>
+                                    <span className="text-[6.5px] md:text-[8px] font-black text-white/60 uppercase tracking-widest mt-0.5">Ticket Medio</span>
                                 </div>
                             </div>
 
@@ -460,9 +460,9 @@ export function MasterLastClosingWidget() {
                                     return pts.length > 0 ? `M ${pts.join(' L ')}` : '';
                                 };
                                 return (
-                                    <div className="w-full mb-6">
+                                    <div className="w-full mb-3 shrink-0">
                                         <div className="w-full relative">
-                                            <svg viewBox="0 0 120 24" className="w-full h-8 md:h-10 block select-none" preserveAspectRatio="none">
+                                            <svg viewBox="0 0 120 24" className="w-full h-6 block select-none" preserveAspectRatio="none">
                                                 <path
                                                     d={toPath(rangeData)}
                                                     fill="none"
@@ -474,7 +474,7 @@ export function MasterLastClosingWidget() {
                                                 />
                                             </svg>
                                         </div>
-                                        <div className="flex justify-between px-0 text-[9px] font-mono text-white/80 leading-none select-none pointer-events-none mt-1">
+                                        <div className="flex justify-between px-0 text-[8px] font-mono text-white/60 leading-none select-none pointer-events-none mt-0.5">
                                             <span>7h</span>
                                             <span>23h</span>
                                         </div>
@@ -483,39 +483,39 @@ export function MasterLastClosingWidget() {
                             })()}
 
                             {/* Tables Container */}
-                            <div className="flex flex-col gap-8 mt-6">
+                            <div className="flex flex-col gap-4 mt-3">
                                 {/* Top 5 Products */}
                                 <div>
-                                    <h3 className="text-xs font-black uppercase text-white/80 tracking-wider mb-3">
+                                    <h3 className="text-[10px] font-black uppercase text-white/70 tracking-wider mb-1.5">
                                         Top 5 Productos
                                     </h3>
                                     {salesProducts.length === 0 ? (
-                                        <p className="text-xs text-white/50 font-medium italic">No hay productos registrados.</p>
+                                        <p className="text-[10px] text-white/40 font-medium italic">No hay productos registrados.</p>
                                     ) : (
                                         <table className="w-full text-left border-collapse">
                                             <thead>
-                                                <tr className="border-b border-white/10 text-[9px] font-black uppercase text-white/50">
-                                                    <th className="pb-2 w-[50%]">Producto</th>
-                                                    <th className="pb-2 text-center w-[15%]">Cant</th>
-                                                    <th className="pb-2 text-center w-[15%]">Media</th>
-                                                    <th className="pb-2 text-right w-[20%]">Total</th>
+                                                <tr className="border-b border-white/10 text-[8px] font-black uppercase text-white/40">
+                                                    <th className="pb-1 w-[55%]">Producto</th>
+                                                    <th className="pb-1 text-center w-[15%]">Cant</th>
+                                                    <th className="pb-1 text-center w-[15%]">Media</th>
+                                                    <th className="pb-1 text-right w-[15%]">Total</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="font-bold text-[11px] text-white/80">
+                                            <tbody className="font-bold text-[10px] text-white/70">
                                                 {salesProducts.map((prod, idx) => (
                                                     <tr key={idx} className="border-b border-white/5 last:border-0 hover:bg-white/5">
-                                                        <td className="py-2 text-white truncate max-w-[150px]">
-                                                            <span className="text-white/45 tabular-nums">{prod.rank} </span>
+                                                        <td className="py-1 text-white truncate max-w-[150px]">
+                                                            <span className="text-white/35 tabular-nums">{prod.rank} </span>
                                                             {prod.nombre_articulo}
                                                         </td>
-                                                        <td className="py-2 text-center text-white/70 tabular-nums">
+                                                        <td className="py-1 text-center text-white/60 tabular-nums">
                                                             {Number(prod.cantidad_total).toFixed(0)}
                                                         </td>
-                                                        <td className="py-2 text-center text-white/60 tabular-nums">
-                                                            {Number(prod.precio_medio).toFixed(2)}€
+                                                        <td className="py-1 text-center text-white/50 tabular-nums">
+                                                            {Number(prod.precio_medio).toFixed(1)}€
                                                         </td>
-                                                        <td className="py-2 text-right font-black tabular-nums text-emerald-400">
-                                                            {Number(prod.total_ingresos).toFixed(2)}€
+                                                        <td className="py-1 text-right font-black tabular-nums text-emerald-400">
+                                                            {Number(prod.total_ingresos).toFixed(1)}€
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -525,36 +525,36 @@ export function MasterLastClosingWidget() {
                                 </div>
 
                                 {/* Top 3 Hours */}
-                                <div className="border-t border-white/10 pt-6">
-                                    <h3 className="text-xs font-black uppercase text-white/80 tracking-wider mb-3">
+                                <div className="border-t border-white/10 pt-3">
+                                    <h3 className="text-[10px] font-black uppercase text-white/70 tracking-wider mb-1.5">
                                         Horas con más Facturación
                                     </h3>
                                     {topHours.length === 0 ? (
-                                        <p className="text-xs text-white/50 font-medium italic">No hay registros horarios.</p>
+                                        <p className="text-[10px] text-white/40 font-medium italic">No hay registros horarios.</p>
                                     ) : (
                                         <table className="w-full text-left border-collapse">
                                             <thead>
-                                                <tr className="border-b border-white/10 text-[9px] font-black uppercase text-white/50">
-                                                    <th className="pb-2 w-[40%]">Horas</th>
-                                                    <th className="pb-2 text-center w-[20%]">Cant</th>
-                                                    <th className="pb-2 text-center w-[20%]">Media</th>
-                                                    <th className="pb-2 text-right w-[20%]">Total</th>
+                                                <tr className="border-b border-white/10 text-[8px] font-black uppercase text-white/40">
+                                                    <th className="pb-1 w-[45%]">Horas</th>
+                                                    <th className="pb-1 text-center w-[15%]">Cant</th>
+                                                    <th className="pb-1 text-center w-[20%]">Media</th>
+                                                    <th className="pb-1 text-right w-[20%]">Total</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="font-bold text-[11px] text-white/80">
+                                            <tbody className="font-bold text-[10px] text-white/70">
                                                 {topHours.map((row, idx) => (
                                                     <tr key={idx} className="border-b border-white/5 last:border-0 hover:bg-white/5">
-                                                        <td className="py-2 font-mono font-bold text-white tabular-nums">
+                                                        <td className="py-1 font-mono font-bold text-white tabular-nums">
                                                             {row.label}
                                                         </td>
-                                                        <td className="py-2 text-center text-white/70 tabular-nums">
+                                                        <td className="py-1 text-center text-white/70 tabular-nums">
                                                             {row.cant}
                                                         </td>
-                                                        <td className="py-2 text-center text-white/60 tabular-nums">
-                                                            {row.media.toFixed(2)}€
+                                                        <td className="py-1 text-center text-white/50 tabular-nums">
+                                                            {row.media.toFixed(1)}€
                                                         </td>
-                                                        <td className="py-2 text-right font-black tabular-nums text-emerald-400">
-                                                            {row.total.toFixed(2)}€
+                                                        <td className="py-1 text-right font-black tabular-nums text-emerald-400">
+                                                            {row.total.toFixed(1)}€
                                                         </td>
                                                     </tr>
                                                 ))}
