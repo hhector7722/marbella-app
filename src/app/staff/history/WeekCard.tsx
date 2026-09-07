@@ -377,12 +377,12 @@ export function WeekCard({
                 {week.summary.isPaid ? (
                     <div
                         data-week-paid="true"
-                        className="pointer-events-none absolute right-0 bottom-0 z-20 flex items-center justify-center"
+                        className="relative z-20 flex h-full shrink-0 items-center justify-center self-stretch"
                     >
                         <img
                             src="/sello/pagado.png"
                             alt="PAGADO"
-                            className="pointer-events-none h-auto w-[48px] md:w-[56px]"
+                            className="pointer-events-none h-auto w-[32px] md:w-[40px]"
                         />
                     </div>
                 ) : null}
