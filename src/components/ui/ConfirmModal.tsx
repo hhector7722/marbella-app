@@ -27,6 +27,8 @@ export type ConfirmModalProps = {
     layer?: ModalLayer;
     /** Botones repartidos a ancho completo en fila horizontal. */
     buttonsStretch?: boolean;
+    /** Alineación de los botones cuando buttonsStretch es false. Default 'end'. */
+    buttonsAlign?: 'end' | 'center';
 };
 
 /**
@@ -51,6 +53,7 @@ export function ConfirmModal({
     hideHeader = false,
     layer = 'system',
     buttonsStretch = false,
+    buttonsAlign = 'end',
 }: ConfirmModalProps) {
     const close = () => {
         if (!confirming) onClose();
@@ -93,7 +96,9 @@ export function ConfirmModal({
             <div className="flex min-w-0 flex-1">{confirmButton}</div>
         </div>
     ) : (
-        <div className="flex w-full min-w-0 flex-wrap items-center justify-end gap-2">
+        <div className={`flex w-full min-w-0 flex-wrap items-center gap-2 ${
+            buttonsAlign === 'center' ? 'justify-center' : 'justify-end'
+        }`}>
             {cancelButton}
             {confirmButton}
         </div>

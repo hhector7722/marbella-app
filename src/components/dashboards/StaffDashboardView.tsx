@@ -289,6 +289,8 @@ export default function StaffDashboardView() {
     const [giffOverlaySrc, setGiffOverlaySrc] = useState<string>('/icons/giff.mp4');
     const [giffOverlayFading, setGiffOverlayFading] = useState(false);
     const giffFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const giffSafetyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const videoRef = useRef<HTMLVideoElement | null>(null);
     const giffFadingRef = useRef(false);
     const GIFF_FADE_MS = 900;
 
@@ -299,11 +301,19 @@ export default function StaffDashboardView() {
         }
     };
 
+    const clearGiffSafetyTimer = () => {
+        if (giffSafetyTimerRef.current) {
+            clearTimeout(giffSafetyTimerRef.current);
+            giffSafetyTimerRef.current = null;
+        }
+    };
+
     const beginGiffOverlayFadeOut = () => {
         if (giffFadingRef.current) return;
         giffFadingRef.current = true;
         setGiffOverlayFading(true);
         clearGiffFadeTimer();
+        clearGiffSafetyTimer();
         giffFadeTimerRef.current = setTimeout(() => {
             setShowGiffOverlay(false);
             setGiffOverlayFading(false);
@@ -312,7 +322,23 @@ export default function StaffDashboardView() {
         }, GIFF_FADE_MS);
     };
 
-    useEffect(() => () => clearGiffFadeTimer(), []);
+    useEffect(() => {
+        return () => {
+            clearGiffFadeTimer();
+            clearGiffSafetyTimer();
+        };
+    }, []);
+
+    useEffect(() => {
+        if (showGiffOverlay && videoRef.current) {
+            const video = videoRef.current;
+            video.muted = true;
+            video.playsInline = true;
+            video.play().catch(err => {
+                console.error("Video autoplay error or block:", err);
+            });
+        }
+    }, [showGiffOverlay, giffOverlaySrc]);
     const [activeMenu, setActiveMenu] = useState<'info' | null>(null);
     const [infoSubMenu, setInfoSubMenu] = useState<'contactos' | null>(null);
     const [isManualsModalOpen, setIsManualsModalOpen] = useState(false);
@@ -661,10 +687,16 @@ export default function StaffDashboardView() {
 
             const openGiffOverlay = (src: string) => {
                 clearGiffFadeTimer();
+                clearGiffSafetyTimer();
                 giffFadingRef.current = false;
                 setGiffOverlayFading(false);
                 setGiffOverlaySrc(src);
                 setShowGiffOverlay(true);
+
+                // Safety timeout: closes the overlay automatically after 10 seconds max (fallback)
+                giffSafetyTimerRef.current = setTimeout(() => {
+                    beginGiffOverlayFadeOut();
+                }, 10000);
             };
 
             if (action === 'in') {
@@ -966,6 +998,7 @@ export default function StaffDashboardView() {
                     hideCloseButton
                     confirming={actionLoading && modalAction === 'in'}
                     onConfirm={handleClockModalConfirm}
+                    buttonsAlign="center"
                 />
             )}
 
@@ -978,21 +1011,22 @@ export default function StaffDashboardView() {
                         giffOverlayFading ? "opacity-0 duration-[900ms]" : "opacity-100 duration-300",
                     )}
                 >
-                    {/* Mismo tamaño que el círculo antiguo; esquinas redondeadas en lugar de círculo. */}
                     <div
                         className={cn(
-                            "w-[min(90vw,90vh)] h-[min(90vw,90vh)] rounded-2xl overflow-hidden flex items-center justify-center shadow-sm transition-[filter,transform] ease-out",
+                            "rounded-2xl overflow-hidden flex items-center justify-center shadow-sm transition-[filter,transform] ease-out",
+                            giffOverlaySrc.includes('mamadou-ndiaye') ? "max-w-[90vw] max-h-[90vh]" : "w-[min(90vw,90vh)] h-[min(90vw,90vh)]",
                             giffOverlayFading ? "blur-md scale-[1.02] duration-[900ms]" : "blur-0 scale-100 duration-300",
                         )}
                     >
                         <video
+                            ref={videoRef}
                             key={giffOverlaySrc}
                             src={giffOverlaySrc}
                             autoPlay
                             muted
                             playsInline
                             loop={false}
-                            className="w-full h-full object-cover"
+                            className={cn(giffOverlaySrc.includes('mamadou-ndiaye') ? "max-w-[90vw] max-h-[90vh] object-contain rounded-2xl" : "w-full h-full object-cover")}
                             onTimeUpdate={(e) => {
                                 const v = e.currentTarget;
                                 if (!Number.isFinite(v.duration) || v.duration <= 0) return;
@@ -1002,6 +1036,7 @@ export default function StaffDashboardView() {
                             onEnded={() => beginGiffOverlayFadeOut()}
                             onError={() => {
                                 clearGiffFadeTimer();
+                                clearGiffSafetyTimer();
                                 giffFadingRef.current = false;
                                 setGiffOverlayFading(false);
                                 setShowGiffOverlay(false);
