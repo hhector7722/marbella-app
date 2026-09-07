@@ -557,6 +557,7 @@
  * La ficha de Datos personales es una hoja A4 blanca sobre el modal azul:
  * revierte el blanqueo que el scheme dark aplica a .bg-white y a los textos.
  */
+[data-component='Modal'][data-scheme='dark'] [data-element='body'] [data-element='personal-record'].bg-white,
 [data-component='Modal'][data-scheme='dark'] [data-element='body'] [data-element='personal-record'] .bg-white {
   background-color: var(--color-superficie);
 }
