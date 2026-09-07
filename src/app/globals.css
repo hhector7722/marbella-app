@@ -2643,7 +2643,7 @@ button[data-element='catalog-filter'] {
 }
 [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-horarios'] > [data-element='body'] > [data-component='StaffWeekSchedule'] {
   --staff-calendar-gap: var(--espacio-2);
-  --staff-calendar-inset-bottom: var(--espacio-2);
+  --staff-calendar-inset-bottom: var(--espacio-3);
   --staff-week-day-size: 0.75rem;
   --staff-week-expansion-min: 3.5rem;
   --staff-week-expansion-max: 4.75rem;
@@ -3073,7 +3073,7 @@ button[data-element='catalog-filter'] {
 }
 [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-horarios'] > [data-element='body'] > [data-component='StaffWeekSchedule'] {
   --staff-calendar-gap: var(--espacio-2);
-  --staff-calendar-inset-bottom: var(--espacio-2);
+  --staff-calendar-inset-bottom: var(--espacio-3);
   --staff-week-day-size: 0.75rem;
   --staff-week-expansion-min: 3.5rem;
   --staff-week-expansion-max: 4.75rem;

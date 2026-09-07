@@ -199,61 +199,17 @@ export const StaffScheduleModal = ({
         setLoadingDay(true);
         setSelectedDate(day);
         try {
-            const localStart = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, 0, 0, 0);
-            const localEnd = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 23, 59, 59, 999);
-
-            const { data: rawShifts, error } = await supabase
-                .from('shifts')
-                .select('start_time, end_time, activity, activity_2, categoria, categoria_2, user_id, is_published, event_start_time, event_end_time, event_participants, event_start_time_2, event_end_time_2, event_participants_2')
-                .gte('start_time', localStart.toISOString())
-                .lte('start_time', localEnd.toISOString())
-                .order('start_time', { ascending: true });
-
-            if (error) throw error;
-
-            if (!rawShifts?.length) {
-                setDayShifts([]);
-                setDayActivity('');
-                setDayCategory('');
-                setEventStart('');
-                setEventEnd('');
-                setEventParticipants('');
-                setDayActivity2('');
-                setDayCategory2('');
-                setEventStart2('');
-                setEventEnd2('');
-                setEventParticipants2('');
-                setLoadingDay(false);
-                return;
-            }
-
-            // Solo turnos publicados para la tabla (todos los trabajadores del día)
-            const publishedShifts = rawShifts.filter((s: any) => s.is_published);
-            if (!publishedShifts.length) {
-                setDayShifts([]);
-                setDayActivity('');
-                setDayCategory('');
-                setEventStart('');
-                setEventEnd('');
-                setEventParticipants('');
-                setDayActivity2('');
-                setDayCategory2('');
-                setEventStart2('');
-                setEventEnd2('');
-                setEventParticipants2('');
-                setLoadingDay(false);
-                return;
-            }
-
-            // El resumen del evento (arriba) siempre se muestra cuando hay turnos publicados,
-            // esté quien esté mirando el día. Se alimenta de las actividades reales del
-            // pabellón (misma fuente que el widget de horario); si el día no tiene, cae al
-            // primer turno publicado.
             const dayYmd = format(day, 'yyyy-MM-dd');
+
+            // 1. Cargamos actividades reales del pabellón primero (independiente de si hay turnos)
             const dayDetail = await fetchDayDetailAction({ date: dayYmd });
             const dayActivities = dayDetail.success ? dayDetail.data.barActivities : [];
             const groupedActivities = groupActivities(dayActivities);
+
+            let hasRealActivities = false;
+
             if (groupedActivities.length > 0) {
+                hasRealActivities = true;
                 const g1 = groupedActivities[0];
                 const g2 = groupedActivities[1];
                 setDayActivity(g1.activityName);
@@ -274,44 +230,73 @@ export const StaffScheduleModal = ({
                         ? String(g2.totalParticipants)
                         : '',
                 );
-            } else {
-                setDayActivity(publishedShifts[0]?.activity || '');
-                setDayCategory(publishedShifts[0]?.categoria || '');
-                setDayActivity2(publishedShifts[0]?.activity_2 || '');
-                setDayCategory2(publishedShifts[0]?.categoria_2 || '');
-                setEventStart(publishedShifts[0]?.event_start_time || '');
-                setEventEnd(publishedShifts[0]?.event_end_time || '');
-                setEventParticipants(publishedShifts[0]?.event_participants || '');
-                setEventStart2(publishedShifts[0]?.event_start_time_2 || '');
-                setEventEnd2(publishedShifts[0]?.event_end_time_2 || '');
-                setEventParticipants2(publishedShifts[0]?.event_participants_2 || '');
             }
 
-            // Todos los usuarios ven la tabla completa del día: quién comparte turno.
-            const visibleShifts = publishedShifts;
+            // 2. Cargamos turnos del día
+            const localStart = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, 0, 0, 0);
+            const localEnd = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 23, 59, 59, 999);
 
-            if (visibleShifts.length === 0) {
+            const { data: rawShifts, error } = await supabase
+                .from('shifts')
+                .select('start_time, end_time, activity, activity_2, categoria, categoria_2, user_id, is_published, event_start_time, event_end_time, event_participants, event_start_time_2, event_end_time_2, event_participants_2')
+                .gte('start_time', localStart.toISOString())
+                .lte('start_time', localEnd.toISOString())
+                .order('start_time', { ascending: true });
+
+            if (error) throw error;
+
+            const publishedShifts = (rawShifts ?? []).filter((s: any) => s.is_published);
+
+            // 3. Si no hay actividades reales del pabellón, caemos al primer turno publicado (si existe)
+            if (!hasRealActivities) {
+                if (publishedShifts.length > 0) {
+                    const firstShift = publishedShifts[0];
+                    setDayActivity(firstShift?.activity || '');
+                    setDayCategory(firstShift?.categoria || '');
+                    setDayActivity2(firstShift?.activity_2 || '');
+                    setDayCategory2(firstShift?.categoria_2 || '');
+                    setEventStart(firstShift?.event_start_time || '');
+                    setEventEnd(firstShift?.event_end_time || '');
+                    setEventParticipants(firstShift?.event_participants || '');
+                    setEventStart2(firstShift?.event_start_time_2 || '');
+                    setEventEnd2(firstShift?.event_end_time_2 || '');
+                    setEventParticipants2(firstShift?.event_participants_2 || '');
+                } else {
+                    // Si tampoco hay turnos publicados, limpiamos los campos de actividad
+                    setDayActivity('');
+                    setDayCategory('');
+                    setDayActivity2('');
+                    setDayCategory2('');
+                    setEventStart('');
+                    setEventEnd('');
+                    setEventParticipants('');
+                    setEventStart2('');
+                    setEventEnd2('');
+                    setEventParticipants2('');
+                }
+            }
+
+            // 4. Cargamos perfiles de los turnos publicados para mostrar quién comparte turno
+            if (publishedShifts.length === 0) {
                 setDayShifts([]);
-                setLoadingDay(false);
-                return;
+            } else {
+                const ids = [...new Set(publishedShifts.map((s: any) => s.user_id))];
+                const { data: profiles } = await supabase.from('profiles').select('id, first_name, avatar_url').in('id', ids);
+                const nameMap: Record<string, string> = {};
+                const avatarMap: Record<string, string | null> = {};
+                (profiles || []).forEach((p: any) => {
+                    nameMap[p.id] = firstGivenName(p.first_name, '?');
+                    avatarMap[p.id] = p.avatar_url ?? null;
+                });
+
+                setDayShifts(publishedShifts.map((s: any) => ({
+                    name: nameMap[s.user_id] || '?',
+                    avatar_url: avatarMap[s.user_id] ?? null,
+                    startTime: new Date(s.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                    endTime: new Date(s.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                    activity: s.activity || undefined,
+                })));
             }
-
-            const ids = [...new Set(visibleShifts.map((s: any) => s.user_id))];
-            const { data: profiles } = await supabase.from('profiles').select('id, first_name, avatar_url').in('id', ids);
-            const nameMap: Record<string, string> = {};
-            const avatarMap: Record<string, string | null> = {};
-            (profiles || []).forEach((p: any) => {
-                nameMap[p.id] = firstGivenName(p.first_name, '?');
-                avatarMap[p.id] = p.avatar_url ?? null;
-            });
-
-            setDayShifts(visibleShifts.map((s: any) => ({
-                name: nameMap[s.user_id] || '?',
-                avatar_url: avatarMap[s.user_id] ?? null,
-                startTime: new Date(s.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-                endTime: new Date(s.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-                activity: s.activity || undefined,
-            })));
         } catch (err: any) {
             console.error('handleDayClick full error:', err);
             toast.error(err?.message || 'Error al cargar el día');
