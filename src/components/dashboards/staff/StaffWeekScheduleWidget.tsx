@@ -418,8 +418,9 @@ export function StaffWeekScheduleWidget({
     }, [masterMode, rangeStart, rangeEnd]);
 
     useEffect(() => {
+        if (!masterMode || loading) return;
         void loadOvertimeData();
-    }, [loadOvertimeData, overtimeRefreshKey]);
+    }, [loadOvertimeData, overtimeRefreshKey, masterMode, loading]);
 
     const loadMonthData = useCallback(async () => {
         if (!userId) {
@@ -605,7 +606,7 @@ export function StaffWeekScheduleWidget({
                                                     <WeekExtCell
                                                         weekDays={weekDays}
                                                         week={overtimeWeeks[weekKey]}
-                                                        loading={overtimeLoading}
+                                                        loading={overtimeLoading || loading}
                                                         onOpenWeekDetail={onOpenWeekDetail}
                                                     />
                                                 </div>
@@ -621,7 +622,7 @@ export function StaffWeekScheduleWidget({
                                                     <WeekExtCell
                                                         weekDays={weekDays}
                                                         week={overtimeWeeks[weekKey]}
-                                                        loading={overtimeLoading}
+                                                        loading={overtimeLoading || loading}
                                                         onOpenWeekDetail={onOpenWeekDetail}
                                                     />
                                                 ) : null}
