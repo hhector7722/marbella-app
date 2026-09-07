@@ -34,11 +34,6 @@ const PRIMARY_KPIS: readonly LastClosingKpi[] = [
     { label: 'Venta neta', format: (m) => formatClosingValue(m.netSales, 'net_sales') },
     { label: 'Tarjeta', format: (m) => formatClosingValue(m.salesCard, 'tpv_sales') },
     { label: 'Efectivo', format: (m) => formatClosingValue(m.cashCounted, 'cash_counted') },
-];
-
-const SECONDARY_KPIS: readonly LastClosingKpi[] = [
-    { label: 'Pendiente', format: (m) => formatClosingValue(m.salesPending, 'tpv_sales') },
-    { label: 'Cobros', format: (m) => formatClosingValue(m.debtRecovered, 'tpv_sales') },
     { label: 'Diferencia', format: (m) => formatClosingDifference(m.difference) },
 ];
 
@@ -50,8 +45,9 @@ const pillClassName =
 /**
  * Último cierre en el mosaico Master: misma magnitud que la card de
  * /dashboard/history (un solo productor, PRINCIPIOS §3). 4×1: cabecera con la
- * fecha, el tiempo y los tickets, y dos bandas de KPIs (4 principales + 3 de
- * diferencia). El cero se muestra como espacio en blanco (CONTENIDO-Y-TONO §3).
+ * fecha, el tiempo y los tickets, y una sola banda de KPIs (4 principales +
+ * Diferencia a la derecha). El cero se muestra como espacio en blanco
+ * (CONTENIDO-Y-TONO §3).
  */
 export function MasterLastClosingWidget() {
     const supabase = useMemo(() => createClient(), []);
@@ -105,14 +101,14 @@ export function MasterLastClosingWidget() {
         return raw.charAt(0).toUpperCase() + raw.slice(1);
     }, [closing]);
 
-    const renderKpiGrid = (kpis: readonly LastClosingKpi[], gridClass: 'grid-cols-3' | 'grid-cols-4') => (
-        <div className={`grid gap-x-1.5 ${gridClass}`}>
+    const renderKpiGrid = (kpis: readonly LastClosingKpi[]) => (
+        <div className="grid grid-cols-5 gap-x-1">
             {kpis.map((kpi) => (
                 <div key={kpi.label} className="flex min-w-0 flex-col items-center justify-center text-center">
-                    <span className="text-[9px] md:text-[10px] tabular-nums leading-none text-[var(--home-widget-ink)]">
+                    <span className="text-[13px] md:text-[15px] tabular-nums leading-none text-[var(--home-widget-ink)]">
                         {kpi.format(metrics)}
                     </span>
-                    <span className="mt-1 text-[7px] md:text-[8px] leading-none text-[var(--home-widget-ink-secondary)]">
+                    <span className="mt-1 text-[8px] md:text-[9px] leading-none text-[var(--home-widget-ink-secondary)]">
                         {kpi.label}
                     </span>
                 </div>
@@ -150,7 +146,7 @@ export function MasterLastClosingWidget() {
                     </span>
                 </div>
             </div>
-            <div className="flex min-h-0 flex-1 flex-col justify-start gap-y-3 px-2 pb-1.5 pt-3">
+            <div className="flex min-h-0 flex-1 flex-col justify-center px-2 pb-1.5">
                 {loading ? (
                     <div
                         className="flex flex-1 items-center justify-center"
@@ -162,10 +158,7 @@ export function MasterLastClosingWidget() {
                 ) : !closing ? (
                     <EmptyState instance="master-ultimo-cierre-none" variant="none" title="Sin cierre" />
                 ) : (
-                    <>
-                        {renderKpiGrid(PRIMARY_KPIS, 'grid-cols-4')}
-                        {renderKpiGrid(SECONDARY_KPIS, 'grid-cols-3')}
-                    </>
+                    renderKpiGrid(PRIMARY_KPIS)
                 )}
             </div>
         </div>
