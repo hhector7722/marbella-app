@@ -24,7 +24,10 @@ import { updateProfile } from '@/app/actions/profile';
 import { Modal } from '@/components/ui/modal';
 import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
 import { OpsHomeScreen } from '@/components/dashboards/OpsHomeScreen';
-import { CajaCambioWidget, CajaInicialWidget, HorasExtrasWidget } from '@/components/dashboards/ops-widgets';
+import { HorasExtrasWidget } from '@/components/dashboards/ops-widgets';
+import { MasterLastClosingWidget } from '@/components/dashboards/MasterLastClosingWidget';
+import { StaffWeekScheduleBlock } from '@/components/dashboards/staff/StaffWeekScheduleBlock';
+import { CajaInicialControl, MasterCajasCambioControl } from '@/components/dashboards/MasterShortcutGrid';
 import { getISOWeek, format, addDays, subDays, startOfWeek, parseISO, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isSameDay, isToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -186,6 +189,8 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const [purchaseInventoriesByBoxId, setPurchaseInventoriesByBoxId] = useState<Record<string, Record<number, number>>>({});
     const [selectedHistory, setSelectedHistory] = useState<{ workerId: string, weekId: string } | null>(null);
     const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+    const [userId, setUserId] = useState<string | null>(null);
+    const [isCajaInicialActionsOpen, setIsCajaInicialActionsOpen] = useState(false);
     const [isDesktop, setIsDesktop] = useState(false);
     // Horas extras: carga independiente (no bloquea shell del dashboard)
     const [overtimeViewMonth, setOvertimeViewMonth] = useState(() => startOfMonth(new Date()));
@@ -221,7 +226,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     useEffect(() => {
         const getUser = async () => {
             const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user?.email) setCurrentUserEmail(session.user.email);
+            if (session?.user) {
+                setCurrentUserEmail(session.user.email ?? null);
+                setUserId(session.user.id);
+            }
         };
         getUser();
     }, []);
@@ -385,6 +393,26 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         } catch (error) { console.error(error); alert("Error"); }
     };
 
+    const handleCajaInicialAccion = (accion: 'in' | 'out' | 'compra' | 'arqueo') => {
+        const box = boxes.find((b: any) => b.type === 'operational');
+        if (!box) {
+            toast.error('No hay caja operacional configurada');
+            return;
+        }
+        if (accion === 'arqueo') {
+            setIsCajaInicialActionsOpen(false);
+            openTreasuryModal(box, 'audit');
+            return;
+        }
+        if (accion === 'compra') {
+            setIsCajaInicialActionsOpen(false);
+            openPurchaseMultiSourceModal();
+            return;
+        }
+        setIsCajaInicialActionsOpen(false);
+        openTreasuryModal(box, accion);
+    };
+
     const buildPaymentSources = (): (BoxOption & PaymentSourceOption)[] => {
         const list: any[] = [];
         const op = boxes.find((b: any) => b.type === 'operational');
@@ -488,31 +516,22 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const ventasSection = (
         <DashboardVentasSection />
     );
-    const cajaInicialSection = (
-        <CajaInicialWidget
-            treasuryLoading={treasuryLoading}
-            boxes={boxes}
-            actualBalance={actualBalance}
-            differenceCents={differenceCents}
-            onOpenMovements={() => router.push('/dashboard/movements')}
-            onIn={(box) => openTreasuryModal(box, 'in')}
-            onOut={(box) => openTreasuryModal(box, 'out')}
-            onPurchase={() => openPurchaseMultiSourceModal()}
-            onAudit={(box) => openTreasuryModal(box, 'audit')}
-        />
+
+    const ultimoCierreSection = (
+        <MasterLastClosingWidget />
     );
 
-    const horasExtrasSection = (
-        <HorasExtrasWidget
-            overtimeViewMonth={overtimeViewMonth}
-            onPrevMonth={() => setOvertimeViewMonth((prev) => subMonths(prev, 1))}
-            onNextMonth={() => setOvertimeViewMonth((prev) => addMonths(prev, 1))}
-            overtimeLoading={overtimeLoading}
-            overtimeWeeksData={overtimeWeeksData}
-            onWeekClick={(week) => {
+    const horarioSection = (
+        <StaffWeekScheduleBlock
+            userId={userId}
+            userRole="manager"
+            userEmail={currentUserEmail ?? ''}
+            masterMode
+            onOpenWeekDetail={(week) => {
                 trackAdminOvertimeWeek(`Semana ${getISOWeek(new Date(week.weekId))}`, { weekId: week.weekId });
                 setWeekDetailModal({ week });
             }}
+            overtimeRefreshKey={overtimeRefreshKey}
         />
     );
 
@@ -521,15 +540,31 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
         .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
         .slice(0, 2);
 
-    const renderDashboardChangeCard = (title: string, idx: number) => (
-        <CajaCambioWidget
-            title={title}
-            idx={idx}
+    const iconCajaInicial = (
+        <CajaInicialControl
             treasuryLoading={treasuryLoading}
-            box={dashboardChangeBoxes[idx]}
-            onAudit={(box) => openTreasuryModal(box, 'audit')}
+            actualBalance={actualBalance}
+            onOpenMovements={() => router.push('/dashboard/movements')}
+            onOpenAcciones={() => setIsCajaInicialActionsOpen(true)}
         />
     );
+
+    const iconCajasCambio = (
+        <MasterCajasCambioControl
+            treasuryLoading={treasuryLoading}
+            box1={dashboardChangeBoxes[0]}
+            box2={dashboardChangeBoxes[1]}
+            onOpenCambio1={() => {
+                const box = dashboardChangeBoxes[0];
+                if (box) openTreasuryModal(box, 'audit');
+            }}
+            onOpenCambio2={() => {
+                const box = dashboardChangeBoxes[1];
+                if (box) openTreasuryModal(box, 'audit');
+            }}
+        />
+    );
+
     const quickActionCards = [
         { title: 'Asistencia', img: '/icons/calendar.png', link: '/staff/history', instance: 'admin-asistencia' },
         { title: 'M obra', img: '/icons/overtime.png', link: '/dashboard/labor', instance: 'admin-m-obra' },
@@ -569,10 +604,10 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const dashboardHome = (
         <OpsHomeScreen
             ventas={ventasSection}
-            cajaInicial={cajaInicialSection}
-            horasExtras={horasExtrasSection}
-            cajaCambio1={renderDashboardChangeCard('Cambio 1', 0)}
-            cajaCambio2={renderDashboardChangeCard('Cambio 2', 1)}
+            ultimoCierre={ultimoCierreSection}
+            horario={horarioSection}
+            iconCajaInicial={iconCajaInicial}
+            iconCajasCambio={iconCajasCambio}
             iconAsistencia={renderQuickActionSquare(quickActionCards[0])}
             iconMasFunciones={
                 <DashboardShortcut
@@ -785,6 +820,75 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
             />
 
             <SupplierSelectionModal isOpen={isSupplierModalOpen} onClose={() => setIsSupplierModalOpen(false)} />
+
+            <Modal
+                open={isCajaInicialActionsOpen}
+                onClose={() => setIsCajaInicialActionsOpen(false)}
+                variant="standard"
+                layer="base"
+                instance="admin-caja-inicial-acciones"
+                usageId="admin-caja-inicial-acciones"
+                usageLabel="Caja inicial: acciones"
+                headerTone="petroleum"
+                scheme="dark"
+                title="Caja Inicial"
+                ariaLabel="Caja inicial: acciones"
+            >
+                <div className="grid grid-cols-2 gap-2 pb-6 pt-1">
+                    {(
+                        [
+                            {
+                                label: 'Entrada',
+                                accion: 'in' as const,
+                                color: 'bg-emerald-500',
+                                icon: <Plus size={18} strokeWidth={2} fill="none" className="text-white" />,
+                            },
+                            {
+                                label: 'Salida',
+                                accion: 'out' as const,
+                                color: 'bg-rose-500',
+                                icon: <Minus size={18} strokeWidth={2} fill="none" className="text-white" />,
+                            },
+                            {
+                                label: 'Compra',
+                                accion: 'compra' as const,
+                                color: 'bg-[#5B8FB9]',
+                                icon: <ShoppingCart size={18} strokeWidth={2} fill="none" className="text-white" />,
+                            },
+                            {
+                                label: 'Arqueo',
+                                accion: 'arqueo' as const,
+                                color: 'bg-orange-400',
+                                icon: <RefreshCw size={18} strokeWidth={2} fill="none" className="text-white" />,
+                            },
+                        ] as const
+                    ).map((opcion) => (
+                        <button
+                            key={opcion.accion}
+                            type="button"
+                            onClick={() => handleCajaInicialAccion(opcion.accion)}
+                            aria-label={opcion.label}
+                            className={`group relative flex h-full min-h-0 w-full flex-col items-center justify-center gap-2 rounded-[var(--radio-superficie)] ${opcion.color} px-2 py-3 text-white transition-transform active:scale-95 touch-manipulation`}
+                        >
+                            <span className="flex items-center justify-center transition-transform group-hover:scale-110">
+                                {opcion.icon}
+                            </span>
+                            <span className="shrink-0 text-[10px] font-black uppercase leading-none tracking-widest">
+                                {opcion.label}
+                            </span>
+                            <span
+                                data-element="rim"
+                                aria-hidden
+                                className="pointer-events-none absolute inset-0 rounded-[var(--radio-superficie)]"
+                                style={{
+                                    boxShadow:
+                                        'inset 0 0 0 1px rgb(255 255 255 / 0.24), inset 0 1px 0 0 rgb(255 255 255 / 0.58), inset 1px 0 0 0 rgb(255 255 255 / 0.38), inset 0 -1px 0 0 rgb(0 0 0 / 0.2), inset -1px 0 0 0 rgb(0 0 0 / 0.12)',
+                                }}
+                            />
+                        </button>
+                    ))}
+                </div>
+            </Modal>
 
             {weekDetailModal && (() => {
                 const weekStaff = (weekDetailModal.week.staff ?? []).filter((s: any) => {

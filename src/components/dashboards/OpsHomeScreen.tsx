@@ -5,10 +5,10 @@ import { HomeScreen, HomeScreenSlot } from '@/components/dashboards/HomeScreen';
 
 export type OpsHomeScreenProps = {
     ventas: ReactNode;
-    cajaInicial: ReactNode;
-    horasExtras: ReactNode;
-    cajaCambio1: ReactNode;
-    cajaCambio2: ReactNode;
+    ultimoCierre: ReactNode;
+    horario: ReactNode;
+    iconCajaInicial: ReactNode;
+    iconCajasCambio: ReactNode;
     iconAsistencia: ReactNode;
     iconMasFunciones: ReactNode;
     iconMObra: ReactNode;
@@ -20,16 +20,16 @@ export type OpsHomeScreenProps = {
 };
 
 /**
- * Mosaico Admin. H. extras 3×2 en filas 3–4; Plantilla y Albaranes a la derecha.
- * Fila 5: Cambio 1, Cambio 2, Recetas, Asistencia.
- * Última fila: Otros, M obra, Stock, Ingredientes.
+ * Mosaico Admin. Horario 3×2 en filas 3–4; C inicial y Plantilla a la derecha.
+ * Fila 5: M obra, stock, recetas, albaranes.
+ * Última fila: otros, asistencia, cajas cambio, ingredientes.
  */
 export function OpsHomeScreen({
     ventas,
-    cajaInicial,
-    horasExtras,
-    cajaCambio1,
-    cajaCambio2,
+    ultimoCierre,
+    horario,
+    iconCajaInicial,
+    iconCajasCambio,
     iconAsistencia,
     iconMasFunciones,
     iconMObra,
@@ -44,38 +44,38 @@ export function OpsHomeScreen({
             <HomeScreenSlot size="wide" instance="dashboard-ventas">
                 {ventas}
             </HomeScreenSlot>
-            <HomeScreenSlot size="wide" instance="dashboard-caja-inicial">
-                {cajaInicial}
+            <HomeScreenSlot size="wide" instance="master-ultimo-cierre">
+                {ultimoCierre}
             </HomeScreenSlot>
-            <HomeScreenSlot size="panel" instance="dashboard-horas-extras">
-                {horasExtras}
+            <HomeScreenSlot size="panel" instance="master-horarios">
+                {horario}
+            </HomeScreenSlot>
+            <HomeScreenSlot size="icon" instance="caja-inicial" label="C Inicial" column={4}>
+                {iconCajaInicial}
             </HomeScreenSlot>
             <HomeScreenSlot size="icon" instance="admin-plantilla" column={4}>
                 {iconPlantilla}
             </HomeScreenSlot>
-            <HomeScreenSlot size="icon" instance="admin-albaranes" column={4}>
-                {iconAlbaranes}
+            <HomeScreenSlot size="icon" instance="admin-m-obra" column={1}>
+                {iconMObra}
             </HomeScreenSlot>
-            <HomeScreenSlot size="tile" instance="dashboard-caja-cambio-1" label="Cambio 1" column={1}>
-                {cajaCambio1}
-            </HomeScreenSlot>
-            <HomeScreenSlot size="tile" instance="dashboard-caja-cambio-2" label="Cambio 2" column={2}>
-                {cajaCambio2}
+            <HomeScreenSlot size="icon" instance="admin-stock" column={2}>
+                {iconStock}
             </HomeScreenSlot>
             <HomeScreenSlot size="icon" instance="admin-recetas" column={3}>
                 {iconRecetas}
             </HomeScreenSlot>
-            <HomeScreenSlot size="icon" instance="admin-asistencia" column={4}>
-                {iconAsistencia}
+            <HomeScreenSlot size="icon" instance="admin-albaranes" column={4}>
+                {iconAlbaranes}
             </HomeScreenSlot>
             <HomeScreenSlot size="icon" instance="admin-mas-funciones" column={1}>
                 {iconMasFunciones}
             </HomeScreenSlot>
-            <HomeScreenSlot size="icon" instance="admin-m-obra" column={2}>
-                {iconMObra}
+            <HomeScreenSlot size="icon" instance="admin-asistencia" column={2}>
+                {iconAsistencia}
             </HomeScreenSlot>
-            <HomeScreenSlot size="icon" instance="admin-stock" column={3}>
-                {iconStock}
+            <HomeScreenSlot size="icon" instance="cajas-cambio" label="Cajas Cambio" column={3}>
+                {iconCajasCambio}
             </HomeScreenSlot>
             <HomeScreenSlot size="icon" instance="admin-ingredientes" column={4}>
                 {iconIngredientes}

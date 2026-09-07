@@ -2568,11 +2568,11 @@ button[data-element='catalog-filter'] {
 [data-component='HomeScreen'][data-layout='ops-admin'] {
   grid-template-areas:
     'ventas  ventas  ventas  ventas'
-    'caja    caja    caja    caja'
-    'hextras hextras hextras plant'
-    'hextras hextras hextras albaranes'
-    'cambio1 cambio2 recetas asis'
-    'mas mobra stock ingredientes';
+    'cierre  cierre  cierre  cierre'
+    'horarios horarios horarios cinicial'
+    'horarios horarios horarios plant'
+    'mobra stock recetas albaranes'
+    'mas asis cajascambio ingredientes';
   grid-template-rows: repeat(6, var(--home-row-track));
   grid-auto-flow: row;
 }
@@ -2582,26 +2582,20 @@ button[data-element='catalog-filter'] {
 [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='dashboard-ventas'] {
   grid-area: ventas;
 }
-[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='dashboard-caja-inicial'] {
-  grid-area: caja;
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='master-ultimo-cierre'] {
+  grid-area: cierre;
 }
-[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='dashboard-horas-extras'] {
-  grid-area: hextras;
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='master-horarios'] {
+  grid-area: horarios;
 }
-[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='dashboard-caja-cambio-1'] {
-  grid-area: cambio1;
-}
-[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='dashboard-caja-cambio-2'] {
-  grid-area: cambio2;
-}
-[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-asistencia'] {
-  grid-area: asis;
-}
-[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-m-obra'] {
-  grid-area: mobra;
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='caja-inicial'] {
+  grid-area: cinicial;
 }
 [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-plantilla'] {
   grid-area: plant;
+}
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-m-obra'] {
+  grid-area: mobra;
 }
 [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-stock'] {
   grid-area: stock;
@@ -2614,6 +2608,12 @@ button[data-element='catalog-filter'] {
 }
 [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-mas-funciones'] {
   grid-area: mas;
+}
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-asistencia'] {
+  grid-area: asis;
+}
+[data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='cajas-cambio'] {
+  grid-area: cajascambio;
 }
 [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='admin-ingredientes'] {
   grid-area: ingredientes;

@@ -28,7 +28,7 @@ type MasterShortcutGridProps = {
  * Arriba: importe verde (movimientos). Abajo: Acción (menú Entrada/Salida/Compra/Arqueo).
  * Composición local del mosaico master; no es pieza de sistema.
  */
-function CajaInicialControl({
+export function CajaInicialControl({
     treasuryLoading,
     actualBalance,
     onOpenMovements,
@@ -106,7 +106,7 @@ function CajaInicialControl({
  * Mismo relleno y contorno premium que Caja Inicial.
  * Composición local del mosaico master; no es pieza de sistema.
  */
-function MasterCajasCambioControl({
+export function MasterCajasCambioControl({
     treasuryLoading,
     box1,
     box2,
