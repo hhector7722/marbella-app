@@ -256,14 +256,14 @@ export class LaborCostMonthReadModelProjector {
         const clockInDays = new Set(engineLogs.map((l) => formatYmdInMadrid(l.clockInIso)));
 
         let currentWeek = firstWeekStart;
+        let carryIn = resolveOpeningCarryIn({ employee, chainStart: firstWeekStart, logs: engineLogs, isPaidByWeek, bagModeOverrideByWeek });
         while (currentWeek <= lastWeekStart) {
           const cWeekEnd = format(addDays(parseISO(currentWeek), 6), 'yyyy-MM-dd');
-          const carryIn = resolveOpeningCarryIn({ employee, chainStart: currentWeek, logs: engineLogs, isPaidByWeek, bagModeOverrideByWeek });
           const weekLogs = engineLogs.filter((l) => {
             const d = formatYmdInMadrid(l.clockInIso);
             return d >= currentWeek && d <= cWeekEnd;
           });
-          const { extrasByDay, summary } = liquidateWeekForCard({
+          const { extrasByDay, summary, result } = liquidateWeekForCard({
             employee,
             weekStart: currentWeek,
             logs: weekLogs,
@@ -277,6 +277,7 @@ export class LaborCostMonthReadModelProjector {
               if (ot > 0) overtimeByDay[d] = (overtimeByDay[d] ?? 0) + ot;
             }
           }
+          carryIn = result.carryOut;
           currentWeek = format(addDays(parseISO(currentWeek), 7), 'yyyy-MM-dd');
         }
 
