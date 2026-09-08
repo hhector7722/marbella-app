@@ -153,11 +153,35 @@ export default function SuppliersPage() {
     const fetchSuppliers = useCallback(async (showLoading = true, showErrorToast = true) => {
         try {
             if (showLoading) setLoading(true);
-            const { data, error } = await supabase
+            let { data, error } = await supabase
                 .from('suppliers')
                 .select('id,created_at,name,delivery_schedule,lead_time,reliability,phone,notes,email_domains,image_url,category,order_deadline,min_order,order_channel,contact_name,payment_method,instructions,observations')
                 .order('name');
-            if (error) {
+            
+            // Si las columnas nuevas aún no existen en el esquema físico (migración pendiente de correr), caemos a la consulta segura legada
+            if (error && (error.message.includes('category') || error.message.includes('column') || error.message.includes('does not exist'))) {
+                const { data: legacyData, error: legacyError } = await supabase
+                    .from('suppliers')
+                    .select('id,created_at,name,delivery_schedule,lead_time,reliability,phone,notes,email_domains,image_url')
+                    .order('name');
+                if (legacyError) {
+                    console.error('Legacy Supabase Error:', legacyError);
+                    if (showErrorToast) toast.error(`Error de base de datos: ${legacyError.message}`);
+                    throw legacyError;
+                }
+                data = (legacyData || []).map((row) => ({
+                    ...row,
+                    category: null,
+                    order_deadline: null,
+                    min_order: null,
+                    order_channel: null,
+                    contact_name: null,
+                    payment_method: null,
+                    instructions: null,
+                    observations: null,
+                })) as any;
+                error = null;
+            } else if (error) {
                 console.error('Supabase Error:', error);
                 if (showErrorToast) {
                     toast.error(`Error de base de datos: ${error.message}`);
@@ -348,7 +372,16 @@ export default function SuppliersPage() {
                 category: newSupplier.category ?? 'Alimentos',
                 notes,
             });
-            if (error) throw error;
+            if (error && (error.message.includes('category') || error.message.includes('column') || error.message.includes('does not exist'))) {
+                const { error: legacyError } = await supabase.from('suppliers').insert({
+                    name,
+                    phone,
+                    notes,
+                });
+                if (legacyError) throw legacyError;
+            } else if (error) {
+                throw error;
+            }
             toast.success('Proveedor creado');
             await fetchSuppliers();
             setShowCreateModal(false);
@@ -586,31 +619,72 @@ export default function SuppliersPage() {
                     })
                     .eq('id', Number(editSupplier.id));
 
-                if (error) throw error;
+                if (error && (error.message.includes('category') || error.message.includes('column') || error.message.includes('does not exist'))) {
+                    // Fallback legada si las columnas nuevas no están creadas físicamente aún
+                    const { error: legacyError } = await supabase
+                        .from('suppliers')
+                        .update({
+                            name,
+                            phone,
+                            delivery_schedule: editSupplier.delivery_schedule || null,
+                            lead_time: editSupplier.lead_time || null,
+                            reliability: editSupplier.reliability || null,
+                            notes,
+                            image_url: nextImageUrl,
+                            email_domains: emailDomains.length ? emailDomains : null,
+                        })
+                        .eq('id', Number(editSupplier.id));
+                    if (legacyError) throw legacyError;
+                } else if (error) {
+                    throw error;
+                }
                 toast.success('Proveedor actualizado');
             } else {
                 // Plantilla/fallback: crear en BD como proveedor real
-                const { error } = await supabase
-                    .from('suppliers')
-                    .insert({
-                        name,
-                        phone,
-                        delivery_schedule: editSupplier.delivery_schedule || null,
-                        lead_time: editSupplier.lead_time || null,
-                        reliability: reliabilityValue,
-                        notes,
-                        image_url: nextImageUrl,
-                        email_domains: emailDomains.length ? emailDomains : null,
-                        category: editSupplier.category ?? 'Alimentos',
-                        order_deadline: orderDeadlineValue,
-                        min_order: minOrderValue,
-                        order_channel: editOrderChannel.trim() || null,
-                        contact_name: editContactName.trim() || null,
-                        payment_method: editPaymentMethod.trim() || null,
-                        instructions: editInstructions.trim() || null,
-                        observations: editNotes.trim() || null,
-                    });
-                if (error) throw error;
+                let insertError: any;
+                try {
+                    const { error } = await supabase
+                        .from('suppliers')
+                        .insert({
+                            name,
+                            phone,
+                            delivery_schedule: editSupplier.delivery_schedule || null,
+                            lead_time: editSupplier.lead_time || null,
+                            reliability: reliabilityValue,
+                            notes,
+                            image_url: nextImageUrl,
+                            email_domains: emailDomains.length ? emailDomains : null,
+                            category: editSupplier.category ?? 'Alimentos',
+                            order_deadline: orderDeadlineValue,
+                            min_order: minOrderValue,
+                            order_channel: editOrderChannel.trim() || null,
+                            contact_name: editContactName.trim() || null,
+                            payment_method: editPaymentMethod.trim() || null,
+                            instructions: editInstructions.trim() || null,
+                            observations: editNotes.trim() || null,
+                        });
+                    insertError = error;
+                } catch (err) {
+                    insertError = err;
+                }
+
+                if (insertError && (insertError.message?.includes('category') || insertError.message?.includes('column') || String(insertError).includes('column'))) {
+                    const { error: legacyError } = await supabase
+                        .from('suppliers')
+                        .insert({
+                            name,
+                            phone,
+                            delivery_schedule: editSupplier.delivery_schedule || null,
+                            lead_time: editSupplier.lead_time || null,
+                            reliability: editSupplier.reliability || null,
+                            notes,
+                            image_url: nextImageUrl,
+                            email_domains: emailDomains.length ? emailDomains : null,
+                        });
+                    if (legacyError) throw legacyError;
+                } else if (insertError) {
+                    throw insertError;
+                }
                 toast.success('Proveedor creado en la base de datos');
             }
 
