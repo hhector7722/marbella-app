@@ -19,6 +19,7 @@ import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLay
 import { CatalogFilterChip } from '@/components/catalog/CatalogFilterChip';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SupplierPickerGrid } from '@/components/suppliers/SupplierPickerGrid';
+import { cn } from '@/lib/utils';
 
 interface Supplier {
     id: string; // bigint en BD; string en UI para soportar rows "initial-*"
@@ -179,6 +180,7 @@ export default function SuppliersPage() {
                     payment_method: null,
                     instructions: null,
                     observations: null,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 })) as any;
                 error = null;
             } else if (error) {
@@ -189,6 +191,7 @@ export default function SuppliersPage() {
                 throw error;
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const dbSuppliers: Supplier[] = (data || []).map((r: any) => {
                 const fields = parseSupplierNotes(r.notes ?? null);
                 
@@ -641,6 +644,7 @@ export default function SuppliersPage() {
                 toast.success('Proveedor actualizado');
             } else {
                 // Plantilla/fallback: crear en BD como proveedor real
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 let insertError: any;
                 try {
                     const { error } = await supabase
@@ -906,21 +910,25 @@ export default function SuppliersPage() {
                         if (!val || !val.trim() || val === '—') {
                             return (
                                 <span className="text-xs font-normal !text-zinc-400 select-none text-center flex-1">
-                                    
+                                    —
                                 </span>
                             );
                         }
                         return (
-                            <span className="text-xs font-bold !text-zinc-800 ml-auto">
+                            <span className="text-xs font-normal !text-zinc-700 ml-auto">
                                 {val}
                             </span>
                         );
                     };
 
+                    const hasInstructions = Boolean(detailSupplier.instructions?.trim());
+                    const hasObservations = Boolean(detailSupplier.observations?.trim());
+                    const hasOperationalInfo = hasInstructions || hasObservations;
+
                     return (
-                        <div className="space-y-3 px-1 py-1">
+                        <div className="space-y-2.5 px-1 py-1">
                             {/* Cabecera / Ficha principal */}
-                            <div className="flex flex-row items-center gap-3 rounded-xl !bg-white p-3 !shadow-md border border-zinc-100/60 shrink-0">
+                            <div className="flex flex-row items-center gap-2.5 rounded-xl !bg-white p-2.5 !shadow-md border border-zinc-100/60 shrink-0">
                                 <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg !bg-white border border-zinc-100 shadow-sm p-0.5">
                                     {getSupplierLogo(detailSupplier.image_url, detailSupplier.name) ? (
                                         <img src={getSupplierLogo(detailSupplier.image_url, detailSupplier.name) || ''} alt="" className="h-full w-full object-contain" />
@@ -933,11 +941,12 @@ export default function SuppliersPage() {
                                     <div className="min-w-0 flex-1">
                                         <h2 className="text-sm font-black !text-zinc-800 leading-tight truncate">{detailSupplier.name}</h2>
                                         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
-                                            <span className="inline-block rounded-full bg-ds-marca/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider !text-ds-marca">
-                                                {detailSupplier.category || 'Sin categoría'}
+                                            <span className="text-[10px] font-medium tracking-wide !text-ds-marca capitalize">
+                                                {detailSupplier.category?.toLowerCase() || 'Sin categoría'}
                                             </span>
                                             
                                             {/* Fiabilidad inline */}
+                                            <span className="text-zinc-300 select-none">·</span>
                                             <div className="flex items-center gap-1">
                                                 <span className="text-[8px] font-black uppercase tracking-wider !text-zinc-400">Fiab</span>
                                                 <div className="flex gap-0.5" aria-label={`Fiabilidad: ${Number(detailSupplier.reliability) || 0} de 5 estrellas`}>
@@ -958,39 +967,39 @@ export default function SuppliersPage() {
                                     
                                     {/* Acciones de contacto directas */}
                                     {detailSupplier.phone ? (
-                                        <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                                        <div className="flex items-center gap-2 shrink-0 ml-2">
                                             <a
                                                 href={`tel:${detailSupplier.phone.replace(/\D/g, '').startsWith('34') ? '+' + detailSupplier.phone.replace(/\D/g, '') : '+34' + detailSupplier.phone.replace(/\D/g, '')}`}
-                                                className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-600 shadow-sm transition-all hover:scale-105 active:scale-95"
+                                                className="flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
                                                 title="Llamar directamente"
                                             >
-                                                <Image src="/icons/phone.png" alt="Llamar" width={18} height={18} className="object-contain" />
+                                                <Image src="/icons/phone.png" alt="Llamar" width={26} height={26} className="object-contain" />
                                             </a>
                                             <a
                                                 href={`https://wa.me/${detailSupplier.phone.replace(/\D/g, '').startsWith('34') ? detailSupplier.phone.replace(/\D/g, '') : '34' + detailSupplier.phone.replace(/\D/g, '')}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-600 shadow-sm transition-all hover:scale-105 active:scale-95"
+                                                className="flex items-center justify-center transition-all hover:scale-110 active:scale-95 shrink-0"
                                                 title="Enviar WhatsApp"
                                             >
-                                                <Image src="/icons/whatsapp.png" alt="WhatsApp" width={18} height={18} className="object-contain" />
+                                                <Image src="/icons/whatsapp.png" alt="WhatsApp" width={26} height={26} className="object-contain" />
                                             </a>
                                         </div>
                                     ) : null}
                                 </div>
                             </div>
 
-                            {/* Contenido en tres columnas */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            {/* Contenido adaptativo de columnas */}
+                            <div className={cn("grid gap-2.5", hasOperationalInfo ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1 md:grid-cols-2")}>
                                 {/* Columna 1 */}
-                                <div className="rounded-xl border border-zinc-100/60 !bg-white p-3.5 !shadow-md flex flex-col justify-between">
+                                <div className="rounded-xl border border-zinc-100/60 !bg-white p-3 !shadow-md flex flex-col justify-between">
                                     <div>
-                                        <h3 className="mb-2 text-[9px] font-black uppercase tracking-widest !text-zinc-400">
+                                        <h3 className="mb-1.5 text-[9px] font-black uppercase tracking-widest !text-zinc-400">
                                             Logística y Suministro
                                         </h3>
-                                        <div className="space-y-1.5">
+                                        <div className="space-y-1">
                                             <div className="flex justify-between items-center py-0.5 border-b !border-zinc-50">
-                                                <span className="text-[10px] font-semibold !text-zinc-500 shrink-0">Límite pedido</span>
+                                                <span className="text-[10px] font-semibold !text-zinc-500 shrink-0">Cuándo pedir</span>
                                                 {renderFieldValue(detailSupplier.order_deadline)}
                                             </div>
                                             <div className="flex justify-between items-center py-0.5 border-b !border-zinc-50">
@@ -1010,12 +1019,12 @@ export default function SuppliersPage() {
                                 </div>
 
                                 {/* Columna 2 */}
-                                <div className="rounded-xl border border-zinc-100/60 !bg-white p-3.5 !shadow-md flex flex-col justify-between">
+                                <div className="rounded-xl border border-zinc-100/60 !bg-white p-3 !shadow-md flex flex-col justify-between">
                                     <div>
-                                        <h3 className="mb-2 text-[9px] font-black uppercase tracking-widest !text-zinc-400">
+                                        <h3 className="mb-1.5 text-[9px] font-black uppercase tracking-widest !text-zinc-400">
                                             Pedido y Contacto
                                         </h3>
-                                        <div className="space-y-1.5">
+                                        <div className="space-y-1">
                                             <div className="flex justify-between items-center py-0.5 border-b !border-zinc-50">
                                                 <span className="text-[10px] font-semibold !text-zinc-500 shrink-0">Canal pedido</span>
                                                 {renderFieldValue(detailSupplier.order_channel)}
@@ -1032,28 +1041,34 @@ export default function SuppliersPage() {
                                     </div>
                                 </div>
 
-                                {/* Columna 3 */}
-                                <div className="rounded-xl border border-zinc-100/60 !bg-white p-3.5 !shadow-md flex flex-col justify-between">
-                                    <div className="space-y-2">
-                                        <div>
-                                            <h3 className="mb-1 text-[9px] font-black uppercase tracking-widest !text-zinc-400">
-                                                Instrucciones Especiales
-                                            </h3>
-                                            <p className="text-[10px] !text-zinc-600 leading-normal line-clamp-2 whitespace-pre-wrap">
-                                                {detailSupplier.instructions || 'Sin instrucciones.'}
-                                            </p>
-                                        </div>
-                                        
-                                        <div className="pt-2 border-t !border-zinc-100/60">
-                                            <h3 className="mb-1 text-[9px] font-black uppercase tracking-widest !text-zinc-400">
-                                                Observaciones
-                                            </h3>
-                                            <p className="text-[10px] !text-zinc-600 leading-normal line-clamp-2 whitespace-pre-wrap">
-                                                {detailSupplier.observations || 'Sin observaciones.'}
-                                            </p>
+                                {/* Columna 3 (Opcional, solo si hay datos operativos) */}
+                                {hasOperationalInfo && (
+                                    <div className="rounded-xl border border-zinc-100/60 !bg-white p-3 !shadow-md flex flex-col justify-between">
+                                        <div className="space-y-1.5">
+                                            {hasInstructions && (
+                                                <div>
+                                                    <h3 className="mb-0.5 text-[9px] font-black uppercase tracking-widest !text-zinc-400">
+                                                        Instrucciones Especiales
+                                                    </h3>
+                                                    <p className="text-[10px] !text-zinc-600 leading-normal line-clamp-3 whitespace-pre-wrap">
+                                                        {detailSupplier.instructions}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            
+                                            {hasObservations && (
+                                                <div className={cn(hasInstructions ? "pt-1.5 border-t !border-zinc-100/60" : "")}>
+                                                    <h3 className="mb-0.5 text-[9px] font-black uppercase tracking-widest !text-zinc-400">
+                                                        Observaciones
+                                                    </h3>
+                                                    <p className="text-[10px] !text-zinc-600 leading-normal line-clamp-3 whitespace-pre-wrap">
+                                                        {detailSupplier.observations}
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
                         </div>
                     );
