@@ -20,6 +20,19 @@ export default function PlaygroundPage() {
                         Entra en Marbella, navega y prueba estéticas globales sin modificar datos reales.
                     </p>
                 </a>
+                <a href="/playground/fichas-cocina" className="group block border border-white/10 rounded-2xl p-8 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/20 transition-all">
+                    <div className="h-32 mb-6 rounded-lg border border-white/5 bg-[#faf7f1] flex flex-col items-center justify-center relative overflow-hidden">
+                        <div className="w-20 h-24 border-2 border-[#e85d19] rounded-md bg-white flex flex-col gap-2 p-2 group-hover:scale-105 transition-transform">
+                            <span className="h-2 w-12 rounded bg-zinc-900" />
+                            <span className="h-12 w-full rounded bg-zinc-200" />
+                            <span className="h-2 w-14 rounded bg-[#e85d19]" />
+                        </div>
+                    </div>
+                    <h2 className="text-xl font-medium text-white/90 mb-2">Fichas de elaboración</h2>
+                    <p className="text-sm text-white/50 leading-relaxed">
+                        Convierte las recetas existentes en fichas A3 uniformes para la cocina.
+                    </p>
+                </a>
             </div>
         </div>
     );
