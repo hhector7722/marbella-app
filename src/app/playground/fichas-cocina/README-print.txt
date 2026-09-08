@@ -1,0 +1,1 @@
+PDF A3 is generated in the browser with jsPDF.
