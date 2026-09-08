@@ -36,6 +36,10 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
 
+## 2026-09-08
+
+- **Fichaje: vídeo «hernan-river» para Héctor en entrada y salida.** Se asigna el vídeo `/icons/hernan-river.mp4` a `hhector7722@gmail.com`. Se actualiza el overlay de fichaje para reproducir vídeos de relación de aspecto horizontal completos (formato 16:9) con esquinas redondeadas, sin cortes en su tamaño y con una transición de opacidad y escala más suave tanto en su inicio como en su final.
+
 ## 2026-09-07
 
 - **Horario: el detalle de día muestra las actividades aunque no haya turnos.** Se corrige el comportamiento en el modal de día (`StaffScheduleModal`): ahora la llamada a `fetchDayDetailAction` es prioritaria e independiente de si existen turnos programados o publicados para el día seleccionado. Esto evita que al pulsar sobre un día con actividades pero sin turnos (como sábados y domingos) aparezca erróneamente «Sin actividad».

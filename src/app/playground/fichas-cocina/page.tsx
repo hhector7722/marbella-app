@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Download, ImagePlus, Printer, Save, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
+import { ChefHat, Download, ImagePlus, Printer, Save, Trash2, Camera } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 
 type Recipe = {
@@ -17,16 +17,14 @@ type Recipe = {
 
 type Step = { text: string; image: string | null };
 
-type Sheet = {
-  keyPoints: string[];
-  avoidPoints: string[];
-  stepImages: string[];
-};
-
 const supabase = createClient();
 
 function splitSteps(value: string | null) {
-  return (value ?? '').split(/\r?\n/).map(s => s.trim()).filter(Boolean).map(text => ({ text, image: null }));
+  return (value ?? '')
+    .split(/\r?\n/)
+    .map(s => s.trim())
+    .filter(Boolean)
+    .map(text => ({ text, image: null }));
 }
 
 async function fileToDataUrl(file: File) {
@@ -45,7 +43,42 @@ async function urlToDataUrl(url: string) {
 }
 
 function slug(value: string) {
-  return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+/**
+ * Parsea el texto del paso para extraer el título de acción y la indicación.
+ * Formato esperado: "ACCIÓN: Indicación detallada" o "ACCIÓN Indicación" o por defecto.
+ */
+function parseStepText(text: string) {
+  const trimmed = text.trim();
+  const colonIdx = trimmed.indexOf(':');
+  
+  if (colonIdx > 0 && colonIdx < 22) {
+    const action = trimmed.substring(0, colonIdx).toUpperCase().trim();
+    const description = trimmed.substring(colonIdx + 1).trim();
+    return { action, description };
+  }
+  
+  const words = trimmed.split(/\s+/);
+  if (words.length > 0 && words[0] === words[0].toUpperCase() && words[0].length > 1) {
+    const action = words[0];
+    const description = words.slice(1).join(' ');
+    return { action, description };
+  }
+  
+  if (words.length >= 2) {
+    const action = words.slice(0, 2).join(' ').toUpperCase();
+    const description = words.slice(2).join(' ');
+    return { action, description };
+  }
+  
+  return { action: 'ELABORAR', description: trimmed };
 }
 
 export default function FichasCocinaPage() {
@@ -62,7 +95,10 @@ export default function FichasCocinaPage() {
 
   useEffect(() => {
     void (async () => {
-      const { data } = await supabase.from('recipes').select('id,name,category,preparation_time,servings,photo_url,elaboration').order('name');
+      const { data } = await supabase
+        .from('recipes')
+        .select('id,name,category,preparation_time,servings,photo_url,elaboration')
+        .order('name');
       if (data) setRecipes(data as Recipe[]);
       setLoading(false);
     })();
@@ -72,11 +108,15 @@ export default function FichasCocinaPage() {
     if (!recipe) return;
     void (async () => {
       setSteps(splitSteps(recipe.elaboration));
-      const { data } = await supabase.from('recipe_kitchen_sheets').select('key_points,avoid_points,step_images').eq('recipe_id', recipe.id).maybeSingle();
+      const { data } = await supabase
+        .from('recipe_kitchen_sheets')
+        .select('key_points,avoid_points,step_images')
+        .eq('recipe_id', recipe.id)
+        .maybeSingle();
       if (data) {
-        const images = Array.isArray(data.step_images) ? data.step_images as string[] : [];
+        const images = Array.isArray(data.step_images) ? (data.step_images as string[]) : [];
         setSteps(splitSteps(recipe.elaboration).map((step, i) => ({ ...step, image: images[i] ?? null })));
-        setKeyPoints((data.key_points as string[] | null)?.length ? data.key_points as string[] : ['']);
+        setKeyPoints((data.key_points as string[] | null)?.length ? (data.key_points as string[]) : ['']);
         setAvoidPoints((data.avoid_points as string[] | null) ?? []);
       } else {
         setKeyPoints(['']);
@@ -91,14 +131,18 @@ export default function FichasCocinaPage() {
     const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
     const path = `kitchen-sheets/${recipe.id}/step-${index + 1}-${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from('recipes').upload(path, file, { contentType: file.type, upsert: false });
-    if (error) { setMessage(`Error subiendo imagen: ${error.message}`); return; }
+    if (error) {
+      setMessage(`Error subiendo imagen: ${error.message}`);
+      return;
+    }
     const { data } = supabase.storage.from('recipes').getPublicUrl(path);
-    setSteps(current => current.map((step, i) => i === index ? { ...step, image: data.publicUrl } : step));
+    setSteps(current => current.map((step, i) => (i === index ? { ...step, image: data.publicUrl } : step)));
   }
 
   async function saveSheet() {
     if (!recipe) return;
-    setSaving(true); setMessage('');
+    setSaving(true);
+    setMessage('');
     const payload = {
       recipe_id: recipe.id,
       key_points: keyPoints.map(x => x.trim()).filter(Boolean),
@@ -108,97 +152,649 @@ export default function FichasCocinaPage() {
     };
     const { error } = await supabase.from('recipe_kitchen_sheets').upsert(payload, { onConflict: 'recipe_id' });
     setSaving(false);
-    setMessage(error ? `Error: ${error.message}` : 'Ficha guardada');
+    setMessage(error ? `Error: ${error.message}` : 'Ficha guardada correctamente');
   }
+
+  // Segmenta los pasos en Fila 1 y Fila 2 adaptativamente según el número de pasos totales (3 a 8)
+  const { fila1, fila2 } = useMemo(() => {
+    const n = Math.min(8, steps.length);
+    let limitFila1 = 3;
+    if (n === 3) limitFila1 = 3;
+    else if (n === 4) limitFila1 = 2;
+    else if (n === 5) limitFila1 = 3;
+    else if (n === 6) limitFila1 = 3;
+    else if (n === 7) limitFila1 = 4;
+    else if (n === 8) limitFila1 = 4;
+
+    return {
+      fila1: steps.slice(0, limitFila1),
+      fila2: steps.slice(limitFila1, n),
+    };
+  }, [steps]);
 
   async function generatePdf() {
     if (!recipe) return;
     setMessage('Generando PDF…');
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a3', compress: true });
-    const W = 297, H = 420, margin = 14;
-    pdf.setFillColor(250, 247, 241); pdf.rect(0, 0, W, H, 'F');
-    pdf.setTextColor(22, 22, 22);
-    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(11); pdf.text('MARBELLA · BAR · COCINA · BUEN AMBIENTE', margin, 18);
-    pdf.setFontSize(29); pdf.text(recipe.name.toUpperCase(), margin, 34);
-    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(10);
-    const meta = [`${recipe.servings ?? 1} ración${recipe.servings === 1 ? '' : 'es'}`, recipe.preparation_time ? `${recipe.preparation_time} min` : 'FICHA DE ELABORACIÓN'];
-    pdf.text(meta.join('  ·  '), margin, 43);
-    pdf.setDrawColor(225, 95, 25); pdf.setLineWidth(1.2); pdf.line(margin, 49, W - margin, 49);
+    
+    // Configuración A3 Horizontal (Landscape: 420 x 297 mm)
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3', compress: true });
+    const W = 420;
+    const H = 297;
+    const margin = 14;
+
+    // Fondo blanco mate premium
+    pdf.setFillColor(252, 251, 249);
+    pdf.rect(0, 0, W, H, 'F');
+
+    // Header
+    pdf.setTextColor(54, 96, 111); // Color marca --color-marca
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(10);
+    pdf.text('MARBELLA · BAR · COCINA · BUEN AMBIENTE', margin, 18);
+
+    pdf.setTextColor(24, 24, 27); // Color texto fuerte
+    pdf.setFontSize(26);
+    pdf.text(recipe.name.toUpperCase(), margin, 30);
+
+    pdf.setTextColor(115, 115, 115);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(9);
+    const metaStr = `${recipe.servings ?? 1} ración${recipe.servings === 1 ? '' : 'es'}  ·  ${recipe.preparation_time ? `${recipe.preparation_time} min` : 'FICHA OPERATIVA'}`;
+    pdf.text(metaStr, margin, 37);
+
+    // Línea de cabecera en petróleo
+    pdf.setDrawColor(54, 96, 111);
+    pdf.setLineWidth(1.2);
+    pdf.line(margin, 42, W - margin, 42);
+
+    // Dimensiones de la composición
+    const startY = 49;
+    const totalContentH = 234; // 297 - 49 - 14 (margin)
+    const colGap = 8;
+    const leftColW = 110;
+    const rightColW = W - margin * 2 - leftColW - colGap; // 274 mm
+    const startRightX = margin + leftColW + colGap; // 132 mm
+
+    // --- Columna Izquierda: Foto Final + Puntos Clave ---
+    // Foto final (60% del alto disponible)
+    const finalPhotoH = 120;
+    pdf.setFillColor(255, 255, 255);
+    pdf.setDrawColor(228, 228, 231);
+    pdf.setLineWidth(0.3);
+    pdf.roundedRect(margin, startY, leftColW, finalPhotoH, 3, 3, 'FD');
+
+    pdf.setTextColor(54, 96, 111);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(8);
+    pdf.text('RESULTADO ESPERADO / PLATO FINAL', margin + 6, startY + 10);
 
     if (recipe.photo_url) {
-      try { const img = await urlToDataUrl(recipe.photo_url); pdf.addImage(img, 'JPEG', margin, 56, 72, 58, undefined, 'FAST'); } catch {}
-    }
-    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(13); pdf.text('ELABORACIÓN PASO A PASO', 93, 64);
-    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(10);
-    const intro = pdf.splitTextToSize('Sigue siempre el orden indicado. Respeta cantidades, tiempos y puntos críticos de la receta.', 184);
-    pdf.text(intro, 93, 72);
-
-    const startY = 126, gapX = 8, gapY = 8, cardW = (W - margin * 2 - gapX) / 2, cardH = 67;
-    pdf.setFontSize(9);
-    for (let i = 0; i < Math.min(8, steps.length); i++) {
-      const col = i % 2, row = Math.floor(i / 2), x = margin + col * (cardW + gapX), y = startY + row * (cardH + gapY);
-      pdf.setFillColor(255, 255, 255); pdf.roundedRect(x, y, cardW, cardH, 3, 3, 'F');
-      pdf.setFillColor(230, 92, 25); pdf.circle(x + 10, y + 10, 6, 'F');
-      pdf.setTextColor(255, 255, 255); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(10); pdf.text(String(i + 1), x + 8.3, y + 13.3);
-      if (steps[i].image) { try { const img = await urlToDataUrl(steps[i].image!); pdf.addImage(img, 'JPEG', x + 20, y + 5, 45, 28, undefined, 'FAST'); } catch {} }
-      pdf.setTextColor(25, 25, 25); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(9); pdf.text(`PASO ${i + 1}`, x + 20, y + 40);
-      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9);
-      const text = pdf.splitTextToSize(steps[i].text, cardW - 30); pdf.text(text.slice(0, 3), x + 20, y + 47);
+      try {
+        const img = await urlToDataUrl(recipe.photo_url);
+        pdf.addImage(img, 'JPEG', margin + 6, startY + 16, leftColW - 12, finalPhotoH - 24, undefined, 'FAST');
+      } catch (e) {
+        pdf.setFillColor(244, 244, 245);
+        pdf.rect(margin + 6, startY + 16, leftColW - 12, finalPhotoH - 24, 'F');
+      }
+    } else {
+      pdf.setFillColor(244, 244, 245);
+      pdf.rect(margin + 6, startY + 16, leftColW - 12, finalPhotoH - 24, 'F');
     }
 
-    const bottomY = startY + Math.ceil(Math.min(8, steps.length) / 2) * (cardH + gapY) + 2;
-    pdf.setFillColor(20, 20, 20); pdf.roundedRect(margin, bottomY, W - margin * 2, 58, 4, 4, 'F');
-    pdf.setTextColor(255, 255, 255); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(12); pdf.text('PUNTOS CLAVE', margin + 8, bottomY + 12);
-    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9);
-    let yy = bottomY + 21; for (const point of keyPoints.filter(Boolean)) { pdf.text(`• ${point}`, margin + 8, yy); yy += 8; }
-    if (avoidPoints.filter(Boolean).length) { pdf.setTextColor(255, 170, 120); pdf.setFont('helvetica', 'bold'); pdf.text('NO HACER', 170, bottomY + 12); pdf.setFont('helvetica', 'normal'); yy = bottomY + 21; for (const point of avoidPoints.filter(Boolean)) { pdf.text(`• ${point}`, 170, yy); yy += 8; } }
-    pdf.setTextColor(110, 110, 110); pdf.setFontSize(7); pdf.text('FICHA OPERATIVA · MARBELLA · USO INTERNO COCINA', margin, H - 8);
-    pdf.save(`${slug(recipe.name)}-ficha-cocina.pdf`);
-    setMessage('PDF generado');
+    // Puntos clave & No Hacer card (40% del alto disponible)
+    const cardY = startY + finalPhotoH + 6;
+    const cardH = totalContentH - finalPhotoH - 6; // ~108 mm
+    pdf.setFillColor(11, 28, 54); // Color envolvente bajo
+    pdf.roundedRect(margin, cardY, leftColW, cardH, 3, 3, 'F');
+
+    // Título Puntos Clave
+    pdf.setTextColor(110, 231, 183); // Verde esmeralda
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(10);
+    pdf.text('PUNTOS CLAVE', margin + 8, cardY + 12);
+
+    pdf.setTextColor(244, 244, 245);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(8);
+    let bulletY = cardY + 20;
+    for (const p of keyPoints.filter(Boolean)) {
+      const splitP = pdf.splitTextToSize(`• ${p}`, leftColW - 16);
+      pdf.text(splitP, margin + 8, bulletY);
+      bulletY += (splitP.length * 4);
+    }
+
+    // Título No Hacer (si existen)
+    const avoidArr = avoidPoints.filter(Boolean);
+    if (avoidArr.length > 0) {
+      pdf.setTextColor(253, 164, 175); // Rosa claro/rojo
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(10);
+      bulletY = cardY + 54;
+      pdf.text('NO HACER', margin + 8, bulletY);
+
+      pdf.setTextColor(244, 244, 245);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8);
+      bulletY += 8;
+      for (const p of avoidArr) {
+        const splitP = pdf.splitTextToSize(`• ${p}`, leftColW - 16);
+        pdf.text(splitP, margin + 8, bulletY);
+        bulletY += (splitP.length * 4);
+      }
+    }
+
+    // Footer interno
+    pdf.setTextColor(115, 115, 115);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(6.5);
+    pdf.text('FICHA OPERATIVA · MARBELLA · USO INTERNO COCINA', margin + 8, cardY + cardH - 6);
+
+    // --- Columna Derecha: Grilla de Pasos adaptativa ---
+    const rowGap = 6;
+    const stepCardH = fila2.length > 0 ? (totalContentH - rowGap) / 2 : totalContentH;
+
+    // Helper para dibujar la tarjeta de un paso
+    const drawPdfStepCard = async (stepItem: Step, numIndex: number, cardX: number, cardYPos: number, cardW: number) => {
+      // Fondo blanco y borde gris sutil
+      pdf.setFillColor(255, 255, 255);
+      pdf.setDrawColor(228, 228, 231);
+      pdf.setLineWidth(0.3);
+      pdf.roundedRect(cardX, cardYPos, cardW, stepCardH, 3, 3, 'FD');
+
+      const numStr = String(numIndex).padStart(2, '0');
+      const parsed = parseStepText(stepItem.text);
+
+      // Número paso en petróleo
+      pdf.setTextColor(54, 96, 111);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(22);
+      pdf.text(numStr, cardX + 6, cardYPos + 12);
+
+      // Título de acción corto
+      pdf.setFontSize(9);
+      pdf.text(parsed.action.toUpperCase(), cardX + 18, cardYPos + 9);
+
+      // Fotografía grande
+      const imageOffsetTop = 16;
+      const textSpaceH = 18;
+      const imgW = cardW - 12;
+      const imgH = stepCardH - imageOffsetTop - textSpaceH;
+      const imageY = cardYPos + imageOffsetTop;
+
+      if (stepItem.image) {
+        try {
+          const img = await urlToDataUrl(stepItem.image);
+          pdf.addImage(img, 'JPEG', cardX + 6, imageY, imgW, imgH, undefined, 'FAST');
+        } catch (e) {
+          pdf.setFillColor(244, 244, 245);
+          pdf.rect(cardX + 6, imageY, imgW, imgH, 'F');
+        }
+      } else {
+        pdf.setFillColor(244, 244, 245);
+        pdf.rect(cardX + 6, imageY, imgW, imgH, 'F');
+      }
+
+      // Indicación breve al pie de la foto
+      pdf.setTextColor(39, 39, 42);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(7.5);
+      const textY = imageY + imgH + 4;
+      const lines = pdf.splitTextToSize(parsed.description, cardW - 12);
+      pdf.text(lines.slice(0, 2), cardX + 6, textY);
+    };
+
+    // Renderizar Fila 1 en PDF
+    const cardW1 = (rightColW - (fila1.length - 1) * colGap) / fila1.length;
+    for (let i = 0; i < fila1.length; i++) {
+      const stepX = startRightX + i * (cardW1 + colGap);
+      await drawPdfStepCard(fila1[i], i + 1, stepX, startY, cardW1);
+    }
+
+    // Renderizar Fila 2 en PDF
+    if (fila2.length > 0) {
+      const cardW2 = (rightColW - (fila2.length - 1) * colGap) / fila2.length;
+      for (let i = 0; i < fila2.length; i++) {
+        const stepX = startRightX + i * (cardW2 + colGap);
+        const stepY = startY + stepCardH + rowGap;
+        await drawPdfStepCard(fila2[i], fila1.length + i + 1, stepX, stepY, cardW2);
+      }
+    }
+
+    pdf.save(`${slug(recipe.name)}-poster-cocina.pdf`);
+    setMessage('PDF generado correctamente');
   }
 
-  if (loading) return <div className="min-h-screen bg-zinc-950 p-8 text-zinc-300">Cargando recetas…</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center text-zinc-300 gap-3">
+        <div className="h-6 w-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+        <span className="text-sm font-semibold tracking-wide">Cargando catálogo de recetas…</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-zinc-100 text-zinc-900 p-4 md:p-8 print:bg-white">
-      <div className="mx-auto max-w-[1500px]">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 print:hidden">
-          <div><div className="text-[10px] font-black uppercase tracking-[0.22em] text-[#36606F]">Marbella · Cocina</div><h1 className="text-2xl font-black tracking-tight">Fichas de elaboración</h1><p className="text-sm text-zinc-500">Una plantilla fija. La receta cambia; el diseño no.</p></div>
-          <div className="flex gap-2"><button onClick={saveSheet} disabled={!recipe || saving} className="inline-flex h-10 items-center gap-2 rounded-xl bg-zinc-900 px-4 text-sm font-bold text-white disabled:opacity-40"><Save size={16}/> {saving ? 'Guardando…' : 'Guardar'}</button><button onClick={generatePdf} disabled={!recipe} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#e85d19] px-4 text-sm font-bold text-white disabled:opacity-40"><Download size={16}/> PDF A3</button><button onClick={() => window.print()} disabled={!recipe} className="inline-flex h-10 items-center gap-2 rounded-xl border border-zinc-300 bg-white px-4 text-sm font-bold"><Printer size={16}/> Imprimir</button></div>
+    <div className="min-h-screen bg-zinc-50 text-zinc-900 p-4 md:p-8 print:p-0 print:bg-white">
+      {/* Estilo local para impresión física perfecta en A3 Horizontal */}
+      <style>{`
+        @media print {
+          @page {
+            size: A3 landscape;
+            margin: 0;
+          }
+          body {
+            background-color: white !important;
+            color: black !important;
+          }
+          .print-hidden {
+            display: none !important;
+          }
+        }
+      `}</style>
+
+      <div className="mx-auto max-w-[1600px] space-y-6">
+        {/* Cabecera / Controles Superiores */}
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-5 print:hidden">
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-[0.25em] text-[#36606F]">
+              Procedimientos Operativos Cocina
+            </div>
+            <h1 className="text-2xl font-black tracking-tight mt-1 text-zinc-900">
+              Diseño de Fichas de Elaboración
+            </h1>
+            <p className="text-xs text-zinc-500 mt-1">
+              Visualización estricta en A3 Horizontal. Diseñado para lectura rápida y operatividad real.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={saveSheet}
+              disabled={!recipe || saving}
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 transition-colors px-4 text-xs font-bold text-white disabled:opacity-40"
+            >
+              <Save size={14} />
+              {saving ? 'Guardando…' : 'Guardar Datos'}
+            </button>
+            <button
+              onClick={generatePdf}
+              disabled={!recipe}
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#36606f] hover:bg-[#2f5d6a] transition-colors px-4 text-xs font-bold text-white disabled:opacity-40"
+            >
+              <Download size={14} />
+              Exportar PDF A3
+            </button>
+            <button
+              onClick={() => window.print()}
+              disabled={!recipe}
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-zinc-300 bg-white hover:bg-zinc-50 transition-colors px-4 text-xs font-bold text-zinc-700"
+            >
+              <Printer size={14} />
+              Imprimir Ficha
+            </button>
+          </div>
         </div>
 
-        <div className="grid gap-5 lg:grid-cols-[330px_1fr] print:hidden">
-          <aside className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-zinc-500">Receta existente</label>
-            <select value={recipeId} onChange={e => setRecipeId(e.target.value)} className="h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 text-sm font-semibold"><option value="">Selecciona una receta…</option>{recipes.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}</select>
-            {recipe && <div className="mt-4 rounded-xl bg-zinc-50 p-3 text-xs text-zinc-600"><b>{recipe.category || 'Sin categoría'}</b><br/>{recipe.servings ?? 1} raciones{recipe.preparation_time ? ` · ${recipe.preparation_time} min` : ''}</div>}
+        {/* Zona del Editor y Selección */}
+        <div className="grid gap-6 lg:grid-cols-[340px_1fr] print:hidden">
+          {/* Panel Lateral: Selección de Receta */}
+          <aside className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm space-y-5 h-fit">
+            <div>
+              <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                Receta de cocina
+              </label>
+              <select
+                value={recipeId}
+                onChange={e => setRecipeId(e.target.value)}
+                className="h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-[#36606f] focus:border-[#36606f] transition-all"
+              >
+                <option value="">Selecciona una receta…</option>
+                {recipes.map(r => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {recipe && (
+              <div className="rounded-xl bg-zinc-50 p-4 border border-zinc-150 space-y-2">
+                <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                  Detalles del Plato
+                </div>
+                <div className="text-sm font-extrabold text-zinc-800">{recipe.name}</div>
+                <div className="text-xs text-zinc-500 font-semibold flex flex-wrap gap-x-3 gap-y-1">
+                  <span>{recipe.category || 'Sin categoría'}</span>
+                  <span>•</span>
+                  <span>{recipe.servings ?? 1} raciones</span>
+                  {recipe.preparation_time && (
+                    <>
+                      <span>•</span>
+                      <span>{recipe.preparation_time} min</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </aside>
 
-          <section className="space-y-4">
-            <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-              <div className="mb-3 flex items-center justify-between"><h2 className="font-black">Pasos</h2><span className="text-xs font-bold text-zinc-400">{steps.length} pasos</span></div>
-              <div className="space-y-2">{steps.map((step, i) => <div key={i} className="grid grid-cols-[34px_1fr_90px] items-center gap-3 rounded-xl border border-zinc-200 p-2"><div className="grid h-8 w-8 place-items-center rounded-full bg-[#e85d19] text-xs font-black text-white">{i + 1}</div><div className="text-sm">{step.text}</div><label className="relative flex h-16 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-zinc-100 text-zinc-400">{step.image ? <img src={step.image} alt="" className="h-full w-full object-cover"/> : <ImagePlus size={20}/>}<input type="file" accept="image/*" className="absolute inset-0 cursor-pointer opacity-0" onChange={e => { const f = e.target.files?.[0]; if (f) void uploadStepImage(i, f); }}/></label></div>)}</div>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <ListEditor title="Puntos clave" values={keyPoints} setValues={setKeyPoints}/>
-              <ListEditor title="No hacer" values={avoidPoints} setValues={setAvoidPoints}/>
-            </div>
-          </section>
+          {/* Formulario de Contenido de la Ficha */}
+          {recipe && (
+            <section className="space-y-6">
+              {/* Carga de Imágenes para cada Paso */}
+              <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+                  <h2 className="font-bold text-zinc-800">Fotografías de los Pasos</h2>
+                  <span className="text-xs font-black bg-[#36606f]/10 text-[#36606f] px-2.5 py-1 rounded-full">
+                    {steps.length} Pasos Detectados
+                  </span>
+                </div>
+
+                <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
+                  {steps.map((step, i) => {
+                    const parsed = parseStepText(step.text);
+                    return (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between gap-4 rounded-xl border border-zinc-200 p-3 hover:border-zinc-300 bg-zinc-50/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#36606f] text-xs font-black text-white">
+                            {i + 1}
+                          </span>
+                          <div className="min-w-0">
+                            <span className="text-[10px] font-black text-[#36606f] tracking-wider block uppercase leading-none mb-1">
+                              {parsed.action}
+                            </span>
+                            <span className="text-xs font-medium text-zinc-600 truncate block">
+                              {parsed.description}
+                            </span>
+                          </div>
+                        </div>
+
+                        <label className="relative flex h-14 w-20 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-zinc-350 bg-white hover:bg-zinc-50 transition-colors shadow-sm">
+                          {step.image ? (
+                            <img src={step.image} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="flex flex-col items-center gap-0.5 text-zinc-400">
+                              <Camera size={14} />
+                              <span className="text-[8px] font-extrabold tracking-tight">FOTO</span>
+                            </div>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="absolute inset-0 cursor-pointer opacity-0"
+                            onChange={e => {
+                              const f = e.target.files?.[0];
+                              if (f) void uploadStepImage(i, f);
+                            }}
+                          />
+                        </label>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Editores de Listas */}
+              <div className="grid gap-4 md:grid-cols-2">
+                <ListEditor title="Puntos Clave" values={keyPoints} setValues={setKeyPoints} />
+                <ListEditor title="No Hacer" values={avoidPoints} setValues={setAvoidPoints} />
+              </div>
+            </section>
+          )}
         </div>
 
-        {recipe && <div className="mx-auto mt-6 w-full max-w-[1100px] bg-[#faf7f1] p-[14mm] shadow-2xl print:mt-0 print:max-w-none print:p-[14mm] print:shadow-none" id="kitchen-sheet">
-          <div className="border-b-4 border-[#e85d19] pb-4"><div className="text-xs font-black tracking-[0.18em]">MARBELLA · BAR · COCINA · BUEN AMBIENTE</div><h2 className="mt-2 text-4xl font-black uppercase leading-none">{recipe.name}</h2><div className="mt-2 text-xs uppercase tracking-widest text-zinc-500">{recipe.servings ?? 1} raciones {recipe.preparation_time ? ` · ${recipe.preparation_time} min` : ''} · FICHA DE ELABORACIÓN</div></div>
-          <div className="mt-5 grid grid-cols-[220px_1fr] gap-6">{recipe.photo_url ? <img src={recipe.photo_url} alt={recipe.name} className="h-[175px] w-full rounded-xl object-cover"/> : <div className="h-[175px] rounded-xl bg-zinc-200"/>}<div><h3 className="text-lg font-black">ELABORACIÓN PASO A PASO</h3><p className="mt-3 text-sm leading-6 text-zinc-600">Sigue siempre el orden indicado. Respeta cantidades, tiempos y puntos críticos de la receta.</p></div></div>
-          <div className="mt-6 grid grid-cols-2 gap-3">{steps.slice(0, 8).map((step, i) => <div key={i} className="min-h-[180px] rounded-xl bg-white p-3"><div className="flex items-center gap-2"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#e85d19] text-xs font-black text-white">{i + 1}</span><span className="text-xs font-black tracking-widest">PASO {i + 1}</span></div>{step.image ? <img src={step.image} alt="" className="mt-3 h-[88px] w-full rounded-lg object-cover"/> : <div className="mt-3 h-[88px] rounded-lg bg-zinc-100"/>}<p className="mt-2 text-xs font-medium leading-5">{step.text}</p></div>)}</div>
-          <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-zinc-900 p-5 text-white"><div><h3 className="text-sm font-black tracking-widest">PUNTOS CLAVE</h3><ul className="mt-3 space-y-2 text-xs">{keyPoints.filter(Boolean).map((x,i)=><li key={i}>• {x}</li>)}</ul></div>{avoidPoints.filter(Boolean).length > 0 && <div><h3 className="text-sm font-black tracking-widest text-orange-300">NO HACER</h3><ul className="mt-3 space-y-2 text-xs text-orange-100">{avoidPoints.filter(Boolean).map((x,i)=><li key={i}>• {x}</li>)}</ul></div>}</div>
-          <div className="mt-4 text-[9px] font-bold tracking-widest text-zinc-400">FICHA OPERATIVA · MARBELLA · USO INTERNO COCINA</div>
-        </div>}
-        {message && <div className="fixed bottom-4 right-4 rounded-xl bg-zinc-900 px-4 py-3 text-sm font-bold text-white shadow-xl print:hidden">{message}</div>}
+        {/* --- VISTA PREVIA EXCLUSIVA DEL CARTEL (A3 HORIZONTAL - ESCALADO) --- */}
+        {recipe && (
+          <div className="space-y-3">
+            <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] print:hidden">
+              Vista previa del póster (A3 Horizontal)
+            </h3>
+
+            {/* Contenedor que simula proporciones de A3 horizontal (Aspect Ratio 1.414:1) */}
+            <div className="w-full overflow-x-auto pb-6 flex justify-center print:p-0">
+              <div className="min-w-[1024px] max-w-[1400px] w-full">
+                <div
+                  id="kitchen-sheet"
+                  className="w-full aspect-[1.414/1] bg-[#fcfbfa] p-[4%] border border-zinc-200/80 shadow-2xl rounded-2xl relative flex flex-col justify-between print:fixed print:inset-0 print:w-[420mm] print:h-[297mm] print:p-[14mm] print:bg-white print:shadow-none print:border-none print:rounded-none print:m-0 print:z-50"
+                >
+                  {/* Header de la Ficha */}
+                  <div className="border-b-[3px] border-[#36606f] pb-3 flex justify-between items-end w-full">
+                    <div>
+                      <div className="text-[9px] md:text-[10px] font-black tracking-[0.25em] text-[#36606f] uppercase">
+                        MARBELLA · BAR · COCINA · BUEN AMBIENTE
+                      </div>
+                      <h2 className="mt-1.5 text-2xl md:text-3xl font-black uppercase leading-none tracking-tight text-zinc-900">
+                        {recipe.name}
+                      </h2>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[9px] md:text-[10px] font-black tracking-widest text-[#36606f] uppercase">
+                        FICHA DE ELABORACIÓN
+                      </div>
+                      <div className="mt-1.5 text-[10px] md:text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                        {recipe.servings ?? 1} raciones {recipe.preparation_time ? ` · ${recipe.preparation_time} min` : ''}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bloque de Contenido */}
+                  <div className="flex-1 min-h-0 w-full mt-4 flex gap-5">
+                    {/* Columna Izquierda: Resultado Esperado & Puntos Clave (30% de ancho) */}
+                    <div className="w-[30%] flex flex-col gap-4 h-full shrink-0 justify-between">
+                      {/* Foto del resultado final */}
+                      <div className="flex-1 rounded-xl overflow-hidden border border-zinc-200 bg-white flex flex-col p-3 shadow-sm min-h-0">
+                        <span className="text-[9px] font-black tracking-widest text-[#36606f] mb-2 block uppercase">
+                          RESULTADO ESPERADO / PLATO FINAL
+                        </span>
+                        <div className="flex-1 w-full rounded-lg overflow-hidden relative bg-zinc-50 border border-zinc-100">
+                          {recipe.photo_url ? (
+                            <img
+                              src={recipe.photo_url}
+                              alt={recipe.name}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-full w-full flex flex-col items-center justify-center text-zinc-300 gap-1">
+                              <ChefHat size={32} strokeWidth={1.2} />
+                              <span className="text-[9px] font-bold">Sin foto final</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Tarjeta de advertencias y consejos */}
+                      <div className="h-[40%] rounded-xl bg-[#0b1c36] text-white p-4 flex flex-col justify-between shadow-md relative overflow-hidden shrink-0">
+                        <div className="space-y-3 overflow-y-auto max-h-full pr-1">
+                          <div>
+                            <h3 className="text-[9px] font-black tracking-widest text-emerald-400 uppercase">
+                              PUNTOS CLAVE
+                            </h3>
+                            <ul className="mt-1.5 space-y-1 text-[9px] text-zinc-200">
+                              {keyPoints.filter(Boolean).map((x, i) => (
+                                <li key={i} className="flex items-start gap-1">
+                                  <span className="text-emerald-400 font-bold">•</span>
+                                  <span>{x}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+
+                          {avoidPoints.filter(Boolean).length > 0 && (
+                            <div>
+                              <h3 className="text-[9px] font-black tracking-widest text-rose-450 uppercase">
+                                NO HACER
+                              </h3>
+                              <ul className="mt-1.5 space-y-1 text-[9px] text-zinc-200">
+                                {avoidPoints.filter(Boolean).map((x, i) => (
+                                  <li key={i} className="flex items-start gap-1">
+                                    <span className="text-rose-400 font-bold">•</span>
+                                    <span>{x}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-[7px] font-bold tracking-widest text-zinc-500 uppercase mt-2">
+                          FICHA OPERATIVA · MARBELLA · USO INTERNO
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Columna Derecha: Cuadrícula de Pasos Adaptativa (70% de ancho) */}
+                    <div className="flex-1 flex flex-col gap-4 h-full min-w-0">
+                      {/* Fila 1 */}
+                      <div
+                        className={`grid gap-4 ${
+                          fila1.length === 4 ? 'grid-cols-4' : fila1.length === 2 ? 'grid-cols-2' : 'grid-cols-3'
+                        } ${fila2.length > 0 ? 'h-[calc(50%-8px)]' : 'h-full'}`}
+                      >
+                        {fila1.map((step, idx) => {
+                          const numStr = String(idx + 1).padStart(2, '0');
+                          const parsed = parseStepText(step.text);
+                          return (
+                            <div
+                              key={idx}
+                              className="bg-white rounded-xl border border-zinc-200 p-3 shadow-sm flex flex-col justify-between min-h-0 relative overflow-hidden"
+                            >
+                              <div className="flex items-baseline gap-1.5 border-b border-zinc-100 pb-1.5">
+                                <span className="text-xl md:text-2xl font-black text-[#36606f] leading-none tracking-tight">
+                                  {numStr}
+                                </span>
+                                <span className="text-[9px] font-black tracking-widest text-[#36606f] uppercase truncate">
+                                  {parsed.action}
+                                </span>
+                              </div>
+
+                              <div className="flex-1 w-full rounded-lg overflow-hidden relative bg-zinc-50 border border-zinc-100 min-h-0 my-2">
+                                {step.image ? (
+                                  <img src={step.image} alt="" className="h-full w-full object-cover" />
+                                ) : (
+                                  <div className="h-full w-full flex items-center justify-center text-zinc-200">
+                                    <ChefHat size={28} strokeWidth={1} />
+                                  </div>
+                                )}
+                              </div>
+
+                              <p className="text-[9px] font-medium text-zinc-600 leading-snug line-clamp-2 min-h-[2.4em] flex items-center">
+                                {parsed.description}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Fila 2 */}
+                      {fila2.length > 0 && (
+                        <div
+                          className={`grid gap-4 ${
+                            fila2.length === 4 ? 'grid-cols-4' : fila2.length === 3 ? 'grid-cols-3' : 'grid-cols-2'
+                          } h-[calc(50%-8px)]`}
+                        >
+                          {fila2.map((step, idx) => {
+                            const numStr = String(fila1.length + idx + 1).padStart(2, '0');
+                            const parsed = parseStepText(step.text);
+                            return (
+                              <div
+                                key={idx}
+                                className="bg-white rounded-xl border border-zinc-200 p-3 shadow-sm flex flex-col justify-between min-h-0 relative overflow-hidden"
+                              >
+                                <div className="flex items-baseline gap-1.5 border-b border-zinc-100 pb-1.5">
+                                  <span className="text-xl md:text-2xl font-black text-[#36606f] leading-none tracking-tight">
+                                    {numStr}
+                                  </span>
+                                  <span className="text-[9px] font-black tracking-widest text-[#36606f] uppercase truncate">
+                                    {parsed.action}
+                                  </span>
+                                </div>
+
+                                <div className="flex-1 w-full rounded-lg overflow-hidden relative bg-zinc-50 border border-zinc-100 min-h-0 my-2">
+                                  {step.image ? (
+                                    <img src={step.image} alt="" className="h-full w-full object-cover" />
+                                  ) : (
+                                    <div className="h-full w-full flex items-center justify-center text-zinc-200">
+                                      <ChefHat size={28} strokeWidth={1} />
+                                    </div>
+                                  )}
+                                </div>
+
+                                <p className="text-[9px] font-medium text-zinc-600 leading-snug line-clamp-2 min-h-[2.4em] flex items-center">
+                                  {parsed.description}
+                                </p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {message && (
+          <div className="fixed bottom-4 right-4 rounded-xl bg-zinc-900 px-4 py-3 text-xs font-bold text-white shadow-xl print:hidden animate-in slide-in-from-bottom duration-350">
+            {message}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function ListEditor({ title, values, setValues }: { title: string; values: string[]; setValues: (v: string[]) => void }) {
-  return <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"><div className="mb-3 flex items-center justify-between"><h2 className="font-black">{title}</h2><button type="button" onClick={() => setValues([...values, ''])} className="text-xs font-bold text-[#36606F]">+ Añadir</button></div><div className="space-y-2">{values.map((value,i)=><div key={i} className="flex gap-2"><input value={value} onChange={e=>setValues(values.map((x,j)=>j===i?e.target.value:x))} className="h-10 min-w-0 flex-1 rounded-lg border border-zinc-300 px-3 text-sm" placeholder={title === 'Puntos clave' ? 'Ej. Freír exactamente 2 min' : 'Ej. No servir con exceso de aceite'}/><button type="button" onClick={()=>setValues(values.filter((_,j)=>j!==i))} className="grid h-10 w-10 place-items-center rounded-lg border border-zinc-200 text-zinc-400"><Trash2 size={15}/></button></div>)}</div></div>
+function ListEditor({
+  title,
+  values,
+  setValues,
+}: {
+  title: string;
+  values: string[];
+  setValues: (v: string[]) => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm space-y-4">
+      <div className="flex items-center justify-between border-b border-zinc-100 pb-2">
+        <h2 className="font-extrabold text-sm text-zinc-800 uppercase tracking-wider">{title}</h2>
+        <button
+          type="button"
+          onClick={() => setValues([...values, ''])}
+          className="text-xs font-black text-[#36606F] hover:text-[#2f5d6a] transition-colors"
+        >
+          + Añadir Punto
+        </button>
+      </div>
+
+      <div className="space-y-2 max-h-[240px] overflow-y-auto pr-1">
+        {values.map((value, i) => (
+          <div key={i} className="flex gap-2 items-center">
+            <input
+              value={value}
+              onChange={e =>
+                setValues(
+                  values.map((x, j) => (j === i ? e.target.value : x))
+                )
+              }
+              className="h-10 min-w-0 flex-1 rounded-xl border border-zinc-300 px-3 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#36606f] focus:border-[#36606f] transition-all"
+              placeholder={
+                title === 'Puntos Clave'
+                  ? 'Ej. Freír exactamente 2 min'
+                  : 'Ej. No servir con exceso de aceite'
+              }
+            />
+            <button
+              type="button"
+              onClick={() => setValues(values.filter((_, j) => j !== i))}
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 transition-colors text-zinc-400 hover:text-zinc-600"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }

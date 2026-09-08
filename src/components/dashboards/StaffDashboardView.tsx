@@ -288,6 +288,7 @@ export default function StaffDashboardView() {
     const [showGiffOverlay, setShowGiffOverlay] = useState(false);
     const [giffOverlaySrc, setGiffOverlaySrc] = useState<string>('/icons/giff.mp4');
     const [giffOverlayFading, setGiffOverlayFading] = useState(false);
+    const [giffActive, setGiffActive] = useState(false);
     const giffFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const giffSafetyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -312,6 +313,7 @@ export default function StaffDashboardView() {
         if (giffFadingRef.current) return;
         giffFadingRef.current = true;
         setGiffOverlayFading(true);
+        setGiffActive(false);
         clearGiffFadeTimer();
         clearGiffSafetyTimer();
         giffFadeTimerRef.current = setTimeout(() => {
@@ -695,12 +697,18 @@ export default function StaffDashboardView() {
                 giffFadingRef.current = false;
                 setGiffOverlayFading(false);
                 setGiffOverlaySrc(src);
+                setGiffActive(false);
                 setShowGiffOverlay(true);
+                setTimeout(() => {
+                    setGiffActive(true);
+                }, 50);
 
-                // Safety timeout: closes the overlay automatically after 10 seconds max (fallback)
+                // Safety timeout: closes the overlay automatically after 10-12 seconds max (fallback)
+                const isHernan = src.includes('hernan-river');
+                const safetyMs = isHernan ? 12000 : 10000;
                 giffSafetyTimerRef.current = setTimeout(() => {
                     beginGiffOverlayFadeOut();
-                }, 10000);
+                }, safetyMs);
             };
 
             if (action === 'in') {
@@ -1006,49 +1014,67 @@ export default function StaffDashboardView() {
                 />
             )}
 
-            {showGiffOverlay && (
-                <div
-                    role="dialog"
-                    aria-label="Fichaje registrado"
-                    className={cn(
-                        "fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-none transition-opacity ease-out",
-                        giffOverlayFading ? "opacity-0 duration-[900ms]" : "opacity-100 duration-300",
-                    )}
-                >
+            {showGiffOverlay && (() => {
+                const isMamadou = giffOverlaySrc.includes('mamadou-ndiaye');
+                const isHernan = giffOverlaySrc.includes('hernan-river');
+                return (
                     <div
+                        role="dialog"
+                        aria-label="Fichaje registrado"
                         className={cn(
-                            "rounded-2xl overflow-hidden flex items-center justify-center shadow-sm transition-[filter,transform] ease-out",
-                            giffOverlaySrc.includes('mamadou-ndiaye') ? "max-w-[90vw] max-h-[90vh]" : "w-[min(90vw,90vh)] h-[min(90vw,90vh)]",
-                            giffOverlayFading ? "blur-md scale-[1.02] duration-[900ms]" : "blur-0 scale-100 duration-300",
+                            "fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-none transition-opacity ease-in-out duration-[900ms]",
+                            giffActive && !giffOverlayFading ? "opacity-100" : "opacity-0",
                         )}
                     >
-                        <video
-                            ref={videoRef}
-                            key={giffOverlaySrc}
-                            src={giffOverlaySrc}
-                            autoPlay
-                            muted
-                            playsInline
-                            loop={false}
-                            className={cn(giffOverlaySrc.includes('mamadou-ndiaye') ? "max-w-[90vw] max-h-[90vh] object-contain rounded-2xl" : "w-full h-full object-cover")}
-                            onTimeUpdate={(e) => {
-                                const v = e.currentTarget;
-                                if (!Number.isFinite(v.duration) || v.duration <= 0) return;
-                                if (v.duration - v.currentTime > GIFF_FADE_MS / 1000) return;
-                                beginGiffOverlayFadeOut();
-                            }}
-                            onEnded={() => beginGiffOverlayFadeOut()}
-                            onError={() => {
-                                clearGiffFadeTimer();
-                                clearGiffSafetyTimer();
-                                giffFadingRef.current = false;
-                                setGiffOverlayFading(false);
-                                setShowGiffOverlay(false);
-                            }}
-                        />
+                        <div
+                            className={cn(
+                                "rounded-2xl overflow-hidden flex items-center justify-center shadow-sm transition-all ease-in-out duration-[900ms]",
+                                isMamadou 
+                                    ? "max-w-[90vw] max-h-[90vh]" 
+                                    : isHernan 
+                                        ? "w-[min(90vw,160vh)] aspect-video max-h-[90vh]" 
+                                        : "w-[min(90vw,90vh)] h-[min(90vw,90vh)]",
+                                giffActive && !giffOverlayFading 
+                                    ? "blur-0 scale-100" 
+                                    : giffOverlayFading 
+                                        ? "blur-md scale-[1.02]" 
+                                        : "blur-sm scale-95",
+                            )}
+                        >
+                            <video
+                                ref={videoRef}
+                                key={giffOverlaySrc}
+                                src={giffOverlaySrc}
+                                autoPlay
+                                muted
+                                playsInline
+                                loop={false}
+                                className={cn(
+                                    isMamadou 
+                                        ? "max-w-[90vw] max-h-[90vh] object-contain rounded-2xl" 
+                                        : isHernan 
+                                            ? "w-full h-full object-cover rounded-2xl" 
+                                            : "w-full h-full object-cover"
+                                )}
+                                onTimeUpdate={(e) => {
+                                    const v = e.currentTarget;
+                                    if (!Number.isFinite(v.duration) || v.duration <= 0) return;
+                                    if (v.duration - v.currentTime > GIFF_FADE_MS / 1000) return;
+                                    beginGiffOverlayFadeOut();
+                                }}
+                                onEnded={() => beginGiffOverlayFadeOut()}
+                                onError={() => {
+                                    clearGiffFadeTimer();
+                                    clearGiffSafetyTimer();
+                                    giffFadingRef.current = false;
+                                    setGiffOverlayFading(false);
+                                    setShowGiffOverlay(false);
+                                }}
+                            />
+                        </div>
                     </div>
-                </div>
-            )}
+                );
+            })()}
 
             <Modal
                 open={!!activeMenu}
