@@ -190,6 +190,8 @@ export function assertCardMatchesLiquidation(
   options?: {
     bagModeOverride?: boolean | null;
     overrideRate?: number | null;
+    /** Reuse pricing already computed by liquidateWeekForCard when available. */
+    pricing?: PriceWeekOvertimeResult;
   },
 ): void {
   const eps = 1e-9;
@@ -199,7 +201,12 @@ export function assertCardMatchesLiquidation(
   if (Math.abs(summary.startBalance - result.carryIn) > eps) {
     throw new Error('Footer PENDIENTES ≠ carryIn');
   }
-  const pricing = priceLiquidationOvertime(result, employee, options);
+  const pricing =
+    options?.pricing ??
+    priceLiquidationOvertime(result, employee, {
+      bagModeOverride: options?.bagModeOverride,
+      overrideRate: options?.overrideRate,
+    });
   if (
     summary.estimatedValue != null &&
     pricing.estimatedValue != null &&
@@ -265,6 +272,7 @@ export function liquidateWeekForCard(input: {
   assertCardMatchesLiquidation(summary, result, input.employee, {
     bagModeOverride: input.bagModeOverride,
     overrideRate: input.overrideRate,
+    pricing,
   });
   return {
     result,
