@@ -1,0 +1,14 @@
+/*
+ * Staff Home — Android viewport compensation.
+ *
+ * The canonical mobile composition is intentionally unchanged on iOS.
+ * Android browsers can expose a different effective viewport/inset around
+ * the fixed bottom chrome, leaving the fixed-height HomeScreen too far above
+ * the TabBar. This removes only the redundant structural bottom air.
+ */
+@media (max-width: 1023px) and (pointer: coarse) and (hover: none) {
+  .staffHome[data-layout='staff'] {
+    padding-bottom: 0;
+    margin-bottom: calc(-1 * var(--espacio-8));
+  }
+}
