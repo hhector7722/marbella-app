@@ -790,7 +790,7 @@ export default function SuppliersPage() {
                         if (!val || !val.trim() || val === '—') {
                             return (
                                 <span className="text-xs font-normal !text-zinc-400 select-none text-center flex-1">
-                                    —
+                                    
                                 </span>
                             );
                         }
