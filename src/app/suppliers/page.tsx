@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createClient } from "@/utils/supabase/client";
-import { Plus, Truck, Upload, ImageIcon } from 'lucide-react';
+import { Plus, Truck, Upload, ImageIcon, Star } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { toast, Toaster } from 'sonner';
 import Image from 'next/image';
@@ -33,6 +33,83 @@ interface Supplier {
     image_url: string | null;
     // Derivado (no existe en BD): se guarda dentro de notes como "Categoría (app): ..."
     category: string | null;
+    // Campos extendidos serializados
+    order_deadline?: string | null;
+    min_order?: string | null;
+    order_channel?: string | null;
+    contact_name?: string | null;
+    payment_method?: string | null;
+    instructions?: string | null;
+    observations?: string | null;
+}
+
+interface SupplierNotesFields {
+    category: string | null;
+    order_deadline: string | null;
+    min_order: string | null;
+    order_channel: string | null;
+    contact_name: string | null;
+    payment_method: string | null;
+    instructions: string | null;
+    observations: string | null;
+}
+
+function parseSupplierNotes(notes: string | null): SupplierNotesFields {
+    const defaultFields: SupplierNotesFields = {
+        category: null,
+        order_deadline: null,
+        min_order: null,
+        order_channel: null,
+        contact_name: null,
+        payment_method: null,
+        instructions: null,
+        observations: null,
+    };
+
+    if (!notes) return defaultFields;
+
+    const trimmed = notes.trim();
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        try {
+            const parsed = JSON.parse(trimmed);
+            return {
+                category: parsed.category ?? null,
+                order_deadline: parsed.order_deadline ?? null,
+                min_order: parsed.min_order ?? null,
+                order_channel: parsed.order_channel ?? null,
+                contact_name: parsed.contact_name ?? null,
+                payment_method: parsed.payment_method ?? null,
+                instructions: parsed.instructions ?? null,
+                observations: parsed.observations ?? null,
+            };
+        } catch (e) {
+            console.error('Error parsing JSON from notes:', e);
+        }
+    }
+
+    // Fallback para formato antiguo: Categoría (app): ...
+    const lines = notes.split('\n');
+    let category: string | null = null;
+    const remainingLines: string[] = [];
+
+    for (const line of lines) {
+        const m = line.match(/^\s*Categoría\s*\(app\)\s*:\s*(.+)\s*$/i);
+        if (m) {
+            category = m[1].trim();
+        } else {
+            remainingLines.push(line);
+        }
+    }
+
+    return {
+        ...defaultFields,
+        category,
+        observations: remainingLines.join('\n').trim() || null,
+    };
+}
+
+function buildNotesWithJSON(fields: SupplierNotesFields): string {
+    return JSON.stringify(fields);
 }
 
 const CATEGORIES = ['Alimentos', 'Bebidas', 'Limpieza', 'Mantenimiento', 'Suministros', 'Otros'];
@@ -56,31 +133,19 @@ export default function SuppliersPage() {
 
     function extractCategoryFromNotes(notes: string | null): string | null {
         if (!notes) return null;
+        const trimmed = notes.trim();
+        if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+            try {
+                const parsed = JSON.parse(trimmed);
+                return parsed.category ?? null;
+            } catch {
+                // ignore
+            }
+        }
         const m = notes.match(/(?:^|\n)\s*Categoría\s*\(app\)\s*:\s*(.+)\s*$/i);
         if (!m) return null;
         const v = String(m[1] ?? '').trim();
         return v ? v : null;
-    }
-
-    function stripCategoryFromNotes(notes: string | null): string | null {
-        if (!notes) return null;
-        const lines = notes
-            .split('\n')
-            .map((l) => l.trimEnd())
-            .filter((l) => !/^\s*Categoría\s*\(app\)\s*:\s*/i.test(l));
-        const joined = lines.join('\n').trim();
-        return joined ? joined : null;
-    }
-
-    function buildNotesWithCategory(category: string | null | undefined, notesWithoutCategory: string | null | undefined): string | null {
-        const cleanCategory = (category ?? '').trim();
-        const cleanNotes = (notesWithoutCategory ?? '').trim();
-        const parts = [
-            cleanCategory ? `Categoría (app): ${cleanCategory}` : null,
-            cleanNotes ? cleanNotes : null,
-        ].filter(Boolean) as string[];
-        const out = parts.join('\n').trim();
-        return out ? out : null;
     }
 
     const isDbSupplierId = useCallback((id: string) => /^\d+$/.test(id), []);
@@ -111,38 +176,59 @@ export default function SuppliersPage() {
                 notes: string | null;
                 email_domains: string[] | null;
                 image_url: string | null;
-            }) => ({
-                id: String(r.id),
-                created_at: r.created_at ?? null,
-                name: String(r.name ?? ''),
-                delivery_schedule: r.delivery_schedule ?? null,
-                lead_time: r.lead_time ?? null,
-                reliability: r.reliability ?? null,
-                phone: r.phone ?? null,
-                notes: r.notes ?? null,
-                email_domains: Array.isArray(r.email_domains) ? r.email_domains : null,
-                image_url: r.image_url ?? null,
-                category: extractCategoryFromNotes(r.notes ?? null),
-            })).filter((s) => s.name);
+            }) => {
+                const fields = parseSupplierNotes(r.notes ?? null);
+                return {
+                    id: String(r.id),
+                    created_at: r.created_at ?? null,
+                    name: String(r.name ?? ''),
+                    delivery_schedule: r.delivery_schedule ?? null,
+                    lead_time: r.lead_time ?? null,
+                    reliability: r.reliability ?? null,
+                    phone: r.phone ?? null,
+                    notes: r.notes ?? null,
+                    email_domains: Array.isArray(r.email_domains) ? r.email_domains : null,
+                    image_url: r.image_url ?? null,
+                    category: fields.category || extractCategoryFromNotes(r.notes ?? null),
+                    order_deadline: fields.order_deadline,
+                    min_order: fields.min_order,
+                    order_channel: fields.order_channel,
+                    contact_name: fields.contact_name,
+                    payment_method: fields.payment_method,
+                    instructions: fields.instructions,
+                    observations: fields.observations,
+                };
+            }).filter((s) => s.name);
 
             // Las plantillas (INITIAL_SUPPLIERS) son únicamente "semilla" para una BD vacía.
             // Si la BD ya tiene proveedores, la fuente de la verdad es la BD: NO se inyectan
             // plantillas, así un proveedor borrado en Supabase desaparece de la UI.
             const combined =
                 dbSuppliers.length === 0
-                    ? INITIAL_SUPPLIERS.map((initial) => ({
-                          id: `initial-${initial.name}`,
-                          name: initial.name!,
-                          created_at: null,
-                          delivery_schedule: null,
-                          lead_time: null,
-                          reliability: null,
-                          phone: null,
-                          notes: initial.category ? `Categoría (app): ${initial.category}` : null,
-                          email_domains: null,
-                          image_url: null,
-                          category: initial.category ?? null,
-                      }))
+                    ? INITIAL_SUPPLIERS.map((initial) => {
+                          const seedNotes = initial.category ? `Categoría (app): ${initial.category}` : null;
+                          const fields = parseSupplierNotes(seedNotes);
+                          return {
+                              id: `initial-${initial.name}`,
+                              name: initial.name!,
+                              created_at: null,
+                              delivery_schedule: null,
+                              lead_time: null,
+                              reliability: null,
+                              phone: null,
+                              notes: seedNotes,
+                              email_domains: null,
+                              image_url: null,
+                              category: initial.category ?? null,
+                              order_deadline: fields.order_deadline,
+                              min_order: fields.min_order,
+                              order_channel: fields.order_channel,
+                              contact_name: fields.contact_name,
+                              payment_method: fields.payment_method,
+                              instructions: fields.instructions,
+                              observations: fields.observations,
+                          };
+                      })
                     : dbSuppliers;
 
             setSuppliers(sortSuppliersByName(combined));
@@ -150,19 +236,30 @@ export default function SuppliersPage() {
             console.error('Error fetching suppliers:', error);
             // Fallback solo si la base de datos está inaccesible o vacía
             if (suppliers.length === 0) {
-                setSuppliers(INITIAL_SUPPLIERS.map((s, i) => ({
-                    id: `fallback-${i}`,
-                    name: s.name!,
-                    category: s.category!,
-                    created_at: null,
-                    delivery_schedule: null,
-                    lead_time: null,
-                    reliability: null,
-                    image_url: null,
-                    phone: null,
-                    notes: s.category ? `Categoría (app): ${s.category}` : null,
-                    email_domains: null,
-                })));
+                setSuppliers(INITIAL_SUPPLIERS.map((s, i) => {
+                    const seedNotes = s.category ? `Categoría (app): ${s.category}` : null;
+                    const fields = parseSupplierNotes(seedNotes);
+                    return {
+                        id: `fallback-${i}`,
+                        name: s.name!,
+                        category: s.category!,
+                        created_at: null,
+                        delivery_schedule: null,
+                        lead_time: null,
+                        reliability: null,
+                        image_url: null,
+                        phone: null,
+                        notes: seedNotes,
+                        email_domains: null,
+                        order_deadline: fields.order_deadline,
+                        min_order: fields.min_order,
+                        order_channel: fields.order_channel,
+                        contact_name: fields.contact_name,
+                        payment_method: fields.payment_method,
+                        instructions: fields.instructions,
+                        observations: fields.observations,
+                    };
+                }));
             }
         } finally {
             if (showLoading) setLoading(false);
@@ -170,6 +267,7 @@ export default function SuppliersPage() {
     }, [supabase, suppliers.length]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         void fetchSuppliers();
 
         const refreshFromForeground = () => {
@@ -231,7 +329,17 @@ export default function SuppliersPage() {
         try {
             setIsCreating(true);
             const phone = newSupplier.phone?.trim() || null;
-            const notes = buildNotesWithCategory(newSupplier.category ?? null, null);
+            const notesObj: SupplierNotesFields = {
+                category: newSupplier.category ?? 'Alimentos',
+                order_deadline: null,
+                min_order: null,
+                order_channel: null,
+                contact_name: null,
+                payment_method: null,
+                instructions: null,
+                observations: null,
+            };
+            const notes = buildNotesWithJSON(notesObj);
             const { error } = await supabase.from('suppliers').insert({
                 name,
                 phone,
@@ -254,6 +362,15 @@ export default function SuppliersPage() {
     const [editSupplier, setEditSupplier] = useState<Supplier | null>(null);
     const [editNotes, setEditNotes] = useState<string>('');
     const [editEmailDomainsText, setEditEmailDomainsText] = useState<string>('');
+    
+    // Estados para campos extendidos de edición
+    const [editOrderDeadline, setEditOrderDeadline] = useState('');
+    const [editMinOrder, setEditMinOrder] = useState('');
+    const [editOrderChannel, setEditOrderChannel] = useState('');
+    const [editContactName, setEditContactName] = useState('');
+    const [editPaymentMethod, setEditPaymentMethod] = useState('');
+    const [editInstructions, setEditInstructions] = useState('');
+
     const [isSavingEdit, setIsSavingEdit] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -309,11 +426,19 @@ export default function SuppliersPage() {
     }, [detailSupplier, isDbSupplierId, userRole]);
 
     function openEditModalFromDetail(s: Supplier) {
-        const withoutCategory = stripCategoryFromNotes(s.notes ?? null) ?? '';
+        const fields = parseSupplierNotes(s.notes);
         resetImageEditState();
         setEditSupplier(s);
-        setEditNotes(withoutCategory);
+        setEditNotes(fields.observations ?? '');
         setEditEmailDomainsText(Array.isArray(s.email_domains) ? s.email_domains.join(', ') : '');
+        
+        // Cargar campos extendidos
+        setEditOrderDeadline(fields.order_deadline ?? '');
+        setEditMinOrder(fields.min_order ?? '');
+        setEditOrderChannel(fields.order_channel ?? '');
+        setEditContactName(fields.contact_name ?? '');
+        setEditPaymentMethod(fields.payment_method ?? '');
+        setEditInstructions(fields.instructions ?? '');
     }
 
     function closeEditModal() {
@@ -363,7 +488,19 @@ export default function SuppliersPage() {
         const phone = editSupplier.phone?.trim() || null;
         const previousImageUrl = editSupplier.image_url?.trim() || null;
         const previousStoragePath = extractSupplierStoragePath(previousImageUrl);
-        const notes = buildNotesWithCategory(editSupplier.category ?? null, editNotes);
+        
+        // Serializar campos extendidos
+        const notesObj: SupplierNotesFields = {
+            category: editSupplier.category ?? 'Alimentos',
+            order_deadline: editOrderDeadline.trim() || null,
+            min_order: editMinOrder.trim() || null,
+            order_channel: editOrderChannel.trim() || null,
+            contact_name: editContactName.trim() || null,
+            payment_method: editPaymentMethod.trim() || null,
+            instructions: editInstructions.trim() || null,
+            observations: editNotes.trim() || null,
+        };
+        const notes = buildNotesWithJSON(notesObj);
 
         const emailDomains = editEmailDomainsText
             .split(',')
@@ -423,6 +560,9 @@ export default function SuppliersPage() {
                     .update({
                         name,
                         phone,
+                        delivery_schedule: editSupplier.delivery_schedule || null,
+                        lead_time: editSupplier.lead_time || null,
+                        reliability: editSupplier.reliability || null,
                         notes,
                         image_url: nextImageUrl,
                         email_domains: emailDomains.length ? emailDomains : null,
@@ -438,6 +578,9 @@ export default function SuppliersPage() {
                     .insert({
                         name,
                         phone,
+                        delivery_schedule: editSupplier.delivery_schedule || null,
+                        lead_time: editSupplier.lead_time || null,
+                        reliability: editSupplier.reliability || null,
                         notes,
                         image_url: nextImageUrl,
                         email_domains: emailDomains.length ? emailDomains : null,
@@ -605,9 +748,9 @@ export default function SuppliersPage() {
                 open={!!detailSupplier}
                 onClose={() => setDetailSupplier(null)}
                 title={detailSupplier?.name ?? 'Proveedor'}
-                subtitle={detailSupplier?.category || ' '}
-                variant="standard"
-                scheme="dark"
+                subtitle={detailSupplier?.category || 'Ficha de Proveedor'}
+                variant="amplify"
+                scheme="work"
                 layer="base"
                 instance="supplier-detail"
                 headerTone="petroleum"
@@ -643,36 +786,148 @@ export default function SuppliersPage() {
                 }
             >
                 {detailSupplier ? (
-                    <div className="flex flex-col items-center px-6 py-6 text-center">
-                        <div className="mb-3 flex h-32 w-32 items-center justify-center overflow-hidden rounded-3xl bg-white shadow-sm">
-                            {getSupplierLogo(detailSupplier.image_url, detailSupplier.name) ? (
-                                <img src={getSupplierLogo(detailSupplier.image_url, detailSupplier.name) || ''} alt="" className="h-full w-full object-contain" />
-                            ) : (
-                                <Truck className="h-12 w-12 text-gray-300" />
-                            )}
+                    <div className="space-y-4 px-2 py-2">
+                        {/* Cabecera / Ficha principal */}
+                        <div className="flex flex-col sm:flex-row items-center gap-4 rounded-2xl border border-zinc-100 bg-zinc-50/50 p-4 shadow-sm">
+                            <div className="flex h-20 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white border border-zinc-100 shadow-sm p-1">
+                                {getSupplierLogo(detailSupplier.image_url, detailSupplier.name) ? (
+                                    <img src={getSupplierLogo(detailSupplier.image_url, detailSupplier.name) || ''} alt="" className="h-full w-full object-contain" />
+                                ) : (
+                                    <Truck className="h-8 w-8 text-zinc-300" />
+                                )}
+                            </div>
+                            
+                            <div className="flex-1 text-center sm:text-left space-y-1 w-full">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                    <div>
+                                        <h2 className="text-base font-black text-zinc-800 leading-tight">{detailSupplier.name}</h2>
+                                        <span className="inline-block mt-0.5 rounded-full bg-ds-marca/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-ds-marca">
+                                            {detailSupplier.category || 'Sin categoría'}
+                                        </span>
+                                    </div>
+                                    
+                                    {/* Acciones de contacto directas */}
+                                    {detailSupplier.phone ? (
+                                        <div className="flex items-center justify-center sm:justify-end gap-2.5 self-center sm:self-auto">
+                                            <a
+                                                href={`tel:${detailSupplier.phone.replace(/\D/g, '').startsWith('34') ? '+' + detailSupplier.phone.replace(/\D/g, '') : '+34' + detailSupplier.phone.replace(/\D/g, '')}`}
+                                                className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-600 shadow-sm transition-all hover:scale-105 active:scale-95"
+                                                title="Llamar directamente"
+                                            >
+                                                <Image src="/icons/phone.png" alt="Llamar" width={24} height={24} className="object-contain" />
+                                            </a>
+                                            <a
+                                                href={`https://wa.me/${detailSupplier.phone.replace(/\D/g, '').startsWith('34') ? detailSupplier.phone.replace(/\D/g, '') : '34' + detailSupplier.phone.replace(/\D/g, '')}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-600 shadow-sm transition-all hover:scale-105 active:scale-95"
+                                                title="Enviar WhatsApp"
+                                            >
+                                                <Image src="/icons/whatsapp.png" alt="WhatsApp" width={24} height={24} className="object-contain" />
+                                            </a>
+                                        </div>
+                                    ) : null}
+                                </div>
+                                
+                                {/* Fiabilidad */}
+                                <div className="flex items-center justify-center sm:justify-start gap-2 pt-0.5">
+                                    <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Fiabilidad</span>
+                                    <div className="flex gap-0.5" aria-label={`Fiabilidad: ${Number(detailSupplier.reliability) || 0} de 5 estrellas`}>
+                                        {Array.from({ length: 5 }).map((_, idx) => {
+                                            const rating = Number(detailSupplier.reliability) || 0;
+                                            return (
+                                                <Star
+                                                    key={idx}
+                                                    size={12}
+                                                    className={idx < rating ? "fill-amber-400 text-amber-400" : "text-zinc-200"}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="mt-2 flex items-center justify-center gap-6">
-                            {detailSupplier.phone ? (
-                                <>
-                                    <a
-                                        href={`tel:${detailSupplier.phone.replace(/\D/g, '').startsWith('34') ? '+' + detailSupplier.phone.replace(/\D/g, '') : '+34' + detailSupplier.phone.replace(/\D/g, '')}`}
-                                        className="transition-all hover:scale-110 active:scale-95"
-                                        title="Llamar"
-                                    >
-                                        <Image src="/icons/phone.png" alt="Llamar" width={36} height={36} className="object-contain" />
-                                    </a>
-                                    <a
-                                        href={`https://wa.me/${detailSupplier.phone.replace(/\D/g, '').startsWith('34') ? detailSupplier.phone.replace(/\D/g, '') : '34' + detailSupplier.phone.replace(/\D/g, '')}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="transition-all hover:scale-110 active:scale-95"
-                                        title="WhatsApp"
-                                    >
-                                        <Image src="/icons/whatsapp.png" alt="WhatsApp" width={36} height={36} className="object-contain" />
-                                    </a>
-                                </>
-                            ) : null}
+                        {/* Contenido en dos columnas */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Columna 1 */}
+                            <div className="space-y-4">
+                                {/* Bloque Logística */}
+                                <div className="rounded-2xl border border-zinc-100 bg-zinc-50/50 p-4 shadow-sm">
+                                    <h3 className="mb-3 text-[11px] font-black uppercase tracking-widest text-zinc-400">
+                                        Logística y Suministro
+                                    </h3>
+                                    <div className="space-y-2.5">
+                                        <div className="flex justify-between items-center py-0.5 border-b border-zinc-100/80">
+                                            <span className="text-xs font-semibold text-zinc-500">Días de reparto</span>
+                                            <span className="text-xs font-bold text-zinc-800">{detailSupplier.delivery_schedule || '—'}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center py-0.5 border-b border-zinc-100/80">
+                                            <span className="text-xs font-semibold text-zinc-500">Plazo de entrega</span>
+                                            <span className="text-xs font-bold text-zinc-800">{detailSupplier.lead_time || '—'}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center py-0.5 border-b border-zinc-100/80">
+                                            <span className="text-xs font-semibold text-zinc-500">Hora límite de pedido</span>
+                                            <span className="text-xs font-bold text-zinc-800">{detailSupplier.order_deadline || '—'}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center py-0.5">
+                                            <span className="text-xs font-semibold text-zinc-500">Pedido mínimo</span>
+                                            <span className="text-xs font-bold text-zinc-800">{detailSupplier.min_order || '—'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Bloque Pedido y Contacto */}
+                                <div className="rounded-2xl border border-zinc-100 bg-zinc-50/50 p-4 shadow-sm">
+                                    <h3 className="mb-3 text-[11px] font-black uppercase tracking-widest text-zinc-400">
+                                        Pedido y Contacto
+                                    </h3>
+                                    <div className="space-y-2.5">
+                                        <div className="flex justify-between items-center py-0.5 border-b border-zinc-100/80">
+                                            <span className="text-xs font-semibold text-zinc-500">Canal de pedido</span>
+                                            <span className="text-xs font-bold text-zinc-800">{detailSupplier.order_channel || '—'}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center py-0.5 border-b border-zinc-100/80">
+                                            <span className="text-xs font-semibold text-zinc-500">Contacto</span>
+                                            <span className="text-xs font-bold text-zinc-800">{detailSupplier.contact_name || '—'}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center py-0.5 border-b border-zinc-100/80">
+                                            <span className="text-xs font-semibold text-zinc-500">Teléfono</span>
+                                            <span className="text-xs font-bold text-zinc-800">{detailSupplier.phone || '—'}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center py-0.5">
+                                            <span className="text-xs font-semibold text-zinc-500">Forma de pago</span>
+                                            <span className="text-xs font-bold text-zinc-800">{detailSupplier.payment_method || '—'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Columna 2 */}
+                            <div className="space-y-4">
+                                {/* Bloque Información Operativa - Instrucciones */}
+                                <div className="rounded-2xl border border-zinc-100 bg-zinc-50/50 p-4 shadow-sm flex flex-col justify-between h-full">
+                                    <div className="space-y-3">
+                                        <div>
+                                            <h3 className="mb-1.5 text-[11px] font-black uppercase tracking-widest text-zinc-400">
+                                                Instrucciones Especiales
+                                            </h3>
+                                            <p className="text-xs text-zinc-600 leading-relaxed whitespace-pre-wrap">
+                                                {detailSupplier.instructions || 'Sin instrucciones operativas específicas.'}
+                                            </p>
+                                        </div>
+                                        
+                                        <div className="pt-3 border-t border-zinc-100/80">
+                                            <h3 className="mb-1.5 text-[11px] font-black uppercase tracking-widest text-zinc-400">
+                                                Observaciones
+                                            </h3>
+                                            <p className="text-xs text-zinc-600 leading-relaxed whitespace-pre-wrap">
+                                                {detailSupplier.observations || 'Sin observaciones adicionales.'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 ) : null}
@@ -702,7 +957,7 @@ export default function SuppliersPage() {
                         ? 'Este proveedor era plantilla. Al guardar se creará en Supabase.'
                         : undefined
                 }
-                variant="standard"
+                variant="amplify"
                 layer="derived"
                 instance="supplier-edit"
                 parentInstance="supplier-detail"
@@ -736,118 +991,218 @@ export default function SuppliersPage() {
                 }
             >
                 {editSupplier ? (
-                    <div className="space-y-4">
-                        <Field instance="supplier-edit-name" label="Nombre" htmlFor="supplier-edit-name">
-                            <input
-                                id="supplier-edit-name"
-                                value={editSupplier.name ?? ''}
-                                onChange={(e) => setEditSupplier({ ...editSupplier, name: e.target.value })}
-                                placeholder="Ej. Suministros Marbella"
-                            />
-                        </Field>
+                    <div className="space-y-4 px-1 py-1">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Columna Izquierda */}
+                            <div className="space-y-4">
+                                <Field instance="supplier-edit-name" label="Nombre" htmlFor="supplier-edit-name">
+                                    <input
+                                        id="supplier-edit-name"
+                                        value={editSupplier.name ?? ''}
+                                        onChange={(e) => setEditSupplier({ ...editSupplier, name: e.target.value })}
+                                        placeholder="Ej. Suministros Marbella"
+                                    />
+                                </Field>
 
-                        <div className="grid grid-cols-2 gap-3">
-                            <Field instance="supplier-edit-category" label="Categoría" htmlFor="supplier-edit-category">
-                                <select
-                                    id="supplier-edit-category"
-                                    value={editSupplier.category ?? 'Alimentos'}
-                                    onChange={(e) => setEditSupplier({ ...editSupplier, category: e.target.value })}
-                                >
-                                    {CATEGORIES.map((cat) => (
-                                        <option key={cat} value={cat}>
-                                            {cat}
-                                        </option>
-                                    ))}
-                                </select>
-                            </Field>
-                            <Field instance="supplier-edit-phone" label="Teléfono" htmlFor="supplier-edit-phone">
-                                <input
-                                    id="supplier-edit-phone"
-                                    value={editSupplier.phone ?? ''}
-                                    onChange={(e) => setEditSupplier({ ...editSupplier, phone: e.target.value })}
-                                    placeholder="600 000 000"
-                                />
-                            </Field>
-                        </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Field instance="supplier-edit-category" label="Categoría" htmlFor="supplier-edit-category">
+                                        <select
+                                            id="supplier-edit-category"
+                                            value={editSupplier.category ?? 'Alimentos'}
+                                            onChange={(e) => setEditSupplier({ ...editSupplier, category: e.target.value })}
+                                        >
+                                            {CATEGORIES.map((cat) => (
+                                                <option key={cat} value={cat}>
+                                                    {cat}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </Field>
+                                    <Field instance="supplier-edit-phone" label="Teléfono" htmlFor="supplier-edit-phone">
+                                        <input
+                                            id="supplier-edit-phone"
+                                            value={editSupplier.phone ?? ''}
+                                            onChange={(e) => setEditSupplier({ ...editSupplier, phone: e.target.value })}
+                                            placeholder="600 000 000"
+                                        />
+                                    </Field>
+                                </div>
 
-                        <div>
-                            <label className="mb-1.5 ml-1 block text-[9px] font-black uppercase tracking-widest text-gray-400">Logo</label>
-                            {(() => {
-                                const displaySrc = previewImageUrl
-                                    ?? (removeImage
-                                        ? null
-                                        : getSupplierLogo(editSupplier.image_url, editSupplier.name));
-                                const hasAnyImage = Boolean(displaySrc);
-                                return (
-                                    <div className="overflow-hidden rounded-2xl border border-zinc-100 bg-zinc-50">
-                                        <div className="flex h-32 w-full items-center justify-center bg-white">
-                                            {hasAnyImage && displaySrc ? (
-                                                <img
-                                                    src={displaySrc}
-                                                    alt=""
-                                                    className="max-h-full max-w-full object-contain"
-                                                />
-                                            ) : (
-                                                <div className="flex flex-col items-center gap-1 text-zinc-300">
-                                                    <ImageIcon size={32} />
-                                                    <span className="text-[10px] font-black uppercase tracking-widest">Sin logo</span>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Field instance="supplier-edit-delivery-schedule" label="Días de reparto" htmlFor="supplier-edit-delivery-schedule">
+                                        <input
+                                            id="supplier-edit-delivery-schedule"
+                                            value={editSupplier.delivery_schedule ?? ''}
+                                            onChange={(e) => setEditSupplier({ ...editSupplier, delivery_schedule: e.target.value })}
+                                            placeholder="Ej. Lunes, Miércoles"
+                                        />
+                                    </Field>
+                                    <Field instance="supplier-edit-lead-time" label="Plazo de entrega" htmlFor="supplier-edit-lead-time">
+                                        <input
+                                            id="supplier-edit-lead-time"
+                                            value={editSupplier.lead_time ?? ''}
+                                            onChange={(e) => setEditSupplier({ ...editSupplier, lead_time: e.target.value })}
+                                            placeholder="Ej. 24 horas"
+                                        />
+                                    </Field>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Field instance="supplier-edit-reliability" label="Fiabilidad" htmlFor="supplier-edit-reliability">
+                                        <select
+                                            id="supplier-edit-reliability"
+                                            value={editSupplier.reliability ?? ''}
+                                            onChange={(e) => setEditSupplier({ ...editSupplier, reliability: e.target.value || null })}
+                                        >
+                                            <option value="">Sin valorar</option>
+                                            <option value="1">1 estrella</option>
+                                            <option value="2">2 estrellas</option>
+                                            <option value="3">3 estrellas</option>
+                                            <option value="4">4 estrellas</option>
+                                            <option value="5">5 estrellas</option>
+                                        </select>
+                                    </Field>
+                                    <Field instance="supplier-edit-order-channel" label="Canal de pedido" htmlFor="supplier-edit-order-channel">
+                                        <input
+                                            id="supplier-edit-order-channel"
+                                            value={editOrderChannel}
+                                            onChange={(e) => setEditOrderChannel(e.target.value)}
+                                            placeholder="Ej. App, WhatsApp, llamada"
+                                        />
+                                    </Field>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Field instance="supplier-edit-order-deadline" label="Hora límite de pedido" htmlFor="supplier-edit-order-deadline">
+                                        <input
+                                            id="supplier-edit-order-deadline"
+                                            value={editOrderDeadline}
+                                            onChange={(e) => setEditOrderDeadline(e.target.value)}
+                                            placeholder="Ej. 13:00"
+                                        />
+                                    </Field>
+                                    <Field instance="supplier-edit-min-order" label="Pedido mínimo" htmlFor="supplier-edit-min-order">
+                                        <input
+                                            id="supplier-edit-min-order"
+                                            value={editMinOrder}
+                                            onChange={(e) => setEditMinOrder(e.target.value)}
+                                            placeholder="Ej. 50 €"
+                                        />
+                                    </Field>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Field instance="supplier-edit-contact-name" label="Nombre de contacto" htmlFor="supplier-edit-contact-name">
+                                        <input
+                                            id="supplier-edit-contact-name"
+                                            value={editContactName}
+                                            onChange={(e) => setEditContactName(e.target.value)}
+                                            placeholder="Ej. Juan Pérez"
+                                        />
+                                    </Field>
+                                    <Field instance="supplier-edit-payment-method" label="Forma de pago" htmlFor="supplier-edit-payment-method">
+                                        <input
+                                            id="supplier-edit-payment-method"
+                                            value={editPaymentMethod}
+                                            onChange={(e) => setEditPaymentMethod(e.target.value)}
+                                            placeholder="Ej. Transferencia, Giro"
+                                        />
+                                    </Field>
+                                </div>
+                            </div>
+
+                            {/* Columna Derecha */}
+                            <div className="space-y-4 flex flex-col justify-between">
+                                <div>
+                                    <label className="mb-1.5 ml-1 block text-[9px] font-black uppercase tracking-widest text-gray-400">Logo</label>
+                                    {(() => {
+                                        const displaySrc = previewImageUrl
+                                            ?? (removeImage
+                                                ? null
+                                                : getSupplierLogo(editSupplier.image_url, editSupplier.name));
+                                        const hasAnyImage = Boolean(displaySrc);
+                                        return (
+                                            <div className="overflow-hidden rounded-2xl border border-zinc-100 bg-zinc-50">
+                                                <div className="flex h-32 w-full items-center justify-center bg-white">
+                                                    {hasAnyImage && displaySrc ? (
+                                                        <img
+                                                            src={displaySrc}
+                                                            alt=""
+                                                            className="max-h-full max-w-full object-contain p-2"
+                                                        />
+                                                    ) : (
+                                                        <div className="flex flex-col items-center gap-1 text-zinc-300">
+                                                            <ImageIcon size={32} />
+                                                            <span className="text-[10px] font-black uppercase tracking-widest">Sin logo</span>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            )}
-                                        </div>
-                                        <div className="flex gap-2 border-t border-zinc-100 bg-zinc-50 p-2">
-                                            <input
-                                                type="file"
-                                                accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                                                className="hidden"
-                                                id="supplier-logo-upload"
-                                                onChange={handleImageFileChange}
-                                                disabled={isSavingEdit || isUploadingImage}
-                                            />
-                                            <label
-                                                htmlFor="supplier-logo-upload"
-                                                className={`inline-flex min-h-[48px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 text-[11px] font-black uppercase tracking-widest text-zinc-800 transition-colors hover:bg-zinc-100 active:bg-zinc-50 ${(isSavingEdit || isUploadingImage) ? 'pointer-events-none opacity-60' : ''}`}
-                                            >
-                                                <Upload size={16} strokeWidth={2.5} />
-                                                {selectedImageFile ? 'Cambiar' : 'Subir'}
-                                            </label>
-                                            <Button
-                                                type="button"
-                                                variant="destructive"
-                                                instance="supplier-edit-remove-image"
-                                                layout="hug"
-                                                className="flex-1"
-                                                disabled={!hasAnyImage || isSavingEdit || isUploadingImage}
-                                                onClick={handleRemoveImageClick}
-                                            >
-                                                Eliminar
-                                            </Button>
-                                        </div>
-                                        <p className="px-3 pb-2 pt-1 text-[10px] font-semibold text-zinc-400">
-                                            PNG, JPG, WebP o SVG · máx. 5 MB
-                                        </p>
-                                    </div>
-                                );
-                            })()}
+                                                <div className="flex gap-2 border-t border-zinc-100 bg-zinc-50 p-2">
+                                                    <input
+                                                        type="file"
+                                                        accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                                                        className="hidden"
+                                                        id="supplier-logo-upload"
+                                                        onChange={handleImageFileChange}
+                                                        disabled={isSavingEdit || isUploadingImage}
+                                                    />
+                                                    <label
+                                                        htmlFor="supplier-logo-upload"
+                                                        className={`inline-flex min-h-[48px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 text-[11px] font-black uppercase tracking-widest text-zinc-800 transition-colors hover:bg-zinc-100 active:bg-zinc-50 ${(isSavingEdit || isUploadingImage) ? 'pointer-events-none opacity-60' : ''}`}
+                                                    >
+                                                        <Upload size={16} strokeWidth={2.5} />
+                                                        {selectedImageFile ? 'Cambiar' : 'Subir'}
+                                                    </label>
+                                                    <Button
+                                                        type="button"
+                                                        variant="destructive"
+                                                        instance="supplier-edit-remove-image"
+                                                        layout="hug"
+                                                        className="flex-1"
+                                                        disabled={!hasAnyImage || isSavingEdit || isUploadingImage}
+                                                        onClick={handleRemoveImageClick}
+                                                    >
+                                                        Eliminar
+                                                    </Button>
+                                                </div>
+                                                <p className="px-3 pb-2 pt-1 text-[10px] font-semibold text-zinc-400">
+                                                    PNG, JPG, WebP o SVG · máx. 5 MB
+                                                </p>
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
+
+                                <Field instance="supplier-edit-domains" label="Dominios email (separados por coma)" htmlFor="supplier-edit-domains">
+                                    <input
+                                        id="supplier-edit-domains"
+                                        value={editEmailDomainsText}
+                                        onChange={(e) => setEditEmailDomainsText(e.target.value)}
+                                        placeholder="proveedor.com, proveedor.es"
+                                    />
+                                </Field>
+
+                                <Field instance="supplier-edit-instructions" label="Instrucciones Especiales" htmlFor="supplier-edit-instructions">
+                                    <textarea
+                                        id="supplier-edit-instructions"
+                                        value={editInstructions}
+                                        onChange={(e) => setEditInstructions(e.target.value)}
+                                        placeholder="Indicaciones operativas para el personal…"
+                                        rows={2}
+                                    />
+                                </Field>
+
+                                <Field instance="supplier-edit-notes" label="Observaciones" htmlFor="supplier-edit-notes">
+                                    <textarea
+                                        id="supplier-edit-notes"
+                                        value={editNotes}
+                                        onChange={(e) => setEditNotes(e.target.value)}
+                                        placeholder="Información adicional de interés…"
+                                        rows={2}
+                                    />
+                                </Field>
+                            </div>
                         </div>
-
-                        <Field instance="supplier-edit-domains" label="Dominios email (separados por coma)" htmlFor="supplier-edit-domains">
-                            <input
-                                id="supplier-edit-domains"
-                                value={editEmailDomainsText}
-                                onChange={(e) => setEditEmailDomainsText(e.target.value)}
-                                placeholder="proveedor.com, proveedor.es"
-                            />
-                        </Field>
-
-                        <Field instance="supplier-edit-notes" label="Notas" htmlFor="supplier-edit-notes">
-                            <textarea
-                                id="supplier-edit-notes"
-                                value={editNotes}
-                                onChange={(e) => setEditNotes(e.target.value)}
-                                placeholder="Observaciones internas…"
-                                rows={4}
-                            />
-                        </Field>
                     </div>
                 ) : null}
             </Modal>
