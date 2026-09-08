@@ -554,8 +554,13 @@ export function StaffWeekScheduleWidget({
         <div
             data-component="StaffWeekSchedule"
             data-layout="month-inline"
-            className="flex h-full min-h-0 w-full flex-col px-1 py-0.5"
+            className="relative flex h-full min-h-0 w-full flex-col px-1 py-0.5"
         >
+            {loading && (
+                <div className="absolute right-3 top-2.5 z-20 flex items-center justify-center pointer-events-none" role="status" aria-label="Cargando horarios">
+                    <LoadingSpinner size="sm" className="h-2.5 w-2.5 text-white/60" />
+                </div>
+            )}
             <div className="flex shrink-0 items-center justify-center gap-0.5 pb-px">
                 <button
                     type="button"
@@ -599,16 +604,10 @@ export function StaffWeekScheduleWidget({
                 </div>
 
                 <div data-element="month-weeks" className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                    {loading ? (
-                        <div className="flex flex-1 items-center justify-center" role="status" aria-label="Cargando horarios">
-                            <LoadingSpinner size="sm" className="text-white" />
-                        </div>
-                    ) : (
-                        <>
-                            {monthWeeks.map((weekDays) => {
-                                const weekStart = weekDays[0];
-                                const weekKey = format(weekStart, 'yyyy-MM-dd');
-                                const isExpanded = isSameWeek(weekStart, expandedWeekStart, { weekStartsOn: 1 });
+                    {monthWeeks.map((weekDays) => {
+                        const weekStart = weekDays[0];
+                        const weekKey = format(weekStart, 'yyyy-MM-dd');
+                        const isExpanded = isSameWeek(weekStart, expandedWeekStart, { weekStartsOn: 1 });
 
                                 const dayButtons = weekDays.map((day) => {
                                     const inMonth = isSameMonth(day, monthAnchor);
@@ -707,8 +706,6 @@ export function StaffWeekScheduleWidget({
                                     </div>
                                 );
                             })}
-                        </>
-                    )}
                 </div>
             </div>
         </div>

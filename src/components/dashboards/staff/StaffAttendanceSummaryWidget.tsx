@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { format, startOfWeek } from 'date-fns';
+import { useEffect, useState, useMemo } from 'react';
+import { addDays, format, getISOWeek, isSameDay, startOfWeek } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { getEmployeeHistoryWeek, type HistoryWeekDto } from '@/app/actions/history-read';
 import { WeekSummary } from '@/components/staff/WeekSummary';
@@ -60,25 +61,60 @@ export function StaffAttendanceSummaryWidget({
         };
     }, [userId, refreshKey]);
 
+    const displayWeek = useMemo(() => {
+        if (historyWeek) return historyWeek;
+
+        // Esqueleto/estructura vacía para carga instantánea
+        const monday = startOfWeek(new Date(), { weekStartsOn: 1 });
+        const days = Array.from({ length: 7 }, (_, i) => {
+            const d = addDays(monday, i);
+            return {
+                date: format(d, 'yyyy-MM-dd'),
+                dayNumber: d.getDate(),
+                dayName: format(d, 'EEEE', { locale: es }),
+                eventType: 'regular',
+                clockIn: null,
+                clockOut: null,
+                totalHours: 0,
+                extraHours: 0,
+                justifiedHours: 0,
+                hasLog: false,
+                isToday: isSameDay(d, new Date()),
+            };
+        });
+
+        return {
+            startDate: format(monday, 'yyyy-MM-dd'),
+            weekNumber: getISOWeek(new Date()),
+            days: days as any,
+            summary: {
+                limitHours: 0,
+                preferStock: false,
+                hourlyRate: null,
+                totalHours: 0,
+                weeklyBalance: 0,
+                accumulatedBalance: 0,
+                estimatedValue: 0,
+                isPaid: false,
+            },
+        } as unknown as HistoryWeekDto;
+    }, [historyWeek]);
+
     return (
         <div className="relative h-full min-h-0" data-fit="week">
-            {loading ? (
-                <div className="absolute inset-0 z-10 flex items-center justify-center" role="status" aria-label="Cargando semana">
-                    <LoadingSpinner size="md" className="text-white" />
+            {loading && (
+                <div className="absolute right-3 top-3 z-20 flex items-center justify-center pointer-events-none" role="status" aria-label="Cargando semana">
+                    <LoadingSpinner size="sm" className="text-white/60" />
                 </div>
-            ) : null}
-            {historyWeek ? (
-                <WeekSummary
-                    flush
-                    dimOtherMonth={false}
-                    weeks={[historyWeek]}
-                    filterMonth={weekFilterMonth}
-                    filterYear={weekFilterYear}
-                    onDayClick={onDayClick}
-                />
-            ) : !loading ? (
-                <EmptyState instance="staff-week-none" variant="none" title="Sin datos" />
-            ) : null}
+            )}
+            <WeekSummary
+                flush
+                dimOtherMonth={false}
+                weeks={[displayWeek]}
+                filterMonth={weekFilterMonth}
+                filterYear={weekFilterYear}
+                onDayClick={onDayClick}
+            />
         </div>
     );
 }
