@@ -7,8 +7,10 @@
  * the TabBar. This removes only the redundant structural bottom air.
  */
 @media (max-width: 1023px) and (pointer: coarse) and (hover: none) {
-  .staffHome[data-layout='staff'] {
-    padding-bottom: 0;
-    margin-bottom: calc(-1 * var(--espacio-8));
+  @supports not (-webkit-touch-callout: none) {
+    .staffHome[data-layout='staff'] {
+      padding-bottom: 0;
+      margin-bottom: calc(-1 * var(--espacio-8));
+    }
   }
 }
