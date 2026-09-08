@@ -6,7 +6,6 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
@@ -500,25 +499,41 @@ export default function PavilionRevisionPage() {
                         </div>
                       </div>
                       
-                      <div className="flex flex-wrap gap-1 border-l border-zinc-200 pl-3 lg:border-l-0 lg:pl-0 lg:pt-1.5">
-                        {allVenues.map((v) => {
-                          const active = occ.venues.includes(v.code);
-                          return (
-                            <button
-                              key={v.id}
-                              type="button"
-                              onClick={() => toggleVenue(i, v.code)}
-                              className={cn(
-                                'rounded px-1.5 py-0.5 text-[10px] font-bold transition-colors border lg:min-h-9 lg:px-2 lg:text-[11px]',
-                                active
-                                  ? 'bg-zinc-800 text-white border-zinc-800'
-                                  : 'bg-white text-zinc-500 border-zinc-200 hover:bg-zinc-100',
-                              )}
-                            >
-                              {v.code}
-                            </button>
-                          );
-                        })}
+                      <div className="flex flex-wrap items-center gap-1.5 border-l border-zinc-200 pl-3 lg:border-l-0 lg:pl-0 lg:pt-1.5">
+                        {occ.venues.map((vCode) => (
+                          <button
+                            key={vCode}
+                            type="button"
+                            onClick={() => toggleVenue(i, vCode)}
+                            className="rounded px-2 py-1 text-[10px] font-bold transition-colors border bg-zinc-800 text-white border-zinc-800 hover:bg-red-50 hover:text-red-600 hover:border-red-200 lg:min-h-9 lg:px-2 lg:text-[11px] flex items-center gap-1 shrink-0"
+                            title="Eliminar espacio"
+                          >
+                            {vCode}
+                            <span className="text-[9px] opacity-70">×</span>
+                          </button>
+                        ))}
+                        
+                        {allVenues.filter((v) => !occ.venues.includes(v.code)).length > 0 && (
+                          <select
+                            value=""
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val) {
+                                toggleVenue(i, val);
+                              }
+                            }}
+                            className="rounded border border-zinc-200 bg-white px-2 py-1 text-[10px] font-bold text-zinc-500 focus:border-[#36606F] focus:outline-none lg:min-h-9 lg:px-2 lg:text-[11px] cursor-pointer hover:bg-zinc-50 min-h-[26px] lg:min-h-9"
+                          >
+                            <option value="" disabled>+ Espacio</option>
+                            {allVenues
+                              .filter((v) => !occ.venues.includes(v.code))
+                              .map((v) => (
+                                <option key={v.id} value={v.code}>
+                                  {v.code}
+                                </option>
+                              ))}
+                          </select>
+                        )}
                       </div>
 
                       <button
