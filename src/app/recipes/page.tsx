@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
+import { KitchenSheetsAccess } from '@/components/recipes/KitchenSheetsAccess';
 import { CatalogGrid, CatalogTileUnificado } from '@/components/catalog/CatalogTile';
 import { CatalogFilterChip } from '@/components/catalog/CatalogFilterChip';
 import { SearchField } from '@/components/ui/SearchField';
@@ -275,6 +276,7 @@ function RecipesContent() {
             <Toaster position="top-right" />
             <DashboardDetailLayout
                 title="Recetas"
+                titleLeading={<KitchenSheetsAccess />}
                 titleFace="display"
                 titleBlockClassName="w-full text-center"
                 showBackButton={false}

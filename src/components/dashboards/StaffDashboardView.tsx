@@ -664,7 +664,9 @@ export default function StaffDashboardView() {
                 distance = getDistanceFromLatLonInMeters(lat, lng, MARBELLA_COORDS.lat, MARBELLA_COORDS.lng);
             } catch (geoError: any) {
                 console.error("Geo error:", geoError);
-                const exemptLocation = userRole === 'manager' || (userEmail?.toLowerCase() === 'marbellaremote@gmail.com');
+                const exemptLocation = userRole === 'manager' ||
+                    (userEmail?.toLowerCase() === 'marbellaremote@gmail.com') ||
+                    (userEmail?.toLowerCase() === 'hernang6799@gmail.com');
                 if (!exemptLocation) {
                     toast.error(geoError.message || "Ubicación necesaria para fichar");
                     setActionLoading(false);
@@ -672,7 +674,9 @@ export default function StaffDashboardView() {
                 }
             }
 
-            const exemptLocation = userRole === 'manager' || (userEmail?.toLowerCase() === 'marbellaremote@gmail.com');
+            const exemptLocation = userRole === 'manager' ||
+                (userEmail?.toLowerCase() === 'marbellaremote@gmail.com') ||
+                (userEmail?.toLowerCase() === 'hernang6799@gmail.com');
             if (!exemptLocation && distance !== null && lat !== null && lng !== null && isOutsideGeofence(distance)) {
                 const clockAction = action === 'in' ? 'in' : 'out';
                 logGeofenceRejection({ action: clockAction, lat, lng, distanceMeters: distance });

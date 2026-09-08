@@ -63,7 +63,9 @@ export default function TimeTracker() {
             // Obtener rol y exención por email (geofencing)
             const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
             const isAdmin = profile?.role === 'manager';
-            const exemptLocation = isAdmin || (user.email?.toLowerCase() === 'marbellaremote@gmail.com');
+            const exemptLocation = isAdmin ||
+                (user.email?.toLowerCase() === 'marbellaremote@gmail.com') ||
+                (user.email?.toLowerCase() === 'hernang6799@gmail.com');
 
             try {
                 const pos = await getCurrentPosition();
