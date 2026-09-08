@@ -1,5 +1,5 @@
-<!-- Generado desde 55 documentos de marbella-os/.
-     Huella del origen: 1752506d4269f512
+<!-- Generado desde 57 documentos de marbella-os/.
+     Huella del origen: 0dbf0ad7b9d7fbc9
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -55,6 +55,7 @@ es `CANON §5`.
 | 60 | `marbella-os/2-diseno/LENGUAJE-VISUAL.md` |
 | 40 | `marbella-os/3-ingenieria/contratos/PROYECCION-v1.md` |
 | 20 | `marbella-os/1-producto/ACTORES-Y-ROLES.md` |
+| 20 | `marbella-os/1-producto/FICHAS-COCINA.md` |
 | 20 | `marbella-os/1-producto/MAPA-DE-CAPACIDADES.md` |
 | 20 | `marbella-os/1-producto/RECORRIDOS.md` |
 | 20 | `marbella-os/2-diseno/CONTENIDO-Y-TONO.md` |
@@ -75,6 +76,7 @@ es `CANON §5`.
 | 20 | `marbella-os/3-ingenieria/operacion/RUNBOOK-BDP-VENTAS.md` |
 | 20 | `marbella-os/3-ingenieria/PROTOCOLO-AGENTES.md` |
 | 20 | `marbella-os/3-ingenieria/SEGURIDAD.md` |
+| 20 | `marbella-os/5-estado/CHANGELOG-FICHAS-COCINA.md` |
 | 20 | `marbella-os/5-estado/CHANGELOG.md` |
 | 20 | `marbella-os/5-estado/DEUDA.md` |
 | 20 | `marbella-os/5-estado/ESTADO.md` |
@@ -82,4 +84,4 @@ es `CANON §5`.
 | 20 | `marbella-os/GLOSARIO.md` |
 
 Todo lo que no aparece en esta tabla **no es normativo** y no autoriza ninguna
-decisión, empezando por los 49 documentos de `marbella-os/6-investigacion/`.
+decisión, empezando por los 48 documentos de `marbella-os/6-investigacion/`.

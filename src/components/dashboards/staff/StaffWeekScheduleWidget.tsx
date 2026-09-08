@@ -321,12 +321,14 @@ function WeekExpansion({
     eventsByDate,
     onOpenDay,
     masterMode = false,
+    className,
 }: {
     weekDays: Date[];
     shifts: ShiftRow[];
     eventsByDate: Record<string, BarActivity[]>;
     onOpenDay?: (ymd: string) => void;
     masterMode?: boolean;
+    className?: string;
 }) {
     const saturday = weekDays[5];
     const sunday = weekDays[6];
@@ -335,7 +337,7 @@ function WeekExpansion({
 
     return (
         <div
-            className="grid grid-cols-2"
+            className={cn("grid grid-cols-2", className)}
             data-element="week-expansion"
         >
             <WeekendDayColumn
@@ -671,15 +673,14 @@ export function StaffWeekScheduleWidget({
                                                     {extCell}
                                                 </div>
                                                 {isExpanded ? (
-                                                    <div className="col-span-7">
-                                                        <WeekExpansion
-                                                            weekDays={weekDays}
-                                                            shifts={shifts}
-                                                            eventsByDate={eventsByDate}
-                                                            onOpenDay={onOpenNote}
-                                                            masterMode={masterMode}
-                                                        />
-                                                    </div>
+                                                    <WeekExpansion
+                                                        weekDays={weekDays}
+                                                        shifts={shifts}
+                                                        eventsByDate={eventsByDate}
+                                                        onOpenDay={onOpenNote}
+                                                        masterMode={masterMode}
+                                                        className="col-span-7"
+                                                    />
                                                 ) : null}
                                             </div>
                                         ) : (

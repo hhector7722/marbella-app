@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "7c41ac0485643fd6",
+  "_huella": "ecc8e2a4e061d074",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -239,6 +239,18 @@
       "citable": true,
       "precedencia": 20,
       "vence": "2027-01-29",
+      "depende_de": []
+    },
+    {
+      "ruta": "marbella-os/1-producto/FICHAS-COCINA.md",
+      "documento": "FICHAS-COCINA",
+      "clase": "vivo",
+      "estado": "vigente",
+      "capa": "producto",
+      "normativo": true,
+      "citable": true,
+      "precedencia": 20,
+      "vence": "2027-09-07",
       "depende_de": []
     },
     {
@@ -556,6 +568,18 @@
       "depende_de": []
     },
     {
+      "ruta": "marbella-os/5-estado/CHANGELOG-FICHAS-COCINA.md",
+      "documento": "CHANGELOG-FICHAS-COCINA",
+      "clase": "inmutable",
+      "estado": "vigente",
+      "capa": "estado",
+      "normativo": true,
+      "citable": true,
+      "precedencia": 20,
+      "vence": null,
+      "depende_de": []
+    },
+    {
       "ruta": "marbella-os/5-estado/CHANGELOG.md",
       "documento": "CHANGELOG",
       "clase": "inmutable",
@@ -673,18 +697,6 @@
       "citable": true,
       "precedencia": 20,
       "vence": "2026-11-25",
-      "depende_de": []
-    },
-    {
-      "ruta": "marbella-os/1-product/fichas-cocina.md",
-      "documento": null,
-      "clase": null,
-      "estado": null,
-      "capa": null,
-      "normativo": false,
-      "citable": false,
-      "precedencia": 0,
-      "vence": null,
       "depende_de": []
     },
     {

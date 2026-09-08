@@ -1,5 +1,5 @@
-<!-- Generado desde 42 documentos de marbella-os/.
-     Huella del origen: 1f3ceff2c6b33019
+<!-- Generado desde 43 documentos de marbella-os/.
+     Huella del origen: ef9e04b9fead584f
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -59,7 +59,8 @@ siendo verdad y dejar constancia de la revisión en el cambio que la hace.
 | 2027-08-16 | `marbella-os/2-diseno/EXPERIENCIA.md` | 2026-08-16 | 12 meses | propiedad del producto |
 | 2027-08-16 | `marbella-os/3-ingenieria/PROTOCOLO-AGENTES.md` | 2026-08-16 | 12 meses | propiedad del producto |
 | 2027-08-25 | `marbella-os/4-decisiones/README.md` | 2026-08-25 | 12 meses | propiedad del producto |
+| 2027-09-07 | `marbella-os/1-producto/FICHAS-COCINA.md` | 2026-09-07 | 12 meses | propiedad del producto |
 | 2028-08-16 | `marbella-os/CANON.md` | 2026-08-16 | 24 meses | propiedad del producto |
 
-Los 46 documentos con `caducidad: no aplica` no aparecen aquí: son
+Los 47 documentos con `caducidad: no aplica` no aparecen aquí: son
 inmutables o congelados, y revisarlos no tendría sentido.
