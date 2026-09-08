@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { addDays, format, isToday, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { createClient } from '@/utils/supabase/client';
@@ -20,6 +20,17 @@ import { Surface } from '@/components/ui/Surface';
 import { KpiStat } from '@/components/ui/KpiStat';
 import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
+import { formatCurrencySpanish } from '@/lib/cash-closing-metrics';
+
+function hourToSlotLabel(h: number): string | null {
+    if (h >= 7 && h <= 22) {
+        const start = `${String(h).padStart(2, '0')}:00`;
+        const end = `${String(h + 1).padStart(2, '0')}:00`;
+        return `${start} - ${end}`;
+    }
+    if (h === 23) return '23:00 - 24:00';
+    return null;
+}
 
 export type DashboardVentasInitialData = {
     liveTickets?: { total: number; count: number };
@@ -52,6 +63,82 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
         !(initialData?.liveTickets != null && initialData?.salesChartData != null)
     );
     const [filterHourRange, setFilterHourRange] = useState<{ start: number; end: number } | null>(null);
+
+    // Sales Summary Modal states
+    const [isSalesSummaryModalOpen, setIsSalesSummaryModalOpen] = useState(false);
+    const [salesSummaryLoading, setSalesSummaryLoading] = useState(false);
+    const [salesProducts, setSalesProducts] = useState<any[]>([]);
+    const [topHours, setTopHours] = useState<any[]>([]);
+
+    const titleDate = useMemo(() => {
+        const [y, m, d] = salesViewDate.split('-').map(Number);
+        const dateObj = new Date(y, (m || 1) - 1, d || 1);
+        return isNaN(dateObj.getTime()) ? "Fecha Inválida" : format(dateObj, 'eeee d MMM', { locale: es });
+    }, [salesViewDate]);
+
+    const fetchSalesSummaryData = async () => {
+        setSalesSummaryLoading(true);
+        try {
+            // 1. Fetch top 5 products ranking
+            const { data: productsData, error: productsError } = await supabase.rpc('get_product_sales_ranking', {
+                p_start_date: salesViewDate,
+                p_end_date: salesViewDate,
+                p_start_time: null,
+                p_end_time: null,
+            });
+
+            if (productsError) {
+                console.error("Error fetching products ranking:", productsError);
+            }
+            const ranking = (productsData || []).map((p: any, idx: number) => ({
+                ...p,
+                rank: idx + 1,
+            })).slice(0, 5);
+            setSalesProducts(ranking);
+
+            // 2. Fetch tickets for calculating top 3 hours
+            const { data: ticketsData, error: ticketsError } = await supabase
+                .from('tickets_marbella')
+                .select('hora_cierre, total_documento, fecha')
+                .eq('fecha', salesViewDate);
+
+            if (ticketsError) {
+                console.error("Error fetching tickets:", ticketsError);
+            }
+
+            const ticketsList = ticketsData || [];
+
+            // Calculate hourSlotsRows
+            const map = new Map<string, { count: number; sum: number }>();
+            for (const t of ticketsList) {
+                const h = getBusinessHourFromTicket(t);
+                const label = hourToSlotLabel(h);
+                if (!label) continue;
+                const amt = Number(t.total_documento) || 0;
+                const prev = map.get(label) ?? { count: 0, sum: 0 };
+                prev.count += 1;
+                prev.sum += amt;
+                map.set(label, prev);
+            }
+            const rows: any[] = [];
+            for (const [label, { count, sum }] of map) {
+                if (count === 0) continue;
+                rows.push({
+                    label,
+                    cant: count,
+                    media: sum / count,
+                    total: sum
+                });
+            }
+            rows.sort((a, b) => b.total - a.total);
+            setTopHours(rows.slice(0, 3));
+
+        } catch (err) {
+            console.error("Error fetching sales summary data:", err);
+        } finally {
+            setSalesSummaryLoading(false);
+        }
+    };
 
     const getTicketHour = (ticket: { hora_cierre?: string; fecha?: string }): number =>
         getBusinessHourFromTicket(ticket);
@@ -409,7 +496,22 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                         </div>
                     ) : (
                     <>
-                    <div className="flex min-h-0 w-full flex-col items-center justify-start text-center">
+                    <div
+                        onClick={() => {
+                            void fetchSalesSummaryData();
+                            setIsSalesSummaryModalOpen(true);
+                        }}
+                        className="flex min-h-0 w-full flex-col items-center justify-start text-center cursor-pointer hover:opacity-80 active:scale-[0.98] transition-all relative before:absolute before:inset-0 before:-m-2 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[''] select-none"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                void fetchSalesSummaryData();
+                                setIsSalesSummaryModalOpen(true);
+                            }
+                        }}
+                    >
                         <KpiStat
                             instance="dashboard-ventas-total"
                             label="Ventas"
@@ -496,20 +598,189 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                 ))}
                             </select>
                         </div>
-                        <div className="px-4 pb-4">
-                            <MiniMonthCalendar
-                                month={salesCalendarBaseDate}
-                                onMonthChange={setSalesCalendarBaseDate}
-                                onSelectDay={(day) => {
-                                    const dStr = format(day, 'yyyy-MM-dd');
-                                    trackVentasDate(formatYmdShort(dStr), { selectedDate: dStr });
-                                    setSalesViewDate(dStr);
-                                    setIsSalesDateModalOpen(false);
-                                }}
-                                isSelected={(day) => format(day, 'yyyy-MM-dd') === salesViewDate}
-                                isDisabled={(day) => format(day, 'yyyy-MM-dd') > format(new Date(), 'yyyy-MM-dd')}
-                            />
-                        </div>
+                         <div className="px-4 pb-4">
+                             <MiniMonthCalendar
+                                 month={salesCalendarBaseDate}
+                                 onMonthChange={setSalesCalendarBaseDate}
+                                 onSelectDay={(day) => {
+                                     const dStr = format(day, 'yyyy-MM-dd');
+                                     trackVentasDate(formatYmdShort(dStr), { selectedDate: dStr });
+                                     setSalesViewDate(dStr);
+                                     setIsSalesDateModalOpen(false);
+                                 }}
+                                 isSelected={(day) => format(day, 'yyyy-MM-dd') === salesViewDate}
+                                 isDisabled={(day) => format(day, 'yyyy-MM-dd') > format(new Date(), 'yyyy-MM-dd')}
+                             />
+                         </div>
+             </Modal>
+
+            {/* Modal Resumen de Ventas */}
+            <Modal
+                open={isSalesSummaryModalOpen}
+                onClose={() => setIsSalesSummaryModalOpen(false)}
+                variant="compact"
+                layer="base"
+                instance="dashboard-ventas-summary"
+                title="Resumen de Ventas"
+                subtitle={titleDate}
+                scheme="dark"
+                scrollContent={true}
+            >
+                <div className="text-white flex flex-col min-h-full select-none">
+                    <div className="p-4 flex flex-col flex-1">
+                        {salesSummaryLoading ? (
+                            <div className="flex justify-center items-center py-16 flex-1">
+                                <LoadingSpinner size="lg" className="text-white" />
+                            </div>
+                        ) : (
+                        <>
+                            {/* KPIs */}
+                            <div className="grid grid-cols-3 mb-3 shrink-0">
+                                <div className="flex flex-col items-center justify-center text-center">
+                                    <span className="text-base md:text-xl font-black tabular-nums leading-none text-white">
+                                        {displaySummary.total > 0 ? `${displaySummary.total.toFixed(2)}€` : " "}
+                                    </span>
+                                    <span className="text-[6.5px] md:text-[8px] font-black text-white/60 uppercase tracking-widest mt-0.5">Ventas Totales</span>
+                                </div>
+
+                                <div className="flex flex-col items-center justify-center text-center border-l border-white/10">
+                                    <span className="text-base md:text-xl font-black tabular-nums leading-none text-white">
+                                        {displaySummary.count > 0 ? displaySummary.count : " "}
+                                    </span>
+                                    <span className="text-[6.5px] md:text-[8px] font-black text-white/60 uppercase tracking-widest mt-0.5">Nº Tickets</span>
+                                </div>
+
+                                <div className="flex flex-col items-center justify-center text-center border-l border-white/10 italic">
+                                    <span className="text-base md:text-xl font-black tabular-nums leading-none text-white">
+                                        {displaySummary.count > 0 ? `${(displaySummary.total / displaySummary.count).toFixed(2)}€` : " "}
+                                    </span>
+                                    <span className="text-[6.5px] md:text-[8px] font-black text-white/60 uppercase tracking-widest mt-0.5">Ticket Medio</span>
+                                </div>
+                            </div>
+
+                            {/* Horizonal Graph */}
+                            {(() => {
+                                const maxMain = Math.max(...chartRangeData.map(d => d.total), 0);
+                                const scaleMax = Math.max(maxMain, 1);
+                                const hasData = maxMain > 0;
+                                if (!hasData) return null;
+                                const numPoints = chartRangeData.length;
+                                const toPath = (data: { hora: number; total: number }[]) => {
+                                    const pts = data.map((d, i) => {
+                                        const x = (i / (numPoints - 1 || 1)) * 120;
+                                        const y = 22 - (d.total / scaleMax) * 18;
+                                        return `${x},${y}`;
+                                    });
+                                    return pts.length > 0 ? `M ${pts.join(' L ')}` : '';
+                                };
+                                return (
+                                    <div className="w-full mb-3 shrink-0">
+                                        <div className="w-full relative">
+                                            <svg viewBox="0 0 120 24" className="w-full h-6 block select-none" preserveAspectRatio="none">
+                                                <path
+                                                    d={toPath(chartRangeData)}
+                                                    fill="none"
+                                                    stroke="white"
+                                                    strokeWidth="2"
+                                                    strokeLinecap="butt"
+                                                    strokeLinejoin="miter"
+                                                    vectorEffect="non-scaling-stroke"
+                                                />
+                                            </svg>
+                                        </div>
+                                        <div className="flex justify-between px-0 text-[8px] font-mono text-white/60 leading-none select-none pointer-events-none mt-0.5">
+                                            <span>7h</span>
+                                            <span>23h</span>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+
+                            {/* Tables Container */}
+                            <div className="flex flex-col gap-4 mt-3">
+                                {/* Top 5 Products */}
+                                <div>
+                                    <h3 className="text-[10px] font-black uppercase text-white/70 tracking-wider mb-1.5">
+                                        Top 5 Productos
+                                    </h3>
+                                    {salesProducts.length === 0 ? (
+                                        <p className="text-[10px] text-white/40 font-medium italic">No hay productos registrados.</p>
+                                    ) : (
+                                        <table className="w-full text-left border-collapse">
+                                            <thead>
+                                                <tr className="border-b border-white/10 text-[8px] font-black uppercase text-white/40">
+                                                    <th className="pb-1 w-[55%]">Producto</th>
+                                                    <th className="pb-1 text-center w-[15%]">Cant</th>
+                                                    <th className="pb-1 text-center w-[15%]">Media</th>
+                                                    <th className="pb-1 text-right w-[15%]">Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="font-bold text-[10px] text-white/70">
+                                                {salesProducts.map((prod, idx) => (
+                                                    <tr key={idx} className="border-b border-white/5 last:border-0 hover:bg-white/5">
+                                                        <td className="py-1 text-white truncate max-w-[150px]">
+                                                            <span className="text-white/35 tabular-nums">{prod.rank} </span>
+                                                            {prod.nombre_articulo}
+                                                        </td>
+                                                        <td className="py-1 text-center text-white/60 tabular-nums">
+                                                            {Number(prod.cantidad_total).toFixed(0)}
+                                                        </td>
+                                                        <td className="py-1 text-center text-white/50 tabular-nums">
+                                                            {Number(prod.precio_medio).toFixed(1)}€
+                                                        </td>
+                                                        <td className="py-1 text-right font-black tabular-nums text-emerald-400">
+                                                            {Number(prod.total_ingresos).toFixed(1)}€
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    )}
+                                </div>
+
+                                {/* Top 3 Hours */}
+                                <div className="border-t border-white/10 pt-3">
+                                    <h3 className="text-[10px] font-black uppercase text-white/70 tracking-wider mb-1.5">
+                                        Horas con más Facturación
+                                    </h3>
+                                    {topHours.length === 0 ? (
+                                        <p className="text-[10px] text-white/40 font-medium italic">No hay registros horarios.</p>
+                                    ) : (
+                                        <table className="w-full text-left border-collapse">
+                                            <thead>
+                                                <tr className="border-b border-white/10 text-[8px] font-black uppercase text-white/40">
+                                                    <th className="pb-1 w-[45%]">Horas</th>
+                                                    <th className="pb-1 text-center w-[15%]">Cant</th>
+                                                    <th className="pb-1 text-center w-[20%]">Media</th>
+                                                    <th className="pb-1 text-right w-[20%]">Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="font-bold text-[10px] text-white/70">
+                                                {topHours.map((row, idx) => (
+                                                    <tr key={idx} className="border-b border-white/5 last:border-0 hover:bg-white/5">
+                                                        <td className="py-1 font-mono font-bold text-white tabular-nums">
+                                                            {row.label}
+                                                        </td>
+                                                        <td className="py-1 text-center text-white/60 tabular-nums">
+                                                            {row.cant}
+                                                        </td>
+                                                        <td className="py-1 text-center text-white/50 tabular-nums">
+                                                            {row.media.toFixed(1)}€
+                                                        </td>
+                                                        <td className="py-1 text-right font-black tabular-nums text-emerald-400">
+                                                            {row.total.toFixed(1)}€
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    )}
+                                </div>
+                            </div>
+                        </>
+                    )}
+                    </div>
+                </div>
             </Modal>
         </>
     );
