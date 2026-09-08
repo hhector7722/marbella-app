@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { addDays, format, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { DaySummaryModal, type DaySummaryLog } from '@/components/modals/DaySummaryModal';
 import { AttendanceDetailModal } from '@/components/modals/AttendanceDetailModal';
@@ -38,6 +39,7 @@ type MasterTodayAttendanceWidgetProps = {
     viewerEmail: string;
     /** Plantilla visible: rosters de los modales de día y de asistencia. */
     employees: PlantillaEmployeeRow[];
+    expanded?: boolean;
     /**
      * Avisa de si los registros desbordan el alto compacto (1×1 con nombre).
      * true → el slot debe crecer; false → cabe como icono+nombre.
@@ -68,6 +70,7 @@ export function MasterTodayAttendanceWidget({
     userRole,
     viewerEmail,
     employees,
+    expanded = false,
     onExpandChange,
 }: MasterTodayAttendanceWidgetProps) {
     const [loading, setLoading] = useState(true);
@@ -79,6 +82,8 @@ export function MasterTodayAttendanceWidget({
     const redBarRef = useRef<HTMLDivElement>(null);
     const logsBlockRef = useRef<HTMLDivElement>(null);
 
+    const [hasOverflow, setHasOverflow] = useState(false);
+
     /**
      * Alto de lista disponible en modo compacto: el cuerpo del slot con nombre
      * mide `--home-icon-size` (4.5rem = 72 px) menos la franja roja.
@@ -89,8 +94,13 @@ export function MasterTodayAttendanceWidget({
         const headerH = redBarRef.current?.offsetHeight ?? 10;
         const compactListH = 72 - headerH;
         const contentH = block ? block.scrollHeight : 0;
-        onExpandChange?.(contentH > compactListH + 1);
-    }, [logs, loading, onExpandChange]);
+        const overflow = contentH > compactListH + 1;
+        setHasOverflow(overflow);
+
+        if (!overflow && expanded) {
+            onExpandChange?.(false);
+        }
+    }, [logs, loading, expanded, onExpandChange]);
 
     const employeesOption = useMemo(
         () =>
@@ -276,8 +286,8 @@ export function MasterTodayAttendanceWidget({
                             {logs.length === 0 ? (
                                 <EmptyState instance="master-today-none" variant="none" title="Sin fichajes" />
                             ) : (
-                                <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-                                    <div className="m-auto flex w-full flex-col" ref={logsBlockRef}>
+                                <div className={`flex min-h-0 flex-1 flex-col ${expanded ? 'overflow-y-auto' : 'overflow-hidden'}`}>
+                                    <div className={`m-auto flex w-full flex-col ${hasOverflow ? 'pb-5' : ''}`} ref={logsBlockRef}>
                                         {logs.map((log) => {
                                             const isNoRegistered =
                                                 log.event_type === 'no_registered' ||
@@ -310,6 +320,20 @@ export function MasterTodayAttendanceWidget({
                                         })}
                                     </div>
                                 </div>
+                            )}
+                            {hasOverflow && (
+                                <button
+                                    type="button"
+                                    onClick={() => onExpandChange?.(!expanded)}
+                                    className="absolute bottom-1.5 left-1/2 z-20 flex h-3.5 w-3.5 -translate-x-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white shadow-sm transition-all hover:bg-zinc-50 active:scale-95 before:absolute before:left-1/2 before:top-1/2 before:h-12 before:w-12 before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']"
+                                    aria-label={expanded ? "Minimizar asistencia" : "Desplegar asistencia"}
+                                >
+                                    {expanded ? (
+                                        <ChevronUp size={8} className="text-zinc-600" />
+                                    ) : (
+                                        <ChevronDown size={8} className="text-zinc-600" />
+                                    )}
+                                </button>
                             )}
                             <button
                                 type="button"

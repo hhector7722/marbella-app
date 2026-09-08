@@ -566,6 +566,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
                         userRole={userRole}
                         viewerEmail={userEmail}
                         employees={plantillaEmployees}
+                        expanded={attendanceExpanded}
                         onExpandChange={setAttendanceExpanded}
                     />
                 </HomeScreenSlot>

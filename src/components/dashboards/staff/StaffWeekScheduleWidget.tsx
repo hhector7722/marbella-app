@@ -662,15 +662,17 @@ export function StaffWeekScheduleWidget({
                                         data-expanded={isExpanded ? 'true' : undefined}
                                     >
                                         {masterMode ? (
-                                            <div className="grid grid-cols-8 gap-px">
-                                                <div
-                                                    className="col-span-7 grid grid-cols-7 gap-px"
-                                                    data-week-row={isExpanded ? 'expanded' : undefined}
-                                                >
-                                                    {dayButtons}
-                                                </div>
-                                                <div className="col-span-1 flex items-center justify-center" data-element="week-ext-cell">
-                                                    {extCell}
+                                            <>
+                                                <div className="grid grid-cols-8 gap-px">
+                                                    <div
+                                                        className="col-span-7 grid grid-cols-7 gap-px"
+                                                        data-week-row={isExpanded ? 'expanded' : undefined}
+                                                    >
+                                                        {dayButtons}
+                                                    </div>
+                                                    <div className="col-span-1 flex items-center justify-center" data-element="week-ext-cell">
+                                                        {extCell}
+                                                    </div>
                                                 </div>
                                                 {isExpanded ? (
                                                     <WeekExpansion
@@ -679,10 +681,10 @@ export function StaffWeekScheduleWidget({
                                                         eventsByDate={eventsByDate}
                                                         onOpenDay={onOpenNote}
                                                         masterMode={masterMode}
-                                                        className="col-span-7"
+                                                        className="w-[87.5%] max-w-[87.5%]"
                                                     />
                                                 ) : null}
-                                            </div>
+                                            </>
                                         ) : (
                                             <>
                                                 <div
