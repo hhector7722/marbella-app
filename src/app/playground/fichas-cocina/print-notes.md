@@ -1,0 +1,1 @@
+La acción PDF A3 usa jsPDF directamente. La acción Imprimir usa la vista de ficha y las clases de impresión existentes; el navegador puede seleccionar A3 en el diálogo de impresión.
