@@ -8,6 +8,7 @@ import {
     type HomeScreenLayout,
     type HomeScreenSlotSize,
 } from '@/lib/design-system/home-screen';
+import styles from './HomeScreen.module.css';
 
 export type HomeScreenProps = {
     children: ReactNode;
@@ -59,7 +60,7 @@ export function HomeScreen({ children, className, layout }: HomeScreenProps) {
             data-component={HOME_SCREEN_COMPONENT_ID}
             data-layout={layout}
             data-widget-scheme="light"
-            className={cn(className)}
+            className={cn(className, layout === 'staff' ? styles.staffHome : undefined)}
         >
             {children}
         </div>
