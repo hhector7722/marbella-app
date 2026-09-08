@@ -1022,23 +1022,23 @@ export default function StaffDashboardView() {
                         role="dialog"
                         aria-label="Fichaje registrado"
                         className={cn(
-                            "fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-none transition-opacity ease-in-out duration-[900ms]",
-                            giffActive && !giffOverlayFading ? "opacity-100" : "opacity-0",
+                            "fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-none transition-opacity ease-in-out",
+                            giffActive && !giffOverlayFading ? "opacity-100 duration-300" : "opacity-0 duration-[900ms]",
                         )}
                     >
                         <div
                             className={cn(
-                                "rounded-2xl overflow-hidden flex items-center justify-center shadow-sm transition-all ease-in-out duration-[900ms]",
+                                "rounded-2xl overflow-hidden flex items-center justify-center shadow-sm transition-all ease-in-out",
                                 isMamadou 
                                     ? "max-w-[90vw] max-h-[90vh]" 
                                     : isHernan 
                                         ? "w-[min(90vw,160vh)] aspect-video max-h-[90vh]" 
                                         : "w-[min(90vw,90vh)] h-[min(90vw,90vh)]",
                                 giffActive && !giffOverlayFading 
-                                    ? "blur-0 scale-100" 
+                                    ? "blur-0 scale-100 duration-300" 
                                     : giffOverlayFading 
-                                        ? "blur-md scale-[1.02]" 
-                                        : "blur-sm scale-95",
+                                        ? "blur-md scale-[1.02] duration-[900ms]" 
+                                        : "blur-sm scale-95 duration-300",
                             )}
                         >
                             <video
@@ -1048,6 +1048,7 @@ export default function StaffDashboardView() {
                                 autoPlay
                                 muted
                                 playsInline
+                                preload="auto"
                                 loop={false}
                                 className={cn(
                                     isMamadou 
@@ -1359,6 +1360,17 @@ export default function StaffDashboardView() {
                     }}
                 />
             )}
+
+            {userEmail && (() => {
+                const preloads = FICHAJE_OVERLAY_VIDEOS[userEmail.toLowerCase().trim()];
+                if (!preloads) return null;
+                return (
+                    <div className="hidden pointer-events-none w-0 h-0 overflow-hidden" aria-hidden="true">
+                        <video src={preloads.entrada} preload="auto" muted playsInline />
+                        <video src={preloads.salida} preload="auto" muted playsInline />
+                    </div>
+                );
+            })()}
         </div>
     );
 }

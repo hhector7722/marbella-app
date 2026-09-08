@@ -38,7 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-08
 
-- **Fichaje: vídeo «hernan-river» para Héctor en entrada y salida.** Se asigna el vídeo `/icons/hernan-river.mp4` a `hhector7722@gmail.com`. Se actualiza el overlay de fichaje para reproducir vídeos de relación de aspecto horizontal completos (formato 16:9) con esquinas redondeadas, sin cortes en su tamaño y con una transición de opacidad y escala más suave tanto en su inicio como en su final.
+- **Fichaje: vídeo «hernan-river» para Hernán en entrada y salida.** Se asigna el vídeo `/icons/hernan-river.mp4` a `hernang6799@gmail.com`. Se actualiza el overlay de fichaje para reproducir vídeos de relación de aspecto horizontal completos (formato 16:9) con esquinas redondeadas, sin cortes en su tamaño y con una transición de opacidad y escala más suave tanto en su inicio como en su final.
+- **Fichaje: precarga y optimización de latencia en la reproducción de vídeos de fichaje.** Se ha añadido un sistema de precarga en segundo plano utilizando elementos `<video preload="auto" muted />` invisibles para cargar las piezas multimedia en caché inmediatamente al iniciar sesión. Adicionalmente, se acelera la transición de entrada a un valor ultra-sensible (300 ms) manteniendo un fundido de salida cinematográfico y suave (900 ms), eliminando cualquier tiempo de espera o pantalla en negro antes de comenzar la reproducción.
 
 ## 2026-09-07
 
