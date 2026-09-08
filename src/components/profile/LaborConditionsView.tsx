@@ -41,6 +41,10 @@ function displayRate(n: number | null): string {
   return `${n} €/h`;
 }
 
+function customBagLabel(bagMode: boolean): string {
+  return bagMode ? 'Bolsa de horas' : 'Pago semanal';
+}
+
 function openTerm(terms: LaborTermDto[]): LaborTermDto | null {
   return terms.find((t) => t.effectiveTo === null) ?? null;
 }
@@ -134,6 +138,7 @@ export default function LaborConditionsView({
 
   const closeEditor = () => {
     setEditing(false);
+    onEditingChange?.(false);
     setEditMode('change');
     setEditingTermOriginalFrom(null);
     setEditingTermOriginalTo(null);
@@ -170,6 +175,7 @@ export default function LaborConditionsView({
       }));
     }
     setEditing(true);
+    onEditingChange?.(true);
   };
 
   /** Corrige un tramo ya registrado (condiciones + fechas; sin crear tramo nuevo). */
@@ -186,13 +192,10 @@ export default function LaborConditionsView({
       effectiveTo: t.effectiveTo,
     });
     setEditing(true);
+    onEditingChange?.(true);
   };
 
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
-
-  useEffect(() => {
-    onEditingChange?.(editing);
-  }, [editing, onEditingChange]);
 
   const editRequestRef = useRef(0);
   useEffect(() => {
@@ -340,63 +343,59 @@ export default function LaborConditionsView({
             <section className={hostedInPageScreen ? '' : 'overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm'}>
               {!hostedInPageScreen && cardHeader('Condiciones laborales', { withBack: true })}
               <div className="p-4">
-                {contractDates && (
-                  <div className="grid grid-cols-2 gap-x-ds-4 gap-y-ds-2 border-b border-zinc-100 pb-ds-3 text-xs mb-ds-3">
-                    <div className="flex flex-col justify-center min-h-[40px]">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Fecha inicio contrato</span>
-                      <span className="text-sm font-bold text-zinc-800 mt-1">
-                        {contractDates.joiningDate ? formatYmdEs(contractDates.joiningDate) : '—'}
-                      </span>
-                    </div>
-                    <div className="flex flex-col justify-center min-h-[40px]">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Finalización trabajador</span>
-                      <span className="text-sm font-bold text-zinc-800 mt-1">
-                        {contractDates.endDate ? formatYmdEs(contractDates.endDate) : 'Activo'}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
                 {terms.length === 0 ? (
                   <p className="text-sm text-zinc-500 text-center py-4">Sin condiciones contractuales.</p>
                 ) : (
-                  <div className="divide-y divide-zinc-100">
+                  <div className="space-y-3">
                     {[...terms]
                       .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))
                       .map((t, idx) => {
                         const isTermExpanded = expandedIndex === idx;
-                        const isVigente = t.effectiveTo === null;
                         return (
-                          <div key={`${t.effectiveFrom}-${t.effectiveTo ?? 'open'}`} className="py-2.5">
+                          <div
+                            key={`${t.effectiveFrom}-${t.effectiveTo ?? 'open'}`}
+                            className={cn(
+                              "rounded-xl border px-4 py-3 transition-all shadow-sm",
+                              "border-[#a7f3d0] bg-[#ecfdf5] text-[#065f46]"
+                            )}
+                          >
                             <button
                               type="button"
                               onClick={() => setExpandedIndex(isTermExpanded ? null : idx)}
-                              className="flex w-full items-center justify-between py-1 text-left active:opacity-70"
+                              className="flex w-full items-center justify-between py-0.5 text-left active:opacity-70"
                             >
-                              <span className="text-xs font-bold text-zinc-800">
+                              <span className="text-sm font-bold">
                                 {formatYmdEs(t.effectiveFrom)} → {t.effectiveTo ? formatYmdEs(t.effectiveTo) : 'Vigente'}
                               </span>
-                              <span className="text-[10px] font-black text-zinc-400">
+                              <span className="text-xs font-black text-[#047857]">
                                 {isTermExpanded ? '▲' : '▼'}
                               </span>
                             </button>
                             {isTermExpanded && (
-                              <div className="grid grid-cols-2 gap-x-ds-4 gap-y-ds-2 mt-2 border-t border-zinc-50 pt-2 text-xs">
-                                <div className="flex flex-col justify-center min-h-[36px] py-1 border-b border-zinc-100/50">
-                                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Horas semanales</span>
-                                  <span className="text-xs font-bold text-zinc-800 mt-0.5">{displayHours(t.weeklyHours)}</span>
+                              <div className="grid grid-cols-2 gap-x-ds-4 gap-y-ds-2 mt-3 border-t border-[#a7f3d0]/40 pt-3 text-xs">
+                                <div className="flex flex-col justify-center min-h-[36px] py-1 border-b border-[#a7f3d0]/30">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#047857]/80">Inicio</span>
+                                  <span className="text-xs font-bold mt-0.5">{formatYmdEs(t.effectiveFrom)}</span>
                                 </div>
-                                <div className="flex flex-col justify-center min-h-[36px] py-1 border-b border-zinc-100/50">
-                                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Régimen</span>
-                                  <span className="text-xs font-bold text-zinc-800 mt-0.5">{regimeLabel(t.regime as ContractRegime)}</span>
+                                <div className="flex flex-col justify-center min-h-[36px] py-1 border-b border-[#a7f3d0]/30">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#047857]/80">Final</span>
+                                  <span className="text-xs font-bold mt-0.5">{t.effectiveTo ? formatYmdEs(t.effectiveTo) : 'Vigente'}</span>
                                 </div>
-                                <div className="flex flex-col justify-center min-h-[36px] py-1 border-b border-zinc-100/50">
-                                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Bolsa / Pago</span>
-                                  <span className="text-xs font-bold text-zinc-800 mt-0.5">{bagLabel(t.bagMode)}</span>
+                                <div className="flex flex-col justify-center min-h-[36px] py-1 border-b border-[#a7f3d0]/30">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#047857]/80">Horas semanales</span>
+                                  <span className="text-xs font-bold mt-0.5">{displayHours(t.weeklyHours)}</span>
                                 </div>
-                                <div className="flex flex-col justify-center min-h-[36px] py-1 border-b border-zinc-100/50">
-                                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Tarifa extras</span>
-                                  <span className="text-xs font-bold text-zinc-800 mt-0.5">{displayRate(t.overtimeRatePerHour)}</span>
+                                <div className="flex flex-col justify-center min-h-[36px] py-1 border-b border-[#a7f3d0]/30">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#047857]/80">Tipo de pago</span>
+                                  <span className="text-xs font-bold mt-0.5">{customBagLabel(t.bagMode)}</span>
+                                </div>
+                                <div className="flex flex-col justify-center min-h-[36px] py-1 border-b border-[#a7f3d0]/30">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#047857]/80">Tarifa horas extras</span>
+                                  <span className="text-xs font-bold mt-0.5">{displayRate(t.overtimeRatePerHour)}</span>
+                                </div>
+                                <div className="flex flex-col justify-center min-h-[36px] py-1 border-b border-[#a7f3d0]/30">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#047857]/80">Categoría</span>
+                                  <span className="text-xs font-bold mt-0.5">{regimeLabel(t.regime as ContractRegime)}</span>
                                 </div>
                               </div>
                             )}
@@ -669,7 +668,7 @@ export default function LaborConditionsView({
 
                 <fieldset>
                   <legend className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                    Régimen
+                    Categoría
                   </legend>
                   <div className="mt-2 grid grid-cols-3 gap-2">
                     {(
@@ -706,7 +705,7 @@ export default function LaborConditionsView({
 
                 <fieldset>
                   <legend className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                    Bolsa / Pago
+                    Tipo de pago
                   </legend>
                   <div className="mt-2 grid grid-cols-2 gap-2">
                     <button
@@ -733,7 +732,7 @@ export default function LaborConditionsView({
                           : 'border-zinc-200 bg-white text-zinc-700',
                       )}
                     >
-                      Pago mensual
+                      Pago semanal
                     </button>
                   </div>
                 </fieldset>
