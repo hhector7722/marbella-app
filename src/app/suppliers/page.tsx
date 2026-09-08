@@ -155,7 +155,7 @@ export default function SuppliersPage() {
             if (showLoading) setLoading(true);
             const { data, error } = await supabase
                 .from('suppliers')
-                .select('id,created_at,name,delivery_schedule,lead_time,reliability,phone,notes,email_domains,image_url')
+                .select('id,created_at,name,delivery_schedule,lead_time,reliability,phone,notes,email_domains,image_url,category,order_deadline,min_order,order_channel,contact_name,payment_method,instructions,observations')
                 .order('name');
             if (error) {
                 console.error('Supabase Error:', error);
@@ -165,38 +165,40 @@ export default function SuppliersPage() {
                 throw error;
             }
 
-            const dbSuppliers: Supplier[] = (data || []).map((r: {
-                id: string | number;
-                created_at: string | null;
-                name: string | null;
-                delivery_schedule: string | null;
-                lead_time: string | null;
-                reliability: string | null;
-                phone: string | null;
-                notes: string | null;
-                email_domains: string[] | null;
-                image_url: string | null;
-            }) => {
+            const dbSuppliers: Supplier[] = (data || []).map((r: any) => {
                 const fields = parseSupplierNotes(r.notes ?? null);
+                
+                let deadline = r.order_deadline ?? fields.order_deadline ?? null;
+                if (deadline && /^\d{2}:\d{2}:\d{2}$/.test(deadline)) {
+                    deadline = deadline.slice(0, 5);
+                }
+
+                let minOrder = null;
+                if (r.min_order != null) {
+                    minOrder = `${Number(r.min_order).toFixed(2).replace('.00', '')} €`;
+                } else if (fields.min_order != null) {
+                    minOrder = fields.min_order;
+                }
+
                 return {
                     id: String(r.id),
                     created_at: r.created_at ?? null,
                     name: String(r.name ?? ''),
                     delivery_schedule: r.delivery_schedule ?? null,
                     lead_time: r.lead_time ?? null,
-                    reliability: r.reliability ?? null,
+                    reliability: r.reliability != null ? String(r.reliability) : null,
                     phone: r.phone ?? null,
                     notes: r.notes ?? null,
                     email_domains: Array.isArray(r.email_domains) ? r.email_domains : null,
                     image_url: r.image_url ?? null,
-                    category: fields.category || extractCategoryFromNotes(r.notes ?? null),
-                    order_deadline: fields.order_deadline,
-                    min_order: fields.min_order,
-                    order_channel: fields.order_channel,
-                    contact_name: fields.contact_name,
-                    payment_method: fields.payment_method,
-                    instructions: fields.instructions,
-                    observations: fields.observations,
+                    category: r.category ?? fields.category ?? extractCategoryFromNotes(r.notes ?? null),
+                    order_deadline: deadline,
+                    min_order: minOrder,
+                    order_channel: r.order_channel ?? fields.order_channel ?? null,
+                    contact_name: r.contact_name ?? fields.contact_name ?? null,
+                    payment_method: r.payment_method ?? fields.payment_method ?? null,
+                    instructions: r.instructions ?? fields.instructions ?? null,
+                    observations: r.observations ?? fields.observations ?? null,
                 };
             }).filter((s) => s.name);
 
@@ -343,7 +345,8 @@ export default function SuppliersPage() {
             const { error } = await supabase.from('suppliers').insert({
                 name,
                 phone,
-                ...(notes ? { notes } : {}),
+                category: newSupplier.category ?? 'Alimentos',
+                notes,
             });
             if (error) throw error;
             toast.success('Proveedor creado');
@@ -509,6 +512,12 @@ export default function SuppliersPage() {
 
         let nextImageUrl: string | null = previousImageUrl;
 
+        const deadlineMatch = editOrderDeadline.trim().match(/(\d{1,2}):(\d{2})/);
+        const orderDeadlineValue = deadlineMatch ? `${deadlineMatch[1].padStart(2, '0')}:${deadlineMatch[2]}:00` : null;
+
+        const minOrderValue = editMinOrder.trim() ? parseFloat(editMinOrder.replace(',', '.').replace(/[^0-9.]/g, '')) || null : null;
+        const reliabilityValue = editSupplier.reliability ? parseInt(String(editSupplier.reliability).replace(/\D/g, ''), 10) || null : null;
+
         try {
             setIsSavingEdit(true);
 
@@ -562,10 +571,18 @@ export default function SuppliersPage() {
                         phone,
                         delivery_schedule: editSupplier.delivery_schedule || null,
                         lead_time: editSupplier.lead_time || null,
-                        reliability: editSupplier.reliability || null,
+                        reliability: reliabilityValue,
                         notes,
                         image_url: nextImageUrl,
                         email_domains: emailDomains.length ? emailDomains : null,
+                        category: editSupplier.category ?? 'Alimentos',
+                        order_deadline: orderDeadlineValue,
+                        min_order: minOrderValue,
+                        order_channel: editOrderChannel.trim() || null,
+                        contact_name: editContactName.trim() || null,
+                        payment_method: editPaymentMethod.trim() || null,
+                        instructions: editInstructions.trim() || null,
+                        observations: editNotes.trim() || null,
                     })
                     .eq('id', Number(editSupplier.id));
 
@@ -580,13 +597,38 @@ export default function SuppliersPage() {
                         phone,
                         delivery_schedule: editSupplier.delivery_schedule || null,
                         lead_time: editSupplier.lead_time || null,
-                        reliability: editSupplier.reliability || null,
+                        reliability: reliabilityValue,
                         notes,
                         image_url: nextImageUrl,
                         email_domains: emailDomains.length ? emailDomains : null,
+                        category: editSupplier.category ?? 'Alimentos',
+                        order_deadline: orderDeadlineValue,
+                        min_order: minOrderValue,
+                        order_channel: editOrderChannel.trim() || null,
+                        contact_name: editContactName.trim() || null,
+                        payment_method: editPaymentMethod.trim() || null,
+                        instructions: editInstructions.trim() || null,
+                        observations: editNotes.trim() || null,
                     });
                 if (error) throw error;
                 toast.success('Proveedor creado en la base de datos');
+            }
+
+            // Actualizar el estado de detailSupplier de forma reactiva si está abierto en pantalla
+            if (detailSupplier && detailSupplier.id === editSupplier.id) {
+                setDetailSupplier({
+                    ...editSupplier,
+                    image_url: nextImageUrl,
+                    email_domains: emailDomains.length ? emailDomains : null,
+                    category: editSupplier.category ?? 'Alimentos',
+                    order_deadline: editOrderDeadline.trim() || null,
+                    min_order: editMinOrder.trim() || null,
+                    order_channel: editOrderChannel.trim() || null,
+                    contact_name: editContactName.trim() || null,
+                    payment_method: editPaymentMethod.trim() || null,
+                    instructions: editInstructions.trim() || null,
+                    observations: editNotes.trim() || null,
+                });
             }
 
             resetImageEditState();
