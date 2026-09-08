@@ -286,7 +286,7 @@ function WeekendDayColumn({
                     </div>
                     <div data-element="weekend-evento-detail" className="flex w-full flex-col">
                         {eventDetailRows.map((row, i) => (
-                            <div key={i} className="grid w-full grid-cols-3">
+                            <div key={i} className={cn("grid w-full gap-x-1", masterMode ? "grid-cols-[max-content_max-content_minmax(0,1fr)]" : "grid-cols-3")}>
                                 {(
                                     [
                                         { kind: 'hours', text: row.hours },
@@ -298,7 +298,10 @@ function WeekendDayColumn({
                                         key={cell.kind}
                                         data-element="weekend-evento-detail-value"
                                         data-segment-kind={cell.kind}
-                                        className="min-w-0 truncate text-center text-[6px] font-medium leading-none opacity-80"
+                                        className={cn(
+                                            "text-center text-[6px] font-medium leading-none opacity-80",
+                                            masterMode && cell.kind === 'hours' ? "whitespace-nowrap font-semibold" : "min-w-0 truncate"
+                                        )}
                                     >
                                         {cell.text}
                                     </span>

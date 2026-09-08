@@ -1,6 +1,14 @@
 ---
-class: product
-state: adopted
+documento: FICHAS-COCINA
+clase: vivo
+estado: vigente
+capa: producto
+normativo: true
+precedencia: 20
+responsable: propiedad del producto
+revisado: 2026-09-07
+caducidad: 12 meses
+depende_de: —
 ---
 
 # Fichas de elaboración de cocina
