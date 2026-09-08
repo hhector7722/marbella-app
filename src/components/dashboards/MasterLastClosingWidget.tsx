@@ -338,7 +338,7 @@ export function MasterLastClosingWidget() {
                                         } : undefined}
                                     >
                                         <span className="inline-flex items-center text-[9px] md:text-[11px] leading-none select-none">
-                                            <span className="text-[var(--home-widget-ink-secondary)] font-bold">{kpi.label}</span>
+                                            <span className="text-[var(--home-widget-ink-secondary)] font-normal">{kpi.label}</span>
                                             <span className="ml-1 text-[var(--home-widget-ink)] font-black tabular-nums">{kpi.format(metrics)}</span>
                                         </span>
                                     </div>
