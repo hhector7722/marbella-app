@@ -624,7 +624,7 @@ export function StaffWeekScheduleWidget({
                                             aria-label={format(day, "EEEE d 'de' MMMM", { locale: es })}
                                             aria-current={today ? 'date' : undefined}
                                             className={cn(
-                                                'relative flex w-full items-center justify-center transition-colors',
+                                                'relative z-10 flex w-full items-center justify-center transition-colors',
                                                 'before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']',
                                                 !today && 'hover:bg-white/10',
                                             )}
@@ -662,16 +662,13 @@ export function StaffWeekScheduleWidget({
                                     >
                                         {masterMode ? (
                                             <>
-                                                <div className="grid grid-cols-8 gap-px shrink-0">
-                                                    <div
-                                                        className="col-span-7 grid grid-cols-7 gap-px"
-                                                        data-week-row={isExpanded ? 'expanded' : undefined}
-                                                    >
-                                                        {dayButtons}
-                                                    </div>
-                                                    <div className="col-span-1 flex items-center justify-center" data-element="week-ext-cell">
-                                                        {extCell}
-                                                    </div>
+                                                <div
+                                                    className="grid grid-cols-8 gap-px shrink-0"
+                                                    data-week-row={isExpanded ? 'expanded' : undefined}
+                                                    data-master-row="true"
+                                                >
+                                                    {dayButtons}
+                                                    {extCell}
                                                 </div>
                                                 {isExpanded ? (
                                                     <WeekExpansion

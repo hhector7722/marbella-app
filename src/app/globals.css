@@ -2698,6 +2698,20 @@ button[data-element='catalog-filter'] {
   border-radius: var(--radio-control);
   background-color: var(--home-widget-fill-secondary);
 }
+[data-component='StaffWeekSchedule'] [data-week-row='expanded'][data-master-row='true'] {
+  background-color: transparent;
+  position: relative;
+}
+[data-component='StaffWeekSchedule'] [data-week-row='expanded'][data-master-row='true']::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  right: 12.5%;
+  background-color: var(--home-widget-fill-secondary);
+  border-radius: var(--radio-control);
+  z-index: 0;
+  pointer-events: none;
+}
 [data-component='StaffWeekSchedule'] [data-week-row] button {
   height: var(--staff-week-day-size);
 }

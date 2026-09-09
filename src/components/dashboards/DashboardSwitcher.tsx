@@ -217,7 +217,8 @@ export default function DashboardSwitcher({
             <div
                 className={cn(
                     'flex min-h-full',
-                    isManager ? 'transition-[margin-left] duration-300 ease-out' : 'w-full',
+                    isManager && dotsPortalMounted ? 'transition-[margin-left] duration-300 ease-out' : '',
+                    !isManager && 'w-full',
                     isDragging && isHorizontalDrag.current && 'duration-0'
                 )}
                 style={isManager ? { width: trackWidth, marginLeft: `${finalTranslate}%` } : {}}
