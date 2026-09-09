@@ -309,17 +309,17 @@ export function MasterTodayAttendanceWidget({
                                             );
                                         })}
                                         {hasExpandableLogs && (
-                                            <div className="relative z-20 flex w-full shrink-0 items-center justify-center pt-1 pb-0.5">
+                                            <div className="flex w-full shrink-0 items-center justify-center mt-1">
                                                 <button
                                                     type="button"
                                                     onClick={() => onExpandChange?.(!expanded)}
-                                                    className="relative flex items-center justify-center text-zinc-400 hover:text-zinc-600 transition-colors before:absolute before:left-1/2 before:top-1/2 before:h-12 before:w-12 before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']"
+                                                    className="flex w-full min-h-[48px] items-center justify-center text-zinc-400 hover:text-zinc-600 transition-colors"
                                                     aria-label={expanded ? "Minimizar asistencia" : "Desplegar asistencia"}
                                                 >
                                                     {expanded ? (
-                                                        <ChevronUp size={8} className="stroke-[2.5]" />
+                                                        <ChevronUp size={12} className="stroke-[2.5]" />
                                                     ) : (
-                                                        <ChevronDown size={8} className="stroke-[2.5]" />
+                                                        <ChevronDown size={12} className="stroke-[2.5]" />
                                                     )}
                                                 </button>
                                             </div>

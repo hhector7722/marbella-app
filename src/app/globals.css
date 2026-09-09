@@ -4988,6 +4988,19 @@ button[data-element='catalog-filter'] {
     column-gap: var(--espacio-3);
     row-gap: var(--home-row-gap);
   }
+  /* Reasignación de grid-area: los nombres de área cambian en escritorio. */
+  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='master-ultimo-cierre'] {
+    grid-area: caja;
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='master-horarios'] {
+    grid-area: hextras;
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='caja-inicial'] {
+    grid-area: cambio1;
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='cajas-cambio'] {
+    grid-area: cambio2;
+  }
 
   [data-component='HomeScreen'][data-layout='staff'] {
     /* Misma composición 4×N que smartphone; ancho acotado para no estirar tiles. */

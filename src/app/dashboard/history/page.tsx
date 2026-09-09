@@ -20,7 +20,8 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { format, startOfMonth, endOfMonth, isSameDay, addDays, subMonths, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths, isToday, isBefore, startOfDay, subWeeks, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+import { cn, getBusinessHourFromTicket } from '@/lib/utils';
+import { BUSINESS_HOURS } from '@/lib/constants';
 import { toast } from 'sonner';
 import CashClosingModal from '@/components/CashClosingModal';
 import { QuickCalculatorModal, FloatingCalculatorFab } from '@/components/ui/QuickCalculatorModal';
@@ -336,6 +337,16 @@ const DonutChart = ({ size = 60, percentage = 75, color = "#10b981" }: { size?: 
     );
 };
 
+function hourToSlotLabel(h: number): string | null {
+    if (h >= 7 && h <= 22) {
+        const start = `${String(h).padStart(2, '0')}:00`;
+        const end = `${String(h + 1).padStart(2, '0')}:00`;
+        return `${start} - ${end}`;
+    }
+    if (h === 23) return '23:00 - 24:00';
+    return null;
+}
+
 // --- HELPERS ---
 
 /** Shows an animated skeleton while the browser downloads the photo, then reveals it. */
@@ -404,6 +415,17 @@ export default function HistoryPage() {
 
     const [selectedClosing, setSelectedClosing] = useState<any>(null);
     const [showPeriodPerformanceModal, setShowPeriodPerformanceModal] = useState(false);
+
+    // --- Modales de cards de resumen (Último cierre + Mensual) ---
+    const [isLastClosingCashModalOpen, setIsLastClosingCashModalOpen] = useState(false);
+    const [isSalesModalOpen, setIsSalesModalOpen] = useState(false);
+    const [salesModalMode, setSalesModalMode] = useState<'last-closing' | 'monthly'>('last-closing');
+    const [salesModalLoading, setSalesModalLoading] = useState(false);
+    const [salesModalDate, setSalesModalDate] = useState('');
+    const [salesProducts, setSalesProducts] = useState<any[]>([]);
+    const [salesChartData, setSalesChartData] = useState<{ hora: number; total: number }[]>([]);
+    const [topHours, setTopHours] = useState<any[]>([]);
+    const [salesSummary, setSalesSummary] = useState({ totalSales: 0, count: 0, avgTicket: 0 });
 
     // --- Real-time swipe drag state ---
     const modalCardRef = useRef<HTMLDivElement>(null);
@@ -538,6 +560,122 @@ export default function HistoryPage() {
     const [showCashDetails, setShowCashDetails] = useState(false);
     const [showClosingModal, setShowClosingModal] = useState(false);
     const [viewMode, setViewMode] = useState<'calendar' | 'table'>('calendar');
+
+    // Función compartida para cargar datos del modal de ventas (igual que MasterLastClosingWidget)
+    const fetchSalesData = async (rawClosingDate: string) => {
+        const closingDate = rawClosingDate.split('T')[0];
+        setSalesModalLoading(true);
+        try {
+            const { data: productsData, error: productsError } = await supabase.rpc('get_product_sales_ranking', {
+                p_start_date: closingDate,
+                p_end_date: closingDate,
+                p_start_time: null,
+                p_end_time: null,
+            });
+            if (productsError) console.error('Error fetching products ranking:', productsError);
+            const ranking = (productsData || []).map((p: any, idx: number) => ({ ...p, rank: idx + 1 })).slice(0, 5);
+            setSalesProducts(ranking);
+
+            const { data: ticketsData, error: ticketsError } = await supabase
+                .from('tickets_marbella')
+                .select('hora_cierre, total_documento, fecha')
+                .eq('fecha', closingDate);
+            if (ticketsError) console.error('Error fetching tickets:', ticketsError);
+
+            const hourly = Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
+            const ticketsList = ticketsData || [];
+            ticketsList.forEach((t: any) => {
+                const hour = getBusinessHourFromTicket(t);
+                hourly[hour].total += Number(t.total_documento) || 0;
+            });
+            setSalesChartData(hourly);
+
+            const map = new Map<string, { count: number; sum: number }>();
+            for (const t of ticketsList) {
+                const h = getBusinessHourFromTicket(t);
+                const label = hourToSlotLabel(h);
+                if (!label) continue;
+                const amt = Number(t.total_documento) || 0;
+                const prev = map.get(label) ?? { count: 0, sum: 0 };
+                prev.count += 1;
+                prev.sum += amt;
+                map.set(label, prev);
+            }
+            const rows: any[] = [];
+            for (const [label, { count, sum }] of map) {
+                if (count === 0) continue;
+                rows.push({ label, cant: count, media: sum / count, total: sum });
+            }
+            rows.sort((a, b) => b.total - a.total);
+            setTopHours(rows.slice(0, 3));
+
+            const totalSales = ticketsList.reduce((acc: number, t: any) => acc + (Number(t.total_documento) || 0), 0);
+            setSalesSummary({ totalSales, count: ticketsList.length, avgTicket: ticketsList.length > 0 ? totalSales / ticketsList.length : 0 });
+        } catch (err) {
+            console.error('Error fetching sales data:', err);
+            toast.error('Error al cargar detalles de ventas');
+        } finally {
+            setSalesModalLoading(false);
+        }
+    };
+
+    // Para el modal mensual: carga todos los tickets del mes y agrega
+    const fetchMonthlySalesData = async (startDate: string, endDate: string) => {
+        setSalesModalLoading(true);
+        try {
+            const { data: productsData, error: productsError } = await supabase.rpc('get_product_sales_ranking', {
+                p_start_date: startDate,
+                p_end_date: endDate,
+                p_start_time: null,
+                p_end_time: null,
+            });
+            if (productsError) console.error('Error fetching products ranking:', productsError);
+            const ranking = (productsData || []).map((p: any, idx: number) => ({ ...p, rank: idx + 1 })).slice(0, 5);
+            setSalesProducts(ranking);
+
+            const { data: ticketsData, error: ticketsError } = await supabase
+                .from('tickets_marbella')
+                .select('hora_cierre, total_documento, fecha')
+                .gte('fecha', startDate)
+                .lte('fecha', endDate);
+            if (ticketsError) console.error('Error fetching tickets:', ticketsError);
+
+            const hourly = Array.from({ length: 24 }, (_, h) => ({ hora: h, total: 0 }));
+            const ticketsList = ticketsData || [];
+            ticketsList.forEach((t: any) => {
+                const hour = getBusinessHourFromTicket(t);
+                hourly[hour].total += Number(t.total_documento) || 0;
+            });
+            setSalesChartData(hourly);
+
+            const map = new Map<string, { count: number; sum: number }>();
+            for (const t of ticketsList) {
+                const h = getBusinessHourFromTicket(t);
+                const label = hourToSlotLabel(h);
+                if (!label) continue;
+                const amt = Number(t.total_documento) || 0;
+                const prev = map.get(label) ?? { count: 0, sum: 0 };
+                prev.count += 1;
+                prev.sum += amt;
+                map.set(label, prev);
+            }
+            const rows: any[] = [];
+            for (const [label, { count, sum }] of map) {
+                if (count === 0) continue;
+                rows.push({ label, cant: count, media: sum / count, total: sum });
+            }
+            rows.sort((a, b) => b.total - a.total);
+            setTopHours(rows.slice(0, 3));
+
+            const totalSales = ticketsList.reduce((acc: number, t: any) => acc + (Number(t.total_documento) || 0), 0);
+            setSalesSummary({ totalSales, count: ticketsList.length, avgTicket: ticketsList.length > 0 ? totalSales / ticketsList.length : 0 });
+        } catch (err) {
+            console.error('Error fetching monthly sales data:', err);
+            toast.error('Error al cargar ventas del mes');
+        } finally {
+            setSalesModalLoading(false);
+        }
+    };
 
     const calendarDays = useMemo(() => {
         const base = filterMode === 'range' && rangeStart ? parseLocalSafe(rangeStart) : parseLocalSafe(selectedDate);
@@ -1296,13 +1434,27 @@ export default function HistoryPage() {
                                     RENDIMIENTO
                                 </span>
                             </div>
-                            <div className="flex flex-col items-center justify-center text-center">
+                            <div
+                                onClick={() => {
+                                    const start = rangeStart ?? format(startOfMonth(new Date()), 'yyyy-MM-dd');
+                                    const end = rangeEnd ?? format(endOfMonth(new Date()), 'yyyy-MM-dd');
+                                    const label = monthNavLabel;
+                                    setSalesModalMode('monthly');
+                                    setSalesModalDate(label);
+                                    void fetchMonthlySalesData(start, end);
+                                    setIsSalesModalOpen(true);
+                                }}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); const start = rangeStart ?? format(startOfMonth(new Date()), 'yyyy-MM-dd'); const end = rangeEnd ?? format(endOfMonth(new Date()), 'yyyy-MM-dd'); setSalesModalMode('monthly'); setSalesModalDate(monthNavLabel); void fetchMonthlySalesData(start, end); setIsSalesModalOpen(true); } }}
+                                className="relative flex flex-col items-center justify-center text-center cursor-pointer hover:opacity-70 active:scale-[0.97] transition-all before:absolute before:inset-0 before:-my-3 before:min-h-[var(--tactil-minimo)] before:content-['']"
+                            >
                                 <div className="flex items-center justify-center leading-none">
                                     <span className="whitespace-nowrap text-base sm:text-lg md:text-xl font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
                                         {formatClosingValue(summary.totalGross, 'tpv_sales')}
                                     </span>
                                 </div>
-                                <span className="mt-1 text-[8px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest leading-none">
+                                <span className="mt-1 text-[8px] md:text-[9px] font-black text-zinc-600 uppercase tracking-widest leading-none">
                                     VENTAS
                                 </span>
                             </div>
@@ -1358,28 +1510,79 @@ export default function HistoryPage() {
                             </div>
                         </div>
                         <div className="mt-8 grid grid-cols-4 gap-x-0.5">
-                            {lastClosingKpis.map((item) => (
-                                <div
-                                    key={item.label}
-                                    className="flex min-w-0 items-start justify-center text-center"
-                                >
-                                    <span className="text-[10px] sm:text-xs md:text-sm font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
-                                        {item.value}
-                                    </span>
-                                </div>
-                            ))}
+                            {lastClosingKpis.map((item) => {
+                                const isVentas = item.label === 'Ventas';
+                                const isEfectivo = item.label === 'Efectivo';
+                                const isClickable = (isVentas || isEfectivo) && !!lastClosing;
+                                const handleClick = () => {
+                                    if (!lastClosing) return;
+                                    if (isVentas) {
+                                        const dateStr = lastClosing.closing_date as string;
+                                        setSalesModalMode('last-closing');
+                                        setSalesModalDate(dateStr);
+                                        void fetchSalesData(dateStr);
+                                        setIsSalesModalOpen(true);
+                                    } else if (isEfectivo) {
+                                        setIsLastClosingCashModalOpen(true);
+                                    }
+                                };
+                                return (
+                                    <div
+                                        key={item.label}
+                                        onClick={isClickable ? handleClick : undefined}
+                                        role={isClickable ? 'button' : undefined}
+                                        tabIndex={isClickable ? 0 : undefined}
+                                        onKeyDown={isClickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); } } : undefined}
+                                        className={cn(
+                                            "flex min-w-0 items-start justify-center text-center",
+                                            isClickable && "cursor-pointer hover:opacity-70 active:scale-[0.97] transition-all relative before:absolute before:inset-0 before:-my-2 before:min-h-[var(--tactil-minimo)] before:content-['']"
+                                        )}
+                                    >
+                                        <span className="text-[10px] sm:text-xs md:text-sm font-black text-zinc-950 tabular-nums leading-none month-cal-kpi-value">
+                                            {item.value}
+                                        </span>
+                                    </div>
+                                );
+                            })}
                         </div>
                         <div className="mt-1 grid grid-cols-4 gap-x-0.5">
-                            {lastClosingKpis.map((item) => (
-                                <div
-                                    key={item.label}
-                                    className="flex min-w-0 items-start justify-center text-center"
-                                >
-                                    <span className="text-[8px] md:text-[9px] font-black text-zinc-400 uppercase tracking-wider leading-tight">
-                                        {item.label}
-                                    </span>
-                                </div>
-                            ))}
+                            {lastClosingKpis.map((item) => {
+                                const isVentas = item.label === 'Ventas';
+                                const isEfectivo = item.label === 'Efectivo';
+                                const isClickable = (isVentas || isEfectivo) && !!lastClosing;
+                                const handleClick = () => {
+                                    if (!lastClosing) return;
+                                    if (isVentas) {
+                                        const dateStr = lastClosing.closing_date as string;
+                                        setSalesModalMode('last-closing');
+                                        setSalesModalDate(dateStr);
+                                        void fetchSalesData(dateStr);
+                                        setIsSalesModalOpen(true);
+                                    } else if (isEfectivo) {
+                                        setIsLastClosingCashModalOpen(true);
+                                    }
+                                };
+                                return (
+                                    <div
+                                        key={item.label}
+                                        onClick={isClickable ? handleClick : undefined}
+                                        role={isClickable ? 'button' : undefined}
+                                        tabIndex={isClickable ? 0 : undefined}
+                                        onKeyDown={isClickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); } } : undefined}
+                                        className={cn(
+                                            "flex min-w-0 items-start justify-center text-center",
+                                            isClickable && "cursor-pointer hover:opacity-70 active:scale-[0.97] transition-all relative before:absolute before:inset-0 before:-my-2 before:min-h-[var(--tactil-minimo)] before:content-['']"
+                                        )}
+                                    >
+                                        <span className={cn(
+                                            "text-[8px] md:text-[9px] font-black uppercase tracking-wider leading-tight",
+                                            isClickable ? "text-zinc-600" : "text-zinc-400"
+                                        )}>
+                                            {item.label}
+                                        </span>
+                                    </div>
+                                );
+                            })}
                         </div>
                         <div className="mt-8 grid grid-cols-3 gap-x-0.5">
                             {lastClosingKpisSecundarios.map((item) => (
@@ -1630,7 +1833,7 @@ export default function HistoryPage() {
                         ) : null
                     }
                 >
-                    <div className="relative flex min-h-full w-full flex-col items-center justify-center px-2.5 pt-1.5 pb-2 sm:px-3.5 sm:pt-2 sm:pb-2.5 bg-gradient-to-b from-[#15345c] to-[#0b1c36]">
+                    <div className="relative flex min-h-full w-full flex-col items-center justify-center px-3 pt-3 pb-3 sm:px-4 sm:pt-4 sm:pb-4 bg-[#0b1c36]">
                         <div
                             ref={modalCardRef}
                             className="relative bg-white rounded-2xl sm:rounded-3xl w-full overflow-hidden shadow-2xl flex flex-col shrink-0"
@@ -2094,6 +2297,179 @@ export default function HistoryPage() {
                     setShowClosingModal(false);
                 }}
             />
+
+            {/* Modal de Desglose de Efectivo del Último Cierre (card de resumen) */}
+            {lastClosing && (
+                <CashBreakdownModal
+                    isOpen={isLastClosingCashModalOpen}
+                    onClose={() => setIsLastClosingCashModalOpen(false)}
+                    breakdown={(lastClosing.breakdown ?? {}) as Record<string, any>}
+                    date={lastClosing.closing_date as string}
+                    total={Number(lastClosing.cash_counted ?? 0)}
+                    layer="base"
+                    instance="history-last-closing-cash-breakdown"
+                />
+            )}
+
+            {/* Modal de Resumen de Ventas (Último cierre y Mensual) */}
+            <Modal
+                open={isSalesModalOpen}
+                onClose={() => setIsSalesModalOpen(false)}
+                variant="compact"
+                layer="base"
+                instance="history-sales-summary"
+                title="Resumen de Ventas"
+                subtitle={salesModalDate}
+                scheme="dark"
+                scrollContent={true}
+            >
+                <div className="text-white flex flex-col min-h-full select-none">
+                    <div className="p-4 flex flex-col flex-1">
+                        {salesModalLoading ? (
+                            <div className="flex justify-center items-center py-16 flex-1">
+                                <LoadingSpinner size="lg" className="text-white" />
+                            </div>
+                        ) : (
+                        <>
+                            {/* KPIs */}
+                            <div className="grid grid-cols-3 mb-3 shrink-0">
+                                <div className="flex flex-col items-center justify-center text-center">
+                                    <span className="text-base md:text-xl font-black tabular-nums leading-none text-white">
+                                        {salesSummary.totalSales > 0 ? `${salesSummary.totalSales.toFixed(2)}€` : ' '}
+                                    </span>
+                                    <span className="text-[6.5px] md:text-[8px] font-black text-white/60 uppercase tracking-widest mt-0.5">Ventas Totales</span>
+                                </div>
+                                <div className="flex flex-col items-center justify-center text-center border-l border-white/10">
+                                    <span className="text-base md:text-xl font-black tabular-nums leading-none text-white">
+                                        {salesSummary.count > 0 ? salesSummary.count : ' '}
+                                    </span>
+                                    <span className="text-[6.5px] md:text-[8px] font-black text-white/60 uppercase tracking-widest mt-0.5">Nº Tickets</span>
+                                </div>
+                                <div className="flex flex-col items-center justify-center text-center border-l border-white/10 italic">
+                                    <span className="text-base md:text-xl font-black tabular-nums leading-none text-white">
+                                        {salesSummary.avgTicket > 0 ? `${salesSummary.avgTicket.toFixed(2)}€` : ' '}
+                                    </span>
+                                    <span className="text-[6.5px] md:text-[8px] font-black text-white/60 uppercase tracking-widest mt-0.5">Ticket Medio</span>
+                                </div>
+                            </div>
+
+                            {/* Gráfico horario */}
+                            {(() => {
+                                const rangeData = salesChartData.slice(BUSINESS_HOURS.start, BUSINESS_HOURS.end + 1);
+                                const maxMain = Math.max(...rangeData.map(d => d.total), 0);
+                                const scaleMax = Math.max(maxMain, 1);
+                                const hasData = maxMain > 0;
+                                if (!hasData) return null;
+                                const numPoints = rangeData.length;
+                                const toPath = (data: { hora: number; total: number }[]) => {
+                                    const pts = data.map((d, i) => {
+                                        const x = (i / (numPoints - 1 || 1)) * 120;
+                                        const y = 22 - (d.total / scaleMax) * 18;
+                                        return `${x},${y}`;
+                                    });
+                                    return pts.length > 0 ? `M ${pts.join(' L ')}` : '';
+                                };
+                                return (
+                                    <div className="w-full mb-3 shrink-0">
+                                        <div className="w-full relative">
+                                            <svg viewBox="0 0 120 24" className="w-full h-6 block select-none" preserveAspectRatio="none">
+                                                <path
+                                                    d={toPath(rangeData)}
+                                                    fill="none"
+                                                    stroke="white"
+                                                    strokeWidth="2"
+                                                    strokeLinecap="butt"
+                                                    strokeLinejoin="miter"
+                                                    vectorEffect="non-scaling-stroke"
+                                                />
+                                            </svg>
+                                        </div>
+                                        <div className="flex justify-between px-0 text-[8px] font-mono text-white/60 leading-none select-none pointer-events-none mt-0.5">
+                                            <span>7h</span>
+                                            <span>23h</span>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+
+                            {/* Tablas */}
+                            <div className="flex flex-col gap-4 mt-3">
+                                {/* Top 5 Productos */}
+                                <div>
+                                    <h3 className="text-[10px] font-black uppercase text-white/70 tracking-wider mb-1.5">
+                                        Top 5 Productos
+                                    </h3>
+                                    {salesProducts.length === 0 ? (
+                                        <p className="text-[10px] text-white/40 font-medium italic">No hay productos registrados.</p>
+                                    ) : (
+                                        <table className="w-full text-left border-collapse">
+                                            <thead>
+                                                <tr className="border-b border-white/10 text-[8px] font-black uppercase text-white/40">
+                                                    <th className="pb-1 w-[55%]">Producto</th>
+                                                    <th className="pb-1 text-center w-[15%]">Cant</th>
+                                                    <th className="pb-1 text-center w-[15%]">Media</th>
+                                                    <th className="pb-1 text-right w-[15%]">Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="font-bold text-[10px] text-white/70">
+                                                {salesProducts.map((prod, idx) => (
+                                                    <tr key={idx} className="border-b border-white/5 last:border-0 hover:bg-white/5">
+                                                        <td className="py-1 text-white truncate max-w-[150px]">
+                                                            <span className="text-white/35 tabular-nums">{prod.rank} </span>
+                                                            {prod.nombre_articulo}
+                                                        </td>
+                                                        <td className="py-1 text-center text-white/60 tabular-nums">
+                                                            {Number(prod.cantidad_total).toFixed(0)}
+                                                        </td>
+                                                        <td className="py-1 text-center text-white/50 tabular-nums">
+                                                            {Number(prod.precio_medio).toFixed(1)}€
+                                                        </td>
+                                                        <td className="py-1 text-right font-black tabular-nums text-emerald-400">
+                                                            {Number(prod.total_ingresos).toFixed(1)}€
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    )}
+                                </div>
+
+                                {/* Top 3 Horas */}
+                                <div className="border-t border-white/10 pt-3">
+                                    <h3 className="text-[10px] font-black uppercase text-white/70 tracking-wider mb-1.5">
+                                        Horas con más Facturación
+                                    </h3>
+                                    {topHours.length === 0 ? (
+                                        <p className="text-[10px] text-white/40 font-medium italic">No hay registros horarios.</p>
+                                    ) : (
+                                        <table className="w-full text-left border-collapse">
+                                            <thead>
+                                                <tr className="border-b border-white/10 text-[8px] font-black uppercase text-white/40">
+                                                    <th className="pb-1 w-[45%]">Horas</th>
+                                                    <th className="pb-1 text-center w-[15%]">Cant</th>
+                                                    <th className="pb-1 text-center w-[20%]">Media</th>
+                                                    <th className="pb-1 text-right w-[20%]">Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="font-bold text-[10px] text-white/70">
+                                                {topHours.map((row, idx) => (
+                                                    <tr key={idx} className="border-b border-white/5 last:border-0 hover:bg-white/5">
+                                                        <td className="py-1 font-mono font-bold text-white tabular-nums">{row.label}</td>
+                                                        <td className="py-1 text-center text-white/70 tabular-nums">{row.cant}</td>
+                                                        <td className="py-1 text-center text-white/50 tabular-nums">{row.media.toFixed(1)}€</td>
+                                                        <td className="py-1 text-right font-black tabular-nums text-emerald-400">{row.total.toFixed(1)}€</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    )}
+                                </div>
+                            </div>
+                        </>
+                        )}
+                    </div>
+                </div>
+            </Modal>
 
             {exportMonthPickerOpen && exportPendingFormat ? (
                 <Modal

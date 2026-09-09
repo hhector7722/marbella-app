@@ -687,7 +687,7 @@ export function StaffWeekScheduleWidget({
                                             <>
                                                 <div
                                                     className="grid grid-cols-8 gap-px shrink-0"
-                                                    data-week-row={isExpanded ? 'expanded' : undefined}
+                                                    data-week-row={isExpanded ? 'expanded' : 'normal'}
                                                     data-master-row="true"
                                                 >
                                                     {dayButtons}
@@ -708,7 +708,7 @@ export function StaffWeekScheduleWidget({
                                             <>
                                                 <div
                                                     className={cn('grid gap-px', WEEK_GRID_COLS)}
-                                                    data-week-row={isExpanded ? 'expanded' : undefined}
+                                                    data-week-row={isExpanded ? 'expanded' : 'normal'}
                                                 >
                                                     {dayButtons}
                                                 </div>
