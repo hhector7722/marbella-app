@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
+    addDays,
     addMonths,
     eachDayOfInterval,
     endOfMonth,
@@ -284,31 +285,33 @@ function WeekendDayColumn({
                             </span>
                         )}
                     </div>
-                    <div data-element="weekend-evento-detail" className="flex w-full flex-col">
-                        {eventDetailRows.map((row, i) => (
-                            <div key={i} className={cn("grid w-full gap-x-1", masterMode ? "grid-cols-[max-content_max-content_minmax(0,1fr)]" : "grid-cols-3")}>
-                                {(
-                                    [
-                                        { kind: 'hours', text: row.hours },
-                                        { kind: 'pax', text: row.pax },
-                                        { kind: 'categories', text: row.categories },
-                                    ] as const
-                                ).map((cell) => (
-                                    <span
-                                        key={cell.kind}
-                                        data-element="weekend-evento-detail-value"
-                                        data-segment-kind={cell.kind}
-                                        className={cn(
-                                            "text-center text-[6px] font-medium leading-none opacity-80",
-                                            masterMode && cell.kind === 'hours' ? "whitespace-nowrap font-semibold" : "min-w-0 truncate"
-                                        )}
-                                    >
-                                        {cell.text}
-                                    </span>
-                                ))}
-                            </div>
-                        ))}
-                    </div>
+                    {eventDetailRows.length > 0 ? (
+                        <div data-element="weekend-evento-detail" className="flex w-full flex-col">
+                            {eventDetailRows.map((row, i) => (
+                                <div key={i} className={cn("grid w-full gap-x-1", masterMode ? "grid-cols-[max-content_max-content_minmax(0,1fr)]" : "grid-cols-3")}>
+                                    {(
+                                        [
+                                            { kind: 'hours', text: row.hours },
+                                            { kind: 'pax', text: row.pax },
+                                            { kind: 'categories', text: row.categories },
+                                        ] as const
+                                    ).map((cell) => (
+                                        <span
+                                            key={cell.kind}
+                                            data-element="weekend-evento-detail-value"
+                                            data-segment-kind={cell.kind}
+                                            className={cn(
+                                                "text-center text-[6px] font-medium leading-none opacity-80",
+                                                masterMode && cell.kind === 'hours' ? "whitespace-nowrap font-semibold" : "min-w-0 truncate"
+                                            )}
+                                        >
+                                            {cell.text}
+                                        </span>
+                                    ))}
+                                </div>
+                            ))}
+                        </div>
+                    ) : null}
                 </div>
             </div>
         </button>
@@ -476,14 +479,48 @@ export function StaffWeekScheduleWidget({
     }, [masterMode, rangeStart, rangeEnd]);
 
     useEffect(() => {
-        if (!masterMode || loading) return;
+        if (!masterMode) return;
         void loadOvertimeData();
-    }, [loadOvertimeData, overtimeRefreshKey, masterMode, loading]);
+    }, [loadOvertimeData, overtimeRefreshKey, masterMode]);
 
-    const loadMonthData = useCallback(async () => {
+    const loadedActivityDatesRef = useRef<Set<string>>(new Set());
+    const expandedSatKey = useMemo(() => format(addDays(expandedWeekStart, 5), 'yyyy-MM-dd'), [expandedWeekStart]);
+    const expandedSunKey = useMemo(() => format(addDays(expandedWeekStart, 6), 'yyyy-MM-dd'), [expandedWeekStart]);
+
+    const loadWeekendActivities = useCallback(async (satKey: string, sunKey: string) => {
+        if (loadedActivityDatesRef.current.has(satKey) && loadedActivityDatesRef.current.has(sunKey)) {
+            return;
+        }
+
+        loadedActivityDatesRef.current.add(satKey);
+        loadedActivityDatesRef.current.add(sunKey);
+
+        try {
+            const activitiesResult = await fetchActivitiesForRangeAction({
+                startDate: satKey,
+                endDate: sunKey,
+            });
+
+            if (activitiesResult.success) {
+                const next: Record<string, BarActivity[]> = {};
+                next[satKey] = activitiesResult.byDate[satKey]?.barActivities ?? [];
+                next[sunKey] = activitiesResult.byDate[sunKey]?.barActivities ?? [];
+                setEventsByDate((prev) => ({ ...prev, ...next }));
+            }
+        } catch (error) {
+            console.error('Error fetching weekend activities:', error);
+            loadedActivityDatesRef.current.delete(satKey);
+            loadedActivityDatesRef.current.delete(sunKey);
+        }
+    }, []);
+
+    useEffect(() => {
+        void loadWeekendActivities(expandedSatKey, expandedSunKey);
+    }, [loadWeekendActivities, expandedSatKey, expandedSunKey]);
+
+    const loadMonthShifts = useCallback(async () => {
         if (!userId) {
             setShifts([]);
-            setEventsByDate({});
             setLoading(false);
             return;
         }
@@ -493,42 +530,28 @@ export function StaffWeekScheduleWidget({
             const startIso = `${rangeStart}T00:00:00`;
             const endIso = `${rangeEnd}T23:59:59`;
 
-            const [shiftsResult, activitiesResult] = await Promise.all([
-                supabase
-                    .from('shifts')
-                    .select('start_time, end_time')
-                    .eq('user_id', userId)
-                    .eq('is_published', true)
-                    .gte('start_time', startIso)
-                    .lte('start_time', endIso)
-                    .order('start_time', { ascending: true }),
-                fetchActivitiesForRangeAction({ startDate: rangeStart, endDate: rangeEnd }),
-            ]);
+            const { data, error } = await supabase
+                .from('shifts')
+                .select('start_time, end_time')
+                .eq('user_id', userId)
+                .eq('is_published', true)
+                .gte('start_time', startIso)
+                .lte('start_time', endIso)
+                .order('start_time', { ascending: true });
 
-            if (shiftsResult.error) throw shiftsResult.error;
-            setShifts(shiftsResult.data ?? []);
-
-            if (activitiesResult.success) {
-                const next: Record<string, BarActivity[]> = {};
-                for (const [date, day] of Object.entries(activitiesResult.byDate)) {
-                    next[date] = day.barActivities;
-                }
-                setEventsByDate(next);
-            } else {
-                setEventsByDate({});
-            }
+            if (error) throw error;
+            setShifts(data ?? []);
         } catch (error) {
             console.error(error);
             setShifts([]);
-            setEventsByDate({});
         } finally {
             setLoading(false);
         }
     }, [userId, rangeEnd, rangeStart]);
 
     useEffect(() => {
-        void loadMonthData();
-    }, [loadMonthData]);
+        void loadMonthShifts();
+    }, [loadMonthShifts]);
 
     const handleDaySelect = (day: Date) => {
         setExpandedWeekStart(startOfWeek(day, { weekStartsOn: 1 }));
@@ -649,7 +672,7 @@ export function StaffWeekScheduleWidget({
                                     <WeekExtCell
                                         weekDays={weekDays}
                                         week={overtimeWeeks[weekKey]}
-                                        loading={overtimeLoading || loading}
+                                        loading={overtimeLoading}
                                         onOpenWeekDetail={onOpenWeekDetail}
                                     />
                                 ) : null;

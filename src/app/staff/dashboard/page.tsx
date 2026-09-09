@@ -1,10 +1,8 @@
-import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { createClient } from "@/utils/supabase/server";
 import DashboardSwitcher from '@/components/dashboards/DashboardSwitcher';
 import { withTimeout } from '@/lib/with-timeout';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { resolveSessionUser } from '@/lib/auth/resolve-session-user';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import {
@@ -12,7 +10,7 @@ import {
     resolveDashboardIdentityFromViewAs,
 } from '@/lib/master-view-as';
 
-async function StaffDashboardContent() {
+export default async function StaffDashboardPage() {
     const supabase = await createClient();
     const user = await resolveSessionUser(supabase, 2000);
 
@@ -76,25 +74,14 @@ async function StaffDashboardContent() {
         viewAsProfile,
     });
 
+    const effectiveUserId = viewAsUserId && viewAsProfile ? viewAsUserId : user.id;
+
     return (
         <DashboardSwitcher
+            userId={effectiveUserId}
             userRole={effective.role}
             userEmail={effective.email}
             initialView="staff"
         />
-    );
-}
-
-export default function StaffDashboardPage() {
-    return (
-        <Suspense
-            fallback={
-                <div className="flex min-h-[50dvh] items-center justify-center">
-                    <LoadingSpinner size="xl" className="text-white" />
-                </div>
-            }
-        >
-            <StaffDashboardContent />
-        </Suspense>
     );
 }

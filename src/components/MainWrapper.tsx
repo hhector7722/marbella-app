@@ -25,7 +25,7 @@ export default function MainWrapper({ children }: { children: React.ReactNode })
                 !isLogin && !fullscreenCarta && !isDesignSystem ? 'true' : undefined
             }
             className={cn(
-            'min-h-screen transition-all duration-300',
+            'min-h-screen',
             !isLogin && !fullscreenCarta && !isDesignSystem && (
                 dashboardMosaic ? 'pt-header-safe-tight' : 'pt-header-safe'
             ),

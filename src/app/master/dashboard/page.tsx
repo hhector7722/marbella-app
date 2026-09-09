@@ -25,6 +25,7 @@ export default async function MasterDashboardPage() {
   // un timeout de profiles redirigía a /staff y empeoraba el arranque.
   return (
     <DashboardSwitcher
+      userId={user.id}
       userRole="manager"
       userEmail={email}
       initialView="master"

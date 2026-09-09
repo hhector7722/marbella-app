@@ -268,16 +268,26 @@ function StaffFichajeIcon({
     );
 }
 
-export default function StaffDashboardView() {
+type StaffDashboardViewProps = {
+    initialUserId?: string | null;
+    initialRole?: 'staff' | 'manager' | 'supervisor';
+    initialEmail?: string;
+};
+
+export default function StaffDashboardView({
+    initialUserId,
+    initialRole,
+    initialEmail,
+}: StaffDashboardViewProps = {}) {
     const supabase = createClient();
     const router = useRouter();
     const { identity, isMaster } = useMasterViewAs();
     const [clockLoading, setClockLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
-    const [userId, setUserId] = useState<string | null>(null);
-    const [userRole, setUserRole] = useState<'staff' | 'manager' | 'supervisor'>('staff');
+    const [userId, setUserId] = useState<string | null>(() => initialUserId ?? null);
+    const [userRole, setUserRole] = useState<'staff' | 'manager' | 'supervisor'>(() => initialRole ?? 'staff');
     const [plantillaEmployees, setPlantillaEmployees] = useState<PlantillaEmployeeRow[]>([]);
-    const [userEmail, setUserEmail] = useState<string>('');
+    const [userEmail, setUserEmail] = useState<string>(() => initialEmail ?? '');
     const [status, setStatus] = useState<WorkStatus>('idle');
     const [todayLog, setTodayLog] = useState<any>(null);
     const [attendanceRefreshKey, setAttendanceRefreshKey] = useState(0);
@@ -405,7 +415,7 @@ export default function StaffDashboardView() {
     useEffect(() => {
         if (isMaster && !identity) return;
         initialize();
-    }, [isMaster, identity?.isViewingAs, identity?.effectiveUserId]);
+    }, [isMaster, identity?.isViewingAs, identity?.effectiveUserId, initialUserId]);
 
     const scheduleDateParam = searchParams.get('scheduleDate')?.trim();
     const scheduleInitialFocus =
@@ -422,15 +432,17 @@ export default function StaffDashboardView() {
         try {
             const { data: { session } } = await supabase.auth.getSession();
             const user = session?.user;
-            if (!user) {
+            if (!user && !initialUserId) {
                 setClockLoading(false);
                 return;
             }
-            const effectiveUserId = identity?.isViewingAs ? identity.effectiveUserId : user.id;
+            const effectiveUserId = identity?.isViewingAs
+                ? identity.effectiveUserId
+                : (initialUserId ?? user?.id ?? '');
 
             setUserId(effectiveUserId);
             setUserEmail(
-                identity?.isViewingAs ? identity.effectiveEmail : (user.email ?? ''),
+                identity?.isViewingAs ? identity.effectiveEmail : (initialEmail || user?.email || ''),
             );
 
             const { data: profile } = await supabase.from('profiles')
@@ -442,10 +454,12 @@ export default function StaffDashboardView() {
                 setUserRole(profile.role as any);
             } else if (identity?.isViewingAs) {
                 setUserRole(identity.effectiveRole as any);
+            } else if (initialRole) {
+                setUserRole(initialRole);
             }
 
             const manageRole = identity?.isViewingAs ? identity.effectiveRole : profile?.role;
-            const manageEmail = identity?.isViewingAs ? identity.effectiveEmail : user.email;
+            const manageEmail = identity?.isViewingAs ? identity.effectiveEmail : (initialEmail || user?.email);
 
             if (canManageStaffAttendance(manageRole, manageEmail)) {
                 const { data: emps } = await supabase

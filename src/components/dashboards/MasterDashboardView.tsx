@@ -48,6 +48,7 @@ type MasterDashboardViewProps = {
         boxes?: any[];
         allEmployees?: any[];
     };
+    initialUserId?: string | null;
 };
 
 /** Fila de trabajador en el detalle de semana de horas extras (mismo lenguaje que el dashboard). */
@@ -92,7 +93,7 @@ function MasterStaffOvertimeRow({
     );
 }
 
-export default function MasterDashboardView({ initialData }: MasterDashboardViewProps) {
+export default function MasterDashboardView({ initialData, initialUserId }: MasterDashboardViewProps) {
     const router = useRouter();
     const supabase = createClient();
     const { actualBalance, boxes, loading: treasuryLoading, refresh } = useMasterTreasuryLive({
@@ -133,7 +134,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
     const [overtimeRefreshKey, setOvertimeRefreshKey] = useState(0);
     const [pendingReservationsCount, setPendingReservationsCount] = useState(0);
 
-    const [userId, setUserId] = useState<string | null>(null);
+    const [userId, setUserId] = useState<string | null>(() => initialUserId ?? null);
     const [userRole, setUserRole] = useState<'staff' | 'manager' | 'supervisor'>('manager');
     const [userEmail, setUserEmail] = useState('');
     const [plantillaEmployees, setPlantillaEmployees] = useState<PlantillaEmployeeRow[]>([]);

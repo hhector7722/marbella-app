@@ -44,9 +44,10 @@ import {
     formatClosingDifference,
     formatCurrencySpanish,
 } from '@/lib/cash-closing-metrics';
-import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
-import { DenominationCountGrid } from '@/components/cash/DenominationCountGrid';
-import { CashCountFooter } from '@/components/cash/CashCountFooter';
+import { CashBreakdownModal } from '@/components/cash/CashBreakdownModal';
+// Delegado a CashBreakdownModal: DenominationCountGrid, CashCountFooter
+import type { DenominationCountGrid } from '@/components/cash/DenominationCountGrid';
+import type { CashCountFooter } from '@/components/cash/CashCountFooter';
 
 // --- TYPES & CONSTANTS ---
 
@@ -335,121 +336,6 @@ const DonutChart = ({ size = 60, percentage = 75, color = "#10b981" }: { size?: 
     );
 };
 
-const CashBreakdownModal = ({
-    isOpen,
-    onClose,
-    breakdown,
-    date,
-    total,
-    isEditing = false,
-    onUpdate,
-    onSave,
-    saving = false,
-}: {
-    isOpen: boolean,
-    onClose: () => void,
-    breakdown: any,
-    date: string,
-    total: number,
-    isEditing?: boolean,
-    onUpdate?: (den: string, qty: number) => void,
-    onSave?: () => void,
-    saving?: boolean,
-}) => {
-    const [calculatorOpen, setCalculatorOpen] = useState(false);
-
-    const displayBreakdown = isEditing ? {
-        ...DENOMINATIONS.reduce((acc, d) => ({ ...acc, [d.toString()]: 0 }), {} as Record<string, number>),
-        ...breakdown
-    } : breakdown;
-
-    const titleDate = (() => {
-        const d = new Date(date);
-        return isNaN(d.getTime()) ? "Fecha Inválida" : format(d, 'eeee d MMM', { locale: es });
-    })();
-
-    const editCounts = Object.fromEntries(
-        DENOMINATIONS.map((d) => [d, Number(displayBreakdown?.[String(d)] ?? displayBreakdown?.[d] ?? 0)])
-    ) as Record<number, number>;
-
-    return (
-        <Modal
-            open={isOpen}
-            onClose={onClose}
-            variant={isEditing ? "amplify" : "compact"}
-            layer="derived"
-            instance="history-cash-breakdown"
-            parentInstance="history-closing-detail"
-            title={titleDate}
-            subtitle="Arqueo de Efectivo"
-            headerTone="petroleum"
-            scrollContent={!isEditing}
-            footer={
-                isEditing ? (
-                    <CashCountFooter
-                        total={total}
-                        instancePrefix="history-cash-breakdown"
-                        onCancel={onClose}
-                        onSave={onSave}
-                        saveLoading={saving}
-                        saveLabel="Guardar"
-                    />
-                ) : undefined
-            }
-        >
-                <QuickCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
-                <FloatingCalculatorFab isOpen={calculatorOpen} onToggle={() => setCalculatorOpen(true)} />
-                {isEditing ? (
-                    <DenominationCountGrid
-                        counts={editCounts}
-                        onAdjust={(denom, delta) => {
-                            const current = Number(displayBreakdown?.[String(denom)] ?? displayBreakdown?.[denom] ?? 0);
-                            onUpdate?.(String(denom), Math.max(0, current + delta));
-                        }}
-                        onChange={(denom, raw) => onUpdate?.(String(denom), parseInt(raw, 10) || 0)}
-                    />
-                ) : (
-                <div className="flex min-h-0 flex-1 flex-col">
-                    <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar p-6">
-                    <div className="grid grid-cols-3 gap-x-2.5 gap-y-1.5 p-0.5 sm:grid-cols-5">
-                        {DENOMINATIONS.map((denom) => {
-                            const qty = Number(displayBreakdown?.[String(denom)] ?? displayBreakdown?.[denom] ?? 0);
-                            return (
-                            <div key={denom} className="flex flex-col items-center gap-0.5">
-                                <div className="flex h-8 min-h-[36px] w-full items-center justify-center rounded-lg sm:h-9">
-                                    <Image
-                                        src={CURRENCY_IMAGES[denom]}
-                                        alt={denom < 1 ? `${(denom * 100).toFixed(0)}c` : `${denom}€`}
-                                        width={140}
-                                        height={140}
-                                        className="pointer-events-none h-full w-auto object-contain drop-shadow-lg"
-                                    />
-                                </div>
-                                <div className="w-full text-center">
-                                    <span className="mb-0 block text-[7px] font-black uppercase tracking-widest text-gray-500">
-                                        {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
-                                    </span>
-                                    <div className="mx-auto flex h-8 w-[86%] items-center justify-center rounded-lg border border-zinc-200 bg-white shadow-sm">
-                                        <span className="text-[9px] font-black tabular-nums tracking-tighter text-zinc-700">
-                                            {qty > 0 ? qty : ' '}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            );
-                        })}
-                    </div>
-                    <div className="mt-8 pt-6 border-t border-gray-100 flex justify-between items-center px-2">
-                        <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Total Contado</span>
-                        <span className="text-2xl font-black text-[#36606F]">{formatCurrencySpanish(total)}</span>
-                    </div>
-                    </div>
-                </div>
-                )}
-        </Modal>
-    );
-};
-
 // --- HELPERS ---
 
 /** Shows an animated skeleton while the browser downloads the photo, then reveals it. */
@@ -457,16 +343,16 @@ function PhotoWithSpinner({ src, alt }: { src: string | null; alt: string }) {
     const [loaded, setLoaded] = useState(false);
     if (!src) return null;
     return (
-        <div className="relative h-28 w-full flex items-center justify-center">
+        <div className="relative h-16 sm:h-20 w-full flex items-center justify-center">
             {!loaded && (
-                <div className="absolute inset-0 flex items-center justify-center bg-zinc-50 rounded-xl border border-zinc-100 animate-pulse">
+                <div className="absolute inset-0 flex items-center justify-center bg-zinc-50 rounded-lg border border-zinc-100 animate-pulse">
                     <LoadingSpinner size="sm" className="text-[#36606F]/50" />
                 </div>
             )}
             <img
                 src={src}
                 alt={alt}
-                className={`h-28 w-auto max-w-full rounded-xl object-contain transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+                className={`h-16 sm:h-20 w-auto max-w-full rounded-lg object-contain transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
                 onLoad={() => setLoaded(true)}
             />
         </div>
@@ -1712,11 +1598,11 @@ export default function HistoryPage() {
                     layer="base"
                     instance="history-closing-detail"
                     title={(() => {
-                        const d = new Date(selectedClosing.closed_at);
+                        const d = parseLocalSafe(selectedClosing.closed_at || selectedClosing.closing_date);
                         return isNaN(d.getTime()) ? 'Fecha inválida' : format(d, 'eeee d MMMM', { locale: es });
                     })()}
                     subtitle="Detalle de cierre"
-                    headerTone="petroleum"
+                    scheme="dark"
                     scrollContent={false}
                     headerTrailing={
                         isManager ? (
@@ -1725,7 +1611,7 @@ export default function HistoryPage() {
                                     <button
                                         type="button"
                                         onClick={handleDeleteClosing}
-                                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+                                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white/80 shadow-none outline-none hover:text-white hover:bg-white/10 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                                         aria-label="Eliminar cierre"
                                     >
                                         <Trash2 size={18} strokeWidth={2.5} />
@@ -1734,7 +1620,7 @@ export default function HistoryPage() {
                                     <button
                                         type="button"
                                         onClick={() => { setEditData({ ...selectedClosing, breakdown: selectedClosing.breakdown ?? {} }); setIsEditing(true); }}
-                                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+                                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white/80 shadow-none outline-none hover:text-white hover:bg-white/10 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                                         aria-label="Editar cierre"
                                     >
                                         <Pencil size={18} strokeWidth={2.5} />
@@ -1744,10 +1630,10 @@ export default function HistoryPage() {
                         ) : null
                     }
                 >
-                    <div className="relative flex flex-col items-center gap-4 w-full animate-in zoom-in-95 duration-200">
+                    <div className="relative flex min-h-full w-full flex-col items-center justify-center px-2.5 pt-1.5 pb-2 sm:px-3.5 sm:pt-2 sm:pb-2.5 bg-gradient-to-b from-[#15345c] to-[#0b1c36]">
                         <div
                             ref={modalCardRef}
-                            className="relative bg-white rounded-[3rem] w-full overflow-hidden shadow-2xl flex flex-col shrink-0"
+                            className="relative bg-white rounded-2xl sm:rounded-3xl w-full overflow-hidden shadow-2xl flex flex-col shrink-0"
                             style={{
                                 transform: `translateX(${swipeDragX}px)`,
                                 transition: swipePhase === 'animating' ? 'transform 300ms cubic-bezier(0.25, 0.1, 0.25, 1.0)' : 'none',
@@ -1759,7 +1645,7 @@ export default function HistoryPage() {
                             onClick={e => e.stopPropagation()}
                         >
                         {isEditing && (
-                        <div className="flex items-center justify-center px-8 pt-3">
+                        <div className="flex items-center justify-center px-4 pt-2">
                             <input
                                 type="datetime-local"
                                 value={(() => {
@@ -1781,7 +1667,7 @@ export default function HistoryPage() {
                             />
                         </div>
                         )}
-                        <div className="px-8 pb-8 pt-3 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
+                        <div className="px-4 sm:px-6 pt-2 pb-2.5 space-y-2 overflow-y-auto flex-1 custom-scrollbar">
                             {(() => {
                                 const current = isEditing ? editData : selectedClosing;
                                 const getValue = (key: keyof typeof current) => Number(current?.[key] ?? 0);
@@ -1823,7 +1709,7 @@ export default function HistoryPage() {
                                         : null;
  
                                     return (
-                                        <div className="grid min-h-[30px] grid-cols-[7.5rem_1fr] items-center gap-x-2 sm:grid-cols-[8.5rem_1fr] sm:gap-x-3 w-full max-w-xs mx-auto">
+                                        <div className="grid min-h-[26px] grid-cols-[7.5rem_1fr] items-center gap-x-2 sm:grid-cols-[8.5rem_1fr] sm:gap-x-3 w-full max-w-xs mx-auto">
                                             <span className="text-[10px] font-bold uppercase leading-tight text-[#36606F] sm:text-[11px]">
                                                 {label}
                                             </span>
@@ -1842,16 +1728,16 @@ export default function HistoryPage() {
                                                         </Button>
                                                     </div>
                                                 ) : isEditing && editable && fieldKey ? (
-                                                    <div className="w-[8.75rem] sm:w-[9.5rem] h-8 border border-[#36606F]/80 rounded-xl bg-white flex items-center justify-center relative shadow-sm">
+                                                    <div className="w-[8.75rem] sm:w-[9.5rem] h-7 border border-[#36606F]/80 rounded-lg bg-white flex items-center justify-center relative shadow-sm">
                                                         <input
                                                             type="number"
                                                             step="0.01"
-                                                            className="h-full w-full bg-transparent px-2 text-center text-sm font-black tabular-nums text-zinc-800 outline-none border-none focus:ring-0"
+                                                            className="h-full w-full bg-transparent px-2 text-center text-xs font-black tabular-nums text-zinc-800 outline-none border-none focus:ring-0"
                                                             value={value || ''}
                                                             onChange={e => handleFieldUpdate(fieldKey, parseFloat(e.target.value) || 0)}
                                                         />
                                                         {hasValue && (
-                                                            <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-black text-zinc-500">
+                                                            <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-zinc-500">
                                                                 €
                                                             </span>
                                                         )}
@@ -1860,7 +1746,7 @@ export default function HistoryPage() {
                                                     <div 
                                                         className={cn(
                                                             "w-[8.75rem] sm:w-[9.5rem] py-0.5 flex items-center justify-center relative",
-                                                            onClick && "cursor-pointer hover:underline decoration-[#36606F]/50 underline-offset-4 min-h-[48px]"
+                                                            onClick && "cursor-pointer hover:underline decoration-[#36606F]/50 underline-offset-4 before:absolute before:-inset-y-2 before:inset-x-0 before:min-h-[48px] before:content-['']"
                                                         )}
                                                         onClick={onClick}
                                                         role={onClick ? 'button' : undefined}
@@ -1868,7 +1754,7 @@ export default function HistoryPage() {
                                                         onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } } : undefined}
                                                     >
                                                         <span className={cn(
-                                                            "text-sm font-black tabular-nums",
+                                                            "text-xs sm:text-sm font-black tabular-nums",
                                                             diffTone ?? 'text-zinc-800'
                                                         )}>
                                                             {text}
@@ -1886,7 +1772,7 @@ export default function HistoryPage() {
 
                                 return (
                                     <div className="flex flex-col divide-y divide-zinc-100">
-                                        <div className="flex items-center justify-center gap-2 pb-2">
+                                        <div className="flex items-center justify-center gap-2 pb-1.5 pt-0.5">
                                             <div className="flex items-center gap-1 opacity-85">
                                                 {(() => {
                                                     const weatherId = weatherIdFromLabel(selectedClosing.weather);
@@ -1920,7 +1806,7 @@ export default function HistoryPage() {
                                             </div>
                                         </div>
 
-                                        <div className="h-14 flex items-center">
+                                        <div className="h-7 sm:h-7.5 flex items-center">
                                             <RowItem
                                                 label="Ventas"
                                                 value={getValue('tpv_sales')}
@@ -1928,13 +1814,13 @@ export default function HistoryPage() {
                                                 editable={true}
                                             />
                                         </div>
-                                        <div className="h-14 flex items-center">
+                                        <div className="h-7 sm:h-7.5 flex items-center">
                                             <RowItem
                                                 label="Venta Neta"
                                                 value={getValue('net_sales')}
                                             />
                                         </div>
-                                        <div className="h-14 flex items-center">
+                                        <div className="h-7 sm:h-7.5 flex items-center">
                                             <RowItem
                                                 label="Tarjeta"
                                                 value={getValue('sales_card')}
@@ -1942,7 +1828,7 @@ export default function HistoryPage() {
                                                 editable={true}
                                             />
                                         </div>
-                                        <div className="h-14 flex items-center">
+                                        <div className="h-7 sm:h-7.5 flex items-center">
                                             <RowItem
                                                 label="Efectivo"
                                                 value={getValue('cash_counted')}
@@ -1950,7 +1836,7 @@ export default function HistoryPage() {
                                                 openEditor={() => setShowCashDetails(true)}
                                             />
                                         </div>
-                                        <div className="h-14 flex items-center">
+                                        <div className="h-7 sm:h-7.5 flex items-center">
                                             <RowItem
                                                 label="Pendiente Pago"
                                                 value={getValue('sales_pending')}
@@ -1958,7 +1844,7 @@ export default function HistoryPage() {
                                                 editable={true}
                                             />
                                         </div>
-                                        <div className="h-14 flex items-center">
+                                        <div className="h-7 sm:h-7.5 flex items-center">
                                             <RowItem
                                                 label="Cobros Pendientes"
                                                 value={collectionsValue}
@@ -1966,7 +1852,7 @@ export default function HistoryPage() {
                                                 editable={true}
                                             />
                                         </div>
-                                        <div className="h-14 flex items-center">
+                                        <div className="h-7 sm:h-7.5 flex items-center">
                                             <RowItem
                                                 label="Diferencia"
                                                 value={getValue('difference')}
@@ -1988,7 +1874,7 @@ export default function HistoryPage() {
                                             const weekdayPlural = weekdayName.endsWith('s') ? weekdayName : `${weekdayName}s`;
 
                                             return (
-                                                <div className="pt-2 flex flex-col items-center justify-center gap-1.5 text-[11px] text-zinc-500 font-medium w-full text-center">
+                                                <div className="pt-1.5 pb-0.5 flex flex-col items-center justify-center gap-0.5 text-[10px] text-zinc-500 font-medium w-full text-center">
                                                     <div className="flex items-center justify-center gap-1.5">
                                                         <span>Esperado:</span>
                                                         <span className="font-extrabold text-zinc-700">
@@ -2009,7 +1895,7 @@ export default function HistoryPage() {
                                                         </div>
                                                     </div>
                                                     {details.expectedSales > 0 && (
-                                                        <p className="text-[9px] text-zinc-400 font-normal italic mt-0.5 max-w-[85%] mx-auto">
+                                                        <p className="text-[8.5px] text-zinc-400 font-normal italic max-w-[85%] mx-auto">
                                                             Esperado basado en los {details.daysUsed} {weekdayPlural} anteriores.
                                                         </p>
                                                     )}
@@ -2027,23 +1913,23 @@ export default function HistoryPage() {
 
                                 if (closingPhotosLoading && hasAnyPhoto) {
                                     return (
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-1">
                                             {hasDataphonePhoto && (
-                                                <div className="flex flex-col items-center gap-1.5">
-                                                    <div className="flex h-28 w-full items-center justify-center bg-zinc-50 rounded-xl border border-zinc-100 animate-pulse">
+                                                <div className="flex flex-col items-center gap-1">
+                                                    <div className="flex h-16 sm:h-20 w-full items-center justify-center bg-zinc-50 rounded-lg border border-zinc-100 animate-pulse">
                                                         <LoadingSpinner size="sm" className="text-[#36606F]/50" />
                                                     </div>
-                                                    <span className="text-center text-[9px] font-black uppercase leading-tight tracking-widest text-zinc-300">
+                                                    <span className="text-center text-[8px] font-bold uppercase leading-tight tracking-wider text-zinc-300">
                                                         Totales datáfonos
                                                     </span>
                                                 </div>
                                             )}
                                             {hasBdpPhoto && (
-                                                <div className="flex flex-col items-center gap-1.5">
-                                                    <div className="flex h-28 w-full items-center justify-center bg-zinc-50 rounded-xl border border-zinc-100 animate-pulse">
+                                                <div className="flex flex-col items-center gap-1">
+                                                    <div className="flex h-16 sm:h-20 w-full items-center justify-center bg-zinc-50 rounded-lg border border-zinc-100 animate-pulse">
                                                         <LoadingSpinner size="sm" className="text-[#36606F]/50" />
                                                     </div>
-                                                    <span className="text-center text-[9px] font-black uppercase leading-tight tracking-widest text-zinc-300">
+                                                    <span className="text-center text-[8px] font-bold uppercase leading-tight tracking-wider text-zinc-300">
                                                         Informe TPV
                                                     </span>
                                                 </div>
@@ -2054,18 +1940,18 @@ export default function HistoryPage() {
                                 return null;
                             })()}
                             {!closingPhotosLoading && (closingPhotoUrls.dataphoneUrl || closingPhotoUrls.bdpUrl) ? (
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-1">
                                     {closingPhotoUrls.dataphoneUrl ? (
                                         <button
                                             type="button"
                                             onClick={() => openClosingPhotoLightbox('Totales datáfonos')}
-                                            className="flex min-h-[48px] flex-col items-center gap-1.5 transition-opacity active:opacity-80"
+                                            className="flex min-h-[48px] flex-col items-center gap-1 transition-opacity active:opacity-80"
                                         >
                                             <PhotoWithSpinner
                                                 src={closingPhotoUrls.dataphoneUrl}
                                                 alt="Totales datáfonos"
                                             />
-                                            <span className="max-w-full text-center text-[9px] font-black uppercase leading-tight tracking-widest text-gray-400">
+                                            <span className="max-w-full text-center text-[8px] font-bold uppercase leading-tight tracking-wider text-gray-400">
                                                 Totales datáfonos
                                             </span>
                                         </button>
@@ -2074,13 +1960,13 @@ export default function HistoryPage() {
                                         <button
                                             type="button"
                                             onClick={() => openClosingPhotoLightbox('Informe TPV')}
-                                            className="flex min-h-[48px] flex-col items-center gap-1.5 transition-opacity active:opacity-80"
+                                            className="flex min-h-[48px] flex-col items-center gap-1 transition-opacity active:opacity-80"
                                         >
                                             <PhotoWithSpinner
                                                 src={closingPhotoUrls.bdpUrl}
                                                 alt="Informe TPV"
                                             />
-                                            <span className="max-w-full text-center text-[9px] font-black uppercase leading-tight tracking-widest text-gray-400">
+                                            <span className="max-w-full text-center text-[8px] font-bold uppercase leading-tight tracking-wider text-gray-400">
                                                 Informe TPV
                                             </span>
                                         </button>
@@ -2088,7 +1974,7 @@ export default function HistoryPage() {
                                 </div>
                             ) : null}
                             {!closingPhotosLoading && closingPhotosError && (selectedClosing.dataphone_totals_photo_path || selectedClosing.bdp_closing_ticket_photo_path) ? (
-                                <p className="text-sm text-rose-600 text-center py-2">{closingPhotosError}</p>
+                                <p className="text-xs text-rose-600 text-center py-1">{closingPhotosError}</p>
                             ) : null}
 
                             {isEditing && (
@@ -2176,6 +2062,9 @@ export default function HistoryPage() {
                 <CashBreakdownModal
                     isOpen={showCashDetails}
                     onClose={() => setShowCashDetails(false)}
+                    layer="derived"
+                    instance="history-cash-breakdown"
+                    parentInstance="history-closing-detail"
                     breakdown={isEditing ? (editData?.breakdown ?? selectedClosing.breakdown ?? {}) : (selectedClosing.breakdown ?? {})}
                     date={selectedClosing.closed_at}
                     total={isEditing ? Number(editData?.cash_counted ?? selectedClosing.cash_counted ?? 0) : Number(selectedClosing.cash_counted ?? 0)}

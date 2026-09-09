@@ -83,8 +83,11 @@ export default async function AdminDashboardPage() {
     redirect('/staff/dashboard');
   }
 
+  const effectiveUserId = viewAsUserId && viewAsProfile ? viewAsUserId : user.id;
+
   return (
     <DashboardSwitcher
+      userId={effectiveUserId}
       userRole={effective.role}
       userEmail={effective.email}
       initialView="admin"

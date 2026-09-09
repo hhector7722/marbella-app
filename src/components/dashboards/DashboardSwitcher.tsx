@@ -26,6 +26,7 @@ const PANEL_INDEX: Record<DashboardView, number> = {
 interface DashboardSwitcherProps {
     userRole: string;
     userEmail?: string | null;
+    userId?: string | null;
     initialView?: DashboardView;
     initialData?: any;
 }
@@ -33,6 +34,7 @@ interface DashboardSwitcherProps {
 export default function DashboardSwitcher({
     userRole,
     userEmail,
+    userId,
     initialView = 'staff',
     initialData,
 }: DashboardSwitcherProps) {
@@ -41,6 +43,7 @@ export default function DashboardSwitcher({
 
     const resolvedRole = identity?.isViewingAs ? identity.effectiveRole : userRole;
     const resolvedEmail = identity?.isViewingAs ? identity.effectiveEmail : (userEmail ?? null);
+    const resolvedUserId = identity?.isViewingAs ? identity.effectiveUserId : (userId ?? null);
 
     // Triple panel solo para master en su propia cuenta (manager + email master), nunca en view-as.
     const isTriple =
@@ -231,11 +234,17 @@ export default function DashboardSwitcher({
                 {isTriple ? (
                     <>
                         <div className={cn(panelClass, 'min-h-full flex-shrink-0 -mt-0.5 md:mt-0')}>
-                            {shouldRenderPanel('admin') && <AdminDashboardView initialData={initialData} />}
+                            {shouldRenderPanel('admin') && (
+                                <AdminDashboardView
+                                    initialData={initialData}
+                                    initialUserId={resolvedUserId}
+                                />
+                            )}
                         </div>
                         <div className={cn(panelClass, 'min-h-full flex-shrink-0 -mt-0.5 md:mt-0')}>
                             {shouldRenderPanel('master') && (
                                 <MasterDashboardView
+                                    initialUserId={resolvedUserId}
                                     initialData={{
                                         liveTickets: initialData?.liveTickets,
                                         salesChartData: initialData?.salesChartData,
@@ -247,21 +256,42 @@ export default function DashboardSwitcher({
                             )}
                         </div>
                         <div className={cn(panelClass, 'min-h-full flex-shrink-0 -mt-0.5 md:mt-0')}>
-                            {shouldRenderPanel('staff') && <StaffDashboardView />}
+                            {shouldRenderPanel('staff') && (
+                                <StaffDashboardView
+                                    initialUserId={resolvedUserId}
+                                    initialRole={resolvedRole as any}
+                                    initialEmail={resolvedEmail ?? ''}
+                                />
+                            )}
                         </div>
                     </>
                 ) : isManager ? (
                     <>
                         <div className={cn(panelClass, 'min-h-full flex-shrink-0 -mt-0.5 md:mt-0')}>
-                            {shouldRenderPanel('admin') && <AdminDashboardView initialData={initialData} />}
+                            {shouldRenderPanel('admin') && (
+                                <AdminDashboardView
+                                    initialData={initialData}
+                                    initialUserId={resolvedUserId}
+                                />
+                            )}
                         </div>
                         <div className={cn(panelClass, 'min-h-full flex-shrink-0 -mt-0.5 md:mt-0')}>
-                            {shouldRenderPanel('staff') && <StaffDashboardView />}
+                            {shouldRenderPanel('staff') && (
+                                <StaffDashboardView
+                                    initialUserId={resolvedUserId}
+                                    initialRole={resolvedRole as any}
+                                    initialEmail={resolvedEmail ?? ''}
+                                />
+                            )}
                         </div>
                     </>
                 ) : (
                     <div className="w-full min-h-full flex-shrink-0 -mt-0.5 md:mt-0">
-                        <StaffDashboardView />
+                        <StaffDashboardView
+                            initialUserId={resolvedUserId}
+                            initialRole={resolvedRole as any}
+                            initialEmail={resolvedEmail ?? ''}
+                        />
                     </div>
                 )}
             </div>

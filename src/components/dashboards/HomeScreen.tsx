@@ -59,7 +59,7 @@ export function HomeScreen({ children, className, layout }: HomeScreenProps) {
             ref={rootRef}
             data-component={HOME_SCREEN_COMPONENT_ID}
             data-layout={layout}
-            data-widget-scheme="light"
+            data-widget-scheme="dark"
             className={cn(className, layout === 'staff' ? styles.staffHome : undefined)}
         >
             {children}

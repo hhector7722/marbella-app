@@ -2,17 +2,17 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { CloudSun, X } from 'lucide-react';
+import { CloudSun } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'sonner';
 import { randomId } from '@/lib/random-id';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Modal } from '@/components/ui/modal';
-import { DENOMINATIONS, CURRENCY_IMAGES, BUSINESS_HOURS } from '@/lib/constants';
+import { CashBreakdownModal } from '@/components/cash/CashBreakdownModal';
+import { BUSINESS_HOURS } from '@/lib/constants';
 import { getBusinessHourFromTicket, cn } from '@/lib/utils';
 import {
     buildLastClosingMetrics,
@@ -350,54 +350,15 @@ export function MasterLastClosingWidget() {
             </div>
 
             {/* Modal de Desglose Monetario de Efectivo */}
-            <Modal
-                open={isCashModalOpen}
+            <CashBreakdownModal
+                isOpen={isCashModalOpen}
                 onClose={() => setIsCashModalOpen(false)}
-                variant="compact"
+                breakdown={displayBreakdown}
+                date={closing?.closing_date as string}
+                total={cashTotal}
                 layer="base"
                 instance="master-last-closing-cash-breakdown"
-                title={titleDate}
-                subtitle="Arqueo de Efectivo"
-                headerTone="petroleum"
-                scrollContent={true}
-            >
-                <div className="flex min-h-0 flex-1 flex-col">
-                    <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar p-6">
-                        <div className="grid grid-cols-3 gap-x-2.5 gap-y-1.5 p-0.5 sm:grid-cols-5">
-                            {DENOMINATIONS.map((denom) => {
-                                const qty = Number(displayBreakdown?.[String(denom)] ?? displayBreakdown?.[denom] ?? 0);
-                                return (
-                                    <div key={denom} className="flex flex-col items-center gap-0.5">
-                                        <div className="flex h-8 min-h-[36px] w-full items-center justify-center rounded-lg sm:h-9">
-                                            <Image
-                                                src={CURRENCY_IMAGES[denom]}
-                                                alt={denom < 1 ? `${(denom * 100).toFixed(0)}c` : `${denom}€`}
-                                                width={140}
-                                                height={140}
-                                                className="pointer-events-none h-full w-auto object-contain drop-shadow-lg"
-                                            />
-                                        </div>
-                                        <div className="w-full text-center">
-                                            <span className="mb-0 block text-[7px] font-black uppercase tracking-widest text-gray-500">
-                                                {denom >= 1 ? `${denom}€` : `${(denom * 100).toFixed(0)}c`}
-                                            </span>
-                                            <div className="mx-auto flex h-8 w-[86%] items-center justify-center rounded-lg border border-zinc-200 bg-white shadow-sm">
-                                                <span className="text-[9px] font-black tabular-nums tracking-tighter text-zinc-700">
-                                                    {qty > 0 ? qty : ' '}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                        <div className="mt-8 pt-6 border-t border-gray-100 flex justify-between items-center px-2">
-                            <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Total Contado</span>
-                            <span className="text-2xl font-black text-[#36606F]">{formatCurrencySpanish(cashTotal)}</span>
-                        </div>
-                    </div>
-                </div>
-            </Modal>
+            />
 
             {/* Modal Resumen de Ventas */}
             <Modal

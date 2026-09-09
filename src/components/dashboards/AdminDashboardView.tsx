@@ -158,7 +158,13 @@ WeekOvertimeCard.displayName = 'WeekOvertimeCard';
 
 type CashModalMode = 'none' | 'menu' | 'in' | 'out' | 'audit' | 'swap' | 'inventory';
 
-const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
+const AdminDashboardView = ({
+    initialData,
+    initialUserId,
+}: {
+    initialData?: any;
+    initialUserId?: string | null;
+}) => {
     const supabase = createClient();
     const router = useRouter();
 
@@ -189,7 +195,7 @@ const AdminDashboardView = ({ initialData }: { initialData?: any }) => {
     const [purchaseInventoriesByBoxId, setPurchaseInventoriesByBoxId] = useState<Record<string, Record<number, number>>>({});
     const [selectedHistory, setSelectedHistory] = useState<{ workerId: string, weekId: string } | null>(null);
     const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
-    const [userId, setUserId] = useState<string | null>(null);
+    const [userId, setUserId] = useState<string | null>(() => initialUserId ?? null);
     const [isCajaInicialActionsOpen, setIsCajaInicialActionsOpen] = useState(false);
     const [isDesktop, setIsDesktop] = useState(false);
     // Horas extras: carga independiente (no bloquea shell del dashboard)

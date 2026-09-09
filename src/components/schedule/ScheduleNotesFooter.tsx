@@ -46,11 +46,24 @@ function firstNameOnly(name: string | null | undefined): string {
     return name.trim().split(/\s+/)[0] ?? '—';
 }
 
+const HINT_STORAGE_KEY = 'weekend_schedule_note_hint_seen';
+
+function isWeekend(dateStr: string | null): boolean {
+    if (!dateStr) return false;
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
+    if (!match) return false;
+    const [, y, m, d] = match;
+    const day = new Date(Number(y), Number(m) - 1, Number(d)).getDay();
+    return day === 0 || day === 6; // 0 = Domingo, 6 = Sábado
+}
+
 export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProps) {
     const supabase = createClient();
     const { identity } = useMasterViewAs();
     const [authUserId, setAuthUserId] = useState<string | null>(null);
     const [notes, setNotes] = useState<NoteRow[]>([]);
+    const [notesLoaded, setNotesLoaded] = useState(false);
+    const [showWeekendHint, setShowWeekendHint] = useState(false);
     const [composing, setComposing] = useState(false);
     const [draft, setDraft] = useState('');
     const [saving, setSaving] = useState(false);
@@ -98,12 +111,79 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
         fetchNotes().then((rows) => {
             setNotes(rows);
             setError(null);
+            setNotesLoaded(true);
         });
     }, [fetchNotes]);
 
     const myNote = effectiveUserId
         ? notes.find((n) => n.user_id === effectiveUserId) ?? null
         : null;
+
+    useEffect(() => {
+        if (!date || !isWeekend(date) || !notesLoaded || myNote) {
+            return;
+        }
+
+        let cancelled = false;
+
+        const checkAndRecordHint = async () => {
+            // 1. Verificación en almacenamiento local (síncrona / rápida)
+            if (typeof window !== 'undefined') {
+                try {
+                    const localSeen =
+                        localStorage.getItem(HINT_STORAGE_KEY) === 'true' ||
+                        (effectiveUserId && localStorage.getItem(`${HINT_STORAGE_KEY}_${effectiveUserId}`) === 'true');
+                    if (localSeen) return;
+                } catch {}
+            }
+
+            // 2. Verificación remota en user_metadata (sincronización multidispositivo)
+            try {
+                const { data } = await supabase.auth.getUser();
+                if (cancelled) return;
+                const user = data.user;
+                if (user?.user_metadata?.[HINT_STORAGE_KEY]) {
+                    if (typeof window !== 'undefined') {
+                        try {
+                            localStorage.setItem(HINT_STORAGE_KEY, 'true');
+                            if (user.id) {
+                                localStorage.setItem(`${HINT_STORAGE_KEY}_${user.id}`, 'true');
+                            }
+                        } catch {}
+                    }
+                    return;
+                }
+
+                // 3. Si no ha sido vista, la mostramos en este modal
+                setShowWeekendHint(true);
+
+                // 4. Se marca de forma persistente inmediatamente al ser mostrada
+                if (typeof window !== 'undefined') {
+                    try {
+                        localStorage.setItem(HINT_STORAGE_KEY, 'true');
+                        const targetId = effectiveUserId || user?.id;
+                        if (targetId) {
+                            localStorage.setItem(`${HINT_STORAGE_KEY}_${targetId}`, 'true');
+                        }
+                    } catch {}
+                }
+
+                if (user && !identity?.isViewingAs) {
+                    await supabase.auth.updateUser({
+                        data: { [HINT_STORAGE_KEY]: true },
+                    });
+                }
+            } catch (err) {
+                console.error('Error checking/saving schedule hint:', err);
+            }
+        };
+
+        void checkAndRecordHint();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [date, notesLoaded, myNote, effectiveUserId, identity?.isViewingAs, supabase]);
 
     const handleSave = async () => {
         if (!date || !effectiveUserId) return;
@@ -167,6 +247,23 @@ export function ScheduleNotesFooter({ date, isManager }: ScheduleNotesFooterProp
 
     return (
         <div className="flex w-full min-w-0 flex-col" data-schedule-notes-footer>
+            {showWeekendHint && !composing && !myNote ? (
+                <div className="mb-3 flex w-full justify-center px-3">
+                    <div className="relative z-10 flex w-fit max-w-full flex-col items-center rounded-lg border border-ds-positivo bg-white px-2.5 py-1.5 shadow-sm">
+                        <p className="text-center text-[11px] leading-tight text-zinc-800 sm:text-xs">
+                            Añade información relevante o circunstancia puntual para el horario de este día. Si las circunstancias lo permiten, se intentará adaptar el turno.
+                        </p>
+                        <p className="mt-0.5 w-full text-center text-[11px] leading-tight text-zinc-600 sm:text-xs">
+                            Ejemplo: «Tengo un compromiso a las 18:00».
+                        </p>
+                        <div
+                            aria-hidden="true"
+                            className="pointer-events-none absolute -bottom-[5px] left-1/2 -translate-x-1/2 size-2.5 rotate-45 border-b border-r border-ds-positivo bg-white"
+                        />
+                    </div>
+                </div>
+            ) : null}
+
             <div className="flex w-full items-center justify-center">
                 {!composing && !myNote ? (
                     <Button

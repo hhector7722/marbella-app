@@ -82,25 +82,15 @@ export function MasterTodayAttendanceWidget({
     const redBarRef = useRef<HTMLDivElement>(null);
     const logsBlockRef = useRef<HTMLDivElement>(null);
 
-    const [hasOverflow, setHasOverflow] = useState(false);
+    const hasExpandableLogs = logs.length >= 6;
+    const visibleLogs = !expanded && hasExpandableLogs ? logs.slice(0, 4) : logs;
 
-    /**
-     * Alto de lista disponible en modo compacto: el cuerpo del slot con nombre
-     * mide `--home-icon-size` (4.5rem = 72 px) menos la franja roja.
-     */
     useEffect(() => {
         if (loading) return;
-        const block = logsBlockRef.current;
-        const headerH = redBarRef.current?.offsetHeight ?? 10;
-        const compactListH = 72 - headerH;
-        const contentH = block ? block.scrollHeight : 0;
-        const overflow = contentH > compactListH + 1;
-        setHasOverflow(overflow);
-
-        if (!overflow && expanded) {
+        if (!hasExpandableLogs && expanded) {
             onExpandChange?.(false);
         }
-    }, [logs, loading, expanded, onExpandChange]);
+    }, [hasExpandableLogs, loading, expanded, onExpandChange]);
 
     const employeesOption = useMemo(
         () =>
@@ -287,8 +277,8 @@ export function MasterTodayAttendanceWidget({
                                 <EmptyState instance="master-today-none" variant="none" title="Sin fichajes" />
                             ) : (
                                 <div className={`flex min-h-0 flex-1 flex-col ${expanded ? 'overflow-y-auto' : 'overflow-hidden'}`}>
-                                    <div className={`m-auto flex w-full flex-col ${hasOverflow ? 'pb-5' : ''}`} ref={logsBlockRef}>
-                                        {logs.map((log) => {
+                                    <div className="m-auto flex w-full flex-col" ref={logsBlockRef}>
+                                        {visibleLogs.map((log) => {
                                             const isNoRegistered =
                                                 log.event_type === 'no_registered' ||
                                                 log.clock_out_show_no_registrada === true;
@@ -318,22 +308,24 @@ export function MasterTodayAttendanceWidget({
                                                 </button>
                                             );
                                         })}
+                                        {hasExpandableLogs && (
+                                            <div className="relative z-20 flex w-full shrink-0 items-center justify-center pt-1 pb-0.5">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onExpandChange?.(!expanded)}
+                                                    className="relative flex items-center justify-center text-zinc-400 hover:text-zinc-600 transition-colors before:absolute before:left-1/2 before:top-1/2 before:h-12 before:w-12 before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']"
+                                                    aria-label={expanded ? "Minimizar asistencia" : "Desplegar asistencia"}
+                                                >
+                                                    {expanded ? (
+                                                        <ChevronUp size={8} className="stroke-[2.5]" />
+                                                    ) : (
+                                                        <ChevronDown size={8} className="stroke-[2.5]" />
+                                                    )}
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-                            )}
-                            {hasOverflow && (
-                                <button
-                                    type="button"
-                                    onClick={() => onExpandChange?.(!expanded)}
-                                    className="absolute bottom-1.5 left-1/2 z-20 flex h-3.5 w-3.5 -translate-x-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white shadow-sm transition-all hover:bg-zinc-50 active:scale-95 before:absolute before:left-1/2 before:top-1/2 before:h-12 before:w-12 before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']"
-                                    aria-label={expanded ? "Minimizar asistencia" : "Desplegar asistencia"}
-                                >
-                                    {expanded ? (
-                                        <ChevronUp size={8} className="text-zinc-600" />
-                                    ) : (
-                                        <ChevronDown size={8} className="text-zinc-600" />
-                                    )}
-                                </button>
                             )}
                             <button
                                 type="button"

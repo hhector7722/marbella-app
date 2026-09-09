@@ -2685,8 +2685,8 @@ button[data-element='catalog-filter'] {
 [data-component='StaffWeekSchedule'] [data-element='week-block'][data-expanded='true'] {
   /* El hueco de la semana abierta se reparte por la retícula, nunca por el
    * contenido que llegue después desde turno, actividad u horas extra. */
-  flex: 1 1 0;
-  min-height: 0;
+  flex: 1 1 auto;
+  min-height: calc(var(--staff-week-day-size) + var(--espacio-1) + var(--staff-week-expansion-min));
   gap: 0;
   overflow: hidden;
 }
@@ -2724,7 +2724,7 @@ button[data-element='catalog-filter'] {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   column-gap: var(--staff-calendar-gap);
-  flex: 1 1 0;
+  flex: 1 1 auto;
   min-height: var(--staff-week-expansion-min);
   max-height: var(--staff-week-expansion-max);
   padding-block: var(--espacio-1);
@@ -2739,7 +2739,7 @@ button[data-element='catalog-filter'] {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  min-height: 0;
+  min-height: 44px;
   height: 100%;
   width: 100%;
   padding: var(--espacio-1);
@@ -2750,15 +2750,20 @@ button[data-element='catalog-filter'] {
   cursor: pointer;
   overflow: hidden;
   -webkit-tap-highlight-color: transparent;
+  position: relative;
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-card']::before {
   z-index: 0;
+  position: absolute;
+  inset: 0;
+  content: '';
+  background: transparent;
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-day'] {
   display: flex;
   flex-direction: column;
   gap: 0;
-  min-height: 0;
+  min-height: 44px;
   height: 100%;
   width: 100%;
 }
