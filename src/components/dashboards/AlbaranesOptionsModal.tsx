@@ -57,6 +57,8 @@ export function AlbaranesOptionsModal({
                     </div>
                 </div>
             }
-        />
+        >
+            {null}
+        </Modal>
     );
 }

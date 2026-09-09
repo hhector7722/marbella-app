@@ -1454,7 +1454,7 @@ export default function HistoryPage() {
                                         {formatClosingValue(summary.totalGross, 'tpv_sales')}
                                     </span>
                                 </div>
-                                <span className="mt-1 text-[8px] md:text-[9px] font-black text-zinc-600 uppercase tracking-widest leading-none">
+                                <span className="mt-1 text-[8px] md:text-[9px] font-black text-white uppercase tracking-widest leading-none">
                                     VENTAS
                                 </span>
                             </div>
@@ -1576,7 +1576,7 @@ export default function HistoryPage() {
                                     >
                                         <span className={cn(
                                             "text-[8px] md:text-[9px] font-black uppercase tracking-wider leading-tight",
-                                            isClickable ? "text-zinc-600" : "text-zinc-400"
+                                            isClickable ? "text-white" : "text-zinc-400"
                                         )}>
                                             {item.label}
                                         </span>
@@ -1806,7 +1806,6 @@ export default function HistoryPage() {
                     })()}
                     subtitle="Detalle de cierre"
                     scheme="dark"
-                    scrollContent={false}
                     headerTrailing={
                         isManager ? (
                             <>
@@ -1833,10 +1832,10 @@ export default function HistoryPage() {
                         ) : null
                     }
                 >
-                    <div className="relative flex min-h-full w-full flex-col items-center justify-center px-3 pt-3 pb-3 sm:px-4 sm:pt-4 sm:pb-4 bg-[#0b1c36]">
+                    <div className="px-ds-3 pt-ds-3 pb-12">
                         <div
                             ref={modalCardRef}
-                            className="relative bg-white rounded-2xl sm:rounded-3xl w-full overflow-hidden shadow-2xl flex flex-col shrink-0"
+                            className="relative bg-white rounded-2xl w-full overflow-hidden shadow-sm flex flex-col shrink-0"
                             style={{
                                 transform: `translateX(${swipeDragX}px)`,
                                 transition: swipePhase === 'animating' ? 'transform 300ms cubic-bezier(0.25, 0.1, 0.25, 1.0)' : 'none',
