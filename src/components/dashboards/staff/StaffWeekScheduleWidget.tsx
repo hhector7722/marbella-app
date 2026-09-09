@@ -662,7 +662,7 @@ export function StaffWeekScheduleWidget({
                                     >
                                         {masterMode ? (
                                             <>
-                                                <div className="grid grid-cols-8 gap-px">
+                                                <div className="grid grid-cols-8 gap-px shrink-0">
                                                     <div
                                                         className="col-span-7 grid grid-cols-7 gap-px"
                                                         data-week-row={isExpanded ? 'expanded' : undefined}

@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
@@ -12,18 +11,9 @@ import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
 const DASHBOARD_DOTS_BOTTOM =
     'calc(var(--shell-bottom-inset) + 0.5rem)';
 
-function DashboardPanelSkeleton() {
-    return <div className="min-h-[480px] w-full animate-pulse bg-white/10 rounded-2xl" aria-hidden />;
-}
-
 import StaffDashboardView from './StaffDashboardView';
-
-const AdminDashboardView = dynamic(() => import('./AdminDashboardView'), {
-    loading: () => <DashboardPanelSkeleton />,
-});
-const MasterDashboardView = dynamic(() => import('./MasterDashboardView'), {
-    loading: () => <DashboardPanelSkeleton />,
-});
+import AdminDashboardView from './AdminDashboardView';
+import MasterDashboardView from './MasterDashboardView';
 
 export type DashboardView = 'admin' | 'master' | 'staff';
 
