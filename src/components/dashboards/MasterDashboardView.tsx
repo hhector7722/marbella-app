@@ -544,7 +544,7 @@ export default function MasterDashboardView({ initialData }: MasterDashboardView
     };
 
     return (
-        <div className="pt-1 animate-in fade-in duration-500 pb-8">
+        <div className="pt-1 pb-8">
             <HomeScreen layout="master" className={attendanceExpanded ? 'asis-expanded' : undefined}>
                 <HomeScreenSlot size="wide" instance="dashboard-ventas">
                     <DashboardVentasSection

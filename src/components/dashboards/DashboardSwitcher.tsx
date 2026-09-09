@@ -59,6 +59,9 @@ export default function DashboardSwitcher({
     const containerRef = useRef<HTMLDivElement>(null);
     const dragMountTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [dotsPortalMounted, setDotsPortalMounted] = useState(false);
+    // La pista solo puede animarse después de una interacción explícita. Así el
+    // margen inicial de cada ruta se pinta de forma estática durante la hidratación.
+    const [canAnimateTrack, setCanAnimateTrack] = useState(false);
 
     const DRAG_DEAD_ZONE = 10;
     const DRAG_MOUNT_DELAY_MS = 150;
@@ -123,6 +126,7 @@ export default function DashboardSwitcher({
             if (Math.abs(diffX) > Math.abs(diffY)) {
                 isHorizontalDrag.current = true;
                 dragActivated.current = true;
+                setCanAnimateTrack(true);
                 setIsDragging(true);
                 startDragMountTimer();
             } else {
@@ -149,6 +153,7 @@ export default function DashboardSwitcher({
     };
 
     const navigateToView = (next: DashboardView) => {
+        setCanAnimateTrack(true);
         setView(next);
         if (next === 'admin') router.replace('/dashboard');
         else if (next === 'master') router.replace('/master/dashboard');
@@ -217,7 +222,7 @@ export default function DashboardSwitcher({
             <div
                 className={cn(
                     'flex min-h-full',
-                    isManager && dotsPortalMounted ? 'transition-[margin-left] duration-300 ease-out' : '',
+                    isManager && canAnimateTrack ? 'transition-[margin-left] duration-300 ease-out' : '',
                     !isManager && 'w-full',
                     isDragging && isHorizontalDrag.current && 'duration-0'
                 )}

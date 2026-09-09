@@ -36,6 +36,11 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
 
+## 2026-09-09
+
+- **Mosaicos: carga inicial estable en Admin, Master y Staff.** Los tres dashboards ya no aplican un fundido de página al montar y el selector horizontal solo anima después de un gesto o pulsación de la persona, por lo que cada ruta aparece estática desde el primer frame.
+- **Horario: la semana expandida reserva su espacio antes de recibir datos.** La distribución vertical del widget ya no toma su tamaño de turnos, actividades ni horas extra; las tarjetas de sábado y domingo y la columna Ext permanecen dentro del hueco asignado durante toda la carga.
+
 ## 2026-09-08
 
 - **Fichaje: vídeo «hernan-river» para Hernán en entrada y salida.** Se asigna el vídeo `/icons/hernan-river.mp4` a `hernang6799@gmail.com`. Se actualiza el overlay de fichaje para reproducir vídeos de relación de aspecto horizontal completos (formato 16:9) con esquinas redondeadas, sin cortes en su tamaño y con una transición de opacidad y escala más suave tanto en su inicio como en su final.
