@@ -15,6 +15,7 @@ import {
 import { CashChangeModal, type BoxOption } from '@/components/CashChangeModal';
 import CashClosingModal from '@/components/CashClosingModal';
 import { SupplierSelectionModal } from '@/components/orders/SupplierSelectionModal';
+import { AlbaranesOptionsModal } from './AlbaranesOptionsModal';
 import { AdminProductModal } from '@/components/modals/AdminProductModal';
 import { AdminMoreFunctionsModal } from '@/components/modals/AdminMoreFunctionsModal';
 import { InfoMenuModals } from '@/components/modals/InfoMenuModals';
@@ -181,6 +182,7 @@ const AdminDashboardView = ({
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
     const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
+    const [isAlbaranesModalOpen, setIsAlbaranesModalOpen] = useState(false);
     const [allEmployees, setAllEmployees] = useState<any[]>(initialData?.allEmployees || []);
     const [allEmployeesIncludingInactive, setAllEmployeesIncludingInactive] = useState<any[] | null>(null);
     const [showAllEmployeesInPlantilla, setShowAllEmployeesInPlantilla] = useState(false);
@@ -639,7 +641,7 @@ const AdminDashboardView = ({
                     instance="admin-albaranes"
                     label="Albaranes"
                     img="/icons/scan.png"
-                    onClick={() => router.push('/dashboard/albaranes')}
+                    onClick={() => setIsAlbaranesModalOpen(true)}
                 />
             }
             iconIngredientes={
@@ -826,6 +828,7 @@ const AdminDashboardView = ({
             />
 
             <SupplierSelectionModal isOpen={isSupplierModalOpen} onClose={() => setIsSupplierModalOpen(false)} />
+            <AlbaranesOptionsModal isOpen={isAlbaranesModalOpen} onClose={() => setIsAlbaranesModalOpen(false)} />
 
             <Modal
                 open={isCajaInicialActionsOpen}
