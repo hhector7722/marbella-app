@@ -47,6 +47,7 @@ export function StaffWeekScheduleBlock({
     const [monthShifts, setMonthShifts] = useState<ShiftMock[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [focusDate, setFocusDate] = useState<string | null>(null);
+    const [scheduleRefreshKey, setScheduleRefreshKey] = useState(0);
     const deepLinkHandledRef = useRef(false);
 
     useEffect(() => {
@@ -102,6 +103,7 @@ export function StaffWeekScheduleBlock({
     const handleClose = useCallback(() => {
         setIsOpen(false);
         setFocusDate(null);
+        setScheduleRefreshKey((k) => k + 1);
         if (deepLinkHandledRef.current && onClearFocus) {
             onClearFocus();
         }
@@ -115,6 +117,7 @@ export function StaffWeekScheduleBlock({
                 masterMode={masterMode}
                 onOpenWeekDetail={onOpenWeekDetail}
                 overtimeRefreshKey={overtimeRefreshKey}
+                refreshKey={scheduleRefreshKey}
             />
             <StaffScheduleModal
                 isOpen={isOpen}

@@ -48,6 +48,8 @@ type StaffWeekScheduleWidgetProps = {
     onOpenWeekDetail?: (week: WeeklyStats) => void;
     /** Al cambiar, recarga las horas extra del mes visible (p. ej. tras cerrar el modal de detalle). */
     overtimeRefreshKey?: number;
+    /** Al cambiar, recarga los turnos propios del mes visible (p. ej. tras cerrar el modal de horario). */
+    refreshKey?: number;
 };
 
 function monthTitle(date: Date): string {
@@ -435,6 +437,7 @@ export function StaffWeekScheduleWidget({
     masterMode = false,
     onOpenWeekDetail,
     overtimeRefreshKey = 0,
+    refreshKey = 0,
 }: StaffWeekScheduleWidgetProps) {
     const [monthAnchor, setMonthAnchor] = useState(() => startOfMonth(new Date()));
     const [expandedWeekStart, setExpandedWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
@@ -551,7 +554,7 @@ export function StaffWeekScheduleWidget({
 
     useEffect(() => {
         void loadMonthShifts();
-    }, [loadMonthShifts]);
+    }, [loadMonthShifts, refreshKey]);
 
     const handleDaySelect = (day: Date) => {
         setExpandedWeekStart(startOfWeek(day, { weekStartsOn: 1 }));

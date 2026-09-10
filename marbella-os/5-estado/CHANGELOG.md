@@ -36,6 +36,10 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
 
+## 2026-09-10
+
+- **Horario: el manager ve los turnos en borrador en la lectura del día.** En el modal de día (`StaffScheduleModal`), `hhector7722@gmail.com` ve también los turnos planificados sin publicar (draft), marcados con la insignia ámbar «B» de borrador y usando su hora de borrador (columna `draft_*`). El personal sigue viendo solo lo publicado. Al volver del editor sin publicar, el cambio deja de parecer perdido. El widget de horario recarga sus turnos al cerrar el modal (nueva prop `refreshKey`).
+
 ## 2026-09-09
 
 - **Horario (Admin y Master): carga en segundo plano de horas extras y eventos con tarjetas completas desde el inicio.** En `/dashboard` y `/master/dashboard`, las horas extra y las actividades de fin de semana cargan en paralelo en segundo plano sin esperar al estado de carga de turnos. Se estabiliza la altura mínima de las tarjetas de sábado y domingo para que existan completas con la fila «Evento» desde el primer frame y actualicen su contenido al completarse la lectura.

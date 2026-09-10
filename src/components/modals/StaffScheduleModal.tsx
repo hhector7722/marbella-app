@@ -126,7 +126,7 @@ const SummaryGrid = ({
 
 /* ─── Types ─────────────────────────────────────────────── */
 interface ShiftMock { date: Date; startTime: string; endTime: string; activity?: string; }
-interface DayShiftRow { name: string; avatar_url?: string | null; startTime: string; endTime: string; activity?: string; }
+interface DayShiftRow { name: string; avatar_url?: string | null; startTime: string; endTime: string; activity?: string; isDraft?: boolean; }
 interface Props {
     isOpen: boolean;
     onClose: () => void;
@@ -238,19 +238,22 @@ export const StaffScheduleModal = ({
 
             const { data: rawShifts, error } = await supabase
                 .from('shifts')
-                .select('start_time, end_time, activity, activity_2, categoria, categoria_2, user_id, is_published, event_start_time, event_end_time, event_participants, event_start_time_2, event_end_time_2, event_participants_2')
+                .select('start_time, end_time, draft_start_time, draft_end_time, activity, activity_2, categoria, categoria_2, user_id, is_published, event_start_time, event_end_time, event_participants, event_start_time_2, event_end_time_2, event_participants_2')
                 .gte('start_time', localStart.toISOString())
                 .lte('start_time', localEnd.toISOString())
                 .order('start_time', { ascending: true });
 
             if (error) throw error;
 
+            // El manager ve también lo planificado sin publicar (borradores del día)
+            const isManagerView = userEmail === 'hhector7722@gmail.com';
             const publishedShifts = (rawShifts ?? []).filter((s: any) => s.is_published);
+            const displayShifts = isManagerView ? (rawShifts ?? []) : publishedShifts;
 
-            // 3. Si no hay actividades reales del pabellón, caemos al primer turno publicado (si existe)
+            // 3. Si no hay actividades reales del pabellón, caemos al primer turno en pantalla (si existe)
             if (!hasRealActivities) {
-                if (publishedShifts.length > 0) {
-                    const firstShift = publishedShifts[0];
+                if (displayShifts.length > 0) {
+                    const firstShift = displayShifts[0];
                     setDayActivity(firstShift?.activity || '');
                     setDayCategory(firstShift?.categoria || '');
                     setDayActivity2(firstShift?.activity_2 || '');
@@ -276,11 +279,11 @@ export const StaffScheduleModal = ({
                 }
             }
 
-            // 4. Cargamos perfiles de los turnos publicados para mostrar quién comparte turno
-            if (publishedShifts.length === 0) {
+            // 4. Cargamos perfiles de los turnos en pantalla (publicados siempre; borradores solo manager)
+            if (displayShifts.length === 0) {
                 setDayShifts([]);
             } else {
-                const ids = [...new Set(publishedShifts.map((s: any) => s.user_id))];
+                const ids = [...new Set(displayShifts.map((s: any) => s.user_id))];
                 const { data: profiles } = await supabase.from('profiles').select('id, first_name, avatar_url').in('id', ids);
                 const nameMap: Record<string, string> = {};
                 const avatarMap: Record<string, string | null> = {};
@@ -289,12 +292,13 @@ export const StaffScheduleModal = ({
                     avatarMap[p.id] = p.avatar_url ?? null;
                 });
 
-                setDayShifts(publishedShifts.map((s: any) => ({
+                setDayShifts(displayShifts.map((s: any) => ({
                     name: nameMap[s.user_id] || '?',
                     avatar_url: avatarMap[s.user_id] ?? null,
-                    startTime: new Date(s.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-                    endTime: new Date(s.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                    startTime: new Date(s.draft_start_time || s.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                    endTime: new Date(s.draft_end_time || s.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
                     activity: s.activity || undefined,
+                    isDraft: !s.is_published,
                 })));
             }
         } catch (err: any) {
@@ -709,6 +713,14 @@ export const StaffScheduleModal = ({
                                                     <span className="min-w-0 truncate text-[11px] font-medium leading-none text-zinc-800 select-none">
                                                         {shift.name}
                                                     </span>
+                                                    {shift.isDraft ? (
+                                                        <span
+                                                            title="Borrador: aún no publicado"
+                                                            className="shrink-0 rounded-full border border-[var(--color-aviso)] px-1 py-px text-[7px] font-black uppercase leading-none tracking-wider bg-[var(--color-aviso-fondo)] text-[var(--color-aviso)]"
+                                                        >
+                                                            B
+                                                        </span>
+                                                    ) : null}
                                                 </div>
                                                 <div className="flex-1 relative min-h-0">
                                                     <div className="absolute inset-0 flex pointer-events-none">
