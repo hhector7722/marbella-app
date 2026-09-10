@@ -353,7 +353,9 @@ export const StaffScheduleModal = ({
 
     const handleBack = () => { setSelectedDate(null); setDayShifts([]); setEditModeForDate(null); };
     const handleClose = async () => {
-        await scheduleEditorRef.current?.flushSave();
+        // Si el guardado no confirmó éxito, no cerramos: se conservan los cambios.
+        const ok = await scheduleEditorRef.current?.flushSave();
+        if (ok === false) return;
         setSelectedDate(null);
         setDayShifts([]);
         setEditModeForDate(null);
@@ -362,7 +364,8 @@ export const StaffScheduleModal = ({
 
     const navigateEditingDay = async (delta: number) => {
         if (!selectedDate) return;
-        await scheduleEditorRef.current?.flushSave();
+        const ok = await scheduleEditorRef.current?.flushSave();
+        if (ok === false) return;
         const next = new Date(selectedDate);
         next.setDate(next.getDate() + delta);
         setSelectedDate(next);
@@ -376,7 +379,8 @@ export const StaffScheduleModal = ({
     };
 
     const exitEditModeAndRefresh = async () => {
-        await scheduleEditorRef.current?.flushSave();
+        const ok = await scheduleEditorRef.current?.flushSave();
+        if (ok === false) return;
         setEditModeForDate(null);
         if (selectedDate) await handleDayClick(selectedDate);
     };

@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-10
 
+- **Horario: el guardado del editor es atómico, verificado y sin pérdida.** El botón Guardar/Sobreescribir y Enviar persisten el día en UNA transacción (`save_schedule_day`) sobre las filas que gestiona el editor y devuelven éxito solo si la BD confirma que lo persistido coincide con lo esperado. Mientras guarda, el botón muestra «Guardando…» y bloquea guardados simultáneos; si la verificación falla, el editor NO cierra, conserva los cambios y muestra el error para reintentar. Al navegar o cerrar, no se publica y la persistencia debe confirmarse antes de continuar.
+- **Horario: los turnos de empleados no visibles en plantilla ya no se borran al editar el día.** Antes, guardar el día borraba todas las filas del día y reintroducía solo las visibles; con el nuevo guardado solo se reescriben los trabajadores del editor y se conservan intactos los turnos de empleados ocultos (p.ej. `visible_in_plantilla=false`).
 - **Horario: el manager ve los turnos en borrador en la lectura del día.** En el modal de día (`StaffScheduleModal`), `hhector7722@gmail.com` ve también los turnos planificados sin publicar (draft), marcados con la insignia ámbar «B» de borrador y usando su hora de borrador (columna `draft_*`). El personal sigue viendo solo lo publicado. Al volver del editor sin publicar, el cambio deja de parecer perdido. El widget de horario recarga sus turnos al cerrar el modal (nueva prop `refreshKey`).
 
 ## 2026-09-09

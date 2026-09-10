@@ -37,12 +37,14 @@ import {
     setCachedLaborRate,
 } from '@/lib/labor-rate-session-cache';
 import { getSsotOrdinaryHourlyRate } from '@/app/actions/ssot-ordinary-rate';
+import { saveScheduleDayAction, type DaySaveActionResult } from '@/app/actions/schedule-save';
+import type { PersistShiftInput } from '@/lib/schedule/persist';
 import {
     computeScheduleDayLaborCost,
     computeRequiredBilling,
     formatScheduleEuro,
 } from '@/lib/schedule-day-profitability';
-import type { Tables, TablesInsert } from '@/types/supabase';
+import type { Tables } from '@/types/supabase';
 
 type ScheduleShift = {
     employeeId: string;
@@ -62,7 +64,6 @@ type ScheduleShift = {
 };
 
 type ScheduleShiftRow = Tables<'shifts'>;
-type ScheduleShiftInsert = TablesInsert<'shifts'>;
 
 export interface ScheduleDayEditorProps {
     initialDate: string;
@@ -441,6 +442,12 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
     const [isDayPublished, setIsDayPublished] = useState(false);
     const [isDaySent, setIsDaySent] = useState(false);
     const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    // Bloquea guardados simultáneos (autoguardado + botón Guardar/Enviar).
+    const savingRef = useRef(false);
+    const [saving, setSaving] = useState(false);
+    // Trabajadores con turno en el día que el editor gestiona (solo ellos
+    // pueden retirarse; los turnos de empleados no visibles se conservan).
+    const managedIdsRef = useRef<string[]>([]);
 
     const [defaultStart, setDefaultStart] = useState('');
     const [defaultEnd, setDefaultEnd] = useState('');
@@ -676,6 +683,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
             }
 
             setShifts(activeShifts);
+            managedIdsRef.current = activeShifts.map((s) => s.employeeId);
             const profileOptions: PlantillaEmployee[] = (employees || []).map((employee) => ({
                 id: employee.id,
                 first_name: employee.first_name ?? '',
@@ -747,174 +755,112 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
         }
     };
 
-    const handleSave = useCallback(async (silent = false, publish = false) => {
+    const buildPersistPayload = () => {
         const activeShifts = shifts.filter(s => s.active);
+        const startOfRange = new Date(`${date}T00:00:00`).toISOString();
+        const endOfRange = new Date(`${date}T23:59:59`).toISOString();
+        const rows: PersistShiftInput[] = activeShifts.map(shift => {
+            // Al guardar, priorizamos SIEMPRE los valores específicos del turno del trabajador (shift.*).
+            const resolvedStart = (shift.start || defaultStart || '08:00').trim();
+            const resolvedEnd = (shift.end || defaultEnd || '16:00').trim();
+            const startDateTime = new Date(`${date}T${resolvedStart}:00`);
+            const endDateTime = new Date(`${date}T${resolvedEnd}:00`);
+            const shiftActivity = (shift.activity || activity || '');
+            const shiftCategory = (shift.categoria || categoria || '');
+            const shiftActivity2 = (shift.activity2 || activity2 || '');
+            const shiftCategory2 = (shift.categoria2 || categoria2 || '');
+            // Las horas de cabecera del EVENTO (slot 1 y 2) deben ser las del día, no las del turno del trabajador.
+            const dayEventStart = (defaultStart || '').trim();
+            const dayEventEnd = (defaultEnd || '').trim();
+            const dayEventStart2 = (defaultStart2 || '').trim();
+            const dayEventEnd2 = (defaultEnd2 || '').trim();
+            return {
+                employeeId: shift.employeeId,
+                startISO: startDateTime.toISOString(),
+                endISO: endDateTime.toISOString(),
+                activity: shiftActivity,
+                categoria: shiftCategory,
+                participantsCount: (shift.participantsCount || participantsCount || ''),
+                activity2: shiftActivity2,
+                categoria2: shiftCategory2,
+                participantsCount2: (shift.participantsCount2 || participantsCount2 || ''),
+                eventStart: dayEventStart,
+                eventEnd: dayEventEnd,
+                eventStart2: dayEventStart2,
+                eventEnd2: dayEventEnd2,
+            };
+        });
+        return { activeShifts, startOfRange, endOfRange, rows };
+    };
+
+    const resolveSaveError = (res: DaySaveActionResult) => {
+        if (res.ok) return '';
+        if (res.kind === 'auth') return 'No hay sesión activa';
+        return res.message;
+    };
+
+    /**
+     * Persistencia única del día: la server action transacciona de forma
+     * atómica (delete por trabajador + insert) y verifica que lo persistido
+     * coincide con lo esperado antes de confirmar éxito.
+     */
+    const runPersist = async (publish: boolean, announce = false): Promise<boolean> => {
+        if (savingRef.current) return false;
+        savingRef.current = true;
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+            saveTimeoutRef.current = null;
+        }
+        if (announce) setSaving(true);
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                if (!silent) toast.error('No hay sesión activa');
+            const { rows, startOfRange, endOfRange } = buildPersistPayload();
+            const res = await saveScheduleDayAction({
+                ymd: date,
+                startISO: startOfRange,
+                endISO: endOfRange,
+                publish,
+                rows,
+                managedUserIds: managedIdsRef.current,
+            });
+            if (!res.ok) {
+                toast.error(resolveSaveError(res));
                 return false;
             }
-
-            const startOfRange = new Date(`${date}T00:00:00`).toISOString();
-            const endOfRange = new Date(`${date}T23:59:59`).toISOString();
-
-            // Si no hay turnos activos: borrar todos los del día y salir (tabla vacía permitida)
-            if (activeShifts.length === 0) {
-                const { error } = await supabase.from('shifts')
-                    .delete()
-                    .gte('start_time', startOfRange)
-                    .lte('start_time', endOfRange);
-                if (error) throw error;
-                setHasUnsavedChanges(false);
-                setIsDayPublished(false);
-                if (!silent) toast.success('Horario vacío guardado');
-                fetchData(date);
-                return true;
-            }
-
-            // Paso 1: Obtener estado actual de la DB para este día
-            const { data: dbShifts } = await supabase.from('shifts')
-                .select('*')
-                .gte('start_time', startOfRange)
-                .lte('start_time', endOfRange);
-
-            const dbShiftMap = new Map(dbShifts?.map(s => [s.user_id, s]) || []);
-
-            // Paso 2: Preparar los nuevos registros
-            const shiftsToInsert = activeShifts.map(shift => {
-                const existing = dbShiftMap.get(shift.employeeId);
-                // Al guardar, priorizamos SIEMPRE los valores específicos del turno del trabajador (shift.*).
-                const resolvedStart = (shift.start || defaultStart || '08:00').trim();
-                const resolvedEnd = (shift.end || defaultEnd || '16:00').trim();
-                const startDateTime = new Date(`${date}T${resolvedStart}:00`);
-                const endDateTime = new Date(`${date}T${resolvedEnd}:00`);
-                const isoStart = startDateTime.toISOString();
-                const isoEnd = endDateTime.toISOString();
-
-                const shiftActivity = (shift.activity || activity || null);
-                const shiftCategory = (shift.categoria || categoria || null);
-                const shiftActivity2 = (shift.activity2 || activity2 || null);
-                const shiftCategory2 = (shift.categoria2 || categoria2 || null);
-
-                const slot2Participants = (shift.participantsCount2 || participantsCount2 || '');
-                // Las horas de cabecera del EVENTO (slot 1 y 2) deben ser las del día, no las del turno del trabajador.
-                const dayEventStart = (defaultStart || '').trim();
-                const dayEventEnd = (defaultEnd || '').trim();
-                const dayEventStart2 = (defaultStart2 || '').trim();
-                const dayEventEnd2 = (defaultEnd2 || '').trim();
-                const shiftNotes = JSON.stringify({
-                    defaultStart: dayEventStart,
-                    defaultEnd: dayEventEnd,
-                    participantsCount: (shift.participantsCount || participantsCount || ''),
-                    defaultStart2: dayEventStart2,
-                    defaultEnd2: dayEventEnd2,
-                    participantsCount2: (shift.participantsCount2 || participantsCount2 || ''),
-                });
-
-                const data: ScheduleShiftInsert = {
-                    user_id: shift.employeeId,
-                    draft_start_time: isoStart,
-                    draft_end_time: isoEnd,
-                    draft_activity: shiftActivity,
-                    draft_categoria: shiftCategory,
-                    draft_activity_2: shiftActivity2,
-                    draft_notes: shiftNotes,
-                    draft_categoria_2: shiftCategory2,
-                    event_start_time: defaultStart || null,
-                    event_end_time: defaultEnd || null,
-                    event_participants: participantsCount ? parseInt(participantsCount, 10) : null,
-                    event_start_time_2: dayEventStart2 || null,
-                    event_end_time_2: dayEventEnd2 || null,
-                    event_participants_2: slot2Participants ? parseInt(slot2Participants, 10) : null,
-                    is_published: publish ? true : (existing?.is_published || false),
-                    // Mantenemos start_time como ancla para el rango del día
-                    start_time: isoStart,
-                    end_time: isoEnd
-                };
-
-                // Si publicamos, sincronizamos con las columnas principales activamente
-                if (publish) {
-                    data.activity = shiftActivity;
-                    data.activity_2 = shiftActivity2;
-                    data.notes = shiftNotes;
-                    data.categoria = shiftCategory;
-                    data.categoria_2 = shiftCategory2;
-                    data.is_published = true;
-                } else if (existing && existing.is_published) {
-                    // Si ya está publicado, NO tocamos las columnas principales durante un autoguardado
-                    data.start_time = existing.start_time;
-                    data.end_time = existing.end_time;
-                    data.activity = existing.activity;
-                    data.activity_2 = existing.activity_2;
-                    data.notes = existing.notes;
-                    data.categoria = existing.categoria;
-                    data.categoria_2 = existing.categoria_2;
-                    data.is_published = true;
-                } else if (!existing) {
-                    // Si es totalmente nuevo, inicializamos las principales pero como borrador (is_published: false)
-                    data.activity = shiftActivity;
-                    data.activity_2 = shiftActivity2;
-                    data.notes = shiftNotes;
-                    data.categoria = shiftCategory;
-                    data.categoria_2 = shiftCategory2;
-                    data.is_published = false;
-                }
-
-                return data;
-            });
-
-            // Borramos los turnos de los usuarios del día para re-insertar de forma limpia
-            await supabase.from('shifts')
-                .delete()
-                .gte('start_time', startOfRange)
-                .lte('start_time', endOfRange);
-
-            const { error } = await supabase.from('shifts').insert(shiftsToInsert);
-
-            if (error) throw error;
-
             setHasUnsavedChanges(false);
-            setIsDayPublished(publish || isDayPublished);
-            if (!silent) toast.success(`${activeShifts.length} turno(s) guardado(s)`);
-            if (!silent && !publish) {
-                fetchData(date);
-            } else if (!silent && publish) {
-                onSuccess?.();
-                onClose();
+            setIsDayPublished(res.published);
+            managedIdsRef.current = rows.map((r) => r.employeeId);
+            if (announce) {
+                toast.success(
+                    publish
+                        ? 'Horario publicado y guardado correctamente'
+                        : 'Horario guardado correctamente',
+                );
             }
             return true;
         } catch (error: unknown) {
             console.error(error);
-            if (!silent) toast.error('Error al guardar');
+            toast.error('Error al guardar. Reintenta.');
             return false;
+        } finally {
+            savingRef.current = false;
+            if (announce) setSaving(false);
         }
-    }, [
-        activity,
-        activity2,
-        categoria,
-        categoria2,
-        date,
-        defaultEnd,
-        defaultEnd2,
-        defaultStart,
-        defaultStart2,
-        fetchData,
-        isDayPublished,
-        onClose,
-        onSuccess,
-        participantsCount,
-        participantsCount2,
-        shifts,
-        supabase,
-    ]);
+    };
+
+    // La ref mantiene SIEMPRE la versión fresca de runPersist (con el estado
+    // actual cerrado), evitando raza: un autoguardado pendiente no puede
+    // correr con el estado antiguo ni pisar un guardado en curso.
+    const runPersistRef = useRef(runPersist);
+    useEffect(() => {
+        runPersistRef.current = runPersist;
+    });
 
     useEffect(() => {
         if (!loading && hasUnsavedChanges) {
             if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
             saveTimeoutRef.current = setTimeout(() => {
                 // El autoguardado NUNCA debe publicar, siempre guarda como borrador (false)
-                void handleSave(true, false);
+                void runPersistRef.current(false);
             }, 1000);
         }
         return () => {
@@ -929,7 +875,6 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
         defaultEnd2,
         defaultStart,
         defaultStart2,
-        handleSave,
         hasUnsavedChanges,
         loading,
         participantsCount,
@@ -946,9 +891,9 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                 saveTimeoutRef.current = null;
             }
             if (!hasUnsavedChanges) return true;
-            return handleSave(true, false);
+            return runPersistRef.current(false, true);
         },
-    }), [handleSave, hasUnsavedChanges]);
+    }), [hasUnsavedChanges]);
 
     useEffect(() => {
         const targetDate = initialDate || new Date().toISOString().split('T')[0];
@@ -1029,7 +974,10 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
 
     const navigateDay = async (direction: -1 | 1) => {
         if (hasUnsavedChanges) {
-            await handleSave(true, isDayPublished);
+            // Navegar NUNCA publica: guarda como borrador y solo cambia de día
+            // si la persistencia confirmó éxito (verificada).
+            const ok = await runPersistRef.current(false);
+            if (!ok) return;
         }
         const currentDate = new Date(`${date}T12:00:00`);
         const newDate = direction === 1 ? addDays(currentDate, 1) : subDays(currentDate, 1);
@@ -1041,7 +989,8 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
     const handleSelectCalendarDate = async (picked: Date) => {
         const dateStr = format(picked, 'yyyy-MM-dd');
         if (hasUnsavedChanges) {
-            await handleSave(true, isDayPublished);
+            const ok = await runPersistRef.current(false);
+            if (!ok) return;
         }
         setShowCalendarModal(false);
         trackScheduleCalendarDay(formatYmdShort(dateStr), { selectedDate: dateStr });
@@ -1287,9 +1236,10 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                             type="button"
                             variant="secondary"
                             instance="schedule-day-share-open"
+                            disabled={saving}
                             onClick={() => setShowShareModal(true)}
                         >
-                            Guardar
+                            {saving ? 'Guardando…' : 'Guardar'}
                         </Button>
                     </div>
                 </div>
@@ -1563,24 +1513,31 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                             type="button"
                             variant="primary"
                             instance="schedule-day-share-save"
+                            disabled={saving}
                             onClick={async () => {
-                                setShowShareModal(false);
+                                if (savingRef.current) return;
                                 trackScheduleShare(!isDayPublished ? 'Guardar borrador' : 'Sobreescribir publicado');
-                                await handleSave(false, true);
+                                const ok = await runPersistRef.current(true, true);
+                                if (!ok) return;
+                                setShowShareModal(false);
+                                onSuccess?.();
+                                onClose();
                             }}
                         >
-                            {!isDayPublished ? 'Guardar' : 'Sobreescribir'}
+                            {saving ? 'Guardando…' : !isDayPublished ? 'Guardar' : 'Sobreescribir'}
                         </Button>
                         <Button
                             type="button"
                             variant="primary"
                             instance="schedule-day-share-send"
+                            disabled={saving}
                             onClick={async () => {
-                                setShowShareModal(false);
+                                if (savingRef.current) return;
                                 trackScheduleShare(!isDaySent ? 'Enviar notificaciones' : 'Reenviar notificaciones');
-                                const saved = await handleSave(true, true);
-                                if (saved || isDayPublished) {
-                                    const userShifts = shifts
+                                const saved = await runPersistRef.current(true, true);
+                                if (!saved) return;
+                                setShowShareModal(false);
+                                const userShifts = shifts
                                         .filter(s => s.active && s.start && s.end)
                                         .map(s => ({ userId: s.employeeId, start: s.start, end: s.end }));
                                     if (userShifts.length === 0) {
@@ -1617,7 +1574,6 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                         toast.dismiss(loadToast);
                                         toast.error('Error al enviar');
                                     }
-                                }
                             }}
                         >
                             {!isDaySent ? 'Enviar' : 'Reenviar'}
