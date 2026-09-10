@@ -29,7 +29,6 @@ import { sendScheduleNotifications } from '@/app/actions/notifications';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import type { PlantillaEmployee } from '@/components/modals/StaffSelectionModal';
 import { filterVisiblePlantillaEmployees } from '@/lib/staff/plantilla-employees';
-import { Avatar } from '@/components/ui/Avatar';
 import { MiniMonthCalendar } from '@/components/time/MiniMonthCalendar';
 import { ShiftBarTimeLabels } from '@/components/schedule/ShiftBarTimeLabels';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
@@ -79,6 +78,8 @@ export interface ScheduleDayEditorHandle {
     openAddEmployee: () => void;
     /** Abre el modal de guardado (Guardar / Guardar y enviar / Sobreescribir). */
     openShare: () => void;
+    /** Fuerza el guardado inmediato de los cambios pendientes (sin publicar). */
+    flushSave: () => Promise<boolean>;
 }
 
 const START_HOUR = 7; // 7:00 AM
@@ -235,11 +236,11 @@ const EditableSummaryCell = ({
     label: string;
     children: ReactNode;
 }) => (
-    <div className="flex min-w-0 w-full flex-col items-center gap-1">
-        <div className="flex min-h-[2rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border-0 bg-transparent">
+    <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
+        <div className="flex min-h-[1.5rem] w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border-0 bg-transparent">
             {children}
         </div>
-        <span className="shrink-0 text-[9px] font-semibold tracking-widest leading-none text-white/60">
+        <span className="shrink-0 text-[8px] font-semibold tracking-widest leading-none text-white/60">
             {label}
         </span>
     </div>
@@ -463,11 +464,6 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
     const [isMaster, setIsMaster] = useState(false);
     const [rateByUserId, setRateByUserId] = useState<Record<string, number>>({});
 
-    useImperativeHandle(ref, () => ({
-        openAddEmployee: () => setShowAddEmployeeModal(true),
-        openShare: () => setShowShareModal(true),
-    }));
-
     useModalUsageTracking({
         open: editingIndex !== null,
         usageId: 'schedule-shift-edit',
@@ -525,10 +521,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
             const activeShifts = employees?.filter(emp => shiftMap.has(emp.id)).map(emp => {
                 const existing = shiftMap.get(emp.id);
 
-                let displayName = firstGivenName(emp.first_name);
-                const lowerName = displayName?.toLowerCase() || '';
-                if (lowerName === 'fernando') displayName = 'Fer';
-                if (lowerName === 'mamadou') displayName = 'Mamdou';
+                const displayName = firstGivenName(emp.first_name);
 
                 // Usamos los valores de borrador si existen, si no los publicados
                 const sTime = existing!.draft_start_time || existing!.start_time;
@@ -718,7 +711,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
         }
         const newShift: ScheduleShift = {
             employeeId: profile.id,
-            name: profile.first_name?.toLowerCase() === 'fernando' ? 'Fer' : (profile.first_name?.toLowerCase() === 'mamadou' ? 'Mamdou' : profile.first_name),
+            name: profile.first_name,
             avatar_url: profile.avatar_url,
             start: defaultStart || '08:00',
             end: defaultEnd || '16:00',
@@ -944,6 +937,19 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
         shifts,
     ]);
 
+    useImperativeHandle(ref, () => ({
+        openAddEmployee: () => setShowAddEmployeeModal(true),
+        openShare: () => setShowShareModal(true),
+        flushSave: async () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+                saveTimeoutRef.current = null;
+            }
+            if (!hasUnsavedChanges) return true;
+            return handleSave(true, false);
+        },
+    }), [handleSave, hasUnsavedChanges]);
+
     useEffect(() => {
         const targetDate = initialDate || new Date().toISOString().split('T')[0];
         startTransition(() => {
@@ -1061,7 +1067,6 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
     const slot2ActivityValue = (activity2 ?? '').trim();
     const hasSlot1Activity = slot1ActivityValue.length > 0;
     const hasSlot2Activity = slot2ActivityValue.length > 0;
-    const hasTwoActivities = hasSlot1Activity && hasSlot2Activity;
     const showSecondActivityCard = hasSlot2Activity || secondSlotExpanded;
 
     if (loading) {
@@ -1293,8 +1298,8 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
             {/* ── BODY: copia exacta de la vista de día del modal de lectura ── */}
             <div className="flex flex-col flex-1 min-h-0 overflow-hidden day-modal-body">
                 {/* Resumen del evento — editable, mismo aspecto que el modal de lectura */}
-                <div className="p-3 md:p-4 lg:p-2 w-full shrink-0">
-                    <div className="flex w-full max-w-2xl mx-auto flex-col gap-2 rounded-[var(--radio-control)] bg-white/10 p-2">
+                <div className="p-2 lg:p-1.5 w-full shrink-0">
+                    <div className="flex w-full max-w-2xl mx-auto flex-col gap-1 rounded-[var(--radio-control)] bg-white/10 p-1.5">
                         {!hasSlot1Activity && !showSecondActivityCard ? (
                             <div className="w-full min-w-0">
                                 {editableGridSlot1}
@@ -1304,7 +1309,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                         onClick={() => setSecondSlotExpanded(true)}
                                         className="relative shrink-0 self-center rounded-xl text-[10px] font-normal py-3 text-white/80 hover:bg-white/10 transition-colors active:scale-[0.99] before:absolute before:inset-0 before:min-h-[var(--tactil-minimo)] before:content-['']"
                                     >
-                                        + Segunda actividad (tarde)
+                                        + Segunda actividad
                                     </button>
                                 </div>
                             </div>
@@ -1312,22 +1317,12 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                             <>
                                 {hasSlot1Activity && (
                                     <div className="w-full min-w-0">
-                                        {hasTwoActivities && (
-                                            <div className="mb-1.5 w-full text-center">
-                                                <span className="text-[9px] font-black tracking-wide text-white/60 uppercase">MAÑANA</span>
-                                            </div>
-                                        )}
                                         {editableGridSlot1}
                                     </div>
                                 )}
 
                                 {showSecondActivityCard && (
                                     <div className="w-full min-w-0">
-                                        {hasTwoActivities && (
-                                            <div className="mb-1.5 w-full text-center">
-                                                <span className="text-[9px] font-black tracking-wide text-white/60 uppercase">TARDE</span>
-                                            </div>
-                                        )}
                                         {editableGridSlot2}
                                         {secondSlotExpanded && !hasSlot2Activity && (
                                             <div className="mt-1 flex w-full justify-center">
@@ -1350,7 +1345,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                         onClick={() => setSecondSlotExpanded(true)}
                                         className="shrink-0 self-center rounded-xl text-[10px] font-normal py-3 text-white/80 hover:bg-white/10 transition-colors active:scale-[0.99] before:absolute before:inset-0 before:min-h-[var(--tactil-minimo)] before:content-[''] relative"
                                     >
-                                        + Segunda actividad (tarde)
+                                        + Segunda actividad
                                     </button>
                                 )}
                             </>
@@ -1387,8 +1382,8 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                             const isEditing = editingIndex === idx;
                             return (
                                 <div key={shift.employeeId} className="flex w-full h-9 md:h-10 border-b border-gray-100 last:border-b-0 bg-white day-modal-shift-row">
-                                    <div className="w-24 md:w-28 px-2 flex items-center gap-2 shrink-0 overflow-hidden">
-                                        {isEditing ? (
+                                    <div className="w-24 md:w-28 px-2 flex items-center gap-1 shrink-0 overflow-hidden">
+                                        {isEditing && (
                                             <button
                                                 type="button"
                                                 onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }}
@@ -1398,27 +1393,14 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                             >
                                                 <X size={8} strokeWidth={3} />
                                             </button>
-                                        ) : (
-                                            <Avatar src={shift.avatar_url ?? undefined} alt={shift.name ?? '?'} size="sm" className="shrink-0" />
                                         )}
                                         <button
                                             type="button"
                                             onClick={(e) => { e.stopPropagation(); setEditingIndex(editingIndex === idx ? null : idx); }}
-                                            className="min-w-0 flex-1 truncate text-left text-[11px] font-medium leading-none text-zinc-800 select-none hover:text-[#5B8FB9] transition-colors"
+                                            className="min-w-0 flex-1 truncate text-left text-[11px] font-normal leading-none text-zinc-800 select-none hover:text-[#5B8FB9] transition-colors"
                                         >
                                             {shift.name}
                                         </button>
-                                        {!isEditing && (
-                                            <button
-                                                type="button"
-                                                onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }}
-                                                className="relative flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-red-500 text-white transition-all shadow-sm hover:bg-red-600 active:scale-95 before:absolute before:inset-0 before:-m-2 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']"
-                                                title="Quitar del horario"
-                                                aria-label={`Quitar ${shift.name}`}
-                                            >
-                                                <X size={10} strokeWidth={3} />
-                                            </button>
-                                        )}
                                     </div>
                                     <div className="flex-1 relative min-h-0">
                                         <div className="absolute inset-0 flex pointer-events-none">
@@ -1438,6 +1420,19 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                 </div>
                             );
                         })}
+
+                        {/* Última fila: añadir trabajador */}
+                        <button
+                            type="button"
+                            onClick={() => setShowAddEmployeeModal(true)}
+                            className="flex w-full min-h-[var(--tactil-minimo)] h-11 items-center gap-0.5 border-b border-gray-100 px-2 bg-white transition-colors hover:bg-gray-50 active:bg-gray-100"
+                            aria-label="Añadir empleado"
+                        >
+                            <span className="flex h-full min-h-[var(--tactil-minimo)] items-center gap-1.5 text-[11px] font-medium text-[#5B8FB9]">
+                                <Plus size={14} strokeWidth={3} />
+                                Añadir trabajador
+                            </span>
+                        </button>
                     </div>
 
                     {/* Footer Total — penúltima fila, fondo blanco, texto gris claro descriptivo */}

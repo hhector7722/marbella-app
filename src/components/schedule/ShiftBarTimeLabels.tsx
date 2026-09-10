@@ -12,6 +12,12 @@ const FIT_TOLERANCE_PX = 1;
 
 const labelStyle = { textShadow: '0 1px 2px rgba(0,0,0,0.3)' } as const;
 
+/** Normaliza la hora a «HH:mm», descartando segundos si vinieran en «HH:mm:ss». */
+function toHHMM(time: string): string {
+    const parts = String(time ?? '').split(':');
+    return parts.length > 2 ? parts.slice(0, 2).join(':') : String(time ?? '').trim();
+}
+
 function fitPairFontSize(startEl: HTMLElement, endEl: HTMLElement, barWidth: number): number {
     const maxW = Math.max(0, barWidth - BAR_PAD_X);
     let fs = MAX_PX;
@@ -66,10 +72,10 @@ export function ShiftBarTimeLabels({ barRef, start, end, className }: ShiftBarTi
     return (
         <>
             <span ref={startRef} className={labelClass} style={{ ...labelStyle, fontSize }}>
-                {start}
+                {toHHMM(start)}
             </span>
             <span ref={endRef} className={labelClass} style={{ ...labelStyle, fontSize }}>
-                {end}
+                {toHHMM(end)}
             </span>
         </>
     );

@@ -88,18 +88,18 @@ const SummaryCell = ({
     value: string;
     valueClassName?: string;
 }) => (
-    <div className="flex min-w-0 w-full flex-col items-center gap-1">
-        <div className="flex min-h-[1.4rem] w-full flex-1 items-end justify-center">
+    <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
+        <div className="flex min-h-[1rem] w-full flex-1 items-end justify-center">
             <span
                 className={cn(
-                    'w-full min-w-0 text-center text-[11px] font-semibold leading-tight text-white sm:text-xs',
+                    'w-full min-w-0 text-center text-[10px] font-semibold leading-tight text-white sm:text-[11px]',
                     valueClassName,
                 )}
             >
                 {value}
             </span>
         </div>
-        <span className="shrink-0 text-[9px] font-semibold tracking-widest leading-none text-white/60">
+        <span className="shrink-0 text-[8px] font-semibold tracking-widest leading-none text-white/60">
             {label}
         </span>
     </div>
@@ -348,10 +348,17 @@ export const StaffScheduleModal = ({
     }, [navigatingToActividades]);
 
     const handleBack = () => { setSelectedDate(null); setDayShifts([]); setEditModeForDate(null); };
-    const handleClose = () => { setSelectedDate(null); setDayShifts([]); setEditModeForDate(null); onClose(); };
+    const handleClose = async () => {
+        await scheduleEditorRef.current?.flushSave();
+        setSelectedDate(null);
+        setDayShifts([]);
+        setEditModeForDate(null);
+        onClose();
+    };
 
-    const navigateEditingDay = (delta: number) => {
+    const navigateEditingDay = async (delta: number) => {
         if (!selectedDate) return;
+        await scheduleEditorRef.current?.flushSave();
         const next = new Date(selectedDate);
         next.setDate(next.getDate() + delta);
         setSelectedDate(next);
@@ -364,9 +371,10 @@ export const StaffScheduleModal = ({
         router.push('/staff/actividades');
     };
 
-    const exitEditModeAndRefresh = () => {
+    const exitEditModeAndRefresh = async () => {
+        await scheduleEditorRef.current?.flushSave();
         setEditModeForDate(null);
-        if (selectedDate) handleDayClick(selectedDate);
+        if (selectedDate) await handleDayClick(selectedDate);
     };
 
     const navigationOverlay =
@@ -397,7 +405,6 @@ export const StaffScheduleModal = ({
 
     const hasAct1 = dayActivity.trim().length > 0;
     const hasAct2 = dayActivity2.trim().length > 0;
-    const hasTwoActivities = hasAct1 && hasAct2;
     const displayOrBlank = (v: any) => {
         if (v === 0) return ' ';
         const s = String(v ?? '').trim();
@@ -642,19 +649,14 @@ export const StaffScheduleModal = ({
                         ) : (
                             <>
                                 {/* Resumen del evento — siempre visible */}
-                                <div className="p-3 md:p-4 lg:p-2 w-full shrink-0">
-                                    <div className="flex w-full max-w-2xl mx-auto flex-col gap-2 rounded-[var(--radio-control)] bg-white/10 p-2">
+                                <div className="p-2 lg:p-1.5 w-full shrink-0">
+                                    <div className="flex w-full max-w-2xl mx-auto flex-col gap-1 rounded-[var(--radio-control)] bg-white/10 p-1.5">
                                         {!hasAct1 && !hasAct2 ? (
                                             <div className="text-center text-white/50 text-[10px] font-black tracking-widest py-3 lg:py-1">Sin actividad</div>
                                         ) : (
                                             <>
                                                 {hasAct1 && (
                                                     <div className="w-full min-w-0">
-                                                        {hasTwoActivities && (
-                                                            <div className="mb-1.5 w-full text-center">
-                                                                <span className="text-[9px] font-black tracking-wide text-white/60 uppercase">MAÑANA</span>
-                                                            </div>
-                                                        )}
                                                         <SummaryGrid
                                                             activity={displayOrBlank(dayActivity)}
                                                             horario={formatHorario(eventStart, eventEnd)}
@@ -666,11 +668,6 @@ export const StaffScheduleModal = ({
 
                                                 {hasAct2 && (
                                                     <div className="w-full min-w-0">
-                                                        {hasTwoActivities && (
-                                                            <div className="mb-1.5 w-full text-center">
-                                                                <span className="text-[9px] font-black tracking-wide text-white/60 uppercase">TARDE</span>
-                                                            </div>
-                                                        )}
                                                         <SummaryGrid
                                                             activity={displayOrBlank(dayActivity2)}
                                                             horario={formatHorario(eventStart2, eventEnd2)}
