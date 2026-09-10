@@ -23,7 +23,6 @@ export function AlbaranesOptionsModal({
             usageLabel="Opciones de Albaranes"
             hideHeader
             hideCloseButton
-            scrollContent={false}
             footer={
                 <div className="flex w-full min-w-0 flex-wrap items-center justify-center gap-2">
                     <Button
