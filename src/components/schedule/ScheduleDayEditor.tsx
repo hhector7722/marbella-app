@@ -136,12 +136,14 @@ const ShiftBar = ({
     shift,
     onUpdate,
     allowMove = true,
-    barClass = ''
+    barClass = '',
+    onClick
 }: {
     shift: ScheduleShift,
     onUpdate: (s: ScheduleShift) => void,
     allowMove?: boolean,
-    barClass?: string
+    barClass?: string,
+    onClick?: () => void
 }) => {
     const barRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -216,6 +218,7 @@ const ShiftBar = ({
                 ...(isFloating ? {} : { background: '#34d399', boxShadow: '0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.25)' }),
             }}
             onPointerDown={(e) => allowMove && handlePointerDown(e, 'move')}
+            onClick={(e) => { e.stopPropagation(); onClick?.(); }}
         >
             <div className="absolute left-0 top-0 bottom-0 w-12 cursor-ew-resize z-30" onPointerDown={(e) => handlePointerDown(e, 'left')} />
             <ShiftBarTimeLabels barRef={barRef} start={shift.start} end={shift.end} className="relative z-20" />
@@ -241,6 +244,178 @@ const EditableSummaryCell = ({
         </span>
     </div>
 );
+
+/* ─── Barra flotante inferior para editar turno (reemplaza el modal) ─── */
+const FloatingShiftEditor = ({
+    shift,
+    onUpdate,
+    onClose,
+    onDelete
+}: {
+    shift: ScheduleShift,
+    onUpdate: (s: ScheduleShift) => void,
+    onClose: () => void,
+    onDelete: () => void
+}) => {
+    const step = SNAP_MINUTES;
+    const barRef = useRef<HTMLDivElement>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragType, setDragType] = useState<'move' | 'left' | 'right' | null>(null);
+    const [dragStartShift, setDragStartShift] = useState<{ start: string, end: string } | null>(null);
+    const [dragStartPercent, setDragStartPercent] = useState<number>(0);
+
+    const leftPos = timeToPercent(shift.start);
+    const width = Math.max(timeToPercent(shift.end) - leftPos, 5);
+
+    const handlePointerDown = (e: React.PointerEvent, type: 'move' | 'left' | 'right') => {
+        e.stopPropagation();
+        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+        setIsDragging(true);
+        setDragType(type);
+        setDragStartShift({ start: shift.start, end: shift.end });
+
+        const parentRect = (e.currentTarget.parentElement || e.currentTarget).getBoundingClientRect();
+        const relativePercent = ((e.clientX - parentRect.left) / parentRect.width) * 100;
+        setDragStartPercent(relativePercent);
+    };
+
+    useEffect(() => {
+        const handlePointerMove = (e: PointerEvent) => {
+            if (!isDragging || !barRef.current || !dragStartShift) return;
+            const parentRect = barRef.current.parentElement!.getBoundingClientRect();
+            const currentPercent = ((e.clientX - parentRect.left) / parentRect.width) * 100;
+
+            if (dragType === 'left') {
+                const rawTime = percentToTime(Math.max(0, Math.min(currentPercent, 100)));
+                if (timeToPercent(rawTime) < timeToPercent(shift.end)) onUpdate({ ...shift, start: rawTime });
+            } else if (dragType === 'right') {
+                const rawTime = percentToTime(Math.max(0, Math.min(currentPercent, 100)));
+                if (timeToPercent(rawTime) > timeToPercent(shift.start)) onUpdate({ ...shift, end: rawTime });
+            } else if (dragType === 'move') {
+                const diffPercent = currentPercent - dragStartPercent;
+                const startPct = timeToPercent(dragStartShift.start);
+                const endPct = timeToPercent(dragStartShift.end);
+                const duration = endPct - startPct;
+
+                const newStartPct = Math.max(0, Math.min(startPct + diffPercent, 100 - duration));
+                const newStart = percentToTime(newStartPct);
+                const actualStartPct = timeToPercent(newStart);
+                const newEnd = percentToTime(actualStartPct + duration);
+
+                if (newStart !== shift.start) {
+                    onUpdate({ ...shift, start: newStart, end: newEnd });
+                }
+            }
+        };
+
+        const handlePointerUp = () => { setIsDragging(false); setDragType(null); };
+
+        if (isDragging) {
+            window.addEventListener('pointermove', handlePointerMove);
+            window.addEventListener('pointerup', handlePointerUp);
+        }
+        return () => {
+            window.removeEventListener('pointermove', handlePointerMove);
+            window.removeEventListener('pointerup', handlePointerUp);
+        };
+    }, [isDragging, dragType, shift, onUpdate, dragStartPercent, dragStartShift]);
+
+    return (
+        <div className="fixed bottom-0 left-0 right-0 z-50 animate-slide-up">
+            <div className="bg-zinc-900/95 backdrop-blur-md rounded-t-2xl border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.3)]">
+                {/* Handle de arrastre */}
+                <div className="w-10 h-1.5 mx-auto mt-3 mb-2 rounded-full bg-white/20" />
+                
+                {/* Nombre del trabajador */}
+                <div className="px-4 pb-2 text-center">
+                    <h3 className="text-white font-semibold text-sm">{shift.name}</h3>
+                </div>
+
+                {/* Controles de Tiempo */}
+                <div className="px-4 pb-4">
+                    <div className="h-14 flex items-center gap-2">
+                        <div className="flex flex-col gap-0.5 shrink-0">
+                            <button 
+                                type="button" 
+                                aria-label="Inicio -30 min" 
+                                onClick={() => onUpdate({ ...shift, start: stepTime(shift.start, -step) })} 
+                                className="w-8 h-6 flex items-center justify-center rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm active:scale-95" 
+                                title="Inicio -30 min"
+                            >
+                                <Plus size={14} strokeWidth={3} />
+                            </button>
+                            <button 
+                                type="button" 
+                                aria-label="Inicio +30 min" 
+                                onClick={() => { const t = stepTime(shift.start, step); if (timeToPercent(t) < timeToPercent(shift.end)) onUpdate({ ...shift, start: t }); }} 
+                                className="w-8 h-6 flex items-center justify-center rounded-lg bg-red-500 hover:bg-red-600 text-white shadow-sm active:scale-95" 
+                                title="Inicio +30 min"
+                            >
+                                <Minus size={14} strokeWidth={3} />
+                            </button>
+                        </div>
+                        <div className="flex-1 relative h-full min-w-0 rounded-xl overflow-hidden">
+                            <div
+                                ref={barRef}
+                                className="absolute top-2 bottom-2 flex items-center justify-between rounded-full z-10 touch-none overflow-hidden px-1.5 cursor-grab active:cursor-grabbing"
+                                style={{
+                                    left: `${leftPos}%`,
+                                    width: `${width}%`,
+                                    background: '#34d399',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.25)',
+                                }}
+                                onPointerDown={(e) => handlePointerDown(e, 'move')}
+                            >
+                                <div className="absolute left-0 top-0 bottom-0 w-12 cursor-ew-resize z-30" onPointerDown={(e) => handlePointerDown(e, 'left')} />
+                                <ShiftBarTimeLabels barRef={barRef} start={shift.start} end={shift.end} className="relative z-20" />
+                                <div className="absolute right-0 top-0 bottom-0 w-12 cursor-ew-resize z-30" onPointerDown={(e) => handlePointerDown(e, 'right')} />
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-0.5 shrink-0">
+                            <button 
+                                type="button" 
+                                aria-label="Final +30 min" 
+                                onClick={() => { const t = stepTime(shift.end, step); if (timeToPercent(t) > timeToPercent(shift.start)) onUpdate({ ...shift, end: t }); }} 
+                                className="w-8 h-6 flex items-center justify-center rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm active:scale-95" 
+                                title="Final +30 min"
+                            >
+                                <Plus size={14} strokeWidth={3} />
+                            </button>
+                            <button 
+                                type="button" 
+                                aria-label="Final -30 min" 
+                                onClick={() => onUpdate({ ...shift, end: stepTime(shift.end, -step) })} 
+                                className="w-8 h-6 flex items-center justify-center rounded-lg bg-red-500 hover:bg-red-600 text-white shadow-sm active:scale-95" 
+                                title="Final -30 min"
+                            >
+                                <Minus size={14} strokeWidth={3} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Botones de acción */}
+                <div className="px-4 pb-4 flex items-center justify-between">
+                    <button
+                        type="button"
+                        onClick={onDelete}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 text-sm font-medium transition-colors"
+                    >
+                        <X size={14} strokeWidth={3} />
+                        <span>Eliminar trabajador</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 text-sm font-medium transition-colors"
+                    >
+                        <span>Cerrar</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDayEditorProps>(function ScheduleDayEditor(
     { initialDate, onClose, onSuccess, embedded = false, modalParentInstance },
@@ -1200,37 +1375,61 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
 
                     {/* Filas de empleados — editables */}
                     <div className="flex flex-col w-full bg-white flex-1 overflow-y-auto min-h-0 day-modal-shift-rows">
-                        {shifts.map((shift, idx) => (
-                            <div key={shift.employeeId} className="flex w-full h-9 md:h-10 border-b border-gray-100 last:border-b-0 bg-white day-modal-shift-row">
-                                <div className="w-24 md:w-28 px-2 flex items-center gap-2 shrink-0 overflow-hidden">
-                                    <Avatar src={shift.avatar_url ?? undefined} alt={shift.name ?? '?'} size="sm" className="shrink-0" />
-                                    <button
-                                        type="button"
-                                        onClick={(e) => { e.stopPropagation(); setEditingIndex(editingIndex === idx ? null : idx); }}
-                                        className="min-w-0 flex-1 truncate text-left text-[11px] font-medium leading-none text-zinc-800 select-none hover:text-[#5B8FB9] transition-colors"
-                                    >
-                                        {shift.name}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }}
-                                        className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500 text-white transition-all shadow-sm hover:bg-red-600 active:scale-95 before:absolute before:inset-0 before:-m-2.5 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']"
-                                        title="Quitar del horario"
-                                        aria-label={`Quitar ${shift.name}`}
-                                    >
-                                        <X size={12} strokeWidth={4} />
-                                    </button>
-                                </div>
-                                <div className="flex-1 relative min-h-0">
-                                    <div className="absolute inset-0 flex pointer-events-none">
-                                        {hoursHeader.map((_, i) => (
-                                            <div key={i} className="flex-1" />
-                                        ))}
+                        {shifts.map((shift, idx) => {
+                            const isEditing = editingIndex === idx;
+                            return (
+                                <div key={shift.employeeId} className="flex w-full h-9 md:h-10 border-b border-gray-100 last:border-b-0 bg-white day-modal-shift-row">
+                                    <div className="w-24 md:w-28 px-2 flex items-center gap-2 shrink-0 overflow-hidden">
+                                        {isEditing ? (
+                                            <button
+                                                type="button"
+                                                onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }}
+                                                className="relative flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-red-500 text-white transition-all shadow-sm hover:bg-red-600 active:scale-95 before:absolute before:inset-0 before:-m-2 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']"
+                                                title="Quitar del horario"
+                                                aria-label={`Quitar ${shift.name}`}
+                                            >
+                                                <X size={8} strokeWidth={3} />
+                                            </button>
+                                        ) : (
+                                            <Avatar src={shift.avatar_url ?? undefined} alt={shift.name ?? '?'} size="sm" className="shrink-0" />
+                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={(e) => { e.stopPropagation(); setEditingIndex(editingIndex === idx ? null : idx); }}
+                                            className="min-w-0 flex-1 truncate text-left text-[11px] font-medium leading-none text-zinc-800 select-none hover:text-[#5B8FB9] transition-colors"
+                                        >
+                                            {shift.name}
+                                        </button>
+                                        {!isEditing && (
+                                            <button
+                                                type="button"
+                                                onClick={(e) => { e.stopPropagation(); handleRemoveEmployee(idx); }}
+                                                className="relative flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-red-500 text-white transition-all shadow-sm hover:bg-red-600 active:scale-95 before:absolute before:inset-0 before:-m-2 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']"
+                                                title="Quitar del horario"
+                                                aria-label={`Quitar ${shift.name}`}
+                                            >
+                                                <X size={10} strokeWidth={3} />
+                                            </button>
+                                        )}
                                     </div>
-                                    {shift.active && <ShiftBar shift={shift} onUpdate={(newS) => handleUpdateShift(idx, newS)} allowMove={editingIndex === idx} />}
+                                    <div className="flex-1 relative min-h-0">
+                                        <div className="absolute inset-0 flex pointer-events-none">
+                                            {hoursHeader.map((_, i) => (
+                                                <div key={i} className="flex-1" />
+                                            ))}
+                                        </div>
+                                        {shift.active && (
+                                            <ShiftBar
+                                                shift={shift}
+                                                onUpdate={(newS) => handleUpdateShift(idx, newS)}
+                                                allowMove={isEditing}
+                                                onClick={() => setEditingIndex(idx)}
+                                            />
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
 
                     {/* Footer Total — penúltima fila, fondo blanco, texto gris claro descriptivo */}
@@ -1266,66 +1465,17 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                 )}
             </div>
 
-            {/* ── Edición del turno de un trabajador (task surface embebida) ── */}
-            {embedded && editingIndex !== null && shifts[editingIndex] && (() => {
+            {/* ── Edición del turno de un trabajador (barra flotante inferior) ── */}
+            {editingIndex !== null && shifts[editingIndex] && (() => {
                 const s = shifts[editingIndex];
                 const upd = (newS: typeof s) => handleUpdateShift(editingIndex, newS);
-                const step = SNAP_MINUTES;
                 return (
-                    <Modal
-                        open
+                    <FloatingShiftEditor
+                        shift={s}
+                        onUpdate={upd}
                         onClose={() => setEditingIndex(null)}
-                        title={s.name || 'Editar turno'}
-                        instance="schedule-shift-edit"
-                        variant="compact"
-                        layer={modalParentInstance ? 'derived' : 'base'}
-                        {...(modalParentInstance ? { parentInstance: modalParentInstance } : {})}
-                    >
-                        <div className="flex flex-col gap-2 p-2 bg-zinc-900/95 backdrop-blur-md">
-                            {/* Controles de Tiempo */}
-                            <div className="h-14 flex items-center gap-2">
-                                <div className="flex flex-col gap-0.5 shrink-0">
-                                    <button type="button" aria-label="Inicio -30 min" onClick={() => upd({ ...s, start: stepTime(s.start, -step) })} className="w-8 h-6 flex items-center justify-center rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm active:scale-95" title="Inicio -30 min"><Plus size={14} strokeWidth={3} /></button>
-                                    <button type="button" aria-label="Inicio +30 min" onClick={() => { const t = stepTime(s.start, step); if (timeToPercent(t) < timeToPercent(s.end)) upd({ ...s, start: t }); }} className="w-8 h-6 flex items-center justify-center rounded-lg bg-red-500 hover:bg-red-600 text-white shadow-sm active:scale-95" title="Inicio +30 min"><Minus size={14} strokeWidth={3} /></button>
-                                </div>
-                                <div className="flex-1 relative h-full min-w-0 rounded-xl overflow-hidden">
-                                    <ShiftBar shift={s} onUpdate={upd} allowMove barClass="bg-[#5B8FB9] border border-white/20" />
-                                </div>
-                                <div className="flex flex-col gap-0.5 shrink-0">
-                                    <button type="button" aria-label="Final +30 min" onClick={() => { const t = stepTime(s.end, step); if (timeToPercent(t) > timeToPercent(s.start)) upd({ ...s, end: t }); }} className="w-8 h-6 flex items-center justify-center rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm active:scale-95" title="Final +30 min"><Plus size={14} strokeWidth={3} /></button>
-                                    <button type="button" aria-label="Final -30 min" onClick={() => upd({ ...s, end: stepTime(s.end, -step) })} className="w-8 h-6 flex items-center justify-center rounded-lg bg-red-500 hover:bg-red-600 text-white shadow-sm active:scale-95" title="Final -30 min"><Minus size={14} strokeWidth={3} /></button>
-                                </div>
-                            </div>
-
-                            {/* Controles de Actividad y Categoría del Trabajador */}
-                            <div className="grid grid-cols-2 gap-2">
-                                <div className="flex flex-col gap-1">
-                                    <span className="text-[7px] font-black text-white/60 uppercase tracking-widest pl-1">Actividad Trabajador</span>
-                                    <div className="h-9 bg-white/10 rounded-xl border border-white/10 overflow-hidden">
-                                        <input
-                                            type="text"
-                                            value={s.activity}
-                                            onChange={(e) => upd({ ...s, activity: e.target.value })}
-                                            placeholder="ACT."
-                                            className="w-full h-full bg-transparent border-none focus:outline-none text-white text-[10px] font-black uppercase px-3 placeholder:text-white/20"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <span className="text-[7px] font-black text-white/60 uppercase tracking-widest pl-1">Categoría Trabajador</span>
-                                    <div className="h-9 bg-white/10 rounded-xl border border-white/10 overflow-hidden">
-                                        <input
-                                            type="text"
-                                            value={s.categoria}
-                                            onChange={(e) => upd({ ...s, categoria: e.target.value })}
-                                            placeholder="CAT."
-                                            className="w-full h-full bg-transparent border-none focus:outline-none text-white text-[10px] font-black uppercase px-3 placeholder:text-white/20"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </Modal>
+                        onDelete={() => handleRemoveEmployee(editingIndex!)}
+                    />
                 );
             })()}
 

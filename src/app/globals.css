@@ -623,6 +623,25 @@
 }
 
 /*
+ * Albaranes options: botones idénticos al fichaje staff (misma fuente,
+ * mismo relleno visual a toda la hit-area).
+ */
+[data-component='Modal'][data-instance='albaranes-options-modal'] [data-element='footer'] {
+  border-top: none;
+  padding-top: var(--espacio-4);
+  padding-bottom: var(--espacio-4);
+}
+[data-component='Modal'][data-instance='albaranes-options-modal'] [data-component='Button'][data-layout='hug'] {
+  font-size: 1.25rem;
+}
+[data-component='Modal'][data-instance='albaranes-options-modal'] [data-component='Button'][data-layout='hug']::before {
+  top: 0;
+  bottom: 0;
+  height: auto;
+  transform: none;
+}
+
+/*
  * Contrato Button. La especificidad del atributo impide que utilidades
  * Tailwind de altura, color, radio o tipo escapen del contrato.
  * Hit-area 48px transparente. El relleno visual abraza el texto/icono
@@ -1003,6 +1022,21 @@
   to {
     transform: none;
   }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 [data-component='PageScreen'] [data-element='lead'] {
   display: flex;
