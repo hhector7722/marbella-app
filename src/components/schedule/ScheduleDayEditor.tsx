@@ -156,6 +156,7 @@ const ShiftBar = ({
     const isFloating = barClass.includes('bg-[') || barClass.includes('zinc');
     const handlePointerDown = (e: React.PointerEvent, type: 'move' | 'left' | 'right') => {
         if (!allowMove) return;
+        e.preventDefault();
         e.stopPropagation();
         (e.target as HTMLElement).setPointerCapture(e.pointerId);
         setIsDragging(true);
@@ -170,6 +171,7 @@ const ShiftBar = ({
     useEffect(() => {
         const handlePointerMove = (e: PointerEvent) => {
             if (!isDragging || !barRef.current || !dragStartShift) return;
+            e.preventDefault();
             const parentRect = barRef.current.parentElement!.getBoundingClientRect();
             const currentPercent = ((e.clientX - parentRect.left) / parentRect.width) * 100;
 
@@ -199,7 +201,7 @@ const ShiftBar = ({
         const handlePointerUp = () => { setIsDragging(false); setDragType(null); };
 
         if (isDragging) {
-            window.addEventListener('pointermove', handlePointerMove);
+            window.addEventListener('pointermove', handlePointerMove, { passive: false });
             window.addEventListener('pointerup', handlePointerUp);
         }
         return () => {
@@ -268,6 +270,7 @@ const FloatingShiftEditor = ({
     const width = Math.max(timeToPercent(shift.end) - leftPos, 5);
 
     const handlePointerDown = (e: React.PointerEvent, type: 'move' | 'left' | 'right') => {
+        e.preventDefault();
         e.stopPropagation();
         (e.target as HTMLElement).setPointerCapture(e.pointerId);
         setIsDragging(true);
@@ -282,6 +285,7 @@ const FloatingShiftEditor = ({
     useEffect(() => {
         const handlePointerMove = (e: PointerEvent) => {
             if (!isDragging || !barRef.current || !dragStartShift) return;
+            e.preventDefault();
             const parentRect = barRef.current.parentElement!.getBoundingClientRect();
             const currentPercent = ((e.clientX - parentRect.left) / parentRect.width) * 100;
 
@@ -311,7 +315,7 @@ const FloatingShiftEditor = ({
         const handlePointerUp = () => { setIsDragging(false); setDragType(null); };
 
         if (isDragging) {
-            window.addEventListener('pointermove', handlePointerMove);
+            window.addEventListener('pointermove', handlePointerMove, { passive: false });
             window.addEventListener('pointerup', handlePointerUp);
         }
         return () => {
@@ -1374,7 +1378,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                     </div>
 
                     {/* Filas de empleados — editables */}
-                    <div className="flex flex-col w-full bg-white flex-1 overflow-y-auto min-h-0 day-modal-shift-rows">
+                    <div className="flex flex-col w-full bg-white flex-1 overflow-y-auto overflow-x-hidden min-h-0 day-modal-shift-rows" style={{ touchAction: 'pan-y' }}>
                         {shifts.map((shift, idx) => {
                             const isEditing = editingIndex === idx;
                             return (

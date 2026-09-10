@@ -310,7 +310,7 @@ export function MasterLastClosingWidget() {
                             })()}
                         </div>
 
-                        {/* Segunda fila: Tarjeta, Efectivo, Diferencia inline ("Nombre Valor") en grid de 3 columnas */}
+                        {/* Segunda fila: Tarjeta, Efectivo, Diferencia — valor arriba, etiqueta debajo */}
                         <div className="grid grid-cols-3 gap-x-1 w-full">
                             {SECONDARY_KPIS.map((kpi) => {
                                 const isClickable = kpi.label === 'Efectivo';
@@ -325,7 +325,7 @@ export function MasterLastClosingWidget() {
                                         key={kpi.label}
                                         onClick={isClickable ? handleClick : undefined}
                                         className={cn(
-                                            "flex min-w-0 items-center justify-center text-center select-none",
+                                            "flex min-w-0 flex-col items-center justify-center text-center select-none",
                                             isClickable && "cursor-pointer hover:opacity-80 active:scale-[0.98] transition-all relative before:absolute before:inset-0 before:-m-2 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']"
                                         )}
                                         role={isClickable ? "button" : undefined}
@@ -337,9 +337,11 @@ export function MasterLastClosingWidget() {
                                             }
                                         } : undefined}
                                     >
-                                        <span className="inline-flex items-center text-[9px] md:text-[11px] leading-none select-none">
-                                            <span className="text-[var(--home-widget-ink-secondary)] font-normal">{kpi.label}</span>
-                                            <span className="ml-1 text-[var(--home-widget-ink)] font-black tabular-nums">{kpi.format(metrics)}</span>
+                                        <span className="font-bold tabular-nums leading-none text-[9px] md:text-[11px] text-[var(--home-widget-ink)]">
+                                            {kpi.format(metrics)}
+                                        </span>
+                                        <span className="mt-0.5 text-[8px] md:text-[9px] leading-none text-[var(--home-widget-ink-secondary)]">
+                                            {kpi.label}
                                         </span>
                                     </div>
                                 );
