@@ -2682,7 +2682,7 @@ button[data-element='catalog-filter'] {
   --staff-calendar-gap: var(--espacio-2);
   --staff-calendar-inset-bottom: var(--espacio-2);
   --staff-week-day-size: 0.75rem;
-  --staff-week-expansion-min: 3.5rem;
+  --staff-week-expansion-min: 4rem;
   --staff-week-expansion-max: 4.75rem;
   box-sizing: border-box;
   display: flex;
@@ -3137,7 +3137,7 @@ button[data-element='catalog-filter'] {
   --staff-calendar-gap: var(--espacio-2);
   --staff-calendar-inset-bottom: var(--espacio-2);
   --staff-week-day-size: 0.75rem;
-  --staff-week-expansion-min: 3.5rem;
+  --staff-week-expansion-min: 4rem;
   --staff-week-expansion-max: 4.75rem;
   box-sizing: border-box;
   display: flex;
