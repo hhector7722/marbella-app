@@ -445,6 +445,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
     // Bloquea guardados simultáneos (autoguardado + botón Guardar/Enviar).
     const savingRef = useRef(false);
     const [saving, setSaving] = useState(false);
+    const [persistError, setPersistError] = useState('');
     // Trabajadores con turno en el día que el editor gestiona (solo ellos
     // pueden retirarse; los turnos de empleados no visibles se conservan).
     const managedIdsRef = useRef<string[]>([]);
@@ -831,9 +832,11 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                 ),
             ]);
             if (!res.ok) {
+                setPersistError(resolveSaveError(res));
                 toast.error(resolveSaveError(res));
                 return false;
             }
+            setPersistError('');
             setHasUnsavedChanges(false);
             setIsDayPublished(res.published);
             managedIdsRef.current = rows.map((r) => r.employeeId);
@@ -848,6 +851,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
         } catch (error: unknown) {
             const cause = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
             console.error('runPersist capturó un error inesperado', error);
+            setPersistError(`excepción: ${cause}`);
             toast.error(`Error al guardar. ${cause}`);
             return false;
         } finally {
@@ -1251,6 +1255,11 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                             {saving ? 'Guardando…' : 'Guardar'}
                         </Button>
                     </div>
+                    {persistError || saving ? (
+                        <div className="w-full text-center text-[10px] leading-tight text-amber-200/90" aria-live="polite">
+                            {saving && !persistError ? 'Guardando…' : persistError}
+                        </div>
+                    ) : null}
                 </div>
             ) : null}
 
