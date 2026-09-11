@@ -591,13 +591,25 @@ export function Modal({
                     backdropClassName
                 )}
                 onClick={closeOnBackdrop ? () => requestCloseRef.current() : undefined}
+                onPointerDown={(e) => {
+                    e.stopPropagation();
+                }}
+                onTouchStart={(e) => {
+                    e.stopPropagation();
+                }}
             />
             <div
                 className={cn(
-                    'relative z-10 flex w-full max-w-full flex-col items-center pointer-events-none',
+                    'relative z-10 flex w-full max-w-full flex-col items-center pointer-events-auto',
                     layout.maxWidthClass,
                     wrapperClassName
                 )}
+                onClick={(e) => {
+                    e.stopPropagation();
+                }}
+                onTouchStart={(e) => {
+                    e.stopPropagation();
+                }}
             >
                 <div
                     ref={panelRef}
