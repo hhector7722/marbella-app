@@ -133,6 +133,22 @@ function parseHourInput(raw: string): string {
     return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
 }
 
+/**
+ * Convierte cualquier formato de hora que pueda venir de la BD (ISO con zona,
+ * «10:00:00» civil, «8:30») a «HH:mm». Devuelve '' si no se puede interpretar.
+ */
+function toHhMm(raw: string | null | undefined): string {
+    const v = String(raw ?? '').trim();
+    if (!v) return '';
+    const parsed = new Date(v);
+    if (!Number.isNaN(parsed.getTime())) {
+        return parsed.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    }
+    const m = /^\s*(\d{1,2}):(\d{2})(?::\d{1,2})?\s*$/.exec(v);
+    if (m) return `${m[1].padStart(2, '0')}:${m[2]}`;
+    return '';
+}
+
 // --- BARRA INTERACTIVA: mismo aspecto que el modal (verde #34d399, sombra) ---
 const ShiftBar = ({
     shift,
@@ -552,8 +568,8 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                     employeeId: emp.id,
                     name: displayName,
                     avatar_url: emp.avatar_url,
-                    start: new Date(sTime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-                    end: new Date(eTime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                    start: toHhMm(sTime),
+                    end: toHhMm(eTime),
                     activity: sActivity,
                     categoria: sCategoria,
                     participantsCount: parsedNotes.participantsCount || '',
@@ -612,8 +628,8 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                 // Fallback to actual times if notes are missing or defaults are empty
                 const fStartTime = first.draft_start_time || first.start_time;
                 const fEndTime = first.draft_end_time || first.end_time;
-                if (!pStart && fStartTime) pStart = new Date(fStartTime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-                if (!pEnd && fEndTime) pEnd = new Date(fEndTime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                if (!pStart && fStartTime) pStart = toHhMm(fStartTime);
+                if (!pEnd && fEndTime) pEnd = toHhMm(fEndTime);
 
                 setDefaultStart(pStart);
                 setDefaultEnd(pEnd);
@@ -758,14 +774,24 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
 
     const buildPersistPayload = () => {
         const activeShifts = shifts.filter(s => s.active);
-        const startOfRange = new Date(`${date}T00:00:00`).toISOString();
-        const endOfRange = new Date(`${date}T23:59:59`).toISOString();
+        const dayStartTime = new Date(`${date}T00:00:00`);
+        const dayEndTime = new Date(`${date}T23:59:59`);
+        if (Number.isNaN(dayStartTime.getTime()) || Number.isNaN(dayEndTime.getTime())) {
+            throw new Error(`Fecha del día no válida: "${date}"`);
+        }
+        const startOfRange = dayStartTime.toISOString();
+        const endOfRange = dayEndTime.toISOString();
+        const toStartIso = (time: string, label: string): string => {
+            const parsed = new Date(`${date}T${time}:00`);
+            if (Number.isNaN(parsed.getTime())) {
+                throw new Error(`Hora de ${label} no válida: "${time}"`);
+            }
+            return parsed.toISOString();
+        };
         const rows: PersistShiftInput[] = activeShifts.map(shift => {
             // Al guardar, priorizamos SIEMPRE los valores específicos del turno del trabajador (shift.*).
             const resolvedStart = (shift.start || defaultStart || '08:00').trim();
             const resolvedEnd = (shift.end || defaultEnd || '16:00').trim();
-            const startDateTime = new Date(`${date}T${resolvedStart}:00`);
-            const endDateTime = new Date(`${date}T${resolvedEnd}:00`);
             const shiftActivity = (shift.activity || activity || '');
             const shiftCategory = (shift.categoria || categoria || '');
             const shiftActivity2 = (shift.activity2 || activity2 || '');
@@ -777,8 +803,8 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
             const dayEventEnd2 = (defaultEnd2 || '').trim();
             return {
                 employeeId: shift.employeeId,
-                startISO: startDateTime.toISOString(),
-                endISO: endDateTime.toISOString(),
+                startISO: toStartIso(resolvedStart, `inicio de ${shift.name}`),
+                endISO: toStartIso(resolvedEnd, `fin de ${shift.name}`),
                 activity: shiftActivity,
                 categoria: shiftCategory,
                 participantsCount: (shift.participantsCount || participantsCount || ''),
