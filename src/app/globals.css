@@ -4970,9 +4970,10 @@ button[data-element='catalog-filter'] {
   }
 
   [data-component='HomeScreen'] {
-    /* Densidad desktop: mismo tamaño de tile que móvil; más columnas, no tiles más grandes. */
-    --home-icon-size: 4.5rem;
-    max-width: min(52rem, 100%);
+    /* Desktop: el mosaico ocupa el ancho útil del shell (la sidebar ya reserva su hueco).
+       La pista crece (tile mayor) y los widgets se ensanchan con el viewport. */
+    --home-icon-size: 6rem;
+    max-width: none;
     width: 100%;
     margin-inline: auto;
     padding-inline: var(--espacio-4);
@@ -4994,6 +4995,11 @@ button[data-element='catalog-filter'] {
     max-width: min(56rem, 100%);
   }
 
+  /* Historial de asistencia (/staff/history): usa casi todo el ancho útil del shell. */
+  [data-component='PageScreen'].history-wide > div {
+    max-width: min(76rem, 100%);
+  }
+
   [data-component='PageScreen'][data-work='catalog'] > div {
     max-width: min(72rem, 100%);
   }
@@ -5003,42 +5009,75 @@ button[data-element='catalog-filter'] {
   }
 
   /*
-   * Home ops-admin: mismos slots que smartphone, en paralelo.
-   * Iconos a tamaño fijo; widgets no se hinchan con más fr.
+   * Home ops-admin: contenido principal grande (ventas, cierre, horario) y una
+   * columna lateral de accesos de 2 fichas contigua al shell. Los iconos
+   * (incluidas Caja inicial y Cajas cambio) viven en esa columna lateral.
+   * Los nombres de área son los mismos que asigna la base, solo que recolocados.
    */
   [data-component='HomeScreen'][data-layout='ops-admin'] {
-    max-width: min(52rem, 100%);
     grid-template-columns:
       repeat(4, minmax(0, 1fr))
       var(--home-icon-size)
       var(--home-icon-size);
     grid-template-areas:
-      'ventas  ventas  ventas  ventas  plant   albaranes'
-      'caja    caja    caja    caja    recetas asis'
-      'hextras hextras hextras hextras mas     mobra'
-      'hextras hextras hextras hextras stock   ingredientes'
-      'cambio1 cambio1 cambio2 cambio2 .      .';
+      'ventas    ventas    ventas    ventas    cinicial  plant'
+      'cierre    cierre    cierre    cierre    mobra     stock'
+      'horarios  horarios  horarios  horarios  recetas   albaranes'
+      'horarios  horarios  horarios  horarios  mas       asis'
+      'horarios  horarios  horarios  horarios  cajascambio ingredientes';
     grid-template-rows: repeat(5, var(--home-row-track));
-    column-gap: var(--espacio-3);
+    column-gap: var(--espacio-4);
     row-gap: var(--home-row-gap);
   }
-  /* Reasignación de grid-area: los nombres de área cambian en escritorio. */
-  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='master-ultimo-cierre'] {
-    grid-area: caja;
+
+  /*
+   * Home master: mismo esquema que Admin — contenido principal grande
+   * (ventas, último cierre, horario) y accesos en columnas laterales.
+   * La asistencia del día mantiene su puesto (fila 3, col. 4) y, al expandirse,
+   * gana la fila 4 con «C Inicial» bajando a la fila 5.
+   */
+  [data-component='HomeScreen'][data-layout='master'] {
+    grid-template-columns:
+      repeat(4, minmax(0, 1fr))
+      var(--home-icon-size)
+      var(--home-icon-size);
+    grid-template-areas:
+      'ventas     ventas     ventas     ventas     reservas  ingred'
+      'ultcierre  ultcierre  ultcierre  ultcierre  recetas   albaran'
+      'horario    horario    horario    asis       otros     cajascambio'
+      'horario    horario    horario    caja       cambio    plantilla'
+      'horario    horario    horario    .          .         .';
+    grid-template-rows: repeat(5, var(--home-row-track));
+    column-gap: var(--espacio-4);
+    row-gap: var(--home-row-gap);
   }
-  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='master-horarios'] {
-    grid-area: hextras;
-  }
-  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='caja-inicial'] {
-    grid-area: cambio1;
-  }
-  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='cajas-cambio'] {
-    grid-area: cambio2;
+  [data-component='HomeScreen'][data-layout='master'].asis-expanded {
+    grid-template-areas:
+      'ventas     ventas     ventas     ventas     reservas  ingred'
+      'ultcierre  ultcierre  ultcierre  ultcierre  recetas   albaran'
+      'horario    horario    horario    asis       otros     cajascambio'
+      'horario    horario    horario    asis       cambio    plantilla'
+      'horario    horario    horario    caja       .         .';
   }
 
   [data-component='HomeScreen'][data-layout='staff'] {
-    /* Misma composición 4×N que smartphone; ancho acotado para no estirar tiles. */
-    max-width: min(42rem, 100%);
+    /* El calendario y el resumen de la semana ocupan la zona principal; accesos a la derecha. */
+    --home-icon-size: 5.5rem;
+    grid-template-columns:
+      repeat(4, minmax(0, 1fr))
+      var(--home-icon-size)
+      var(--home-icon-size);
+    grid-template-areas:
+      'semana    semana    semana    semana    fichaje   albaranes'
+      'horarios  horarios  horarios  horarios  recetas   pedidos'
+      'horarios  horarios  horarios  horarios  cambio    propinas'
+      'horarios  horarios  horarios  horarios  compra    carta'
+      'horarios  horarios  horarios  horarios  reservas  cierre'
+      'horarios  horarios  horarios  horarios  prov      invent'
+      'horarios  horarios  horarios  horarios  info      web';
+    grid-template-rows: repeat(7, var(--home-row-track));
+    column-gap: var(--espacio-4);
+    row-gap: var(--home-row-gap);
   }
 
   /* Widgets home: no heredar tipografía hinchada de KpiStat md+. */
@@ -5047,6 +5086,98 @@ button[data-element='catalog-filter'] {
     min-height: 0;
     height: auto;
   }
+
+  /* Ventas (ops-admin y master): KPI con aire en pantallas grandes. */
+  [data-component='HomeScreen'][data-layout='ops-admin'] [data-instance='dashboard-ventas'] [data-component='KpiStat'] [data-element='value'],
+  [data-component='HomeScreen'][data-layout='master'] [data-instance='dashboard-ventas'] [data-component='KpiStat'] [data-element='value'] {
+    font-size: 18px;
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin'] [data-instance='dashboard-ventas'] [data-component='KpiStat'] [data-element='label'],
+  [data-component='HomeScreen'][data-layout='master'] [data-instance='dashboard-ventas'] [data-component='KpiStat'] [data-element='label'] {
+    font-size: 12px;
+    margin-top: 4px;
+  }
+
+  /* Etiquetas de los accesos laterales legibles en escritorio. */
+  [data-component='HomeScreen'] > [data-element='slot'] > [data-element='name'] {
+    font-size: 12px;
+  }
+
+  /*
+   * /staff/history: el resumen del mes usa casi todo el ancho útil del shell.
+   * Las 7 columnas de día crecen con el contenedor; altura de celda y textos legibles.
+   */
+  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-grid-wrap {
+    width: 100%;
+    max-width: 100%;
+  }
+  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-cell {
+    padding: 4px;
+  }
+  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-week,
+  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-cell,
+  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-week > * {
+    min-height: 96px !important;
+  }
+  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-cell > span:first-of-type {
+    top: 4px;
+    right: 6px;
+    font-size: 12px;
+  }
+  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-day-logs {
+    padding-top: 14px;
+    gap: 3px;
+  }
+  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-day-clocks > div {
+    height: 18px;
+    gap: 4px;
+  }
+  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-day-clocks > div + div {
+    margin-top: 2px;
+  }
+  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-day-clocks .rounded-full,
+  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-day-clocks .h-1\.5 {
+    width: 6px;
+    height: 6px;
+  }
+  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-day-clocks svg {
+    width: 9px;
+    height: 9px;
+  }
+  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-day-clocks span {
+    font-size: 13px;
+  }
+  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-day-totals > div {
+    height: 14px;
+    font-size: 10px;
+  }
+  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0,
+  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0 > div {
+    height: 22px;
+    min-height: 22px;
+  }
+  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0 span {
+    font-size: 10px;
+  }
+  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-weeks > [data-week-footer]:not([data-overrides='true']) {
+    height: 32px;
+    min-height: 32px;
+    max-height: 32px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-footer-label] {
+    font-size: 12px;
+  }
+  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric] {
+    gap: 8px;
+  }
+  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric-value] {
+    font-size: 14px;
+  }
+  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric-label] {
+    font-size: 12px;
+  }
 }
 
 @media (min-width: 1440px) {
@@ -5054,17 +5185,20 @@ button[data-element='catalog-filter'] {
     --shell-sidebar-width: 6.25rem;
   }
   [data-component='HomeScreen'] {
-    --home-icon-size: 4.5rem;
-    max-width: min(56rem, 100%);
+    --home-icon-size: 6.5rem;
+    max-width: none;
   }
   [data-component='HomeScreen'][data-layout='ops-admin'] {
-    /* Misma rejilla 4+2: más viewport ≠ widgets más anchos. */
-    max-width: min(56rem, 100%);
-    --home-icon-size: 4.5rem;
+    max-width: none;
+    --home-icon-size: 6.5rem;
+  }
+  [data-component='HomeScreen'][data-layout='master'] {
+    max-width: none;
+    --home-icon-size: 6.5rem;
   }
   [data-component='HomeScreen'][data-layout='staff'] {
-    max-width: min(44rem, 100%);
-    --home-icon-size: 4.5rem;
+    max-width: none;
+    --home-icon-size: 5.5rem;
   }
   [data-component='PageScreen'] > div {
     max-width: min(60rem, 100%);
@@ -5074,6 +5208,9 @@ button[data-element='catalog-filter'] {
   }
   [data-component='PageScreen'][data-work='calendar'] > div {
     max-width: min(56rem, 100%);
+  }
+  [data-component='PageScreen'].history-wide > div {
+    max-width: min(88rem, 100%);
   }
 }
 
