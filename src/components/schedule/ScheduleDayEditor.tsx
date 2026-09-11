@@ -12,6 +12,7 @@ import {
     type ReactNode,
 } from 'react';
 import { createClient } from "@/utils/supabase/client";
+import { createPortal } from 'react-dom';
 import { X, Plus, Minus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
@@ -467,6 +468,27 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
     const hasUnsavedChangesRef = useRef(false);
     const [saving, setSaving] = useState(false);
     const [persistError, setPersistError] = useState('');
+
+    // [TEMPORAL] Traza visible para diagnóstico en móvil.
+    const [traceLines, setTraceLines] = useState<string[]>([]);
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const orig = console.log;
+        console.log = (...args: unknown[]) => {
+            try {
+                const s = args
+                    .map((a) => (typeof a === 'string' ? a : JSON.stringify(a)))
+                    .join(' ');
+                if (/\[(SAVE|ENQ|RUN|SAVING)\]/.test(s)) {
+                    setTraceLines((prev) => [...prev.slice(-18), s]);
+                }
+            } catch {}
+            orig(...args);
+        };
+        return () => {
+            console.log = orig;
+        };
+    }, []);
     // Trabajadores con turno en el día que el editor gestiona (solo ellos
     // pueden retirarse; los turnos de empleados no visibles se conservan).
     const managedIdsRef = useRef<string[]>([]);
@@ -838,12 +860,15 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
      * Se ejecuta siempre en serie a través de `enqueuePersist`.
      */
     const runPersistImpl = async (publish: boolean): Promise<boolean> => {
+        console.log('[RUN] enter', { publish });
         if (saveTimeoutRef.current) {
             clearTimeout(saveTimeoutRef.current);
             saveTimeoutRef.current = null;
         }
         try {
             const { rows, startOfRange, endOfRange } = buildPersistPayload();
+            console.log('[RUN] payload', { rows: rows.length, startOfRange, endOfRange });
+            console.log('[RUN] calling action');
             const res = await Promise.race([
                 saveScheduleDayAction({
                     ymd: date,
@@ -860,6 +885,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                     ),
                 ),
             ]);
+            console.log('[RUN] result', res);
             if (!res.ok) {
                 setPersistError(resolveSaveError(res));
                 toast.error(resolveSaveError(res));
@@ -873,6 +899,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
             return true;
         } catch (error: unknown) {
             const cause = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+            console.log('[RUN] throw', cause);
             console.error('runPersist capturó un error inesperado', error);
             setPersistError(`excepción: ${cause}`);
             toast.error(`Error al guardar. ${cause}`);
@@ -893,13 +920,16 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
      * `announce` marca los guardados manuales (reflejan `saving` y avisan).
      */
     const enqueuePersist = useCallback((publish: boolean, announce = false): Promise<boolean> => {
+        console.log('[ENQ] enter', { publish, announce, pending: manualSavesPendingRef.current, saving });
         if (announce) {
             manualSavesPendingRef.current += 1;
+            console.log('[SAVING] true (enqueue announce)');
             setSaving(true);
         }
         const run = persistTailRef.current
             .catch(() => undefined)
             .then(() => persistImplRef.current(publish));
+        console.log('[ENQ] chained');
         persistTailRef.current = run.then(
             () => undefined,
             () => undefined,
@@ -907,7 +937,11 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
         const settled = run.finally(() => {
             if (announce) {
                 manualSavesPendingRef.current = Math.max(0, manualSavesPendingRef.current - 1);
-                if (manualSavesPendingRef.current === 0) setSaving(false);
+                console.log('[ENQ] settled', { pending: manualSavesPendingRef.current });
+                if (manualSavesPendingRef.current === 0) {
+                    console.log('[SAVING] false (enqueue finally)');
+                    setSaving(false);
+                }
             }
         });
         if (announce) {
@@ -1603,8 +1637,11 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                             instance="schedule-day-share-save"
                             disabled={saving}
                             onClick={async () => {
+                                console.log('[SAVE] click', { saving, pending: manualSavesPendingRef.current, hasUnsaved: hasUnsavedChangesRef.current });
                                 trackScheduleShare(!isDayPublished ? 'Guardar borrador' : 'Sobreescribir publicado');
+                                console.log('[SAVE] after track');
                                 const ok = await enqueuePersist(true, true);
+                                console.log('[SAVE] enqueue result', ok);
                                 if (!ok) return;
                                 setShowShareModal(false);
                                 onSuccess?.();
@@ -1667,6 +1704,33 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                     </div>
                 </div>
             </Modal>
+            {typeof document !== 'undefined' && traceLines.length > 0
+                ? createPortal(
+                      <div
+                          style={{
+                              position: 'fixed',
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              zIndex: 2147483647,
+                              maxHeight: '35vh',
+                              overflow: 'auto',
+                              background: 'rgba(0,0,0,0.9)',
+                              color: '#7CFC00',
+                              fontSize: 9,
+                              lineHeight: 1.2,
+                              fontFamily: 'monospace',
+                              padding: 4,
+                              pointerEvents: 'none',
+                          }}
+                      >
+                          {traceLines.map((l, i) => (
+                              <div key={i}>{l}</div>
+                          ))}
+                      </div>,
+                      document.body,
+                  )
+                : null}
         </div>
     );
 });
