@@ -814,14 +814,22 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
         if (announce) setSaving(true);
         try {
             const { rows, startOfRange, endOfRange } = buildPersistPayload();
-            const res = await saveScheduleDayAction({
-                ymd: date,
-                startISO: startOfRange,
-                endISO: endOfRange,
-                publish,
-                rows,
-                managedUserIds: managedIdsRef.current,
-            });
+            const res = await Promise.race([
+                saveScheduleDayAction({
+                    ymd: date,
+                    startISO: startOfRange,
+                    endISO: endOfRange,
+                    publish,
+                    rows,
+                    managedUserIds: managedIdsRef.current,
+                }),
+                new Promise<never>((_, reject) =>
+                    setTimeout(
+                        () => reject(new Error('El servidor no responde (timeout 20s)')),
+                        20_000,
+                    ),
+                ),
+            ]);
             if (!res.ok) {
                 toast.error(resolveSaveError(res));
                 return false;
@@ -1516,7 +1524,10 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                             instance="schedule-day-share-save"
                             disabled={saving}
                             onClick={async () => {
-                                if (savingRef.current) return;
+                                if (savingRef.current) {
+                                    toast.info('Guardando… espera un momento');
+                                    return;
+                                }
                                 trackScheduleShare(!isDayPublished ? 'Guardar borrador' : 'Sobreescribir publicado');
                                 const ok = await runPersistRef.current(true, true);
                                 if (!ok) return;
@@ -1533,7 +1544,10 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                             instance="schedule-day-share-send"
                             disabled={saving}
                             onClick={async () => {
-                                if (savingRef.current) return;
+                                if (savingRef.current) {
+                                    toast.info('Guardando… espera un momento');
+                                    return;
+                                }
                                 trackScheduleShare(!isDaySent ? 'Enviar notificaciones' : 'Reenviar notificaciones');
                                 const saved = await runPersistRef.current(true, true);
                                 if (!saved) return;
