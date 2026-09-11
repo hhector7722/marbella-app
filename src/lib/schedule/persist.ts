@@ -196,6 +196,34 @@ function sameEqual(a: number | null | undefined, b: number | null | undefined): 
     return (a ?? null) === (b ?? null);
 }
 
+/**
+ * `timestamptz` sale de Postgres como «2026-09-12T12:00:00+00:00» y la capa
+ * superior lo compara con su propio ISO «...T12:00:00.000Z». Son el mismo
+ * instante con distinto texto: se comparan por epoch, no por string.
+ */
+const TIMESTAMP_COLUMNS = new Set<string>([
+    'start_time',
+    'end_time',
+    'draft_start_time',
+    'draft_end_time',
+]);
+
+function sameColumnValue(got: unknown, want: unknown, isTimestamp: boolean): boolean {
+    if (typeof got === 'number' || typeof want === 'number') {
+        return sameEqual(got as number, want as number);
+    }
+    if (isTimestamp) {
+        const g = norm(got);
+        const w = norm(want);
+        if (!g || !w) return g === w;
+        const gt = Date.parse(g);
+        const wt = Date.parse(w);
+        if (Number.isNaN(gt) || Number.isNaN(wt)) return g === w;
+        return gt === wt;
+    }
+    return norm(got) === norm(want);
+}
+
 export type VerificationWarnings = {
     missing: string[];
     mismatched: Array<{ userId: string; field: string; expected: string; got: string }>;
@@ -264,9 +292,7 @@ export function verifyPersistedRows(
         for (const col of STABLE_COLUMNS) {
             const g = got[col];
             const w = want[col];
-            const equalValue = typeof w === 'number' || typeof g === 'number'
-                ? sameEqual(g as number, w as number)
-                : norm(g) === norm(w);
+            const equalValue = sameColumnValue(g, w, TIMESTAMP_COLUMNS.has(col as string));
             if (!equalValue) {
                 rowOk = false;
                 warnings.mismatched.push({
@@ -293,9 +319,7 @@ export function verifyPersistedRows(
         for (const col of STABLE_COLUMNS) {
             const g = got[col];
             const w = prev.footprint[col];
-            const equalValue = typeof w === 'number' || typeof g === 'number'
-                ? sameEqual(g as number, w as number)
-                : norm(g) === norm(w);
+            const equalValue = sameColumnValue(g, w, TIMESTAMP_COLUMNS.has(col as string));
             if (!equalValue) {
                 warnings.mismatched.push({
                     userId: prev.user_id,

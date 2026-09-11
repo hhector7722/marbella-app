@@ -113,6 +113,20 @@ test('verifyPersistedRows: coincidencia exacta', () => {
     assert.deepEqual(res.warnings.mismatched, []);
 });
 
+test('verifyPersistedRows: tolera el formato timestamptz de Postgres (+00:00)', () => {
+    const expected = [toDbShiftRow(input(), EMPTY_EXISTING, true)];
+    const got = persistedRow(expected[0]);
+    const toPg = (iso: string | null): string | null =>
+        iso ? iso.replace(/\.\d{3}Z$/, '+00:00') : iso;
+    got.start_time = toPg(got.start_time) as string;
+    got.end_time = toPg(got.end_time) as string;
+    got.draft_start_time = toPg(got.draft_start_time);
+    got.draft_end_time = toPg(got.draft_end_time);
+    const res = verifyPersistedRows(expected, [got], []);
+    assert.equal(res.ok, true);
+    assert.deepEqual(res.warnings.mismatched, []);
+});
+
 test('verifyPersistedRows: falta una fila esperada', () => {
     const expected = [toDbShiftRow(input(), EMPTY_EXISTING, true)];
     const res = verifyPersistedRows(expected, [], []);
