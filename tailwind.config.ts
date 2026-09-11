@@ -2,6 +2,11 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
     darkMode: "class",
+    future: {
+        // En táctil `:hover` se queda pegado tras un toque (el botón abierto
+        // sigue "resaltado"). Sin hover real no se emiten los estilos `hover:`.
+        hoverOnlyWhenSupported: true,
+    },
     content: [
         "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
         "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
