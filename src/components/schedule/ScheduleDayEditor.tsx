@@ -482,6 +482,11 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
     const [showCalendarModal, setShowCalendarModal] = useState(false);
     const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
+
+    // Reinicia el flag de bloqueo del guardado al abrir el modal de compartir (evita que el modal quede bloqueado tras un timeout).
+    useEffect(() => {
+        if (showShareModal) savingRef.current = false;
+    }, [showShareModal]);
     const [calendarDate, setCalendarDate] = useState(new Date());
 
     // Rentabilidad del día: coste de mano de obra y facturación rentable
@@ -1276,7 +1281,13 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                             variant="secondary"
                             instance="schedule-day-share-open"
                             disabled={saving}
-                            onClick={() => setShowShareModal(true)}
+                            onClick={() => {
+                                if (saving) {
+                                    toast.info('Guardando… espera un momento');
+                                    return;
+                                }
+                                setShowShareModal(true);
+                            }}
                         >
                             {saving ? 'Guardando…' : 'Guardar'}
                         </Button>
