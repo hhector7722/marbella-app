@@ -469,6 +469,8 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
     const hasUnsavedChangesRef = useRef(false);
     const [saving, setSaving] = useState(false);
     const [persistError, setPersistError] = useState('');
+    // Resultado del último envío de notificaciones (nombres por categoría).
+    const [notifyResult, setNotifyResult] = useState<{ sent: string[]; missing: string[]; failed: string[] } | null>(null);
     // Trabajadores con turno en el día que el editor gestiona (solo ellos
     // pueden retirarse; los turnos de empleados no visibles se conservan).
     const managedIdsRef = useRef<string[]>([]);
@@ -977,7 +979,10 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
 
     useImperativeHandle(ref, () => ({
         openAddEmployee: () => setShowAddEmployeeModal(true),
-        openShare: () => setShowShareModal(true),
+        openShare: () => {
+            setNotifyResult(null);
+            setShowShareModal(true);
+        },
         flushSave: flushPendingChanges,
     }), [flushPendingChanges]);
 
@@ -1323,6 +1328,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                     toast.info('Guardando… espera un momento');
                                     return;
                                 }
+                                setNotifyResult(null);
                                 setShowShareModal(true);
                             }}
                         >
@@ -1626,49 +1632,75 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                 trackScheduleShare(!isDaySent ? 'Enviar notificaciones' : 'Reenviar notificaciones');
                                 const saved = await enqueuePersist(true, true);
                                 if (!saved) return;
-                                setShowShareModal(false);
                                 const userShifts = shifts
-                                        .filter(s => s.active && s.start && s.end)
-                                        .map(s => ({ userId: s.employeeId, start: s.start, end: s.end }));
-                                    if (userShifts.length === 0) {
-                                        toast.info('No hay nadie con horario ese día para notificar');
+                                    .filter(s => s.active && s.start && s.end)
+                                    .map(s => ({ userId: s.employeeId, start: s.start, end: s.end }));
+                                if (userShifts.length === 0) {
+                                    toast.info('No hay nadie con horario ese día para notificar');
+                                    return;
+                                }
+                                const dateFormatted = format(new Date(date), "EEEE dd/MM", { locale: es });
+                                const nameById = new Map(shifts.map(s => [s.employeeId, s.name || '']));
+                                const namesOf = (ids: string[] | undefined) =>
+                                    (ids ?? []).map(id => nameById.get(id) || '').filter(Boolean);
+                                const allIds = userShifts.map(s => s.userId);
+                                const loadToast = toast.loading('Enviando...');
+                                try {
+                                    const res = await sendScheduleNotifications(dateFormatted, userShifts, date);
+                                    toast.dismiss(loadToast);
+                                    if (res?.error || res?.success === false) {
+                                        setNotifyResult({ sent: [], missing: [], failed: namesOf(res?.failedUserIds ?? allIds) });
                                         return;
                                     }
-                                    const dateFormatted = format(new Date(date), "EEEE dd/MM", { locale: es });
-                                    const loadToast = toast.loading('Enviando...');
-                                    try {
-                                        const res = await sendScheduleNotifications(dateFormatted, userShifts, date);
-                                        toast.dismiss(loadToast);
-                                        if (res?.error || res?.success === false) {
-                                            toast.error(res?.error || 'Error al enviar notificaciones');
-                                            return;
-                                        }
-                                        const sent = Number(res?.sentCount ?? 0);
-                                        const target = Number(res?.targetCount ?? userShifts.length);
-                                        const missing = Array.isArray(res?.missingSubscriptionUserIds) ? res.missingSubscriptionUserIds.length : Math.max(0, target - sent);
-                                        if (sent <= 0) {
-                                            toast.warning(
-                                                res?.message ||
-                                                    'Aviso en campana. Activa push para recibir también fuera de la app.'
-                                            );
-                                            setIsDaySent(true);
-                                            return;
-                                        }
-                                        if (sent < target) {
-                                            toast.warning(`Enviadas ${sent}/${target}. Faltan ${missing} sin push activado.`);
-                                        } else {
-                                            toast.success('Notificaciones enviadas');
-                                        }
-                                        setIsDaySent(true);
-                                    } catch {
-                                        toast.dismiss(loadToast);
-                                        toast.error('Error al enviar');
-                                    }
+                                    setNotifyResult({
+                                        sent: namesOf(res?.sentUserIds),
+                                        missing: namesOf(res?.missingSubscriptionUserIds),
+                                        failed: namesOf(res?.failedUserIds),
+                                    });
+                                    setIsDaySent(true);
+                                } catch {
+                                    toast.dismiss(loadToast);
+                                    setNotifyResult({ sent: [], missing: [], failed: namesOf(allIds) });
+                                }
                             }}
                         >
                             {!isDaySent ? 'Enviar' : 'Reenviar'}
                         </Button>
                     </div>
+                    {notifyResult && (notifyResult.sent.length + notifyResult.missing.length + notifyResult.failed.length) > 0 ? (
+                        <div className="flex flex-col gap-2 text-left">
+                            {notifyResult.sent.length > 0 ? (
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">🟢 Push enviado</p>
+                                    <ul>
+                                        {notifyResult.sent.map((n, i) => (
+                                            <li key={`sent-${i}`} className="text-[11px] leading-tight text-zinc-700">✓ {n}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ) : null}
+                            {notifyResult.missing.length > 0 ? (
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-orange-500">🟠 Sin push activo</p>
+                                    <ul>
+                                        {notifyResult.missing.map((n, i) => (
+                                            <li key={`missing-${i}`} className="text-[11px] leading-tight text-zinc-700">• {n}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ) : null}
+                            {notifyResult.failed.length > 0 ? (
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-rose-600">🔴 Error al enviar</p>
+                                    <ul>
+                                        {notifyResult.failed.map((n, i) => (
+                                            <li key={`failed-${i}`} className="text-[11px] leading-tight text-zinc-700">• {n}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ) : null}
+                        </div>
+                    ) : null}
                 </div>
             </Modal>
         </div>

@@ -83,6 +83,8 @@ export async function sendScheduleNotifications(
             sentCount: 0,
             targetCount: userIds.length,
             missingSubscriptionUserIds: userIds,
+            sentUserIds: [],
+            failedUserIds: userIds,
         };
     }
 
@@ -95,6 +97,8 @@ export async function sendScheduleNotifications(
             sentCount: 0,
             targetCount: userIds.length,
             missingSubscriptionUserIds: userIds,
+            sentUserIds: [],
+            failedUserIds: userIds,
         };
     }
     const { data: callerProfile } = await supabase
@@ -109,6 +113,8 @@ export async function sendScheduleNotifications(
             sentCount: 0,
             targetCount: userIds.length,
             missingSubscriptionUserIds: userIds,
+            sentUserIds: [],
+            failedUserIds: userIds,
         };
     }
 
@@ -125,6 +131,8 @@ export async function sendScheduleNotifications(
             sentCount: 0,
             targetCount: userIds.length,
             missingSubscriptionUserIds: userIds,
+            sentUserIds: [],
+            failedUserIds: userIds,
         };
     }
 
@@ -160,6 +168,8 @@ export async function sendScheduleNotifications(
             sentCount: 0,
             targetCount: userIds.length,
             missingSubscriptionUserIds,
+            sentUserIds: [],
+            failedUserIds: [],
         };
     }
 
@@ -178,6 +188,12 @@ export async function sendScheduleNotifications(
 
     const sentCount = results.filter(r => r.status === 'fulfilled').length;
     const failures = results.filter(r => r.status === 'rejected');
+    const sentUserIds = results
+        .map((r, idx) => (r.status === 'fulfilled' ? subs[idx].user_id : null))
+        .filter((id): id is string => id !== null);
+    const failedUserIds = results
+        .map((r, idx) => (r.status === 'rejected' ? subs[idx].user_id : null))
+        .filter((id): id is string => id !== null);
 
     // Clean up expired subscriptions
     const expiredSubIds = failures
@@ -201,6 +217,8 @@ export async function sendScheduleNotifications(
         sentCount,
         targetCount: userIds.length,
         missingSubscriptionUserIds,
+        sentUserIds,
+        failedUserIds,
     };
 }
 
