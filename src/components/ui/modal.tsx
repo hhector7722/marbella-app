@@ -37,6 +37,15 @@ type ModalScheme = 'work' | 'dark';
 /** `plain` = sin marco/fondo (default contrato). `soft` = tratamiento explícito. */
 type ModalHeaderActionChrome = 'plain' | 'soft';
 
+/**
+ * Un portal de React burbujea los eventos por el árbol de componentes, no por el
+ * DOM. Sin esta frontera, un click/tap dentro del Modal alcanza los handlers de
+ * la UI que quedó detrás. La cima absorbe el evento y nadie del fondo reacciona.
+ */
+function containModalEvent(event: { stopPropagation: () => void }): void {
+    event.stopPropagation();
+}
+
 export type ModalProps = {
     open: boolean;
     onClose: () => void;
@@ -580,6 +589,11 @@ export function Modal({
                 paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
                 paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
             }}
+            onClick={containModalEvent}
+            onPointerDown={containModalEvent}
+            onMouseDown={containModalEvent}
+            onTouchStart={containModalEvent}
+            onTouchEnd={containModalEvent}
         >
             <button
                 type="button"
@@ -591,25 +605,13 @@ export function Modal({
                     backdropClassName
                 )}
                 onClick={closeOnBackdrop ? () => requestCloseRef.current() : undefined}
-                onPointerDown={(e) => {
-                    e.stopPropagation();
-                }}
-                onTouchStart={(e) => {
-                    e.stopPropagation();
-                }}
             />
             <div
                 className={cn(
-                    'relative z-10 flex w-full max-w-full flex-col items-center pointer-events-auto',
+                    'relative z-10 flex w-full max-w-full flex-col items-center pointer-events-none',
                     layout.maxWidthClass,
                     wrapperClassName
                 )}
-                onClick={(e) => {
-                    e.stopPropagation();
-                }}
-                onTouchStart={(e) => {
-                    e.stopPropagation();
-                }}
             >
                 <div
                     ref={panelRef}

@@ -454,11 +454,11 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                                     }
                                 }}
                             >
-                                <svg viewBox="0 0 120 20" className="w-full h-3 block select-none" preserveAspectRatio="none">
+                                <svg viewBox="0 0 120 20" className="w-full h-3 lg:h-10 block select-none" preserveAspectRatio="none">
                                     <path d={toPath(rangeData)} fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="butt" strokeLinejoin="miter" vectorEffect="non-scaling-stroke" className="text-ds-marca" />
                                 </svg>
                             </div>
-                            <div className="flex justify-between px-0 text-[8px] font-mono leading-none text-ds-marca select-none pointer-events-none">
+                            <div className="flex justify-between px-0 text-[8px] lg:text-[11px] font-mono leading-none text-ds-marca select-none pointer-events-none">
                                 <span>{BUSINESS_HOURS.start} h</span>
                                 <span>{BUSINESS_HOURS.end} h</span>
                             </div>

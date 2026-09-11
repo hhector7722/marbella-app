@@ -55,7 +55,7 @@ const SECONDARY_KPIS: readonly LastClosingKpi[] = [
 ];
 
 const pillClassName =
-    'relative shrink-0 inline-flex items-center justify-center text-[8px] font-black uppercase tracking-wider ' +
+    'relative shrink-0 inline-flex items-center justify-center text-[8px] lg:text-[10px] font-black uppercase tracking-wider ' +
     'text-[var(--home-widget-ink)] transition-all active:scale-[0.98] hover:opacity-80 ' +
     'before:absolute before:inset-0 before:-m-2 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']';
 
@@ -217,11 +217,11 @@ export function MasterLastClosingWidget() {
 
     return (
         <div className="flex h-full min-h-0 flex-col overflow-hidden">
-            <div className="flex shrink-0 items-center justify-between gap-2 px-2 pt-1.5">
+            <div className="flex shrink-0 items-center justify-between gap-2 px-2 pt-1.5 lg:px-3 lg:pt-2">
                 <Link href="/dashboard/history" className={pillClassName}>
                     Último cierre
                 </Link>
-                <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-1.5 gap-y-0.5 text-[7px] md:text-[8px] font-medium tabular-nums text-[var(--home-widget-ink-secondary)]">
+                <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-1.5 gap-y-0.5 text-[7px] md:text-[8px] lg:text-[10px] font-medium tabular-nums text-[var(--home-widget-ink-secondary)]">
                     {closing ? <span className="shrink-0">{dateLabel}</span> : null}
                     {metrics.weatherLabel ? (
                         <span className="inline-flex shrink-0 items-center gap-1">
@@ -245,7 +245,7 @@ export function MasterLastClosingWidget() {
                     </span>
                 </div>
             </div>
-            <div className="flex min-h-0 flex-1 flex-col justify-start px-2 pb-3.5 pt-3">
+            <div className="flex min-h-0 flex-1 flex-col justify-start px-2 pb-3.5 pt-3 lg:px-3 lg:pb-5 lg:pt-4">
                 {loading ? (
                     <div
                         className="flex flex-1 items-center justify-center"
@@ -257,7 +257,7 @@ export function MasterLastClosingWidget() {
                 ) : !closing ? (
                     <EmptyState instance="master-ultimo-cierre-none" variant="none" title="Sin cierre" />
                 ) : (
-                    <div className="flex flex-col gap-y-2.5 w-full">
+                    <div className="flex flex-col gap-y-2.5 lg:gap-y-4 w-full">
                         {/* Primera fila: Ventas y Venta neta alineados matemáticamente con los midpoints de la segunda fila */}
                         <div className="grid grid-cols-6 gap-x-1 w-full">
                             {/* Ventas: col-start-2 col-span-2 (centrado a 1/3 del ancho, entre Tarjeta y Efectivo) */}
@@ -282,10 +282,10 @@ export function MasterLastClosingWidget() {
                                             }
                                         }}
                                     >
-                                        <span className="font-bold tabular-nums leading-none text-[12px] md:text-[14px] text-[var(--home-widget-ink)]">
+                                        <span className="font-bold tabular-nums leading-none text-[12px] md:text-[14px] lg:text-[20px] text-[var(--home-widget-ink)]">
                                             {kpi.format(metrics)}
                                         </span>
-                                        <span className="mt-1 text-[9px] md:text-[10px] leading-none text-[var(--home-widget-ink-secondary)]">
+                                        <span className="mt-1 text-[9px] md:text-[10px] lg:text-[12px] leading-none text-[var(--home-widget-ink-secondary)]">
                                             {kpi.label}
                                         </span>
                                     </div>
@@ -299,10 +299,10 @@ export function MasterLastClosingWidget() {
                                     <div
                                         className="col-start-4 col-span-2 flex min-w-0 flex-col items-center justify-center text-center select-none"
                                     >
-                                        <span className="font-bold tabular-nums leading-none text-[12px] md:text-[14px] text-[var(--home-widget-ink)]">
+                                        <span className="font-bold tabular-nums leading-none text-[12px] md:text-[14px] lg:text-[20px] text-[var(--home-widget-ink)]">
                                             {kpi.format(metrics)}
                                         </span>
-                                        <span className="mt-1 text-[9px] md:text-[10px] leading-none text-[var(--home-widget-ink-secondary)]">
+                                        <span className="mt-1 text-[9px] md:text-[10px] lg:text-[12px] leading-none text-[var(--home-widget-ink-secondary)]">
                                             {kpi.label}
                                         </span>
                                     </div>
@@ -337,10 +337,10 @@ export function MasterLastClosingWidget() {
                                             }
                                         } : undefined}
                                     >
-                                        <span className="font-bold tabular-nums leading-none text-[9px] md:text-[11px] text-[var(--home-widget-ink)]">
+                                        <span className="font-bold tabular-nums leading-none text-[9px] md:text-[11px] lg:text-[15px] text-[var(--home-widget-ink)]">
                                             {kpi.format(metrics)}
                                         </span>
-                                        <span className="mt-0.5 text-[8px] md:text-[9px] leading-none text-[var(--home-widget-ink-secondary)]">
+                                        <span className="mt-0.5 text-[8px] md:text-[9px] lg:text-[11px] leading-none text-[var(--home-widget-ink-secondary)]">
                                             {kpi.label}
                                         </span>
                                     </div>

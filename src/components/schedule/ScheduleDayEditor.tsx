@@ -479,79 +479,14 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
     const [categoria2, setCategoria2] = useState<string>('');
     const [secondSlotExpanded, setSecondSlotExpanded] = useState(false);
 
-    const shareModalContentRef = useRef<HTMLDivElement>(null);
+    const [showCalendarModal, setShowCalendarModal] = useState(false);
+    const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false);
 
     // Reinicia el flag de bloqueo del guardado al abrir el modal de compartir (evita que el modal quede bloqueado tras un timeout).
     useEffect(() => {
         if (showShareModal) savingRef.current = false;
     }, [showShareModal]);
-
-    // Diagnóstico del Modal de compartir (solo en desarrollo)
-    useEffect(() => {
-        const el = shareModalContentRef.current;
-        if (!el) return;
-        const computed = window.getComputedStyle(el);
-        console.log('[DIAGNOSTIC] modal de compartir styles', {
-            zIndex: computed.zIndex,
-            position: computed.position,
-            pointerEvents: computed.pointerEvents,
-            overflow: computed.overflow,
-            width: computed.width,
-            height: computed.height,
-            top: computed.top,
-            left: computed.left,
-            right: computed.right,
-            bottom: computed.bottom,
-            opacity: computed.opacity,
-            visibility: computed.visibility,
-        });
-
-        const handlePointerDown = (e: PointerEvent) => {
-            console.log('[DIAGNOSTIC] pointerdown en modal de compartir', {
-                target: e.target,
-                currentTarget: e.currentTarget,
-                eventPhase: e.eventPhase,
-                bubbles: e.bubbles,
-                cancelBubble: e.cancelBubble,
-                composed: e.composed,
-                pointerType: e.pointerType,
-            });
-        };
-
-        const handlePointerUp = (e: PointerEvent) => {
-            console.log('[DIAGNOSTIC] pointerup en modal de compartir', {
-                target: e.target,
-                currentTarget: e.currentTarget,
-                eventPhase: e.eventPhase,
-                bubbles: e.bubbles,
-                cancelBubble: e.cancelBubble,
-                composed: e.composed,
-                pointerType: e.pointerType,
-            });
-        };
-
-        const handleClick = (e: MouseEvent) => {
-            console.log('[DIAGNOSTIC] click en modal de compartir', {
-                target: e.target,
-                currentTarget: e.currentTarget,
-                eventPhase: e.eventPhase,
-                bubbles: e.bubbles,
-                cancelBubble: e.cancelBubble,
-                composed: e.composed,
-            });
-        };
-
-        el.addEventListener('pointerdown', handlePointerDown);
-        el.addEventListener('pointerup', handlePointerUp);
-        el.addEventListener('click', handleClick);
-
-        return () => {
-            el.removeEventListener('pointerdown', handlePointerDown);
-            el.removeEventListener('pointerup', handlePointerUp);
-            el.removeEventListener('click', handleClick);
-        };
-    }, [showShareModal]);
-
     const [calendarDate, setCalendarDate] = useState(new Date());
 
     // Rentabilidad del día: coste de mano de obra y facturación rentable
@@ -1602,50 +1537,16 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                 onSelect={(emp) => handleAddEmployee(emp.id)}
             />
 
-            const shareModalContentRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const el = shareModalContentRef.current;
-        if (!el) return;
-        const computed = window.getComputedStyle(el);
-        console.log('[DIAGNOSTIC] modal de compartir styles', {
-            zIndex: computed.zIndex,
-            position: computed.position,
-            pointerEvents: computed.pointerEvents,
-            overflow: computed.overflow,
-            width: computed.width,
-            height: computed.height,
-            top: computed.top,
-            left: computed.left,
-            right: computed.right,
-            bottom: computed.bottom,
-            opacity: computed.opacity,
-            visibility: computed.visibility,
-        });
-        const handleClick = (e: MouseEvent) => {
-            console.log('[DIAGNOSTIC] click en modal de compartir', {
-                target: e.target,
-                currentTarget: e.currentTarget,
-                eventPhase: e.eventPhase,
-                bubbles: e.bubbles,
-                cancelBubble: e.cancelBubble,
-                composed: e.composed,
-            });
-        };
-        el.addEventListener('click', handleClick);
-        return () => el.removeEventListener('click', handleClick);
-    }, [showShareModal]);
-
-    <Modal
-        open={showShareModal}
-        onClose={() => setShowShareModal(false)}
-        title="Compartir"
-        instance="schedule-share"
-        variant="compact"
-        layer={modalParentInstance ? 'derived' : 'base'}
-        {...(modalParentInstance ? { parentInstance: modalParentInstance } : {})}
-    >
-        <div ref={shareModalContentRef} className="flex flex-col gap-5">
+            <Modal
+                open={showShareModal}
+                onClose={() => setShowShareModal(false)}
+                title="Compartir"
+                instance="schedule-share"
+                variant="compact"
+                layer={modalParentInstance ? 'derived' : 'base'}
+                {...(modalParentInstance ? { parentInstance: modalParentInstance } : {})}
+            >
+                <div className="flex flex-col gap-5">
                     <div className="flex flex-col gap-1 text-center">
                         <span className="text-[10px] font-black tracking-widest text-zinc-400 uppercase mb-1">Estado del Horario</span>
                         <div className="text-xs uppercase font-black px-4 py-1.5 bg-gray-100 rounded-xl inline-flex self-center">

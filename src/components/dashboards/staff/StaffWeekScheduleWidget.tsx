@@ -257,7 +257,7 @@ function WeekendDayColumn({
             className="relative text-left outline-none transition-opacity hover:opacity-90 active:opacity-80 before:absolute before:inset-0 before:-m-0.5 before:min-h-[var(--tactil-minimo)] before:content-['']"
         >
             <div data-element="weekend-day" className="flex h-full min-h-0 min-w-0 flex-col">
-                <p data-element="weekend-title" className="shrink-0 text-center text-[7px] font-semibold leading-none">
+                <p data-element="weekend-title" className="shrink-0 text-center text-[7px] lg:text-[11px] font-semibold leading-none">
                     {formatWeekdayHeading(day)}
                 </p>
 
@@ -265,11 +265,11 @@ function WeekendDayColumn({
                     {!masterMode && (
                         <div data-element="weekend-turno" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
                             {turno ? (
-                                <span data-element="weekend-turno-value" className="min-w-0 truncate text-[6px] font-medium tabular-nums leading-none">
+                                <span data-element="weekend-turno-value" className="min-w-0 truncate text-[6px] lg:text-[11px] font-medium tabular-nums leading-none">
                                     {turno}
                                 </span>
                             ) : (
-                                <span data-element="weekend-turno-label" className="shrink-0 text-[6px] font-medium leading-none tracking-wide">
+                                <span data-element="weekend-turno-label" className="shrink-0 text-[6px] lg:text-[11px] font-medium leading-none tracking-wide">
                                     Turno
                                 </span>
                             )}
@@ -278,11 +278,11 @@ function WeekendDayColumn({
 
                     <div data-element="weekend-evento" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
                         {eventLabel ? (
-                            <span data-element="weekend-evento-value" className="min-w-0 truncate text-[6px] font-medium leading-none">
+                            <span data-element="weekend-evento-value" className="min-w-0 truncate text-[6px] lg:text-[11px] font-medium leading-none">
                                 {eventLabel}
                             </span>
                         ) : (
-                            <span data-element="weekend-evento-label" className="shrink-0 text-[6px] font-medium leading-none tracking-wide">
+                            <span data-element="weekend-evento-label" className="shrink-0 text-[6px] lg:text-[11px] font-medium leading-none tracking-wide">
                                 Evento
                             </span>
                         )}
@@ -303,7 +303,7 @@ function WeekendDayColumn({
                                             data-element="weekend-evento-detail-value"
                                             data-segment-kind={cell.kind}
                                             className={cn(
-                                                "text-center text-[6px] font-medium leading-none opacity-80",
+                                                "text-center text-[6px] lg:text-[11px] font-medium leading-none opacity-80",
                                                 masterMode && cell.kind === 'hours' ? "whitespace-nowrap font-semibold" : "min-w-0 truncate"
                                             )}
                                         >
@@ -405,7 +405,7 @@ function WeekExtCell({
                     <span
                         data-element="weekend-ext-value"
                         className={cn(
-                            'text-[7px] tabular-nums leading-none',
+                            'text-[7px] lg:text-[11px] tabular-nums leading-none',
                             paid ? 'font-semibold text-white/90' : 'font-semibold text-white/70',
                         )}
                     >
@@ -415,7 +415,7 @@ function WeekExtCell({
                         data-element="weekend-ext-paid"
                         data-paid={paid ? 'true' : 'false'}
                         className={cn(
-                            'flex h-2 w-2 shrink-0 items-center justify-center rounded-full',
+                            'flex h-2 w-2 lg:h-3 lg:w-3 shrink-0 items-center justify-center rounded-full',
                             paid ? 'bg-emerald-500' : 'bg-rose-500',
                         )}
                     >
@@ -594,12 +594,12 @@ export function StaffWeekScheduleWidget({
                         e.stopPropagation();
                         handleMonthChange(-1);
                     }}
-                    className="relative flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-white/80 transition-colors hover:bg-white/10 before:absolute before:inset-0 before:-m-2 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']"
+                    className="relative flex h-6 w-6 lg:h-8 lg:w-8 shrink-0 items-center justify-center rounded-md text-white/80 transition-colors hover:bg-white/10 before:absolute before:inset-0 before:-m-2 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']"
                     aria-label="Mes anterior"
                 >
-                    <ChevronLeft className="h-3.5 w-3.5" strokeWidth={2.5} />
+                    <ChevronLeft className="h-3.5 w-3.5 lg:h-4 lg:w-4" strokeWidth={2.5} />
                 </button>
-                <span className="min-w-[6.5rem] text-center text-[9px] font-black uppercase tracking-widest text-white">
+                <span className="min-w-[6.5rem] text-center text-[9px] lg:text-[15px] font-black uppercase tracking-widest text-white">
                     {monthTitle(monthAnchor)}
                 </span>
                 <button
@@ -608,10 +608,10 @@ export function StaffWeekScheduleWidget({
                         e.stopPropagation();
                         handleMonthChange(1);
                     }}
-                    className="relative flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-white/80 transition-colors hover:bg-white/10 before:absolute before:inset-0 before:-m-2 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']"
+                    className="relative flex h-6 w-6 lg:h-8 lg:w-8 shrink-0 items-center justify-center rounded-md text-white/80 transition-colors hover:bg-white/10 before:absolute before:inset-0 before:-m-2 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']"
                     aria-label="Mes siguiente"
                 >
-                    <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} />
+                    <ChevronRight className="h-3.5 w-3.5 lg:h-4 lg:w-4" strokeWidth={2.5} />
                 </button>
             </div>
 
@@ -619,12 +619,12 @@ export function StaffWeekScheduleWidget({
                 <div className={cn('grid shrink-0 gap-px', masterMode ? WEEK_GRID_COLS_EXT : WEEK_GRID_COLS)}>
                     {WEEKDAY_LABELS.map((label) => (
                         <div key={label} className="flex items-center justify-center">
-                            <span className="text-[5px] font-medium uppercase leading-none text-white/40">{label}</span>
+                            <span className="text-[5px] lg:text-[11px] font-medium uppercase leading-none text-white/40">{label}</span>
                         </div>
                     ))}
                     {masterMode ? (
                         <div className="flex items-center justify-center">
-                            <span className="text-[5px] font-bold uppercase leading-none text-white/60">Ext</span>
+                            <span className="text-[5px] lg:text-[11px] font-bold uppercase leading-none text-white/60">Ext</span>
                         </div>
                     ) : null}
                 </div>
@@ -658,7 +658,7 @@ export function StaffWeekScheduleWidget({
                                             <span
                                                 data-today={today ? 'true' : undefined}
                                                 className={cn(
-                                                    'text-[7px] tabular-nums leading-none',
+                                                    'text-[7px] lg:text-[14px] tabular-nums leading-none',
                                                     today &&
                                                         'flex h-[var(--staff-week-day-size)] w-[var(--staff-week-day-size)] items-center justify-center rounded-full bg-emerald-500 font-black text-white',
                                                     !today && !inMonth && 'font-medium text-white/45',

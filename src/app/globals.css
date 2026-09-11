@@ -4971,8 +4971,10 @@ button[data-element='catalog-filter'] {
 
   [data-component='HomeScreen'] {
     /* Desktop: el mosaico ocupa el ancho útil del shell (la sidebar ya reserva su hueco).
-       La pista crece (tile mayor) y los widgets se ensanchan con el viewport. */
-    --home-icon-size: 6rem;
+       Los iconos quedan moderados y la pista de fila crece: el contenido
+       (ventas, cierre, calendario) gana alto y su tipografía escala con él. */
+    --home-icon-size: 5rem;
+    --home-row-track: 9rem;
     max-width: none;
     width: 100%;
     margin-inline: auto;
@@ -5061,8 +5063,10 @@ button[data-element='catalog-filter'] {
   }
 
   [data-component='HomeScreen'][data-layout='staff'] {
-    /* El calendario y el resumen de la semana ocupan la zona principal; accesos a la derecha. */
-    --home-icon-size: 5.5rem;
+    /* El calendario y el resumen de la semana ocupan la zona principal; accesos a la derecha.
+       Siete filas (semana + 6 de calendario) caben en el alto útil con una pista moderada. */
+    --home-icon-size: 5rem;
+    --home-row-track: 7rem;
     grid-template-columns:
       repeat(4, minmax(0, 1fr))
       var(--home-icon-size)
@@ -5112,71 +5116,199 @@ button[data-element='catalog-filter'] {
     max-width: 100%;
   }
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-cell {
-    padding: 4px;
+    padding: 6px;
   }
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-week,
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-cell,
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-week > * {
-    min-height: 96px !important;
+    min-height: 112px !important;
   }
-  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-cell > span:first-of-type {
-    top: 4px;
-    right: 6px;
+  /*
+   * Plantilla (mosaico) de /staff/history: la fila de semana parte de 112px y
+   * las celdas estiran con ella. No se fuerza la celda porque su alto mínimo
+   * se calcula inline desde el número de fichajes: forzarlo recortaría días
+   * con muchos empleados.
+   */
+  [data-component='PageScreen'].history-wide .month-cal-cell {
+    padding: 6px;
+  }
+  [data-component='PageScreen'].history-wide .month-cal-week {
+    min-height: 112px !important;
+  }
+  /* Cabecera L–D (plantilla y semana por empleado): franja y rótulos legibles. */
+  [data-component='PageScreen'].history-wide .month-cal-grid-wrap > .grid.shrink-0,
+  [data-component='PageScreen'].history-wide .month-cal-grid-wrap > .grid.shrink-0 > div {
+    height: 26px;
+    min-height: 26px;
+  }
+  [data-component='PageScreen'].history-wide .month-cal-grid-wrap > .grid.shrink-0 span {
     font-size: 12px;
   }
+  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-cell > span:first-of-type {
+    top: 5px;
+    right: 7px;
+    font-size: 13px;
+  }
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-day-logs {
-    padding-top: 14px;
-    gap: 3px;
+    padding-top: 16px;
+    gap: 4px;
   }
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-day-clocks > div {
-    height: 18px;
-    gap: 4px;
+    height: 20px;
+    gap: 5px;
   }
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-day-clocks > div + div {
     margin-top: 2px;
   }
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-day-clocks .rounded-full,
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-day-clocks .h-1\.5 {
-    width: 6px;
-    height: 6px;
+    width: 7px;
+    height: 7px;
   }
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-day-clocks svg {
-    width: 9px;
-    height: 9px;
+    width: 10px;
+    height: 10px;
   }
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-day-clocks span {
-    font-size: 13px;
+    font-size: 14px;
   }
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-day-totals > div {
-    height: 14px;
-    font-size: 10px;
+    height: 16px;
+    font-size: 11px;
   }
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0,
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0 > div {
-    height: 22px;
-    min-height: 22px;
+    height: 26px;
+    min-height: 26px;
   }
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0 span {
-    font-size: 10px;
+    font-size: 12px;
   }
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-weeks > [data-week-footer]:not([data-overrides='true']) {
-    height: 32px;
-    min-height: 32px;
-    max-height: 32px;
-    padding-top: 4px;
-    padding-bottom: 4px;
+    height: 36px;
+    min-height: 36px;
+    max-height: 36px;
+    padding-top: 5px;
+    padding-bottom: 5px;
   }
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-footer-label] {
-    font-size: 12px;
+    font-size: 13px;
   }
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric] {
-    gap: 8px;
+    gap: 10px;
   }
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric-value] {
-    font-size: 14px;
+    font-size: 16px;
   }
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric-label] {
+    font-size: 13px;
+  }
+
+  /*
+   * ===== Optimización desktop de los dashboards =====
+   * El contenido principal (ventas, cierre, calendario) gana protagonismo y su
+   * tipografía interna escala con el hueco. Los accesos laterales conservan
+   * iconos moderados y quedan visualmente subordinados.
+   */
+
+  /* Slots de icono: centrados en la pista alta; el atajo no queda descolgado arriba. */
+  [data-component='HomeScreen'] > [data-element='slot'][data-slot='icon']:not([data-named='true']) {
+    align-items: center;
+  }
+  /* Rótulos de los accesos: legibles sin que el icono domine. */
+  [data-component='HomeScreen'] [data-component='DashboardShortcut'] [data-element='text'],
+  [data-component='HomeScreen'] [data-component='StaffFichajeControl'] [data-element='text'],
+  [data-component='HomeScreen'] [data-component='CajaInicialControl'] [data-element='text'],
+  [data-component='HomeScreen'] [data-component='MasterCajasCambioControl'] [data-element='text'] {
     font-size: 12px;
+  }
+
+  /* Ventas: cifras protagonistas con jerarquía clara. */
+  [data-component='HomeScreen'][data-layout='ops-admin'] [data-instance='dashboard-ventas'] [data-component='KpiStat'] [data-element='value'],
+  [data-component='HomeScreen'][data-layout='master'] [data-instance='dashboard-ventas'] [data-component='KpiStat'] [data-element='value'] {
+    font-size: 1.5rem;
+  }
+  [data-component='HomeScreen'][data-layout='ops-admin'] [data-instance='dashboard-ventas'] [data-component='KpiStat'] [data-element='label'],
+  [data-component='HomeScreen'][data-layout='master'] [data-instance='dashboard-ventas'] [data-component='KpiStat'] [data-element='label'] {
+    font-size: 0.8125rem;
+    margin-top: var(--espacio-1);
+  }
+  [data-instance='dashboard-ventas'] [data-element='header'] a {
+    font-size: 11px;
+  }
+  [data-instance='dashboard-ventas'] [data-element='header'] button span {
+    font-size: 12px;
+  }
+  [data-instance='dashboard-ventas'] [data-element='header'] button .text-zinc-400 {
+    font-size: 10px;
+  }
+  [data-instance='dashboard-ventas'] [data-element='kpis'] {
+    gap: var(--espacio-3);
+    padding-inline: var(--espacio-3);
+    padding-top: var(--espacio-1);
+  }
+
+  /*
+   * Calendario/horario del mosaico (Staff y Master): la pista de semana crece y
+   * los números de día, turnos y horas acompañan.
+   */
+  [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-horarios'] > [data-element='body'] > [data-component='StaffWeekSchedule'] {
+    --staff-calendar-gap: var(--espacio-3);
+    --staff-week-day-size: 3rem;
+    --staff-week-expansion-min: 7.5rem;
+    --staff-week-expansion-max: 10rem;
+  }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-horarios'] > [data-element='body'] > [data-component='StaffWeekSchedule'],
+  [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='master-horarios'] > [data-element='body'] > [data-component='StaffWeekSchedule'] {
+    --staff-calendar-gap: var(--espacio-2);
+    --staff-week-day-size: 1.75rem;
+    --staff-week-expansion-min: 5.5rem;
+    --staff-week-expansion-max: 7.5rem;
+  }
+  /* El mes reparte sus semanas por todo el alto disponible; la semana abierta
+   * no monopoliza el hueco, así no quedan franjas vacías al pie. */
+  [data-component='StaffWeekSchedule'] [data-element='month-weeks'] {
+    justify-content: space-between;
+  }
+  [data-component='StaffWeekSchedule'] [data-element='week-block'][data-expanded='true'] {
+    flex: 0 0 auto;
+  }
+
+
+  /*
+   * Resumen superior del Staff (semana 4×1): tipografía legible sin perder
+   * la franja L–D ni el pie de métricas.
+   */
+  [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0,
+  [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0 > div {
+    height: 18px;
+    min-height: 18px;
+  }
+  [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0 span {
+    font-size: 9px;
+  }
+  [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-day-clocks > div {
+    height: 16px;
+  }
+  [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-day-clocks span {
+    font-size: 11px;
+  }
+  [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-week {
+    min-height: 62px;
+  }
+  [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-weeks > [data-week-footer]:not([data-overrides='true']) {
+    height: 22px;
+    min-height: 22px;
+    max-height: 22px;
+  }
+  [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-footer-label] {
+    font-size: 10px;
+  }
+  [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric-value] {
+    font-size: 11px;
+  }
+  [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric-label] {
+    font-size: 10px;
   }
 }
 
@@ -5185,20 +5317,24 @@ button[data-element='catalog-filter'] {
     --shell-sidebar-width: 6.25rem;
   }
   [data-component='HomeScreen'] {
-    --home-icon-size: 6.5rem;
+    --home-icon-size: 5.25rem;
+    --home-row-track: 9.5rem;
     max-width: none;
   }
   [data-component='HomeScreen'][data-layout='ops-admin'] {
     max-width: none;
-    --home-icon-size: 6.5rem;
+    --home-icon-size: 5.25rem;
+    --home-row-track: 9.5rem;
   }
   [data-component='HomeScreen'][data-layout='master'] {
     max-width: none;
-    --home-icon-size: 6.5rem;
+    --home-icon-size: 5.25rem;
+    --home-row-track: 9.5rem;
   }
   [data-component='HomeScreen'][data-layout='staff'] {
     max-width: none;
-    --home-icon-size: 5.5rem;
+    --home-icon-size: 5.25rem;
+    --home-row-track: 7.5rem;
   }
   [data-component='PageScreen'] > div {
     max-width: min(60rem, 100%);
@@ -5210,7 +5346,7 @@ button[data-element='catalog-filter'] {
     max-width: min(56rem, 100%);
   }
   [data-component='PageScreen'].history-wide > div {
-    max-width: min(88rem, 100%);
+    max-width: min(96rem, 100%);
   }
 }
 

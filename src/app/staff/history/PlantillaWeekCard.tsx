@@ -118,13 +118,13 @@ export function PlantillaWeekCard({
                             )}
                         >
                             <span className={cn(
-                                "absolute top-1 right-1 text-[9px] font-bold",
+                                "absolute top-1 right-1 text-[9px] lg:text-[13px] font-bold",
                                 day.isToday && !day.isOtherMonth ? "text-blue-600" : (day.isOtherMonth ? "text-gray-400 opacity-50" : "text-gray-400")
                             )}>
                                 {day.dayNumber}
                             </span>
                             <div className={cn("flex-1 flex flex-col items-stretch justify-center mt-3 w-full overflow-hidden", day.isOtherMonth && "opacity-45")}>
-                                <div className="flex h-full w-full flex-col items-stretch justify-evenly gap-[3px]">
+                                <div className="flex h-full w-full flex-col items-stretch justify-evenly gap-[3px] lg:gap-1.5">
                                     {(() => {
                                         const logs = day.logs || [];
                                         const overflow = logs.length > maxRows ? logs.length - maxRows + 1 : 0;
@@ -147,10 +147,10 @@ export function PlantillaWeekCard({
                                                                 key={log.id}
                                                                 className="relative flex w-full min-w-0 flex-row items-center"
                                                             >
-                                                                <span className="min-w-0 max-w-[66%] flex-1 truncate text-[6px] font-normal leading-none text-zinc-600">
+                                                                <span className="min-w-0 max-w-[66%] flex-1 truncate text-[6px] lg:text-[10px] font-normal leading-none text-zinc-600">
                                                                     {name}
                                                                 </span>
-                                                                <span className={cn("absolute left-3/4 -translate-x-1/2 text-[7px] font-black leading-none", special.text)}>
+                                                                <span className={cn("absolute left-3/4 -translate-x-1/2 text-[7px] lg:text-[10px] font-black leading-none", special.text)}>
                                                                     {special.label}
                                                                 </span>
                                                                 {needsLineBelow && showRowDividers && (
@@ -165,10 +165,10 @@ export function PlantillaWeekCard({
                                                             key={log.id}
                                                             className="relative flex w-full min-w-0 flex-row items-center justify-between gap-1"
                                                         >
-                                                            <span className="min-w-0 flex-1 truncate text-[6px] font-normal leading-none text-zinc-600">
+                                                            <span className="min-w-0 flex-1 truncate text-[6px] lg:text-[10px] font-normal leading-none text-zinc-600">
                                                                 {name}
                                                             </span>
-                                                            <span className={cn("flex shrink-0 items-center gap-0 text-[6px] font-bold leading-none", timeMono && "font-mono")} data-week-log-hours>
+                                                            <span className={cn("flex shrink-0 items-center gap-0 text-[6px] lg:text-[10px] font-bold leading-none", timeMono && "font-mono")} data-week-log-hours>
                                                                 <span className={isNoRegistered ? outTimeClassName : inTimeClassName}>
                                                                     {inHour || '—'}
                                                                 </span>
@@ -189,7 +189,7 @@ export function PlantillaWeekCard({
                                                 })}
                                                 {overflow > 0 && (
                                                     <div className="flex w-full min-w-0 flex-row items-center justify-start">
-                                                        <span className="text-[7px] font-bold text-gray-400">+{overflow} más</span>
+                                                        <span className="text-[7px] lg:text-[10px] font-bold text-gray-400">+{overflow} más</span>
                                                     </div>
                                                 )}
                                             </>

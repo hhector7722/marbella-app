@@ -267,7 +267,7 @@ export function MasterTodayAttendanceWidget({
                                 aria-label={`Resumen de fichajes del ${dateLabel}`}
                                 className="relative flex w-full min-w-0 items-center justify-center px-1 py-0.5 before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-['']"
                             >
-                                <span className="truncate text-[6px] font-bold leading-none tracking-wide text-white drop-shadow-sm">
+                                <span className="truncate text-[6px] lg:text-[9px] font-bold leading-none tracking-wide text-white drop-shadow-sm">
                                     {dateLabel}
                                 </span>
                             </button>
@@ -289,10 +289,10 @@ export function MasterTodayAttendanceWidget({
                                                     onClick={() => setIsSummaryModalOpen(true)}
                                                     className="flex w-full min-w-0 items-center justify-between gap-1 px-2 py-0.5 text-left transition-colors hover:bg-zinc-50"
                                                 >
-                                                    <span className="min-w-0 flex-1 truncate text-[7px] font-medium leading-none text-zinc-700">
+                                                    <span className="min-w-0 flex-1 truncate text-[7px] lg:text-[11px] font-medium leading-none text-zinc-700">
                                                         {firstGivenName(log.first_name, 'Trabajador')}
                                                     </span>
-                                                    <span className="flex shrink-0 items-center text-[7px] font-bold leading-none tabular-nums">
+                                                    <span className="flex shrink-0 items-center text-[7px] lg:text-[11px] font-bold leading-none tabular-nums">
                                                         <span className={isNoRegistered ? 'text-rose-700' : 'text-emerald-700'}>
                                                             {formatCompactHour(log.in_time) || '--:--'}
                                                         </span>
