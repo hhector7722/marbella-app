@@ -25,7 +25,7 @@ export type DaySaveActionResult =
     | { ok: true; saved: number; published: boolean; matched: number }
     | { ok: false; kind: 'auth' | 'validation' | 'persist' | 'verification'; message: string };
 
-const CIVIL_TIME_RE = /^(\d{2}):(\d{2})$/;
+const CIVIL_TIME_RE = /^\d{1,2}:\d{2}(:\d{2})?$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function isIso(iso: unknown): iso is string {
@@ -34,6 +34,16 @@ function isIso(iso: unknown): iso is string {
 }
 
 export async function saveScheduleDayAction(input: DaySaveActionInput): Promise<DaySaveActionResult> {
+    try {
+        return await executeSaveDay(input);
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error('[schedule-save] error inesperado de la action', err);
+        return { ok: false, kind: 'persist', message: `Error del servidor: ${message}` };
+    }
+}
+
+async function executeSaveDay(input: DaySaveActionInput): Promise<DaySaveActionResult> {
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();

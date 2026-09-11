@@ -838,8 +838,9 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
             }
             return true;
         } catch (error: unknown) {
-            console.error(error);
-            toast.error('Error al guardar. Reintenta.');
+            const cause = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+            console.error('runPersist capturó un error inesperado', error);
+            toast.error(`Error al guardar. ${cause}`);
             return false;
         } finally {
             savingRef.current = false;
