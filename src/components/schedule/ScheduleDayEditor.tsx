@@ -27,6 +27,7 @@ import { fetchDayDetailAction, type BarActivity } from '@/app/staff/actividades/
 import { groupActivities } from '@/components/dashboards/staff/StaffWeekScheduleWidget';
 import { sendScheduleNotifications } from '@/app/actions/notifications';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
+import { HitTestProbe } from '@/components/debug/HitTestProbe';
 import type { PlantillaEmployee } from '@/components/modals/StaffSelectionModal';
 import { filterVisiblePlantillaEmployees } from '@/lib/staff/plantilla-employees';
 import { MiniMonthCalendar } from '@/components/time/MiniMonthCalendar';
@@ -1248,6 +1249,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
             className="flex flex-col flex-1 min-h-0 w-full overflow-hidden"
             onClick={() => setEditingIndex(null)}
         >
+            <HitTestProbe />
             {/* ── CABECERA SOLO STANDALONE (fuera del Modal padre) ── */}
             {!modalParentInstance ? (
                 <div className="flex shrink-0 items-center justify-between px-4 py-3">
@@ -1570,6 +1572,9 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                             instance="schedule-day-share-save"
                             disabled={saving}
                             onClick={async () => {
+                                const dbg = { savingRef: savingRef.current, saving, hasUnsaved: hasUnsavedChanges };
+                                (window as unknown as { __shareClick: unknown }).__shareClick = dbg;
+                                console.log('[SHARE-CLICK]', dbg);
                                 if (savingRef.current) {
                                     toast.info('Guardando… espera un momento');
                                     return;

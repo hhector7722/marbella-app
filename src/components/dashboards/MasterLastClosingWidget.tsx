@@ -245,7 +245,7 @@ export function MasterLastClosingWidget() {
                     </span>
                 </div>
             </div>
-            <div className="flex min-h-0 flex-1 flex-col justify-start px-2 pb-3.5 pt-3 lg:px-3 lg:pb-5 lg:pt-4">
+            <div className="flex min-h-0 flex-1 flex-col justify-start px-2 pb-3.5 pt-3 lg:px-3 lg:pb-4 lg:pt-1">
                 {loading ? (
                     <div
                         className="flex flex-1 items-center justify-center"
@@ -257,7 +257,7 @@ export function MasterLastClosingWidget() {
                 ) : !closing ? (
                     <EmptyState instance="master-ultimo-cierre-none" variant="none" title="Sin cierre" />
                 ) : (
-                    <div className="flex flex-col gap-y-2.5 lg:gap-y-4 w-full">
+                    <div className="flex flex-col gap-y-2.5 lg:gap-y-2 w-full">
                         {/* Primera fila: Ventas y Venta neta alineados matemáticamente con los midpoints de la segunda fila */}
                         <div className="grid grid-cols-6 gap-x-1 w-full">
                             {/* Ventas: col-start-2 col-span-2 (centrado a 1/3 del ancho, entre Tarjeta y Efectivo) */}

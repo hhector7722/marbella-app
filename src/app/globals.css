@@ -4926,10 +4926,16 @@ button[data-element='catalog-filter'] {
     padding-bottom: 0 !important;
   }
 
+  /*
+   * Sidebar de navegación (lg+): panel propio, oscuro y opaco, separado del
+   * contenido por hairline + sombra. Los iconos y etiquetas ganan presencia y
+   * la sección activa se marca con pastilla e indicador lateral.
+   */
   [data-component='TabBar'].marbella-fixed-bottombar,
   [data-component='TabBar'].marbella-fixed-bottombar[data-mode='compact'],
   [data-component='TabBar'].marbella-fixed-bottombar[data-mode='full'],
-  [data-component='TabBar'].marbella-fixed-bottombar[data-hidden='true'] {
+  [data-component='TabBar'].marbella-fixed-bottombar[data-hidden='true'],
+  [data-component='TabBar'][data-over='light'].marbella-fixed-bottombar {
     top: 0;
     bottom: 0;
     left: 0;
@@ -4938,28 +4944,72 @@ button[data-element='catalog-filter'] {
     max-width: var(--shell-sidebar-width);
     height: 100%;
     margin: 0;
-    padding: var(--espacio-3) var(--espacio-2);
+    padding: var(--espacio-4) var(--espacio-2);
     border-radius: 0;
     flex-direction: column;
     align-items: stretch;
     justify-content: flex-start;
-    gap: var(--espacio-1);
+    gap: var(--espacio-2);
     transform: none !important;
     -webkit-transform: none !important;
     opacity: 1 !important;
     pointer-events: auto !important;
+    background-color: color-mix(in srgb, var(--color-envolvente-bajo) 90%, black);
+    -webkit-backdrop-filter: saturate(150%) blur(28px);
+    backdrop-filter: saturate(150%) blur(28px);
     box-shadow:
-      inset -1px 0 0 rgb(255 255 255 / 0.12),
-      4px 0 24px rgb(0 0 0 / 0.18);
+      inset -1px 0 0 rgb(255 255 255 / 0.14),
+      8px 0 32px rgb(0 0 0 / 0.30);
+  }
+
+  [data-component='TabBar'] {
+    --tabbar-icon-size: 26px;
   }
 
   [data-component='TabBar'] [data-element='item'] {
+    position: relative;
     flex: 0 0 auto;
     height: auto;
-    min-height: var(--tactil-minimo);
+    min-height: calc(var(--tactil-minimo) + var(--espacio-2));
     padding: var(--espacio-2) var(--espacio-1);
     border-radius: var(--radio-control);
-    gap: 4px;
+    gap: var(--espacio-1);
+    color: rgb(255 255 255 / 0.62);
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+
+  [data-component='TabBar'] [data-element='item']:hover {
+    background-color: rgb(255 255 255 / 0.08);
+    color: var(--color-texto-invertido);
+  }
+
+  [data-component='TabBar'] [data-element='item'][data-active='true'] {
+    background-color: rgb(255 255 255 / 0.14);
+    color: var(--color-texto-invertido);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18);
+  }
+
+  [data-component='TabBar'] [data-element='item'][data-active='true']::before {
+    content: '';
+    position: absolute;
+    left: calc(-1 * var(--espacio-1));
+    top: 50%;
+    width: 3px;
+    height: 56%;
+    transform: translateY(-50%);
+    border-radius: 999px;
+    background-color: var(--color-texto-invertido);
+    box-shadow: 0 0 8px rgb(255 255 255 / 0.55);
+  }
+
+  [data-component='TabBar'] [data-element='label'] {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0;
+  }
+
+  [data-component='TabBar'] [data-element='item'][data-active='true'] [data-element='label'] {
+    font-weight: 700;
   }
 
   [data-component='TabBar'][data-mode='compact'] [data-element='label'] {
@@ -4971,10 +5021,11 @@ button[data-element='catalog-filter'] {
 
   [data-component='HomeScreen'] {
     /* Desktop: el mosaico ocupa el ancho útil del shell (la sidebar ya reserva su hueco).
-       Los iconos quedan moderados y la pista de fila crece: el contenido
-       (ventas, cierre, calendario) gana alto y su tipografía escala con él. */
-    --home-icon-size: 5rem;
-    --home-row-track: 9rem;
+       Accesos compactos (icono moderado) y pista de fila ajustada para que el
+       contenido principal y TODOS los accesos entren sin scroll vertical. */
+    --home-icon-size: 3rem;
+    --home-row-track: 7rem;
+    --home-row-gap: var(--espacio-2);
     max-width: none;
     width: 100%;
     margin-inline: auto;
@@ -5028,45 +5079,49 @@ button[data-element='catalog-filter'] {
       'horarios  horarios  horarios  horarios  mas       asis'
       'horarios  horarios  horarios  horarios  cajascambio ingredientes';
     grid-template-rows: repeat(5, var(--home-row-track));
-    column-gap: var(--espacio-4);
+    column-gap: var(--espacio-2);
     row-gap: var(--home-row-gap);
   }
 
   /*
-   * Home master: mismo esquema que Admin — contenido principal grande
-   * (ventas, último cierre, horario) y accesos en columnas laterales.
-   * La asistencia del día mantiene su puesto (fila 3, col. 4) y, al expandirse,
-   * gana la fila 4 con «C Inicial» bajando a la fila 5.
+   * Home master: contenido principal grande (ventas, último cierre, horario) y
+   * TODOS los accesos (Caja inicial, Asistencia, Cajas cambio, Reservas,
+   * Ingredientes, Recetas, Albaranes, Otros, Cambio y Plantilla) en las dos
+   * columnas laterales. Asistencia ocupa el ancho de ambas columnas en la
+   * primera fila, con aire suficiente sin robar ancho al contenido.
    */
   [data-component='HomeScreen'][data-layout='master'] {
     grid-template-columns:
       repeat(4, minmax(0, 1fr))
-      var(--home-icon-size)
-      var(--home-icon-size);
+      minmax(4.5rem, 0.6fr)
+      minmax(4.5rem, 0.6fr);
     grid-template-areas:
+      'ventas     ventas     ventas     ventas     asis      asis'
       'ventas     ventas     ventas     ventas     reservas  ingred'
       'ultcierre  ultcierre  ultcierre  ultcierre  recetas   albaran'
-      'horario    horario    horario    asis       otros     cajascambio'
-      'horario    horario    horario    caja       cambio    plantilla'
-      'horario    horario    horario    .          .         .';
-    grid-template-rows: repeat(5, var(--home-row-track));
-    column-gap: var(--espacio-4);
+      'horario    horario    horario    horario    otros     cajascambio'
+      'horario    horario    horario    horario    cambio    plantilla'
+      'horario    horario    horario    horario    caja      .';
+    grid-template-rows: repeat(6, var(--home-row-track));
+    column-gap: var(--espacio-2);
     row-gap: var(--home-row-gap);
   }
   [data-component='HomeScreen'][data-layout='master'].asis-expanded {
     grid-template-areas:
-      'ventas     ventas     ventas     ventas     reservas  ingred'
-      'ultcierre  ultcierre  ultcierre  ultcierre  recetas   albaran'
-      'horario    horario    horario    asis       otros     cajascambio'
-      'horario    horario    horario    asis       cambio    plantilla'
-      'horario    horario    horario    caja       .         .';
+      'ventas     ventas     ventas     ventas     asis      asis'
+      'ventas     ventas     ventas     ventas     asis      asis'
+      'ultcierre  ultcierre  ultcierre  ultcierre  reservas  ingred'
+      'horario    horario    horario    horario    recetas   albaran'
+      'horario    horario    horario    horario    otros     cajascambio'
+      'horario    horario    horario    horario    cambio    plantilla'
+      'horario    horario    horario    horario    caja      .';
+    grid-template-rows: repeat(7, var(--home-row-track));
   }
 
   [data-component='HomeScreen'][data-layout='staff'] {
     /* El calendario y el resumen de la semana ocupan la zona principal; accesos a la derecha.
        Siete filas (semana + 6 de calendario) caben en el alto útil con una pista moderada. */
-    --home-icon-size: 5rem;
-    --home-row-track: 7rem;
+    --home-row-track: 5.75rem;
     grid-template-columns:
       repeat(4, minmax(0, 1fr))
       var(--home-icon-size)
@@ -5080,7 +5135,7 @@ button[data-element='catalog-filter'] {
       'horarios  horarios  horarios  horarios  prov      invent'
       'horarios  horarios  horarios  horarios  info      web';
     grid-template-rows: repeat(7, var(--home-row-track));
-    column-gap: var(--espacio-4);
+    column-gap: var(--espacio-2);
     row-gap: var(--home-row-gap);
   }
 
@@ -5116,7 +5171,7 @@ button[data-element='catalog-filter'] {
     max-width: 100%;
   }
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-cell {
-    padding: 6px;
+    padding: 6px 6px 10px;
   }
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-week,
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-cell,
@@ -5130,7 +5185,7 @@ button[data-element='catalog-filter'] {
    * con muchos empleados.
    */
   [data-component='PageScreen'].history-wide .month-cal-cell {
-    padding: 6px;
+    padding: 6px 6px 10px;
   }
   [data-component='PageScreen'].history-wide .month-cal-week {
     min-height: 112px !important;
@@ -5150,8 +5205,8 @@ button[data-element='catalog-filter'] {
     font-size: 13px;
   }
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-day-logs {
-    padding-top: 16px;
-    gap: 4px;
+    padding-top: 24px;
+    gap: 5px;
   }
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-day-clocks > div {
     height: 20px;
@@ -5226,12 +5281,12 @@ button[data-element='catalog-filter'] {
   /* Ventas: cifras protagonistas con jerarquía clara. */
   [data-component='HomeScreen'][data-layout='ops-admin'] [data-instance='dashboard-ventas'] [data-component='KpiStat'] [data-element='value'],
   [data-component='HomeScreen'][data-layout='master'] [data-instance='dashboard-ventas'] [data-component='KpiStat'] [data-element='value'] {
-    font-size: 1.5rem;
+    font-size: 1.375rem;
   }
   [data-component='HomeScreen'][data-layout='ops-admin'] [data-instance='dashboard-ventas'] [data-component='KpiStat'] [data-element='label'],
   [data-component='HomeScreen'][data-layout='master'] [data-instance='dashboard-ventas'] [data-component='KpiStat'] [data-element='label'] {
-    font-size: 0.8125rem;
-    margin-top: var(--espacio-1);
+    font-size: 0.75rem;
+    margin-top: 2px;
   }
   [data-instance='dashboard-ventas'] [data-element='header'] a {
     font-size: 11px;
@@ -5245,7 +5300,8 @@ button[data-element='catalog-filter'] {
   [data-instance='dashboard-ventas'] [data-element='kpis'] {
     gap: var(--espacio-3);
     padding-inline: var(--espacio-3);
-    padding-top: var(--espacio-1);
+    padding-top: 2px;
+    padding-bottom: 2px;
   }
 
   /*
@@ -5254,16 +5310,16 @@ button[data-element='catalog-filter'] {
    */
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-horarios'] > [data-element='body'] > [data-component='StaffWeekSchedule'] {
     --staff-calendar-gap: var(--espacio-3);
-    --staff-week-day-size: 3rem;
-    --staff-week-expansion-min: 7.5rem;
-    --staff-week-expansion-max: 10rem;
+    --staff-week-day-size: 2.5rem;
+    --staff-week-expansion-min: 6rem;
+    --staff-week-expansion-max: 8rem;
   }
   [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-horarios'] > [data-element='body'] > [data-component='StaffWeekSchedule'],
   [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='master-horarios'] > [data-element='body'] > [data-component='StaffWeekSchedule'] {
     --staff-calendar-gap: var(--espacio-2);
-    --staff-week-day-size: 1.75rem;
-    --staff-week-expansion-min: 5.5rem;
-    --staff-week-expansion-max: 7.5rem;
+    --staff-week-day-size: 1.5rem;
+    --staff-week-expansion-min: 4.5rem;
+    --staff-week-expansion-max: 6rem;
   }
   /* El mes reparte sus semanas por todo el alto disponible; la semana abierta
    * no monopoliza el hueco, así no quedan franjas vacías al pie. */
@@ -5281,25 +5337,25 @@ button[data-element='catalog-filter'] {
    */
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0,
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0 > div {
-    height: 18px;
-    min-height: 18px;
+    height: 16px;
+    min-height: 16px;
   }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0 span {
     font-size: 9px;
   }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-day-clocks > div {
-    height: 16px;
+    height: 15px;
   }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-day-clocks span {
     font-size: 11px;
   }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-week {
-    min-height: 62px;
+    min-height: 54px;
   }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-weeks > [data-week-footer]:not([data-overrides='true']) {
-    height: 22px;
-    min-height: 22px;
-    max-height: 22px;
+    height: 20px;
+    min-height: 20px;
+    max-height: 20px;
   }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-footer-label] {
     font-size: 10px;
@@ -5317,24 +5373,24 @@ button[data-element='catalog-filter'] {
     --shell-sidebar-width: 6.25rem;
   }
   [data-component='HomeScreen'] {
-    --home-icon-size: 5.25rem;
-    --home-row-track: 9.5rem;
+    --home-icon-size: 3.25rem;
+    --home-row-track: 7.5rem;
     max-width: none;
   }
   [data-component='HomeScreen'][data-layout='ops-admin'] {
     max-width: none;
-    --home-icon-size: 5.25rem;
-    --home-row-track: 9.5rem;
+    --home-icon-size: 3.25rem;
+    --home-row-track: 7.5rem;
   }
   [data-component='HomeScreen'][data-layout='master'] {
     max-width: none;
-    --home-icon-size: 5.25rem;
-    --home-row-track: 9.5rem;
+    --home-icon-size: 3.25rem;
+    --home-row-track: 7.5rem;
   }
   [data-component='HomeScreen'][data-layout='staff'] {
     max-width: none;
-    --home-icon-size: 5.25rem;
-    --home-row-track: 7.5rem;
+    --home-icon-size: 3.25rem;
+    --home-row-track: 6.25rem;
   }
   [data-component='PageScreen'] > div {
     max-width: min(60rem, 100%);

@@ -123,7 +123,7 @@ export function PlantillaWeekCard({
                             )}>
                                 {day.dayNumber}
                             </span>
-                            <div className={cn("flex-1 flex flex-col items-stretch justify-center mt-3 w-full overflow-hidden", day.isOtherMonth && "opacity-45")}>
+                            <div className={cn("flex-1 flex flex-col items-stretch justify-center mt-3 lg:mt-5 lg:pb-1.5 w-full overflow-hidden", day.isOtherMonth && "opacity-45")}>
                                 <div className="flex h-full w-full flex-col items-stretch justify-evenly gap-[3px] lg:gap-1.5">
                                     {(() => {
                                         const logs = day.logs || [];
