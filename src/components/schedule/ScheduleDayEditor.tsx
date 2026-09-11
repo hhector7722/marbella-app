@@ -27,7 +27,6 @@ import { fetchDayDetailAction, type BarActivity } from '@/app/staff/actividades/
 import { groupActivities } from '@/components/dashboards/staff/StaffWeekScheduleWidget';
 import { sendScheduleNotifications } from '@/app/actions/notifications';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
-import { HitTestProbe } from '@/components/debug/HitTestProbe';
 import type { PlantillaEmployee } from '@/components/modals/StaffSelectionModal';
 import { filterVisiblePlantillaEmployees } from '@/lib/staff/plantilla-employees';
 import { MiniMonthCalendar } from '@/components/time/MiniMonthCalendar';
@@ -459,8 +458,13 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
     const [isDayPublished, setIsDayPublished] = useState(false);
     const [isDaySent, setIsDaySent] = useState(false);
     const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    // Bloquea guardados simultáneos (autoguardado + botón Guardar/Enviar).
-    const savingRef = useRef(false);
+    // Cola de persistencia compartida: serializa autoguardado y guardado manual.
+    // Si ya hay una escritura en curso, la siguiente espera a que termine en vez
+    // de abortar (nunca hay dos escrituras concurrentes de la misma edición).
+    const persistTailRef = useRef<Promise<unknown>>(Promise.resolve());
+    const persistImplRef = useRef<(publish: boolean) => Promise<boolean>>(() => Promise.resolve(false));
+    const manualSavesPendingRef = useRef(0);
+    const hasUnsavedChangesRef = useRef(false);
     const [saving, setSaving] = useState(false);
     const [persistError, setPersistError] = useState('');
     // Trabajadores con turno en el día que el editor gestiona (solo ellos
@@ -484,10 +488,6 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
     const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
 
-    // Reinicia el flag de bloqueo del guardado al abrir el modal de compartir (evita que el modal quede bloqueado tras un timeout).
-    useEffect(() => {
-        if (showShareModal) savingRef.current = false;
-    }, [showShareModal]);
     const [calendarDate, setCalendarDate] = useState(new Date());
 
     // Rentabilidad del día: coste de mano de obra y facturación rentable
@@ -833,18 +833,15 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
     };
 
     /**
-     * Persistencia única del día: la server action transacciona de forma
-     * atómica (delete por trabajador + insert) y verifica que lo persistido
-     * coincide con lo esperado antes de confirmar éxito.
+     * Persistencia atómica del día: la server action transacciona (delete por
+     * trabajador + insert) y verifica que lo persistido coincide con lo esperado.
+     * Se ejecuta siempre en serie a través de `enqueuePersist`.
      */
-    const runPersist = async (publish: boolean, announce = false): Promise<boolean> => {
-        if (savingRef.current) return false;
-        savingRef.current = true;
+    const runPersistImpl = async (publish: boolean): Promise<boolean> => {
         if (saveTimeoutRef.current) {
             clearTimeout(saveTimeoutRef.current);
             saveTimeoutRef.current = null;
         }
-        if (announce) setSaving(true);
         try {
             const { rows, startOfRange, endOfRange } = buildPersistPayload();
             const res = await Promise.race([
@@ -869,16 +866,10 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                 return false;
             }
             setPersistError('');
+            hasUnsavedChangesRef.current = false;
             setHasUnsavedChanges(false);
             setIsDayPublished(res.published);
             managedIdsRef.current = rows.map((r) => r.employeeId);
-            if (announce) {
-                toast.success(
-                    publish
-                        ? 'Horario publicado y guardado correctamente'
-                        : 'Horario guardado correctamente',
-                );
-            }
             return true;
         } catch (error: unknown) {
             const cause = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
@@ -886,26 +877,78 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
             setPersistError(`excepción: ${cause}`);
             toast.error(`Error al guardar. ${cause}`);
             return false;
-        } finally {
-            savingRef.current = false;
-            if (announce) setSaving(false);
         }
     };
 
-    // La ref mantiene SIEMPRE la versión fresca de runPersist (con el estado
-    // actual cerrado), evitando raza: un autoguardado pendiente no puede
-    // correr con el estado antiguo ni pisar un guardado en curso.
-    const runPersistRef = useRef(runPersist);
+    // La ref mantiene la versión fresca de la implementación (con el estado
+    // actual cerrado), de modo que una persistencia encolada corre con el
+    // estado más reciente y no con el de una edición anterior.
     useEffect(() => {
-        runPersistRef.current = runPersist;
+        persistImplRef.current = runPersistImpl;
     });
+
+    /**
+     * Encola una persistencia. Si hay otra en curso, espera a que termine y
+     * después guarda: nunca hay dos escrituras concurrentes de la misma edición.
+     * `announce` marca los guardados manuales (reflejan `saving` y avisan).
+     */
+    const enqueuePersist = useCallback((publish: boolean, announce = false): Promise<boolean> => {
+        if (announce) {
+            manualSavesPendingRef.current += 1;
+            setSaving(true);
+        }
+        const run = persistTailRef.current
+            .catch(() => undefined)
+            .then(() => persistImplRef.current(publish));
+        persistTailRef.current = run.then(
+            () => undefined,
+            () => undefined,
+        );
+        const settled = run.finally(() => {
+            if (announce) {
+                manualSavesPendingRef.current = Math.max(0, manualSavesPendingRef.current - 1);
+                if (manualSavesPendingRef.current === 0) setSaving(false);
+            }
+        });
+        if (announce) {
+            void settled.then((ok) => {
+                if (ok) {
+                    toast.success(
+                        publish
+                            ? 'Horario publicado y guardado correctamente'
+                            : 'Horario guardado correctamente',
+                    );
+                }
+            });
+        }
+        return settled;
+    }, []);
+
+    useEffect(() => {
+        hasUnsavedChangesRef.current = hasUnsavedChanges;
+    }, [hasUnsavedChanges]);
+
+    /**
+     * Fuerza el guardado pendiente antes de salir/navegar: cancela el
+     * autoguardado diferido, espera a la persistencia en curso y, si aún hay
+     * cambios sin guardar, guarda como borrador. Devuelve si quedó todo guardado.
+     */
+    const flushPendingChanges = useCallback(async (): Promise<boolean> => {
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+            saveTimeoutRef.current = null;
+        }
+        await persistTailRef.current.catch(() => undefined);
+        if (!hasUnsavedChangesRef.current) return true;
+        return enqueuePersist(false, true);
+    }, [enqueuePersist]);
 
     useEffect(() => {
         if (!loading && hasUnsavedChanges) {
             if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
             saveTimeoutRef.current = setTimeout(() => {
                 // El autoguardado NUNCA debe publicar, siempre guarda como borrador (false)
-                void runPersistRef.current(false);
+                void enqueuePersist(false);
             }, 1000);
         }
         return () => {
@@ -925,20 +968,14 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
         participantsCount,
         participantsCount2,
         shifts,
+        enqueuePersist,
     ]);
 
     useImperativeHandle(ref, () => ({
         openAddEmployee: () => setShowAddEmployeeModal(true),
         openShare: () => setShowShareModal(true),
-        flushSave: async () => {
-            if (saveTimeoutRef.current) {
-                clearTimeout(saveTimeoutRef.current);
-                saveTimeoutRef.current = null;
-            }
-            if (!hasUnsavedChanges) return true;
-            return runPersistRef.current(false, true);
-        },
-    }), [hasUnsavedChanges]);
+        flushSave: flushPendingChanges,
+    }), [flushPendingChanges]);
 
     useEffect(() => {
         const targetDate = initialDate || new Date().toISOString().split('T')[0];
@@ -1018,12 +1055,10 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
     }, [isMaster, date, activeEmployeeIds, supabase]);
 
     const navigateDay = async (direction: -1 | 1) => {
-        if (hasUnsavedChanges) {
-            // Navegar NUNCA publica: guarda como borrador y solo cambia de día
-            // si la persistencia confirmó éxito (verificada).
-            const ok = await runPersistRef.current(false);
-            if (!ok) return;
-        }
+        // Navegar NUNCA publica: coordina con la persistencia en curso y guarda
+        // como borrador lo pendiente. Si la persistencia falla, avisa pero no
+        // deja la navegación atrapada.
+        await flushPendingChanges();
         const currentDate = new Date(`${date}T12:00:00`);
         const newDate = direction === 1 ? addDays(currentDate, 1) : subDays(currentDate, 1);
         const newDateStr = newDate.toISOString().split('T')[0];
@@ -1033,10 +1068,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
 
     const handleSelectCalendarDate = async (picked: Date) => {
         const dateStr = format(picked, 'yyyy-MM-dd');
-        if (hasUnsavedChanges) {
-            const ok = await runPersistRef.current(false);
-            if (!ok) return;
-        }
+        await flushPendingChanges();
         setShowCalendarModal(false);
         trackScheduleCalendarDay(formatYmdShort(dateStr), { selectedDate: dateStr });
         setDate(dateStr);
@@ -1249,7 +1281,6 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
             className="flex flex-col flex-1 min-h-0 w-full overflow-hidden"
             onClick={() => setEditingIndex(null)}
         >
-            <HitTestProbe />
             {/* ── CABECERA SOLO STANDALONE (fuera del Modal padre) ── */}
             {!modalParentInstance ? (
                 <div className="flex shrink-0 items-center justify-between px-4 py-3">
@@ -1572,15 +1603,8 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                             instance="schedule-day-share-save"
                             disabled={saving}
                             onClick={async () => {
-                                const dbg = { savingRef: savingRef.current, saving, hasUnsaved: hasUnsavedChanges };
-                                (window as unknown as { __shareClick: unknown }).__shareClick = dbg;
-                                console.log('[SHARE-CLICK]', dbg);
-                                if (savingRef.current) {
-                                    toast.info('Guardando… espera un momento');
-                                    return;
-                                }
                                 trackScheduleShare(!isDayPublished ? 'Guardar borrador' : 'Sobreescribir publicado');
-                                const ok = await runPersistRef.current(true, true);
+                                const ok = await enqueuePersist(true, true);
                                 if (!ok) return;
                                 setShowShareModal(false);
                                 onSuccess?.();
@@ -1595,12 +1619,8 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                             instance="schedule-day-share-send"
                             disabled={saving}
                             onClick={async () => {
-                                if (savingRef.current) {
-                                    toast.info('Guardando… espera un momento');
-                                    return;
-                                }
                                 trackScheduleShare(!isDaySent ? 'Enviar notificaciones' : 'Reenviar notificaciones');
-                                const saved = await runPersistRef.current(true, true);
+                                const saved = await enqueuePersist(true, true);
                                 if (!saved) return;
                                 setShowShareModal(false);
                                 const userShifts = shifts

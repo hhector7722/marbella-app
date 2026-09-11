@@ -34,6 +34,7 @@ import { PavilionDayModal } from '@/components/pavilion/PavilionDayModal';
 import { createClient } from '@/utils/supabase/client';
 import { usePageView } from '@/lib/usage/usePageView';
 import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
+import { Toaster } from 'sonner';
 
 
 const ACTIVIDADES_EMAILS = [
@@ -342,6 +343,7 @@ export default function HorarioPage() {
 
   return (
     <>
+    <Toaster position="top-center" richColors closeButton />
     <DashboardDetailLayout
       title="Horario"
       showBackButton={false}
