@@ -311,10 +311,10 @@ const AdminDashboardView = ({
         setPaidStatus(prev => ({ ...prev, [key]: newStatus }));
         try {
             const weekData = overtimeWeeksData.find(w => w.weekId === weekId);
-            const staffData = weekData?.staff?.find((s: any) => s.id === staffId);
+            const staffData = weekData?.staff?.find((s) => s.id === staffId);
             const result = await togglePaidStatus(staffId, weekId, newStatus, {
-                totalHours: staffData?.hours ?? staffData?.totalHours ?? 0,
-                overtimeHours: staffData?.hours ?? staffData?.overtimeHours ?? 0
+                totalHours: staffData?.totalHours ?? 0,
+                overtimeHours: staffData?.overtimeHours ?? 0,
             });
             if (!result.success) throw new Error("Error updating paid status");
             invalidateHomeOvertimeCache();
