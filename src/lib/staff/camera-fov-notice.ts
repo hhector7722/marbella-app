@@ -8,8 +8,8 @@ export const CAMERA_FOV_NOTICE_ACKED_AT_COLUMN = 'camera_fov_notice_acked_at' as
 
 export const CAMERA_FOV_NOTICE_IMAGE_SRC = '/docs/manuals/camara-seguridad.jpg';
 
-export const CAMERA_FOV_NOTICE_IMAGE_WIDTH = 1024;
-export const CAMERA_FOV_NOTICE_IMAGE_HEIGHT = 297;
+export const CAMERA_FOV_NOTICE_IMAGE_WIDTH = 1008;
+export const CAMERA_FOV_NOTICE_IMAGE_HEIGHT = 280;
 
 export const CAMERA_FOV_NOTICE_TITLE =
     'Actualización del campo de visión de la cámara de seguridad';

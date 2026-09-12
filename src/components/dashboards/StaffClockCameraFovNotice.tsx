@@ -22,7 +22,7 @@ export function StaffClockCameraFovNotice() {
         <div data-element="camera-fov-notice" className="flex min-h-0 w-full min-w-0 flex-col gap-ds-4">
             <div data-element="camera-fov-image" className="w-full shrink-0">
                 <img
-                    src={CAMERA_FOV_NOTICE_IMAGE_SRC}
+                    src={`${CAMERA_FOV_NOTICE_IMAGE_SRC}?v=2`}
                     alt="Campo de visión actual de la cámara de seguridad"
                     width={CAMERA_FOV_NOTICE_IMAGE_WIDTH}
                     height={CAMERA_FOV_NOTICE_IMAGE_HEIGHT}
