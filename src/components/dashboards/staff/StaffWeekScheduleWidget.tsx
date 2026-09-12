@@ -163,11 +163,16 @@ function selectPrimaryActivity(acts: BarActivity[]): BarActivity[] {
     return primary ? [primary] : [];
 }
 
+function toSentenceCase(value: string): string {
+    const lower = value.trim().toLocaleLowerCase('es-ES');
+    return lower.charAt(0).toLocaleUpperCase('es-ES') + lower.slice(1);
+}
+
 function formatDayEventNames(acts: BarActivity[] | undefined): string | null {
     const primary = selectPrimaryActivity(acts ?? []);
     const grouped = groupActivities(primary);
     if (grouped.length === 0) return null;
-    return grouped.map((a) => a.activityName).join(' · ');
+    return grouped.map((a) => toSentenceCase(a.activityName)).join(' · ');
 }
 
 type EventDetailRow = {
