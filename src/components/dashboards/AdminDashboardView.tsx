@@ -429,7 +429,7 @@ const AdminDashboardView = ({
     const openPurchaseMultiSourceModal = async () => {
         const op = boxes.find((b: any) => b.type === 'operational');
         const changeBoxes = boxes.filter((b: any) => b.type === 'change').sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
-        const boxesToLoad = [op, ...changeBoxes].filter(Boolean);
+        const boxesToLoad = [...(op ? [op] : []), ...changeBoxes];
         const inv: Record<string, Record<number, number>> = {};
         for (const box of boxesToLoad) {
             const { data } = await supabase.from('cash_box_inventory').select('*').eq('box_id', box.id).gt('quantity', 0);
