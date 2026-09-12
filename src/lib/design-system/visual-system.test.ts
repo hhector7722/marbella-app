@@ -841,6 +841,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             join(SRC_ROOT, 'components/dashboards/staff/StaffWeekScheduleWidget.tsx'),
             'utf8'
         );
+        const weekScheduleCss = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
         assert.match(
             weekSchedule,
             /grid-cols-\[max-content_max-content_minmax\(0,1fr\)\]/,
@@ -855,6 +856,21 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             weekSchedule,
             /cell\.kind === 'hours'[\s\S]{0,120}whitespace-nowrap/,
             'las horas del evento no se truncan en Staff ni en Master'
+        );
+        assert.match(
+            weekSchedule,
+            /data-element="weekend-ext"/,
+            'la columna Ext tiene identidad propia para flotar sobre el widget'
+        );
+        assert.doesNotMatch(
+            weekSchedule,
+            /home-widget-fill-secondary/,
+            'los importes Ext no van en una card de relleno secundario'
+        );
+        assert.match(
+            weekScheduleCss,
+            /\[data-element='weekend-ext'\][\s\S]{0,80}background-color:\s*transparent/,
+            'los importes Ext flotan sobre el cristal, sin relleno de card'
         );
         assert.doesNotMatch(staff, /label="Horarios"/);
         assert.doesNotMatch(staff, /bg-purple-600/);

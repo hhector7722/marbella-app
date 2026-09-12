@@ -383,6 +383,7 @@ function WeekExtCell({
     return (
         <button
             type="button"
+            data-element="weekend-ext"
             onClick={(e) => {
                 e.stopPropagation();
                 if (week) onOpenWeekDetail?.(week);
@@ -393,8 +394,7 @@ function WeekExtCell({
                     : 'Horas extra sin importe esta semana'
             }
             className={cn(
-                'relative flex w-full items-center justify-center gap-0.5 rounded-[var(--radio-control)] transition-colors',
-                (week || loading) && 'bg-[var(--home-widget-fill-secondary)] px-1 py-1',
+                'relative z-10 flex w-full items-center justify-center gap-0.5 transition-colors',
                 'before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']',
                 week && 'hover:bg-white/10',
                 !week && 'cursor-default',

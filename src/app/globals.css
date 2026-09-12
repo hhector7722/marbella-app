@@ -2791,6 +2791,9 @@ button[data-element='catalog-filter'] {
 [data-component='StaffWeekSchedule'] [data-week-row] button {
   height: var(--staff-week-day-size);
 }
+[data-component='StaffWeekSchedule'] [data-element='weekend-ext'] {
+  background-color: transparent;
+}
 [data-component='StaffWeekSchedule'] [data-element='week-expansion'] {
   position: relative;
   z-index: 1;
