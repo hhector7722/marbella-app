@@ -270,28 +270,28 @@ function WeekendDayColumn({
 
                 <div data-element="weekend-details" className="flex min-h-0 min-w-0 flex-1 flex-col">
                     {!masterMode && (
-                        <div data-element="weekend-turno" className="flex min-w-0 items-center justify-center">
+                        <div data-element="weekend-turno" className="flex min-w-0 items-baseline gap-1">
                             {shiftStart && shiftEnd ? (
-                                <span
-                                    data-element="weekend-turno-pill"
-                                    className="inline-flex max-w-full min-w-0 overflow-hidden rounded-full border-[0.5px] border-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
-                                    aria-label={`Turno ${shiftStart} a ${shiftEnd}`}
-                                >
+                                <>
                                     <span
                                         data-element="weekend-turno-start"
-                                        className="shrink-0 border-r-[0.5px] border-white px-1 py-px text-[7px] lg:text-[10px] font-semibold tabular-nums leading-none text-white"
+                                        className="flex min-w-0 items-baseline gap-0.5 border-l-2 border-[var(--color-positivo)] pl-0.5"
                                     >
-                                        {shiftStart}
+                                        <span className="text-[6px] lg:text-[11px] font-medium tabular-nums leading-none text-white">
+                                            {shiftStart}
+                                        </span>
                                     </span>
                                     <span
                                         data-element="weekend-turno-end"
-                                        className="shrink-0 px-1 py-px text-[7px] lg:text-[10px] font-semibold tabular-nums leading-none text-white"
+                                        className="flex min-w-0 items-baseline gap-0.5 border-l-2 border-[var(--color-negativo)] pl-0.5"
                                     >
-                                        {shiftEnd}
+                                        <span className="text-[6px] lg:text-[11px] font-medium tabular-nums leading-none text-white">
+                                            {shiftEnd}
+                                        </span>
                                     </span>
-                                </span>
+                                </>
                             ) : (
-                                <span data-element="weekend-turno-label" className="shrink-0 text-[6px] lg:text-[11px] font-medium leading-none tracking-wide">
+                                <span data-element="weekend-turno-label" className="shrink-0 border-l-2 border-[var(--color-positivo)] pl-0.5 text-[6px] lg:text-[11px] font-medium leading-none tracking-wide">
                                     Turno
                                 </span>
                             )}

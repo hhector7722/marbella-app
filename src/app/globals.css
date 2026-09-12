@@ -2867,23 +2867,11 @@ button[data-element='catalog-filter'] {
 [data-component='StaffWeekSchedule'] [data-element='weekend-turno-label'] {
   color: var(--home-widget-ink-secondary);
 }
-[data-component='StaffWeekSchedule'] [data-element='weekend-turno-pill'] {
-  line-height: 1.15;
-  border-width: 0.5px;
-  border-color: #fff;
-}
-[data-component='StaffWeekSchedule'] [data-element='weekend-turno-start'],
-[data-component='StaffWeekSchedule'] [data-element='weekend-turno-end'] {
-  letter-spacing: 0.01em;
-}
 [data-component='StaffWeekSchedule'] [data-element='weekend-turno-start'] {
-  border-right: 0.5px solid #fff;
-  /* Verde apagado: el token vivo se mezcla con el fondo del mosaico. */
-  background-color: color-mix(in srgb, var(--color-positivo) 62%, #1e3a4c);
+  border-left-color: var(--color-positivo);
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-turno-end'] {
-  /* Rojo apagado: mismo criterio que el inicio. */
-  background-color: color-mix(in srgb, var(--color-negativo) 58%, #1e3a4c);
+  border-left-color: var(--color-negativo);
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-evento'] {
   margin-top: 2px;
