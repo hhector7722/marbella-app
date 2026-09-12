@@ -7,6 +7,8 @@ import {
     HOME_SCREEN_COMPONENT_ID,
     HOME_SCREEN_COLUMNS,
     HOME_SCREEN_ROWS,
+    HOME_SCREEN_DESKTOP_COLUMNS,
+    HOME_SCREEN_DESKTOP_ROWS,
     HOME_SCREEN_SLOT_SPAN,
     resolveHomeWidgetScheme,
 } from './home-screen.ts';
@@ -18,6 +20,8 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.equal(HOME_SCREEN_COMPONENT_ID, 'HomeScreen');
         assert.equal(HOME_SCREEN_COLUMNS, 4);
         assert.equal(HOME_SCREEN_ROWS, 6);
+        assert.equal(HOME_SCREEN_DESKTOP_COLUMNS, 8);
+        assert.equal(HOME_SCREEN_DESKTOP_ROWS, 5);
         assert.deepEqual(HOME_SCREEN_SLOT_SPAN.icon, { cols: 1, rows: 1 });
         assert.deepEqual(HOME_SCREEN_SLOT_SPAN.small, { cols: 2, rows: 2 });
         assert.deepEqual(HOME_SCREEN_SLOT_SPAN.medium, { cols: 4, rows: 2 });
@@ -80,13 +84,13 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.match(home, /data-layout='master'/);
         assert.match(
             home,
-            /hextras hextras hextras plant[\s\S]*hextras hextras hextras albaranes[\s\S]*cambio1 cambio2 recetas asis[\s\S]*mas mobra stock ingredientes/,
-            'H. extras en filas 3–4; Plantilla y Albaranes a la derecha; Cambio 1/2 en la fila de Recetas'
+            /horarios horarios horarios cinicial[\s\S]*horarios horarios horarios plant[\s\S]*mobra stock recetas albaranes[\s\S]*mas asis cajascambio ingredientes/,
+            'Admin smartphone: Horario 3×2 con C Inicial y Plantilla a la derecha; fila 5 M obra/Stock/Recetas/Albaranes; fila 6 Otros/Asistencia/Cajas cambio/Ingredientes'
         );
         assert.doesNotMatch(
             home,
             /2 \* var\(--home-icon-size\) \+ var\(--home-row-gap\)/,
-            'H. extras ya no va en una pista doble: son dos filas de icono'
+            'ningún widget usa una pista doble calculada a mano'
         );
         assert.match(
             home,
@@ -100,7 +104,7 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         );
         assert.match(
             home,
-            /grid-template-areas:[\s\S]*hextras hextras hextras plant[\s\S]*hextras hextras hextras albaranes/
+            /grid-template-areas:[\s\S]*horarios horarios horarios cinicial[\s\S]*horarios horarios horarios plant/
         );
         assert.match(
             home,
@@ -109,8 +113,8 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         );
         assert.match(
             home,
-            /grid-template-areas:[\s\S]*ultcierre ultcierre ultcierre ultcierre[\s\S]*horario  horario  horario  asis[\s\S]*horario  horario  horario  \.[\s\S]*ingred   albaran  caja     hextras/,
-            'Master: widget «Último cierre» 4×1 en la fila 2; asistencia del día 1×1 (fila 3, columna 4); horarios 3×2 (filas 3–4, columnas 1–3)'
+            /grid-template-areas:[\s\S]*ultcierre ultcierre ultcierre ultcierre[\s\S]*horario  horario  horario  asis[\s\S]*horario  horario  horario  caja[\s\S]*reservas ingred  recetas  albaran/,
+            'Master smartphone: Último cierre 4×1; asistencia 1×1 (fila 3, col 4); horarios 3×2; C Inicial bajo asistencia; Albaranes en la fila 5'
         );
         assert.match(
             home,
@@ -124,7 +128,7 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         );
         assert.match(
             home,
-            /\[data-instance='dashboard-caja-cambio-1'\][\s\S]*grid-area:\s*cambio1/
+            /\[data-instance='cajas-cambio'\][\s\S]*grid-area:\s*cajascambio/
         );
         assert.match(
             home,
@@ -292,6 +296,41 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
             'el hilo inset no se pinta en el cuerpo del widget'
         );
         assert.doesNotMatch(home, /grid-cols-7|grid-cols-8/);
+        assert.match(
+            css,
+            /@media \(min-width: 1024px\)[\s\S]*grid-template-columns:\s*repeat\(8, minmax\(0, 1fr\)\)/,
+            'escritorio: la plantilla HomeScreen es 8 columnas'
+        );
+        assert.match(
+            css,
+            /@media \(min-width: 1024px\)[\s\S]*grid-template-rows:\s*repeat\(5, minmax\(0, 1fr\)\)/,
+            'escritorio: la plantilla HomeScreen es 5 filas'
+        );
+        assert.match(
+            css,
+            /cinicial      plant[\s\S]*cajascambio   ingredientes/,
+            'Admin desktop: C Inicial y Plantilla comparten fila; Cajas Cambio e Ingredientes comparten fila'
+        );
+        assert.match(
+            css,
+            /ultcierre  ultcierre  ultcierre  asis      asis/,
+            'Master desktop: Asistencia ocupa las dos columnas de accesos de la fila 1'
+        );
+        assert.match(
+            css,
+            /\[data-layout='master'\] > \[data-element='slot'\]\[data-instance='albaranes'\] \{[\s\S]*display:\s*none/,
+            'Master desktop: Albaranes no ocupa un slot del mosaico'
+        );
+        assert.match(
+            css,
+            /info       web        perfil/,
+            'Staff desktop: Perfil ocupa el slot libre de la plantilla'
+        );
+        assert.match(
+            home,
+            /staff-perfil[\s\S]*display:\s*none/,
+            'Staff smartphone: Perfil no aparece en el mosaico 4×6'
+        );
     });
 
     it('Staff, Admin y Master montan la misma HomeScreen', () => {
@@ -370,6 +409,10 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.match(weekWidget, /<WeekSummary/);
         assert.match(staff, /instance="staff-albaranes"/);
         assert.match(staff, /instance="staff-cambio"/);
+        assert.match(staff, /instance="staff-perfil"/);
+        assert.match(staff, /label="Perfil"/);
+        assert.match(staff, /img="\/icons\/admin\.png"/);
+        assert.match(staff, /router\.push\('\/profile'\)/);
         assert.match(admin, /<OpsHomeScreen/);
         assert.match(master, /<HomeScreen/);
         assert.doesNotMatch(master, /<OpsHomeScreen/);
@@ -384,43 +427,38 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.match(master, /size="panel" instance="master-horarios"/);
         assert.match(master, /<StaffWeekScheduleBlock/);
         assert.match(grid, /size=\{size\} instance=\{key\} label=\{label\}/);
-        assert.match(grid, /size: 'tile'[\s\S]*label: 'H extras'/);
         assert.match(grid, /label: 'Cajas Cambio'/);
         assert.match(grid, /<MasterCajasCambioControl/);
-        assert.match(grid, /<MasterOvertimeIconWidget/);
         assert.match(grid, /label="Otros"/);
+        assert.match(grid, /label="Albaranes"/);
+        assert.match(grid, /onClick=\{onOpenAlbaranes\}/);
         assert.doesNotMatch(grid, /label="Proveedores"/);
         assert.doesNotMatch(grid, /label="Asistencia"/);
-        assert.doesNotMatch(grid, /label="Recetas"/);
         assert.doesNotMatch(grid, /label="Web"/);
         assert.doesNotMatch(grid, /label="Carta"/);
-        assert.match(
-            grid,
-            /<MasterOvertimeIconWidget[\s\S]*monthLabel=\{overtimeMonthLabel\}/,
-            'H. extras monta el widget del mes'
-        );
-        assert.match(
-            grid,
-            /weekdayHeaders = \['L', 'M', 'X', 'J', 'V', 'S', 'D'\][\s\S]*<X /,
-            'H. extras muestra calendario del mes, estado de abono e importe'
-        );
         assert.doesNotMatch(grid, /md:grid-cols-7|lg:grid-cols-8/);
+        const otros = readFileSync(
+            join(SRC_ROOT, 'components/modals/MasterMoreFunctionsModal.tsx'),
+            'utf8'
+        );
+        assert.match(
+            otros,
+            /label: 'Albaranes'[\s\S]*action: 'albaranes'/,
+            'Albaranes sigue disponible en el modal Otros del Master'
+        );
         assert.match(ops, /layout="ops-admin"/);
         assert.match(ops, /size="wide" instance="dashboard-ventas"/);
-        assert.match(ops, /size="wide" instance="dashboard-caja-inicial"/);
-        assert.match(ops, /size="panel" instance="dashboard-horas-extras"/);
-        assert.doesNotMatch(ops, /label="H\. extras"/);
-        assert.doesNotMatch(ops, /instance="dashboard-horas-extras"[^>]*label=/);
+        assert.match(ops, /size="icon" instance="caja-inicial"/);
+        assert.match(ops, /size="icon" instance="admin-plantilla"/);
         assert.match(ops, /size="icon" instance="admin-recetas"/);
         assert.match(ops, /size="icon" instance="admin-albaranes"/);
-        assert.match(ops, /size="tile" instance="dashboard-caja-cambio-1" label="Cambio 1"/);
-        assert.match(ops, /size="tile" instance="dashboard-caja-cambio-2" label="Cambio 2"/);
+        assert.match(ops, /size="icon" instance="cajas-cambio"/);
         assert.match(ops, /size="icon" instance="admin-mas-funciones"/);
         assert.match(ops, /size="icon" instance="admin-ingredientes"/);
         assert.match(
             ops,
-            /dashboard-horas-extras[\s\S]*admin-plantilla[\s\S]*admin-albaranes[\s\S]*dashboard-caja-cambio-1[\s\S]*admin-recetas[\s\S]*admin-mas-funciones/,
-            'H. extras en 3–4; Plantilla y Albaranes a la derecha; Cambio 1/2 con Recetas; Otros en última fila'
+            /caja-inicial[\s\S]*admin-plantilla[\s\S]*admin-recetas[\s\S]*admin-albaranes[\s\S]*cajas-cambio[\s\S]*admin-ingredientes/,
+            'Admin: C Inicial con Plantilla; Cajas Cambio con Ingredientes; Albaranes permanece en el mosaico'
         );
     });
 

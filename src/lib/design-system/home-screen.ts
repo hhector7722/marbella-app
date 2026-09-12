@@ -1,5 +1,7 @@
 /**
- * Rejilla de inicio (T1). Una página de Springboard: 4 columnas × 6 filas.
+ * Rejilla de inicio (T1).
+ * Smartphone: 4 columnas × 6 filas (Springboard).
+ * Desktop (lg+): 8 columnas × 5 filas — la misma plantilla para las tres homes.
  * Cada pista = squircle + nombre de un atajo (una línea). Entre pistas, solo --home-row-gap.
  */
 
@@ -7,6 +9,8 @@ export const HOME_SCREEN_COMPONENT_ID = 'HomeScreen' as const;
 
 export const HOME_SCREEN_COLUMNS = 4;
 export const HOME_SCREEN_ROWS = 6;
+export const HOME_SCREEN_DESKTOP_COLUMNS = 8;
+export const HOME_SCREEN_DESKTOP_ROWS = 5;
 
 export const HOME_SCREEN_SLOT_SIZES = ['icon', 'small', 'medium', 'large', 'wide', 'half', 'panel', 'tile', 'tall'] as const;
 

@@ -215,7 +215,7 @@ export default function DashboardSwitcher({
         <div
             ref={containerRef}
             className={cn(
-                'relative w-full max-w-full min-h-full overflow-x-clip overflow-y-auto',
+                'dashboard-mosaic-switcher relative w-full max-w-full min-h-full overflow-x-clip overflow-y-auto',
                 isManager ? 'touch-pan-y' : ''
             )}
             onTouchStart={handleTouchStart}

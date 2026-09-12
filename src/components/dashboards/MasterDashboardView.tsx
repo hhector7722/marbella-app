@@ -16,6 +16,7 @@ import { MasterTodayAttendanceWidget } from '@/components/dashboards/MasterToday
 import { MasterLastClosingWidget } from '@/components/dashboards/MasterLastClosingWidget';
 import { StaffWeekScheduleBlock } from '@/components/dashboards/staff/StaffWeekScheduleBlock';
 import { MasterMoreFunctionsModal } from '@/components/modals/MasterMoreFunctionsModal';
+import { AlbaranesOptionsModal } from '@/components/dashboards/AlbaranesOptionsModal';
 import CashClosingModal from '@/components/CashClosingModal';
 import { CashChangeModal, type BoxOption } from '@/components/CashChangeModal';
 import { CashDenominationForm, CASH_COUNT_FORM_ID } from '@/components/CashDenominationForm';
@@ -139,6 +140,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
     const [userEmail, setUserEmail] = useState('');
     const [plantillaEmployees, setPlantillaEmployees] = useState<PlantillaEmployeeRow[]>([]);
     const [isMoreFunctionsModalOpen, setIsMoreFunctionsModalOpen] = useState(false);
+    const [isAlbaranesModalOpen, setIsAlbaranesModalOpen] = useState(false);
     const [attendanceExpanded, setAttendanceExpanded] = useState(false);
 
     const changeBoxes = useMemo(
@@ -545,7 +547,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
     };
 
     return (
-        <div className="pt-1 pb-8">
+        <div className="home-mosaic-page">
             <HomeScreen layout="master" className={attendanceExpanded ? 'asis-expanded' : undefined}>
                 <HomeScreenSlot size="wide" instance="dashboard-ventas">
                     <DashboardVentasSection
@@ -601,6 +603,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                         setIsStaffModalOpen(true);
                         void ensureActivePlantillaEmployees();
                     }}
+                    onOpenAlbaranes={() => setIsAlbaranesModalOpen(true)}
                     pendingReservationsCount={pendingReservationsCount}
                 />
             </HomeScreen>
@@ -698,6 +701,12 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                 isOpen={isMoreFunctionsModalOpen}
                 onClose={() => setIsMoreFunctionsModalOpen(false)}
                 onOpenCierre={() => setIsClosingModalOpen(true)}
+                onOpenAlbaranes={() => setIsAlbaranesModalOpen(true)}
+            />
+
+            <AlbaranesOptionsModal
+                isOpen={isAlbaranesModalOpen}
+                onClose={() => setIsAlbaranesModalOpen(false)}
             />
 
             <Modal

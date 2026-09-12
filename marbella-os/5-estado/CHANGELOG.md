@@ -36,6 +36,10 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
 
+## 2026-09-12
+
+- **HomeScreen desktop: plantilla única 8×5 para las tres homes.** `/dashboard`, `/master/dashboard` y `/staff/dashboard` dejan de calcular su disposición de escritorio por separado. A partir de lg (1024 px) ocupan regiones de la misma retícula de 8 columnas y 5 filas; el smartphone permanece en 4×6. En Master, Albaranes deja el mosaico desktop y pasa al modal Otros (sigue en el mosaico del teléfono). En Staff, el slot libre de escritorio es Perfil, el mismo destino que el del TabBar. El estado activo del sidebar ya no usa una franja blanca lateral.
+
 ## 2026-09-10
 
 - **Horario: el guardado del editor es atómico, verificado y sin pérdida.** El botón Guardar/Sobreescribir y Enviar persisten el día en UNA transacción (`save_schedule_day`) sobre las filas que gestiona el editor y devuelven éxito solo si la BD confirma que lo persistido coincide con lo esperado. Mientras guarda, el botón muestra «Guardando…» y bloquea guardados simultáneos; si la verificación falla, el editor NO cierra, conserva los cambios y muestra el error para reintentar. Al navegar o cerrar, no se publica y la persistencia debe confirmarse antes de continuar.

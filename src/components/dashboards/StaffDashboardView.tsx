@@ -862,7 +862,7 @@ export default function StaffDashboardView({
     };
 
     return (
-        <div className="pt-1 pb-8">
+        <div className="home-mosaic-page">
             <HomeScreen layout="staff">
                 <HomeScreenSlot size="wide" instance="staff-semana">
                     <StaffAttendanceSummaryWidget
@@ -997,6 +997,17 @@ export default function StaffDashboardView({
                         onClick={() => {
                             trackStaffShortcut('Web');
                             window.open(STAFF_WEB_HREF, '_blank', 'noopener,noreferrer');
+                        }}
+                    />
+                </HomeScreenSlot>
+                <HomeScreenSlot size="icon" instance="staff-perfil">
+                    <DashboardShortcut
+                        instance="staff-perfil"
+                        label="Perfil"
+                        img="/icons/admin.png"
+                        onClick={() => {
+                            trackStaffShortcut('Perfil');
+                            router.push('/profile');
                         }}
                     />
                 </HomeScreenSlot>

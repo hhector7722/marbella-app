@@ -39,8 +39,9 @@ function wallpaperColor(): string {
 }
 
 /**
- * Página de inicio. 4 columnas, hasta 6 filas. La pista es el icono.
- * Con `label`, el nombre vive bajo el hueco. Sin `label`, el widget mide icono + nombre.
+ * Página de inicio. Smartphone: 4×6. Escritorio (lg+): plantilla 8×5 compartida.
+ * La pista es el icono. Con `label`, el nombre vive bajo el hueco.
+ * Sin `label`, el widget mide icono + nombre.
  */
 export function HomeScreen({ children, className, layout }: HomeScreenProps) {
     const rootRef = useRef<HTMLDivElement>(null);

@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlbaranesOptionsModal } from './AlbaranesOptionsModal';
 import PremiumCountUp from '@/components/ui/PremiumCountUp';
 import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
 import { HomeScreenSlot } from '@/components/dashboards/HomeScreen';
@@ -20,6 +19,7 @@ type MasterShortcutGridProps = {
     onOpenCajaInicialAcciones: () => void;
     onOpenOtros: () => void;
     onOpenPlantilla: () => void;
+    onOpenAlbaranes: () => void;
     pendingReservationsCount?: number;
 };
 
@@ -191,10 +191,10 @@ export default function MasterShortcutGrid({
     onOpenCajaInicialAcciones,
     onOpenOtros,
     onOpenPlantilla,
+    onOpenAlbaranes,
     pendingReservationsCount = 0,
 }: MasterShortcutGridProps) {
     const router = useRouter();
-    const [isAlbaranesModalOpen, setIsAlbaranesModalOpen] = useState(false);
 
     const changeBox1 = changeBoxes[0];
     const changeBox2 = changeBoxes[1];
@@ -253,7 +253,7 @@ export default function MasterShortcutGrid({
                     instance="albaranes"
                     label="Albaranes"
                     img="/icons/scan.png"
-                    onClick={() => setIsAlbaranesModalOpen(true)}
+                    onClick={onOpenAlbaranes}
                 />
             ),
         },
@@ -315,7 +315,6 @@ export default function MasterShortcutGrid({
                     {node}
                 </HomeScreenSlot>
             ))}
-            <AlbaranesOptionsModal isOpen={isAlbaranesModalOpen} onClose={() => setIsAlbaranesModalOpen(false)} />
         </>
     );
 }

@@ -14,6 +14,7 @@ interface MasterMoreFunctionsModalProps {
     isOpen: boolean;
     onClose: () => void;
     onOpenCierre: () => void;
+    onOpenAlbaranes: () => void;
 }
 
 type MoreFunctionsItem = {
@@ -22,7 +23,7 @@ type MoreFunctionsItem = {
     img: string;
 } & (
     | { href: string }
-    | { action: 'cierre' | 'web' }
+    | { action: 'cierre' | 'web' | 'albaranes' }
 );
 
 const MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
@@ -36,12 +37,14 @@ const MORE_FUNCTIONS_ITEMS: MoreFunctionsItem[] = [
     { label: 'Propinas', instance: 'propinas', href: '/dashboard/propinas', img: '/icons/tip.png' },
     { label: 'Uso app', instance: 'uso-app', href: '/dashboard/uso', img: '/icons/uso.png' },
     { label: 'Rentabilidad', instance: 'rentabilidad', href: '/dashboard/insights', img: '/icons/rent.png' },
+    { label: 'Albaranes', instance: 'albaranes', action: 'albaranes', img: '/icons/scan.png' },
 ];
 
 export function MasterMoreFunctionsModal({
     isOpen,
     onClose,
     onOpenCierre,
+    onOpenAlbaranes,
 }: MasterMoreFunctionsModalProps) {
     const router = useRouter();
     const [isNavigating, setIsNavigating] = useState(false);
@@ -58,9 +61,10 @@ export function MasterMoreFunctionsModal({
         setTimeout(action, 150);
     };
 
-    const actionHandlers: Record<'cierre' | 'web', () => void> = {
+    const actionHandlers: Record<'cierre' | 'web' | 'albaranes', () => void> = {
         cierre: onOpenCierre,
         web: () => window.open(WEB_URL, '_blank', 'noopener,noreferrer'),
+        albaranes: onOpenAlbaranes,
     };
 
     return (

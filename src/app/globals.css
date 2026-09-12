@@ -2487,7 +2487,12 @@ button[data-element='catalog-filter'] {
  * 4 columnas, 6 filas. Cada pista = squircle + nombre de un atajo (una línea).
  * Equivale a una celda de la plantilla: icono + «nombre». Entre pistas, --home-row-gap.
  * Un widget 4×1 llena una pista; un panel 3×2 llena dos pistas + el hueco entre ellas.
+ * En escritorio (lg+) la misma pieza usa la plantilla 8×5; ver media query.
  */
+.home-mosaic-page {
+  padding-top: 0.25rem;
+  padding-bottom: 2rem;
+}
 [data-component='HomeScreen'] {
   --home-icon-size: 4.5rem;
   --home-name: 1.65rem;
@@ -2598,9 +2603,9 @@ button[data-element='catalog-filter'] {
 }
 /*
  * Admin (/dashboard): áreas fijas.
- * H. extras 3×2 en filas 3–4; Plantilla y Albaranes a la derecha.
- * Fila 5: Cambio 1, Cambio 2, Recetas, Asistencia.
- * Última fila: Otros, M obra, Stock, Ingredientes.
+ * Horario 3×2 en filas 3–4; C Inicial y Plantilla a la derecha.
+ * Fila 5: M obra, Stock, Recetas, Albaranes.
+ * Última fila: Otros, Asistencia, Cajas Cambio, Ingredientes.
  */
 [data-component='HomeScreen'][data-layout='ops-admin'] {
   grid-template-areas:
@@ -3025,6 +3030,9 @@ button[data-element='catalog-filter'] {
 }
 [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-web'] {
   grid-area: web;
+}
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-perfil'] {
+  display: none;
 }
 [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-albaranes'] {
   grid-area: albaranes;
@@ -4928,8 +4936,8 @@ button[data-element='catalog-filter'] {
 
   /*
    * Sidebar de navegación (lg+): panel propio, oscuro y opaco, separado del
-   * contenido por hairline + sombra. Los iconos y etiquetas ganan presencia y
-   * la sección activa se marca con pastilla e indicador lateral.
+   * contenido por sombra. Los iconos y etiquetas ganan presencia y la sección
+   * activa se marca con la tarjeta existente, sin franja lateral.
    */
   [data-component='TabBar'].marbella-fixed-bottombar,
   [data-component='TabBar'].marbella-fixed-bottombar[data-mode='compact'],
@@ -4957,9 +4965,7 @@ button[data-element='catalog-filter'] {
     background-color: color-mix(in srgb, var(--color-envolvente-bajo) 90%, black);
     -webkit-backdrop-filter: saturate(150%) blur(28px);
     backdrop-filter: saturate(150%) blur(28px);
-    box-shadow:
-      inset -1px 0 0 rgb(255 255 255 / 0.14),
-      8px 0 32px rgb(0 0 0 / 0.30);
+    box-shadow: 8px 0 32px rgb(0 0 0 / 0.30);
   }
 
   [data-component='TabBar'] {
@@ -5006,20 +5012,67 @@ button[data-element='catalog-filter'] {
     pointer-events: auto;
   }
 
+  /*
+   * Plantilla desktop compartida: 8 columnas × 5 filas iguales.
+   * Las tres homes ocupan regiones distintas de esta misma retícula.
+   * El alto cabe en el viewport: nada entra en la zona de indicadores.
+   */
+  .dashboard-mosaic-switcher {
+    --home-desktop-indicator-reserve: calc(var(--tactil-minimo) + var(--espacio-6));
+    height: calc(
+      100dvh
+      - var(--estructura-cabecera)
+      - var(--espacio-2)
+      - env(safe-area-inset-top, 0px)
+      - var(--home-desktop-indicator-reserve)
+    );
+    max-height: calc(
+      100dvh
+      - var(--estructura-cabecera)
+      - var(--espacio-2)
+      - env(safe-area-inset-top, 0px)
+      - var(--home-desktop-indicator-reserve)
+    );
+    overflow-x: clip;
+    overflow-y: hidden;
+  }
+  .dashboard-mosaic-switcher > div {
+    height: 100%;
+    min-height: 0;
+  }
+  .dashboard-mosaic-switcher > div > div {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .home-mosaic-page {
+    box-sizing: border-box;
+    height: 100%;
+    max-height: 100%;
+    padding-top: 0;
+    padding-bottom: 0;
+    overflow: hidden;
+  }
   [data-component='HomeScreen'] {
-    /* Desktop: composición equilibrada. Iconos de acceso moderados, columna de
-       accesos propia y pista fluida (clamp) para que la suma de alturas + gaps
-       quepa en el viewport sin scroll, reservando la zona de indicadores. */
-    --home-icon-size: 2.75rem;
-    --home-access-col: 6rem;
-    --home-row-track: clamp(6.75rem, 10.5vh, 7.5rem);
-    --home-row-gap: var(--espacio-6);
+    --home-row-gap: var(--espacio-4);
+    --home-shortcut-label-band: calc(var(--espacio-1) + 12px * 1.2);
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    grid-template-rows: repeat(5, minmax(0, 1fr));
+    grid-auto-rows: unset;
+    column-gap: var(--espacio-4);
+    row-gap: var(--home-row-gap);
+    height: 100%;
+    max-height: 100%;
     max-width: min(92rem, 100%);
     width: 100%;
     margin-inline: auto;
     padding-inline: var(--espacio-4);
-    /* Zona inferior segura: los indicadores de página viven aquí. */
-    padding-bottom: var(--espacio-8);
+    padding-bottom: 0;
+    overflow: hidden;
+  }
+  [data-component='HomeScreen'] > [data-element='slot'][data-slot='icon'] {
+    container-type: size;
+    --home-icon-size: min(100cqi, calc(100cqb - var(--home-shortcut-label-band)));
   }
 
   [data-component='PageScreen'] {
@@ -5052,81 +5105,79 @@ button[data-element='catalog-filter'] {
   }
 
   /*
-   * Home ops-admin: contenido principal grande (ventas, cierre, horario) y una
-   * columna lateral de accesos de 2 fichas contigua al shell. Los iconos
-   * (incluidas Caja inicial y Cajas cambio) viven en esa columna lateral.
-   * Los nombres de área son los mismos que asigna la base, solo que recolocados.
+   * Plantilla 8×5 compartida. Admin: Ventas 3×2, Cierre 3×2, Horario 6×3,
+   * accesos en las dos columnas derechas (10 slots).
    */
   [data-component='HomeScreen'][data-layout='ops-admin'] {
-    grid-template-columns:
-      repeat(4, minmax(0, 1fr))
-      var(--home-access-col)
-      var(--home-access-col);
+    grid-template-columns: repeat(8, minmax(0, 1fr));
     grid-template-areas:
-      'ventas    ventas    ventas    ventas    cinicial  plant'
-      'cierre    cierre    cierre    cierre    mobra     stock'
-      'horarios  horarios  horarios  horarios  recetas   albaranes'
-      'horarios  horarios  horarios  horarios  mas       asis'
-      'horarios  horarios  horarios  horarios  cajascambio ingredientes';
-    grid-template-rows: repeat(5, var(--home-row-track));
-    column-gap: var(--espacio-6);
+      'ventas    ventas    ventas    cierre    cierre    cierre    cinicial      plant'
+      'ventas    ventas    ventas    cierre    cierre    cierre    mobra         stock'
+      'horarios  horarios  horarios  horarios  horarios  horarios  recetas       albaranes'
+      'horarios  horarios  horarios  horarios  horarios  horarios  mas           asis'
+      'horarios  horarios  horarios  horarios  horarios  horarios  cajascambio   ingredientes';
+    grid-template-rows: repeat(5, minmax(0, 1fr));
+    column-gap: var(--espacio-4);
     row-gap: var(--home-row-gap);
   }
 
   /*
-   * Home master: contenido principal (ventas, último cierre, horario) y TODOS
-   * los accesos (Caja inicial, Asistencia, Cajas cambio, Reservas, Ingredientes,
-   * Recetas, Albaranes, Otros, Cambio y Plantilla) en dos columnas laterales
-   * idénticas. Todos comparten la misma celda, escala y alineación; 5 filas.
+   * Master: mismas pistas 8×5. Asistencia ocupa las dos columnas de accesos
+   * de la fila 1. El resto de accesos, los 8 slots restantes.
    */
   [data-component='HomeScreen'][data-layout='master'] {
-    grid-template-columns:
-      repeat(4, minmax(0, 1fr))
-      var(--home-access-col)
-      var(--home-access-col);
+    grid-template-columns: repeat(8, minmax(0, 1fr));
     grid-template-areas:
-      'ventas     ventas     ventas     ventas     asis      reservas'
-      'ultcierre  ultcierre  ultcierre  ultcierre  caja      ingred'
-      'horario    horario    horario    horario    recetas   albaran'
-      'horario    horario    horario    horario    otros     cajascambio'
-      'horario    horario    horario    horario    cambio    plantilla';
-    grid-template-rows: repeat(5, var(--home-row-track));
-    column-gap: var(--espacio-6);
+      'ventas     ventas     ventas     ultcierre  ultcierre  ultcierre  asis      asis'
+      'ventas     ventas     ventas     ultcierre  ultcierre  ultcierre  caja      ingred'
+      'horario    horario    horario    horario    horario    horario    recetas   reservas'
+      'horario    horario    horario    horario    horario    horario    otros     cajascambio'
+      'horario    horario    horario    horario    horario    horario    cambio    plantilla';
+    grid-template-rows: repeat(5, minmax(0, 1fr));
+    column-gap: var(--espacio-4);
     row-gap: var(--home-row-gap);
   }
   [data-component='HomeScreen'][data-layout='master'].asis-expanded {
     grid-template-areas:
-      'ventas     ventas     ventas     ventas     asis      reservas'
-      'ventas     ventas     ventas     ventas     asis      ingred'
-      'ultcierre  ultcierre  ultcierre  ultcierre  recetas   albaran'
-      'horario    horario    horario    horario    otros     cajascambio'
-      'horario    horario    horario    horario    cambio    plantilla'
-      'horario    horario    horario    horario    caja      .';
-    grid-template-rows: repeat(6, var(--home-row-track));
+      'ventas     ventas     ventas     ultcierre  ultcierre  ultcierre  asis      asis'
+      'ventas     ventas     ventas     ultcierre  ultcierre  ultcierre  caja      ingred'
+      'horario    horario    horario    horario    horario    horario    recetas   reservas'
+      'horario    horario    horario    horario    horario    horario    otros     cajascambio'
+      'horario    horario    horario    horario    horario    horario    cambio    plantilla';
+    grid-template-rows: repeat(5, minmax(0, 1fr));
   }
 
   [data-component='HomeScreen'][data-layout='staff'] {
-    /* El calendario y el resumen de la semana ocupan la zona principal; accesos a la derecha.
-       Siete filas (semana + 6 de calendario) con pista fluida para caber sin scroll. */
-    --home-row-track: clamp(4.75rem, 8vh, 6rem);
-    --home-row-gap: var(--espacio-3);
-    grid-template-columns:
-      repeat(4, minmax(0, 1fr))
-      var(--home-access-col)
-      var(--home-access-col);
+    grid-template-columns: repeat(8, minmax(0, 1fr));
     grid-template-areas:
-      'semana    semana    semana    semana    fichaje   albaranes'
-      'horarios  horarios  horarios  horarios  recetas   pedidos'
-      'horarios  horarios  horarios  horarios  cambio    propinas'
-      'horarios  horarios  horarios  horarios  compra    carta'
-      'horarios  horarios  horarios  horarios  reservas  cierre'
-      'horarios  horarios  horarios  horarios  prov      invent'
-      'horarios  horarios  horarios  horarios  info      web';
-    /* La fila del resumen semanal tiene un punto más de alto: su contenido
-       (días + horas + pie) nunca se recorta. */
-    grid-template-rows: calc(var(--home-row-track) + var(--espacio-4)) repeat(6, var(--home-row-track));
-    column-gap: var(--espacio-6);
+      'semana    semana    semana    semana    semana    fichaje    albaranes  recetas'
+      'semana    semana    semana    semana    semana    pedidos    cambio     propinas'
+      'horarios  horarios  horarios  horarios  horarios  compra     carta      reservas'
+      'horarios  horarios  horarios  horarios  horarios  cierre     prov       invent'
+      'horarios  horarios  horarios  horarios  horarios  info       web        perfil';
+    grid-template-rows: repeat(5, minmax(0, 1fr));
+    column-gap: var(--espacio-4);
     row-gap: var(--home-row-gap);
+  }
+  [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-perfil'] {
+    display: flex;
+    grid-area: perfil;
+  }
+
+  /*
+   * Master desktop: Albaranes sale del mosaico (sigue en Otros).
+   * Asistencia llena las dos columnas de la fila 1 como widget, no como icono nombrado.
+   */
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='albaranes'] {
+    display: none;
+  }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'] > [data-element='name'] {
+    display: none;
+  }
+  [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-asistencia'][data-named='true'] > [data-element='body'] {
+    height: 100%;
+    max-height: none;
+    inset: 0;
   }
 
   /* Widgets home: no heredar tipografía hinchada de KpiStat md+. */
@@ -5134,17 +5185,6 @@ button[data-element='catalog-filter'] {
     font-size: 11px;
     min-height: 0;
     height: auto;
-  }
-
-  /* Ventas (ops-admin y master): KPI con aire en pantallas grandes. */
-  [data-component='HomeScreen'][data-layout='ops-admin'] [data-instance='dashboard-ventas'] [data-component='KpiStat'] [data-element='value'],
-  [data-component='HomeScreen'][data-layout='master'] [data-instance='dashboard-ventas'] [data-component='KpiStat'] [data-element='value'] {
-    font-size: 18px;
-  }
-  [data-component='HomeScreen'][data-layout='ops-admin'] [data-instance='dashboard-ventas'] [data-component='KpiStat'] [data-element='label'],
-  [data-component='HomeScreen'][data-layout='master'] [data-instance='dashboard-ventas'] [data-component='KpiStat'] [data-element='label'] {
-    font-size: 12px;
-    margin-top: 4px;
   }
 
   /* Etiquetas de los accesos laterales legibles en escritorio. */
@@ -5180,6 +5220,11 @@ button[data-element='catalog-filter'] {
   [data-component='PageScreen'].history-wide .month-cal-week {
     min-height: 100px !important;
   }
+  [data-component='PageScreen'].history-wide .month-cal-weeks > [data-week-block]:last-child,
+  [data-component='PageScreen'].history-wide .month-cal-weeks > .month-cal-week:last-child,
+  [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-weeks > [data-week-footer]:last-child {
+    margin-bottom: var(--espacio-4);
+  }
   /* Cabecera L–D (plantilla y semana por empleado): franja y rótulos legibles. */
   [data-component='PageScreen'].history-wide .month-cal-grid-wrap > .grid.shrink-0,
   [data-component='PageScreen'].history-wide .month-cal-grid-wrap > .grid.shrink-0 > div {
@@ -5190,12 +5235,12 @@ button[data-element='catalog-filter'] {
     font-size: 12px;
   }
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-cell > span:first-of-type {
-    top: 5px;
-    right: 7px;
+    top: 8px;
+    right: 8px;
     font-size: 13px;
   }
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-day-logs {
-    padding-top: 28px;
+    padding-top: 32px;
     gap: 5px;
   }
   [data-component='PageScreen'].history-wide [data-week-summary] .month-cal-day-clocks > div {
@@ -5250,33 +5295,29 @@ button[data-element='catalog-filter'] {
   }
 
   /*
-   * ===== Optimización desktop de los dashboards =====
-   * El contenido principal (ventas, cierre, calendario) gana protagonismo y su
-   * tipografía interna escala con el hueco. Los accesos laterales conservan
-   * iconos moderados y quedan visualmente subordinados.
+   * Accesos: el squircle llena el slot (misma medida en las tres homes).
+   * El tamaño sale de la celda 8×5, no de un ancho fijo por página.
    */
-
-  /* Slots de icono: centrados en la pista alta; el atajo no queda descolgado arriba. */
   [data-component='HomeScreen'] > [data-element='slot'][data-slot='icon']:not([data-named='true']) {
     align-items: center;
   }
-  /* Rótulos de los accesos: legibles sin que el icono domine. */
   [data-component='HomeScreen'] [data-component='DashboardShortcut'] [data-element='text'],
   [data-component='HomeScreen'] [data-component='StaffFichajeControl'] [data-element='text'],
   [data-component='HomeScreen'] [data-component='CajaInicialControl'] [data-element='text'],
   [data-component='HomeScreen'] [data-component='MasterCajasCambioControl'] [data-element='text'] {
     font-size: 12px;
   }
-  /*
-   * Acceso = icono moderado + etiqueta a todo el ancho de la columna.
-   * El recuadro del icono no se estira: mantiene su tamaño y se centra.
-   */
   [data-component='HomeScreen'] [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'],
-  [data-component='HomeScreen'] [data-component='StaffFichajeControl']:not([data-layout='dual-stack']) {
-    max-width: var(--home-access-col);
+  [data-component='HomeScreen'] [data-component='StaffFichajeControl'],
+  [data-component='HomeScreen'] [data-component='CajaInicialControl'],
+  [data-component='HomeScreen'] [data-component='MasterCajasCambioControl'] {
+    width: var(--home-icon-size);
+    max-width: var(--home-icon-size);
   }
   [data-component='HomeScreen'] [data-component='DashboardShortcut'][data-variant='icon-card-text-outside'] [data-element='iconWrap'],
-  [data-component='HomeScreen'] [data-component='StaffFichajeControl']:not([data-layout='dual-stack']) [data-element='iconWrap'] {
+  [data-component='HomeScreen'] [data-component='StaffFichajeControl'] [data-element='iconWrap'],
+  [data-component='HomeScreen'] [data-component='CajaInicialControl'] [data-element='iconWrap'],
+  [data-component='HomeScreen'] [data-component='MasterCajasCambioControl'] [data-element='iconWrap'] {
     width: var(--home-icon-size);
     max-width: var(--home-icon-size);
     margin-inline: auto;
@@ -5309,29 +5350,22 @@ button[data-element='catalog-filter'] {
   }
 
   /*
-   * Calendario/horario del mosaico (Staff y Master): la pista de semana crece y
-   * los números de día, turnos y horas acompañan.
+   * Calendario/horario del mosaico: el hueco de 3 filas permite números y
+   * turnos legibles. Misma escala en Staff, Admin y Master.
    */
-  [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-horarios'] > [data-element='body'] > [data-component='StaffWeekSchedule'] {
-    --staff-calendar-gap: var(--espacio-3);
-    --staff-week-day-size: 2.5rem;
-    --staff-week-expansion-min: 6rem;
-    --staff-week-expansion-max: 8rem;
-  }
+  [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-horarios'] > [data-element='body'] > [data-component='StaffWeekSchedule'],
   [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-horarios'] > [data-element='body'] > [data-component='StaffWeekSchedule'],
   [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='master-horarios'] > [data-element='body'] > [data-component='StaffWeekSchedule'] {
     --staff-calendar-gap: var(--espacio-2);
     --staff-week-day-size: 1.5rem;
     --staff-week-expansion-min: 4.5rem;
-    --staff-week-expansion-max: 6rem;
+    --staff-week-expansion-max: 6.5rem;
   }
-  /* Asistencia master: el botón de desplegar no debe empujar la lista fuera de
-   * la celda compacta de una fila. */
-  [data-component='HomeScreen'][data-layout='master'] [data-instance='master-asistencia'] .min-h-\[48px\] {
-    min-height: 24px;
+  /* Desktop: la asistencia Master permanece en su zona 2×1; no despliega el grid. */
+  [data-component='HomeScreen'][data-layout='master'] [data-instance='master-asistencia'] button[aria-label='Desplegar asistencia'],
+  [data-component='HomeScreen'][data-layout='master'] [data-instance='master-asistencia'] button[aria-label='Minimizar asistencia'] {
+    display: none;
   }
-  /* El mes reparte sus semanas por todo el alto disponible; la semana abierta
-   * no monopoliza el hueco, así no quedan franjas vacías al pie. */
   [data-component='StaffWeekSchedule'] [data-element='month-weeks'] {
     justify-content: space-between;
   }
@@ -5339,59 +5373,52 @@ button[data-element='catalog-filter'] {
     flex: 0 0 auto;
   }
 
-
   /*
-   * Resumen superior del Staff (semana 4×1): tipografía legible sin perder
-   * la franja L–D ni el pie de métricas.
+   * Resumen semanal Staff: ahora ocupa 5×2, así que recupera tipografía
+   * legible en lugar de la compactación de una sola fila.
    */
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0,
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0 > div {
-    height: 14px;
-    min-height: 14px;
+    height: 18px;
+    min-height: 18px;
   }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0 span {
-    font-size: 9px;
+    font-size: 11px;
   }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-day-logs {
-    padding-top: 8px;
+    padding-top: 12px;
   }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-day-clocks > div {
-    height: 13px;
+    height: 16px;
   }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-day-clocks span {
-    font-size: 11px;
+    font-size: 12px;
   }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-day-totals > div {
-    height: 9px;
+    height: 12px;
   }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-week {
-    min-height: 40px;
+    min-height: 52px;
   }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-weeks > [data-week-footer]:not([data-overrides='true']) {
-    height: 16px;
-    min-height: 16px;
-    max-height: 16px;
+    height: 22px;
+    min-height: 22px;
+    max-height: 22px;
   }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-footer-label] {
-    font-size: 10px;
-  }
-  [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric-value] {
     font-size: 11px;
   }
+  [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric-value] {
+    font-size: 13px;
+  }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-metric-label] {
-    font-size: 10px;
+    font-size: 11px;
   }
 }
 
 @media (min-width: 1440px) {
   :root {
     --shell-sidebar-width: 6.25rem;
-  }
-  [data-component='HomeScreen'] {
-    /* En pantallas grandes el icono solo crece un punto: el espacio extra va a
-       la separación, no a agrandar accesos. */
-    --home-icon-size: 3rem;
-    --home-access-col: 6.5rem;
   }
   [data-component='PageScreen'] > div {
     max-width: min(60rem, 100%);

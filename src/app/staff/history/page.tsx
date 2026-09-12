@@ -946,6 +946,7 @@ export default function HistoryPage() {
                 template="list"
                 work="calendar"
                 className="history-wide"
+                fillViewport
                 maxWidthClass="max-w-4xl"
                 contentClassName="p-0 flex flex-col min-h-0"
                 periodSlot={
