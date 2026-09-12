@@ -46,8 +46,8 @@ El patrón más usado del producto. Sus leyes están en [EXPERIENCIA §8](EXPERI
 **Variantes** (API tipada del contrato):
 - **`compact`** — confirmaciones y formularios cortos (`max-w-sm`). Default histórico.
 - **`standard`** — formularios estándar (`max-w-md`).
-- **`work`** — trabajo real en panel ancho (`max-w-6xl` / 1152px, alto útil preferente). Valor alineado a [ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md).
-- **`day`** — trabajo sobre una fecha concreta (`max-w-6xl` / 1152px; ver P4).
+- **`work`** — trabajo real en panel ancho (`max-w-6xl` / 1152px, alto útil preferente). Valor alineado a [ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md). Tablas densas, documentos, mapeos.
+- **`day`** — una fecha concreta (`max-w-4xl` / 896px; ver P4). El ancho cubre nombres + escala horaria 7–23 con `tipo.minimo`; no hereda el de `work`. En escritorio el espacio extra se usa para leer filas y franjas, no para maximizar el panel.
 - **`amplify`** — imagen o dato ampliado (`max-w-2xl`).
 
 **Reglas**:
@@ -84,10 +84,10 @@ El detalle y la edición de una fecha concreta, dentro del calendario o de la vi
 **Anatomía**: cabecera con la fecha y navegación al día anterior y siguiente; cuerpo con las filas del día; pie con las acciones.
 
 **Reglas**:
-- Las filas de hora reparten el alto disponible en partes iguales; no se desplazan si caben.
+- Las filas de hora reparten el alto **extra** en partes iguales; no se desplazan si caben. No encogen por debajo de un mínimo legible (`tipo.minimo` para horas y nombres; las franjas de turno se leen dentro o junto a la barra).
 - La navegación entre días no cierra el modal.
-- Sale con dos anchos: amplio para trabajo con tabla, estrecho para consulta puntual.
-- Al editar, el modal no cambia de estética respecto a la consulta.
+- Sale con dos anchos: `work` (amplio, tablas densas ajenas a la línea temporal) y `day` (consulta de fecha, `max-w-4xl`, dimensionado al contenido). El horario del día usa `day`.
+- Al editar, el modal no cambia de variante ni de estética respecto a la consulta.
 
 ---
 

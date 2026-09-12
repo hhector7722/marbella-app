@@ -4678,26 +4678,27 @@ button[data-element='catalog-filter'] {
     }
 
     /**
-     * Modal del día (PavilionDayModal / StaffScheduleModal):
-     * caber en 1 viewport, filas de hora iguales, sin agobiar.
+     * Modal de día en escritorio: ventana de trabajo, no pantalla completa.
+     * El ancho lo fija la variante `day` (`max-w-4xl`). Aquí: altura útil,
+     * franjas y tipo por encima de tipo.minimo (11 px). Smartphone no entra.
      */
     .day-modal-overlay {
-      padding: 0.75rem !important;
+      padding: var(--espacio-4) !important;
     }
 
     .day-modal-panel {
-      width: min(100%, 64rem) !important;
-      max-width: 64rem !important;
-      height: calc(100dvh - 1.5rem) !important;
-      max-height: calc(100dvh - 1.5rem) !important;
-      border-radius: 1rem !important;
+      width: min(100%, 56rem) !important;
+      max-width: 56rem !important;
+      height: auto !important;
+      max-height: var(--modal-max-height) !important;
+      border-radius: var(--radio-superficie) !important;
     }
 
     .day-modal-panel.day-modal-panel--narrow {
       width: min(100%, 28rem) !important;
       max-width: 28rem !important;
       height: auto !important;
-      max-height: calc(100dvh - 1.5rem) !important;
+      max-height: var(--modal-max-height) !important;
     }
 
     .day-modal-header {
@@ -4708,9 +4709,11 @@ button[data-element='catalog-filter'] {
     .day-modal-body {
       display: flex !important;
       flex-direction: column !important;
-      flex: 1 1 0% !important;
+      flex: 1 1 auto !important;
       min-height: 0 !important;
       overflow: hidden !important;
+      gap: var(--espacio-3);
+      padding-bottom: var(--espacio-2);
     }
 
     .day-modal-dots {
@@ -4720,43 +4723,127 @@ button[data-element='catalog-filter'] {
     .day-modal-activities {
       display: flex !important;
       flex-direction: column !important;
-      flex: 1 1 0% !important;
+      flex: 1 1 auto !important;
       min-height: 0 !important;
-      overflow: hidden !important;
-      padding: 0.2rem 0.4rem !important;
+      overflow: auto !important;
+      padding: var(--espacio-2) var(--espacio-3) !important;
     }
 
     .day-modal-activities > table {
-      height: 100% !important;
+      height: auto !important;
       min-height: 0;
     }
 
     .day-modal-activities thead tr {
-      height: 1.35rem !important;
+      height: 2rem !important;
+      min-height: 2rem !important;
     }
 
-    /* Filas de hora: misma altura (reparto del alto disponible) */
+    .day-modal-activities thead th {
+      font-size: 0.6875rem !important; /* tipo.minimo */
+    }
+
+    /* Filas de hora: reparte el extra; no encoge por debajo de lo legible. */
     .day-modal-activities tbody tr,
     .day-modal-activities tbody tr.day-modal-hour-row {
       height: 1% !important;
+      min-height: 2.25rem !important;
     }
 
     .day-modal-activities tbody td {
       vertical-align: middle;
     }
 
+    .day-modal-activities tbody td span {
+      font-size: 0.6875rem !important; /* tipo.minimo */
+    }
+
+    [data-component='Modal'] [data-element='schedule-shift-table'] {
+      --shift-bar-label-max: 12px; /* tipo.apoyo */
+      --shift-bar-label-min: 11px; /* tipo.minimo */
+      --schedule-shift-row-h: 3.25rem;
+      --schedule-hour-scale-h: 2rem;
+      --schedule-name-col: 8rem;
+      flex: 0 1 auto !important;
+    }
+
+    [data-component='Modal'] [data-element='schedule-event-summary'] {
+      padding: var(--espacio-3) var(--espacio-2) !important;
+    }
+
+    [data-component='Modal'] [data-element='schedule-event-summary'] > div {
+      gap: var(--espacio-2) !important;
+      padding: var(--espacio-2) !important;
+    }
+
+    [data-component='Modal'] [data-element='schedule-event-summary'] [data-element='summary-value'] {
+      font-size: 0.75rem !important; /* tipo.apoyo */
+      line-height: 1.25 !important;
+    }
+
+    [data-component='Modal'] [data-element='schedule-event-summary'] [data-element='summary-label'] {
+      font-size: 0.625rem !important;
+      margin-top: 0.125rem;
+    }
+
+    [data-component='Modal'] [data-element='schedule-hour-scale'],
+    [data-component='Modal'] [data-element='schedule-hour-scale'] > * {
+      height: var(--schedule-hour-scale-h) !important;
+      min-height: var(--schedule-hour-scale-h) !important;
+    }
+
+    [data-component='Modal'] [data-element='hour-tick'] {
+      font-size: 0.75rem !important; /* tipo.apoyo */
+      font-weight: 700 !important;
+      transform: none !important;
+    }
+
+    [data-component='Modal'] [data-element='schedule-hour-scale'] > :first-child,
+    [data-component='Modal'] .day-modal-shift-row > :first-child,
+    [data-component='Modal'] [data-element='schedule-hour-totals'] > :first-child {
+      width: var(--schedule-name-col) !important;
+      flex-shrink: 0 !important;
+    }
+
     .day-modal-shift-rows {
       display: flex !important;
       flex-direction: column !important;
-      flex: 1 1 0% !important;
+      flex: 1 1 auto !important;
       min-height: 0 !important;
-      overflow: hidden !important;
+      overflow-x: hidden !important;
+      overflow-y: auto !important;
     }
 
-    .day-modal-shift-row {
-      flex: 1 1 0% !important;
-      min-height: 0 !important;
-      height: auto !important;
+    [data-component='Modal'] .day-modal-shift-row {
+      flex: 0 0 auto !important;
+      min-height: var(--schedule-shift-row-h) !important;
+      height: var(--schedule-shift-row-h) !important;
+    }
+
+    [data-component='Modal'] .day-modal-shift-row [data-element='employee-name'] {
+      font-size: 0.75rem !important; /* tipo.apoyo */
+      line-height: 1.2 !important;
+    }
+
+    [data-component='Modal'] .day-modal-shift-row [data-element='shift-bar'] {
+      --shift-bar-label-max: 12px;
+      --shift-bar-label-min: 11px;
+      top: 0.5rem !important;
+      bottom: 0.5rem !important;
+      padding-inline: 0.625rem !important;
+    }
+
+    [data-component='Modal'] .day-modal-shift-row [data-element='shift-bar'] span {
+      font-size: 0.75rem !important; /* tipo.apoyo; gana al ajuste JS de 9px */
+    }
+
+    [data-component='Modal'] [data-element='schedule-hour-totals'] > * {
+      height: 2.5rem !important;
+      min-height: 2.5rem !important;
+    }
+
+    [data-component='Modal'] [data-element='schedule-hour-totals'] {
+      font-size: 0.75rem !important;
     }
   }
 }

@@ -65,6 +65,7 @@ const ReadOnlyShiftBar = ({ start, end }: { start: string; end: string }) => {
     return (
         <div
             ref={barRef}
+            data-element="shift-bar"
             className="absolute top-2.5 bottom-2.5 flex items-center justify-between rounded-full z-10 overflow-hidden touch-none px-1.5"
             style={{
                 left: `${leftPos}%`,
@@ -91,6 +92,7 @@ const SummaryCell = ({
     <div className="flex min-w-0 w-full flex-col items-center gap-0.5">
         <div className="flex min-h-[1rem] w-full flex-1 items-end justify-center">
             <span
+                data-element="summary-value"
                 className={cn(
                     'w-full min-w-0 text-center text-[10px] font-semibold leading-tight text-white sm:text-[11px]',
                     valueClassName,
@@ -99,7 +101,7 @@ const SummaryCell = ({
                 {value}
             </span>
         </div>
-        <span className="shrink-0 text-[8px] font-semibold tracking-widest leading-none text-white/60">
+        <span data-element="summary-label" className="shrink-0 text-[8px] font-semibold tracking-widest leading-none text-white/60">
             {label}
         </span>
     </div>
@@ -435,7 +437,7 @@ export const StaffScheduleModal = ({
                     )
                 }
                 instance="staff-schedule"
-                variant="work"
+                variant="day"
                 layer="base"
                 scheme="dark"
                 onBack={editModeForDate ? exitEditModeAndRefresh : selectedDate ? handleBack : undefined}
@@ -655,10 +657,10 @@ export const StaffScheduleModal = ({
                         ) : (
                             <>
                                 {/* Resumen del evento — siempre visible */}
-                                <div className="p-2 lg:p-1.5 w-full shrink-0">
+                                <div data-element="schedule-event-summary" className="p-2 w-full shrink-0">
                                     <div className="flex w-full max-w-2xl mx-auto flex-col gap-1 rounded-[var(--radio-control)] bg-white/10 p-1.5">
                                         {!hasAct1 && !hasAct2 ? (
-                                            <div className="text-center text-white/50 text-[10px] font-black tracking-widest py-3 lg:py-1">Sin actividad</div>
+                                            <div className="text-center text-white/50 text-[10px] font-black tracking-widest py-3">Sin actividad</div>
                                         ) : (
                                             <>
                                                 {hasAct1 && (
@@ -695,11 +697,11 @@ export const StaffScheduleModal = ({
                                 ) : (
                                 <div data-element="schedule-shift-table" className="rounded-2xl border border-zinc-200/60 shadow-[0_1px_2px_rgba(0,0,0,0.05),0_12px_32px_rgba(0,0,0,0.16)] overflow-hidden flex flex-col flex-1 min-h-0">
                                     {/* Encabezado rojo */}
-                                    <div className="flex w-full bg-[#E55353] text-white shrink-0">
+                                    <div data-element="schedule-hour-scale" className="flex w-full bg-[#E55353] text-white shrink-0">
                                         <div className="w-24 md:w-28 flex items-center justify-center shrink-0 h-5 md:h-6" />
                                         <div className="flex-1 relative h-5 md:h-6 flex">
                                             {hoursHeader.map(hour => (
-                                                <div key={hour} className="flex-1 text-[9px] font-black flex items-center justify-start -translate-x-1 sm:-translate-x-2 select-none opacity-90">
+                                                <div key={hour} data-element="hour-tick" className="flex-1 text-[9px] font-black flex items-center justify-start -translate-x-1 sm:-translate-x-2 select-none opacity-90">
                                                     {hour}
                                                 </div>
                                             ))}
@@ -712,7 +714,7 @@ export const StaffScheduleModal = ({
                                             <div key={idx} className="flex w-full h-9 md:h-10 border-b border-gray-100 last:border-b-0 bg-white day-modal-shift-row">
                                                 <div className="w-24 md:w-28 px-2 flex items-center gap-2 shrink-0 overflow-hidden">
                                                     <Avatar src={shift.avatar_url ?? undefined} alt={shift.name} size="sm" className="shrink-0" />
-                                                    <span className="min-w-0 truncate text-[11px] font-medium leading-none text-zinc-800 select-none">
+                                                    <span data-element="employee-name" className="min-w-0 truncate text-[11px] font-medium leading-none text-zinc-800 select-none">
                                                         {shift.name}
                                                     </span>
                                                     {shift.isDraft ? (
@@ -737,7 +739,7 @@ export const StaffScheduleModal = ({
                                     </div>
 
                                     {/* Footer Total — fondo blanco, texto gris claro descriptivo */}
-                                    <div className="flex w-full bg-white border-t border-gray-100 shrink-0 rounded-b-2xl">
+                                    <div data-element="schedule-hour-totals" className="flex w-full bg-white border-t border-gray-100 shrink-0 rounded-b-2xl">
                                         <div className="w-24 md:w-28 h-9 md:h-10 font-semibold text-gray-400 text-[10px] md:text-xs flex items-center justify-start pl-3 uppercase tracking-widest shrink-0">
                                             Total
                                         </div>

@@ -4,11 +4,33 @@ import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { cn } from '@/lib/utils';
 
 const STEP = 0.25;
+/** Suelo móvil; en escritorio el CSS del modal sube `--shift-bar-label-*`. */
 const MAX_PX = 9;
 const MIN_PX = 5;
-/** Margen horizontal dentro de la barra (px-1.5 + holgura). */
-const BAR_PAD_X = 12;
 const FIT_TOLERANCE_PX = 1;
+const LABEL_MAX_VAR = '--shift-bar-label-max';
+const LABEL_MIN_VAR = '--shift-bar-label-min';
+
+function readPxVar(el: HTMLElement, name: string, fallback: number): number {
+    let node: HTMLElement | null = el;
+    while (node) {
+        const raw = getComputedStyle(node).getPropertyValue(name).trim();
+        if (raw) {
+            const n = Number.parseFloat(raw);
+            if (Number.isFinite(n) && n > 0) return n;
+        }
+        if (node.getAttribute('data-component') === 'Modal') break;
+        node = node.parentElement;
+    }
+    return fallback;
+}
+
+function barPadX(bar: HTMLElement): number {
+    const style = getComputedStyle(bar);
+    const left = Number.parseFloat(style.paddingLeft) || 0;
+    const right = Number.parseFloat(style.paddingRight) || 0;
+    return left + right + 4;
+}
 
 const labelStyle = { textShadow: '0 1px 2px rgba(0,0,0,0.3)' } as const;
 
@@ -18,10 +40,16 @@ function toHHMM(time: string): string {
     return parts.length > 2 ? parts.slice(0, 2).join(':') : String(time ?? '').trim();
 }
 
-function fitPairFontSize(startEl: HTMLElement, endEl: HTMLElement, barWidth: number): number {
-    const maxW = Math.max(0, barWidth - BAR_PAD_X);
-    let fs = MAX_PX;
-    while (fs >= MIN_PX) {
+function fitPairFontSize(
+    startEl: HTMLElement,
+    endEl: HTMLElement,
+    bar: HTMLElement,
+): number {
+    const maxPx = Math.max(readPxVar(bar, LABEL_MAX_VAR, MAX_PX), MIN_PX);
+    const minPx = Math.min(readPxVar(bar, LABEL_MIN_VAR, MIN_PX), maxPx);
+    const maxW = Math.max(0, bar.getBoundingClientRect().width - barPadX(bar));
+    let fs = maxPx;
+    while (fs >= minPx) {
         startEl.style.fontSize = `${fs}px`;
         endEl.style.fontSize = `${fs}px`;
         void startEl.offsetWidth;
@@ -29,7 +57,7 @@ function fitPairFontSize(startEl: HTMLElement, endEl: HTMLElement, barWidth: num
         if (total <= maxW + FIT_TOLERANCE_PX) return fs;
         fs -= STEP;
     }
-    return MIN_PX;
+    return minPx;
 }
 
 type ShiftBarTimeLabelsProps = {
@@ -52,7 +80,7 @@ export function ShiftBarTimeLabels({ barRef, start, end, className }: ShiftBarTi
         if (!bar || !startEl || !endEl) return;
 
         const run = () => {
-            const fs = fitPairFontSize(startEl, endEl, bar.getBoundingClientRect().width);
+            const fs = fitPairFontSize(startEl, endEl, bar);
             setFontSize(fs);
             startEl.style.fontSize = `${fs}px`;
             endEl.style.fontSize = `${fs}px`;

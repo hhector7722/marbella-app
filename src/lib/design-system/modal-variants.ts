@@ -31,7 +31,8 @@ export function resolveModalVariant(variant: ModalVariant): ModalVariantLayout {
         case 'work':
             return { maxWidthClass: 'max-w-6xl', preferTall: true };
         case 'day':
-            return { maxWidthClass: 'max-w-6xl', preferTall: true };
+            // P4: consulta de una fecha. Ancho = nombres + escala 7–23, no el de `work`.
+            return { maxWidthClass: 'max-w-4xl', preferTall: true };
         case 'amplify':
             return { maxWidthClass: 'max-w-2xl', preferTall: false };
         default: {

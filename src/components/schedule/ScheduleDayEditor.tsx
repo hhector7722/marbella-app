@@ -231,6 +231,7 @@ const ShiftBar = ({
     return (
         <div
             ref={barRef}
+            data-element="shift-bar"
             className={cn('absolute top-2 bottom-2 flex items-center justify-between rounded-full z-10 touch-none overflow-hidden px-1.5', barClass, allowMove ? 'cursor-grab active:cursor-grabbing' : 'cursor-default')}
             style={{
                 left: `${leftPos}%`,
@@ -1409,11 +1410,11 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                 ) : (
                 <div data-element="schedule-shift-table" className="rounded-2xl border border-zinc-200/60 shadow-[0_1px_2px_rgba(0,0,0,0.05),0_12px_32px_rgba(0,0,0,0.16)] overflow-hidden flex flex-col flex-1 min-h-0">
                     {/* Encabezado rojo */}
-                    <div className="flex w-full bg-[#E55353] text-white shrink-0">
+                    <div data-element="schedule-hour-scale" className="flex w-full bg-[#E55353] text-white shrink-0">
                         <div className="w-24 md:w-28 flex items-center justify-center shrink-0 h-5 md:h-6" />
                         <div className="flex-1 relative h-5 md:h-6 flex">
                             {hoursHeader.map(hour => (
-                                <div key={hour} className="flex-1 text-[9px] font-black flex items-center justify-start -translate-x-1 sm:-translate-x-2 select-none opacity-90">
+                                <div key={hour} data-element="hour-tick" className="flex-1 text-[9px] font-black flex items-center justify-start -translate-x-1 sm:-translate-x-2 select-none opacity-90">
                                     {hour}
                                 </div>
                             ))}
@@ -1445,6 +1446,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                                         <button
                                             type="button"
                                             onClick={(e) => { e.stopPropagation(); setEditingIndex(editingIndex === idx ? null : idx); }}
+                                            data-element="employee-name"
                                             className="min-w-0 flex-1 truncate text-left text-[11px] font-normal leading-none text-zinc-800 select-none hover:text-[#5B8FB9] transition-colors"
                                         >
                                             {shift.name}
@@ -1484,7 +1486,7 @@ export const ScheduleDayEditor = forwardRef<ScheduleDayEditorHandle, ScheduleDay
                     </div>
 
                     {/* Footer Total — penúltima fila, fondo blanco, texto gris claro descriptivo */}
-                    <div className="flex w-full bg-white border-t border-gray-100 shrink-0">
+                    <div data-element="schedule-hour-totals" className="flex w-full bg-white border-t border-gray-100 shrink-0">
                         <div className="w-24 md:w-28 h-9 md:h-10 font-semibold text-gray-400 text-[10px] md:text-xs flex items-center justify-start pl-3 uppercase tracking-widest shrink-0">
                             Total
                         </div>

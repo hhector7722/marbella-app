@@ -76,18 +76,19 @@ describe('Modal identidad y variantes', () => {
         assert.equal(resolveModalVariant('standard').preferTall, false);
         assert.equal(resolveModalVariant('work').maxWidthClass, 'max-w-6xl');
         assert.equal(resolveModalVariant('work').preferTall, true);
-        assert.equal(resolveModalVariant('day').maxWidthClass, 'max-w-6xl');
+        assert.equal(resolveModalVariant('day').maxWidthClass, 'max-w-4xl');
         assert.equal(resolveModalVariant('day').preferTall, true);
         assert.equal(resolveModalVariant('amplify').maxWidthClass, 'max-w-2xl');
         assert.equal(resolveModalVariant('amplify').preferTall, false);
     });
 
-    it('work/day = max-width 1152px', () => {
-        // Tailwind: max-w-6xl = 72rem = 1152px
+    it('work = 1152px; day = 896px (contenido de la fecha, no pantalla completa)', () => {
+        // Tailwind: max-w-6xl = 72rem = 1152px; max-w-4xl = 56rem = 896px
         assert.equal(resolveModalVariant('work').maxWidthClass, 'max-w-6xl');
-        assert.equal(resolveModalVariant('day').maxWidthClass, 'max-w-6xl');
+        assert.equal(resolveModalVariant('day').maxWidthClass, 'max-w-4xl');
         const remToPx = (rem: number) => rem * 16;
         assert.equal(remToPx(72), 1152);
+        assert.equal(remToPx(56), 896);
     });
 
     it('tokens dimensionales alineados a Albaranes', () => {
@@ -179,6 +180,27 @@ describe('Modal identidad y variantes', () => {
         assert.match(modalSource, /data-element="heading"/);
         assert.equal(modalSource.includes('hideTitle || titleLeft'), false);
         assert.equal(modalSource.includes('flex-col justify-center'), false);
+    });
+
+    it('escritorio: el modal de día no llena el viewport y las filas no encogen', () => {
+        const css = readFileSync(join(process.cwd(), 'src/app/globals.css'), 'utf8');
+        const dayBlock =
+            css.match(
+                /\/\*\*\s*\n\s*\* Modal de día en escritorio[\s\S]*?(?=\n  \}\n\})/
+            )?.[0] ?? '';
+        assert.ok(dayBlock.length > 0, 'el bloque desktop del modal de día está acotado');
+        assert.match(dayBlock, /--schedule-shift-row-h:\s*3\.25rem/);
+        assert.match(dayBlock, /--shift-bar-label-min:\s*11px/);
+        assert.match(dayBlock, /\.day-modal-shift-row[\s\S]*?flex:\s*0 0 auto/);
+        assert.match(dayBlock, /\.day-modal-panel[\s\S]*?height:\s*auto/);
+        assert.doesNotMatch(dayBlock, /100dvh/);
+        assert.match(dayBlock, /day-modal-hour-row[\s\S]*?min-height:\s*2\.25rem/);
+        const staffSchedule = readFileSync(
+            join(process.cwd(), 'src/components/modals/StaffScheduleModal.tsx'),
+            'utf8'
+        );
+        assert.match(staffSchedule, /variant="day"/);
+        assert.doesNotMatch(staffSchedule, /variant="work"/);
     });
 });
 
