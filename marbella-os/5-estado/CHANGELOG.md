@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-12
 
+- **Horario: el horario del evento no se abrevia en Staff.** En las tarjetas de sábado y domingo de `/staff/dashboard`, la columna de horas del evento deja de truncarse con puntos. Usa el mismo ancho al contenido (`max-content` + `whitespace-nowrap`) que ya tenía Master; pax y categoría siguen cediendo el espacio que sobre.
+
 - **Fichaje: aviso del campo de visión de la cámara en el modal de entrada.** Hasta que el trabajador confirma con éxito su primer fichaje de entrada, el modal de «Confirmar» muestra la imagen de la cámara, el título del aviso y una card explicativa. Cancelar no lo marca como leído; el siguiente toque en Entrada vuelve a mostrarlo. Tras confirmar, no reaparece en ningún dispositivo.
 
 - **HomeScreen desktop: el contenido interno de los widgets llena el hueco 8×5.** En `/dashboard`, `/master/dashboard` y `/staff/dashboard`, Ventas, Último cierre, Horario y el resumen semanal Staff reparte cabecera, secundaria, KPIs/días y complemento dentro del tamaño ya asignado. La plantilla exterior no cambia; el smartphone tampoco.

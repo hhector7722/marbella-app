@@ -837,6 +837,25 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
         assert.match(staff, /instance="staff-horarios"/);
         assert.match(staff, /<StaffWeekScheduleBlock/);
+        const weekSchedule = readFileSync(
+            join(SRC_ROOT, 'components/dashboards/staff/StaffWeekScheduleWidget.tsx'),
+            'utf8'
+        );
+        assert.match(
+            weekSchedule,
+            /grid-cols-\[max-content_max-content_minmax\(0,1fr\)\]/,
+            'el horario del evento toma el ancho de su contenido, no tres columnas iguales'
+        );
+        assert.doesNotMatch(
+            weekSchedule,
+            /masterMode && cell\.kind === 'hours'/,
+            'las horas del evento no se abrevian solo en Master'
+        );
+        assert.match(
+            weekSchedule,
+            /cell\.kind === 'hours'[\s\S]{0,120}whitespace-nowrap/,
+            'las horas del evento no se truncan en Staff ni en Master'
+        );
         assert.doesNotMatch(staff, /label="Horarios"/);
         assert.doesNotMatch(staff, /bg-purple-600/);
         assert.match(staff, /instance="staff-fichaje"/);

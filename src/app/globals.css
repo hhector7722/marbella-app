@@ -2878,6 +2878,9 @@ button[data-element='catalog-filter'] {
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-evento-detail-value'][data-segment-kind='hours'] {
   border-left-color: #fb923c;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-evento-detail-value'][data-segment-kind='pax'] {
   border-left-color: #f472b6;
