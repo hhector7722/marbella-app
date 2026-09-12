@@ -18,9 +18,9 @@ import {
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
-    fetchActivitiesForRangeAction,
+    fetchBarActivitiesForRangeClient,
     type BarActivity,
-} from '@/app/staff/actividades/actions';
+} from '@/lib/pavilion/bar-activities-range';
 import { createClient } from '@/utils/supabase/client';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -516,10 +516,11 @@ export function StaffWeekScheduleWidget({
         loadedActivityDatesRef.current.add(sunKey);
 
         try {
-            const activitiesResult = await fetchActivitiesForRangeAction({
-                startDate: satKey,
-                endDate: sunKey,
-            });
+            const activitiesResult = await fetchBarActivitiesForRangeClient(
+                createClient(),
+                satKey,
+                sunKey,
+            );
 
             if (activitiesResult.success) {
                 const next: Record<string, BarActivity[]> = {};
@@ -576,7 +577,6 @@ export function StaffWeekScheduleWidget({
 
     const loadNoteDates = useCallback(async () => {
         if (!showNoteMarkers) {
-            setNoteDates(new Set());
             return;
         }
         try {

@@ -6,6 +6,14 @@ import {
   ingestPavilionActivityPdf,
   PAVILION_ACTIVITIES_BUCKET,
 } from '@/lib/pavilion-activities/ingest';
+import {
+  ACTIVITY_OCCURRENCES_RANGE_SELECT,
+  groupOccurrencesToByDate,
+  type BarActivity,
+  type DayCalendarData,
+} from '@/lib/pavilion/bar-activities-range';
+
+export type { BarActivity, DayCalendarData };
 
 const MAX_BYTES = 10 * 1024 * 1024;
 
@@ -153,25 +161,6 @@ export async function uploadPavilionActivityAction(params: {
 // Calendar & Day Detail (nuevo calendario operativo)
 // ---------------------------------------------------------------------------
 
-export interface BarActivity {
-  activityName: string;
-  activityIcon: string | null;
-  activityColor: string | null;
-  startTime: string;
-  endTime: string;
-  formStartTime: string | null;
-  formEndTime: string | null;
-  totalParticipants: number | null;
-  categories: string[];
-  venueCodes: string[];
-}
-
-export interface DayCalendarData {
-  date: string;
-  totalCount: number;
-  barActivities: BarActivity[];
-}
-
 export interface DayDetail {
   date: string;
   barActivities: BarActivity[];
@@ -245,22 +234,7 @@ export async function fetchActivitiesForRangeAction(params: {
 
   const { data, error } = await auth.supabase
     .from('activity_occurrences')
-    .select(
-      `
-      activity_date,
-      start_time,
-      end_time,
-      form_start_time,
-      form_end_time,
-      preferred_start_time,
-      preferred_end_time,
-      total_participants,
-      activities ( name, color, active ),
-      activity_kinds ( icon ),
-      occurrence_venues ( venues ( code, affects_bar ) ),
-      occurrence_groups ( participants, participant_categories ( name ) )
-    `,
-    )
+    .select(ACTIVITY_OCCURRENCES_RANGE_SELECT)
     .gte('activity_date', startDate)
     .lte('activity_date', endDate)
     .order('activity_date', { ascending: true })
@@ -270,52 +244,10 @@ export async function fetchActivitiesForRangeAction(params: {
     return { success: false, error: error.message ?? 'Error al cargar datos.' };
   }
 
-  const byDate: Record<string, DayCalendarData> = {};
-
-  for (const row of data ?? []) {
-    const act = row.activities as unknown as { name: string; color: string | null; active: boolean | null } | null;
-    if (act && act.active === false) continue;
-    const d = row.activity_date as string;
-    if (!byDate[d]) {
-      byDate[d] = { date: d, totalCount: 0, barActivities: [] };
-    }
-    byDate[d].totalCount++;
-    const venues =
-      (row.occurrence_venues as unknown as {
-        venues: { code: string; affects_bar: boolean };
-      }[])?.map((ov) => ov.venues) ?? [];
-
-    const barVenues = venues.filter((v) => v.affects_bar);
-    const hasFormTimes = (row as any).form_start_time !== null;
-    const fromReportForm = (row as any).preferred_start_time === 'form' && venues.length === 0;
-    if (barVenues.length > 0 || hasFormTimes || fromReportForm) {
-      const prefStart = (row as any).preferred_start_time as string;
-      const prefEnd = (row as any).preferred_end_time as string;
-      const formStart = (row as any).form_start_time as string | null;
-      const formEnd = (row as any).form_end_time as string | null;
-      const totalParticipants = (row as any).total_participants as number | null;
-      const occurrenceGroups = (row as any).occurrence_groups as any[] || [];
-      const categories = occurrenceGroups.map((g: any) => g.participant_categories?.name).filter(Boolean);
-
-      const finalStart = (prefStart === 'form' && formStart) ? formStart : (row.start_time as string);
-      const finalEnd = (prefEnd === 'form' && formEnd) ? formEnd : (row.end_time as string);
-
-      byDate[d].barActivities.push({
-        activityName: (row.activities as unknown as { name: string; color: string | null }).name,
-        activityIcon: (row.activity_kinds as unknown as { icon: string | null } | null)?.icon ?? null,
-        activityColor: (row.activities as unknown as { name: string; color: string | null }).color ?? null,
-        startTime: finalStart,
-        endTime: finalEnd,
-        formStartTime: formStart,
-        formEndTime: formEnd,
-        totalParticipants,
-        categories,
-        venueCodes: barVenues.map((v) => v.code),
-      });
-    }
-  }
-
-  return { success: true, byDate };
+  return {
+    success: true,
+    byDate: groupOccurrencesToByDate((data ?? []) as Record<string, unknown>[]),
+  };
 }
 
 export async function fetchDayDetailAction(params: {

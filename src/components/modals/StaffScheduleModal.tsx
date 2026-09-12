@@ -20,7 +20,7 @@ import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
 import { ShiftBarTimeLabels } from '@/components/schedule/ShiftBarTimeLabels';
 import { ScheduleNotesFooter } from '@/components/schedule/ScheduleNotesFooter';
-import { fetchActivitiesForRangeAction, type BarActivity } from '@/app/staff/actividades/actions';
+import { fetchBarActivitiesForRangeClient, type BarActivity } from '@/lib/pavilion/bar-activities-range';
 import { groupActivities } from '@/components/dashboards/staff/StaffWeekScheduleWidget';
 
 /* ─── Constants (match editor exactly) ─────────────────── */
@@ -341,7 +341,7 @@ export const StaffScheduleModal = ({
                 await finishDayLoad(rawShifts ?? [], hasRealActivities);
             } else {
                 const [activitiesResult, shiftsResult] = await Promise.all([
-                    fetchActivitiesForRangeAction({ startDate: dayYmd, endDate: dayYmd }),
+                    fetchBarActivitiesForRangeClient(supabase, dayYmd, dayYmd),
                     shiftsPromise,
                 ]);
 
