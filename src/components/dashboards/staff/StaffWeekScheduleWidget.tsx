@@ -279,18 +279,13 @@ function WeekendDayColumn({
                                 >
                                     <span
                                         data-element="weekend-turno-start"
-                                        className="shrink-0 bg-[var(--color-positivo)] px-1.5 py-0.5 text-[9px] lg:text-[11px] font-semibold tabular-nums leading-none text-white"
+                                        className="shrink-0 border-r border-white bg-[var(--color-positivo)] px-1 py-px text-[7px] lg:text-[10px] font-semibold tabular-nums leading-none text-white"
                                     >
                                         {shiftStart}
                                     </span>
                                     <span
-                                        data-element="weekend-turno-divider"
-                                        aria-hidden="true"
-                                        className="w-px shrink-0 self-stretch bg-white"
-                                    />
-                                    <span
                                         data-element="weekend-turno-end"
-                                        className="shrink-0 bg-[var(--color-negativo)] px-1.5 py-0.5 text-[9px] lg:text-[11px] font-semibold tabular-nums leading-none text-white"
+                                        className="shrink-0 bg-[var(--color-negativo)] px-1 py-px text-[7px] lg:text-[10px] font-semibold tabular-nums leading-none text-white"
                                     >
                                         {shiftEnd}
                                     </span>
@@ -726,7 +721,9 @@ export function StaffWeekScheduleWidget({
                                                         'flex h-[var(--staff-week-day-size)] w-[var(--staff-week-day-size)] items-center justify-center rounded-full bg-emerald-500 font-black text-white',
                                                     !today &&
                                                         hasNote &&
-                                                        'flex h-[var(--staff-week-day-size)] w-[var(--staff-week-day-size)] items-center justify-center rounded-full bg-amber-500 font-black text-white',
+                                                        'flex h-[var(--staff-week-day-size)] w-[var(--staff-week-day-size)] items-center justify-center rounded-full border-2 border-[var(--color-aviso)] bg-transparent font-semibold',
+                                                    !today && hasNote && !inMonth && 'text-white/45',
+                                                    !today && hasNote && inMonth && 'text-white/90',
                                                     !today && !hasNote && !inMonth && 'font-medium text-white/45',
                                                     !today && !hasNote && inMonth && 'font-semibold text-white/90',
                                                 )}
