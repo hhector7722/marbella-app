@@ -51,7 +51,7 @@ type StaffWeekScheduleWidgetProps = {
     onOpenWeekDetail?: (week: WeeklyStats) => void;
     /** Al cambiar, recarga las horas extra del mes visible (p. ej. tras cerrar el modal de detalle). */
     overtimeRefreshKey?: number;
-    /** Al cambiar, recarga los turnos propios del mes visible (p. ej. tras cerrar el modal de horario). */
+    /** Al cambiar, recarga los turnos del finde expandido (p. ej. tras cerrar el modal de horario). */
     refreshKey?: number;
 };
 
@@ -531,7 +531,8 @@ export function StaffWeekScheduleWidget({
         void loadWeekendActivities(expandedSatKey, expandedSunKey);
     }, [loadWeekendActivities, expandedSatKey, expandedSunKey]);
 
-    const loadMonthShifts = useCallback(async () => {
+    /** Solo turnos del finde expandido: el grid de días no los usa, solo las cards sáb/dom. */
+    const loadWeekendShifts = useCallback(async (satKey: string, sunKey: string) => {
         if (!userId) {
             setShifts([]);
             setLoading(false);
@@ -540,8 +541,8 @@ export function StaffWeekScheduleWidget({
         setLoading(true);
         try {
             const supabase = createClient();
-            const startIso = `${rangeStart}T00:00:00`;
-            const endIso = `${rangeEnd}T23:59:59`;
+            const startIso = `${satKey}T00:00:00`;
+            const endIso = `${sunKey}T23:59:59`;
 
             const { data, error } = await supabase
                 .from('shifts')
@@ -560,11 +561,11 @@ export function StaffWeekScheduleWidget({
         } finally {
             setLoading(false);
         }
-    }, [userId, rangeEnd, rangeStart]);
+    }, [userId]);
 
     useEffect(() => {
-        void loadMonthShifts();
-    }, [loadMonthShifts, refreshKey]);
+        void loadWeekendShifts(expandedSatKey, expandedSunKey);
+    }, [loadWeekendShifts, expandedSatKey, expandedSunKey, refreshKey]);
 
     const handleDaySelect = (day: Date) => {
         setExpandedWeekStart(startOfWeek(day, { weekStartsOn: 1 }));
