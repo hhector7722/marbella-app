@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const MAX_ROWS_DEFAULT = 12;
@@ -10,7 +11,7 @@ const DAY_VERTICAL_PAD = 4;
 const DAY_HEADER_HEIGHT = 9;
 const DAY_CONTENT_TOP_OFFSET = 12;
 
-/** Tipos con etiqueta de texto (sin reloj). `regular` y `no_registered` pintan horas. */
+/** Tipos con etiqueta de texto (sin reloj). `regular` pinta horas; `no_registered` pinta una cruz. */
 const SPECIAL_EVENTS: Record<string, { label: string; text: string }> = {
     holiday: { label: 'F', text: 'text-red-500' },
     weekend: { label: 'E', text: 'text-yellow-500' },
@@ -134,8 +135,7 @@ export function PlantillaWeekCard({
                                             <>
                                                 {displayLogs.map((log, idx) => {
                                                     const special = SPECIAL_EVENTS[log.event_type || 'regular'];
-                                                    const isNoRegistered =
-                                                        log.event_type === 'no_registered' || log.clock_out_show_no_registrada === true;
+                                                    const isForgotClockOut = log.clock_out_show_no_registrada === true;
                                                     const name = getFirstName(log);
                                                     const inHour = formatHourOnly(log.in_time);
                                                     const outHour = formatHourOnly(log.out_time);
@@ -160,6 +160,35 @@ export function PlantillaWeekCard({
                                                         );
                                                     }
 
+                                                    if (log.event_type === 'no_registered') {
+                                                        return (
+                                                            <div
+                                                                key={log.id}
+                                                                className="relative flex w-full min-w-0 flex-row items-center"
+                                                            >
+                                                                <span className="min-w-0 max-w-[66%] flex-1 truncate text-[6px] lg:text-[10px] font-normal leading-none text-zinc-600">
+                                                                    {name}
+                                                                </span>
+                                                                <span
+                                                                    className="absolute left-3/4 inline-flex -translate-x-1/2 items-center justify-center"
+                                                                    data-week-log-hours
+                                                                    data-day-state="no-registered"
+                                                                    aria-label="No registrado"
+                                                                >
+                                                                    <X
+                                                                        data-element="no-registered-cross"
+                                                                        strokeWidth={2.5}
+                                                                        className="h-2.5 w-2.5 shrink-0 text-[var(--color-negativo)] lg:h-3.5 lg:w-3.5"
+                                                                        aria-hidden
+                                                                    />
+                                                                </span>
+                                                                {needsLineBelow && showRowDividers && (
+                                                                    <div className="absolute h-px bg-gray-100 left-0.5 right-0.5" style={{ top: 'calc(100% + 1px)' }} />
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    }
+
                                                     return (
                                                         <div
                                                             key={log.id}
@@ -169,7 +198,7 @@ export function PlantillaWeekCard({
                                                                 {name}
                                                             </span>
                                                             <span className={cn("flex shrink-0 items-center gap-0 text-[6px] lg:text-[10px] font-bold leading-none", timeMono && "font-mono")} data-week-log-hours>
-                                                                <span className={isNoRegistered ? outTimeClassName : inTimeClassName}>
+                                                                <span className={isForgotClockOut ? outTimeClassName : inTimeClassName}>
                                                                     {inHour || '—'}
                                                                 </span>
                                                                 {outHour ? (

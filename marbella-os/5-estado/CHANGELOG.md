@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-12
 
+- **Asistencia: el día «No registrado» vuelve a pintarse con una cruz, no con horas.** En `/staff/dashboard` y `/staff/history`, ese tipo de turno no muestra entrada ni salida. La cruz en `color.negativo` ocupa el hueco de los fichajes. Distinto de olvidar fichar la salida, que sí conserva las horas. [P6](../2-diseno/PATRONES.md#p6--tarjeta-semanal).
+
 - **Comunicados: el aviso de la cámara se abre en un Modal de la app.** En Perfil → Documentos → Comunicados, ese comunicado ya no abre una pestaña con la imagen: usa el Modal de sistema con la foto, el título y la card, sin Cancelar ni Confirmar.
 
 - **Modal de día en escritorio: ventana según contenido, no pantalla completa.** La variante `day` pasa a `max-w-4xl` (nombres + escala horaria). El horario del personal deja `work` y usa `day`. Filas, franjas y horas suben por encima de `tipo.minimo`; el smartphone no cambia. [P2](../2-diseno/PATRONES.md#p2--modal), [P4](../2-diseno/PATRONES.md#p4--modal-de-día), [ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md).

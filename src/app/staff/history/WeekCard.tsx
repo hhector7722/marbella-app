@@ -209,8 +209,24 @@ export function WeekCard({
                                     )}
                                 </div>
                             ) : day.eventType === 'no_registered' ? (
-                                <div className={cn("flex min-h-0 flex-1 items-center justify-center", isOtherMonth && "opacity-45")}>
-                                    <X size={18} strokeWidth={2.5} className={cn("text-red-600", isOtherMonth && 'opacity-60')} />
+                                <div
+                                    className={cn(
+                                        "month-cal-day-logs flex min-h-0 flex-1 flex-col items-center justify-center",
+                                        isOtherMonth && "opacity-45",
+                                    )}
+                                    data-day-state="no-registered"
+                                    role="img"
+                                    aria-label="No registrado"
+                                >
+                                    <X
+                                        data-element="no-registered-cross"
+                                        strokeWidth={2.5}
+                                        className={cn(
+                                            "shrink-0 text-[var(--color-negativo)]",
+                                            isOtherMonth && "opacity-60",
+                                        )}
+                                        aria-hidden
+                                    />
                                 </div>
                             ) : (
                                 <div className={cn("month-cal-day-logs flex min-h-0 flex-1 flex-col justify-start gap-0.5 pt-2.5", isOtherMonth && "opacity-45")}>
@@ -225,14 +241,7 @@ export function WeekCard({
                                         </div>
                                         <div className="mt-px flex h-[13px] items-center justify-center gap-[3px]">
                                             {day.hasLog && day.clockOut ? (
-                                                day.eventType === 'no_registered' ? (
-                                                    <>
-                                                        <span className="inline-flex h-[4.5px] w-[4.5px] shrink-0 items-center justify-center overflow-visible" aria-hidden>
-                                                            <X size={6} strokeWidth={2.5} className={cn("shrink-0", isOtherMonth ? "text-gray-400" : "text-red-500")} />
-                                                        </span>
-                                                        <span className={cn("text-[9px] leading-none", isOtherMonth ? "text-gray-400" : "text-gray-700")}>{day.clockOut}</span>
-                                                    </>
-                                                ) : day.clock_out_show_no_registrada ? (
+                                                day.clock_out_show_no_registrada ? (
                                                     <span
                                                         title="Salida no registrada (olvidó fichar)"
                                                         className="inline-flex shrink-0 items-center justify-center gap-1"

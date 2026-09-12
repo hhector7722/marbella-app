@@ -274,7 +274,7 @@ function WeekendDayColumn({
                             {shiftStart && shiftEnd ? (
                                 <span
                                     data-element="weekend-turno-pill"
-                                    className="inline-flex max-w-full min-w-0 overflow-hidden rounded-full border border-white/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
+                                    className="inline-flex max-w-full min-w-0 overflow-hidden rounded-full border border-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
                                     aria-label={`Turno ${shiftStart} a ${shiftEnd}`}
                                 >
                                     <span
@@ -283,6 +283,11 @@ function WeekendDayColumn({
                                     >
                                         {shiftStart}
                                     </span>
+                                    <span
+                                        data-element="weekend-turno-divider"
+                                        aria-hidden="true"
+                                        className="w-px shrink-0 self-stretch bg-white"
+                                    />
                                     <span
                                         data-element="weekend-turno-end"
                                         className="shrink-0 bg-[var(--color-negativo)] px-1 py-px text-[6px] lg:text-[10px] font-black tabular-nums leading-none text-white"
