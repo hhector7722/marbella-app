@@ -249,8 +249,8 @@ function WeekendDayColumn({
     masterMode?: boolean;
 }) {
     const ymd = format(day, 'yyyy-MM-dd');
-    const shiftStart = shift != null ? formatClockTime(shift.start_time) : null;
-    const shiftEnd = shift != null ? formatClockTime(shift.end_time) : null;
+    const shiftStart = shift != null ? fmtHour(formatClockTime(shift.start_time)) : null;
+    const shiftEnd = shift != null ? fmtHour(formatClockTime(shift.end_time)) : null;
 
     return (
         <button
@@ -279,7 +279,7 @@ function WeekendDayColumn({
                                 >
                                     <span
                                         data-element="weekend-turno-start"
-                                        className="shrink-0 bg-[var(--color-positivo)] px-1 py-px text-[6px] lg:text-[10px] font-black tabular-nums leading-none text-white"
+                                        className="shrink-0 bg-[var(--color-positivo)] px-1.5 py-0.5 text-[9px] lg:text-[11px] font-semibold tabular-nums leading-none text-white"
                                     >
                                         {shiftStart}
                                     </span>
@@ -290,7 +290,7 @@ function WeekendDayColumn({
                                     />
                                     <span
                                         data-element="weekend-turno-end"
-                                        className="shrink-0 bg-[var(--color-negativo)] px-1 py-px text-[6px] lg:text-[10px] font-black tabular-nums leading-none text-white"
+                                        className="shrink-0 bg-[var(--color-negativo)] px-1.5 py-0.5 text-[9px] lg:text-[11px] font-semibold tabular-nums leading-none text-white"
                                     >
                                         {shiftEnd}
                                     </span>
