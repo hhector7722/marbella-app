@@ -333,8 +333,18 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         );
         assert.match(
             css,
-            /\[data-instance='dashboard-ventas'\] \[data-element='kpis'\] \{[\s\S]*flex:\s*1 1 auto/,
-            'escritorio: los KPI de Ventas llenan el hueco interior'
+            /\[data-instance='dashboard-ventas'\] \[data-element='kpis'\] \{[\s\S]*flex:\s*0 0 auto/,
+            'escritorio: los KPI de Ventas no expanden el hueco entre gráfica y cifras'
+        );
+        assert.match(
+            css,
+            /\[data-component='Surface'\]\[data-instance='dashboard-ventas'\] \{[\s\S]*justify-content:\s*center/,
+            'escritorio: cabecera, gráfica y KPI se centran como una sola composición'
+        );
+        assert.match(
+            css,
+            /\[data-instance='dashboard-ventas'\] \[data-element='metrics'\] \{[\s\S]*flex:\s*0 0 auto/,
+            'escritorio: la zona de métricas no engorda el vacío vertical'
         );
         assert.match(
             css,

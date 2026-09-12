@@ -45,6 +45,24 @@ const EVENT_TYPES = [
 /** Tipos que computan en contrato/banco pero no son jornada trabajada (ni propinas). */
 const JUSTIFIED_EVENT_TYPES = new Set(['holiday', 'weekend', 'adjustment', 'personal']);
 
+/** Papel de valores sobre el overlay `scheme="dark"`. El CSS de sistema lo restaura a `color.superficie`. */
+function AttendancePaper({
+    children,
+    className,
+}: {
+    children: React.ReactNode;
+    className?: string;
+}) {
+    return (
+        <div
+            data-element="attendance-paper"
+            className={cn('rounded-xl border border-zinc-100 bg-white p-2', className)}
+        >
+            {children}
+        </div>
+    );
+}
+
 type DayLogDraft = {
     id?: string;
     in_time: string;
@@ -706,6 +724,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
             instance="attendance-detail"
             variant="compact"
             layer="base"
+            scheme="dark"
             footer={
                 !loading ? (
                     isManager ? (
@@ -755,7 +774,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                     <button
                         type="button"
                         onClick={() => openCreateFichaje()}
-                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+                        className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white/70 shadow-none outline-none hover:bg-white/10 hover:opacity-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
                         aria-label="Nuevo fichaje"
                     >
                         <Plus size={18} strokeWidth={2.5} />
@@ -772,7 +791,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                         </div>
                     ) : activeLogs.length === 0 ? (
                         showCreateFichaje && isManager && createUserId && date ? (
-                            <div className="space-y-3">
+                            <AttendancePaper className="space-y-3">
                                 {availableEmployees.length > 1 ? (
                                     <div>
                                         <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-1">Empleado</label>
@@ -828,7 +847,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                         + Horas justificadas
                                     </button>
                                 )}
-                            </div>
+                            </AttendancePaper>
                         ) : (
                             <div className="py-6 flex flex-col items-center justify-center gap-3">
                                 <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest text-center">Sin datos</span>
@@ -875,12 +894,9 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                 const eventLabel = EVENT_TYPES.find((t) => t.value === log.event_type)?.label ?? log.event_type;
 
                                 return (
-                                    <div
+                                    <AttendancePaper
                                         key={log.id ?? log._localKey ?? `log-${index}`}
-                                        className={cn(
-                                            'rounded-xl border p-2',
-                                            specialDay ? 'border-blue-100 bg-blue-50/40' : 'border-zinc-100 bg-white',
-                                        )}
+                                        className={specialDay ? 'border-blue-100' : undefined}
                                     >
                                         {specialDay ? (
                                             <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -902,7 +918,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
 
                                         {!specialDay && (
                                             <div className="grid grid-cols-2 gap-1.5">
-                                                <div className="bg-zinc-50 rounded-xl py-1.5 pl-2 pr-1 border border-zinc-100 relative overflow-hidden">
+                                                <div className="bg-white rounded-xl py-1.5 pl-2 pr-1 border border-zinc-100 relative overflow-hidden">
                                                     <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-emerald-500" />
                                                     <span className="text-[6px] font-black text-emerald-600 uppercase tracking-widest block">Entrada</span>
                                                     {isManager ? (
@@ -916,7 +932,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                                         <span className="text-[13px] font-black text-gray-800 tracking-tight block">{log.in_time || ' '}</span>
                                                     )}
                                                 </div>
-                                                <div className="bg-zinc-50 rounded-xl py-1.5 pl-2 pr-1 border border-zinc-100 relative overflow-hidden">
+                                                <div className="bg-white rounded-xl py-1.5 pl-2 pr-1 border border-zinc-100 relative overflow-hidden">
                                                     <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-rose-500" />
                                                     <span className="text-[6px] font-black text-rose-600 uppercase tracking-widest block">Salida</span>
                                                     {isManager ? (
@@ -934,7 +950,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                         )}
 
                                         {isManager && !specialDay && log.event_type === 'regular' && log.out_time ? (
-                                            <label className="flex items-center gap-2 mt-1.5 py-1.5 px-2 rounded-xl bg-zinc-50 border border-zinc-100 cursor-pointer">
+                                            <label className="flex items-center gap-2 mt-1.5 py-1.5 px-2 rounded-xl bg-white border border-zinc-100 cursor-pointer">
                                                 <input
                                                     type="checkbox"
                                                     checked={log.clock_out_show_no_registrada === true}
@@ -989,7 +1005,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
 
                                         {!specialDay && (
                                             <div className={cn('mt-1.5 grid gap-1.5', isManager ? 'grid-cols-2' : 'grid-cols-1')}>
-                                                <div className="bg-blue-50 rounded-xl py-1.5 px-2 border border-blue-100">
+                                                <div className="bg-white rounded-xl py-1.5 px-2 border border-zinc-100">
                                                     <span className="text-[6px] font-black text-blue-600 uppercase tracking-widest block">
                                                         Horas justificadas (computan)
                                                     </span>
@@ -1015,7 +1031,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                                     ) : null}
                                                 </div>
                                                 {isManager && (
-                                                    <div className="bg-zinc-50 rounded-xl py-1.5 px-2 border border-zinc-100 min-w-0">
+                                                    <div className="bg-white rounded-xl py-1.5 px-2 border border-zinc-100 min-w-0">
                                                         <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest block">Evento</span>
                                                         <select
                                                             value={log.event_type}
@@ -1034,7 +1050,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                         )}
 
                                         {specialDay && isManager && (
-                                            <div className="mt-1.5 bg-zinc-50 rounded-xl py-1.5 px-2 border border-zinc-100 min-w-0">
+                                            <div className="mt-1.5 bg-white rounded-xl py-1.5 px-2 border border-zinc-100 min-w-0">
                                                 <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest block">Evento</span>
                                                 <select
                                                     value={log.event_type}
@@ -1049,12 +1065,12 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                                 </select>
                                             </div>
                                         )}
-                                    </div>
+                                    </AttendancePaper>
                                 );
                             })}
 
                             {activeLogs.length > 1 || dayTotalHours > 0 || isManager ? (
-                                <div className="rounded-xl border border-zinc-100 bg-zinc-50 py-1.5 px-2 flex items-center justify-between gap-2">
+                                <AttendancePaper className="flex items-center justify-between gap-2 py-1.5">
                                     <div className="flex items-baseline gap-1.5 min-w-0">
                                         <span className="text-[7px] font-black uppercase tracking-widest text-zinc-500">Total día</span>
                                         <span className="text-[12px] font-black text-zinc-800">
@@ -1071,7 +1087,7 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                             <span className="text-[8px] font-black uppercase tracking-widest leading-tight">Semana</span>
                                         </button>
                                     )}
-                                </div>
+                                </AttendancePaper>
                             ) : null}
 
                             </div>

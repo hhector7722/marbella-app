@@ -1912,7 +1912,7 @@ export default function HistoryPage() {
  
                                     return (
                                         <div className="grid min-h-[26px] grid-cols-[7.5rem_1fr] items-center gap-x-2 sm:grid-cols-[8.5rem_1fr] sm:gap-x-3 w-full max-w-xs mx-auto">
-                                            <span className="text-[10px] font-bold uppercase leading-tight text-[#36606F] sm:text-[11px]">
+                                            <span className="text-[10px] font-bold uppercase leading-tight text-ds-texto-invertido sm:text-[11px]">
                                                 {label}
                                             </span>
                                             <div className="flex min-w-0 items-center justify-center">
@@ -2550,10 +2550,12 @@ export default function HistoryPage() {
 
             <ImageLightbox
                 open={lightboxIndex !== null && closingPhotoSlides.length > 0}
-                slides={closingPhotoSlides}
-                activeIndex={lightboxIndex ?? 0}
-                onActiveIndexChange={setLightboxIndex}
+                src={lightboxIndex !== null ? closingPhotoSlides[lightboxIndex]?.src : null}
+                alt={lightboxIndex !== null ? closingPhotoSlides[lightboxIndex]?.alt : undefined}
                 onClose={() => setLightboxIndex(null)}
+                scheme="dark"
+                variant="standard"
+                instance="history-closing-photo"
                 parentInstance="history-closing-detail"
             />
 

@@ -38,6 +38,12 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-12
 
+- **Cierres: la foto del día se abre en el mismo Modal oscuro.** En el detalle de cierre, pulsar Totales datáfonos o Informe TPV abre una superficie derivada `standard`/`dark` con esa sola imagen, canto blanco (`color.texto.invertido`) y `radio.superficie`. Sin carrusel ni marco de zinc. [P2](../2-diseno/PATRONES.md#p2--modal), [ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md).
+
+- **Cierres: las etiquetas del detalle del día se leen en blanco.** En el modal de detalle de cierre (`/dashboard/history`), nombres como Ventas, Venta neta y Tarjeta dejan el petróleo y usan `color.texto.invertido` sobre el envolvente oscuro.
+
+- **Asistencia: el detalle del día pasa al azul del envolvente.** Al pulsar un día desde el resumen semanal Staff, el resumen diario Master o el historial, el modal (lista del día y ficha de la persona) usa `scheme="dark"` y las cards de valores quedan en papel blanco. [SISTEMA-DE-COMPONENTES](../2-diseno/SISTEMA-DE-COMPONENTES.md), [P4](../2-diseno/PATRONES.md#p4--modal-de-día).
+
 - **Home: C Inicial y Cajas Cambio ya no recargan al cambiar de pantalla.** `/dashboard` y `/master/dashboard` leen el mismo snapshot (`getTreasurySnapshot`). El importe visto se reutiliza unos 30 s al volver a la home; el spinner solo sale si aún no hay dato. Dejan de pedirse cada 30 s: se refrescan al volver a la pestaña, al enfocar y tras un movimiento de caja.
 
 - **Asistencia: el día «No registrado» vuelve a pintarse con una cruz, no con horas.** En `/staff/dashboard` y `/staff/history`, ese tipo de turno no muestra entrada ni salida. La cruz en `color.negativo` ocupa el hueco de los fichajes. Distinto de olvidar fichar la salida, que sí conserva las horas. [P6](../2-diseno/PATRONES.md#p6--tarjeta-semanal).

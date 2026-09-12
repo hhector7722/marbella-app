@@ -170,6 +170,11 @@ describe('Modal identidad y variantes', () => {
         assert.match(css, /\[data-component='Modal'\]\[data-scheme='dark'\]/);
         assert.match(
             css,
+            /\[data-component='Modal'\]\[data-scheme='dark'\] \[data-element='body'\] :is\(\.text-\\\[\\\#36606F\\\], \.text-ds-marca\)[\s\S]*?color:\s*var\(--color-texto-invertido\)/,
+            'scheme dark remapea tinta de marca a invertida'
+        );
+        assert.match(
+            css,
             /\[data-component='Modal'\]:not\(\[data-scheme='dark'\]\)[\s\S]*?\.text-white[\s\S]*?color:\s*var\(--color-texto-fuerte\)/,
             'cabecera work remapea text-white legacy a tinta fuerte'
         );
@@ -180,6 +185,34 @@ describe('Modal identidad y variantes', () => {
         assert.match(modalSource, /data-element="heading"/);
         assert.equal(modalSource.includes('hideTitle || titleLeft'), false);
         assert.equal(modalSource.includes('flex-col justify-center'), false);
+    });
+
+    it('el detalle de cierre usa tinta invertida y abre la foto en el mismo Modal', () => {
+        const history = readFileSync(join(process.cwd(), 'src/app/dashboard/history/page.tsx'), 'utf8');
+        const lightbox = readFileSync(join(process.cwd(), 'src/components/ui/ImageLightbox.tsx'), 'utf8');
+        assert.match(history, /instance="history-closing-detail"/);
+        assert.match(
+            history,
+            /leading-tight text-ds-texto-invertido sm:text-\[11px\]/,
+            'detalle de cierre: etiquetas en tinta invertida'
+        );
+        assert.match(history, /instance="history-closing-photo"/);
+        assert.match(history, /scheme="dark"/);
+        assert.match(history, /variant="standard"/);
+        assert.match(history, /parentInstance="history-closing-detail"/);
+        assert.doesNotMatch(
+            history,
+            /slides=\{closingPhotoSlides\}/,
+            'la foto del cierre no abre el carrusel: solo la imagen pulsada'
+        );
+        assert.match(lightbox, /scheme = 'work'/);
+        assert.match(
+            lightbox,
+            /rounded-ds-superficie border border-\[var\(--color-texto-invertido\)\]/,
+            'la foto oscura lleva contorno blanco y radio de superficie'
+        );
+        assert.match(lightbox, /scheme=\{scheme\}/);
+        assert.match(lightbox, /variant=\{variant\}/);
     });
 
     it('escritorio: el modal de día no llena el viewport y las filas no encogen', () => {

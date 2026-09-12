@@ -85,6 +85,7 @@ El detalle y la edición de una fecha concreta, dentro del calendario o de la vi
 
 **Reglas**:
 - Las filas de hora reparten el alto **extra** en partes iguales; no se desplazan si caben. No encogen por debajo de un mínimo legible (`tipo.minimo` para horas y nombres; las franjas de turno se leen dentro o junto a la barra).
+- El overlay usa `scheme="dark"` (envolvente bajo). Las cifras y fichajes van en papel (`color.superficie`).
 - La navegación entre días no cierra el modal.
 - Sale con dos anchos: `work` (amplio, tablas densas ajenas a la línea temporal) y `day` (consulta de fecha, `max-w-4xl`, dimensionado al contenido). El horario del día usa `day`.
 - Al editar, el modal no cambia de variante ni de estética respecto a la consulta.

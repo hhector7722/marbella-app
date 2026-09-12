@@ -187,7 +187,7 @@ export function DaySummaryModal({
         <button
             type="button"
             onClick={openCreateFichaje}
-            className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-zinc-700 shadow-none outline-none hover:bg-zinc-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
+            className="relative flex h-full max-h-full min-h-0 w-[var(--modal-header-height)] shrink-0 items-center justify-center border-0 bg-transparent text-white/70 shadow-none outline-none hover:bg-white/10 hover:opacity-100 active:opacity-70 before:absolute before:inset-0 before:-m-[6px] before:min-h-12 before:min-w-12 before:content-['']"
             aria-label="Nuevo fichaje"
         >
             <Plus size={18} strokeWidth={2.5} />
@@ -207,6 +207,7 @@ export function DaySummaryModal({
                 title="Resumen de Fichajes"
                 subtitle={dateLabel}
                 headerTone="petroleum"
+                scheme="dark"
                 headerTrailing={canManage ? addButton : undefined}
                 footer={
                     <div className="flex w-full gap-2 px-ds-4">
@@ -241,7 +242,7 @@ export function DaySummaryModal({
                     {logs.length === 0 ? (
                         <EmptyState instance="attendance-day-summary-none" variant="none" title="No hay fichajes registrados" />
                     ) : (
-                        <div>
+                        <div className="flex flex-col gap-2">
                             {logs.map((log) => {
                                 const name = firstGivenName(log.first_name || log.employee_name, '?');
                                 const isNoRegistered =
@@ -252,11 +253,12 @@ export function DaySummaryModal({
                                     <button
                                         key={log.id}
                                         type="button"
+                                        data-element="attendance-paper"
                                         onClick={() => {
                                             trackDaySummary(name, { selectedUserId: log.user_id });
                                             onSelectLog(log.user_id);
                                         }}
-                                        className="flex w-full min-w-0 items-center justify-between gap-3 border-b border-zinc-50 py-3.5 text-left transition-colors last:border-0 hover:bg-zinc-50/80"
+                                        className="flex w-full min-h-[48px] min-w-0 items-center justify-between gap-3 rounded-xl border border-zinc-100 bg-white px-3 py-3 text-left transition-colors hover:bg-zinc-50/80"
                                     >
                                         <span className="min-w-0 truncate text-[15px] font-medium text-zinc-900">
                                             {name}

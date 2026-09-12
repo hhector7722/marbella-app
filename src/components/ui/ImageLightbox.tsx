@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Modal } from '@/components/ui/modal'
-import type { ModalLayer } from '@/lib/design-system'
+import type { ModalLayer, ModalVariant } from '@/lib/design-system'
 import { PinchZoomViewport } from '@/components/ui/PinchZoomViewport'
+import { cn } from '@/lib/utils'
 
 export type ImageLightboxSlide = {
   src: string
@@ -22,6 +23,9 @@ type ImageLightboxProps = {
   activeIndex?: number
   onActiveIndexChange?: (index: number) => void
   layer?: ModalLayer
+  variant?: ModalVariant
+  scheme?: 'work' | 'dark'
+  instance?: string
   /** Padre de navegación cuando se abre sobre otro Modal. */
   parentInstance?: string
 }
@@ -37,10 +41,14 @@ export function ImageLightbox({
   activeIndex = 0,
   onActiveIndexChange,
   layer = 'base',
+  variant = 'work',
+  scheme = 'work',
+  instance = 'image-lightbox',
   parentInstance,
 }: ImageLightboxProps) {
   const swipeStart = useRef<{ x: number; y: number } | null>(null)
   const [internalIndex, setInternalIndex] = useState(activeIndex)
+  const dark = scheme === 'dark'
 
   const resolvedSlides: ImageLightboxSlide[] =
     slides && slides.length > 0
@@ -95,8 +103,8 @@ export function ImageLightbox({
     else goPrev()
   }
 
-  const canPrev = slideCount > 1 && currentIndex > 0
-  const canNext = slideCount > 1 && currentIndex < slideCount - 1
+  const canPrev = !dark && slideCount > 1 && currentIndex > 0
+  const canNext = !dark && slideCount > 1 && currentIndex < slideCount - 1
   const resolvedLayer = parentInstance ? 'derived' : layer
 
   return (
@@ -104,17 +112,23 @@ export function ImageLightbox({
       open={open && !!currentSlide}
       onClose={onClose}
       title={currentSlide?.alt || 'Imagen'}
-      subtitle={slideCount > 1 ? `${currentIndex + 1}/${slideCount}` : undefined}
-      variant="work"
+      subtitle={!dark && slideCount > 1 ? `${currentIndex + 1}/${slideCount}` : undefined}
+      variant={variant}
+      scheme={scheme}
       layer={resolvedLayer}
-      instance="image-lightbox"
+      instance={instance}
       parentInstance={parentInstance}
-      backdropClassName="bg-black/80"
-      usageId="image-lightbox"
+      backdropClassName={dark ? undefined : 'bg-black/80'}
+      usageId={instance}
       usageLabel="Imagen ampliada"
+      hideTitle={dark}
+      ariaLabel={dark ? (currentSlide?.alt || 'Imagen') : undefined}
     >
       <div
-        className="relative flex min-h-0 flex-1 items-stretch"
+        className={cn(
+          'relative flex min-h-0 flex-1',
+          dark ? 'items-center justify-center' : 'items-stretch',
+        )}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
@@ -130,18 +144,28 @@ export function ImageLightbox({
         ) : null}
 
         {currentSlide ? (
-          <PinchZoomViewport
-            resetKey={currentSlide.src}
-            className="flex-1 rounded-2xl border border-zinc-100 bg-zinc-50"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+          dark ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={currentSlide.src}
               alt={currentSlide.alt}
-              className="max-h-[min(72dvh,calc(100svh-11rem))] w-auto max-w-full object-contain sm:max-h-[min(78vh,calc(100vh-11rem))]"
+              className="max-h-[min(72dvh,calc(100svh-11rem))] w-auto max-w-full rounded-ds-superficie border border-[var(--color-texto-invertido)] object-contain sm:max-h-[min(78vh,calc(100vh-11rem))]"
               draggable={false}
             />
-          </PinchZoomViewport>
+          ) : (
+            <PinchZoomViewport
+              resetKey={currentSlide.src}
+              className="flex-1 rounded-2xl border border-zinc-100 bg-zinc-50"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={currentSlide.src}
+                alt={currentSlide.alt}
+                className="max-h-[min(72dvh,calc(100svh-11rem))] w-auto max-w-full object-contain sm:max-h-[min(78vh,calc(100vh-11rem))]"
+                draggable={false}
+              />
+            </PinchZoomViewport>
+          )
         ) : null}
 
         {canNext ? (

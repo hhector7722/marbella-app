@@ -528,6 +528,9 @@
 [data-component='Modal'][data-scheme='dark'] [data-element='body'] :is(.text-gray-700, .text-gray-800, .text-zinc-900, .text-zinc-800, .text-zinc-700) {
   color: var(--color-texto-invertido);
 }
+[data-component='Modal'][data-scheme='dark'] [data-element='body'] :is(.text-\[\#36606F\], .text-ds-marca) {
+  color: var(--color-texto-invertido);
+}
 [data-component='Modal'][data-scheme='dark'] [data-element='body'] :is(.text-gray-400, .text-zinc-400, .text-zinc-500) {
   color: rgb(255 255 255 / 0.55);
 }
@@ -566,6 +569,30 @@
 }
 [data-component='Modal'][data-scheme='dark'] [data-element='body'] [data-element='personal-record'] :is(.text-gray-400, .text-gray-500, .text-zinc-400, .text-zinc-500) {
   color: var(--color-texto-tenue);
+}
+/*
+ * Detalle y resumen de asistencia: las cards de valores son papel sobre el modal azul.
+ * El scheme dark blanquea .bg-white; aquí se restaura color.superficie y tinta de lectura.
+ */
+[data-component='Modal'][data-scheme='dark'] [data-element='body'] [data-element='attendance-paper'] {
+  background-color: var(--color-superficie);
+  color: var(--color-texto);
+  color-scheme: light;
+}
+[data-component='Modal'][data-scheme='dark'] [data-element='body'] [data-element='attendance-paper'] .bg-white,
+[data-component='Modal'][data-scheme='dark'] [data-element='body'] [data-element='attendance-paper'] .bg-zinc-50,
+[data-component='Modal'][data-scheme='dark'] [data-element='body'] [data-element='attendance-paper'] .bg-blue-50 {
+  background-color: var(--color-superficie);
+}
+[data-component='Modal'][data-scheme='dark'] [data-element='body'] [data-element='attendance-paper'] :is(.text-gray-700, .text-gray-800, .text-zinc-900, .text-zinc-800, .text-zinc-700) {
+  color: var(--color-texto);
+}
+[data-component='Modal'][data-scheme='dark'] [data-element='body'] [data-element='attendance-paper'] :is(.text-gray-400, .text-gray-500, .text-zinc-400, .text-zinc-500) {
+  color: var(--color-texto-tenue);
+}
+[data-component='Modal'][data-scheme='dark'] [data-component='EmptyState'] [data-element='title'],
+[data-component='Modal'][data-scheme='dark'] [data-component='EmptyState'] [data-element='description'] {
+  color: rgb(255 255 255 / 0.55);
 }
 /*
  * Editor de día embebido (modo edición del modal de horario): hereda el azul
@@ -5492,7 +5519,15 @@ button[data-element='catalog-filter'] {
    * principal y complemento. No se cambia el tamaño exterior.
    */
 
-  /* Ventas: cabecera arriba; los tres KPI llenan el resto en columnas. */
+  /*
+   * Ventas: cabecera → gráfica → KPIs como una sola composición vertical.
+   * El bloque entero se centra en el hueco; los KPI no expanden (sin vacío entre gráfica y cifras).
+   */
+  [data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas'] > [data-element='body'] > [data-component='Surface'][data-instance='dashboard-ventas'] {
+    justify-content: center;
+    gap: var(--espacio-2);
+    padding-block: var(--espacio-2);
+  }
   [data-component='HomeScreen'][data-layout='ops-admin'] [data-instance='dashboard-ventas'] [data-component='KpiStat'] [data-element='value'],
   [data-component='HomeScreen'][data-layout='master'] [data-instance='dashboard-ventas'] [data-component='KpiStat'] [data-element='value'] {
     font-size: 1.375rem;
@@ -5514,26 +5549,26 @@ button[data-element='catalog-filter'] {
     font-size: 10px;
   }
   [data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas'] [data-element='metrics'] {
+    flex: 0 0 auto;
     justify-content: flex-start;
+    gap: var(--espacio-3);
   }
   [data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas'] [data-element='kpis'] {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     min-height: 0;
-    align-items: stretch;
+    align-items: start;
     gap: var(--espacio-3);
     padding-inline: var(--espacio-4);
-    padding-block: var(--espacio-4);
+    padding-block: var(--espacio-2);
   }
   [data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas'] [data-element='kpis'] > div {
     display: flex;
-    height: 100%;
     min-height: 0;
     align-items: center;
     justify-content: center;
   }
   [data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas'] [data-component='KpiStat'] {
     justify-content: center;
-    height: 100%;
   }
 
   /* Último cierre: Ventas / Venta neta protagonistas; Tarjeta / Efectivo / Diferencia debajo. */
@@ -5601,6 +5636,10 @@ button[data-element='catalog-filter'] {
   }
   [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-details'] {
     justify-content: center;
+  }
+  /* Sábado / Domingo: margen interno izquierdo sutil; geometría exterior intacta. */
+  [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-card'] {
+    padding-inline: var(--espacio-3);
   }
 
   /*

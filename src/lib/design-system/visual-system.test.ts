@@ -1070,6 +1070,29 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
     });
 
+    it('el detalle de un día de asistencia es overlay dark con cards de papel', () => {
+        const detail = readFileSync(
+            join(SRC_ROOT, 'components/modals/AttendanceDetailModal.tsx'),
+            'utf8'
+        );
+        const summary = readFileSync(
+            join(SRC_ROOT, 'components/modals/DaySummaryModal.tsx'),
+            'utf8'
+        );
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        assert.match(detail, /instance="attendance-detail"/);
+        assert.match(detail, /scheme="dark"/);
+        assert.match(detail, /data-element="attendance-paper"/);
+        assert.match(summary, /instance="attendance-day-summary"/);
+        assert.match(summary, /scheme="dark"/);
+        assert.match(summary, /data-element="attendance-paper"/);
+        assert.match(
+            css,
+            /\[data-component='Modal'\]\[data-scheme='dark'\][\s\S]*?\[data-element='attendance-paper'\][\s\S]*?--color-superficie/,
+            'las cards de valores restauran papel sobre el overlay azul'
+        );
+    });
+
     it('Ver todos / Ver activos es el último usuario del selector, no un CTA de cabecera', () => {
         const modal = readFileSync(
             join(SRC_ROOT, 'components/modals/StaffSelectionModal.tsx'),
