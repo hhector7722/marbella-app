@@ -172,7 +172,7 @@ Norma en [EXPERIENCIA §1](EXPERIENCIA.md#1-táctil).
 | `estructura.barra-inferior` | 46 px + área segura inferior | Pista del tab bar iOS (icono 22 px + etiqueta 9 pt). El material sigue bajo el home indicator | adoptado (`--estructura-barra-inferior`) |
 | `estructura.fin-de-lista` | 96 px + área segura | Hueco al final de listas táctiles | adoptado |
 | `estructura.fin-de-lista.tarjetas` | 240 px + área segura | Hueco al final de listas con barra de cantidad | adoptado |
-| `estructura.alto-modal` | `min(68dvh, 100dvh − safe − 2.5rem)` en contrato Modal (ref. Albaranes); otros shells pueden conservar 94% documentado históricamente | Alto máximo de un modal de tarea | adoptado (`--modal-max-height`) |
+| `estructura.alto-modal` | `100dvh − safe − 2rem` (padding del overlay, 1rem por lado). El panel usa `min(100%, token)` respecto al interior del overlay. Otros shells pueden conservar 94% documentado históricamente | Alto máximo de un modal de tarea: el área visible, no un recorte del dvh teórico | adoptado (`--modal-max-height`) |
 | `estructura.cabecera-modal` | 36 px | Alto fijo de cabecera de Modal y de PageScreen (norma global; el contenido se escala para caber) | adoptado (`--modal-header-height`) |
 | `estructura.modal-cabecera-inset` | 16 px (= `espacio.4`) | Inset horizontal único de cabecera Modal (ref. Albaranes). Título y subtítulo empiezan aquí | adoptado (`--modal-header-inset`) |
 | `estructura.modal-cuerpo-inicio` | 12 px (= `espacio.3`) | Separación vertical mínima Header → primer contenido del Body. No es inset completo del Body | adoptado (`--modal-body-start-gap`) |

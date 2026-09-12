@@ -105,7 +105,8 @@ const EMPTY_OVERTIME = {
 
 /**
  * Listado de horas extras / nómina semanal.
- * Fuente: Hours Engine + Cost Engine (liquidateWeekForCard) vía read-model SSOT.
+ * Fuente: proyección persistida (`weekly_snapshots`) escrita por el Writer.
+ * No liquida en lectura. Semana en curso y futuras no entran.
  */
 export async function getOvertimeData(startDate: string, endDate: string, userId?: string) {
     try {

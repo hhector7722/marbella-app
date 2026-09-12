@@ -7,8 +7,8 @@ import React, { memo, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, addMonths, subMonths, getISOWeek, addDays, eachDayOfInterval, isSameDay, isBefore, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { getOvertimeData, togglePaidStatus, togglePreferStockStatus } from '@/app/actions/overtime';
-import type { WeeklyStats } from '@/lib/hours-engine/overtime-weeks-ssot';
+import { togglePaidStatus, togglePreferStockStatus } from '@/app/actions/overtime';
+import { invalidateHomeOvertimeCache, useOvertimeWeeks } from '@/hooks/useOvertimeWeeks';
 import { cn } from '@/lib/utils';
 import WorkerWeeklyHistoryModal from '@/components/WorkerWeeklyHistoryModal';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
@@ -88,8 +88,12 @@ StaffOvertimeRow.displayName = 'StaffOvertimeRow';
 
 export default function OvertimePage() {
     const [viewMonth, setViewMonth] = useState(() => startOfMonth(new Date()));
-    const [weeksData, setWeeksData] = useState<WeeklyStats[]>([]);
-    const [loading, setLoading] = useState(true);
+    const overtimeRangeStart = format(startOfMonth(viewMonth), 'yyyy-MM-dd');
+    const overtimeRangeEnd = format(endOfMonth(viewMonth), 'yyyy-MM-dd');
+    const { weeks: weeksData, loading, refresh } = useOvertimeWeeks(
+        overtimeRangeStart,
+        overtimeRangeEnd,
+    );
     const [weekDetailModal, setWeekDetailModal] = useState<{ week: any } | null>(null);
 
     const weekDetailTrackingLabel = useMemo(() => {
@@ -104,25 +108,19 @@ export default function OvertimePage() {
     const [calculatorOpen, setCalculatorOpen] = useState(false);
 
     useEffect(() => {
-        const start = format(startOfMonth(viewMonth), 'yyyy-MM-dd');
-        const end = format(endOfMonth(viewMonth), 'yyyy-MM-dd');
-        setLoading(true);
-        getOvertimeData(start, end)
-            .then((result) => {
-                if (result?.weeksResult) setWeeksData(result.weeksResult);
-                else setWeeksData([]);
-            })
-            .catch(() => setWeeksData([]))
-            .finally(() => setLoading(false));
-    }, [viewMonth]);
+        const nextPaid: Record<string, boolean> = {};
+        weeksData.forEach((week) => {
+            week.staff?.forEach((s) => {
+                nextPaid[`${week.weekId}-${s.id}`] = !!s.isPaid;
+            });
+        });
+        setPaidStatus(nextPaid);
+    }, [weeksData]);
 
     const handleTogglePaid = async (e: React.MouseEvent, weekId: string, staffId: string, newStatus: boolean) => {
         e.stopPropagation();
         const key = `${weekId}-${staffId}`;
         setPaidStatus(prev => ({ ...prev, [key]: newStatus }));
-        setWeeksData(prev => prev.map(w => w.weekId === weekId
-            ? { ...w, staff: w.staff.map(s => s.id === staffId ? { ...s, isPaid: newStatus } : s) }
-            : w));
         try {
             const weekData = weeksData.find(w => w.weekId === weekId);
             const staffData = weekData?.staff?.find((s: any) => s.id === staffId);
@@ -131,12 +129,10 @@ export default function OvertimePage() {
                 overtimeHours: staffData?.overtimeHours ?? 0
             });
             if (!result.success) throw new Error("Error updating paid status");
+            invalidateHomeOvertimeCache();
             toast.success(newStatus ? "Marcado como pagado" : "Pago cancelado");
         } catch (error) {
             setPaidStatus(prev => ({ ...prev, [key]: !newStatus }));
-            setWeeksData(prev => prev.map(w => w.weekId === weekId
-                ? { ...w, staff: w.staff.map(s => s.id === staffId ? { ...s, isPaid: !newStatus } : s) }
-                : w));
             toast.error("Error al actualizar pago");
         }
     };
@@ -148,10 +144,8 @@ export default function OvertimePage() {
             const result = await togglePreferStockStatus(staffId, weekId, currentStatus);
             if (!result.success) throw new Error(result.error);
             toast.success(result.newStatus ? "Enviado a Bolsa de Horas" : "Cambiado a Pago en Nómina", { id: 'prefer-stock-toggle' });
-            const start = format(startOfMonth(viewMonth), 'yyyy-MM-dd');
-            const end = format(endOfMonth(viewMonth), 'yyyy-MM-dd');
-            const res = await getOvertimeData(start, end);
-            if (res?.weeksResult) setWeeksData(res.weeksResult);
+            invalidateHomeOvertimeCache();
+            await refresh();
         } catch (error: any) {
             toast.error("Error al actualizar modo: " + error.message, { id: 'prefer-stock-toggle' });
         }

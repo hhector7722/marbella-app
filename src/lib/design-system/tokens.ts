@@ -92,12 +92,11 @@ export const DS_SCREEN_TOKENS = {
      */
     modalBodyStartGap: '12px',
     /**
-     * Tope de alto de Modal — referencia Albaranes detalle:
-     * `min(68dvh, calc(100dvh − safe-areas − 2.5rem))`.
-     * TOKENS `estructura.alto-modal` (contrato Modal; supersede el 94svh genérico en esta superficie).
+     * Tope de alto de Modal: viewport visible menos área segura y el padding
+     * del overlay (1rem por lado). TOKENS `estructura.alto-modal`.
      */
     modalMaxHeight:
-        'min(68dvh, calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 2.5rem))',
+        'calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 2rem)',
     /** Backdrop nivel base (ADR-0008). */
     modalOverlayBase: 'rgba(0, 0, 0, 0.32)',
     modalOverlayBaseFilter: 'blur(8px) saturate(65%)',

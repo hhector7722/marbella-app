@@ -543,6 +543,27 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         assert.doesNotMatch(snapshot, /select\('\*'\)/);
     });
 
+    it('Horas extras de Admin y Master leen un solo listado cacheado', () => {
+        const admin = readFileSync(
+            join(SRC_ROOT, 'components/dashboards/AdminDashboardView.tsx'),
+            'utf8'
+        );
+        const master = readFileSync(
+            join(SRC_ROOT, 'components/dashboards/MasterDashboardView.tsx'),
+            'utf8'
+        );
+        const widget = readFileSync(
+            join(SRC_ROOT, 'components/dashboards/staff/StaffWeekScheduleWidget.tsx'),
+            'utf8'
+        );
+        assert.match(admin, /from '@\/hooks\/useOvertimeWeeks'/);
+        assert.match(master, /from '@\/hooks\/useOvertimeWeeks'/);
+        assert.match(widget, /from '@\/hooks\/useOvertimeWeeks'/);
+        assert.doesNotMatch(admin, /getOvertimeData\(/);
+        assert.doesNotMatch(master, /getOvertimeData\(/);
+        assert.doesNotMatch(widget, /getOvertimeData\(/);
+    });
+
     it('el cristal es claro sobre cielo y oscuro sobre el petróleo actual', () => {
         assert.equal(resolveHomeWidgetScheme('#5B8FB9'), 'light');
         assert.equal(resolveHomeWidgetScheme('#7eb0d4'), 'light');

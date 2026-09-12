@@ -24,10 +24,10 @@ import {
 import { createClient } from '@/utils/supabase/client';
 import { cn } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { getOvertimeData } from '@/app/actions/overtime';
 import { Check, X } from 'lucide-react';
 import type { WeeklyStats } from '@/lib/hours-engine/overtime-weeks-ssot';
 import { isMasterDashboardUser } from '@/lib/master-dashboard';
+import { useOvertimeWeeks } from '@/hooks/useOvertimeWeeks';
 
 const WEEKDAY_LABELS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'] as const;
 
@@ -472,8 +472,6 @@ export function StaffWeekScheduleWidget({
     const [shifts, setShifts] = useState<ShiftRow[]>([]);
     const [eventsByDate, setEventsByDate] = useState<Record<string, BarActivity[]>>({});
     const [loading, setLoading] = useState(true);
-    const [overtimeWeeks, setOvertimeWeeks] = useState<Record<string, WeeklyStats>>({});
-    const [overtimeLoading, setOvertimeLoading] = useState(() => masterMode);
     /** Días (yyyy-MM-dd) con al menos una nota; solo se rellena para el usuario master. */
     const [noteDates, setNoteDates] = useState<Set<string>>(() => new Set());
     const showNoteMarkers = isMasterDashboardUser(userEmail);
@@ -494,28 +492,18 @@ export function StaffWeekScheduleWidget({
 
     const monthWeeks = useMemo(() => chunkWeeks(monthDays), [monthDays]);
 
-    const loadOvertimeData = useCallback(async () => {
-        if (!masterMode) return;
-        setOvertimeLoading(true);
-        try {
-            const result = await getOvertimeData(rangeStart, rangeEnd);
-            const byWeek: Record<string, WeeklyStats> = {};
-            (result?.weeksResult ?? []).forEach((w) => {
-                byWeek[w.weekId] = w;
-            });
-            setOvertimeWeeks(byWeek);
-        } catch (e) {
-            console.error(e);
-            setOvertimeWeeks({});
-        } finally {
-            setOvertimeLoading(false);
-        }
-    }, [masterMode, rangeStart, rangeEnd]);
-
-    useEffect(() => {
-        if (!masterMode) return;
-        void loadOvertimeData();
-    }, [loadOvertimeData, overtimeRefreshKey, masterMode]);
+    const { weeks: overtimeWeekList, loading: overtimeLoading } = useOvertimeWeeks(
+        rangeStart,
+        rangeEnd,
+        { enabled: masterMode, refreshKey: overtimeRefreshKey },
+    );
+    const overtimeWeeks = useMemo(() => {
+        const byWeek: Record<string, WeeklyStats> = {};
+        overtimeWeekList.forEach((w) => {
+            byWeek[w.weekId] = w;
+        });
+        return byWeek;
+    }, [overtimeWeekList]);
 
     const loadedActivityDatesRef = useRef<Set<string>>(new Set());
     const expandedSatKey = useMemo(() => format(addDays(expandedWeekStart, 5), 'yyyy-MM-dd'), [expandedWeekStart]);

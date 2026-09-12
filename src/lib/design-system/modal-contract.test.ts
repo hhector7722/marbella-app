@@ -98,8 +98,9 @@ describe('Modal identidad y variantes', () => {
         assert.equal(DS_SCREEN_TOKENS.modalBodyStartGap, DS_SCREEN_TOKENS.espacio3);
         assert.equal(DS_SCREEN_TOKENS.modalBodyStartGap, '12px');
         assert.equal(DS_SCREEN_TOKENS.radioSuperficie, '16px');
-        assert.match(DS_SCREEN_TOKENS.modalMaxHeight, /68dvh/);
-        assert.match(DS_SCREEN_TOKENS.modalMaxHeight, /2\.5rem/);
+        assert.doesNotMatch(DS_SCREEN_TOKENS.modalMaxHeight, /68dvh/);
+        assert.match(DS_SCREEN_TOKENS.modalMaxHeight, /100dvh/);
+        assert.match(DS_SCREEN_TOKENS.modalMaxHeight, /2rem/);
         assert.equal(DS_SCREEN_TOKENS.modalOverlayBase, 'rgba(0, 0, 0, 0.32)');
         assert.equal(DS_SCREEN_TOKENS.modalOverlayBaseFilter, 'blur(8px) saturate(65%)');
         assert.equal(DS_SCREEN_TOKENS.modalOverlayElevated, 'rgba(0, 0, 0, 0.28)');
@@ -149,6 +150,19 @@ describe('Modal identidad y variantes', () => {
         assert.match(css, /--modal-body-start-gap:\s*var\(--espacio-3\)/);
         assert.match(css, /\[data-component='Modal'\] \[data-element='container'\]/);
         assert.match(css, /border-radius:\s*var\(--radio-superficie\)/);
+        assert.match(
+            css,
+            /--modal-max-height:\s*calc\(\s*100dvh/,
+            'el tope de alto es el viewport visible, no 68dvh'
+        );
+        assert.doesNotMatch(css, /--modal-max-height:[\s\S]{0,80}68dvh/);
+        assert.match(css, /max-height:\s*min\(100%, var\(--modal-max-height\)\)/);
+        assert.match(
+            modalSource,
+            /h-full max-h-full min-h-0/,
+            'el marco del overlay cede altura al panel'
+        );
+        assert.match(modalSource, /max-h-\[min\(100%,var\(--modal-max-height\)\)\]/);
         assert.match(css, /\[data-component='Modal'\] \[data-element='body'\]/);
         assert.match(css, /padding-top:\s*var\(--modal-body-start-gap\)/);
         assert.match(css, /--modal-content-inset-start:\s*var\(--modal-header-inset\)/);

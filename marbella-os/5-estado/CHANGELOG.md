@@ -38,6 +38,10 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-12
 
+- **Perfil: el modal de Datos personales se ve entero.** El panel deja el tope del 68dvh (una medida de Albaranes, no el área visible) y usa el interior del overlay. En teléfono y escritorio la ficha —incluido el documento— cabe sin recorte; si aún no entra, el Body se desplaza y la cabecera no. [EXPERIENCIA §8](../2-diseno/EXPERIENCIA.md#8-modales), [TOKENS](../2-diseno/TOKENS.md).
+
+- **Horas extras: los listados del dashboard leen lo ya persistido.** La columna Ext del horario, el mosaico de extras y `/dashboard/overtime` dejan de liquidar la plantilla en cada carga. Pintan el importe guardado de las semanas cerradas y reutilizan ese resultado al volver al mes o al pasar de `/dashboard` a `/master/dashboard`. La semana en curso no se calcula.
+
 - **Cierres: la foto del día se abre en el mismo Modal oscuro.** En el detalle de cierre, pulsar Totales datáfonos o Informe TPV abre una superficie derivada `standard`/`dark` con esa sola imagen, canto blanco (`color.texto.invertido`) y `radio.superficie`. Sin carrusel ni marco de zinc. [P2](../2-diseno/PATRONES.md#p2--modal), [ADR-0007](../4-decisiones/ADR-0007-modal-superficie-derivada.md).
 
 - **Cierres: las etiquetas del detalle del día se leen en blanco.** En el modal de detalle de cierre (`/dashboard/history`), nombres como Ventas, Venta neta y Tarjeta dejan el petróleo y usan `color.texto.invertido` sobre el envolvente oscuro.

@@ -212,9 +212,9 @@ function ModalPanelShell({
             data-header-compact={headerCompact ? 'true' : undefined}
             data-subordinate={isSubordinate ? 'true' : undefined}
             className={cn(
-                'flex w-full max-w-full flex-col overflow-hidden overflow-x-hidden rounded-ds-superficie shadow-ds-modal outline-none',
+                'flex w-full max-w-full min-h-0 flex-col overflow-hidden overflow-x-hidden rounded-ds-superficie shadow-ds-modal outline-none',
                 dark ? 'bg-[var(--color-envolvente-bajo)] text-ds-texto-invertido' : 'bg-ds-superficie text-ds-texto-fuerte',
-                'max-h-ds-modal',
+                'max-h-[min(100%,var(--modal-max-height))]',
                 preferTall && 'min-h-[min(20rem,var(--modal-max-height))]',
                 pickModalPanelClassName(className)
             )}
@@ -608,7 +608,7 @@ export function Modal({
             />
             <div
                 className={cn(
-                    'relative z-10 flex w-full max-w-full flex-col items-center pointer-events-none',
+                    'relative z-10 flex h-full max-h-full min-h-0 w-full max-w-full flex-col items-center justify-center pointer-events-none',
                     layout.maxWidthClass,
                     wrapperClassName
                 )}
@@ -628,7 +628,7 @@ export function Modal({
                     tabIndex={-1}
                     data-subordinate={isSubordinate ? 'true' : undefined}
                     className={cn(
-                        'pointer-events-auto w-full max-w-full outline-none transition-[filter,opacity] duration-200',
+                        'pointer-events-auto flex max-h-full min-h-0 w-full max-w-full flex-col outline-none transition-[filter,opacity] duration-200',
                         isSubordinate && 'pointer-events-none',
                         panelHostClassName
                     )}

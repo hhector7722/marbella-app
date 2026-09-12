@@ -7,7 +7,8 @@ import { es } from 'date-fns/locale';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'sonner';
 import { Check, Circle, Minus, Plus, RefreshCw, ShoppingCart } from 'lucide-react';
-import { getOvertimeData, togglePaidStatus } from '@/app/actions/overtime';
+import { togglePaidStatus } from '@/app/actions/overtime';
+import { invalidateHomeOvertimeCache, useOvertimeWeeks } from '@/hooks/useOvertimeWeeks';
 import DashboardVentasSection from '@/components/dashboards/DashboardVentasSection';
 import MasterShortcutGrid from '@/components/dashboards/MasterShortcutGrid';
 import { HorasExtrasWidget } from '@/components/dashboards/ops-widgets';
@@ -126,13 +127,18 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
     const [showAllEmployeesInPlantilla, setShowAllEmployeesInPlantilla] = useState(false);
 
     const [overtimeViewMonth, setOvertimeViewMonth] = useState(() => startOfMonth(new Date()));
-    const [overtimeWeeksData, setOvertimeWeeksData] = useState<WeeklyStats[]>([]);
-    const [overtimeLoading, setOvertimeLoading] = useState(true);
+    const overtimeRangeStart = format(startOfMonth(overtimeViewMonth), 'yyyy-MM-dd');
+    const overtimeRangeEnd = format(endOfMonth(overtimeViewMonth), 'yyyy-MM-dd');
     const [isOvertimeModalOpen, setIsOvertimeModalOpen] = useState(false);
     const [overtimeWeekDetail, setOvertimeWeekDetail] = useState<WeeklyStats | null>(null);
     const [overtimePaidStatus, setOvertimePaidStatus] = useState<Record<string, boolean>>({});
     const [overtimeWorkerHistory, setOvertimeWorkerHistory] = useState<{ workerId: string; weekId: string } | null>(null);
     const [overtimeRefreshKey, setOvertimeRefreshKey] = useState(0);
+    const { weeks: overtimeWeeksData, loading: overtimeLoading } = useOvertimeWeeks(
+        overtimeRangeStart,
+        overtimeRangeEnd,
+        { refreshKey: overtimeRefreshKey },
+    );
     const [pendingReservationsCount, setPendingReservationsCount] = useState(0);
 
     const [userId, setUserId] = useState<string | null>(() => initialUserId ?? null);
@@ -209,48 +215,19 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
     }, [supabase]);
 
     useEffect(() => {
-        let cancelled = false;
-        const start = format(startOfMonth(overtimeViewMonth), 'yyyy-MM-dd');
-        const end = format(endOfMonth(overtimeViewMonth), 'yyyy-MM-dd');
-        setOvertimeLoading(true);
-        getOvertimeData(start, end)
-            .then((result) => {
-                if (cancelled) return;
-                const weeks = result?.weeksResult ?? [];
-                setOvertimeWeeksData(weeks);
-                const nextPaid: Record<string, boolean> = {};
-                weeks.forEach((week) => {
-                    week.staff?.forEach((s) => {
-                        nextPaid[`${week.weekId}-${s.id}`] = !!s.isPaid;
-                    });
-                });
-                setOvertimePaidStatus(nextPaid);
-            })
-            .catch(() => {
-                if (!cancelled) {
-                    setOvertimeWeeksData([]);
-                    toast.error('No se pudieron cargar las horas extras');
-                }
-            })
-            .finally(() => {
-                if (!cancelled) setOvertimeLoading(false);
+        const nextPaid: Record<string, boolean> = {};
+        overtimeWeeksData.forEach((week) => {
+            week.staff?.forEach((s) => {
+                nextPaid[`${week.weekId}-${s.id}`] = !!s.isPaid;
             });
-        return () => {
-            cancelled = true;
-        };
-    }, [overtimeViewMonth]);
+        });
+        setOvertimePaidStatus(nextPaid);
+    }, [overtimeWeeksData]);
 
     const toggleOvertimePaid = async (e: React.MouseEvent, weekId: string, staffId: string, newStatus: boolean) => {
         e.stopPropagation();
         const key = `${weekId}-${staffId}`;
         setOvertimePaidStatus((prev) => ({ ...prev, [key]: newStatus }));
-        setOvertimeWeeksData((prev) =>
-            prev.map((w) =>
-                w.weekId === weekId
-                    ? { ...w, staff: w.staff?.map((s) => (s.id === staffId ? { ...s, isPaid: newStatus } : s)) }
-                    : w
-            )
-        );
         try {
             const weekData = overtimeWeeksData.find((w) => w.weekId === weekId);
             const staffData = weekData?.staff?.find((s) => s.id === staffId);
@@ -259,17 +236,11 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
                 overtimeHours: staffData?.overtimeHours ?? 0,
             });
             if (!result.success) throw new Error('Error al actualizar pago');
+            invalidateHomeOvertimeCache();
             toast.success(newStatus ? 'Marcado como pagado' : 'Pago cancelado');
         } catch (error) {
             console.error(error);
             setOvertimePaidStatus((prev) => ({ ...prev, [key]: !newStatus }));
-            setOvertimeWeeksData((prev) =>
-                prev.map((w) =>
-                    w.weekId === weekId
-                        ? { ...w, staff: w.staff?.map((s) => (s.id === staffId ? { ...s, isPaid: !newStatus } : s)) }
-                        : w
-                )
-            );
             toast.error('Error al actualizar pago');
         }
     };

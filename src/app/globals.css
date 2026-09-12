@@ -80,10 +80,9 @@
   --modal-subordinate-opacity: 0.58;
   /* Separación Header → Body (ref. detalle Albaranes) = espacio.3 */
   --modal-body-start-gap: var(--espacio-3);
-  /* Referencia Albaranes detalle: max-h 68dvh con safe-area */
-  --modal-max-height: min(
-    68dvh,
-    calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 2.5rem)
+  /* Tope = viewport visible menos área segura y el padding del overlay (1rem por lado). */
+  --modal-max-height: calc(
+    100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 2rem
   );
   /* ADR-0008 — backdrop base vs elevado */
   --modal-overlay-base: rgba(0, 0, 0, 0.32);
@@ -221,6 +220,7 @@
 [data-component='ConsumptionBottomSheet'] [data-element='body'] {
   overflow-x: hidden;
   max-width: 100%;
+  min-height: 0;
 }
 
 /*
@@ -508,6 +508,8 @@
  */
 [data-component='Modal'] [data-element='container'] {
   border-radius: var(--radio-superficie);
+  max-height: min(100%, var(--modal-max-height));
+  min-height: 0;
 }
 
 /*

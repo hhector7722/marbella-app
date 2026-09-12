@@ -1,27 +1,17 @@
 /**
- * Listados de horas extras (overtime / dashboards) desde Hours Engine.
- * Misma liquidación que WorkerWeeklyHistoryModal / WeekCard — una sola verdad.
+ * Listados de horas extras (overtime / dashboards) desde la proyección persistida.
  *
- * NO usa get_weekly_worker_stats ni perfiles como jornada.
+ * Importe = `weekly_snapshots.total_cost` (Cost Engine vía Writer).
+ * No liquida en lectura. Semana en curso y futuras no entran.
+ *
+ * Historial de una persona y pie de tarjeta semanal siguen el read-model HE.
  */
 
-import { addDays, format, getISOWeek, parseISO } from 'date-fns';
+import { addDays, format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import {
-  employeeTimelineStartWeek,
-  isPaidLookupFromRows,
-  bagModeOverrideLookupFromRows,
-  overtimeRateOverrideLookupFromRows,
-  loadEmployeeBoundaryFacts,
-  loadEmployeeBoundaryFactsBatch,
-  liquidateWeekForCard,
-  resolveOpeningCarryIn,
-  type EmployeeBoundaryFacts,
-} from '@/lib/hours-engine';
-import { formatYmdInMadrid, madridRangeUtcIso } from '@/lib/madrid-date-bounds';
-import { filterVisiblePlantillaEmployees } from '@/lib/staff/plantilla-employees';
-import { weekDisplayFromEngine } from '@/lib/read-models/week-display-from-engine';
+import { formatYmdInMadrid } from '../madrid-date-bounds.ts';
+import { filterVisiblePlantillaEmployees } from '../staff/plantilla-employees.ts';
 
 export interface StaffWeeklyStats {
   id: string;
@@ -46,6 +36,41 @@ export interface WeeklyStats {
   staff: StaffWeeklyStats[];
 }
 
+export type BuildOvertimeWeeksOptions = {
+  startDate: string;
+  endDate: string;
+  userId?: string | null;
+  onlyCompletedWeeks?: boolean;
+};
+
+type ProfileRow = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  role: string | null;
+  visible_in_plantilla?: boolean | null;
+};
+
+export type OvertimeSnapshotRow = {
+  user_id: string;
+  week_start: string;
+  total_cost: number | string | null;
+  total_hours: number | string | null;
+  ordinary_hours: number | string | null;
+  extra_hours: number | string | null;
+  is_paid: boolean | null;
+  prefer_stock_hours_override: boolean | null;
+};
+
+function asFiniteNumber(value: unknown): number {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function civilYmd(value: string): string {
+  return value.split('T')[0]!;
+}
+
 function mondayOnOrBeforeYmd(ymd: string): string {
   const [y, m, d] = ymd.split('-').map(Number);
   const dt = new Date(y!, m! - 1, d!);
@@ -55,7 +80,7 @@ function mondayOnOrBeforeYmd(ymd: string): string {
   return format(dt, 'yyyy-MM-dd');
 }
 
-function listMondaysInRange(startYmd: string, endYmd: string): string[] {
+export function listMondaysInRange(startYmd: string, endYmd: string): string[] {
   const out: string[] = [];
   let cur = mondayOnOrBeforeYmd(startYmd);
   const end = endYmd.split('T')[0]!;
@@ -69,294 +94,86 @@ function listMondaysInRange(startYmd: string, endYmd: string): string[] {
 }
 
 /** Domingo (lunes+6) estrictamente anterior al día civil Madrid de hoy. */
-function isCompletedWeekMonday(weekMondayYmd: string, todayMadridYmd: string): boolean {
+export function isCompletedWeekMonday(weekMondayYmd: string, todayMadridYmd: string): boolean {
   const sunday = format(addDays(parseISO(weekMondayYmd), 6), 'yyyy-MM-dd');
   return sunday < todayMadridYmd;
 }
 
-function todayMadridYmd(): string {
+export function todayMadridYmd(): string {
   return formatYmdInMadrid(new Date().toISOString());
 }
 
-type ProfileRow = {
-  id: string;
-  first_name: string | null;
-  last_name: string | null;
-  role: string | null;
-  visible_in_plantilla?: boolean | null;
-};
+export function completedMondaysInRange(
+  startDate: string,
+  endDate: string,
+  todayYmd: string,
+  onlyCompleted = true,
+): string[] {
+  const start = startDate.split('T')[0]!;
+  const end = endDate.split('T')[0]!;
+  let mondays = listMondaysInRange(start, end);
+  if (onlyCompleted) mondays = mondays.filter((m) => isCompletedWeekMonday(m, todayYmd));
+  return mondays;
+}
 
-type HoursHistoryRows = {
-  snapshots: Array<{
-    week_start: string;
-    is_paid: boolean | null;
-    prefer_stock_hours_override: boolean | null;
-    overtime_price_snapshot: number | null;
-  }>;
-  logs: Array<{
-    clock_in: string;
-    clock_out: string | null;
-    total_hours: number | null;
-  }>;
-};
+export function overtimeWeeksCacheKey(
+  startDate: string,
+  endDate: string,
+  todayYmd: string,
+  userId?: string | null,
+): string {
+  const mondays = completedMondaysInRange(startDate, endDate, todayYmd);
+  const who = userId ?? '*';
+  return `${who}|${mondays.join(',') || `${civilYmd(startDate)}:${civilYmd(endDate)}:none`}`;
+}
 
-export type BuildOvertimeWeeksOptions = {
-  startDate: string;
-  endDate: string;
-  userId?: string | null;
-  onlyCompletedWeeks?: boolean;
-};
+export function staffStatsFromProjection(
+  profile: ProfileRow,
+  row: OvertimeSnapshotRow,
+): StaffWeeklyStats {
+  const totalCost = asFiniteNumber(row.total_cost);
+  const totalHours = asFiniteNumber(row.total_hours);
+  const regularHours = asFiniteNumber(row.ordinary_hours);
+  const overtimeHours = asFiniteNumber(row.extra_hours);
+  const displayName =
+    `${profile.first_name ?? ''} ${profile.last_name ?? ''}`.trim() || '—';
+  return {
+    id: profile.id,
+    name: displayName,
+    role: profile.role ?? 'staff',
+    totalHours,
+    regularHours,
+    overtimeHours,
+    totalCost,
+    regularCost: 0,
+    overtimeCost: totalCost,
+    isPaid: row.is_paid === true,
+    preferStock: row.prefer_stock_hours_override === true,
+  };
+}
 
-/**
- * Construye weeksResult + summary con liquidateWeekForCard (HE).
- * Forma idéntica a la que consumen /dashboard/overtime y paneles manager/master.
- */
-export async function buildOvertimeWeeksFromSsot(
-  supabase: SupabaseClient,
-  options: BuildOvertimeWeeksOptions,
-): Promise<{
+export function assembleOvertimeWeeks(input: {
+  mondays: string[];
+  profiles: ProfileRow[];
+  snapshots: OvertimeSnapshotRow[];
+}): {
   weeksResult: WeeklyStats[];
   summary: { totalCost: number; totalHours: number; totalOvertimeCost: number };
-}> {
-  const startDate = options.startDate.split('T')[0]!;
-  const endDate = options.endDate.split('T')[0]!;
-  const onlyCompleted = options.onlyCompletedWeeks !== false;
-  const today = todayMadridYmd();
-
-  let mondays = listMondaysInRange(startDate, endDate);
-  if (onlyCompleted) mondays = mondays.filter((m) => isCompletedWeekMonday(m, today));
-  if (mondays.length === 0) {
-    return { weeksResult: [], summary: { totalCost: 0, totalHours: 0, totalOvertimeCost: 0 } };
-  }
-
-  const firstMonday = mondays[0]!;
-  const lastMonday = mondays[mondays.length - 1]!;
-  const lastSunday = format(addDays(parseISO(lastMonday), 6), 'yyyy-MM-dd');
-
-  const overtimeProfileSelect =
-    'id, first_name, last_name, avatar_url, role, visible_in_plantilla' as const;
-
-  let profilesQuery = supabase
-    .from('profiles')
-    .select(overtimeProfileSelect)
-    .eq('visible_in_plantilla', true)
-    .order('first_name');
-
-  if (options.userId) {
-    profilesQuery = supabase
-      .from('profiles')
-      .select(overtimeProfileSelect)
-      .eq('id', options.userId);
-  }
-
-  const { data: profileRows, error: profileErr } = await profilesQuery;
-  if (profileErr) throw profileErr;
-
-  const profiles = filterVisiblePlantillaEmployees(
-    (profileRows ?? []) as unknown as ProfileRow[],
-  );
-  const workerIds = profiles.map((profile) => profile.id);
-
+} {
+  const profileById = new Map(input.profiles.map((p) => [p.id, p]));
   const staffByWeek = new Map<string, StaffWeeklyStats[]>();
-  for (const m of mondays) staffByWeek.set(m, []);
+  for (const monday of input.mondays) staffByWeek.set(monday, []);
 
-  // Batch boundary facts. If the batch fails, retain the original per-worker path.
-  let boundaryFactsByUser: Record<string, EmployeeBoundaryFacts> = {};
-  let boundaryBatchFailed = false;
-  if (workerIds.length > 0) {
-    try {
-      boundaryFactsByUser = await loadEmployeeBoundaryFactsBatch(supabase, workerIds);
-    } catch {
-      boundaryBatchFailed = true;
-    }
+  for (const row of input.snapshots) {
+    const weekStart = civilYmd(row.week_start);
+    const bucket = staffByWeek.get(weekStart);
+    if (!bucket) continue;
+    const profile = profileById.get(row.user_id);
+    if (!profile) continue;
+    bucket.push(staffStatsFromProjection(profile, row));
   }
 
-  // Calculate the earliest historical week required by any employee before issuing
-  // the shared time_logs/weekly_snapshots reads. This preserves carry-in semantics.
-  const timelineStarts = workerIds
-    .map((userId) => employeeTimelineStartWeek(boundaryFactsByUser[userId]))
-    .filter((value): value is string => Boolean(value));
-  const logsFromYmd = timelineStarts.reduce(
-    (earliest, value) => (value < earliest ? value : earliest),
-    firstMonday,
-  );
-
-  const hoursHistoryByUser = new Map<string, HoursHistoryRows>();
-  let historyBatchFailed = false;
-
-  if (workerIds.length > 0 && !boundaryBatchFailed) {
-    try {
-      const { startIso, endIso } = madridRangeUtcIso(logsFromYmd, lastSunday);
-      const [snapsRes, logsRes] = await Promise.all([
-        supabase
-          .from('weekly_snapshots')
-          .select('user_id, week_start, is_paid, prefer_stock_hours_override, overtime_price_snapshot')
-          .in('user_id', workerIds)
-          .gte('week_start', logsFromYmd)
-          .lte('week_start', lastMonday),
-        supabase
-          .from('time_logs')
-          .select('user_id, clock_in, clock_out, total_hours')
-          .in('user_id', workerIds)
-          .gte('clock_in', startIso)
-          .lte('clock_in', endIso),
-      ]);
-
-      if (snapsRes.error || logsRes.error) {
-        historyBatchFailed = true;
-      } else {
-        for (const userId of workerIds) {
-          hoursHistoryByUser.set(userId, { snapshots: [], logs: [] });
-        }
-        for (const row of snapsRes.data ?? []) {
-          const bucket = hoursHistoryByUser.get(row.user_id);
-          if (bucket) {
-            bucket.snapshots.push({
-              week_start: row.week_start,
-              is_paid: row.is_paid,
-              prefer_stock_hours_override: row.prefer_stock_hours_override,
-              overtime_price_snapshot: row.overtime_price_snapshot,
-            });
-          }
-        }
-        for (const row of logsRes.data ?? []) {
-          const bucket = hoursHistoryByUser.get(row.user_id);
-          if (bucket) {
-            bucket.logs.push({
-              clock_in: row.clock_in,
-              clock_out: row.clock_out,
-              total_hours: row.total_hours,
-            });
-          }
-        }
-      }
-    } catch {
-      historyBatchFailed = true;
-    }
-  } else if (workerIds.length > 0) {
-    historyBatchFailed = true;
-  }
-
-  for (const profile of profiles) {
-    let employee = boundaryFactsByUser[profile.id];
-    if (!employee) {
-      try {
-        employee = await loadEmployeeBoundaryFacts(supabase, profile.id);
-        boundaryFactsByUser[profile.id] = employee;
-      } catch {
-        continue;
-      }
-    }
-
-    let snapsRows: HoursHistoryRows['snapshots'];
-    let logRows: HoursHistoryRows['logs'];
-
-    if (!historyBatchFailed && hoursHistoryByUser.has(profile.id)) {
-      const history = hoursHistoryByUser.get(profile.id)!;
-      snapsRows = history.snapshots;
-      logRows = history.logs;
-    } else {
-      const timelineStart = employeeTimelineStartWeek(employee);
-      const employeeLogsFromYmd =
-        timelineStart && timelineStart < firstMonday ? timelineStart : firstMonday;
-      const { startIso, endIso } = madridRangeUtcIso(employeeLogsFromYmd, lastSunday);
-
-      const [snapsRes, logsRes] = await Promise.all([
-        supabase
-          .from('weekly_snapshots')
-          .select('week_start, is_paid, prefer_stock_hours_override, overtime_price_snapshot')
-          .eq('user_id', profile.id)
-          .gte('week_start', employeeLogsFromYmd)
-          .lte('week_start', lastMonday),
-        supabase
-          .from('time_logs')
-          .select('clock_in, clock_out, total_hours')
-          .eq('user_id', profile.id)
-          .gte('clock_in', startIso)
-          .lte('clock_in', endIso),
-      ]);
-
-      if (snapsRes.error || logsRes.error) continue;
-      snapsRows = snapsRes.data ?? [];
-      logRows = logsRes.data ?? [];
-    }
-
-    const engineLogs = logRows.map((l) => ({
-      clockInIso: l.clock_in as string,
-      clockOutIso: l.clock_out as string | null,
-      totalHours: l.total_hours as number | null,
-    }));
-
-    const isPaidByWeek = isPaidLookupFromRows(snapsRows);
-    const bagModeOverrideByWeek = bagModeOverrideLookupFromRows(snapsRows);
-    const overtimeRateOverrideByWeek = overtimeRateOverrideLookupFromRows(snapsRows);
-    const displayName =
-      `${profile.first_name ?? ''} ${profile.last_name ?? ''}`.trim() || '—';
-    const role = profile.role ?? 'staff';
-
-    let carryIn = resolveOpeningCarryIn({
-      employee,
-      chainStart: firstMonday,
-      logs: engineLogs,
-      isPaidByWeek,
-      bagModeOverrideByWeek,
-    });
-
-    for (const weekStart of mondays) {
-      const weekEnd = format(addDays(parseISO(weekStart), 6), 'yyyy-MM-dd');
-      const weekLogs = engineLogs.filter((l) => {
-        const day = formatYmdInMadrid(l.clockInIso);
-        return day >= weekStart && day <= weekEnd;
-      });
-
-      const isPaid = isPaidByWeek(weekStart);
-      const bagModeOverride = bagModeOverrideByWeek(weekStart);
-      const overrideRate = overtimeRateOverrideByWeek(weekStart);
-
-      const { result, summary } = liquidateWeekForCard({
-        employee,
-        weekStart,
-        logs: weekLogs,
-        isPaid,
-        carryIn,
-        bagModeOverride,
-        overrideRate,
-      });
-
-      const display = weekDisplayFromEngine(result, summary, bagModeOverride);
-      carryIn = result.carryOut;
-
-      const hasActivity =
-        weekLogs.length > 0 ||
-        Math.abs(display.estimatedValue ?? 0) > 0.005 ||
-        Math.abs(display.weeklyBalance) > 0.005 ||
-        Math.abs(display.finalBalance) > 0.005 ||
-        snapsRows.some((s) => String(s.week_start).split('T')[0] === weekStart);
-
-      if (!hasActivity) continue;
-
-      const row: StaffWeeklyStats = {
-        id: profile.id,
-        name: displayName,
-        role,
-        totalHours: display.totalHours,
-        regularHours: Math.max(
-          0,
-          display.totalHours - Math.max(0, display.weeklyBalance),
-        ),
-        overtimeHours: Math.max(0, display.weeklyBalance),
-        totalCost: display.estimatedValue ?? 0,
-        regularCost: 0,
-        overtimeCost: display.estimatedValue ?? 0,
-        isPaid: display.isPaid,
-        preferStock: display.preferStock,
-      };
-
-      staffByWeek.get(weekStart)!.push(row);
-    }
-  }
-
-  const weeksResult: WeeklyStats[] = [...mondays]
+  const weeksResult: WeeklyStats[] = [...input.mondays]
     .reverse()
     .map((weekStart) => {
       const staff = (staffByWeek.get(weekStart) ?? []).sort(
@@ -383,4 +200,76 @@ export async function buildOvertimeWeeksFromSsot(
   };
 
   return { weeksResult, summary };
+}
+
+const EMPTY_OVERTIME = {
+  weeksResult: [] as WeeklyStats[],
+  summary: { totalCost: 0, totalHours: 0, totalOvertimeCost: 0 },
+};
+
+const OVERTIME_PROFILE_SELECT =
+  'id, first_name, last_name, avatar_url, role, visible_in_plantilla' as const;
+
+const OVERTIME_SNAPSHOT_SELECT =
+  'user_id, week_start, total_cost, total_hours, ordinary_hours, extra_hours, is_paid, prefer_stock_hours_override' as const;
+
+/**
+ * weeksResult + summary desde weekly_snapshots (proyección del Writer).
+ * Forma idéntica a la que consumen /dashboard/overtime y paneles manager/master.
+ */
+export async function buildOvertimeWeeksFromSsot(
+  supabase: SupabaseClient,
+  options: BuildOvertimeWeeksOptions,
+): Promise<{
+  weeksResult: WeeklyStats[];
+  summary: { totalCost: number; totalHours: number; totalOvertimeCost: number };
+}> {
+  const onlyCompleted = options.onlyCompletedWeeks !== false;
+  const mondays = completedMondaysInRange(
+    options.startDate,
+    options.endDate,
+    todayMadridYmd(),
+    onlyCompleted,
+  );
+  if (mondays.length === 0) return EMPTY_OVERTIME;
+
+  let profilesQuery = supabase
+    .from('profiles')
+    .select(OVERTIME_PROFILE_SELECT)
+    .eq('visible_in_plantilla', true)
+    .order('first_name');
+
+  if (options.userId) {
+    profilesQuery = supabase
+      .from('profiles')
+      .select(OVERTIME_PROFILE_SELECT)
+      .eq('id', options.userId);
+  }
+
+  const { data: profileRows, error: profileErr } = await profilesQuery;
+  if (profileErr) throw profileErr;
+
+  const profiles = filterVisiblePlantillaEmployees(
+    (profileRows ?? []) as unknown as ProfileRow[],
+  );
+  const workerIds = profiles.map((profile) => profile.id);
+  if (workerIds.length === 0) return EMPTY_OVERTIME;
+
+  const firstMonday = mondays[0]!;
+  const lastMonday = mondays[mondays.length - 1]!;
+
+  const { data: snapshotRows, error: snapshotErr } = await supabase
+    .from('weekly_snapshots')
+    .select(OVERTIME_SNAPSHOT_SELECT)
+    .in('user_id', workerIds)
+    .gte('week_start', firstMonday)
+    .lte('week_start', lastMonday);
+
+  if (snapshotErr) throw snapshotErr;
+
+  return assembleOvertimeWeeks({
+    mondays,
+    profiles,
+    snapshots: (snapshotRows ?? []) as OvertimeSnapshotRow[],
+  });
 }
