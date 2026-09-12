@@ -2,14 +2,16 @@
  * Read-model de semana: DTO de pintura desde Hours Engine + Cost Engine.
  *
  * SSOT: liquidateWeekForCard → weekCardSummaryFromLiquidation.
- * PROHIBIDO: derivar extras/importe/bolsa desde columnas crudas del snapshot
- * (extra_hours, total_cost, pending_balance, prefer_stock_hours_override, …).
+ * PROHIBIDO: derivar extras/importe/bolsa desde extra_hours o total_cost.
  *
- * weekly_snapshots solo aporta hechos administrativos:
- * is_paid, prefer_stock_hours_override, overtime_price_snapshot.
+ * weekly_snapshots aporta hechos administrativos (is_paid, overrides)
+ * y, en la tarjeta suelta, `pending_balance` como carryIn persistido (INV-J01).
+ * El desglose diario no está en esa fila: relojes y Ex del día salen de
+ * time_logs de esa semana + una liquidación.
  */
 
-import { addDays, endOfWeek, format, getISOWeek, parseISO, startOfWeek } from 'date-fns';
+import { addDays, endOfWeek, format, getISOWeek, isSameDay, parseISO, startOfWeek } from 'date-fns';
+import { es } from 'date-fns/locale';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   employeeTimelineStartWeek,
@@ -18,20 +20,28 @@ import {
   overtimeRateOverrideLookupFromRows,
   resolveOpeningCarryIn,
 } from '../hours-engine/opening-carry.ts';
+import { resolveWeekCardCarryIn } from '../hours-engine/week-card-carry-in.ts';
 import { loadEmployeeBoundaryFacts } from '../hours-engine/load-employee-facts.ts';
 import {
   liquidateWeekForCard,
   netPayableHoursFromLiquidation,
   type WeekCardSummaryFromEngine,
 } from '../hours-engine/week-card-from-liquidation.ts';
-import type { LiquidationResult } from '../hours-engine/types.ts';
+import type { CivilDate, LiquidationResult } from '../hours-engine/types.ts';
 import {
-  formatMadridHmFromIso,
+  addCivilDays,
+  previousWeekStart,
+} from '../hours-engine/week-dates.ts';
+import {
   formatYmdInMadrid,
   madridRangeUtcIso,
 } from '../madrid-date-bounds.ts';
-import { buildEmployeeWeeksFromTimeLogs } from '../staff/build-employee-weeks-from-logs.ts';
-import { buildEmployeeWeeksInRange } from '../staff/build-employee-weeks-from-logs.ts';
+import {
+  aggregateLogsForDay,
+  buildEmployeeWeeksFromTimeLogs,
+  buildEmployeeWeeksInRange,
+  type RawTimeLogForWeek,
+} from '../staff/build-employee-weeks-from-logs.ts';
 
 const EPS = 1e-9;
 
@@ -364,6 +374,230 @@ export async function buildEmployeeHistoryMonthFromEngine(
   });
 }
 
+type WeekCardSnapRow = {
+  week_start: string;
+  is_paid: boolean | null;
+  prefer_stock_hours_override?: boolean | null;
+  overtime_price_snapshot?: number | null;
+  pending_balance?: number | null;
+};
+
+function weekKey(value: unknown): CivilDate {
+  return String(value).split('T')[0]! as CivilDate;
+}
+
+function localDateFromYmd(ymd: string): Date {
+  const [y, m, d] = ymd.split('-').map(Number);
+  return new Date(y!, m! - 1, d!);
+}
+
+function pendingBalanceFromRow(row: WeekCardSnapRow): number {
+  const n = Number(row.pending_balance);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function engineLogsInWeek(
+  logs: Array<{ clockInIso: string; clockOutIso: string | null; totalHours: number | null }>,
+  weekStart: CivilDate,
+  sunday: CivilDate,
+) {
+  return logs.filter((l) => {
+    const day = formatYmdInMadrid(l.clockInIso);
+    return day != null && day >= weekStart && day <= sunday;
+  });
+}
+
+async function loadWeekCardWindow(
+  supabase: SupabaseClient,
+  userId: string,
+  weekStart: CivilDate,
+) {
+  const sunday = addCivilDays(weekStart, 6);
+  const prevMonday = previousWeekStart(weekStart);
+  const { startIso, endIso } = madridRangeUtcIso(prevMonday, sunday);
+
+  const [employee, snapsRes, logsRes] = await Promise.all([
+    loadEmployeeBoundaryFacts(supabase, userId),
+    supabase
+      .from('weekly_snapshots')
+      .select(
+        'week_start, is_paid, prefer_stock_hours_override, overtime_price_snapshot, pending_balance',
+      )
+      .eq('user_id', userId)
+      .in('week_start', [prevMonday, weekStart]),
+    supabase
+      .from('time_logs')
+      .select(
+        'clock_in, clock_out, total_hours, justified_hours, event_type, clock_out_show_no_registrada',
+      )
+      .eq('user_id', userId)
+      .gte('clock_in', startIso)
+      .lte('clock_in', endIso),
+  ]);
+
+  if (snapsRes.error) throw snapsRes.error;
+  if (logsRes.error) throw logsRes.error;
+
+  const snapByWeek = new Map<string, WeekCardSnapRow>();
+  for (const row of (snapsRes.data ?? []) as WeekCardSnapRow[]) {
+    snapByWeek.set(weekKey(row.week_start), row);
+  }
+
+  const rawLogs = (logsRes.data ?? []) as RawTimeLogForWeek[];
+  const engineLogs = rawLogs.map((l) => ({
+    clockInIso: l.clock_in as string,
+    clockOutIso: l.clock_out as string | null,
+    totalHours: l.total_hours as number | null,
+  }));
+
+  return { employee, sunday, prevMonday, snapByWeek, rawLogs, engineLogs };
+}
+
+function historyWeekFromLiquidation(input: {
+  weekStart: CivilDate;
+  rawLogs: RawTimeLogForWeek[];
+  extrasByDay: Readonly<Record<string, number>>;
+  display: WeekDisplayDto;
+  bagModeOverride: boolean | null;
+  overtimeRateOverride: number | null;
+}): HistoryWeekDto {
+  const today = new Date();
+  const currentWeekStart = startOfWeek(today, { weekStartsOn: 1 });
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const date = addCivilDays(input.weekStart, i);
+    const agg = aggregateLogsForDay(
+      input.rawLogs.filter((l) => formatYmdInMadrid(l.clock_in as string) === date),
+    );
+    const local = localDateFromYmd(date);
+    return {
+      date,
+      dayName: format(local, 'EEE', { locale: es }),
+      dayNumber: local.getDate(),
+      hasLog: agg.hasLog,
+      clockIn: agg.clockIn,
+      clockOut: agg.clockOut,
+      clock_out_show_no_registrada: agg.clock_out_show_no_registrada,
+      totalHours: agg.totalHours,
+      extraHours: Number(input.extrasByDay[date]) || 0,
+      eventType: agg.eventType,
+      isToday: isSameDay(local, today),
+      justifiedHours: agg.justifiedHours,
+    };
+  });
+
+  return {
+    weekNumber: getISOWeek(localDateFromYmd(input.weekStart)),
+    startDate: input.weekStart,
+    isCurrentWeek: isSameDay(localDateFromYmd(input.weekStart), currentWeekStart),
+    days,
+    summary: {
+      ...input.display,
+      bagModeOverride: input.bagModeOverride,
+      overtimeRateOverride: input.overtimeRateOverride,
+    },
+  };
+}
+
+/**
+ * Una semana (mosaico Staff / modal de persona): carryIn del snapshot,
+ * fichajes de como máximo dos semanas, una liquidación de la semana vista.
+ */
+export async function buildEmployeeHistoryWeekFromEngine(
+  supabase: SupabaseClient,
+  input: { userId: string; weekStart: string },
+): Promise<HistoryWeekDto> {
+  const weekStart = weekKey(input.weekStart);
+  const window = await loadWeekCardWindow(supabase, input.userId, weekStart);
+  const thisSnap = window.snapByWeek.get(weekStart) ?? null;
+  const prevSnap = window.snapByWeek.get(window.prevMonday) ?? null;
+
+  const resolved = resolveWeekCardCarryIn({
+    weekStart,
+    employee: window.employee,
+    thisWeekSnapshot: thisSnap
+      ? { pendingBalance: pendingBalanceFromRow(thisSnap) }
+      : null,
+    previousWeek:
+      prevSnap != null
+        ? {
+            snapshot: { pendingBalance: pendingBalanceFromRow(prevSnap) },
+            logs: engineLogsInWeek(
+              window.engineLogs,
+              window.prevMonday,
+              addCivilDays(window.prevMonday, 6),
+            ),
+            isPaid: prevSnap.is_paid === true,
+            bagModeOverride:
+              prevSnap.prefer_stock_hours_override === true ||
+              prevSnap.prefer_stock_hours_override === false
+                ? prevSnap.prefer_stock_hours_override
+                : null,
+          }
+        : null,
+  });
+
+  let carryIn = resolved.source === 'needs-full-replay' ? 0 : resolved.carryIn;
+  let isPaid = thisSnap?.is_paid === true;
+  let bagModeOverride: boolean | null =
+    thisSnap?.prefer_stock_hours_override === true ||
+    thisSnap?.prefer_stock_hours_override === false
+      ? thisSnap.prefer_stock_hours_override
+      : null;
+  let overtimeRateOverride: number | null =
+    thisSnap?.overtime_price_snapshot != null &&
+    Number.isFinite(Number(thisSnap.overtime_price_snapshot))
+      ? Number(thisSnap.overtime_price_snapshot)
+      : null;
+  let weekLogs = engineLogsInWeek(window.engineLogs, weekStart, window.sunday);
+  let rawLogs = window.rawLogs.filter((l) => {
+    const day = formatYmdInMadrid(l.clock_in as string);
+    return day != null && day >= weekStart && day <= window.sunday;
+  });
+
+  if (resolved.source === 'needs-full-replay') {
+    const ctx = await loadAdminFlagsAndLogs(
+      supabase,
+      input.userId,
+      weekStart,
+      window.sunday,
+    );
+    carryIn = resolveOpeningCarryIn({
+      employee: ctx.employee,
+      chainStart: weekStart,
+      logs: ctx.engineLogs,
+      isPaidByWeek: ctx.isPaidByWeek,
+      bagModeOverrideByWeek: ctx.bagModeOverrideByWeek,
+    });
+    isPaid = ctx.isPaidByWeek(weekStart);
+    bagModeOverride = ctx.bagModeOverrideByWeek(weekStart);
+    overtimeRateOverride = ctx.overtimeRateOverrideByWeek(weekStart);
+    weekLogs = engineLogsInWeek(ctx.engineLogs, weekStart, window.sunday);
+    rawLogs = (ctx.rawLogs as RawTimeLogForWeek[]).filter((l) => {
+      const day = formatYmdInMadrid(l.clock_in as string);
+      return day != null && day >= weekStart && day <= window.sunday;
+    });
+  }
+
+  const { result, summary, extrasByDay } = liquidateWeekForCard({
+    employee: window.employee,
+    weekStart,
+    logs: weekLogs,
+    isPaid,
+    carryIn,
+    bagModeOverride,
+    overrideRate: overtimeRateOverride,
+  });
+
+  return historyWeekFromLiquidation({
+    weekStart,
+    rawLogs,
+    extrasByDay,
+    display: weekDisplayFromEngine(result, summary, bagModeOverride),
+    bagModeOverride,
+    overtimeRateOverride,
+  });
+}
+
 /**
  * Una semana (modal / staff home): footer HE + relojes.
  */
@@ -382,78 +616,30 @@ export async function buildWeekDetailFromEngine(
   }>;
   summary: WeekDisplayDto;
 }> {
-  const weekStart = input.weekStart.split('T')[0]!;
-  const sunday = format(addDays(parseISO(weekStart), 6), 'yyyy-MM-dd');
-
-  const [{ data: profile }, ctx] = await Promise.all([
+  const [{ data: profile }, week] = await Promise.all([
     supabase
       .from('profiles')
       .select('first_name, last_name')
       .eq('id', input.userId)
       .maybeSingle(),
-    loadAdminFlagsAndLogs(supabase, input.userId, weekStart, sunday),
+    buildEmployeeHistoryWeekFromEngine(supabase, input),
   ]);
 
   const name =
     `${profile?.first_name ?? ''} ${profile?.last_name ?? ''}`.trim() || '—';
 
-  const bagModeOverride = ctx.bagModeOverrideByWeek(weekStart);
-  const carryIn = resolveOpeningCarryIn({
-    employee: ctx.employee,
-    chainStart: weekStart,
-    logs: ctx.engineLogs,
-    isPaidByWeek: ctx.isPaidByWeek,
-    bagModeOverrideByWeek: ctx.bagModeOverrideByWeek,
-  });
-
-  const weekLogs = ctx.engineLogs.filter((l) => {
-    const day = formatYmdInMadrid(l.clockInIso);
-    return day != null && day >= weekStart && day <= sunday;
-  });
-
-  const { result, summary, extrasByDay } = liquidateWeekForCard({
-    employee: ctx.employee,
-    weekStart,
-    logs: weekLogs,
-    isPaid: ctx.isPaidByWeek(weekStart),
-    carryIn,
-    bagModeOverride,
-    overrideRate: ctx.overtimeRateOverrideByWeek(weekStart),
-  });
-
-  const display = weekDisplayFromEngine(result, summary, bagModeOverride);
-
-  const days: Array<{
-    date: string;
-    hasLog: boolean;
-    clockIn: string | null;
-    clockOut: string | null;
-    totalHours: number;
-    extraHours: number;
-  }> = [];
-
-  for (let i = 0; i < 7; i++) {
-    const d = format(addDays(parseISO(weekStart), i), 'yyyy-MM-dd');
-    const dayLogs = (ctx.rawLogs ?? []).filter(
-      (l) => formatYmdInMadrid(l.clock_in as string) === d,
-    );
-    const first = dayLogs[0] as
-      | { clock_in?: string; clock_out?: string | null; total_hours?: number | null }
-      | undefined;
-    days.push({
-      date: d,
-      hasLog: dayLogs.length > 0,
-      clockIn: first?.clock_in ? formatMadridHmFromIso(first.clock_in) : null,
-      clockOut: first?.clock_out ? formatMadridHmFromIso(first.clock_out) : null,
-      totalHours: dayLogs.reduce(
-        (s, l) => s + (Number((l as { total_hours?: number }).total_hours) || 0),
-        0,
-      ),
-      extraHours: Number(extrasByDay[d as keyof typeof extrasByDay]) || 0,
-    });
-  }
-
-  return { workerName: name, days, summary: display };
+  return {
+    workerName: name,
+    days: week.days.map((d) => ({
+      date: d.date,
+      hasLog: d.hasLog,
+      clockIn: d.clockIn,
+      clockOut: d.clockOut,
+      totalHours: d.totalHours,
+      extraHours: d.extraHours,
+    })),
+    summary: week.summary,
+  };
 }
 
 /**

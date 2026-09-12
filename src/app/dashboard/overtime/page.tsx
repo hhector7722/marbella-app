@@ -9,6 +9,7 @@ import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, 
 import { es } from 'date-fns/locale';
 import { togglePaidStatus, togglePreferStockStatus } from '@/app/actions/overtime';
 import { invalidateHomeOvertimeCache, useOvertimeWeeks } from '@/hooks/useOvertimeWeeks';
+import { invalidateHomeHistoryWeekCache } from '@/hooks/useEmployeeHistoryWeek';
 import { cn } from '@/lib/utils';
 import WorkerWeeklyHistoryModal from '@/components/WorkerWeeklyHistoryModal';
 import { DashboardDetailLayout } from '@/components/dashboard/DashboardDetailLayout';
@@ -130,6 +131,7 @@ export default function OvertimePage() {
             });
             if (!result.success) throw new Error("Error updating paid status");
             invalidateHomeOvertimeCache();
+            invalidateHomeHistoryWeekCache();
             toast.success(newStatus ? "Marcado como pagado" : "Pago cancelado");
         } catch (error) {
             setPaidStatus(prev => ({ ...prev, [key]: !newStatus }));
@@ -145,6 +147,7 @@ export default function OvertimePage() {
             if (!result.success) throw new Error(result.error);
             toast.success(result.newStatus ? "Enviado a Bolsa de Horas" : "Cambiado a Pago en Nómina", { id: 'prefer-stock-toggle' });
             invalidateHomeOvertimeCache();
+            invalidateHomeHistoryWeekCache();
             await refresh();
         } catch (error: any) {
             toast.error("Error al actualizar modo: " + error.message, { id: 'prefer-stock-toggle' });

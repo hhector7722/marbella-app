@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { addDays, format, getISOWeek, isSameDay, startOfWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { getEmployeeHistoryWeek, type HistoryWeekDto } from '@/app/actions/history-read';
+import { useEmployeeHistoryWeek } from '@/hooks/useEmployeeHistoryWeek';
+import type { HistoryWeekDto } from '@/app/actions/history-read';
 import { WeekSummary } from '@/components/staff/WeekSummary';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { EmptyState } from '@/components/ui/EmptyState';
 
 type StaffAttendanceSummaryWidgetProps = {
     userId: string | null;
@@ -26,45 +26,25 @@ export function StaffAttendanceSummaryWidget({
     onDayClick,
     refreshKey = 0,
 }: StaffAttendanceSummaryWidgetProps) {
-    const [loading, setLoading] = useState(true);
-    const [historyWeek, setHistoryWeek] = useState<HistoryWeekDto | null>(null);
-    const [weekFilterYear, setWeekFilterYear] = useState(() => new Date().getFullYear());
-    const [weekFilterMonth, setWeekFilterMonth] = useState(() => new Date().getMonth());
+    const weekStart = useMemo(
+        () => format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'),
+        [],
+    );
+    const {
+        week: historyWeek,
+        filterYear,
+        filterMonth,
+        loading,
+        error,
+    } = useEmployeeHistoryWeek(userId, weekStart, { refreshKey });
 
     useEffect(() => {
-        if (!userId) return;
-        let cancelled = false;
-        getEmployeeHistoryWeek({
-            userId,
-            weekStart: format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'),
-        })
-            .then((res) => {
-                if (cancelled) return;
-                if (!res.success) {
-                    toast.error(res.error || 'No se pudo cargar el resumen semanal');
-                    setHistoryWeek(null);
-                    return;
-                }
-                setHistoryWeek(res.week);
-                setWeekFilterYear(res.filterYear);
-                setWeekFilterMonth(res.filterMonth);
-            })
-            .catch((e) => {
-                console.error(e);
-                toast.error('No se pudo cargar el resumen semanal');
-            })
-            .finally(() => {
-                if (!cancelled) setLoading(false);
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, [userId, refreshKey]);
+        if (error) toast.error(error);
+    }, [error]);
 
     const displayWeek = useMemo(() => {
         if (historyWeek) return historyWeek;
 
-        // Esqueleto/estructura vacía para carga instantánea
         const monday = startOfWeek(new Date(), { weekStartsOn: 1 });
         const days = Array.from({ length: 7 }, (_, i) => {
             const d = addDays(monday, i);
@@ -86,7 +66,7 @@ export function StaffAttendanceSummaryWidget({
         return {
             startDate: format(monday, 'yyyy-MM-dd'),
             weekNumber: getISOWeek(new Date()),
-            days: days as any,
+            days: days as HistoryWeekDto['days'],
             summary: {
                 limitHours: 0,
                 preferStock: false,
@@ -99,6 +79,9 @@ export function StaffAttendanceSummaryWidget({
             },
         } as unknown as HistoryWeekDto;
     }, [historyWeek]);
+
+    const weekFilterYear = historyWeek ? filterYear : new Date().getFullYear();
+    const weekFilterMonth = historyWeek ? filterMonth : new Date().getMonth();
 
     return (
         <div className="relative h-full min-h-0" data-fit="week">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { format, getISOWeek, parseISO, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -8,10 +8,7 @@ import { toast } from 'sonner';
 import { Modal } from '@/components/ui/modal';
 import type { ModalLayer } from '@/lib/design-system';
 import { overtimeWorkerHistoryUsageLabel } from '@/lib/usage/modal-apply';
-import {
-  getEmployeeHistoryWeek,
-  type HistoryWeekDto,
-} from '@/app/actions/history-read';
+import { useEmployeeHistoryWeek } from '@/hooks/useEmployeeHistoryWeek';
 import { WeekSummary } from '@/components/staff/WeekSummary';
 import { firstGivenName } from '@/lib/utils';
 
@@ -42,11 +39,15 @@ export default function WorkerWeeklyHistoryModal({
   layer = 'base',
   parentInstance,
 }: WorkerWeeklyHistoryModalProps) {
-  const [loading, setLoading] = useState(true);
-  const [week, setWeek] = useState<HistoryWeekDto | null>(null);
-  const [workerName, setWorkerName] = useState('');
-  const [filterYear, setFilterYear] = useState(0);
-  const [filterMonth, setFilterMonth] = useState(0);
+  const mondayISO = (weekStart || '1970-01-01').split('T')[0]!;
+  const {
+    week,
+    workerName,
+    filterYear,
+    filterMonth,
+    loading,
+    error,
+  } = useEmployeeHistoryWeek(workerId, mondayISO, { enabled: isOpen });
 
   const trackingLabel = useMemo(() => {
     if (!isOpen || !weekStart) return 'Historial trabajador horas extras';
@@ -59,38 +60,9 @@ export default function WorkerWeeklyHistoryModal({
   }, [isOpen, weekStart, workerName]);
 
   useEffect(() => {
-    if (isOpen && workerId && weekStart) {
-      void fetchWeekData();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, workerId, weekStart]);
+    if (error) toast.error(error);
+  }, [error]);
 
-  async function fetchWeekData() {
-    setLoading(true);
-    setWeek(null);
-    try {
-      const mondayISO = weekStart.split('T')[0]!;
-      const res = await getEmployeeHistoryWeek({
-        userId: workerId,
-        weekStart: mondayISO,
-      });
-      if (!res.success) {
-        toast.error(res.error || 'No se pudo cargar la semana');
-        return;
-      }
-      setWorkerName(res.workerName);
-      setWeek(res.week);
-      setFilterYear(res.filterYear);
-      setFilterMonth(res.filterMonth);
-    } catch (error) {
-      console.error(error);
-      toast.error('Error al cargar historial');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const mondayISO = (weekStart || '1970-01-01').split('T')[0]!;
   const mondayDate = parseISO(mondayISO);
   const sundayDate = addDays(mondayDate, 6);
   const weekNumber = week?.weekNumber ?? getISOWeek(mondayDate);

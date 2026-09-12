@@ -989,7 +989,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         );
         assert.match(staffWeekWidget, /from '@\/components\/staff\/WeekSummary'/);
         assert.match(staffWeekWidget, /<WeekSummary/);
-        assert.match(staffWeekWidget, /getEmployeeHistoryWeek/);
+        assert.match(staffWeekWidget, /useEmployeeHistoryWeek/);
         assert.doesNotMatch(staffWeekWidget, /from '@\/app\/staff\/history\/WeekCard'/);
         assert.doesNotMatch(staffWeekWidget, /<WeekCard/);
         assert.doesNotMatch(staffWeekWidget, /<MonthCalendarFrame/);
@@ -1001,7 +1001,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
 
         assert.match(overtimeModal, /from '@\/components\/staff\/WeekSummary'/);
         assert.match(overtimeModal, /<WeekSummary/);
-        assert.match(overtimeModal, /getEmployeeHistoryWeek/);
+        assert.match(overtimeModal, /useEmployeeHistoryWeek/);
         assert.doesNotMatch(overtimeModal, /from '@\/app\/staff\/history\/WeekCard'/);
         assert.doesNotMatch(overtimeModal, /<WeekCard/);
         assert.doesNotMatch(overtimeModal, /<MonthCalendarFrame/);
@@ -1013,6 +1013,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.doesNotMatch(history, /from ['"].*\/WeekCard['"]/);
 
         assert.match(historyRead, /buildEmployeeHistoryMonthFromEngine/);
+        assert.match(historyRead, /buildEmployeeHistoryWeekFromEngine/);
         assert.match(historyRead, /HistoryWeekDto/);
 
         assert.match(weekCard, /text-\[7px\] font-normal/, 'el número del día es el del mosaico');

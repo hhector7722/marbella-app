@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { Check, Circle, Minus, Plus, RefreshCw, ShoppingCart } from 'lucide-react';
 import { togglePaidStatus } from '@/app/actions/overtime';
 import { invalidateHomeOvertimeCache, useOvertimeWeeks } from '@/hooks/useOvertimeWeeks';
+import { invalidateHomeHistoryWeekCache } from '@/hooks/useEmployeeHistoryWeek';
 import DashboardVentasSection from '@/components/dashboards/DashboardVentasSection';
 import MasterShortcutGrid from '@/components/dashboards/MasterShortcutGrid';
 import { HorasExtrasWidget } from '@/components/dashboards/ops-widgets';
@@ -237,6 +238,7 @@ export default function MasterDashboardView({ initialData, initialUserId }: Mast
             });
             if (!result.success) throw new Error('Error al actualizar pago');
             invalidateHomeOvertimeCache();
+            invalidateHomeHistoryWeekCache();
             toast.success(newStatus ? 'Marcado como pagado' : 'Pago cancelado');
         } catch (error) {
             console.error(error);

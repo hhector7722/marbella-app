@@ -35,6 +35,7 @@ import { toast } from 'sonner';
 import { cn, calculateRoundedHours, firstGivenName } from '@/lib/utils';
 import { togglePaidStatus, togglePreferStockStatus } from '@/app/actions/overtime';
 import { invalidateHomeOvertimeCache, useOvertimeWeeks } from '@/hooks/useOvertimeWeeks';
+import { invalidateHomeHistoryWeekCache } from '@/hooks/useEmployeeHistoryWeek';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import DashboardVentasSection from '@/components/dashboards/DashboardVentasSection';
 import { Surface } from '@/components/ui/Surface';
@@ -317,6 +318,7 @@ const AdminDashboardView = ({
             });
             if (!result.success) throw new Error("Error updating paid status");
             invalidateHomeOvertimeCache();
+            invalidateHomeHistoryWeekCache();
             toast.success(newStatus ? "Marcado como pagado" : "Pago cancelado");
         } catch (error) {
             console.error(error);
@@ -333,6 +335,7 @@ const AdminDashboardView = ({
             if (!result.success) throw new Error(result.error);
             toast.success(result.newStatus ? "Enviado a Bolsa de Horas" : "Cambiado a Pago en Nómina", { id: 'prefer-stock-toggle' });
             invalidateHomeOvertimeCache();
+            invalidateHomeHistoryWeekCache();
             setOvertimeRefreshKey((k) => k + 1);
         } catch (error: any) {
             console.error(error);

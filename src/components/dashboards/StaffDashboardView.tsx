@@ -34,6 +34,7 @@ import {
 } from '@/lib/staff/plantilla-employees';
 import { canManageStaffAttendance } from '@/lib/staff/attendance-access';
 import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
+import { invalidateHomeHistoryWeekCache } from '@/hooks/useEmployeeHistoryWeek';
 import { StaffAttendanceSummaryWidget } from '@/components/dashboards/staff/StaffAttendanceSummaryWidget';
 import { StaffWeekScheduleBlock } from '@/components/dashboards/staff/StaffWeekScheduleBlock';
 import WorkTimer, { StaffElapsedDigits, formatStaffElapsedHms } from '@/components/ui/WorkTimer';
@@ -770,6 +771,8 @@ export default function StaffDashboardView({
                 if (!sync.success) {
                     toast.error(sync.error ?? 'Fichaje OK; falló persistencia Cost Engine');
                 }
+                invalidateHomeHistoryWeekCache();
+                setAttendanceRefreshKey((k) => k + 1);
                 const { data: { user: u } } = await supabase.auth.getUser();
                 const email = u?.email?.toLowerCase().trim() ?? '';
                 const overlayConfig = FICHAJE_OVERLAY_VIDEOS[email];
@@ -797,6 +800,8 @@ export default function StaffDashboardView({
                 if (!sync.success) {
                     toast.error(sync.error ?? 'Fichaje OK; falló persistencia Cost Engine');
                 }
+                invalidateHomeHistoryWeekCache();
+                setAttendanceRefreshKey((k) => k + 1);
                 const { data: { user: u } } = await supabase.auth.getUser();
                 const email = u?.email?.toLowerCase().trim() ?? '';
                 const overlayConfig = FICHAJE_OVERLAY_VIDEOS[email];
@@ -1404,7 +1409,10 @@ export default function StaffDashboardView({
                 userRole={userRole}
                 viewerEmail={userEmail}
                 onClose={() => setIsDayDetailModalOpen(false)}
-                onSuccess={() => setAttendanceRefreshKey((k) => k + 1)}
+                onSuccess={() => {
+                    invalidateHomeHistoryWeekCache();
+                    setAttendanceRefreshKey((k) => k + 1);
+                }}
                 employees={plantillaEmployees.map((employee) => ({
                     id: employee.id,
                     first_name: employee.first_name ?? '',

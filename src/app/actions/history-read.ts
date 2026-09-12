@@ -9,6 +9,7 @@ import { resolveHistoryAccessScope } from '@/lib/staff/history-access-server';
 import {
   buildEmployeeHistoryMonthFromEngine,
   buildEmployeeHistoryRangeFromEngine,
+  buildEmployeeHistoryWeekFromEngine,
   buildWeekDetailFromEngine,
   type HistoryWeekDto,
   type WeekFooterDto,
@@ -85,6 +86,7 @@ export async function getWeekDetailDto(input: {
 
 /**
  * Una semana con el mismo DTO que `/staff/history` (HistoryWeekDto).
+ * CarryIn desde `weekly_snapshots.pending_balance`; no liquida el mes.
  * Usado por el mosaico Staff, horas extras → empleado y asistencia.
  */
 export async function getEmployeeHistoryWeek(input: {
@@ -110,44 +112,17 @@ export async function getEmployeeHistoryWeek(input: {
       return { success: false, error: 'weekStart inválido' };
     }
 
-    let filterYear = y;
-    let filterMonth = m - 1;
-
-    const findWeek = (weeks: HistoryWeekDto[]) =>
-      weeks.find((w) => w.startDate.split('T')[0] === monday) ?? null;
-
-    const [{ data: profile }, weeksPrimary] = await Promise.all([
+    const [{ data: profile }, week] = await Promise.all([
       auth.supabase
         .from('profiles')
         .select('first_name, last_name')
         .eq('id', input.userId)
         .maybeSingle(),
-      buildEmployeeHistoryMonthFromEngine(auth.supabase, {
+      buildEmployeeHistoryWeekFromEngine(auth.supabase, {
         userId: input.userId,
-        filterYear,
-        filterMonth,
+        weekStart: monday,
       }),
     ]);
-
-    let weeks = weeksPrimary;
-    let week = findWeek(weeks);
-
-    // Semana que toca el mes anterior (p. ej. lunes 30 jun → jul): probar mes previo
-    if (!week) {
-      const prev = new Date(filterYear, filterMonth - 1, 1);
-      filterYear = prev.getFullYear();
-      filterMonth = prev.getMonth();
-      weeks = await buildEmployeeHistoryMonthFromEngine(auth.supabase, {
-        userId: input.userId,
-        filterYear,
-        filterMonth,
-      });
-      week = findWeek(weeks);
-    }
-
-    if (!week) {
-      return { success: false, error: 'Semana no encontrada en historial' };
-    }
 
     const workerName =
       `${profile?.first_name ?? ''} ${profile?.last_name ?? ''}`.trim() || '—';
@@ -156,8 +131,8 @@ export async function getEmployeeHistoryWeek(input: {
       success: true,
       workerName,
       week,
-      filterYear,
-      filterMonth,
+      filterYear: y,
+      filterMonth: m - 1,
     };
   } catch (e) {
     return {
