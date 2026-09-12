@@ -39,7 +39,8 @@ import DashboardVentasSection from '@/components/dashboards/DashboardVentasSecti
 import { Surface } from '@/components/ui/Surface';
 import { EmptyState } from '@/components/ui/EmptyState';
 import WorkerWeeklyHistoryModal from '@/components/WorkerWeeklyHistoryModal';
-import { getDashboardData } from '@/app/actions/get-dashboard-data';
+import { useHomeTreasury } from '@/hooks/useHomeTreasury';
+import { filterVisiblePlantillaEmployees } from '@/lib/staff/plantilla-employees';
 import { CURRENCY_IMAGES, DENOMINATIONS } from '@/lib/constants';
 import { CashDenominationForm, CASH_COUNT_FORM_ID } from '@/components/CashDenominationForm';
 import { BoxInventoryView } from '@/components/BoxInventoryView';
@@ -168,13 +169,11 @@ const AdminDashboardView = ({
 }) => {
     const supabase = createClient();
     const router = useRouter();
+    const { actualBalance, boxes, loading: treasuryLoading, refresh } = useHomeTreasury({
+        actualBalance: initialData?.actualBalance,
+        boxes: initialData?.boxes,
+    });
 
-    const [treasuryLoading, setTreasuryLoading] = useState(!initialData);
-    const [dailyStats, setDailyStats] = useState<any>(initialData?.dailyStats || null);
-    const [boxes, setBoxes] = useState<any[]>(initialData?.boxes || []);
-    const [theoreticalBalance, setTheoreticalBalance] = useState<number>(initialData?.theoreticalBalance || 0);
-    const [actualBalance, setActualBalance] = useState<number>(initialData?.actualBalance || 0);
-    const [differenceCents, setDifferenceCents] = useState<number>(initialData?.differenceCents ?? Math.round((initialData?.difference ?? 0) * 100));
     const [paidStatus, setPaidStatus] = useState<Record<string, boolean>>(initialData?.paidStatus || {});
     const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -289,11 +288,6 @@ const AdminDashboardView = ({
         toast.success(visible ? 'Trabajador visible en plantilla' : 'Trabajador oculto en plantilla');
     };
 
-    /** Hora 0–23 según TPV (hora_cierre); alineado con get_hourly_sales. */
-    useEffect(() => {
-        if (!initialData) fetchData();
-    }, []);
-
     // Fetch overtime por mes — paralelo al shell (tesorería/ventas)
     useEffect(() => {
         const start = format(startOfMonth(overtimeViewMonth), 'yyyy-MM-dd');
@@ -356,32 +350,27 @@ const AdminDashboardView = ({
             if (!result.success) throw new Error(result.error);
             toast.success(result.newStatus ? "Enviado a Bolsa de Horas" : "Cambiado a Pago en Nómina", { id: 'prefer-stock-toggle' });
             setOvertimeRefreshKey((k) => k + 1);
-            fetchData();
         } catch (error: any) {
             console.error(error);
             toast.error("Error al actualizar modo: " + error.message, { id: 'prefer-stock-toggle' });
         }
     };
 
-    async function fetchData() {
-        try {
-            setTreasuryLoading(true);
-            const data = await getDashboardData();
-            if (data) {
-                setDailyStats(data.dailyStats);
-                setBoxes(data.boxes);
-                setTheoreticalBalance(data.theoreticalBalance || 0);
-                setActualBalance(data.actualBalance || 0);
-                setDifferenceCents(data.differenceCents ?? Math.round((data.difference ?? 0) * 100));
-                setAllEmployees(data.allEmployees);
-            }
-        } catch (error) {
+    const ensureActivePlantillaEmployees = async () => {
+        if (allEmployees.length > 0) return allEmployees;
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('visible_in_plantilla', true);
+        if (error) {
             console.error(error);
-            toast.error('Error al actualizar datos');
-        } finally {
-            setTreasuryLoading(false);
+            toast.error('Error al cargar plantilla');
+            return null;
         }
-    }
+        const cleaned = filterVisiblePlantillaEmployees(data || []);
+        setAllEmployees(cleaned);
+        return cleaned;
+    };
 
     const handleCashTransaction = async (total: number, breakdown: any, notesOrOutBreakdown: any, customDate?: string) => {
         try {
@@ -397,7 +386,7 @@ const AdminDashboardView = ({
             await supabase.from('treasury_log').insert(payload);
             setCashModalMode('none');
             setSelectedBox(null);
-            fetchData();
+            void refresh();
         } catch (error) { console.error(error); alert("Error"); }
     };
 
@@ -494,7 +483,7 @@ const AdminDashboardView = ({
 
             setShowPurchaseMultiSourceModal(false);
             setPurchaseInventoriesByBoxId({});
-            fetchData();
+            void refresh();
             trackAdminPurchaseMulti(notesWithTpv || 'Compra registrada');
             toast.success('Compra registrada');
         } catch (error) {
@@ -586,7 +575,10 @@ const AdminDashboardView = ({
             label={card.title}
             img={card.img}
             onClick={() => {
-                if (card.title === 'Plantilla') setIsStaffModalOpen(true);
+                if (card.title === 'Plantilla') {
+                    setIsStaffModalOpen(true);
+                    void ensureActivePlantillaEmployees();
+                }
                 else if (card.title === 'Stock') setIsProductModalOpen(true);
                 else if (card.link) router.push(card.link);
             }}
@@ -594,8 +586,8 @@ const AdminDashboardView = ({
     );
 
     const closingSalesSummary = {
-        total: dailyStats?.total ?? dailyStats?.liveTickets?.total ?? 0,
-        count: dailyStats?.count ?? dailyStats?.liveTickets?.count ?? 0,
+        total: 0,
+        count: 0,
     };
 
     const handleOpenCompra = () => {
@@ -739,7 +731,7 @@ const AdminDashboardView = ({
                             boxOptions={buildPaymentSources()}
                             isManager={true}
                             onClose={() => setCashModalMode('none')}
-                            onSuccess={() => { fetchData(); setCashModalMode('none'); }}
+                            onSuccess={() => { void refresh(); setCashModalMode('none'); }}
                         />
                     )}
                 </>
@@ -822,7 +814,7 @@ const AdminDashboardView = ({
             <CashClosingModal
                 isOpen={isClosingModalOpen}
                 onClose={() => setIsClosingModalOpen(false)}
-                onSuccess={() => { void fetchData(); }}
+                onSuccess={() => { void refresh(); }}
                 initialTotalSales={closingSalesSummary.total}
                 initialTicketsCount={closingSalesSummary.count}
             />

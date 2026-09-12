@@ -507,6 +507,32 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         );
     });
 
+    it('C Inicial y Cajas Cambio leen un solo snapshot de tesorería', () => {
+        const admin = readFileSync(
+            join(SRC_ROOT, 'components/dashboards/AdminDashboardView.tsx'),
+            'utf8'
+        );
+        const master = readFileSync(
+            join(SRC_ROOT, 'components/dashboards/MasterDashboardView.tsx'),
+            'utf8'
+        );
+        const hook = readFileSync(
+            join(SRC_ROOT, 'hooks/useHomeTreasury.ts'),
+            'utf8'
+        );
+        const snapshot = readFileSync(
+            join(SRC_ROOT, 'app/actions/get-treasury-snapshot.ts'),
+            'utf8'
+        );
+        assert.match(admin, /from '@\/hooks\/useHomeTreasury'/);
+        assert.match(master, /from '@\/hooks\/useHomeTreasury'/);
+        assert.doesNotMatch(admin, /getDashboardData/);
+        assert.doesNotMatch(hook, /setInterval/);
+        assert.match(hook, /visibilitychange/);
+        assert.match(snapshot, /select\('id, name, type, current_balance, image_url'\)/);
+        assert.doesNotMatch(snapshot, /select\('\*'\)/);
+    });
+
     it('el cristal es claro sobre cielo y oscuro sobre el petróleo actual', () => {
         assert.equal(resolveHomeWidgetScheme('#5B8FB9'), 'light');
         assert.equal(resolveHomeWidgetScheme('#7eb0d4'), 'light');

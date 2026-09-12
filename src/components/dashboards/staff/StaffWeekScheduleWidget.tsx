@@ -163,16 +163,23 @@ function selectPrimaryActivity(acts: BarActivity[]): BarActivity[] {
     return primary ? [primary] : [];
 }
 
-function toSentenceCase(value: string): string {
-    const lower = value.trim().toLocaleLowerCase('es-ES');
-    return lower.charAt(0).toLocaleUpperCase('es-ES') + lower.slice(1);
+/** Caja oración para nombres que llegan en MAYÚSCULAS del pabellón (CONTENIDO-Y-TONO). */
+function toSentenceCase(text: string): string {
+    const trimmed = text.trim();
+    if (!trimmed) return trimmed;
+    const letters = trimmed.replace(/[^\p{L}]/gu, '');
+    if (letters.length > 0 && letters === letters.toLocaleUpperCase('es')) {
+        const lower = trimmed.toLocaleLowerCase('es');
+        return lower.charAt(0).toLocaleUpperCase('es') + lower.slice(1);
+    }
+    return trimmed;
 }
 
 function formatDayEventNames(acts: BarActivity[] | undefined): string | null {
     const primary = selectPrimaryActivity(acts ?? []);
-    const grouped = groupActivities(primary);
-    if (grouped.length === 0) return null;
-    return grouped.map((a) => toSentenceCase(a.activityName)).join(' · ');
+    const mixed = groupActivities(primary);
+    if (mixed.length === 0) return null;
+    return mixed.map((a) => toSentenceCase(a.activityName)).join(' · ');
 }
 
 type EventDetailRow = {

@@ -153,8 +153,8 @@ export async function getDashboardData() {
         }
     }
 
-    // Overtime NO va aquí: bloqueaba 5–15s el shell. AdminDashboardView lo carga
-    // en paralelo vía getOvertimeData (sección con spinner propia).
+    // Tesorería de las homes ya no pasa por aquí: C Inicial y Cajas Cambio leen
+    // getTreasurySnapshot (useHomeTreasury). Overtime tampoco: getOvertimeData.
     return {
         dailyStats,
         liveTickets: { total: salesStats?.total_ventas || 0, count: salesStats?.recuento_tickets || 0 },

@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
+import type { HomeTreasuryBox } from '@/lib/treasury/home-treasury-cache';
 
 function parseNumericToCents(value: unknown): number {
     if (value === null || value === undefined) return 0;
@@ -35,7 +36,7 @@ export async function getTreasurySnapshot() {
     const supabase = await createClient();
 
     const [{ data: allBoxes }, { data: opBoxStatusRows }] = await Promise.all([
-        supabase.from('cash_boxes').select('*').order('name'),
+        supabase.from('cash_boxes').select('id, name, type, current_balance, image_url').order('name'),
         supabase.rpc('get_operational_box_status'),
     ]);
 
@@ -46,7 +47,7 @@ export async function getTreasurySnapshot() {
         actualBalance = physicalCents / 100;
     }
 
-    let boxes: NonNullable<typeof allBoxes> = [];
+    let boxes: HomeTreasuryBox[] = [];
     if (allBoxes) {
         boxes = [...allBoxes].sort((a, b) => {
             if (a.type === 'operational' && b.type !== 'operational') return -1;

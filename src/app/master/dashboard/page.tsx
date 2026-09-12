@@ -5,8 +5,8 @@ import { isMasterDashboardUser } from '@/lib/master-dashboard';
 import { resolveSessionUser } from '@/lib/auth/resolve-session-user';
 
 /**
- * Home master: NO await de getDashboardData (ventas + plantilla + 60d HE).
- * Eso bloqueaba 5–15s el HTML. MasterDashboardView ya carga tesorería/ventas/OT en cliente.
+ * Home master: NO await de tesorería/ventas/HE.
+ * Tesorería de C Inicial y Cajas Cambio: useHomeTreasury en cliente (snapshot compartido).
  */
 export default async function MasterDashboardPage() {
   const supabase = await createClient();

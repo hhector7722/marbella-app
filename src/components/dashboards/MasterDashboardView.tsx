@@ -26,7 +26,7 @@ import { randomId } from '@/lib/random-id';
 import { CashCountDateButton, formatCashCountDateInput } from '@/components/cash/CashCountDateButton';
 import { StaffSelectionModal } from '@/components/modals/StaffSelectionModal';
 import { updateProfile } from '@/app/actions/profile';
-import { useMasterTreasuryLive } from '@/hooks/useMasterTreasuryLive';
+import { useHomeTreasury } from '@/hooks/useHomeTreasury';
 import {
     PLANTILLA_EMPLOYEE_SELECT,
     filterVisiblePlantillaEmployees,
@@ -97,7 +97,7 @@ function MasterStaffOvertimeRow({
 export default function MasterDashboardView({ initialData, initialUserId }: MasterDashboardViewProps) {
     const router = useRouter();
     const supabase = createClient();
-    const { actualBalance, boxes, loading: treasuryLoading, refresh } = useMasterTreasuryLive({
+    const { actualBalance, boxes, loading: treasuryLoading, refresh } = useHomeTreasury({
         actualBalance: initialData?.actualBalance,
         boxes: initialData?.boxes,
     });

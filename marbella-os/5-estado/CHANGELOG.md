@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-12
 
+- **Home: C Inicial y Cajas Cambio ya no recargan al cambiar de pantalla.** `/dashboard` y `/master/dashboard` leen el mismo snapshot (`getTreasurySnapshot`). El importe visto se reutiliza unos 30 s al volver a la home; el spinner solo sale si aún no hay dato. Dejan de pedirse cada 30 s: se refrescan al volver a la pestaña, al enfocar y tras un movimiento de caja.
+
 - **Asistencia: el día «No registrado» vuelve a pintarse con una cruz, no con horas.** En `/staff/dashboard` y `/staff/history`, ese tipo de turno no muestra entrada ni salida. La cruz en `color.negativo` ocupa el hueco de los fichajes. Distinto de olvidar fichar la salida, que sí conserva las horas. [P6](../2-diseno/PATRONES.md#p6--tarjeta-semanal).
 
 - **Comunicados: el aviso de la cámara se abre en un Modal de la app.** En Perfil → Documentos → Comunicados, ese comunicado ya no abre una pestaña con la imagen: usa el Modal de sistema con la foto, el título y la card, sin Cancelar ni Confirmar.

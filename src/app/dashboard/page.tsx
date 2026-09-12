@@ -11,7 +11,7 @@ import {
 } from '@/lib/master-view-as';
 
 /**
- * Admin dashboard: shell inmediata. AdminDashboardView carga tesorería/ventas
+ * Admin dashboard: shell inmediata. Tesorería (C Inicial / Cajas Cambio) y ventas
  * en cliente; overtime en paralelo (sección con spinner, no bloquea el resto).
  */
 export default async function AdminDashboardPage() {
