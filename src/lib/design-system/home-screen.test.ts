@@ -351,6 +351,21 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
             /\[data-instance='staff-semana'\] \[data-week-summary\] \.month-cal-day-logs \{[\s\S]*justify-content:\s*center/,
             'escritorio: los fichajes del resumen semanal ocupan el centro de la celda'
         );
+        assert.match(
+            css,
+            /\[data-instance='staff-semana'\] \[data-week-summary\] \.month-cal-week \{[\s\S]*flex:\s*1 1 0[\s\S]*grid-template-rows:\s*1fr/,
+            'escritorio: la fila de días del resumen semanal llena el hueco sobre el pie'
+        );
+        assert.match(
+            css,
+            /\[data-instance='staff-semana'\] \[data-week-summary\] \.month-cal-weeks > \[data-week-footer\]:not\(\[data-overrides='true'\]\) \{[\s\S]*flex:\s*0 0 auto[\s\S]*margin-top:\s*auto/,
+            'escritorio: el pie del resumen semanal se queda al fondo, sin hueco debajo'
+        );
+        assert.match(
+            css,
+            /\.month-cal-shell \.month-cal-week \{[\s\S]*flex:\s*none !important/,
+            'el alto fijo de Cierres no se impone al resumen semanal del mosaico'
+        );
     });
 
     it('Staff, Admin y Master montan la misma HomeScreen', () => {

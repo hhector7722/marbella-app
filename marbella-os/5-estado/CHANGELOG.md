@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-12
 
+- **Staff: el resumen semanal de escritorio llena el hueco 5×2.** En `/staff/dashboard`, la fila de días crece hasta el pie (Horas / Pendientes / Extras / Importe). El vacío deja de quedar debajo del resumen: los fichajes ocupan el centro de la celda y H/Ex el fondo. El smartphone no cambia.
+
 - **Horario (Admin y Master): los importes de la columna Ext flotan sobre el widget.** En `/dashboard` y `/master/dashboard`, el importe y el indicador de abono de cada semana dejan de ir en una card con fondo y se pintan directamente sobre el cristal del widget, igual que los números de día. La semana sin importe sigue vacía.
 
 - **Horario: el horario del evento no se abrevia en Staff.** En las tarjetas de sábado y domingo de `/staff/dashboard`, la columna de horas del evento deja de truncarse con puntos. Usa el mismo ancho al contenido (`max-content` + `whitespace-nowrap`) que ya tenía Master; pax y categoría siguen cediendo el espacio que sobre.
