@@ -331,6 +331,26 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
             /staff-perfil[\s\S]*display:\s*none/,
             'Staff smartphone: Perfil no aparece en el mosaico 4×6'
         );
+        assert.match(
+            css,
+            /\[data-instance='dashboard-ventas'\] \[data-element='kpis'\] \{[\s\S]*flex:\s*1 1 auto/,
+            'escritorio: los KPI de Ventas llenan el hueco interior'
+        );
+        assert.match(
+            css,
+            /\[data-instance='master-ultimo-cierre'\] \[data-element='primary-kpis'\] \{[\s\S]*flex:\s*1\.2 1 0/,
+            'escritorio: Ventas y Venta neta del último cierre ocupan la banda principal'
+        );
+        assert.match(
+            css,
+            /\[data-element='week-block'\]\[data-expanded='true'\] \{[\s\S]*flex:\s*2\.2 1 0/,
+            'escritorio: la semana abierta del horario crece para turnos y eventos'
+        );
+        assert.match(
+            css,
+            /\[data-instance='staff-semana'\] \[data-week-summary\] \.month-cal-day-logs \{[\s\S]*justify-content:\s*center/,
+            'escritorio: los fichajes del resumen semanal ocupan el centro de la celda'
+        );
     });
 
     it('Staff, Admin y Master montan la misma HomeScreen', () => {

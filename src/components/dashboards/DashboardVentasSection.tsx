@@ -402,6 +402,7 @@ export default function DashboardVentasSection({ initialData }: DashboardVentasS
                 </div>
 
                 <div
+                    data-element="metrics"
                     className={cn(
                         'flex min-h-0 flex-1 flex-col overflow-hidden',
                         chartHasData ? 'justify-end' : 'justify-center'

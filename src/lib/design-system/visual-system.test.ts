@@ -794,9 +794,10 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(ventas, /items-start/, 'Venta Neta y Ticket medio arrancan a la altura de Ventas');
         assert.doesNotMatch(ventas, /#36606F|#407080/);
         assert.match(ventas, /<KpiStat /);
-        assert.match(ventas, /mt-auto/, 'con ventas, cifras y conceptos van abajo del widget');
-        assert.match(ventas, /my-auto/, 'sin ventas, cifras y conceptos van al centro');
-        assert.match(ventas, /displaySummary\.total > 0 \? 'mt-auto' : 'my-auto'/, 'sin ventas se centran; con ventas se quedan abajo');
+        assert.match(ventas, /data-element="metrics"/, 'el cuerpo de cifras es una zona propia del widget');
+        assert.match(ventas, /data-element="kpis"/);
+        assert.match(ventas, /chartHasData \? 'justify-end' : 'justify-center'/, 'en el hueco compacto la gráfica empuja las cifras; sin gráfica no quedan pegadas al borde');
+        assert.doesNotMatch(ventas, /displaySummary\.total > 0 \? 'mt-auto' : 'my-auto'/);
         assert.match(ventas, /hasData/, 'sin ventas no se pinta la gráfica');
         assert.match(ventas, /strokeWidth="1"/, 'la línea de la gráfica es fina');
         assert.match(ventas, /BUSINESS_HOURS\.start\} h/, 'la gráfica marca las 7 h a la izquierda');

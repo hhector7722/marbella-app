@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-12
 
+- **HomeScreen desktop: el contenido interno de los widgets llena el hueco 8×5.** En `/dashboard`, `/master/dashboard` y `/staff/dashboard`, Ventas, Último cierre, Horario y el resumen semanal Staff reparte cabecera, secundaria, KPIs/días y complemento dentro del tamaño ya asignado. La plantilla exterior no cambia; el smartphone tampoco.
+
 - **HomeScreen desktop: plantilla única 8×5 para las tres homes.** `/dashboard`, `/master/dashboard` y `/staff/dashboard` dejan de calcular su disposición de escritorio por separado. A partir de lg (1024 px) ocupan regiones de la misma retícula de 8 columnas y 5 filas; el smartphone permanece en 4×6. En Master, Albaranes deja el mosaico desktop y pasa al modal Otros (sigue en el mosaico del teléfono). En Staff, el slot libre de escritorio es Perfil, el mismo destino que el del TabBar. El estado activo del sidebar ya no usa una franja blanca lateral.
 
 ## 2026-09-10

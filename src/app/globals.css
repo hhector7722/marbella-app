@@ -5323,15 +5323,23 @@ button[data-element='catalog-filter'] {
     margin-inline: auto;
   }
 
-  /* Ventas: cifras protagonistas con jerarquía clara. */
+  /*
+   * Interior de widgets home (escritorio): el hueco 8×5 ya está cerrado.
+   * Aquí solo se reparte el contenido interno: cabecera, secundaria,
+   * principal y complemento. No se cambia el tamaño exterior.
+   */
+
+  /* Ventas: cabecera arriba; los tres KPI llenan el resto en columnas. */
   [data-component='HomeScreen'][data-layout='ops-admin'] [data-instance='dashboard-ventas'] [data-component='KpiStat'] [data-element='value'],
   [data-component='HomeScreen'][data-layout='master'] [data-instance='dashboard-ventas'] [data-component='KpiStat'] [data-element='value'] {
     font-size: 1.375rem;
+    height: 1.375rem;
+    min-height: 1.375rem;
   }
   [data-component='HomeScreen'][data-layout='ops-admin'] [data-instance='dashboard-ventas'] [data-component='KpiStat'] [data-element='label'],
   [data-component='HomeScreen'][data-layout='master'] [data-instance='dashboard-ventas'] [data-component='KpiStat'] [data-element='label'] {
     font-size: 0.75rem;
-    margin-top: 2px;
+    margin-top: var(--espacio-2);
   }
   [data-instance='dashboard-ventas'] [data-element='header'] a {
     font-size: 11px;
@@ -5342,51 +5350,130 @@ button[data-element='catalog-filter'] {
   [data-instance='dashboard-ventas'] [data-element='header'] button .text-zinc-400 {
     font-size: 10px;
   }
-  [data-instance='dashboard-ventas'] [data-element='kpis'] {
+  [data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas'] [data-element='metrics'] {
+    justify-content: flex-start;
+  }
+  [data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas'] [data-element='kpis'] {
+    flex: 1 1 auto;
+    min-height: 0;
+    align-items: stretch;
     gap: var(--espacio-3);
-    padding-inline: var(--espacio-3);
-    padding-top: 2px;
-    padding-bottom: 2px;
+    padding-inline: var(--espacio-4);
+    padding-block: var(--espacio-4);
+  }
+  [data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas'] [data-element='kpis'] > div {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    align-items: center;
+    justify-content: center;
+  }
+  [data-component='HomeScreen'] > [data-element='slot'][data-instance='dashboard-ventas'] [data-component='KpiStat'] {
+    justify-content: center;
+    height: 100%;
+  }
+
+  /* Último cierre: Ventas / Venta neta protagonistas; Tarjeta / Efectivo / Diferencia debajo. */
+  [data-component='HomeScreen'] > [data-element='slot'][data-instance='master-ultimo-cierre'] [data-element='metrics'] {
+    justify-content: stretch;
+    padding-block: var(--espacio-4);
+  }
+  [data-component='HomeScreen'] > [data-element='slot'][data-instance='master-ultimo-cierre'] [data-element='kpi-stack'] {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    gap: 0;
+    justify-content: stretch;
+  }
+  [data-component='HomeScreen'] > [data-element='slot'][data-instance='master-ultimo-cierre'] [data-element='primary-kpis'] {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex: 1.2 1 0;
+    min-height: 0;
+    align-items: center;
+  }
+  [data-component='HomeScreen'] > [data-element='slot'][data-instance='master-ultimo-cierre'] [data-element='primary-kpis'] > * {
+    grid-column: auto;
+  }
+  [data-component='HomeScreen'] > [data-element='slot'][data-instance='master-ultimo-cierre'] [data-element='secondary-kpis'] {
+    flex: 0.8 1 0;
+    min-height: 0;
+    align-items: center;
   }
 
   /*
-   * Calendario/horario del mosaico: el hueco de 3 filas permite números y
-   * turnos legibles. Misma escala en Staff, Admin y Master.
+   * Calendario/horario del mosaico: el hueco de 3 filas reparte las semanas.
+   * La abierta crece para turnos/eventos; las demás toman el aire restante.
+   * Misma escala en Staff, Admin y Master.
    */
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-horarios'] > [data-element='body'] > [data-component='StaffWeekSchedule'],
   [data-component='HomeScreen'][data-layout='master'] > [data-element='slot'][data-instance='master-horarios'] > [data-element='body'] > [data-component='StaffWeekSchedule'],
   [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='master-horarios'] > [data-element='body'] > [data-component='StaffWeekSchedule'] {
     --staff-calendar-gap: var(--espacio-2);
     --staff-week-day-size: 1.5rem;
-    --staff-week-expansion-min: 4.5rem;
-    --staff-week-expansion-max: 6.5rem;
+    --staff-week-expansion-min: 0px;
+    --staff-week-expansion-max: none;
   }
   /* Desktop: la asistencia Master permanece en su zona 2×1; no despliega el grid. */
   [data-component='HomeScreen'][data-layout='master'] [data-instance='master-asistencia'] button[aria-label='Desplegar asistencia'],
   [data-component='HomeScreen'][data-layout='master'] [data-instance='master-asistencia'] button[aria-label='Minimizar asistencia'] {
     display: none;
   }
-  [data-component='StaffWeekSchedule'] [data-element='month-weeks'] {
-    justify-content: space-between;
+  [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='month-weeks'] {
+    justify-content: flex-start;
   }
-  [data-component='StaffWeekSchedule'] [data-element='week-block'][data-expanded='true'] {
-    flex: 0 0 auto;
+  [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='week-block']:not([data-expanded='true']) {
+    flex: 1 1 0;
+    min-height: 0;
+    justify-content: center;
+  }
+  [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='week-block'][data-expanded='true'] {
+    flex: 2.2 1 0;
+    min-height: 0;
+  }
+  [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='week-expansion'] {
+    min-height: 0;
+    max-height: none;
+  }
+  [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-details'] {
+    justify-content: space-evenly;
   }
 
   /*
-   * Resumen semanal Staff: ahora ocupa 5×2, así que recupera tipografía
-   * legible en lugar de la compactación de una sola fila.
+   * Resumen semanal Staff: el 5×2 reparte cabecera, días y pie.
+   * Los relojes ocupan el centro de la celda; H/Ex quedan al fondo.
    */
+  [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-fit='week'] {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-fit='week'] [data-component='MonthCalendarFrame'] {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0,
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0 > div {
-    height: 18px;
-    min-height: 18px;
+    height: 22px;
+    min-height: 22px;
   }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-grid-wrap > .grid.shrink-0 span {
     font-size: 11px;
   }
+  [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-cell {
+    height: 100%;
+    padding: var(--espacio-2) var(--espacio-1) var(--espacio-2);
+  }
+  [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-cell > span:first-of-type {
+    top: var(--espacio-2);
+    right: var(--espacio-2);
+    font-size: 11px;
+  }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-day-logs {
-    padding-top: 12px;
+    justify-content: center;
+    padding-top: 1.375rem;
+    padding-bottom: var(--espacio-1);
+    gap: var(--espacio-2);
   }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-day-clocks > div {
     height: 16px;
@@ -5395,15 +5482,18 @@ button[data-element='catalog-filter'] {
     font-size: 12px;
   }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-day-totals > div {
-    height: 12px;
+    height: 14px;
   }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-week {
-    min-height: 52px;
+    flex: 1 1 auto;
+    min-height: 0;
   }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-weeks > [data-week-footer]:not([data-overrides='true']) {
-    height: 22px;
-    min-height: 22px;
-    max-height: 22px;
+    flex: 0 0 auto;
+    height: auto;
+    min-height: 2.25rem;
+    max-height: none;
+    padding-block: var(--espacio-2);
   }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-weeks > [data-week-footer] [data-week-footer-label] {
     font-size: 11px;

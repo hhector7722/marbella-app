@@ -217,7 +217,7 @@ export function MasterLastClosingWidget() {
 
     return (
         <div className="flex h-full min-h-0 flex-col overflow-hidden">
-            <div className="flex shrink-0 items-center justify-between gap-2 px-2 pt-1.5 lg:px-3 lg:pt-2">
+            <div data-element="header" className="flex shrink-0 items-center justify-between gap-2 px-2 pt-1.5 lg:px-3 lg:pt-2">
                 <Link href="/dashboard/history" className={pillClassName}>
                     Último cierre
                 </Link>
@@ -245,7 +245,7 @@ export function MasterLastClosingWidget() {
                     </span>
                 </div>
             </div>
-            <div className="flex min-h-0 flex-1 flex-col justify-start px-2 pb-3.5 pt-3 lg:px-3 lg:pb-3 lg:pt-0">
+            <div data-element="metrics" className="flex min-h-0 flex-1 flex-col justify-start px-2 pb-3.5 pt-3 lg:px-3 lg:pb-3 lg:pt-0">
                 {loading ? (
                     <div
                         className="flex flex-1 items-center justify-center"
@@ -257,9 +257,9 @@ export function MasterLastClosingWidget() {
                 ) : !closing ? (
                     <EmptyState instance="master-ultimo-cierre-none" variant="none" title="Sin cierre" />
                 ) : (
-                    <div className="flex flex-col gap-y-2.5 lg:gap-y-2 w-full">
+                    <div data-element="kpi-stack" className="flex flex-col gap-y-2.5 lg:gap-y-2 w-full">
                         {/* Primera fila: Ventas y Venta neta alineados matemáticamente con los midpoints de la segunda fila */}
-                        <div className="grid grid-cols-6 gap-x-1 w-full">
+                        <div data-element="primary-kpis" className="grid grid-cols-6 gap-x-1 w-full">
                             {/* Ventas: col-start-2 col-span-2 (centrado a 1/3 del ancho, entre Tarjeta y Efectivo) */}
                             {(() => {
                                 const kpi = PRIMARY_KPIS[0];
@@ -311,7 +311,7 @@ export function MasterLastClosingWidget() {
                         </div>
 
                         {/* Segunda fila: Tarjeta, Efectivo, Diferencia — valor arriba, etiqueta debajo */}
-                        <div className="grid grid-cols-3 gap-x-1 w-full">
+                        <div data-element="secondary-kpis" className="grid grid-cols-3 gap-x-1 w-full">
                             {SECONDARY_KPIS.map((kpi) => {
                                 const isClickable = kpi.label === 'Efectivo';
                                 const handleClick = () => {
