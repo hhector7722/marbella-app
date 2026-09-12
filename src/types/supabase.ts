@@ -1768,6 +1768,7 @@ export type Database = {
           last_name: string | null
           monthly_cost: number | null
           needs_onboarding: boolean | null
+          camera_fov_notice_acked_at: string | null
           overtime_cost_per_hour: number | null
           payroll_name: string | null
           phone: string | null
@@ -1797,6 +1798,7 @@ export type Database = {
           last_name?: string | null
           monthly_cost?: number | null
           needs_onboarding?: boolean | null
+          camera_fov_notice_acked_at?: string | null
           overtime_cost_per_hour?: number | null
           payroll_name?: string | null
           phone?: string | null
@@ -1826,6 +1828,7 @@ export type Database = {
           last_name?: string | null
           monthly_cost?: number | null
           needs_onboarding?: boolean | null
+          camera_fov_notice_acked_at?: string | null
           overtime_cost_per_hour?: number | null
           payroll_name?: string | null
           phone?: string | null

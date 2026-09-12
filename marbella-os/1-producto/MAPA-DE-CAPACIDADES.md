@@ -6,7 +6,7 @@ capa: producto
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-07-29
+revisado: 2026-09-12
 caducidad: 3 meses
 supersede: —
 ---
@@ -36,7 +36,7 @@ Registrar quién trabaja, cuándo y cuánto. Es la capacidad más sensible del p
 
 - **Actores**: persona en turno, responsable de operación, responsable del negocio.
 - **Superficies**: panel de equipo (fichaje), historial de horas propio, registros del equipo, calendario mensual, editor de día, hoja de jornada impresa.
-- **Reglas propias**: semana de lunes a domingo; jornada fija para casos concretos; distinción entre horas ordinarias y extras; tipos de ausencia con etiquetas propias.
+- **Reglas propias**: semana de lunes a domingo; jornada fija para casos concretos; distinción entre horas ordinarias y extras; tipos de ausencia con etiquetas propias. El aviso del campo de visión de la cámara se muestra en el mismo modal de confirmar entrada hasta que esa persona confirma con éxito su primer fichaje de entrada; cancelar no lo marca como leído.
 - **Estado**: en movimiento. Su motor de cálculo se rehízo por completo y su interfaz se está unificando.
 - **Gobernada por**: [ADR-0001](../4-decisiones/ADR-0001-hours-engine-productor-unico.md), [contrato de proyección](../3-ingenieria/contratos/PROYECCION-v1.md).
 - **Especificación**: pendiente.

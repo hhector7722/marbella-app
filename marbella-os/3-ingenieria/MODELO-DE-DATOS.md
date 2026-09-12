@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-07-29
+revisado: 2026-09-12
 caducidad: 6 meses
 supersede: —
 ---
@@ -52,7 +52,7 @@ Las 72 tablas tipadas se agrupan en nueve dominios.
 
 **La regla que gobierna este dominio:** `time_logs` es hecho, `weekly_snapshots` es resultado. Nada más produce horas. Ver [ADR-0001](../4-decisiones/ADR-0001-hours-engine-productor-unico.md).
 
-`profiles` conserva además los datos de la ficha de empleado: `dni` (NIF/NIE/Pasaporte), `afiliacion_seguridad_social`, `nacionalidad`, `fecha_nacimiento`, `domicilio`, `phone` y `email`. Son datos introducidos a mano, sin productor que los calcule.
+`profiles` conserva además los datos de la ficha de empleado: `dni` (NIF/NIE/Pasaporte), `afiliacion_seguridad_social`, `nacionalidad`, `fecha_nacimiento`, `domicilio`, `phone` y `email`. Son datos introducidos a mano, sin productor que los calcule. Conserva también `camera_fov_notice_acked_at`: el instante en que esa persona confirmó su primer fichaje de entrada viendo el aviso del campo de visión de la cámara. NULL significa que el aviso sigue pendiente. Cancelar el modal no escribe este campo.
 
 #### La duplicación de condiciones laborales
 

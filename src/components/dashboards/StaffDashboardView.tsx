@@ -41,7 +41,13 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { StaffClockCameraFovNotice } from '@/components/dashboards/StaffClockCameraFovNotice';
 import DashboardShortcut from '@/components/dashboards/DashboardShortcut';
+import {
+    CAMERA_FOV_NOTICE_ACKED_AT_COLUMN,
+    isCameraFovNoticePending,
+    shouldShowCameraFovNotice,
+} from '@/lib/staff/camera-fov-notice';
 import { HomeScreen, HomeScreenSlot } from '@/components/dashboards/HomeScreen';
 import { ConsumptionModal } from '@/app/staff/ConsumptionModal';
 import { AccessMenuGrid, CatalogTile } from '@/components/catalog/CatalogTile';
@@ -296,6 +302,7 @@ export default function StaffDashboardView({
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
     const [fichajeOverlay, setFichajeOverlay] = useState<'none' | 'confirm' | 'consumption'>('none');
     const [modalAction, setModalAction] = useState<'in' | 'out' | null>(null);
+    const [cameraFovNoticeAckedAt, setCameraFovNoticeAckedAt] = useState<string | null>(null);
     const [showGiffOverlay, setShowGiffOverlay] = useState(false);
     const [giffOverlaySrc, setGiffOverlaySrc] = useState<string>('/icons/giff.mp4');
     const [giffOverlayFading, setGiffOverlayFading] = useState(false);
@@ -448,16 +455,22 @@ export default function StaffDashboardView({
             );
 
             const { data: profile } = await supabase.from('profiles')
-                .select('first_name, role, email')
+                .select(`first_name, role, email, ${CAMERA_FOV_NOTICE_ACKED_AT_COLUMN}`)
                 .eq('id', effectiveUserId)
                 .single();
 
             if (profile) {
                 setUserRole(profile.role as any);
-            } else if (identity?.isViewingAs) {
-                setUserRole(identity.effectiveRole as any);
-            } else if (initialRole) {
-                setUserRole(initialRole);
+                const ackedAt = (profile as { camera_fov_notice_acked_at?: string | null })
+                    .camera_fov_notice_acked_at;
+                setCameraFovNoticeAckedAt(typeof ackedAt === 'string' ? ackedAt : null);
+            } else {
+                setCameraFovNoticeAckedAt(null);
+                if (identity?.isViewingAs) {
+                    setUserRole(identity.effectiveRole as any);
+                } else if (initialRole) {
+                    setUserRole(initialRole);
+                }
             }
 
             const manageRole = identity?.isViewingAs ? identity.effectiveRole : profile?.role;
@@ -739,6 +752,19 @@ export default function StaffDashboardView({
                     .single();
                 if (inErr) throw inErr;
                 setTodayLog(data); setStatus('working'); toast.success("¡Jornada iniciada!");
+                if (isCameraFovNoticePending(cameraFovNoticeAckedAt)) {
+                    const ackedAt = now.toISOString();
+                    const { error: ackErr } = await supabase
+                        .from('profiles')
+                        .update({ [CAMERA_FOV_NOTICE_ACKED_AT_COLUMN]: ackedAt })
+                        .eq('id', userId)
+                        .is(CAMERA_FOV_NOTICE_ACKED_AT_COLUMN, null);
+                    if (ackErr) {
+                        console.error(ackErr);
+                    } else {
+                        setCameraFovNoticeAckedAt(ackedAt);
+                    }
+                }
                 const dayYmd = formatYmdInMadrid(now);
                 const sync = await syncOvertimeCostAfterTimeLogChange(userId, dayYmd);
                 if (!sync.success) {
@@ -1038,7 +1064,11 @@ export default function StaffDashboardView({
                     confirming={actionLoading && modalAction === 'in'}
                     onConfirm={handleClockModalConfirm}
                     buttonsAlign="center"
-                />
+                >
+                    {shouldShowCameraFovNotice(modalAction, cameraFovNoticeAckedAt)
+                        ? <StaffClockCameraFovNotice />
+                        : undefined}
+                </ConfirmModal>
             )}
 
             {showGiffOverlay && (() => {

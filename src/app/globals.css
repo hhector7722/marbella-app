@@ -600,8 +600,13 @@
   padding: 0;
   min-height: 0;
 }
-[data-component='Modal'][data-instance='staff-clock-confirm'] [data-element='footer'] {
+[data-component='Modal'][data-instance='staff-clock-confirm'] [data-element='body']:not(:empty) {
+  padding-bottom: var(--espacio-4);
+}
+[data-component='Modal'][data-instance='staff-clock-confirm'] [data-element='body']:empty ~ [data-element='footer'] {
   border-top: none;
+}
+[data-component='Modal'][data-instance='staff-clock-confirm'] [data-element='footer'] {
   padding-top: var(--espacio-4);
   padding-bottom: var(--espacio-4);
 }
@@ -620,6 +625,35 @@
   bottom: 0;
   height: auto;
   transform: none;
+}
+[data-component='Modal'][data-instance='staff-clock-confirm'] [data-element='camera-fov-image'] {
+  overflow: hidden;
+  border: 1px solid var(--color-texto-invertido);
+  border-radius: var(--radio-control);
+}
+[data-component='Modal'][data-instance='staff-clock-confirm'] [data-element='camera-fov-image'] img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+[data-component='Modal'][data-instance='staff-clock-confirm'] [data-element='camera-fov-title'] {
+  margin: 0;
+  color: var(--color-texto-invertido);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.25;
+  text-wrap: pretty;
+}
+[data-component='Modal'][data-instance='staff-clock-confirm'] [data-component='Surface'][data-instance='staff-clock-camera-notice'] {
+  background-color: var(--color-superficie);
+  color: var(--color-texto);
+}
+[data-component='Modal'][data-instance='staff-clock-confirm'] [data-element='camera-fov-body'] {
+  margin: 0;
+  color: var(--color-texto);
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.4;
 }
 
 /*

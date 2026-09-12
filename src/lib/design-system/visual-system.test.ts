@@ -854,6 +854,47 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.doesNotMatch(timer, /No has fichado/);
     });
 
+    it('el aviso de la cámara vive en el ConfirmModal de entrada, no en un modal nuevo', () => {
+        const staff = readFileSync(
+            join(SRC_ROOT, 'components/dashboards/StaffDashboardView.tsx'),
+            'utf8'
+        );
+        const notice = readFileSync(
+            join(SRC_ROOT, 'components/dashboards/StaffClockCameraFovNotice.tsx'),
+            'utf8'
+        );
+        const css = readFileSync(join(SRC_ROOT, 'app/globals.css'), 'utf8');
+        assert.match(staff, /instance="staff-clock-confirm"/);
+        assert.match(staff, /hideHeader/);
+        assert.match(staff, /hideCloseButton/);
+        assert.match(staff, /StaffClockCameraFovNotice/);
+        assert.match(staff, /shouldShowCameraFovNotice/);
+        assert.match(staff, /CAMERA_FOV_NOTICE_ACKED_AT_COLUMN/);
+        assert.doesNotMatch(staff, /Leído/);
+        assert.match(
+            staff,
+            /clock_in: now\.toISOString\(\)[\s\S]*isCameraFovNoticePending/,
+            'el aviso se marca leído después de registrar la entrada'
+        );
+        assert.doesNotMatch(
+            staff,
+            /<Surface /,
+            'el mosaico Staff no envuelve el aviso en Surface; lo hace el cuerpo del modal'
+        );
+        assert.match(notice, /<Surface/);
+        assert.match(notice, /variant="block"/);
+        assert.match(notice, /instance="staff-clock-camera-notice"/);
+        assert.doesNotMatch(notice, /hideCloseButton|data-element="header"/);
+        assert.match(
+            css,
+            /\[data-component='Modal'\]\[data-instance='staff-clock-confirm'\] \[data-element='camera-fov-title'\]/
+        );
+        assert.match(
+            css,
+            /\[data-component='Modal'\]\[data-instance='staff-clock-confirm'\] \[data-component='Surface'\]\[data-instance='staff-clock-camera-notice'\]/
+        );
+    });
+
     it('login entra a la app con recarga, no con router.push', () => {
         const login = readFileSync(join(SRC_ROOT, 'app/login/page.tsx'), 'utf8');
         assert.match(login, /window\.location\.replace\('\/'\)/);
