@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-12
 
+- **Horario desktop: las cards de sábado y domingo ya no se recortan.** En el mosaico, las semanas cerradas dejan de comerse la altura. La semana abierta reserva un mínimo para título, evento y horas, y crece si el hueco da de sí. El tamaño exterior del widget no cambia.
+
 - **Staff: el resumen semanal de escritorio llena el hueco 5×2.** En `/staff/dashboard`, la fila de días crece hasta el pie (Horas / Pendientes / Extras / Importe). El vacío deja de quedar debajo del resumen: los fichajes ocupan el centro de la celda y H/Ex el fondo. El smartphone no cambia.
 
 - **Horario (Admin y Master): los importes de la columna Ext flotan sobre el widget.** En `/dashboard` y `/master/dashboard`, el importe y el indicador de abono de cada semana dejan de ir en una card con fondo y se pintan directamente sobre el cristal del widget, igual que los números de día. La semana sin importe sigue vacía.

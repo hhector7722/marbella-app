@@ -343,8 +343,18 @@ describe('HomeScreen — rejilla de inicio iOS', () => {
         );
         assert.match(
             css,
-            /\[data-element='week-block'\]\[data-expanded='true'\] \{[\s\S]*flex:\s*2\.2 1 0/,
-            'escritorio: la semana abierta del horario crece para turnos y eventos'
+            /\[data-element='week-block'\]:not\(\[data-expanded='true'\]\) \{[\s\S]*flex:\s*0 1 auto/,
+            'escritorio: las semanas cerradas del horario no crecen a costa de las cards'
+        );
+        assert.match(
+            css,
+            /\[data-element='week-block'\]\[data-expanded='true'\] \{[\s\S]*flex:\s*1 1 auto/,
+            'escritorio: la semana abierta del horario recibe el hueco restante'
+        );
+        assert.match(
+            css,
+            /--staff-week-expansion-min:\s*5\.5rem/,
+            'escritorio: las cards de sábado y domingo reservan alto para evento y horas'
         );
         assert.match(
             css,

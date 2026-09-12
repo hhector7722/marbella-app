@@ -5449,8 +5449,9 @@ button[data-element='catalog-filter'] {
   }
 
   /*
-   * Calendario/horario del mosaico: el hueco de 3 filas reparte las semanas.
-   * La abierta crece para turnos/eventos; las demás toman el aire restante.
+   * Calendario/horario del mosaico: las semanas cerradas no crecen.
+   * Todo el hueco que sobre va a la semana abierta, con un mínimo que
+   * deja ver título, evento y horas. Sin tope: si hay más alto, crece.
    * Misma escala en Staff, Admin y Master.
    */
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-horarios'] > [data-element='body'] > [data-component='StaffWeekSchedule'],
@@ -5458,7 +5459,7 @@ button[data-element='catalog-filter'] {
   [data-component='HomeScreen'][data-layout='ops-admin'] > [data-element='slot'][data-instance='master-horarios'] > [data-element='body'] > [data-component='StaffWeekSchedule'] {
     --staff-calendar-gap: var(--espacio-2);
     --staff-week-day-size: 1.5rem;
-    --staff-week-expansion-min: 0px;
+    --staff-week-expansion-min: 5.5rem;
     --staff-week-expansion-max: none;
   }
   /* Desktop: la asistencia Master permanece en su zona 2×1; no despliega el grid. */
@@ -5470,20 +5471,20 @@ button[data-element='catalog-filter'] {
     justify-content: flex-start;
   }
   [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='week-block']:not([data-expanded='true']) {
-    flex: 1 1 0;
-    min-height: 0;
+    flex: 0 1 auto;
     justify-content: center;
+    padding-block: var(--espacio-1);
   }
   [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='week-block'][data-expanded='true'] {
-    flex: 2.2 1 0;
-    min-height: 0;
+    flex: 1 1 auto;
+    min-height: calc(var(--staff-week-day-size) + var(--espacio-1) + var(--staff-week-expansion-min));
   }
   [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='week-expansion'] {
-    min-height: 0;
+    min-height: var(--staff-week-expansion-min);
     max-height: none;
   }
   [data-component='HomeScreen'] [data-component='StaffWeekSchedule'] [data-element='weekend-details'] {
-    justify-content: space-evenly;
+    justify-content: center;
   }
 
   /*
