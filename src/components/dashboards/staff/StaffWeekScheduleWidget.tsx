@@ -40,8 +40,11 @@ type ShiftRow = {
 
 type StaffWeekScheduleWidgetProps = {
     userId: string | null;
-    /** Abre el modal de horario del día (StaffScheduleModal) al pulsar una tarjeta de fin de semana. */
-    onOpenNote?: (ymd: string) => void;
+    /**
+     * Abre el modal de horario del día (StaffScheduleModal) al pulsar una tarjeta de fin de semana.
+     * Si el widget ya tiene actividades cacheadas para ese día, las pasa como semilla (puede ser `[]`).
+     */
+    onOpenNote?: (ymd: string, activities?: BarActivity[]) => void;
     /** Modo Master: pinta la columna «Ext» de horas extra a la derecha del calendario. */
     masterMode?: boolean;
     /** Abre el modal de detalle de semana de horas extras (solo modo Master). */
@@ -230,13 +233,16 @@ function WeekendDayColumn({
     eventLabel,
     eventDetailRows,
     onOpenDay,
+    cachedActivities,
     masterMode = false,
 }: {
     day: Date;
     shift: ShiftRow | null;
     eventLabel: string | null;
     eventDetailRows: EventDetailRow[];
-    onOpenDay?: (ymd: string) => void;
+    onOpenDay?: (ymd: string, activities?: BarActivity[]) => void;
+    /** Actividades ya cargadas para este día; se reutilizan al abrir el modal. */
+    cachedActivities?: BarActivity[];
     masterMode?: boolean;
 }) {
     const ymd = format(day, 'yyyy-MM-dd');
@@ -251,7 +257,7 @@ function WeekendDayColumn({
             data-element="weekend-card"
             onClick={(e) => {
                 e.stopPropagation();
-                onOpenDay?.(ymd);
+                onOpenDay?.(ymd, cachedActivities);
             }}
             aria-label={`Ver ${formatWeekdayHeading(day)}`}
             className="relative text-left outline-none transition-opacity hover:opacity-90 active:opacity-80 before:absolute before:inset-0 before:-m-0.5 before:min-h-[var(--tactil-minimo)] before:content-['']"
@@ -333,7 +339,7 @@ function WeekExpansion({
     weekDays: Date[];
     shifts: ShiftRow[];
     eventsByDate: Record<string, BarActivity[]>;
-    onOpenDay?: (ymd: string) => void;
+    onOpenDay?: (ymd: string, activities?: BarActivity[]) => void;
     masterMode?: boolean;
     className?: string;
 }) {
@@ -353,6 +359,7 @@ function WeekExpansion({
                 eventLabel={formatDayEventNames(eventsByDate[satKey])}
                 eventDetailRows={formatDayEventDetailRows(eventsByDate[satKey])}
                 onOpenDay={onOpenDay}
+                cachedActivities={eventsByDate[satKey]}
                 masterMode={masterMode}
             />
             <WeekendDayColumn
@@ -361,6 +368,7 @@ function WeekExpansion({
                 eventLabel={formatDayEventNames(eventsByDate[sunKey])}
                 eventDetailRows={formatDayEventDetailRows(eventsByDate[sunKey])}
                 onOpenDay={onOpenDay}
+                cachedActivities={eventsByDate[sunKey]}
                 masterMode={masterMode}
             />
         </div>

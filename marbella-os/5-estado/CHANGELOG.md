@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-12
 
+- **Comunicados: el aviso de la cámara se abre en un Modal de la app.** En Perfil → Documentos → Comunicados, ese comunicado ya no abre una pestaña con la imagen: usa el Modal de sistema con la foto, el título y la card, sin Cancelar ni Confirmar.
+
 - **Modal de día en escritorio: ventana según contenido, no pantalla completa.** La variante `day` pasa a `max-w-4xl` (nombres + escala horaria). El horario del personal deja `work` y usa `day`. Filas, franjas y horas suben por encima de `tipo.minimo`; el smartphone no cambia. [P2](../2-diseno/PATRONES.md#p2--modal), [P4](../2-diseno/PATRONES.md#p4--modal-de-día), [ADR-0008](../4-decisiones/ADR-0008-modal-backdrop-capas.md).
 
 - **Horario desktop: las cards de sábado y domingo ya no se recortan.** En el mosaico, las semanas cerradas dejan de comerse la altura. La semana abierta reserva un mínimo para título, evento y horas, y crece si el hueco da de sí. El tamaño exterior del widget no cambia.

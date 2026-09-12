@@ -36,7 +36,7 @@ Registrar quién trabaja, cuándo y cuánto. Es la capacidad más sensible del p
 
 - **Actores**: persona en turno, responsable de operación, responsable del negocio.
 - **Superficies**: panel de equipo (fichaje), historial de horas propio, registros del equipo, calendario mensual, editor de día, hoja de jornada impresa.
-- **Reglas propias**: semana de lunes a domingo; jornada fija para casos concretos; distinción entre horas ordinarias y extras; tipos de ausencia con etiquetas propias. El aviso del campo de visión de la cámara se muestra en el mismo modal de confirmar entrada hasta que esa persona confirma con éxito su primer fichaje de entrada; cancelar no lo marca como leído.
+- **Reglas propias**: semana de lunes a domingo; jornada fija para casos concretos; distinción entre horas ordinarias y extras; tipos de ausencia con etiquetas propias. El aviso del campo de visión de la cámara se muestra en el mismo modal de confirmar entrada hasta que esa persona confirma con éxito su primer fichaje de entrada; cancelar no lo marca como leído. En Perfil → Documentos → Comunicados se abre el mismo aviso como Modal de la app, no en una pestaña nueva.
 - **Estado**: en movimiento. Su motor de cálculo se rehízo por completo y su interfaz se está unificando.
 - **Gobernada por**: [ADR-0001](../4-decisiones/ADR-0001-hours-engine-productor-unico.md), [contrato de proyección](../3-ingenieria/contratos/PROYECCION-v1.md).
 - **Especificación**: pendiente.
@@ -183,7 +183,7 @@ Dar a cada persona acceso a lo suyo.
 
 - **Actores**: persona en turno, responsable de operación, master.
 - **Superficies**: perfil, documentos (nóminas, contratos, comunicados, sanciones), condiciones de contrato.
-- **Reglas propias**: cada persona ve solo sus documentos; las condiciones de contrato se versionan por tramos de vigencia y solo las edita el maestro; el maestro edita los datos personales de cualquier trabajador.
+- **Reglas propias**: cada persona ve solo sus documentos; las condiciones de contrato se versionan por tramos de vigencia y solo las edita el maestro; el maestro edita los datos personales de cualquier trabajador. El aviso del campo de visión de la cámara se abre en un Modal de sistema sobre Comunicados, no como imagen en una pestaña.
 - **Estado**: consolidada.
 - **Especificación**: pendiente.
 

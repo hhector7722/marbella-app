@@ -928,6 +928,23 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
             css,
             /\[data-component='Modal'\]\[data-instance='staff-clock-confirm'\] \[data-component='Surface'\]\[data-instance='staff-clock-camera-notice'\]/
         );
+        assert.match(
+            css,
+            /\[data-component='Modal'\]\[data-instance='profile-camera-fov-notice'\] \[data-component='Surface'\]\[data-instance='staff-clock-camera-notice'\]/
+        );
+    });
+
+    it('el comunicado del aviso de la cámara abre un Modal de sistema, no una pestaña', () => {
+        const comunicados = readFileSync(
+            join(SRC_ROOT, 'components/profile/ComunicadosModal.tsx'),
+            'utf8'
+        );
+        assert.match(comunicados, /isCameraFovNoticeDocument/);
+        assert.match(comunicados, /StaffClockCameraFovNotice/);
+        assert.match(comunicados, /instance="profile-camera-fov-notice"/);
+        assert.match(comunicados, /layer="system"/);
+        assert.match(comunicados, /setCameraFovOpen\(true\)/);
+        assert.doesNotMatch(comunicados, /Leído/);
     });
 
     it('login entra a la app con recarga, no con router.push', () => {

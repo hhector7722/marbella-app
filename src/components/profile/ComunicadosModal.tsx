@@ -10,6 +10,8 @@ import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { DocumentListRow } from '@/components/ui/DocumentListRow';
 import { addEmployeeDocumentByTipo, deleteEmployeeDocumentByTipo } from '@/app/actions/profile';
+import { StaffClockCameraFovNotice } from '@/components/dashboards/StaffClockCameraFovNotice';
+import { isCameraFovNoticeDocument, CAMERA_FOV_NOTICE_TITLE } from '@/lib/staff/camera-fov-notice';
 
 interface ComunicadosModalProps {
     isOpen: boolean;
@@ -33,6 +35,7 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
     const [docs, setDocs] = useState<DocRow[]>([]);
     const [uploading, setUploading] = useState(false);
     const [uploadKind, setUploadKind] = useState<'comunicado' | 'sancion' | null>(null);
+    const [cameraFovOpen, setCameraFovOpen] = useState(false);
 
     const fetchDocs = async () => {
         setLoading(true);
@@ -63,11 +66,18 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
     };
 
     useEffect(() => {
-        if (!isOpen) return;
+        if (!isOpen) {
+            setCameraFovOpen(false);
+            return;
+        }
         fetchDocs();
     }, [isOpen, userId]);
 
     const openDoc = (doc: DocRow) => {
+        if (isCameraFovNoticeDocument(doc.storage_path)) {
+            setCameraFovOpen(true);
+            return;
+        }
         const q = new URLSearchParams({
             owner: userId,
             path: doc.storage_path,
@@ -232,6 +242,7 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
     ) : null;
 
     return (
+        <>
         <Modal
             open={isOpen}
             onClose={onClose}
@@ -300,5 +311,21 @@ export default function ComunicadosModal({ isOpen, onClose, userId, isManager = 
                 )}
             </div>
         </Modal>
+            <Modal
+                open={isOpen && cameraFovOpen}
+                onClose={() => setCameraFovOpen(false)}
+                title={CAMERA_FOV_NOTICE_TITLE}
+                variant="compact"
+                layer="system"
+                scheme="dark"
+                instance="profile-camera-fov-notice"
+                usageId="profile-camera-fov-notice"
+                usageLabel="Aviso del campo de visión de la cámara"
+                hideHeader
+                hideCloseButton
+            >
+                <StaffClockCameraFovNotice />
+            </Modal>
+        </>
     );
 }

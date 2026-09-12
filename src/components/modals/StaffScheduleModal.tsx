@@ -20,7 +20,7 @@ import { useTrackModalApply } from '@/hooks/useTrackModalApply';
 import { formatYmdShort } from '@/lib/usage/modal-apply';
 import { ShiftBarTimeLabels } from '@/components/schedule/ShiftBarTimeLabels';
 import { ScheduleNotesFooter } from '@/components/schedule/ScheduleNotesFooter';
-import { fetchDayDetailAction } from '@/app/staff/actividades/actions';
+import { fetchActivitiesForRangeAction, type BarActivity } from '@/app/staff/actividades/actions';
 import { groupActivities } from '@/components/dashboards/staff/StaffWeekScheduleWidget';
 
 /* ─── Constants (match editor exactly) ─────────────────── */
@@ -137,6 +137,11 @@ interface Props {
     userRole?: 'staff' | 'manager' | 'supervisor' | 'admin';
     /** yyyy-MM-dd desde notificación: abre el detalle de ese día al abrir el modal */
     initialFocusDate?: string | null;
+    /**
+     * Actividades ya conocidas (p. ej. cache del widget). `undefined` = sin semilla;
+     * array (también vacío) = no hace falta volver a pedir el pabellón.
+     */
+    initialActivities?: BarActivity[];
     userEmail?: string;
 }
 
@@ -147,6 +152,7 @@ export const StaffScheduleModal = ({
     shifts,
     userRole,
     initialFocusDate,
+    initialActivities,
     userEmail,
 }: Props) => {
     const router = useRouter();
@@ -180,8 +186,69 @@ export const StaffScheduleModal = ({
     const [eventEnd2, setEventEnd2] = useState('');
     const [eventParticipants2, setEventParticipants2] = useState<number | string>('');
     const [loadingDay, setLoadingDay] = useState(false);
+    /** Resumen del evento listo (semilla o fetch); permite pintar sin esperar turnos. */
+    const [dayShellReady, setDayShellReady] = useState(false);
 
     const hoursHeader = Array.from({ length: TOTAL_HOURS }, (_, i) => i + START_HOUR);
+
+    const clearActivityFields = () => {
+        setDayActivity('');
+        setDayCategory('');
+        setDayActivity2('');
+        setDayCategory2('');
+        setEventStart('');
+        setEventEnd('');
+        setEventParticipants('');
+        setEventStart2('');
+        setEventEnd2('');
+        setEventParticipants2('');
+    };
+
+    const applyBarActivities = (dayActivities: BarActivity[]): boolean => {
+        const groupedActivities = groupActivities(dayActivities);
+        if (groupedActivities.length === 0) {
+            return false;
+        }
+        const g1 = groupedActivities[0];
+        const g2 = groupedActivities[1];
+        setDayActivity(g1.activityName);
+        setDayCategory((g1.categories ?? []).join(', '));
+        setEventStart(formatHourShort(g1.startTime));
+        setEventEnd(formatHourShort(g1.endTime));
+        setEventParticipants(
+            g1.totalParticipants != null && g1.totalParticipants > 0
+                ? String(g1.totalParticipants)
+                : '',
+        );
+        setDayActivity2(g2?.activityName ?? '');
+        setDayCategory2((g2?.categories ?? []).join(', '));
+        setEventStart2(g2 ? formatHourShort(g2.startTime) : '');
+        setEventEnd2(g2 ? formatHourShort(g2.endTime) : '');
+        setEventParticipants2(
+            g2?.totalParticipants != null && g2.totalParticipants > 0
+                ? String(g2.totalParticipants)
+                : '',
+        );
+        return true;
+    };
+
+    const applyShiftActivityFallback = (displayShifts: any[]) => {
+        if (displayShifts.length > 0) {
+            const firstShift = displayShifts[0];
+            setDayActivity(firstShift?.activity || '');
+            setDayCategory(firstShift?.categoria || '');
+            setDayActivity2(firstShift?.activity_2 || '');
+            setDayCategory2(firstShift?.categoria_2 || '');
+            setEventStart(firstShift?.event_start_time || '');
+            setEventEnd(firstShift?.event_end_time || '');
+            setEventParticipants(firstShift?.event_participants || '');
+            setEventStart2(firstShift?.event_start_time_2 || '');
+            setEventEnd2(firstShift?.event_end_time_2 || '');
+            setEventParticipants2(firstShift?.event_participants_2 || '');
+        } else {
+            clearActivityFields();
+        }
+    };
 
     const navigateMonth = (d: 1 | -1) =>
         setCurrentDate(d === 1 ? addMonths(currentDate, 1) : subMonths(currentDate, 1));
@@ -196,97 +263,53 @@ export const StaffScheduleModal = ({
         return days;
     };
 
-    const handleDayClick = async (day: Date) => {
+    const handleDayClick = async (day: Date, seededActivities?: BarActivity[]) => {
         trackScheduleDay(formatYmdShort(format(day, 'yyyy-MM-dd')));
-        setLoadingDay(true);
         setSelectedDate(day);
+        setDayShifts([]);
+        setLoadingDay(true);
+        setDayShellReady(false);
+
+        const dayYmd = format(day, 'yyyy-MM-dd');
+        const hasSeed = seededActivities !== undefined;
+        let hasRealActivities = false;
+
+        if (hasSeed) {
+            hasRealActivities = applyBarActivities(seededActivities);
+            if (!hasRealActivities) clearActivityFields();
+            setDayShellReady(true);
+        }
+
         try {
-            const dayYmd = format(day, 'yyyy-MM-dd');
-
-            // 1. Cargamos actividades reales del pabellón primero (independiente de si hay turnos)
-            const dayDetail = await fetchDayDetailAction({ date: dayYmd });
-            const dayActivities = dayDetail.success ? dayDetail.data.barActivities : [];
-            const groupedActivities = groupActivities(dayActivities);
-
-            let hasRealActivities = false;
-
-            if (groupedActivities.length > 0) {
-                hasRealActivities = true;
-                const g1 = groupedActivities[0];
-                const g2 = groupedActivities[1];
-                setDayActivity(g1.activityName);
-                setDayCategory((g1.categories ?? []).join(', '));
-                setEventStart(formatHourShort(g1.startTime));
-                setEventEnd(formatHourShort(g1.endTime));
-                setEventParticipants(
-                    g1.totalParticipants != null && g1.totalParticipants > 0
-                        ? String(g1.totalParticipants)
-                        : '',
-                );
-                setDayActivity2(g2?.activityName ?? '');
-                setDayCategory2((g2?.categories ?? []).join(', '));
-                setEventStart2(g2 ? formatHourShort(g2.startTime) : '');
-                setEventEnd2(g2 ? formatHourShort(g2.endTime) : '');
-                setEventParticipants2(
-                    g2?.totalParticipants != null && g2.totalParticipants > 0
-                        ? String(g2.totalParticipants)
-                        : '',
-                );
-            }
-
-            // 2. Cargamos turnos del día
             const localStart = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, 0, 0, 0);
             const localEnd = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 23, 59, 59, 999);
 
-            const { data: rawShifts, error } = await supabase
+            const shiftsPromise = supabase
                 .from('shifts')
                 .select('start_time, end_time, draft_start_time, draft_end_time, activity, activity_2, categoria, categoria_2, user_id, is_published, event_start_time, event_end_time, event_participants, event_start_time_2, event_end_time_2, event_participants_2')
                 .gte('start_time', localStart.toISOString())
                 .lte('start_time', localEnd.toISOString())
                 .order('start_time', { ascending: true });
 
-            if (error) throw error;
+            const finishDayLoad = async (rawShifts: any[], pavilionOk: boolean) => {
+                const isManagerView = userEmail === 'hhector7722@gmail.com';
+                const publishedShifts = rawShifts.filter((s: any) => s.is_published);
+                const displayShifts = isManagerView ? rawShifts : publishedShifts;
 
-            // El manager ve también lo planificado sin publicar (borradores del día)
-            const isManagerView = userEmail === 'hhector7722@gmail.com';
-            const publishedShifts = (rawShifts ?? []).filter((s: any) => s.is_published);
-            const displayShifts = isManagerView ? (rawShifts ?? []) : publishedShifts;
-
-            // 3. Si no hay actividades reales del pabellón, caemos al primer turno en pantalla (si existe)
-            if (!hasRealActivities) {
-                if (displayShifts.length > 0) {
-                    const firstShift = displayShifts[0];
-                    setDayActivity(firstShift?.activity || '');
-                    setDayCategory(firstShift?.categoria || '');
-                    setDayActivity2(firstShift?.activity_2 || '');
-                    setDayCategory2(firstShift?.categoria_2 || '');
-                    setEventStart(firstShift?.event_start_time || '');
-                    setEventEnd(firstShift?.event_end_time || '');
-                    setEventParticipants(firstShift?.event_participants || '');
-                    setEventStart2(firstShift?.event_start_time_2 || '');
-                    setEventEnd2(firstShift?.event_end_time_2 || '');
-                    setEventParticipants2(firstShift?.event_participants_2 || '');
-                } else {
-                    // Si tampoco hay turnos publicados, limpiamos los campos de actividad
-                    setDayActivity('');
-                    setDayCategory('');
-                    setDayActivity2('');
-                    setDayCategory2('');
-                    setEventStart('');
-                    setEventEnd('');
-                    setEventParticipants('');
-                    setEventStart2('');
-                    setEventEnd2('');
-                    setEventParticipants2('');
+                if (!pavilionOk) {
+                    applyShiftActivityFallback(displayShifts);
                 }
-            }
 
-            // 4. Cargamos perfiles de los turnos en pantalla (publicados siempre; borradores solo manager)
-            if (displayShifts.length === 0) {
-                setDayShifts([]);
-            } else {
+                if (displayShifts.length === 0) {
+                    setDayShifts([]);
+                    return;
+                }
+
                 const ids = [...new Set(displayShifts.map((s: any) => s.user_id))];
-                const { data: profiles } = await supabase.from('profiles').select('id, first_name, avatar_url').in('id', ids);
+                const { data: profiles } = await supabase
+                    .from('profiles')
+                    .select('id, first_name, avatar_url')
+                    .in('id', ids);
                 const nameMap: Record<string, string> = {};
                 const avatarMap: Record<string, string | null> = {};
                 (profiles || []).forEach((p: any) => {
@@ -294,29 +317,51 @@ export const StaffScheduleModal = ({
                     avatarMap[p.id] = p.avatar_url ?? null;
                 });
 
-                setDayShifts(displayShifts.map((s: any) => ({
-                    name: nameMap[s.user_id] || '?',
-                    avatar_url: avatarMap[s.user_id] ?? null,
-                    startTime: new Date(s.draft_start_time || s.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-                    endTime: new Date(s.draft_end_time || s.end_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-                    activity: s.activity || undefined,
-                    isDraft: !s.is_published,
-                })));
+                setDayShifts(
+                    displayShifts.map((s: any) => ({
+                        name: nameMap[s.user_id] || '?',
+                        avatar_url: avatarMap[s.user_id] ?? null,
+                        startTime: new Date(s.draft_start_time || s.start_time).toLocaleTimeString('es-ES', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                        }),
+                        endTime: new Date(s.draft_end_time || s.end_time).toLocaleTimeString('es-ES', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                        }),
+                        activity: s.activity || undefined,
+                        isDraft: !s.is_published,
+                    })),
+                );
+            };
+
+            if (hasSeed) {
+                const { data: rawShifts, error } = await shiftsPromise;
+                if (error) throw error;
+                await finishDayLoad(rawShifts ?? [], hasRealActivities);
+            } else {
+                const [activitiesResult, shiftsResult] = await Promise.all([
+                    fetchActivitiesForRangeAction({ startDate: dayYmd, endDate: dayYmd }),
+                    shiftsPromise,
+                ]);
+
+                if (shiftsResult.error) throw shiftsResult.error;
+
+                const dayActivities = activitiesResult.success
+                    ? activitiesResult.byDate[dayYmd]?.barActivities ?? []
+                    : [];
+                hasRealActivities = applyBarActivities(dayActivities);
+                if (!hasRealActivities) clearActivityFields();
+                setDayShellReady(true);
+
+                await finishDayLoad(shiftsResult.data ?? [], hasRealActivities);
             }
         } catch (err: any) {
             console.error('handleDayClick full error:', err);
             toast.error(err?.message || 'Error al cargar el día');
             setDayShifts([]);
-            setDayActivity('');
-            setDayCategory('');
-            setDayActivity2('');
-            setDayCategory2('');
-            setEventStart('');
-            setEventEnd('');
-            setEventParticipants('');
-            setEventStart2('');
-            setEventEnd2('');
-            setEventParticipants2('');
+            clearActivityFields();
+            setDayShellReady(true);
         } finally {
             setLoadingDay(false);
         }
@@ -333,8 +378,8 @@ export const StaffScheduleModal = ({
         const d = Number(m[3]);
         const day = new Date(y, mo - 1, d);
         setCurrentDate(day);
-        void handleDayClick(day);
-    }, [isOpen, initialFocusDate]);
+        void handleDayClick(day, initialActivities);
+    }, [isOpen, initialFocusDate, initialActivities]);
 
     useEffect(() => {
         if (!isOpen) lastFocusedDateRef.current = null;
@@ -353,7 +398,7 @@ export const StaffScheduleModal = ({
         return () => window.clearTimeout(timeout);
     }, [navigatingToActividades]);
 
-    const handleBack = () => { setSelectedDate(null); setDayShifts([]); setEditModeForDate(null); };
+    const handleBack = () => { setSelectedDate(null); setDayShifts([]); setEditModeForDate(null); setDayShellReady(false); };
     const handleClose = async () => {
         // Coordina con la persistencia en curso; si falla, el editor ya avisa,
         // pero el cierre no queda atrapado.
@@ -361,6 +406,7 @@ export const StaffScheduleModal = ({
         setSelectedDate(null);
         setDayShifts([]);
         setEditModeForDate(null);
+        setDayShellReady(false);
         onClose();
     };
 
@@ -650,13 +696,13 @@ export const StaffScheduleModal = ({
                 ) : (
                     // VISTA B: TABLA IDÉNTICA AL EDITOR — SÓLO LECTURA
                     <div className="flex flex-col flex-1 overflow-hidden min-h-0 day-modal-body">
-                        {loadingDay ? (
+                        {!dayShellReady ? (
                             <div className="flex-1 flex items-center justify-center py-20">
                                 <div className="w-8 h-8 rounded-full border-4 border-ds-marca border-t-transparent animate-spin" />
                             </div>
                         ) : (
                             <>
-                                {/* Resumen del evento — siempre visible */}
+                                {/* Resumen del evento — visible en cuanto hay semilla o fetch */}
                                 <div data-element="schedule-event-summary" className="p-2 w-full shrink-0">
                                     <div className="flex w-full max-w-2xl mx-auto flex-col gap-1 rounded-[var(--radio-control)] bg-white/10 p-1.5">
                                         {!hasAct1 && !hasAct2 ? (
@@ -690,7 +736,11 @@ export const StaffScheduleModal = ({
                                 </div>
 
                                 {/* Tabla o «Sin turno» */}
-                                {dayShifts.length === 0 ? (
+                                {loadingDay ? (
+                                    <div className="flex-1 flex items-center justify-center py-16 px-4">
+                                        <div className="w-8 h-8 rounded-full border-4 border-ds-marca border-t-transparent animate-spin" />
+                                    </div>
+                                ) : dayShifts.length === 0 ? (
                                     <div className="flex-1 flex items-center justify-center py-16 px-4">
                                         <p className="text-xs font-medium text-white/60">Sin turno</p>
                                     </div>

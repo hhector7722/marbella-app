@@ -4,6 +4,8 @@ import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import {
     CAMERA_FOV_NOTICE_IMAGE_SRC,
+    CAMERA_FOV_NOTICE_STORAGE_BASENAME,
+    isCameraFovNoticeDocument,
     isCameraFovNoticePending,
     shouldShowCameraFovNotice,
 } from './camera-fov-notice.ts';
@@ -27,5 +29,13 @@ describe('Aviso del campo de visión de la cámara', () => {
     it('la imagen del aviso existe en public/', () => {
         const relative = CAMERA_FOV_NOTICE_IMAGE_SRC.replace(/^\//, '');
         assert.equal(existsSync(join(process.cwd(), 'public', relative)), true);
+    });
+
+    it('reconoce el comunicado archivado por la ruta de storage', () => {
+        assert.equal(
+            isCameraFovNoticeDocument(`abc/${CAMERA_FOV_NOTICE_STORAGE_BASENAME}`),
+            true
+        );
+        assert.equal(isCameraFovNoticeDocument('abc/comunicados/otro.pdf'), false);
     });
 });

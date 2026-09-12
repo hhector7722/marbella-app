@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { StaffWeekScheduleWidget } from '@/components/dashboards/staff/StaffWeekScheduleWidget';
 import { StaffScheduleModal } from '@/components/modals/StaffScheduleModal';
+import type { BarActivity } from '@/app/staff/actividades/actions';
 import type { WeeklyStats } from '@/lib/hours-engine/overtime-weeks-ssot';
 
 interface ShiftMock {
@@ -47,6 +48,8 @@ export function StaffWeekScheduleBlock({
     const [monthShifts, setMonthShifts] = useState<ShiftMock[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [focusDate, setFocusDate] = useState<string | null>(null);
+    /** Semilla de actividades del widget; `undefined` = sin cache (hay que pedirlas). */
+    const [focusActivities, setFocusActivities] = useState<BarActivity[] | undefined>(undefined);
     const [scheduleRefreshKey, setScheduleRefreshKey] = useState(0);
     const deepLinkHandledRef = useRef(false);
 
@@ -92,17 +95,20 @@ export function StaffWeekScheduleBlock({
         if (!initialFocusDate || deepLinkHandledRef.current) return;
         deepLinkHandledRef.current = true;
         setFocusDate(initialFocusDate);
+        setFocusActivities(undefined);
         setIsOpen(true);
     }, [initialFocusDate]);
 
-    const handleOpenNote = useCallback((ymd: string) => {
+    const handleOpenNote = useCallback((ymd: string, activities?: BarActivity[]) => {
         setFocusDate(ymd);
+        setFocusActivities(activities);
         setIsOpen(true);
     }, []);
 
     const handleClose = useCallback(() => {
         setIsOpen(false);
         setFocusDate(null);
+        setFocusActivities(undefined);
         setScheduleRefreshKey((k) => k + 1);
         if (deepLinkHandledRef.current && onClearFocus) {
             onClearFocus();
@@ -126,6 +132,7 @@ export function StaffWeekScheduleBlock({
                 userRole={userRole}
                 userEmail={userEmail}
                 initialFocusDate={focusDate}
+                initialActivities={focusActivities}
             />
         </>
     );

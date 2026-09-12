@@ -17,6 +17,13 @@ export const CAMERA_FOV_NOTICE_TITLE =
 export const CAMERA_FOV_NOTICE_BODY =
     'Se informa del nuevo campo de visión de la cámara, con el objetivo de que todos los trabajadores conozcan su alcance.';
 
+export const CAMERA_FOV_NOTICE_STORAGE_BASENAME = 'actualizacion-campo-vision-camara.png';
+
+export function isCameraFovNoticeDocument(storagePath: string): boolean {
+    const base = storagePath.split('/').pop() ?? '';
+    return base === CAMERA_FOV_NOTICE_STORAGE_BASENAME;
+}
+
 export function isCameraFovNoticePending(ackedAt: string | null | undefined): boolean {
     return ackedAt == null || ackedAt === '';
 }

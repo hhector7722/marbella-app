@@ -600,7 +600,8 @@
   padding: 0;
   min-height: 0;
 }
-[data-component='Modal'][data-instance='staff-clock-confirm'] [data-element='body']:not(:empty) {
+[data-component='Modal'][data-instance='staff-clock-confirm'] [data-element='body']:not(:empty),
+[data-component='Modal'][data-instance='profile-camera-fov-notice'] [data-element='body'] {
   padding-bottom: var(--espacio-4);
 }
 [data-component='Modal'][data-instance='staff-clock-confirm'] [data-element='body']:empty ~ [data-element='footer'] {
@@ -626,17 +627,20 @@
   height: auto;
   transform: none;
 }
-[data-component='Modal'][data-instance='staff-clock-confirm'] [data-element='camera-fov-image'] {
+[data-component='Modal'][data-instance='staff-clock-confirm'] [data-element='camera-fov-image'],
+[data-component='Modal'][data-instance='profile-camera-fov-notice'] [data-element='camera-fov-image'] {
   overflow: hidden;
   border: 1px solid var(--color-texto-invertido);
   border-radius: var(--radio-control);
 }
-[data-component='Modal'][data-instance='staff-clock-confirm'] [data-element='camera-fov-image'] img {
+[data-component='Modal'][data-instance='staff-clock-confirm'] [data-element='camera-fov-image'] img,
+[data-component='Modal'][data-instance='profile-camera-fov-notice'] [data-element='camera-fov-image'] img {
   display: block;
   width: 100%;
   height: auto;
 }
-[data-component='Modal'][data-instance='staff-clock-confirm'] [data-element='camera-fov-title'] {
+[data-component='Modal'][data-instance='staff-clock-confirm'] [data-element='camera-fov-title'],
+[data-component='Modal'][data-instance='profile-camera-fov-notice'] [data-element='camera-fov-title'] {
   margin: 0;
   color: var(--color-texto-invertido);
   font-size: 1.25rem;
@@ -644,11 +648,13 @@
   line-height: 1.25;
   text-wrap: pretty;
 }
-[data-component='Modal'][data-instance='staff-clock-confirm'] [data-component='Surface'][data-instance='staff-clock-camera-notice'] {
+[data-component='Modal'][data-instance='staff-clock-confirm'] [data-component='Surface'][data-instance='staff-clock-camera-notice'],
+[data-component='Modal'][data-instance='profile-camera-fov-notice'] [data-component='Surface'][data-instance='staff-clock-camera-notice'] {
   background-color: var(--color-superficie);
   color: var(--color-texto);
 }
-[data-component='Modal'][data-instance='staff-clock-confirm'] [data-element='camera-fov-body'] {
+[data-component='Modal'][data-instance='staff-clock-confirm'] [data-element='camera-fov-body'],
+[data-component='Modal'][data-instance='profile-camera-fov-notice'] [data-element='camera-fov-body'] {
   margin: 0;
   color: var(--color-texto);
   font-size: 0.875rem;

@@ -14,6 +14,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
     CAMERA_FOV_NOTICE_BODY,
     CAMERA_FOV_NOTICE_IMAGE_SRC,
+    CAMERA_FOV_NOTICE_STORAGE_BASENAME,
     CAMERA_FOV_NOTICE_TITLE,
 } from '../src/lib/staff/camera-fov-notice.ts';
 
@@ -21,7 +22,6 @@ const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SCALE = 3;
 const LOGICAL_WIDTH = 360;
 const OUT_PNG = path.join(ROOT, 'public/docs/manuals/comunicado-campo-vision-camara.png');
-const STORAGE_BASENAME = 'actualizacion-campo-vision-camara.png';
 const DISPLAY_FILENAME = `${CAMERA_FOV_NOTICE_TITLE}.png`;
 
 const COLOR_ENVOLVENTE_BAJO = '#0b1c36';
@@ -197,7 +197,7 @@ async function seedComunicado(png: Buffer) {
     let uploaded = 0;
     let skipped = 0;
     for (const profile of targets) {
-        const storagePath = `${profile.id}/comunicados/${STORAGE_BASENAME}`;
+        const storagePath = `${profile.id}/comunicados/${CAMERA_FOV_NOTICE_STORAGE_BASENAME}`;
         const { data: existing } = await admin
             .from('employee_documents')
             .select('id')
