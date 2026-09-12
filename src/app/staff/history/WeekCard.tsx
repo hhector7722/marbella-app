@@ -220,9 +220,10 @@ export function WeekCard({
                                 >
                                     <X
                                         data-element="no-registered-cross"
-                                        strokeWidth={2.5}
+                                        size={22}
+                                        strokeWidth={3}
                                         className={cn(
-                                            "shrink-0 text-[var(--color-negativo)]",
+                                            "shrink-0 text-red-600",
                                             isOtherMonth && "opacity-60",
                                         )}
                                         aria-hidden

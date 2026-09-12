@@ -177,8 +177,9 @@ export function PlantillaWeekCard({
                                                                 >
                                                                     <X
                                                                         data-element="no-registered-cross"
+                                                                        size={14}
                                                                         strokeWidth={2.5}
-                                                                        className="h-2.5 w-2.5 shrink-0 text-[var(--color-negativo)] lg:h-3.5 lg:w-3.5"
+                                                                        className="h-3.5 w-3.5 shrink-0 text-red-600 lg:h-4 lg:w-4"
                                                                         aria-hidden
                                                                     />
                                                                 </span>

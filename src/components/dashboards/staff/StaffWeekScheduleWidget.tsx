@@ -279,13 +279,13 @@ function WeekendDayColumn({
                                 >
                                     <span
                                         data-element="weekend-turno-start"
-                                        className="shrink-0 border-r-[0.5px] border-white bg-[var(--color-positivo)] px-1 py-px text-[7px] lg:text-[10px] font-semibold tabular-nums leading-none text-white"
+                                        className="shrink-0 border-r-[0.5px] border-white px-1 py-px text-[7px] lg:text-[10px] font-semibold tabular-nums leading-none text-white"
                                     >
                                         {shiftStart}
                                     </span>
                                     <span
                                         data-element="weekend-turno-end"
-                                        className="shrink-0 bg-[var(--color-negativo)] px-1 py-px text-[7px] lg:text-[10px] font-semibold tabular-nums leading-none text-white"
+                                        className="shrink-0 px-1 py-px text-[7px] lg:text-[10px] font-semibold tabular-nums leading-none text-white"
                                     >
                                         {shiftEnd}
                                     </span>

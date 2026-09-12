@@ -2878,6 +2878,12 @@ button[data-element='catalog-filter'] {
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-turno-start'] {
   border-right: 0.5px solid #fff;
+  /* Verde apagado: el token vivo se mezcla con el fondo del mosaico. */
+  background-color: color-mix(in srgb, var(--color-positivo) 62%, #1e3a4c);
+}
+[data-component='StaffWeekSchedule'] [data-element='weekend-turno-end'] {
+  /* Rojo apagado: mismo criterio que el inicio. */
+  background-color: color-mix(in srgb, var(--color-negativo) 58%, #1e3a4c);
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-evento'] {
   margin-top: 2px;
@@ -3434,6 +3440,15 @@ button[data-element='catalog-filter'] {
   padding-top: 10px;
   gap: 2px;
 }
+[data-week-summary] [data-day-state='no-registered'] {
+  padding-top: 0;
+  padding-bottom: 0;
+  justify-content: center;
+}
+[data-week-summary] [data-element='no-registered-cross'] {
+  width: 22px;
+  height: 22px;
+}
 [data-week-summary] .month-cal-day-totals {
   margin-top: auto;
   flex-shrink: 0;
@@ -3467,10 +3482,6 @@ button[data-element='catalog-filter'] {
   font-size: 9px;
   line-height: 1;
   white-space: nowrap;
-}
-[data-week-summary] [data-element='no-registered-cross'] {
-  width: 22px;
-  height: 22px;
 }
 [data-week-summary] .month-cal-weeks > [data-week-footer]:not([data-overrides='true']) {
   box-sizing: border-box;
@@ -3533,9 +3544,14 @@ button[data-element='catalog-filter'] {
 [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-day-clocks span {
   font-size: 8px;
 }
+[data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] [data-day-state='no-registered'] {
+  padding-top: 0;
+  padding-bottom: 0;
+  justify-content: center;
+}
 [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] [data-element='no-registered-cross'] {
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
 }
 [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-week {
   flex: 1 1 0;
@@ -5646,12 +5662,17 @@ button[data-element='catalog-filter'] {
     padding-bottom: var(--espacio-1);
     gap: var(--espacio-2);
   }
+  [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] [data-day-state='no-registered'] {
+    padding-top: 0;
+    padding-bottom: 0;
+    justify-content: center;
+  }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-day-clocks {
     margin-top: auto;
   }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] [data-element='no-registered-cross'] {
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 1.75rem;
+    height: 1.75rem;
   }
   [data-component='HomeScreen'][data-layout='staff'] > [data-element='slot'][data-instance='staff-semana'] [data-week-summary] .month-cal-day-clocks > div {
     height: 16px;
