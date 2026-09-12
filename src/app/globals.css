@@ -2869,6 +2869,7 @@ button[data-element='catalog-filter'] {
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-turno-pill'] {
   line-height: 1.15;
+  border-width: 0.5px;
   border-color: #fff;
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-turno-start'],
@@ -2876,7 +2877,7 @@ button[data-element='catalog-filter'] {
   letter-spacing: 0.01em;
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-turno-start'] {
-  border-right: 1px solid #fff;
+  border-right: 0.5px solid #fff;
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-evento'] {
   margin-top: 2px;
