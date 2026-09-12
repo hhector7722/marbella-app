@@ -2863,15 +2863,14 @@ button[data-element='catalog-filter'] {
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-turno'] {
   margin-top: 2px;
+  /* Verde pastel alineado con los acentos del evento (amarillo/naranja), no el token vivo. */
+  border-left-color: #4ade80;
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-turno-label'] {
   color: var(--home-widget-ink-secondary);
 }
-[data-component='StaffWeekSchedule'] [data-element='weekend-turno-start'] {
-  border-left-color: var(--color-positivo);
-}
-[data-component='StaffWeekSchedule'] [data-element='weekend-turno-end'] {
-  border-left-color: var(--color-negativo);
+[data-component='StaffWeekSchedule'] [data-element='weekend-turno-value'] {
+  color: #fff;
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-evento'] {
   margin-top: 2px;

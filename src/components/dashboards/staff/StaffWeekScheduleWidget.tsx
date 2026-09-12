@@ -270,28 +270,17 @@ function WeekendDayColumn({
 
                 <div data-element="weekend-details" className="flex min-h-0 min-w-0 flex-1 flex-col">
                     {!masterMode && (
-                        <div data-element="weekend-turno" className="flex min-w-0 items-baseline gap-1">
+                        <div data-element="weekend-turno" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
                             {shiftStart && shiftEnd ? (
-                                <>
-                                    <span
-                                        data-element="weekend-turno-start"
-                                        className="flex min-w-0 items-baseline gap-0.5 border-l-2 border-[var(--color-positivo)] pl-0.5"
-                                    >
-                                        <span className="text-[6px] lg:text-[11px] font-medium tabular-nums leading-none text-white">
-                                            {shiftStart}
-                                        </span>
-                                    </span>
-                                    <span
-                                        data-element="weekend-turno-end"
-                                        className="flex min-w-0 items-baseline gap-0.5 border-l-2 border-[var(--color-negativo)] pl-0.5"
-                                    >
-                                        <span className="text-[6px] lg:text-[11px] font-medium tabular-nums leading-none text-white">
-                                            {shiftEnd}
-                                        </span>
-                                    </span>
-                                </>
+                                <span
+                                    data-element="weekend-turno-value"
+                                    className="min-w-0 truncate text-[6px] lg:text-[11px] font-medium tabular-nums leading-none text-white"
+                                    aria-label={`Turno ${shiftStart} a ${shiftEnd}`}
+                                >
+                                    {shiftStart} – {shiftEnd}
+                                </span>
                             ) : (
-                                <span data-element="weekend-turno-label" className="shrink-0 border-l-2 border-[var(--color-positivo)] pl-0.5 text-[6px] lg:text-[11px] font-medium leading-none tracking-wide">
+                                <span data-element="weekend-turno-label" className="shrink-0 text-[6px] lg:text-[11px] font-medium leading-none tracking-wide">
                                     Turno
                                 </span>
                             )}
@@ -721,7 +710,7 @@ export function StaffWeekScheduleWidget({
                                                         'flex h-[var(--staff-week-day-size)] w-[var(--staff-week-day-size)] items-center justify-center rounded-full bg-emerald-500 font-black text-white',
                                                     !today &&
                                                         hasNote &&
-                                                        'flex h-[var(--staff-week-day-size)] w-[var(--staff-week-day-size)] items-center justify-center rounded-full border-2 border-[var(--color-aviso)] bg-transparent font-semibold',
+                                                        'flex h-[var(--staff-week-day-size)] w-[var(--staff-week-day-size)] items-center justify-center rounded-full border border-[var(--color-aviso)] bg-transparent font-semibold',
                                                     !today && hasNote && !inMonth && 'text-white/45',
                                                     !today && hasNote && inMonth && 'text-white/90',
                                                     !today && !hasNote && !inMonth && 'font-medium text-white/45',
