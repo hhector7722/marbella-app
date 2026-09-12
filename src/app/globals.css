@@ -2863,13 +2863,16 @@ button[data-element='catalog-filter'] {
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-turno'] {
   margin-top: 2px;
-  border-left-color: var(--color-positivo);
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-turno-label'] {
   color: var(--home-widget-ink-secondary);
 }
-[data-component='StaffWeekSchedule'] [data-element='weekend-turno-value'] {
-  color: var(--home-widget-ink);
+[data-component='StaffWeekSchedule'] [data-element='weekend-turno-pill'] {
+  line-height: 1.15;
+}
+[data-component='StaffWeekSchedule'] [data-element='weekend-turno-start'],
+[data-component='StaffWeekSchedule'] [data-element='weekend-turno-end'] {
+  letter-spacing: 0.01em;
 }
 [data-component='StaffWeekSchedule'] [data-element='weekend-evento'] {
   margin-top: 2px;

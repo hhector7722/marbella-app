@@ -249,10 +249,8 @@ function WeekendDayColumn({
     masterMode?: boolean;
 }) {
     const ymd = format(day, 'yyyy-MM-dd');
-    const turno =
-        shift != null
-            ? `${formatClockTime(shift.start_time)} – ${formatClockTime(shift.end_time)}`
-            : null;
+    const shiftStart = shift != null ? formatClockTime(shift.start_time) : null;
+    const shiftEnd = shift != null ? formatClockTime(shift.end_time) : null;
 
     return (
         <button
@@ -272,10 +270,25 @@ function WeekendDayColumn({
 
                 <div data-element="weekend-details" className="flex min-h-0 min-w-0 flex-1 flex-col">
                     {!masterMode && (
-                        <div data-element="weekend-turno" className="flex min-w-0 items-baseline gap-0.5 border-l-2 pl-0.5">
-                            {turno ? (
-                                <span data-element="weekend-turno-value" className="min-w-0 truncate text-[6px] lg:text-[11px] font-medium tabular-nums leading-none">
-                                    {turno}
+                        <div data-element="weekend-turno" className="flex min-w-0 items-center justify-center">
+                            {shiftStart && shiftEnd ? (
+                                <span
+                                    data-element="weekend-turno-pill"
+                                    className="inline-flex max-w-full min-w-0 overflow-hidden rounded-full border border-white/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
+                                    aria-label={`Turno ${shiftStart} a ${shiftEnd}`}
+                                >
+                                    <span
+                                        data-element="weekend-turno-start"
+                                        className="shrink-0 bg-[var(--color-positivo)] px-1 py-px text-[6px] lg:text-[10px] font-black tabular-nums leading-none text-white"
+                                    >
+                                        {shiftStart}
+                                    </span>
+                                    <span
+                                        data-element="weekend-turno-end"
+                                        className="shrink-0 bg-[var(--color-negativo)] px-1 py-px text-[6px] lg:text-[10px] font-black tabular-nums leading-none text-white"
+                                    >
+                                        {shiftEnd}
+                                    </span>
                                 </span>
                             ) : (
                                 <span data-element="weekend-turno-label" className="shrink-0 text-[6px] lg:text-[11px] font-medium leading-none tracking-wide">
