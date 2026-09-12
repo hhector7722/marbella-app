@@ -5,9 +5,9 @@
  * PROHIBIDO: derivar extras/importe/bolsa desde extra_hours o total_cost.
  *
  * weekly_snapshots aporta hechos administrativos (is_paid, overrides)
- * y, en la tarjeta suelta, `pending_balance` como carryIn persistido (INV-J01).
- * El desglose diario no está en esa fila: relojes y Ex del día salen de
- * time_logs de esa semana + una liquidación.
+ * y `pending_balance` como carryIn persistido (INV-J01) de la primera semana
+ * de la ventana. El desglose diario no está en esa fila: relojes y Ex del día
+ * salen de time_logs de las semanas visibles + liquidación de esa cadena.
  */
 
 import { addDays, endOfWeek, format, getISOWeek, isSameDay, parseISO, startOfWeek } from 'date-fns';
@@ -20,7 +20,11 @@ import {
   overtimeRateOverrideLookupFromRows,
   resolveOpeningCarryIn,
 } from '../hours-engine/opening-carry.ts';
-import { resolveWeekCardCarryIn } from '../hours-engine/week-card-carry-in.ts';
+import {
+  resolveWeekCardCarryIn,
+  resolveWeekCardCarryInFromSnaps,
+  weekStartKey,
+} from '../hours-engine/week-card-carry-in.ts';
 import { loadEmployeeBoundaryFacts } from '../hours-engine/load-employee-facts.ts';
 import {
   liquidateWeekForCard,
@@ -30,6 +34,7 @@ import {
 import type { CivilDate, LiquidationResult } from '../hours-engine/types.ts';
 import {
   addCivilDays,
+  mondayOnOrBefore,
   previousWeekStart,
 } from '../hours-engine/week-dates.ts';
 import {
@@ -164,12 +169,7 @@ export function weekDisplayFromEngine(
 }
 
 function mondayOnOrBeforeYmd(ymd: string): string {
-  const [y, m, d] = ymd.split('-').map(Number);
-  const dt = new Date(y!, m! - 1, d!);
-  const dow = dt.getDay();
-  const delta = dow === 0 ? -6 : 1 - dow;
-  dt.setDate(dt.getDate() + delta);
-  return format(dt, 'yyyy-MM-dd');
+  return mondayOnOrBefore(weekStartKey(ymd));
 }
 
 async function loadAdminFlagsAndLogs(
@@ -177,17 +177,24 @@ async function loadAdminFlagsAndLogs(
   userId: string,
   chainStart: string,
   rangeEndSunday: string,
+  options?: { windowOnly?: boolean },
 ) {
   const employee = await loadEmployeeBoundaryFacts(supabase, userId);
   const timelineStart = employeeTimelineStartWeek(employee);
-  const logsFrom =
-    timelineStart && timelineStart < chainStart ? timelineStart : chainStart;
+  const prevMonday = previousWeekStart(weekStartKey(chainStart));
+  const logsFrom = options?.windowOnly
+    ? prevMonday
+    : timelineStart && timelineStart < chainStart
+      ? timelineStart
+      : chainStart;
   const { startIso, endIso } = madridRangeUtcIso(logsFrom, rangeEndSunday);
 
   const [snapsRes, logsRes] = await Promise.all([
     supabase
       .from('weekly_snapshots')
-      .select('week_start, is_paid, prefer_stock_hours_override, overtime_price_snapshot')
+      .select(
+        'week_start, is_paid, prefer_stock_hours_override, overtime_price_snapshot, pending_balance',
+      )
       .eq('user_id', userId)
       .gte('week_start', logsFrom)
       .lte('week_start', mondayOnOrBeforeYmd(rangeEndSunday)),
@@ -237,10 +244,49 @@ async function loadAdminFlagsAndLogs(
     logsFrom,
     engineLogs,
     rawLogs: logsRes.data ?? [],
+    snapRows,
     isPaidByWeek,
     bagModeOverrideByWeek,
     overtimeRateOverrideByWeek,
     flagsByWeek,
+  };
+}
+
+type HistoryFlagsContext = Awaited<ReturnType<typeof loadAdminFlagsAndLogs>>;
+
+async function loadHistoryWindowContext(
+  supabase: SupabaseClient,
+  userId: string,
+  chainStart: string,
+  rangeEndSunday: string,
+): Promise<{ ctx: HistoryFlagsContext; openingCarryIn: number }> {
+  let ctx = await loadAdminFlagsAndLogs(
+    supabase,
+    userId,
+    chainStart,
+    rangeEndSunday,
+    { windowOnly: true },
+  );
+  const opening = resolveWeekCardCarryInFromSnaps({
+    weekStart: weekStartKey(chainStart),
+    employee: ctx.employee,
+    snaps: ctx.snapRows,
+    logs: ctx.engineLogs,
+  });
+  if (opening.source !== 'needs-full-replay') {
+    return { ctx, openingCarryIn: opening.carryIn };
+  }
+
+  ctx = await loadAdminFlagsAndLogs(supabase, userId, chainStart, rangeEndSunday);
+  return {
+    ctx,
+    openingCarryIn: resolveOpeningCarryIn({
+      employee: ctx.employee,
+      chainStart,
+      logs: ctx.engineLogs,
+      isPaidByWeek: ctx.isPaidByWeek,
+      bagModeOverrideByWeek: ctx.bagModeOverrideByWeek,
+    }),
   };
 }
 
@@ -255,7 +301,7 @@ function liquidateChainFooters(input: {
   isPaidByWeek: (ws: string) => boolean;
   bagModeOverrideByWeek: (ws: string) => boolean | null;
   overtimeRateOverrideByWeek: (ws: string) => number | null;
-  chainStart: string;
+  openingCarryIn: number;
 }): Map<string, { display: WeekDisplayDto; extrasByDay: Readonly<Record<string, number>> }> {
   const out = new Map<
     string,
@@ -263,13 +309,7 @@ function liquidateChainFooters(input: {
   >();
   if (input.weekStarts.length === 0) return out;
 
-  let carryIn = resolveOpeningCarryIn({
-    employee: input.employee,
-    chainStart: input.chainStart,
-    logs: input.engineLogs,
-    isPaidByWeek: input.isPaidByWeek,
-    bagModeOverrideByWeek: input.bagModeOverrideByWeek,
-  });
+  let carryIn = input.openingCarryIn;
 
   for (const weekStart of input.weekStarts) {
     const weekEnd = format(addDays(parseISO(weekStart), 6), 'yyyy-MM-dd');
@@ -297,7 +337,8 @@ function liquidateChainFooters(input: {
 }
 
 /**
- * Historial mensual: relojes desde time_logs; footer desde HE/Cost Engine.
+ * Historial mensual: relojes de las semanas del mes (+1 previa);
+ * arrastre del snapshot; footer desde HE/Cost Engine.
  */
 export async function buildEmployeeHistoryMonthFromEngine(
   supabase: SupabaseClient,
@@ -316,7 +357,7 @@ export async function buildEmployeeHistoryMonthFromEngine(
     'yyyy-MM-dd',
   );
 
-  const ctx = await loadAdminFlagsAndLogs(
+  const { ctx, openingCarryIn } = await loadHistoryWindowContext(
     supabase,
     userId,
     rangeStart,
@@ -342,7 +383,7 @@ export async function buildEmployeeHistoryMonthFromEngine(
     isPaidByWeek: ctx.isPaidByWeek,
     bagModeOverrideByWeek: ctx.bagModeOverrideByWeek,
     overtimeRateOverrideByWeek: ctx.overtimeRateOverrideByWeek,
-    chainStart: weekStarts[0] ?? rangeStart,
+    openingCarryIn,
   });
 
   return mapped.map((week) => {
@@ -645,7 +686,7 @@ export async function buildWeekDetailFromEngine(
 }
 
 /**
- * Historial en rango (export): relojes + footers HE.
+ * Historial en rango (export): misma ventana corta que el mes.
  */
 export async function buildEmployeeHistoryRangeFromEngine(
   supabase: SupabaseClient,
@@ -659,7 +700,7 @@ export async function buildEmployeeHistoryRangeFromEngine(
   const rangeStartYmd = format(startOfWeek(rangeStart, { weekStartsOn: 1 }), 'yyyy-MM-dd');
   const rangeEndYmd = format(endOfWeek(rangeEnd, { weekStartsOn: 1 }), 'yyyy-MM-dd');
 
-  const ctx = await loadAdminFlagsAndLogs(
+  const { ctx, openingCarryIn } = await loadHistoryWindowContext(
     supabase,
     userId,
     rangeStartYmd,
@@ -685,7 +726,7 @@ export async function buildEmployeeHistoryRangeFromEngine(
     isPaidByWeek: ctx.isPaidByWeek,
     bagModeOverrideByWeek: ctx.bagModeOverrideByWeek,
     overtimeRateOverrideByWeek: ctx.overtimeRateOverrideByWeek,
-    chainStart: weekStarts[0] ?? rangeStartYmd,
+    openingCarryIn,
   });
 
   return mapped.map((week) => {

@@ -99,7 +99,7 @@ export function resolveOpeningCarryIn(input: {
 
 /** Lookup Pagada desde filas de weekly_snapshots (u homólogo). */
 export function isPaidLookupFromRows(
-  rows: readonly { week_start: string; is_paid: boolean | null }[],
+  rows: readonly { week_start: string; is_paid?: boolean | null }[],
 ): (weekStart: CivilDate) => boolean {
   const map = new Map<string, boolean>();
   for (const r of rows) {

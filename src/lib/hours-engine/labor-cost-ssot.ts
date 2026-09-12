@@ -17,18 +17,15 @@
  *   coste_total_dia = coste_ordinario_dia + coste_extras_dia
  */
 
-import { addDays, format, parseISO } from 'date-fns';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   employeeTimelineStartWeek,
   isPaidLookupFromRows,
   bagModeOverrideLookupFromRows,
-  overtimeRateOverrideLookupFromRows,
   resolveOpeningCarryIn,
 } from './opening-carry.ts';
 import { loadEmployeeBoundaryFacts } from './load-employee-facts.ts';
-import { liquidateWeekForCard } from './week-card-from-liquidation.ts';
-import type { EmployeeBoundaryFacts } from './types.ts';
+import type { CivilDate, EmployeeBoundaryFacts, TimeLogFact } from './types.ts';
 import {
   allocatePayrollToNaturalDays,
   monthKeysCovering,
@@ -38,8 +35,23 @@ import {
   filterVisiblePlantillaEmployees,
   PLANTILLA_EMPLOYEE_SELECT,
 } from '@/lib/staff/plantilla-employees';
+import {
+  hoursWindowBounds,
+  listMondaysInclusive,
+  overtimeMoneyByDayFromChain,
+  resolveWindowOpeningCarry,
+  WEEKLY_SNAPSHOT_WINDOW_SELECT,
+  type WindowSnapRow,
+} from './window-hours-chain.ts';
+import { mondayOnOrBefore } from './week-dates.ts';
 
 export { allocatePayrollToNaturalDays } from './payroll-ordinary-daily.ts';
+export { allocateWeekCostToDays } from './allocate-week-cost-to-days.ts';
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
 export type LaborDayCell = { total: number; fixed: number; overtime: number };
 
 export type LaborDayWorker = {
@@ -62,75 +74,99 @@ export type LaborCostPeriodResult = {
   missingPayrollMonths: string[];
 };
 
-function mondayOf(ymd: string): string {
-  const [y, m, d] = ymd.split('-').map(Number);
-  const dt = new Date(y!, m! - 1, d!);
-  const dow = dt.getDay();
-  const delta = dow === 0 ? -6 : 1 - dow;
-  dt.setDate(dt.getDate() + delta);
-  return format(dt, 'yyyy-MM-dd');
+function mondayOf(ymd: string): CivilDate {
+  return mondayOnOrBefore(ymd.split('T')[0]! as CivilDate);
 }
 
-function listMondaysCovering(startYmd: string, endYmd: string): string[] {
-  const out: string[] = [];
-  let cur = mondayOf(startYmd);
-  const end = endYmd.split('T')[0]!;
-  while (cur <= end) {
-    out.push(cur);
-    cur = format(addDays(parseISO(cur), 7), 'yyyy-MM-dd');
-  }
-  return out;
+function listMondaysCovering(startYmd: string, endYmd: string): CivilDate[] {
+  return listMondaysInclusive(mondayOf(startYmd), mondayOf(endYmd));
 }
 
-function listYmdInclusive(startYmd: string, endYmd: string): string[] {
-  const out: string[] = [];
-  let d = startYmd.split('T')[0]!;
-  const end = endYmd.split('T')[0]!;
-  while (d <= end) {
-    out.push(d);
-    d = format(addDays(parseISO(d), 1), 'yyyy-MM-dd');
-  }
-  return out;
+function toEngineLogs(
+  rows: Array<{ clock_in: string; clock_out: string | null; total_hours: number | null }>,
+): TimeLogFact[] {
+  return rows.map((l) => ({
+    clockInIso: l.clock_in,
+    clockOutIso: l.clock_out,
+    totalHours: l.total_hours,
+  }));
 }
 
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
-}
+async function loadEmployeeOvertimeByDay(
+  supabase: SupabaseClient,
+  userId: string,
+  employee: EmployeeBoundaryFacts,
+  firstMonday: CivilDate,
+  lastMonday: CivilDate,
+): Promise<Record<string, number> | null> {
+  const weekStarts = listMondaysInclusive(firstMonday, lastMonday);
+  const { logsFrom, lastSunday, snapsTo } = hoursWindowBounds(firstMonday, lastMonday);
 
-/**
- * Prorratea estimatedValue semanal a días según extrasByDay (HE).
- * Si no hay extras diarias pero hay importe, reparte en el lunes (fallback).
- */
-function allocateWeekCostToDays(
-  extrasByDay: Readonly<Record<string, number>>,
-  estimatedValue: number,
-  weekStart: string,
-  weekEnd: string,
-): Record<string, number> {
-  const out: Record<string, number> = {};
-  if (Math.abs(estimatedValue) < 0.005) return out;
+  const load = async (fromYmd: string) => {
+    const { startIso, endIso } = madridRangeUtcIso(fromYmd, lastSunday);
+    const [snapsRes, logsRes] = await Promise.all([
+      supabase
+        .from('weekly_snapshots')
+        .select(WEEKLY_SNAPSHOT_WINDOW_SELECT)
+        .eq('user_id', userId)
+        .gte('week_start', fromYmd)
+        .lte('week_start', snapsTo),
+      supabase
+        .from('time_logs')
+        .select('clock_in, clock_out, total_hours')
+        .eq('user_id', userId)
+        .gte('clock_in', startIso)
+        .lte('clock_in', endIso),
+    ]);
+    if (snapsRes.error || logsRes.error) return null;
+    return {
+      snaps: (snapsRes.data ?? []) as WindowSnapRow[],
+      logs: toEngineLogs((logsRes.data ?? []) as Array<{
+        clock_in: string;
+        clock_out: string | null;
+        total_hours: number | null;
+      }>),
+    };
+  };
 
-  const days = listYmdInclusive(weekStart, weekEnd);
-  const weights = days.map((day) => Math.max(0, extrasByDay[day] ?? 0));
-  const sumW = weights.reduce((a, b) => a + b, 0);
+  const short = await load(logsFrom);
+  if (!short) return null;
 
-  if (sumW <= 0) {
-    out[weekStart] = estimatedValue;
-    return out;
+  let snaps = short.snaps;
+  let logs = short.logs;
+  let opening = resolveWindowOpeningCarry({
+    employee,
+    firstWeekStart: firstMonday,
+    snaps,
+    logs,
+  });
+
+  if ('needsFullReplay' in opening) {
+    const timelineStart = employeeTimelineStartWeek(employee);
+    const fromYmd =
+      timelineStart && timelineStart < firstMonday ? timelineStart : firstMonday;
+    const full = await load(fromYmd);
+    if (!full) return null;
+    snaps = full.snaps;
+    logs = full.logs;
+    opening = {
+      carryIn: resolveOpeningCarryIn({
+        employee,
+        chainStart: firstMonday,
+        logs,
+        isPaidByWeek: isPaidLookupFromRows(snaps),
+        bagModeOverrideByWeek: bagModeOverrideLookupFromRows(snaps),
+      }),
+    };
   }
 
-  let allocated = 0;
-  for (let i = 0; i < days.length; i++) {
-    const share =
-      i === days.length - 1
-        ? round2(estimatedValue - allocated)
-        : round2((estimatedValue * weights[i]!) / sumW);
-    if (Math.abs(share) >= 0.005) {
-      out[days[i]!] = (out[days[i]!] ?? 0) + share;
-      allocated = round2(allocated + share);
-    }
-  }
-  return out;
+  return overtimeMoneyByDayFromChain({
+    employee,
+    weekStarts,
+    snaps,
+    logs,
+    openingCarryIn: opening.carryIn,
+  });
 }
 
 /**
@@ -211,7 +247,6 @@ export async function buildLaborCostPeriodFromSsot(
   if (mondays.length > 0) {
     const firstMonday = mondays[0]!;
     const lastMonday = mondays[mondays.length - 1]!;
-    const lastSunday = format(addDays(parseISO(lastMonday), 6), 'yyyy-MM-dd');
 
     let profilesQuery = supabase
       .from('profiles')
@@ -237,75 +272,16 @@ export async function buildLaborCostPeriodFromSsot(
         continue;
       }
 
-      const timelineStart = employeeTimelineStartWeek(employee);
-      const logsFromYmd =
-        timelineStart && timelineStart < firstMonday ? timelineStart : firstMonday;
-      const { startIso, endIso } = madridRangeUtcIso(logsFromYmd, lastSunday);
-
-      const [snapsRes, logsRes] = await Promise.all([
-        supabase
-          .from('weekly_snapshots')
-          .select('week_start, is_paid, prefer_stock_hours_override, overtime_price_snapshot')
-          .eq('user_id', profile.id)
-          .gte('week_start', logsFromYmd)
-          .lte('week_start', lastMonday),
-        supabase
-          .from('time_logs')
-          .select('clock_in, clock_out, total_hours')
-          .eq('user_id', profile.id)
-          .gte('clock_in', startIso)
-          .lte('clock_in', endIso),
-      ]);
-      if (snapsRes.error || logsRes.error) continue;
-
-      const engineLogs = (logsRes.data ?? []).map((l) => ({
-        clockInIso: l.clock_in as string,
-        clockOutIso: l.clock_out as string | null,
-        totalHours: l.total_hours as number | null,
-      }));
-      const isPaidByWeek = isPaidLookupFromRows(snapsRes.data ?? []);
-      const bagModeOverrideByWeek = bagModeOverrideLookupFromRows(
-        snapsRes.data ?? [],
-      );
-      const overtimeRateOverrideByWeek = overtimeRateOverrideLookupFromRows(
-        snapsRes.data ?? [],
-      );
-
-      let carryIn = resolveOpeningCarryIn({
+      const byDay = await loadEmployeeOvertimeByDay(
+        supabase,
+        profile.id,
         employee,
-        chainStart: firstMonday,
-        logs: engineLogs,
-        isPaidByWeek,
-        bagModeOverrideByWeek,
-      });
-
-      for (const weekStart of mondays) {
-        const weekEnd = format(addDays(parseISO(weekStart), 6), 'yyyy-MM-dd');
-        const weekLogs = engineLogs.filter((l) => {
-          const day = formatYmdInMadrid(l.clockInIso);
-          return day >= weekStart && day <= weekEnd;
-        });
-
-        const { result, extrasByDay, summary } = liquidateWeekForCard({
-          employee,
-          weekStart,
-          logs: weekLogs,
-          isPaid: isPaidByWeek(weekStart),
-          carryIn,
-          bagModeOverride: bagModeOverrideByWeek(weekStart),
-          overrideRate: overtimeRateOverrideByWeek(weekStart),
-        });
-        carryIn = result.carryOut;
-
-        const dayCosts = allocateWeekCostToDays(
-          extrasByDay,
-          summary.estimatedValue ?? 0,
-          weekStart,
-          weekEnd,
-        );
-        for (const [iso, amount] of Object.entries(dayCosts)) {
-          bumpOt(iso, amount);
-        }
+        firstMonday,
+        lastMonday,
+      );
+      if (!byDay) continue;
+      for (const [iso, amount] of Object.entries(byDay)) {
+        bumpOt(iso, amount);
       }
     }
   }
@@ -351,7 +327,6 @@ export async function buildLaborCostDayDetailFromSsot(
 }> {
   const day = dateYmd.split('T')[0]!;
   const weekStart = mondayOf(day);
-  const weekEnd = format(addDays(parseISO(weekStart), 6), 'yyyy-MM-dd');
 
   const ordinaryPromise = loadOrdinaryByDateFromPayroll(supabase, day, day);
 
@@ -379,70 +354,14 @@ export async function buildLaborCostDayDetailFromSsot(
       continue;
     }
 
-    const timelineStart = employeeTimelineStartWeek(employee);
-    const logsFromYmd =
-      timelineStart && timelineStart < weekStart ? timelineStart : weekStart;
-    const { startIso, endIso } = madridRangeUtcIso(logsFromYmd, weekEnd);
-
-    const [snapsRes, logsRes] = await Promise.all([
-      supabase
-        .from('weekly_snapshots')
-        .select('week_start, is_paid, prefer_stock_hours_override, overtime_price_snapshot')
-        .eq('user_id', profile.id)
-        .gte('week_start', logsFromYmd)
-        .lte('week_start', weekStart),
-      supabase
-        .from('time_logs')
-        .select('clock_in, clock_out, total_hours')
-        .eq('user_id', profile.id)
-        .gte('clock_in', startIso)
-        .lte('clock_in', endIso),
-    ]);
-    if (snapsRes.error || logsRes.error) continue;
-
-    const engineLogs = (logsRes.data ?? []).map((l) => ({
-      clockInIso: l.clock_in as string,
-      clockOutIso: l.clock_out as string | null,
-      totalHours: l.total_hours as number | null,
-    }));
-    const isPaidByWeek = isPaidLookupFromRows(snapsRes.data ?? []);
-    const bagModeOverrideByWeek = bagModeOverrideLookupFromRows(
-      snapsRes.data ?? [],
-    );
-    const overtimeRateOverrideByWeek = overtimeRateOverrideLookupFromRows(
-      snapsRes.data ?? [],
-    );
-
-    const carryIn = resolveOpeningCarryIn({
-      employee,
-      chainStart: weekStart,
-      logs: engineLogs,
-      isPaidByWeek,
-      bagModeOverrideByWeek,
-    });
-
-    const weekLogs = engineLogs.filter((l) => {
-      const d = formatYmdInMadrid(l.clockInIso);
-      return d >= weekStart && d <= weekEnd;
-    });
-
-    const { extrasByDay, summary } = liquidateWeekForCard({
+    const byDay = await loadEmployeeOvertimeByDay(
+      supabase,
+      profile.id,
       employee,
       weekStart,
-      logs: weekLogs,
-      isPaid: isPaidByWeek(weekStart),
-      carryIn,
-      bagModeOverride: bagModeOverrideByWeek(weekStart),
-      overrideRate: overtimeRateOverrideByWeek(weekStart),
-    });
-
-    const dayCosts = allocateWeekCostToDays(
-      extrasByDay,
-      summary.estimatedValue ?? 0,
       weekStart,
-      weekEnd,
     );
-    const overtime = dayCosts[day] ?? 0;
+    const overtime = byDay?.[day] ?? 0;
     if (Math.abs(overtime) < 0.005) continue;
 
     const name =

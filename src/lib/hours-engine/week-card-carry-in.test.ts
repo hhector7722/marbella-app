@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { resolveWeekCardCarryIn } from './week-card-carry-in.ts';
+import {
+  resolveWeekCardCarryIn,
+  resolveWeekCardCarryInFromSnaps,
+} from './week-card-carry-in.ts';
 import { liquidateWeek } from './liquidation-engine.ts';
 import type { EmployeeBoundaryFacts, TimeLogFact } from './types.ts';
 
@@ -120,5 +123,20 @@ describe('resolveWeekCardCarryIn', () => {
     });
 
     assert.equal(resolved.source, 'needs-full-replay');
+  });
+
+  it('lee pending_balance de filas de snapshot sin replay', () => {
+    const resolved = resolveWeekCardCarryInFromSnaps({
+      weekStart: THIS_WEEK,
+      employee: emp(true),
+      snaps: [
+        { week_start: THIS_WEEK, pending_balance: -12, is_paid: false },
+        { week_start: PREV_WEEK, pending_balance: -29.5, is_paid: false },
+      ],
+      logs: logs40(PREV_WEEK),
+    });
+
+    assert.equal(resolved.source, 'this-week-snapshot');
+    assert.equal(resolved.source === 'this-week-snapshot' ? resolved.carryIn : null, -12);
   });
 });

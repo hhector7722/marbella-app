@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-12
 
+- **Historial mensual y coste laboral: ventana corta, euros reales.** En `/staff/history` (una persona) y en coste laboral día/mes el arrastre sale del snapshot de la primera semana vista; solo se liquidan esas semanas. El extra del día deja de pintar horas como si fueran euros: reparte el importe semanal. Las cifras de extras en labor cambian a €. El equipo en historial no cambia.
+
 - **Staff: el resumen semanal ya no recorre el histórico al abrir.** En `/staff/dashboard` (y en el modal de una persona desde horas extras) la tarjeta lee el arrastre ya guardado de esa semana, pide como mucho dos semanas de fichajes y reutiliza el resultado unos 30 s. Tras fichar o editar asistencia se vuelve a pedir. El historial mensual de `/staff/history` no cambia.
 
 - **Perfil: el modal de Datos personales se ve entero.** El panel deja el tope del 68dvh (una medida de Albaranes, no el área visible) y usa el interior del overlay. En teléfono y escritorio la ficha —incluido el documento— cabe sin recorte; si aún no entra, el Body se desplaza y la cabecera no. [EXPERIENCIA §8](../2-diseno/EXPERIENCIA.md#8-modales), [TOKENS](../2-diseno/TOKENS.md).
