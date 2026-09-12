@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-12
 
+- **Staff: el resumen semanal ya no recorre el histórico al abrir.** En `/staff/dashboard` (y en el modal de una persona desde horas extras) la tarjeta lee el arrastre ya guardado de esa semana, pide como mucho dos semanas de fichajes y reutiliza el resultado unos 30 s. Tras fichar o editar asistencia se vuelve a pedir. El historial mensual de `/staff/history` no cambia.
+
 - **Perfil: el modal de Datos personales se ve entero.** El panel deja el tope del 68dvh (una medida de Albaranes, no el área visible) y usa el interior del overlay. En teléfono y escritorio la ficha —incluido el documento— cabe sin recorte; si aún no entra, el Body se desplaza y la cabecera no. [EXPERIENCIA §8](../2-diseno/EXPERIENCIA.md#8-modales), [TOKENS](../2-diseno/TOKENS.md).
 
 - **Horas extras: los listados del dashboard leen lo ya persistido.** La columna Ext del horario, el mosaico de extras y `/dashboard/overtime` dejan de liquidar la plantilla en cada carga. Pintan el importe guardado de las semanas cerradas y reutilizan ese resultado al volver al mes o al pasar de `/dashboard` a `/master/dashboard`. La semana en curso no se calcula.

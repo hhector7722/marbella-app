@@ -1,7 +1,9 @@
 /**
  * Orquestación de cadena continua de carry.
  * No forma parte del núcleo (liquidateWeek / computeCarry / resolver).
- * Toda cadena de UI debe obtener openingCarryIn vía resolveOpeningCarryIn.
+ * Toda cadena de UI de varias semanas debe obtener openingCarryIn vía
+ * resolveOpeningCarryIn. La tarjeta semanal suelta lee el carryIn ya
+ * persistido (`pending_balance`) con resolveWeekCardCarryIn.
  */
 
 import { liquidateWeek } from './liquidation-engine.ts';

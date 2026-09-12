@@ -41,7 +41,7 @@ El producto está en producción y sostiene la operación diaria del negocio. El
 
 ## En movimiento
 
-- **Dominio de horas.** El motor de cálculo es el único productor de las magnitudes de liquidación, con arrastre encadenado real entre semanas. La proyección persistida ya no calcula. Los listados de extras del dashboard leen esa proyección; el historial de la persona y el coste laboral diario aún liquidan en carga ([D5](DEUDA.md)). Agosto no genera deuda de asistencia en semanas staff cuyo lunes cae en ese mes ([HORAS](../3-ingenieria/dominio/HORAS.md)).
+- **Dominio de horas.** El motor de cálculo es el único productor de las magnitudes de liquidación, con arrastre encadenado real entre semanas. La proyección persistida ya no calcula. Los listados de extras del dashboard leen esa proyección; la tarjeta semanal del mosaico Staff y el modal de una persona liquidan solo esa semana con el arrastre persistido. El historial mensual y el coste laboral diario aún liquidan en carga ([D5](DEUDA.md)). Agosto no genera deuda de asistencia en semanas staff cuyo lunes cae en ese mes ([HORAS](../3-ingenieria/dominio/HORAS.md)).
 - **Coste laboral.** El coste ordinario procede del resumen mensual de la gestoría. El productor mensual está endurecido con versionado de intérprete y registro de importaciones; parte del diseño documentado todavía no está implementado.
 - **Pabellón.** Importación e interpretación automática de la programación, con revisión humana. En estabilización.
 - **Análisis de negocio.** Indicadores en evolución.

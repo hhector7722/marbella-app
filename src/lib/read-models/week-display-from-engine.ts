@@ -554,6 +554,7 @@ export async function buildEmployeeHistoryWeekFromEngine(
     return day != null && day >= weekStart && day <= window.sunday;
   });
 
+  let employeeForCard = window.employee;
   if (resolved.source === 'needs-full-replay') {
     const ctx = await loadAdminFlagsAndLogs(
       supabase,
@@ -576,10 +577,11 @@ export async function buildEmployeeHistoryWeekFromEngine(
       const day = formatYmdInMadrid(l.clock_in as string);
       return day != null && day >= weekStart && day <= window.sunday;
     });
+    employeeForCard = ctx.employee;
   }
 
   const { result, summary, extrasByDay } = liquidateWeekForCard({
-    employee: window.employee,
+    employee: employeeForCard,
     weekStart,
     logs: weekLogs,
     isPaid,

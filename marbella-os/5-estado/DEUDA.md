@@ -105,7 +105,7 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 
 **Disparador de pago**: el cambio previsto en [ADR-0001](../4-decisiones/ADR-0001-hours-engine-productor-unico.md), que ya lo declara deuda temporal y no arquitectura final.
 
-**Pago parcial (2026-09-12, listados de extras):** `/dashboard/overtime`, el mosaico de extras y la columna Ext del horario leen `weekly_snapshots.total_cost`. Siguen en motor-en-lectura el historial de la persona, el coste laboral diario y las tarjetas semanales.
+**Pago parcial (2026-09-12, listados de extras):** `/dashboard/overtime`, el mosaico de extras y la columna Ext del horario leen `weekly_snapshots.total_cost`. **Pago parcial (2026-09-12, tarjeta semanal suelta):** el mosaico Staff y el modal de una persona leen `pending_balance` como arrastre y liquidan solo esa semana. Siguen en motor-en-lectura el historial mensual (`/staff/history`) y el coste laboral diario.
 
 ---
 
