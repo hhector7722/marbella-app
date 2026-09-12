@@ -119,6 +119,7 @@ export function StaffWeekScheduleBlock({
         <>
             <StaffWeekScheduleWidget
                 userId={userId}
+                userEmail={userEmail}
                 onOpenNote={handleOpenNote}
                 masterMode={masterMode}
                 onOpenWeekDetail={onOpenWeekDetail}

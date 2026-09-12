@@ -27,6 +27,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { getOvertimeData } from '@/app/actions/overtime';
 import { Check, X } from 'lucide-react';
 import type { WeeklyStats } from '@/lib/hours-engine/overtime-weeks-ssot';
+import { isMasterDashboardUser } from '@/lib/master-dashboard';
 
 const WEEKDAY_LABELS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'] as const;
 
@@ -45,6 +46,8 @@ type StaffWeekScheduleWidgetProps = {
      * Si el widget ya tiene actividades cacheadas para ese día, las pasa como semilla (puede ser `[]`).
      */
     onOpenNote?: (ymd: string, activities?: BarActivity[]) => void;
+    /** Email de sesión: el master ve indicador naranja en días con nota. */
+    userEmail?: string;
     /** Modo Master: pinta la columna «Ext» de horas extra a la derecha del calendario. */
     masterMode?: boolean;
     /** Abre el modal de detalle de semana de horas extras (solo modo Master). */
@@ -444,6 +447,7 @@ function WeekExtCell({
 export function StaffWeekScheduleWidget({
     userId,
     onOpenNote,
+    userEmail,
     masterMode = false,
     onOpenWeekDetail,
     overtimeRefreshKey = 0,
@@ -456,6 +460,9 @@ export function StaffWeekScheduleWidget({
     const [loading, setLoading] = useState(true);
     const [overtimeWeeks, setOvertimeWeeks] = useState<Record<string, WeeklyStats>>({});
     const [overtimeLoading, setOvertimeLoading] = useState(() => masterMode);
+    /** Días (yyyy-MM-dd) con al menos una nota; solo se rellena para el usuario master. */
+    const [noteDates, setNoteDates] = useState<Set<string>>(() => new Set());
+    const showNoteMarkers = isMasterDashboardUser(userEmail);
 
     const visibleRange = useMemo(() => {
         const start = startOfWeek(startOfMonth(monthAnchor), { weekStartsOn: 1 });
@@ -567,6 +574,30 @@ export function StaffWeekScheduleWidget({
         void loadWeekendShifts(expandedSatKey, expandedSunKey);
     }, [loadWeekendShifts, expandedSatKey, expandedSunKey, refreshKey]);
 
+    const loadNoteDates = useCallback(async () => {
+        if (!showNoteMarkers) {
+            setNoteDates(new Set());
+            return;
+        }
+        try {
+            const supabase = createClient();
+            const { data, error } = await supabase
+                .from('schedule_day_notes')
+                .select('date')
+                .gte('date', rangeStart)
+                .lte('date', rangeEnd);
+            if (error) throw error;
+            setNoteDates(new Set((data ?? []).map((row) => String(row.date))));
+        } catch (error) {
+            console.error(error);
+            setNoteDates(new Set());
+        }
+    }, [showNoteMarkers, rangeStart, rangeEnd]);
+
+    useEffect(() => {
+        void loadNoteDates();
+    }, [loadNoteDates, refreshKey]);
+
     const handleDaySelect = (day: Date) => {
         setExpandedWeekStart(startOfWeek(day, { weekStartsOn: 1 }));
         if (!isSameMonth(day, monthAnchor)) {
@@ -649,6 +680,8 @@ export function StaffWeekScheduleWidget({
                                 const dayButtons = weekDays.map((day) => {
                                     const inMonth = isSameMonth(day, monthAnchor);
                                     const today = isToday(day);
+                                    const ymd = format(day, 'yyyy-MM-dd');
+                                    const hasNote = showNoteMarkers && noteDates.has(ymd);
 
                                     return (
                                         <button
@@ -663,17 +696,21 @@ export function StaffWeekScheduleWidget({
                                             className={cn(
                                                 'relative z-10 flex w-full items-center justify-center transition-colors',
                                                 'before:absolute before:inset-0 before:-m-1 before:min-h-[var(--tactil-minimo)] before:min-w-[var(--tactil-minimo)] before:content-[\'\']',
-                                                !today && 'hover:bg-white/10',
+                                                !today && !hasNote && 'hover:bg-white/10',
                                             )}
                                         >
                                             <span
                                                 data-today={today ? 'true' : undefined}
+                                                data-has-note={hasNote && !today ? 'true' : undefined}
                                                 className={cn(
                                                     'text-[7px] lg:text-[14px] tabular-nums leading-none',
                                                     today &&
                                                         'flex h-[var(--staff-week-day-size)] w-[var(--staff-week-day-size)] items-center justify-center rounded-full bg-emerald-500 font-black text-white',
-                                                    !today && !inMonth && 'font-medium text-white/45',
-                                                    !today && inMonth && 'font-semibold text-white/90',
+                                                    !today &&
+                                                        hasNote &&
+                                                        'flex h-[var(--staff-week-day-size)] w-[var(--staff-week-day-size)] items-center justify-center rounded-full bg-amber-500 font-black text-white',
+                                                    !today && !hasNote && !inMonth && 'font-medium text-white/45',
+                                                    !today && !hasNote && inMonth && 'font-semibold text-white/90',
                                                 )}
                                             >
                                                 {format(day, 'd')}
