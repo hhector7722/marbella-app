@@ -13,6 +13,12 @@ import { isFullscreenCartaPath } from '@/lib/carta-fullscreen-path';
 import { navigateInsideSandbox } from '@/lib/sandbox/client';
 import { useChromeScroll } from '@/components/chrome/ChromeScrollProvider';
 import { useMasterViewAs } from '@/components/master/MasterViewAsProvider';
+import { Camera } from 'lucide-react';
+
+const CAMERA_ACCESS_EMAILS = new Set([
+    'fogotorrat@gmail.com',
+    'hhector7722@gmail.com',
+]);
 
 export default function Navbar() {
     const pathname = usePathname();
@@ -37,7 +43,7 @@ export default function Navbar() {
 
                 const role = (profile?.role ?? user.user_metadata?.role ?? 'staff') as string;
                 const name = profile?.first_name ?? user.user_metadata?.first_name ?? 'Empleado';
-                const email = profile?.email ?? user.email ?? '';
+                const email = (profile?.email ?? user.email ?? '').trim().toLowerCase();
                 const is_supervisor = profile?.is_supervisor ?? user.user_metadata?.is_supervisor ?? false;
 
                 setUserData({ name, role, email, is_supervisor });
@@ -64,6 +70,13 @@ export default function Navbar() {
     if (pathname.startsWith('/design-system')) return null;
 
     const effectiveRole = identity?.isViewingAs ? identity.effectiveRole : userData?.role;
+    const effectiveEmail = (
+        isMaster && identity?.isViewingAs
+            ? identity.effectiveEmail
+            : userData?.email
+    )?.trim().toLowerCase();
+    const canSeeCamera = Boolean(effectiveEmail && CAMERA_ACCESS_EMAILS.has(effectiveEmail));
+
     // Master: el saludo refleja siempre la identidad efectiva (tuya o la simulada).
     const displayName =
         isMaster && identity ? identity.effectiveName : (userData?.name ?? '');
@@ -132,6 +145,17 @@ export default function Navbar() {
                     </div>
 
                     <div className="ml-auto flex shrink-0 items-center -space-x-2">
+                        {canSeeCamera ? (
+                            <button
+                                type="button"
+                                aria-label="Abrir cámaras"
+                                title="Cámara"
+                                onClick={() => router.push('/camaras')}
+                                className="grid h-[40px] w-[40px] shrink-0 place-items-center border-0 bg-transparent p-0 text-white/90 transition-opacity hover:text-white active:opacity-70"
+                            >
+                                <Camera size={24} strokeWidth={2} aria-hidden />
+                            </button>
+                        ) : null}
                         <ReservationsBell />
                         <NotificationsBell />
                     </div>
