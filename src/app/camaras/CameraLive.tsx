@@ -1,7 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { CAMERA_LIVE_URL } from '@/lib/cameras/access';
+
+const CAMERA_MP4_URL = 'https://video.barlamarbella.com/api/stream.mp4?src=reolink';
 
 export default function CameraLive() {
   return (
@@ -20,12 +21,15 @@ export default function CameraLive() {
 
         <section className="w-full overflow-hidden rounded-2xl border border-white/90 bg-black">
           <div className="relative aspect-[1536/432] w-full overflow-hidden rounded-[inherit] bg-black">
-            <iframe
-              title="Cámara sala"
-              src={CAMERA_LIVE_URL}
-              className="absolute inset-0 h-full w-full rounded-[inherit] border-0"
-              allow="autoplay; fullscreen; microphone"
-              referrerPolicy="no-referrer"
+            <video
+              className="absolute inset-0 h-full w-full rounded-[inherit] object-cover"
+              src={CAMERA_MP4_URL}
+              autoPlay
+              muted
+              playsInline
+              controls={false}
+              preload="none"
+              aria-label="Cámara sala en directo"
             />
           </div>
         </section>
