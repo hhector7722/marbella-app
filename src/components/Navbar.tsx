@@ -97,6 +97,27 @@ export default function Navbar() {
                     'marbella-fixed-topbar text-white pt-safe fixed top-0 right-0 left-0 z-[100] h-header-safe flex items-center isolate print:hidden'
                 )}
             >
+                {canSeeCamera ? (
+                    <button
+                        type="button"
+                        aria-label="Abrir cámaras"
+                        title="Cámara"
+                        onClick={() => router.push('/camaras')}
+                        className="absolute left-1/2 top-1/2 z-10 grid h-[40px] w-[40px] -translate-x-1/2 -translate-y-1/2 place-items-center border-0 bg-transparent p-0 transition-opacity hover:opacity-90 active:opacity-70"
+                    >
+                        <Image
+                            src="/icons/live-icon.png"
+                            alt="LIVE"
+                            width={40}
+                            height={40}
+                            className="h-auto w-[34px] object-contain"
+                            onError={(event) => {
+                                event.currentTarget.src = '/icons/live.png';
+                            }}
+                        />
+                    </button>
+                ) : null}
+
                 <div className="max-w-7xl lg:max-w-none mx-auto flex items-center justify-between px-1 lg:px-4 w-full min-w-0">
                     <div className="flex min-w-0 flex-1 items-center gap-1">
                         {!hideNavbarBack && (
@@ -142,23 +163,6 @@ export default function Navbar() {
                     </div>
 
                     <div className="ml-auto flex shrink-0 items-center -space-x-2">
-                        {canSeeCamera ? (
-                            <button
-                                type="button"
-                                aria-label="Abrir cámaras"
-                                title="Cámara"
-                                onClick={() => router.push('/camaras')}
-                                className="grid h-[40px] w-[40px] shrink-0 place-items-center border-0 bg-transparent p-0 transition-opacity hover:opacity-90 active:opacity-70"
-                            >
-                                <Image
-                                    src="/icons/live.png"
-                                    alt="LIVE"
-                                    width={40}
-                                    height={9}
-                                    className="h-auto w-[34px] object-contain"
-                                />
-                            </button>
-                        ) : null}
                         <ReservationsBell />
                         <NotificationsBell />
                     </div>
