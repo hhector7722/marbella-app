@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import CameraPlayer from './CameraPlayer';
+import { CAMERA_LIVE_URL } from '@/lib/cameras/access';
 
 export default function CameraLive() {
   return (
@@ -20,7 +20,13 @@ export default function CameraLive() {
 
         <section className="w-full overflow-hidden rounded-2xl border border-white/90 bg-black">
           <div className="relative aspect-[1536/432] w-full overflow-hidden rounded-[inherit] bg-black">
-            <CameraPlayer />
+            <iframe
+              title="Cámara sala"
+              src={CAMERA_LIVE_URL}
+              className="absolute inset-0 h-full w-full rounded-[inherit] border-0"
+              allow="autoplay; fullscreen; microphone"
+              referrerPolicy="no-referrer"
+            />
           </div>
         </section>
       </div>
