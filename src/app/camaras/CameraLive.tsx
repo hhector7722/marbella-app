@@ -1,8 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { catalogTitleFont } from '@/lib/fonts/catalog-title';
-import { CAMERA_LIVE_URL } from '@/lib/cameras/access';
+import CameraPlayer from './CameraPlayer';
 
 export default function CameraLive() {
   return (
@@ -14,20 +13,14 @@ export default function CameraLive() {
             alt="LIVE"
             width={120}
             height={27}
-            className={`${catalogTitleFont.className} h-auto w-[96px] object-contain sm:w-[120px]`}
+            className="h-auto w-[96px] object-contain sm:w-[120px]"
             priority
           />
         </header>
 
         <section className="w-full overflow-hidden rounded-2xl border border-white/90 bg-black">
           <div className="relative aspect-[1536/432] w-full overflow-hidden rounded-[inherit] bg-black">
-            <iframe
-              title="Cámara sala"
-              src={CAMERA_LIVE_URL}
-              className="absolute inset-0 h-full w-full rounded-[inherit] border-0"
-              allow="autoplay; fullscreen; microphone"
-              referrerPolicy="no-referrer"
-            />
+            <CameraPlayer />
           </div>
         </section>
       </div>
