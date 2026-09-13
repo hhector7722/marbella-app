@@ -11,9 +11,9 @@ export default function CameraLive() {
           <Image
             src="/icons/live.png"
             alt="LIVE"
-            width={120}
-            height={27}
-            className="h-auto w-[96px] object-contain sm:w-[120px]"
+            width={72}
+            height={16}
+            className="h-auto w-[64px] object-contain sm:w-[72px]"
             priority
           />
         </header>
