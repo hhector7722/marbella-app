@@ -9,17 +9,15 @@ export default function CameraLive() {
     <main className="min-h-screen px-2 pb-4 pt-header-safe md:px-3">
       <div className="mx-auto flex w-full max-w-none flex-col items-center gap-3">
         <header className="flex w-full items-center justify-center pt-1" aria-label="Cámara en directo">
-          <h1
-            className={`${catalogTitleFont.className} flex items-center justify-center gap-2 text-3xl uppercase leading-none text-white sm:text-4xl`}
-          >
+          <h1 className={`${catalogTitleFont.className} flex items-center justify-center gap-2 text-3xl uppercase leading-none text-white sm:text-4xl`}>
             <span>Cámara</span>
-            <span className="relative inline-flex h-[0.8em] w-[2.45em] items-center justify-center align-middle" aria-label="LIVE">
+            <span className="relative inline-flex h-[0.8em] w-[2.45em] overflow-hidden align-middle" aria-label="LIVE">
               <Image
-                src="/images/live-badge.png"
+                src="/icons/live.png"
                 alt="LIVE"
                 fill
-                className="object-contain"
-                sizes="120px"
+                className="absolute left-0 top-[-55%] h-auto w-[calc(100%*1.28)] max-w-none object-contain"
+                sizes="140px"
                 priority
               />
             </span>
