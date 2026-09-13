@@ -275,11 +275,6 @@ export async function updateWeeklyWorkerConfig(
     }
 ) {
     if (await isSandboxRequest()) return { success: true, simulated: true };
-    console.log('[TRACE 3] Parámetro recibido por updateWeeklyWorkerConfig:', {
-        userId,
-        weekStart,
-        updates,
-    });
     const supabase = await createClient();
 
     try {
