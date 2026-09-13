@@ -15,13 +15,19 @@ export type {
 
 export {
   mapEnginesToProjectionRow,
+  mapEnginesToProjectionDays,
+  assertProjectionDayInvariants,
   domainRowToInsertPayload,
   domainRowToUpdatePayload,
   projectionDomainEquals,
   roundMoneyCents,
   MONEY_EPS,
 } from './map-projection.ts';
-export type { WeeklyProjectionDomainRow } from './map-projection.ts';
+export type {
+  WeeklyProjectionDomainRow,
+  WeeklyProjectionDayRow,
+  ProjectionPricingInput,
+} from './map-projection.ts';
 
 export {
   validateProjectionBatch,
@@ -35,7 +41,10 @@ export type {
   ValidateProjectionBatchOptions,
 } from './validate-projection.ts';
 
-export { writeWeeklyProjection } from './write-weekly-projection.ts';
+export {
+  writeWeeklyProjection,
+  projectionFactsWindowStart,
+} from './write-weekly-projection.ts';
 export type {
   WriteWeeklyProjectionInput,
   WriteWeeklyProjectionResult,

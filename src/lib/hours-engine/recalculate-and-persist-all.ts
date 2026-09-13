@@ -12,6 +12,7 @@ import {
   type WriteWeeklyProjectionResult,
 } from './projection/index.ts';
 import type { CivilDate } from './types.ts';
+import { compareCivilDate, previousWeekStart } from './week-dates.ts';
 
 export type WriteProjectionForEmployeesResult = {
   success: true;
@@ -53,6 +54,67 @@ async function resolveFromWeekStart(
 }
 
 /**
+ * Semanas con snapshot anterior al alta y sin C de v2.
+ *
+ * Cadena aislada: carryIn de apertura 0, no alimenta `timelineStart` (INV-C01).
+ * El Hours Engine las liquida como `pre_alta`. Tras el primer barrido, esta
+ * consulta no devuelve filas y el cron no reescribe el pre-alta.
+ */
+async function writeIsolatedPreTimelineIfNeeded(
+  client: SupabaseClient,
+  userId: string,
+  processKind: ProjectionProcessKind,
+): Promise<{ ok: true; weeksWritten: number } | { ok: false; error: string }> {
+  let timeline: CivilDate | null = null;
+  try {
+    const employee = await loadEmployeeBoundaryFacts(client, userId);
+    timeline = employeeTimelineStartWeek(employee);
+  } catch (err) {
+    return {
+      ok: false,
+      error: `frontera empleado (pre-alta): ${
+        err instanceof Error ? err.message : String(err)
+      }`,
+    };
+  }
+  if (timeline == null) return { ok: true, weeksWritten: 0 };
+
+  const { data, error } = await client
+    .from('weekly_snapshots')
+    .select('week_start')
+    .eq('user_id', userId)
+    .lt('week_start', timeline)
+    .is('carry_out', null)
+    .order('week_start', { ascending: true });
+
+  if (error) {
+    return { ok: false, error: `snapshots pre-alta: ${error.message}` };
+  }
+  if (!data?.length) return { ok: true, weeksWritten: 0 };
+
+  const fromWeekStart = ymdKey(String(data[0]!.week_start));
+  const lastOrphan = ymdKey(String(data[data.length - 1]!.week_start));
+  const fence = previousWeekStart(timeline);
+  const toWeekStart =
+    compareCivilDate(lastOrphan, fence) <= 0 ? lastOrphan : fence;
+
+  if (compareCivilDate(fromWeekStart, toWeekStart) > 0) {
+    return { ok: true, weeksWritten: 0 };
+  }
+
+  const result = await writeWeeklyProjection(client, {
+    userId,
+    fromWeekStart,
+    toWeekStart,
+    processKind,
+  });
+  if (!result.ok) {
+    return { ok: false, error: result.error };
+  }
+  return { ok: true, weeksWritten: result.weeksWritten };
+}
+
+/**
  * Regenera proyección C para un empleado desde `fromWeekStart` (lunes o fecha civil).
  */
 export async function writeProjectionFromWeek(
@@ -81,6 +143,17 @@ export async function writeProjectionForEmployees(
   let weeksWritten = 0;
 
   for (const userId of unique) {
+    const pre = await writeIsolatedPreTimelineIfNeeded(
+      client,
+      userId,
+      processKind,
+    );
+    if (!pre.ok) {
+      failures.push(`${userId} (pre-alta): ${pre.error}`);
+      continue;
+    }
+    weeksWritten += pre.weeksWritten;
+
     const fromWeekStart = await resolveFromWeekStart(client, userId);
     if (!fromWeekStart) continue;
 
@@ -103,6 +176,51 @@ export async function writeProjectionForEmployees(
   }
 
   return { weeksWritten, employeeCount: unique.length };
+}
+
+/**
+ * Solo residuos pre-alta sin v2. No reescribe la cadena oficial post-alta.
+ */
+export async function backfillIsolatedPreTimelineProjection(
+  client: SupabaseClient,
+  processKind: ProjectionProcessKind = 'backfill',
+): Promise<{ weeksWritten: number; employeeCount: number }> {
+  const { data, error } = await client
+    .from('weekly_snapshots')
+    .select('user_id')
+    .is('carry_out', null)
+    .limit(10000);
+
+  if (error) {
+    throw new Error(`Listado pre-alta para Writer: ${error.message}`);
+  }
+
+  const userIds = [
+    ...new Set((data ?? []).map((r) => r.user_id).filter(Boolean)),
+  ] as string[];
+
+  const failures: string[] = [];
+  let weeksWritten = 0;
+  for (const userId of userIds) {
+    const pre = await writeIsolatedPreTimelineIfNeeded(
+      client,
+      userId,
+      processKind,
+    );
+    if (!pre.ok) {
+      failures.push(`${userId} (pre-alta): ${pre.error}`);
+      continue;
+    }
+    weeksWritten += pre.weeksWritten;
+  }
+
+  if (failures.length > 0) {
+    throw new Error(
+      `backfillIsolatedPreTimelineProjection falló en ${failures.length} empleados. Primero: ${failures[0]}`,
+    );
+  }
+
+  return { weeksWritten, employeeCount: userIds.length };
 }
 
 /**

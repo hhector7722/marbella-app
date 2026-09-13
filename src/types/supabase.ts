@@ -3202,18 +3202,64 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_snapshot_days: {
+        Row: {
+          created_at: string
+          day: string
+          overtime_cost: number
+          overtime_hours: number
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          overtime_cost: number
+          overtime_hours: number
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          overtime_cost?: number
+          overtime_hours?: number
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_snapshot_days_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weekly_snapshot_days_week_fk"
+            columns: ["user_id", "week_start"]
+            isOneToOne: false
+            referencedRelation: "weekly_snapshots"
+            referencedColumns: ["user_id", "week_start"]
+          },
+        ]
+      }
       weekly_snapshots: {
         Row: {
           balance_hours: number | null
+          carry_out: number | null
           contracted_hours_snapshot: number
           created_at: string | null
           extra_hours: number | null
           final_balance: number | null
+          has_missing_rate: boolean | null
           id: string
           is_paid: boolean | null
           ordinary_hours: number | null
           overtime_price_snapshot: number | null
+          overtime_rate_effective: number | null
           pending_balance: number | null
+          prefer_stock_effective: boolean | null
           prefer_stock_hours_override: boolean | null
           total_cost: number | null
           total_hours: number | null
@@ -3223,15 +3269,19 @@ export type Database = {
         }
         Insert: {
           balance_hours?: number | null
+          carry_out?: number | null
           contracted_hours_snapshot: number
           created_at?: string | null
           extra_hours?: number | null
           final_balance?: number | null
+          has_missing_rate?: boolean | null
           id?: string
           is_paid?: boolean | null
           ordinary_hours?: number | null
           overtime_price_snapshot?: number | null
+          overtime_rate_effective?: number | null
           pending_balance?: number | null
+          prefer_stock_effective?: boolean | null
           prefer_stock_hours_override?: boolean | null
           total_cost?: number | null
           total_hours?: number | null
@@ -3241,15 +3291,19 @@ export type Database = {
         }
         Update: {
           balance_hours?: number | null
+          carry_out?: number | null
           contracted_hours_snapshot?: number
           created_at?: string | null
           extra_hours?: number | null
           final_balance?: number | null
+          has_missing_rate?: boolean | null
           id?: string
           is_paid?: boolean | null
           ordinary_hours?: number | null
           overtime_price_snapshot?: number | null
+          overtime_rate_effective?: number | null
           pending_balance?: number | null
+          prefer_stock_effective?: boolean | null
           prefer_stock_hours_override?: boolean | null
           total_cost?: number | null
           total_hours?: number | null

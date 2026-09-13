@@ -10,10 +10,13 @@ import type { EmployeeBoundaryFacts, LiquidationResult } from '../types.ts';
 import {
   domainRowToInsertPayload,
   domainRowToUpdatePayload,
+  mapEnginesToProjectionDays,
   mapEnginesToProjectionRow,
+  assertProjectionDayInvariants,
   projectionDomainEquals,
   roundMoneyCents,
 } from './map-projection.ts';
+import { projectionFactsWindowStart } from './write-weekly-projection.ts';
 import {
   validateProjectionBatch,
   validateWriterPreconditions,
@@ -68,7 +71,7 @@ describe('Projection Writer — versiones (metadata ≠ dominio)', () => {
   it('expone fingerprints de HE / Cost / contrato', () => {
     assert.equal(HOURS_ENGINE_VERSION, 'he-1.0.0');
     assert.equal(COST_ENGINE_VERSION, 'cost-1.0.0');
-    assert.equal(PROJECTION_CONTRACT_VERSION, 'projection-contract-v1');
+    assert.equal(PROJECTION_CONTRACT_VERSION, 'projection-contract-v2');
   });
 
   it('buildProjectionMetadata no inventa dominio', () => {
@@ -81,7 +84,7 @@ describe('Projection Writer — versiones (metadata ≠ dominio)', () => {
   });
 });
 
-describe('Projection Writer — mapeo PROJECTION CONTRACT v1', () => {
+describe('Projection Writer — mapeo PROJECTION CONTRACT v2', () => {
   it('mapea HE + Cost → columnas C sin reinterpretar', () => {
     const employee = emp();
     const liquidation = liquidateWeek({
@@ -105,6 +108,29 @@ describe('Projection Writer — mapeo PROJECTION CONTRACT v1', () => {
     assert.equal(row.extra_hours, liquidation.overtimeHours);
     assert.equal(row.contracted_hours_snapshot, liquidation.contractedHoursEffective);
     assert.equal(row.total_cost, roundMoneyCents(pricing.estimatedValue!));
+    assert.equal(row.carry_out, liquidation.carryOut);
+    assert.equal(row.prefer_stock_effective, false);
+    assert.equal(row.has_missing_rate, false);
+  });
+
+  it('mapea 7 días con Σ horas = extra_hours y Σ € = total_cost', () => {
+    const employee = emp();
+    const liquidation = liquidateWeek({
+      employee,
+      weekStart: '2026-03-02',
+      logs: [{ clockInIso: '2026-03-02T08:00:00.000Z', totalHours: 45 }],
+      isPaid: false,
+      carryIn: 0,
+    });
+    const pricing = priceLiquidationOvertime(liquidation, employee);
+    const row = mapEnginesToProjectionRow(liquidation, pricing);
+    const days = mapEnginesToProjectionDays(liquidation, pricing.estimatedValue);
+    assert.equal(days.length, 7);
+    assert.doesNotThrow(() => assertProjectionDayInvariants(row, days));
+    const hours = days.reduce((s, d) => s + d.overtime_hours, 0);
+    const cost = days.reduce((s, d) => s + d.overtime_cost, 0);
+    assert.equal(hours, row.extra_hours);
+    assert.ok(Math.abs(cost - row.total_cost) < 0.005);
   });
 
   it('UPDATE payload no incluye columnas B (overrides)', () => {
@@ -124,6 +150,8 @@ describe('Projection Writer — mapeo PROJECTION CONTRACT v1', () => {
     assert.equal('overtime_price_snapshot' in upd, false);
     assert.ok('pending_balance' in upd);
     assert.ok('total_cost' in upd);
+    assert.ok('carry_out' in upd);
+    assert.ok('prefer_stock_effective' in upd);
   });
 
   it('INSERT payload no incluye columnas B', () => {
@@ -140,6 +168,26 @@ describe('Projection Writer — mapeo PROJECTION CONTRACT v1', () => {
     const ins = domainRowToInsertPayload(row);
     assert.equal('is_paid' in ins, false);
     assert.equal(ins.total_cost, 12.35);
+  });
+});
+
+describe('Projection Writer — ventana de hechos', () => {
+  it('lote post-alta: carga desde timelineStart aunque from sea posterior', () => {
+    assert.equal(
+      projectionFactsWindowStart('2026-03-02', '2026-01-05'),
+      '2026-01-05',
+    );
+  });
+
+  it('lote pre-alta aislado: carga desde fromWeekStart (no desde el alta)', () => {
+    assert.equal(
+      projectionFactsWindowStart('2024-01-01', '2026-02-16'),
+      '2024-01-01',
+    );
+  });
+
+  it('sin timeline: carga desde fromWeekStart', () => {
+    assert.equal(projectionFactsWindowStart('2026-01-05', null), '2026-01-05');
   });
 });
 

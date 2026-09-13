@@ -1,5 +1,5 @@
 /**
- * Versiones de metadata del Writer de proyección (PROJECTION CONTRACT v1).
+ * Versiones de metadata del Writer de proyección (PROJECTION CONTRACT v2).
  * Nunca entran en liquidateWeek / computeCarry / priceWeekOvertime (INV-J08).
  */
 
@@ -9,8 +9,8 @@ export const HOURS_ENGINE_VERSION = 'he-1.0.0' as const;
 /** Fingerprint del Cost Engine que produce estimatedValue → total_cost. */
 export const COST_ENGINE_VERSION = 'cost-1.0.0' as const;
 
-/** Identifica PROJECTION CONTRACT v1. */
-export const PROJECTION_CONTRACT_VERSION = 'projection-contract-v1' as const;
+/** Identifica PROJECTION CONTRACT v2. */
+export const PROJECTION_CONTRACT_VERSION = 'projection-contract-v2' as const;
 
 /**
  * Origen del write (metadata de proceso).

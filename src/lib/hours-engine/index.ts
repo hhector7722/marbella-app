@@ -49,6 +49,7 @@ export {
 export { mondayOnOrBefore, nextWeekStart, previousWeekStart, weekBounds } from './week-dates.ts';
 export { loadEmployeeBoundaryFacts, loadEmployeeBoundaryFactsBatch } from './load-employee-facts.ts';
 export {
+  backfillIsolatedPreTimelineProjection,
   persistOvertimeCostForEmployees,
   recalculateAllBalancesAndPersist,
   writeProjectionFromWeek,

@@ -108,6 +108,13 @@ describe('Fase 1b — integración Writer único', () => {
     }
   });
 
+  it('el orquestador escribe residuos pre-alta en cadena aislada', () => {
+    const body = read('src/lib/hours-engine/recalculate-and-persist-all.ts');
+    assert.match(body, /writeIsolatedPreTimelineIfNeeded/);
+    assert.match(body, /previousWeekStart\(timeline\)/);
+    assert.match(body, /backfillIsolatedPreTimelineProjection/);
+  });
+
   it('migración Fase 1b desconecta trigger/cron SQL de columnas C', () => {
     const mig = read(
       'supabase/migrations/20260727135641_phase1b_disable_sql_c_producers.sql',

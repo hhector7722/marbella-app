@@ -6,7 +6,7 @@ capa: producto
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-12
+revisado: 2026-09-13
 caducidad: 3 meses
 supersede: —
 ---
@@ -38,7 +38,7 @@ Registrar quién trabaja, cuándo y cuánto. Es la capacidad más sensible del p
 - **Superficies**: panel de equipo (fichaje), historial de horas propio, registros del equipo, calendario mensual, editor de día, hoja de jornada impresa.
 - **Reglas propias**: semana de lunes a domingo; jornada fija para casos concretos; distinción entre horas ordinarias y extras; tipos de ausencia con etiquetas propias. El aviso del campo de visión de la cámara se muestra en el mismo modal de confirmar entrada hasta que esa persona confirma con éxito su primer fichaje de entrada; cancelar no lo marca como leído. En Perfil → Documentos → Comunicados se abre el mismo aviso como Modal de la app, no en una pestaña nueva.
 - **Estado**: en movimiento. Su motor de cálculo se rehízo por completo y su interfaz se está unificando.
-- **Gobernada por**: [ADR-0001](../4-decisiones/ADR-0001-hours-engine-productor-unico.md), [contrato de proyección](../3-ingenieria/contratos/PROYECCION-v1.md).
+- **Gobernada por**: [ADR-0001](../4-decisiones/ADR-0001-hours-engine-productor-unico.md), [ADR-0011](../4-decisiones/ADR-0011-proyeccion-diaria-hija-y-carry-out.md), [contrato de proyección](../3-ingenieria/contratos/PROYECCION-v2.md).
 - **Especificación**: pendiente.
 
 ### Caja y tesorería

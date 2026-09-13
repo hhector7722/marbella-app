@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-07-29
+revisado: 2026-09-13
 caducidad: 3 meses
 supersede: —
 ---
@@ -103,7 +103,7 @@ Las rutas que sirven documentos sensibles —nóminas, documento de identidad—
 
 ## 6. Políticas de acceso en la base de datos
 
-- **60 tablas** tienen políticas activas.
+- **60 tablas** tienen políticas activas. `weekly_snapshot_days` (proyección diaria hija) nace con RLS: el personal lee y escribe la suya; manager o admin, todas. Sin permiso a `anon`.
 - De las 56 creadas por migración, **52 la activan en la misma migración**. Es la norma en la práctica.
 - Los ayudantes `is_manager()` e `is_manager_or_admin()` consultan `profiles`, no el testigo. Es lo correcto: leen el estado actual, no una copia.
 

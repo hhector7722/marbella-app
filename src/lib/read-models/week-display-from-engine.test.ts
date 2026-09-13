@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import { liquidateWeekForCard } from '../hours-engine/week-card-from-liquidation.ts';
 import type { EmployeeBoundaryFacts, TimeLogFact } from '../hours-engine/types.ts';
@@ -68,6 +69,19 @@ describe('week-display-from-engine invariantes', () => {
     assert.equal(dto.displayEstimatedValue, 0);
     assert.equal(dto.displayPendingBalance, -29.5);
     assert.equal(dto.displayHours, 40);
+  });
+
+  it('historial mensual: semana sin proyección y sin fichajes no grita', () => {
+    const src = readFileSync(
+      new URL('./week-display-from-engine.ts', import.meta.url),
+      'utf8',
+    );
+    assert.match(src, /weekHasAttendance/);
+    assert.match(src, /emptyCalendarDisplay/);
+    assert.match(
+      src,
+      /if \(weekHasAttendance\(week\.days\)\) throw missingProjectionError/,
+    );
   });
 
   it('assert falla si se fuerza extras>0 con carryOut<0', () => {

@@ -1,5 +1,5 @@
-<!-- Generado desde 57 documentos de marbella-os/.
-     Huella del origen: eb7f5f344f62dfe5
+<!-- Generado desde 58 documentos de marbella-os/.
+     Huella del origen: b2f2ec81af4e7d13
      NO EDITAR A MANO: se regenera con `npm run generate:corpus`, y
      `npm run validate:corpus` compara este fichero con lo que produce
      el generador. Cualquier edición manual se detecta. -->
@@ -49,11 +49,12 @@ es `CANON §5`.
 | 80 | `marbella-os/4-decisiones/ADR-0008-modal-backdrop-capas.md` |
 | 80 | `marbella-os/4-decisiones/ADR-0009-modal-subordinacion.md` |
 | 80 | `marbella-os/4-decisiones/ADR-0010-jerarquia-visual-canonica.md` |
+| 80 | `marbella-os/4-decisiones/ADR-0011-proyeccion-diaria-hija-y-carry-out.md` |
 | 60 | `marbella-os/1-producto/PRINCIPIOS.md` |
 | 60 | `marbella-os/1-producto/VISION.md` |
 | 60 | `marbella-os/2-diseno/EXPERIENCIA.md` |
 | 60 | `marbella-os/2-diseno/LENGUAJE-VISUAL.md` |
-| 40 | `marbella-os/3-ingenieria/contratos/PROYECCION-v1.md` |
+| 40 | `marbella-os/3-ingenieria/contratos/PROYECCION-v2.md` |
 | 20 | `marbella-os/1-producto/ACTORES-Y-ROLES.md` |
 | 20 | `marbella-os/1-producto/FICHAS-COCINA.md` |
 | 20 | `marbella-os/1-producto/MAPA-DE-CAPACIDADES.md` |
@@ -84,4 +85,4 @@ es `CANON §5`.
 | 20 | `marbella-os/GLOSARIO.md` |
 
 Todo lo que no aparece en esta tabla **no es normativo** y no autoriza ninguna
-decisión, empezando por los 48 documentos de `marbella-os/6-investigacion/`.
+decisión, empezando por los 49 documentos de `marbella-os/6-investigacion/`.

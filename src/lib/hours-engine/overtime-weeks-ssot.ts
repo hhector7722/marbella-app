@@ -4,7 +4,7 @@
  * Importe = `weekly_snapshots.total_cost` (Cost Engine vía Writer).
  * No liquida en lectura. Semana en curso y futuras no entran.
  *
- * Historial de una persona y pie de tarjeta semanal siguen el read-model HE.
+ * Historial de una persona y pie de tarjeta semanal leen weekly_snapshots + weekly_snapshot_days.
  */
 
 import { addDays, format, parseISO } from 'date-fns';

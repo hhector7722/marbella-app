@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-07-29
+revisado: 2026-09-13
 caducidad: 12 meses
 ---
 
@@ -24,7 +24,8 @@ El motivo es que un contrato se cumple o no se cumple, y eso solo se puede compr
 
 | Contrato | Qué acuerda | Estado |
 |---|---|---|
-| [Proyección semanal v1](./PROYECCION-v1.md) | Qué escribe el productor de horas en la proyección semanal, con qué autoridad y con qué garantías de idempotencia | Vigente |
+| [Proyección v2](./PROYECCION-v2.md) | Qué escribe el productor de horas en la fila semanal y en los días hijos, con qué autoridad y con qué garantías | Vigente |
+| [Proyección semanal v1](./PROYECCION-v1.md) | Contrato anterior de la fila semanal, sin `carry_out` ni días | Superado por v2 |
 
 ## Cuándo hace falta un contrato
 

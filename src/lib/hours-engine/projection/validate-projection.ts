@@ -1,5 +1,5 @@
 /**
- * Validación pre-persistencia del Writer (PROJECTION CONTRACT v1 §5 / §8).
+ * Validación pre-persistencia del Writer (PROJECTION CONTRACT v2).
  * Abortar escritura si cualquier invariante falla.
  *
  * No recalcula liquidación ni inventa dominio: solo inspecciona
@@ -31,6 +31,8 @@ const HOURS_EPS = 1e-6;
 export type ProjectionWeekCandidate = {
   liquidation: LiquidationResult;
   estimatedValue: number | null;
+  hourlyRate?: number | null;
+  hasMissingRate?: boolean;
   /** Overrides leídos como input (no se escriben). */
   overrides: {
     isPaid: boolean;
@@ -414,9 +416,17 @@ export function validateProjectionBatch(
     if (laborFail) return laborFail;
 
     // INV-J01…J04: el payload debe ser exactamente el mapeo del HE (por construcción).
-    const row = mapEnginesToProjectionRow(liq, c.estimatedValue);
+    const row = mapEnginesToProjectionRow(liq, {
+      estimatedValue: c.estimatedValue,
+      hourlyRate: c.hourlyRate ?? null,
+      hasMissingRate: c.hasMissingRate === true,
+      bagModeOverride: c.overrides.preferStockHoursOverride,
+    });
     if (!close(row.pending_balance, liq.carryIn)) {
       return fail('INV-J01', `INV-J01 pending_balance≠carryIn @ ${liq.weekStart}`);
+    }
+    if (!close(row.carry_out, liq.carryOut)) {
+      return fail('INV-C02', `carry_out≠carryOut @ ${liq.weekStart}`);
     }
     if (!close(row.final_balance, liq.balanceFinal)) {
       return fail('INV-J02', `INV-J02 final_balance≠balanceFinal @ ${liq.weekStart}`);

@@ -1,5 +1,5 @@
 /**
- * Writer único de proyección semanal (ADR-HE-SSOT-001 / PROJECTION CONTRACT v1).
+ * Writer único de proyección semanal (ADR-0001 / ADR-0011 / PROJECTION CONTRACT v2).
  *
  * Responsabilidades (únicas):
  * 1. Recibir hechos de entrada (vía Supabase + overrides existentes)
@@ -39,6 +39,8 @@ import {
   domainRowToUpdatePayload,
   MONEY_EPS,
   projectionDomainEquals,
+  mapEnginesToProjectionDays,
+  assertProjectionDayInvariants,
   type WeeklyProjectionDomainRow,
 } from './map-projection.ts';
 import {
@@ -54,6 +56,24 @@ import {
 
 function ymdKey(raw: string): CivilDate {
   return (typeof raw === 'string' ? raw.split('T')[0]! : String(raw)) as CivilDate;
+}
+
+/**
+ * Inicio de la ventana de hechos (fichajes + overrides B) que el Writer carga.
+ *
+ * Si el lote empieza antes de `timelineStart` (semanas pre-alta aisladas),
+ * hay que incluir esos días. Si empieza en o después, se carga desde el alta
+ * para poder resolver el opening carry. INV-C01 no cambia: la cadena oficial
+ * sigue semillando 0 en el alta.
+ */
+export function projectionFactsWindowStart(
+  fromWeekStart: CivilDate,
+  timelineStart: CivilDate | null,
+): CivilDate {
+  if (timelineStart == null) return fromWeekStart;
+  return compareCivilDate(fromWeekStart, timelineStart) < 0
+    ? fromWeekStart
+    : timelineStart;
 }
 
 function todayMadridYmd(): CivilDate {
@@ -113,7 +133,16 @@ function rowFromDb(raw: {
   extra_hours: number | null;
   contracted_hours_snapshot: number;
   total_cost: number | null;
+  carry_out: number | null;
+  prefer_stock_effective: boolean | null;
+  has_missing_rate: boolean | null;
+  overtime_rate_effective: number | null;
 }): WeeklyProjectionDomainRow {
+  if (raw.carry_out == null || raw.prefer_stock_effective == null || raw.has_missing_rate == null) {
+    throw new Error(
+      `writeWeeklyProjection: read-back sin columnas v2 @ ${raw.week_start}`,
+    );
+  }
   return {
     user_id: raw.user_id,
     week_start: ymdKey(raw.week_start),
@@ -126,6 +155,13 @@ function rowFromDb(raw: {
     extra_hours: raw.extra_hours ?? 0,
     contracted_hours_snapshot: raw.contracted_hours_snapshot,
     total_cost: raw.total_cost ?? 0,
+    carry_out: raw.carry_out,
+    prefer_stock_effective: raw.prefer_stock_effective,
+    has_missing_rate: raw.has_missing_rate,
+    overtime_rate_effective:
+      raw.overtime_rate_effective != null && Number.isFinite(Number(raw.overtime_rate_effective))
+        ? Number(raw.overtime_rate_effective)
+        : null,
   };
 }
 
@@ -177,7 +213,7 @@ export async function writeWeeklyProjection(
   const timelineStart = employeeTimelineStartWeek(employee);
   // Semilla INV-C01 se comprueba tras cargar logs/overrides (misma cadena que el write).
 
-  const logsFrom = timelineStart ?? fromWeekStart;
+  const logsFrom = projectionFactsWindowStart(fromWeekStart, timelineStart);
   const { weekEnd: horizonEndDay } = weekBounds(toWeekStart);
   const { startIso, endIso } = madridRangeUtcIso(logsFrom, horizonEndDay);
 
@@ -294,6 +330,8 @@ export async function writeWeeklyProjection(
       candidates.push({
         liquidation,
         estimatedValue: pricing.estimatedValue,
+        hourlyRate: pricing.hourlyRate ?? null,
+        hasMissingRate: pricing.hasMissingRate === true,
         overrides: {
           isPaid,
           preferStockHoursOverride: bagModeOverride,
@@ -335,12 +373,35 @@ export async function writeWeeklyProjection(
   let weeksInserted = 0;
   let weeksUpdated = 0;
 
+  const WEEK_READ_SELECT =
+    'user_id, week_start, week_end, pending_balance, balance_hours, final_balance, total_hours, ordinary_hours, extra_hours, contracted_hours_snapshot, total_cost, carry_out, prefer_stock_effective, has_missing_rate, overtime_rate_effective, is_paid, prefer_stock_hours_override, overtime_price_snapshot';
+
   for (const row of rows) {
+    const candidate = candidates.find(
+      (c) => ymdKey(c.liquidation.weekStart) === row.week_start,
+    );
+    if (!candidate) {
+      return {
+        ok: false,
+        error: `writeWeeklyProjection: sin liquidación en memoria @ ${row.week_start}`,
+      };
+    }
+    const days = mapEnginesToProjectionDays(
+      candidate.liquidation,
+      candidate.estimatedValue,
+    );
+    try {
+      assertProjectionDayInvariants(row, days);
+    } catch (err) {
+      return {
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+
     const { data: existing, error: existErr } = await client
       .from('weekly_snapshots')
-      .select(
-        'user_id, week_start, week_end, pending_balance, balance_hours, final_balance, total_hours, ordinary_hours, extra_hours, contracted_hours_snapshot, total_cost, is_paid, prefer_stock_hours_override, overtime_price_snapshot',
-      )
+      .select(WEEK_READ_SELECT)
       .eq('user_id', userId)
       .eq('week_start', row.week_start)
       .maybeSingle();
@@ -393,11 +454,30 @@ export async function writeWeeklyProjection(
       weeksInserted += 1;
     }
 
+    const { error: delDaysErr } = await client
+      .from('weekly_snapshot_days')
+      .delete()
+      .eq('user_id', userId)
+      .eq('week_start', row.week_start);
+    if (delDaysErr) {
+      return {
+        ok: false,
+        error: `writeWeeklyProjection: borrar días ${row.week_start}: ${delDaysErr.message}`,
+      };
+    }
+    const { error: insDaysErr } = await client
+      .from('weekly_snapshot_days')
+      .insert(days);
+    if (insDaysErr) {
+      return {
+        ok: false,
+        error: `writeWeeklyProjection: insertar días ${row.week_start}: ${insDaysErr.message}`,
+      };
+    }
+
     const { data: readBack, error: readErr } = await client
       .from('weekly_snapshots')
-      .select(
-        'user_id, week_start, week_end, pending_balance, balance_hours, final_balance, total_hours, ordinary_hours, extra_hours, contracted_hours_snapshot, total_cost, is_paid, prefer_stock_hours_override, overtime_price_snapshot',
-      )
+      .select(WEEK_READ_SELECT)
       .eq('user_id', userId)
       .eq('week_start', row.week_start)
       .maybeSingle();
@@ -421,7 +501,15 @@ export async function writeWeeklyProjection(
       };
     }
 
-    const persisted = rowFromDb(readBack);
+    let persisted: WeeklyProjectionDomainRow;
+    try {
+      persisted = rowFromDb(readBack);
+    } catch (err) {
+      return {
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
     if (!projectionDomainEquals(row, persisted, MONEY_EPS)) {
       return {
         ok: false,

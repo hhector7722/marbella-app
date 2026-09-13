@@ -1,72 +1,32 @@
 /**
  * LaborCostDayReadModelProjector (FASE 4).
  *
- * Proyector de lectura encargado de construir el DTO inmutable del detalle diario (`LaborCostDayDTO`).
- *
  * Consume exclusivamente:
  * - PayrollAllocationService (Payroll Domain)
  * - ContractTermsService (Contracts SSOT)
- * - Hours Engine (ventana corta: pending_balance + liquidateWeekForCard → € extra)
+ * - weekly_snapshot_days.overtime_cost (proyección persistida)
  * - Ventas (daily_sales / ticket_sales)
  *
  * REGLAS INVIOLABLES:
  * 1. NUNCA incluye la fila sintética "Nómina empresa". Desaparece al 100%.
  * 2. Toggle OFF: Filtra únicamente trabajadores con actividad real (fichajes > 0 u extras > 0). Resumen = suma exclusiva de los visibles.
  * 3. Toggle ON: Muestra trabajadores con contrato activo UNION trabajadores con actividad real.
- * 4. Eventuales: Sin contrato ni nómina -> Fijo = 0, Extras = Hours Engine, Total = Extras.
+ * 4. Eventuales: Sin contrato ni nómina -> Fijo = 0, Extras = proyección, Total = Extras.
  * 5. Sin Payroll: isPayrollPending = true, pctStatus = 'incomplete_payroll_pending'. NUNCA estima datos.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { addDays, format, parseISO } from 'date-fns';
 import type { PayrollAllocationService } from '../payroll/payroll-allocation-service.ts';
 import type { ContractTermsService } from '../payroll/contract-terms-service.ts';
 import type { PayrollFactRepository } from '../payroll/payroll-fact-repository.ts';
-import { Money, LaborCost, Percentage } from '../payroll/value-objects.ts';
+import { Money, Percentage } from '../payroll/value-objects.ts';
 import type { LaborCostDayDTO, WorkerLaborCostDTO } from './labor-cost-dtos.ts';
-import {
-  loadEmployeeBoundaryFacts,
-  loadEmployeeBoundaryFactsBatch,
-} from '../hours-engine/load-employee-facts.ts';
-import {
-  employeeTimelineStartWeek,
-  isPaidLookupFromRows,
-  bagModeOverrideLookupFromRows,
-  resolveOpeningCarryIn,
-} from '../hours-engine/opening-carry.ts';
-import {
-  hoursWindowBounds,
-  overtimeMoneyByDayFromChain,
-  resolveWindowOpeningCarry,
-  WEEKLY_SNAPSHOT_WINDOW_SELECT,
-  WEEKLY_SNAPSHOT_WINDOW_SELECT_WITH_USER,
-} from '../hours-engine/window-hours-chain.ts';
-import { mondayOnOrBefore } from '../hours-engine/week-dates.ts';
-import type { CivilDate } from '../hours-engine/types.ts';
+import { loadOvertimeCostByDay } from './overtime-cost-from-projection.ts';
 import { formatYmdInMadrid, madridRangeUtcIso } from '../madrid-date-bounds.ts';
 import {
   filterVisiblePlantillaEmployees,
   PLANTILLA_EMPLOYEE_SELECT,
 } from '../staff/plantilla-employees.ts';
-
-function mondayOf(ymd: string): CivilDate {
-  return mondayOnOrBefore(ymd.split('T')[0]! as CivilDate);
-}
-
-type HoursHistoryRows = {
-  snapshots: Array<{
-    week_start: string;
-    is_paid: boolean | null;
-    prefer_stock_hours_override: boolean | null;
-    overtime_price_snapshot: number | null;
-    pending_balance: number | null;
-  }>;
-  logs: Array<{
-    clock_in: string;
-    clock_out: string | null;
-    total_hours: number | null;
-  }>;
-};
 
 export class LaborCostDayReadModelProjector {
   constructor(
@@ -89,9 +49,6 @@ export class LaborCostDayReadModelProjector {
     const day = dateYmd.split('T')[0]!;
     const periodYm = day.substring(0, 7);
     const includeAll = options?.includeAllContracted ?? false; // Default Toggle OFF
-
-    const weekStart = mondayOf(day);
-    const weekEnd = format(addDays(parseISO(weekStart), 6), 'yyyy-MM-dd');
 
     // 1. Obtener hechos de nómina para verificar si el mes tiene nómina cargada.
     //    También se reutilizan estos mismos hechos para calcular el coste mensual por trabajador,
@@ -130,99 +87,32 @@ export class LaborCostDayReadModelProjector {
     const profiles = filterVisiblePlantillaEmployees(profileRows ?? []);
     const profileIds = profiles.map((profile) => profile.id);
 
-    // 4. Cargar una sola vez los hechos contractuales y de frontera necesarios para todos
-    //    los trabajadores visibles. La evaluación posterior es 100% en memoria.
+    // 4. Contratos del mes en una sola carga. Extra diario: proyección persistida.
     let contractStore;
-    let boundaryFactsByUser: Record<string, Awaited<ReturnType<typeof loadEmployeeBoundaryFactsBatch>>[string]> = {};
 
     try {
       contractStore = await this.contractTermsService.loadTermsForMonth(profileIds, periodYm);
     } catch {
-      // Fallback excepcional: conserva el comportamiento anterior si la carga en lote falla.
       contractStore = null;
     }
 
-    try {
-      boundaryFactsByUser = await loadEmployeeBoundaryFactsBatch(this.supabase, profileIds);
-    } catch {
-      // La versión anterior aislaba los fallos por empleado. Solo usamos el lote cuando funciona;
-      // ante un fallo de lote volvemos a la misma carga individual y aislada.
-      const fallbackEntries = await Promise.all(
-        profileIds.map(async (userId) => {
-          try {
-            return [userId, await loadEmployeeBoundaryFacts(this.supabase, userId)] as const;
-          } catch {
-            return null;
-          }
-        }),
-      );
-      boundaryFactsByUser = Object.fromEntries(
-        fallbackEntries.filter(
-          (entry): entry is readonly [string, Awaited<ReturnType<typeof loadEmployeeBoundaryFacts>>] =>
-            entry !== null,
-        ),
-      );
-    }
-
-    // 5. Histórico corto de Hours Engine: semana vista + la anterior (arrastre).
-    const hoursHistoryByUser = new Map<string, HoursHistoryRows>();
-    let hoursHistoryBatchFailed = false;
-    const { logsFrom: windowFromYmd, lastSunday: windowEndYmd } = hoursWindowBounds(
-      weekStart,
-      weekStart,
-    );
-
+    const overtimeByUser = await loadOvertimeCostByDay(this.supabase, profileIds, day, day);
+    const clockInUsers = new Set<string>();
     if (profileIds.length > 0) {
-      try {
-        const { startIso, endIso } = madridRangeUtcIso(windowFromYmd, windowEndYmd);
-        const [snapsRes, logsRes] = await Promise.all([
-          this.supabase
-            .from('weekly_snapshots')
-            .select(WEEKLY_SNAPSHOT_WINDOW_SELECT_WITH_USER)
-            .in('user_id', profileIds)
-            .gte('week_start', windowFromYmd)
-            .lte('week_start', weekStart),
-          this.supabase
-            .from('time_logs')
-            .select('user_id, clock_in, clock_out, total_hours')
-            .in('user_id', profileIds)
-            .gte('clock_in', startIso)
-            .lte('clock_in', endIso),
-        ]);
-
-        if (snapsRes.error || logsRes.error) {
-          hoursHistoryBatchFailed = true;
-        } else {
-          for (const userId of profileIds) {
-            hoursHistoryByUser.set(userId, { snapshots: [], logs: [] });
-          }
-
-          for (const row of snapsRes.data ?? []) {
-            const bucket = hoursHistoryByUser.get(row.user_id);
-            if (bucket) {
-              bucket.snapshots.push({
-                week_start: row.week_start,
-                is_paid: row.is_paid,
-                prefer_stock_hours_override: row.prefer_stock_hours_override,
-                overtime_price_snapshot: row.overtime_price_snapshot,
-                pending_balance: row.pending_balance,
-              });
-            }
-          }
-
-          for (const row of logsRes.data ?? []) {
-            const bucket = hoursHistoryByUser.get(row.user_id);
-            if (bucket) {
-              bucket.logs.push({
-                clock_in: row.clock_in,
-                clock_out: row.clock_out,
-                total_hours: row.total_hours,
-              });
-            }
-          }
+      const { startIso, endIso } = madridRangeUtcIso(day, day);
+      const { data: logRows, error: logsErr } = await this.supabase
+        .from('time_logs')
+        .select('user_id, clock_in')
+        .in('user_id', profileIds)
+        .gte('clock_in', startIso)
+        .lte('clock_in', endIso);
+      if (logsErr) {
+        throw new Error(`time_logs: ${logsErr.message}`);
+      }
+      for (const row of logRows ?? []) {
+        if (formatYmdInMadrid(row.clock_in) === day) {
+          clockInUsers.add(String(row.user_id));
         }
-      } catch {
-        hoursHistoryBatchFailed = true;
       }
     }
 
@@ -233,107 +123,14 @@ export class LaborCostDayReadModelProjector {
     for (const profile of profiles) {
       const name = `${profile.first_name ?? ''} ${profile.last_name ?? ''}`.trim() || '—';
 
-      // A. Contrato Activo (Contracts SSOT), resuelto en memoria a partir de la carga en lote.
       const hasActiveContract = contractStore
         ? contractStore.isContractActiveOn(profile.id, day)
         : await this.contractTermsService.isContractActiveOn(profile.id, day);
 
-      // B. Horas Extras (Hours Engine SSOT)
-      let overtimeMoney = Money.zero();
-      let hasClockIns = false;
-
-      try {
-        const employee = boundaryFactsByUser[profile.id];
-        if (!employee) throw new Error(`Empleado ${profile.id} sin hechos de frontera válidos`);
-
-        const loadHours = async (fromYmd: string): Promise<HoursHistoryRows> => {
-          const { startIso, endIso } = madridRangeUtcIso(fromYmd, weekEnd);
-          const [snapsRes, logsRes] = await Promise.all([
-            this.supabase
-              .from('weekly_snapshots')
-              .select(WEEKLY_SNAPSHOT_WINDOW_SELECT)
-              .eq('user_id', profile.id)
-              .gte('week_start', fromYmd)
-              .lte('week_start', weekStart),
-            this.supabase
-              .from('time_logs')
-              .select('clock_in, clock_out, total_hours')
-              .eq('user_id', profile.id)
-              .gte('clock_in', startIso)
-              .lte('clock_in', endIso),
-          ]);
-          if (snapsRes.error || logsRes.error) {
-            throw new Error('No se pudo cargar histórico de Hours Engine');
-          }
-          return {
-            snapshots: (snapsRes.data ?? []) as HoursHistoryRows['snapshots'],
-            logs: (logsRes.data ?? []) as HoursHistoryRows['logs'],
-          };
-        };
-
-        let snapsRows: HoursHistoryRows['snapshots'];
-        let logRows: HoursHistoryRows['logs'];
-
-        if (!hoursHistoryBatchFailed) {
-          const history = hoursHistoryByUser.get(profile.id) ?? { snapshots: [], logs: [] };
-          snapsRows = history.snapshots;
-          logRows = history.logs;
-        } else {
-          const short = await loadHours(windowFromYmd);
-          snapsRows = short.snapshots;
-          logRows = short.logs;
-        }
-
-        let engineLogs = logRows.map((l) => ({
-          clockInIso: l.clock_in as string,
-          clockOutIso: l.clock_out as string | null,
-          totalHours: l.total_hours as number | null,
-        }));
-
-        hasClockIns = engineLogs.some((l) => formatYmdInMadrid(l.clockInIso) === day);
-
-        let opening = resolveWindowOpeningCarry({
-          employee,
-          firstWeekStart: weekStart,
-          snaps: snapsRows,
-          logs: engineLogs,
-        });
-
-        if ('needsFullReplay' in opening) {
-          const timelineStart = employeeTimelineStartWeek(employee);
-          const fromYmd =
-            timelineStart && timelineStart < weekStart ? timelineStart : weekStart;
-          const full = await loadHours(fromYmd);
-          snapsRows = full.snapshots;
-          logRows = full.logs;
-          engineLogs = logRows.map((l) => ({
-            clockInIso: l.clock_in as string,
-            clockOutIso: l.clock_out as string | null,
-            totalHours: l.total_hours as number | null,
-          }));
-          hasClockIns = engineLogs.some((l) => formatYmdInMadrid(l.clockInIso) === day);
-          opening = {
-            carryIn: resolveOpeningCarryIn({
-              employee,
-              chainStart: weekStart,
-              logs: engineLogs,
-              isPaidByWeek: isPaidLookupFromRows(snapsRows),
-              bagModeOverrideByWeek: bagModeOverrideLookupFromRows(snapsRows),
-            }),
-          };
-        }
-
-        const byDay = overtimeMoneyByDayFromChain({
-          employee,
-          weekStarts: [weekStart],
-          snaps: snapsRows,
-          logs: engineLogs,
-          openingCarryIn: opening.carryIn,
-        });
-        overtimeMoney = Money.from(byDay[day] ?? 0);
-      } catch {
-        // Ignorar trabajadores sin hechos de frontera válidos
-      }
+      const overtimeMoney = Money.from(
+        overtimeByUser.get(profile.id)?.get(day)?.overtimeCost ?? 0,
+      );
+      const hasClockIns = clockInUsers.has(profile.id);
 
       const hasActivity = hasClockIns || !overtimeMoney.isZero();
 

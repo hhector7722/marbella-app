@@ -6,7 +6,7 @@ capa: estado
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-08-26
+revisado: 2026-09-13
 caducidad: 3 meses
 supersede: —
 ---
@@ -97,15 +97,15 @@ Las entradas **D17 a D26 salieron de la revisión de ingeniería** de ese mismo 
 
 ---
 
-## D5 · Motor de horas ejecutado en lectura
+## D5 · Motor de horas ejecutado en lectura — pagada
 
-**Prioridad: media.** Parte de las lecturas ejecutan el motor de cálculo al cargar en lugar de leer la proyección persistida.
+**Prioridad: media. Pagada el 2026-09-13.** Parte de las lecturas ejecutaban el motor de cálculo al cargar en lugar de leer la proyección persistida.
 
 **Coste**: coste por carga proporcional al histórico de la persona, y riesgo de divergencia entre lo que se pinta y lo que está persistido.
 
 **Disparador de pago**: el cambio previsto en [ADR-0001](../4-decisiones/ADR-0001-hours-engine-productor-unico.md), que ya lo declara deuda temporal y no arquitectura final.
 
-**Pago parcial (2026-09-12, listados de extras):** `/dashboard/overtime`, el mosaico de extras y la columna Ext del horario leen `weekly_snapshots.total_cost`. **Pago parcial (2026-09-12, tarjeta semanal suelta):** el mosaico Staff y el modal de una persona leen `pending_balance` como arrastre y liquidan solo esa semana. **Pago parcial (2026-09-12, historial mensual y coste laboral):** `/staff/history` de una persona y el coste laboral (día y mes) leen el arrastre del snapshot y liquidan solo las semanas de la ventana; el € extra diario se parte del importe semanal, no de las horas. Sigue siendo motor-en-lectura: no hay desglose diario persistido.
+**Pago (2026-09-13):** el Writer persiste `carry_out` y `weekly_snapshot_days`. Historial, tarjeta semanal y coste extra diario leen esa proyección. Las lecturas ya no llaman a `liquidateWeek`. Contrato: [PROYECCION-v2](../3-ingenieria/contratos/PROYECCION-v2.md). Decisión: [ADR-0011](../4-decisiones/ADR-0011-proyeccion-diaria-hija-y-carry-out.md). Hasta regenerar cada semana con el Writer, la lectura falla visible (no pinta un cero). Los snapshots anteriores al alta se regeneran en cadena aislada (no alimentan INV-C01). Una semana de calendario sin snapshot y sin fichajes no grita.
 
 ---
 

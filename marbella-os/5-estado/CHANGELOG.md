@@ -36,6 +36,12 @@ Este documento responde a «¿qué cambió y cuándo?». Para «¿cómo está el
 
 Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué cambió, para quién y con qué consecuencia. Una o dos frases. Si necesita más, necesita un ADR o una especificación, y aquí solo va el enlace.
 
+## 2026-09-13
+
+- **El Writer cubre fichajes anteriores al alta sin romper la semilla 0.** Esas semanas se persisten como cadena aislada (`pre_alta`); el arrastre no entra en el lunes de alta. El historial de esos meses deja de fallar por proyección v2 ausente. [ADR-0001](../4-decisiones/ADR-0001-hours-engine-productor-unico.md) INV-C01.
+
+- **Historial, tarjeta semanal y coste extra diario leen la proyección, no el motor.** El Writer guarda el arrastre saliente y el OT/€ de cada día. Abrir `/staff/history`, el mosaico Staff o el coste laboral ya no liquida. Si falta esa proyección, la pantalla avisa; no inventa un cero. [ADR-0011](../4-decisiones/ADR-0011-proyeccion-diaria-hija-y-carry-out.md). Paga [D5](DEUDA.md).
+
 ## 2026-09-12
 
 - **Historial mensual y coste laboral: ventana corta, euros reales.** En `/staff/history` (una persona) y en coste laboral día/mes el arrastre sale del snapshot de la primera semana vista; solo se liquidan esas semanas. El extra del día deja de pintar horas como si fueran euros: reparte el importe semanal. Las cifras de extras en labor cambian a €. El equipo en historial no cambia.

@@ -86,7 +86,7 @@ export async function getWeekDetailDto(input: {
 
 /**
  * Una semana con el mismo DTO que `/staff/history` (HistoryWeekDto).
- * CarryIn desde `weekly_snapshots.pending_balance`; no liquida el mes.
+ * Footer y Ex del día desde proyección v2; no liquida.
  * Usado por el mosaico Staff, horas extras → empleado y asistencia.
  */
 export async function getEmployeeHistoryWeek(input: {

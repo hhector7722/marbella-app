@@ -1,6 +1,6 @@
 {
   "_generado": "Derivado de marbella-os/. No editar a mano: se regenera con `npm run generate:corpus`.",
-  "_huella": "e4ea4dd7eab29a07",
+  "_huella": "f26e75c16a3d700c",
   "_citable": "normativo === true && estado === \"vigente\"",
   "documentos": [
     {
@@ -156,6 +156,20 @@
       ]
     },
     {
+      "ruta": "marbella-os/4-decisiones/ADR-0011-proyeccion-diaria-hija-y-carry-out.md",
+      "documento": "ADR-0011",
+      "clase": "inmutable",
+      "estado": "vigente",
+      "capa": "decisiones",
+      "normativo": true,
+      "citable": true,
+      "precedencia": 80,
+      "vence": null,
+      "depende_de": [
+        "ADR-0001"
+      ]
+    },
+    {
       "ruta": "marbella-os/1-producto/PRINCIPIOS.md",
       "documento": "PRINCIPIOS",
       "clase": "constitucional",
@@ -204,8 +218,8 @@
       "depende_de": []
     },
     {
-      "ruta": "marbella-os/3-ingenieria/contratos/PROYECCION-v1.md",
-      "documento": "CONTRATO-PROYECCION-v1",
+      "ruta": "marbella-os/3-ingenieria/contratos/PROYECCION-v2.md",
+      "documento": "CONTRATO-PROYECCION-v2",
       "clase": "inmutable",
       "estado": "vigente",
       "capa": "ingenieria",
@@ -214,7 +228,8 @@
       "precedencia": 40,
       "vence": null,
       "depende_de": [
-        "ADR-0001"
+        "ADR-0001",
+        "ADR-0011"
       ]
     },
     {
@@ -262,7 +277,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2026-12-12",
+      "vence": "2026-12-13",
       "depende_de": []
     },
     {
@@ -346,7 +361,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-01-29",
+      "vence": "2027-03-13",
       "depende_de": []
     },
     {
@@ -370,7 +385,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-07-29",
+      "vence": "2027-09-13",
       "depende_de": []
     },
     {
@@ -382,7 +397,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-01-29",
+      "vence": "2027-03-13",
       "depende_de": []
     },
     {
@@ -490,7 +505,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-03-12",
+      "vence": "2027-03-13",
       "depende_de": []
     },
     {
@@ -552,7 +567,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2026-10-29",
+      "vence": "2026-12-13",
       "depende_de": []
     },
     {
@@ -564,7 +579,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-08-25",
+      "vence": "2027-09-13",
       "depende_de": []
     },
     {
@@ -600,7 +615,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2026-11-26",
+      "vence": "2026-12-13",
       "depende_de": []
     },
     {
@@ -612,7 +627,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2026-10-02",
+      "vence": "2026-10-13",
       "depende_de": []
     },
     {
@@ -684,7 +699,7 @@
       "normativo": true,
       "citable": true,
       "precedencia": 20,
-      "vence": "2027-03-07",
+      "vence": "2027-03-13",
       "depende_de": []
     },
     {
@@ -710,6 +725,20 @@
       "precedencia": 0,
       "vence": null,
       "depende_de": []
+    },
+    {
+      "ruta": "marbella-os/3-ingenieria/contratos/PROYECCION-v1.md",
+      "documento": "CONTRATO-PROYECCION-v1",
+      "clase": "inmutable",
+      "estado": "superado",
+      "capa": "ingenieria",
+      "normativo": false,
+      "citable": false,
+      "precedencia": 0,
+      "vence": null,
+      "depende_de": [
+        "ADR-0001"
+      ]
     },
     {
       "ruta": "marbella-os/6-investigacion/archivo/2026-03-10-avatars-migracion.md",

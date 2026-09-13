@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-12
+revisado: 2026-09-13
 caducidad: 6 meses
 supersede: —
 ---
@@ -36,7 +36,7 @@ Consecuencia práctica para este documento: **es la única defensa que existe co
 
 Las 72 tablas tipadas se agrupan en nueve dominios.
 
-### Personas y jornada — 9 tablas
+### Personas y jornada — 10 tablas
 
 | Tabla | Autoridad sobre |
 |---|---|
@@ -44,13 +44,14 @@ Las 72 tablas tipadas se agrupan en nueve dominios.
 | `time_logs` | El fichaje. Hecho primario, nunca derivado |
 | `hours_contract_terms` | Condiciones de contrato con vigencia temporal |
 | `profile_labor_cost_terms` | Coste laboral con vigencia temporal |
-| `weekly_snapshots` | **Resultado del motor de horas.** Única lectura válida |
+| `weekly_snapshots` | **Resultado semanal del motor de horas.** Única lectura válida de magnitudes semanales |
+| `weekly_snapshot_days` | **Resultado diario** (OT bruto y € extra del día), hijo de la proyección semanal |
 | `shifts` | Turnos planificados |
 | `schedule_day_notes` | Notas libres por día y por usuario en el horario. Una por usuario y día |
 | `weekly_closings_log` | Registro de cierres semanales |
 | `employee_documents` | Documentos de la persona |
 
-**La regla que gobierna este dominio:** `time_logs` es hecho, `weekly_snapshots` es resultado. Nada más produce horas. Ver [ADR-0001](../4-decisiones/ADR-0001-hours-engine-productor-unico.md).
+**La regla que gobierna este dominio:** `time_logs` es hecho, `weekly_snapshots` y `weekly_snapshot_days` son resultado. Nada más produce horas ni el € extra del día. Ver [ADR-0001](../4-decisiones/ADR-0001-hours-engine-productor-unico.md), [ADR-0011](../4-decisiones/ADR-0011-proyeccion-diaria-hija-y-carry-out.md).
 
 `profiles` conserva además los datos de la ficha de empleado: `dni` (NIF/NIE/Pasaporte), `afiliacion_seguridad_social`, `nacionalidad`, `fecha_nacimiento`, `domicilio`, `phone` y `email`. Son datos introducidos a mano, sin productor que los calcule. Conserva también `camera_fov_notice_acked_at`: el instante en que esa persona confirmó su primer fichaje de entrada viendo el aviso del campo de visión de la cámara. NULL significa que el aviso sigue pendiente. Cancelar el modal no escribe este campo.
 
@@ -183,7 +184,7 @@ Este criterio no está garantizado por nada automático. Es deuda: [D21](../5-es
 ## 5. Reglas del esquema
 
 1. **Un hecho no se sobrescribe.** Un fichaje se corrige creando la corrección, no borrando el original.
-2. **Un resultado siempre se puede regenerar.** Si borrar `weekly_snapshots` pierde información, es que se estaba usando como hecho.
+2. **Un resultado siempre se puede regenerar.** Si borrar `weekly_snapshots` o `weekly_snapshot_days` pierde información, es que se estaba usando como hecho.
 3. **Condiciones laborales, con vigencia.** Nunca reescribir la condición: cerrar la anterior y abrir la nueva.
 4. **Dos fechas cuando el negocio no coincide con el reloj.** Fecha de negocio y fecha real, siempre separadas.
 5. **Una tabla nueva nace con política de acceso.** Sin excepción, ver [SEGURIDAD](./SEGURIDAD.md).

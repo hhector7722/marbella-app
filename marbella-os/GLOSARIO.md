@@ -6,7 +6,7 @@ capa: raiz
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-07
+revisado: 2026-09-13
 caducidad: 6 meses
 supersede: —
 ---
@@ -82,7 +82,7 @@ Vocabulario congelado por [ADR-0001](4-decisiones/ADR-0001-hours-engine-producto
 |---|---|
 | **Hours Engine** | Único productor de las magnitudes de liquidación de horas. Función pura. |
 | **Cost Engine** | Único productor del valor económico de las horas extras. |
-| **Proyección persistida** | La fila semanal que almacena el resultado del Hours Engine. **No calcula nada.** Nombre canónico completo: proyección persistida de liquidación semanal. Identificador: `weekly_snapshots`. |
+| **Proyección persistida** | El resultado del Hours Engine y del Cost Engine ya escrito. **No calcula nada.** La fila semanal es `weekly_snapshots`; el desglose diario (OT y € extra del día) es `weekly_snapshot_days`. |
 | **Writer** | El único componente autorizado a escribir la proyección. |
 | **Read Model** | Capa que lee la proyección y la convierte en datos de presentación, sin reinterpretar negocio. |
 | **DTO de pintura** | Estructura final que consume la interfaz. La interfaz pinta; no interpreta. |

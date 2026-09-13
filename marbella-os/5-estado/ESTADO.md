@@ -6,7 +6,7 @@ capa: estado
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-09-02
+revisado: 2026-09-13
 caducidad: 1 mes
 supersede: PROJECT_STATUS.md §ESTADO GENERAL
 ---
@@ -41,7 +41,7 @@ El producto está en producción y sostiene la operación diaria del negocio. El
 
 ## En movimiento
 
-- **Dominio de horas.** El motor de cálculo es el único productor de las magnitudes de liquidación, con arrastre encadenado real entre semanas. La proyección persistida ya no calcula. Los listados de extras del dashboard leen esa proyección; la tarjeta semanal, el historial mensual de una persona y el coste laboral leen el arrastre persistido y liquidan solo la ventana visible ([D5](DEUDA.md)). Agosto no genera deuda de asistencia en semanas staff cuyo lunes cae en ese mes ([HORAS](../3-ingenieria/dominio/HORAS.md)).
+- **Dominio de horas.** El motor de cálculo es el único productor de las magnitudes de liquidación, con arrastre encadenado real entre semanas. La proyección persistida (fila semanal + días hijos) ya no calcula. Historial, tarjeta semanal, listados de extras y coste extra diario leen esa proyección ([ADR-0011](../4-decisiones/ADR-0011-proyeccion-diaria-hija-y-carry-out.md)). Agosto no genera deuda de asistencia en semanas staff cuyo lunes cae en ese mes ([HORAS](../3-ingenieria/dominio/HORAS.md)).
 - **Coste laboral.** El coste ordinario procede del resumen mensual de la gestoría. El productor mensual está endurecido con versionado de intérprete y registro de importaciones; parte del diseño documentado todavía no está implementado.
 - **Pabellón.** Importación e interpretación automática de la programación, con revisión humana. En estabilización.
 - **Análisis de negocio.** Indicadores en evolución.
@@ -73,7 +73,7 @@ Marbella OS está recién creado y convive con el corpus anterior. Para evitar d
 |---|---|---|
 | Producto, experiencia, diseño, tokens, componentes | `marbella-os/` | Permanente |
 | Reglas de negocio de horas | [ADR-0001](../4-decisiones/ADR-0001-hours-engine-productor-unico.md) | Permanente |
-| Contrato de la proyección semanal | [contrato de proyección v1](../3-ingenieria/contratos/PROYECCION-v1.md) | Permanente |
+| Contrato de la proyección | [contrato de proyección v2](../3-ingenieria/contratos/PROYECCION-v2.md) | Permanente |
 | Historial de cambios anterior a hoy | archivo congelado de `PROJECT_STATUS.md` | Permanente, no normativo |
 | Historial de cambios desde hoy | [CHANGELOG](CHANGELOG.md) | Permanente |
 

@@ -9,7 +9,11 @@
 
 import { liquidateWeek } from './liquidation-engine.ts';
 import { resolveEffectiveContract, resolveEffectiveOvertimeRate } from './contract-resolver.ts';
-import { roundMarbellaHours } from './marbella-round.ts';
+import {
+  extrasFooterFromProjection,
+  netPayableHoursFromProjection,
+  preferStockEffective,
+} from './extras-footer.ts';
 import { compareCivilDate } from './week-dates.ts';
 import { formatYmdInMadrid } from '../madrid-date-bounds.ts';
 import {
@@ -54,6 +58,12 @@ export type WeekCardSummaryFromEngine = {
   hasMissingRate?: boolean;
 };
 
+export {
+  extrasFooterFromProjection,
+  netPayableHoursFromProjection,
+  preferStockEffective,
+};
+
 /**
  * Horas que el waterfall de carry extrae a cobro en modo pago.
  * Invariante: si carryOut < 0 (queda deuda), netPayable = 0.
@@ -63,17 +73,11 @@ export function netPayableHoursFromLiquidation(
   result: LiquidationResult,
   bagModeOverride?: boolean | null,
 ): number {
-  const preferStock =
-    bagModeOverride === true
-      ? true
-      : bagModeOverride === false
-        ? false
-        : result.segments.length > 0 && result.segments.every((s) => s.bagMode);
-  if (preferStock) return 0;
-  // Crédito extraído = lo que no se queda en el banco.
-  return roundMarbellaHours(
-    Math.max(0, result.balanceFinal - Math.max(0, result.carryOut)),
-  );
+  return netPayableHoursFromProjection({
+    preferStock: preferStockEffective(result, bagModeOverride),
+    balanceFinal: result.balanceFinal,
+    carryOut: result.carryOut,
+  });
 }
 
 export type WeekAdminFlags = {
@@ -150,24 +154,14 @@ export function weekCardSummaryFromLiquidation(
   pricing: PriceWeekOvertimeResult,
   bagModeOverride?: boolean | null,
 ): WeekCardSummaryFromEngine {
-  const preferStock =
-    bagModeOverride === true
-      ? true
-      : bagModeOverride === false
-        ? false
-        : result.segments.length > 0 && result.segments.every((s) => s.bagMode);
-
-  const netPayable = netPayableHoursFromLiquidation(result, bagModeOverride);
-
-  // En pago: extras = horas de ESTA semana que se liquidan a cobro.
-  // En bolsa: extras = OT de la semana que acumula en banco.
-  // Ambos: si queda deuda (carryOut < 0), el OT se absorbió → EXTRAS footer = 0.
-  const extrasFooter =
-    result.carryOut < 0
-      ? 0
-      : preferStock
-        ? roundMarbellaHours(result.overtimeHours)
-        : roundMarbellaHours(Math.max(0, netPayable - Math.max(0, result.carryIn)));
+  const preferStock = preferStockEffective(result, bagModeOverride);
+  const extrasFooter = extrasFooterFromProjection({
+    preferStock,
+    carryIn: result.carryIn,
+    carryOut: result.carryOut,
+    overtimeHours: result.overtimeHours,
+    balanceFinal: result.balanceFinal,
+  });
 
   return {
     totalHours: result.hoursWorked,

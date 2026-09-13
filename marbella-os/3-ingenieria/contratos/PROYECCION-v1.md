@@ -1,13 +1,13 @@
 ---
 documento: CONTRATO-PROYECCION-v1
 clase: inmutable
-estado: vigente
+estado: superado
 capa: ingenieria
-normativo: true
-precedencia: 40
+normativo: false
+precedencia: 0
 responsable: propiedad del producto
 publicado: 2026-07-27
-revisado: 2026-07-29
+revisado: 2026-09-13
 depende_de: ADR-0001
 supersede: docs/PROJECTION_CONTRACT_v1.md
 ---

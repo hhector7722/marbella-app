@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-07-29
+revisado: 2026-09-13
 caducidad: 6 meses
 supersede: —
 ---
@@ -100,7 +100,7 @@ Un motor produce una magnitud de negocio. **Es el único autorizado a producirla
 |---|---|---|
 | Motor de horas | Horas ordinarias, extras, arrastre, liquidación | [ADR-0001](../4-decisiones/ADR-0001-hours-engine-productor-unico.md) |
 | Motor de coste de extras | Importe de las horas extra | [dominio/COSTE-LABORAL](./dominio/COSTE-LABORAL.md) |
-| Escritor de proyección | Persiste el resultado semanal | [contratos/PROYECCION-v1](./contratos/PROYECCION-v1.md) |
+| Escritor de proyección | Persiste el resultado semanal y el diario hijo | [contratos/PROYECCION-v2](./contratos/PROYECCION-v2.md) |
 | Orquestador de invalidación | Decide qué hay que recalcular ante un cambio | — |
 | Coste de receta | Coste de un escandallo | [dominio/PRECIOS-Y-COMPRAS](./dominio/PRECIOS-Y-COMPRAS.md) |
 | Sistema de sombra | Compara el motor nuevo con el cálculo heredado | [spikes](../6-investigacion/spikes/README.md) |

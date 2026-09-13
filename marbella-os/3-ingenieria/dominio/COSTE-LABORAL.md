@@ -6,7 +6,7 @@ capa: ingenieria
 normativo: true
 precedencia: 20
 responsable: propiedad del producto
-revisado: 2026-07-29
+revisado: 2026-09-13
 caducidad: 6 meses
 supersede: docs/COSTE_LABORAL_DIARIO_SSOT.md
 ---
@@ -53,10 +53,10 @@ Reglas, todas ellas normativas:
 
 ## 3. Coste de las horas extras
 
-**Origen único: el motor de horas**, a través de su valor estimado de liquidación.
+**Origen único: el motor de horas**, a través de su valor estimado de liquidación, **ya persistido**.
 
-- **No se recalculan tarifas ni se estiman importes** en ningún consumidor.
-- El reparto entre los días de la semana usa los pesos de extras por día, la misma cadena que alimenta el historial de la persona y la pantalla de horas extras.
+- **No se recalculan tarifas ni se estiman importes** en ningún consumidor. La lectura es `weekly_snapshot_days.overtime_cost` (día) y `weekly_snapshots.total_cost` (semana).
+- El Writer reparte el importe semanal entre los días con los pesos de extras diarias. Historial, extras y labor leen ese resultado.
 - Por construcción, el importe de una semana coincide en las tres pantallas que lo muestran. Una discrepancia es un defecto grave, no una diferencia de criterio.
 
 ---
