@@ -69,12 +69,9 @@ export default function Navbar() {
     if (pathname.startsWith('/design-system')) return null;
 
     const effectiveRole = identity?.isViewingAs ? identity.effectiveRole : userData?.role;
-    const effectiveEmail = (
-        isMaster && identity?.isViewingAs
-            ? identity.effectiveEmail
-            : userData?.email
-    )?.trim().toLowerCase();
-    const canSeeCamera = Boolean(effectiveEmail && CAMERA_ACCESS_EMAILS.has(effectiveEmail));
+    const canSeeCamera = Boolean(
+        userData?.email && CAMERA_ACCESS_EMAILS.has(userData.email.trim().toLowerCase())
+    );
 
     const displayName =
         isMaster && identity ? identity.effectiveName : (userData?.name ?? '');
@@ -103,15 +100,14 @@ export default function Navbar() {
                         aria-label="Abrir cámaras"
                         title="Cámara"
                         onClick={() => router.push('/camaras')}
-                        className="absolute left-1/2 top-1/2 z-10 grid h-[44px] w-[48px] -translate-x-1/2 -translate-y-1/2 place-items-center border-0 bg-transparent p-0 transition-opacity hover:opacity-90 active:opacity-70"
+                        className="absolute left-1/2 top-1/2 z-20 grid h-[44px] w-[56px] -translate-x-1/2 -translate-y-1/2 place-items-center border-0 bg-transparent p-0 transition-opacity hover:opacity-90 active:opacity-70"
                     >
                         <img
                             src="/icons/live-icon.png"
                             alt="LIVE"
-                            className="block h-auto w-[42px] object-contain"
-                            onError={(event) => {
-                                event.currentTarget.src = '/icons/live.png';
-                            }}
+                            width="48"
+                            height="24"
+                            className="block h-auto w-[48px] max-w-none object-contain"
                         />
                     </button>
                 ) : null}
