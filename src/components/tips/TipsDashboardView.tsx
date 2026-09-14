@@ -473,7 +473,7 @@ export default function TipsDashboardView({
               <div className="overflow-x-auto overscroll-x-contain px-4 md:px-6 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 <div className="flex w-max min-w-full flex-nowrap items-center gap-x-2 pe-2">
                   <div className="flex shrink-0 items-center gap-1.5">
-                    <span className="text-[8px] md:text-[9px] font-black uppercase tracking-wider text-emerald-800/80 whitespace-nowrap">
+                    <span className="whitespace-nowrap text-[8px] font-black uppercase tracking-wider text-[var(--color-texto-invertido)] md:text-[9px]">
                       <span className="md:hidden">L-V</span>
                       <span className="hidden md:inline">Lun – Vie</span>
                     </span>
@@ -492,7 +492,7 @@ export default function TipsDashboardView({
                   </div>
 
                   <div className="flex shrink-0 items-center gap-1.5">
-                    <span className="text-[8px] md:text-[9px] font-black uppercase tracking-wider text-emerald-800/80 whitespace-nowrap">
+                    <span className="whitespace-nowrap text-[8px] font-black uppercase tracking-wider text-[var(--color-texto-invertido)] md:text-[9px]">
                       <span className="md:hidden">S-D</span>
                       <span className="hidden md:inline">Sáb – Dom</span>
                     </span>
@@ -516,7 +516,7 @@ export default function TipsDashboardView({
                       variant="primary"
                       layout="hug"
                       instance="tips-confirm-distribution-open"
-                      className="shrink-0"
+                      className="ml-auto shrink-0"
                       disabled={loading || !preview || staffWithWorkedHours.length === 0}
                       onClick={() => setConfirmModalOpen(true)}
                     >
