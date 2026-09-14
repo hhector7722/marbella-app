@@ -66,6 +66,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className="light">
+      <head>
+        <link rel="dns-prefetch" href="//video.barlamarbella.com" />
+        <link rel="preconnect" href="https://video.barlamarbella.com" crossOrigin="anonymous" />
+      </head>
       <body
         className={cn(
           inter.className,
