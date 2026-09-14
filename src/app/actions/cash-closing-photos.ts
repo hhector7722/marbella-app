@@ -1,5 +1,6 @@
 'use server'
 
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { createClient } from '@/utils/supabase/server'
 import { isSandboxRequest } from '@/lib/sandbox/server'
 
@@ -11,15 +12,25 @@ export type CashClosingPhotoKind = 'dataphone' | 'bdp-ticket'
 async function requireAuthenticated() {
   const supabase = await createClient()
   const {
-    data: { session },
+    data: { user },
     error,
-  } = await supabase.auth.getSession()
+  } = await supabase.auth.getUser()
 
-  if (error || !session?.user) {
+  if (error || !user) {
     return { ok: false as const, error: 'No autorizado' }
   }
 
-  return { ok: true as const, supabase, userId: session.user.id }
+  return { ok: true as const, supabase, userId: user.id }
+}
+
+function getStorageAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) return null
+
+  return createServiceClient(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
 }
 
 function extForMime(mime: string): string {
@@ -106,6 +117,11 @@ export async function getCashClosingPhotoUrlsAction(params: {
   const auth = await requireAuthenticated()
   if (!auth.ok) return { success: false, error: auth.error }
 
+  const admin = getStorageAdmin()
+  if (!admin) {
+    return { success: false, error: 'Configuración de Storage incompleta.' }
+  }
+
   const dataphonePath = typeof params.dataphonePath === 'string' ? params.dataphonePath.trim() : ''
   const bdpPath = typeof params.bdpPath === 'string' ? params.bdpPath.trim() : ''
 
@@ -113,7 +129,7 @@ export async function getCashClosingPhotoUrlsAction(params: {
   let bdpUrl: string | null = null
 
   if (dataphonePath) {
-    const { data, error } = await auth.supabase.storage
+    const { data, error } = await admin.storage
       .from('cash_closings')
       .createSignedUrl(dataphonePath, 60 * 10)
     if (error) return { success: false, error: `No se pudo abrir la foto de datáfonos: ${error.message}` }
@@ -121,7 +137,7 @@ export async function getCashClosingPhotoUrlsAction(params: {
   }
 
   if (bdpPath) {
-    const { data, error } = await auth.supabase.storage
+    const { data, error } = await admin.storage
       .from('cash_closings')
       .createSignedUrl(bdpPath, 60 * 10)
     if (error) return { success: false, error: `No se pudo abrir el ticket BDP: ${error.message}` }
