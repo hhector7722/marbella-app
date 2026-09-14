@@ -69,9 +69,7 @@ export default function Navbar() {
     if (pathname.startsWith('/design-system')) return null;
 
     const effectiveRole = identity?.isViewingAs ? identity.effectiveRole : userData?.role;
-    const effectiveCameraEmail = (
-        identity?.isViewingAs ? identity.effectiveEmail : userData?.email
-    )?.trim().toLowerCase();
+    const effectiveCameraEmail = (identity?.effectiveEmail ?? userData?.email)?.trim().toLowerCase();
     const canSeeCamera = Boolean(
         sessionReady && effectiveCameraEmail && CAMERA_ACCESS_EMAILS.has(effectiveCameraEmail)
     );
