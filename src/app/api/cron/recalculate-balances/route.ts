@@ -33,12 +33,13 @@ function ymdKey(value: unknown): CivilDate {
 }
 
 /**
- * Cron semanal: materializa la semana en curso para perfiles activos en ella
- * y para cualquier usuario que tenga hechos de asistencia en esa semana.
+ * Cron semanal: materializa la semana en curso para quien tenga un tramo
+ * contractual que solape la semana y para cualquier usuario con fichajes en ella.
  *
- * La segunda condición es importante: un fichaje real es un hecho autoritativo y
- * no puede quedarse sin proyección solo porque `end_date` ya haya pasado. El read
- * model debe poder seguir siendo SELECT puro y detectar únicamente huecos reales.
+ * La vigencia contractual se obtiene de `hours_contract_terms`, no de
+ * `profiles.end_date`: este último es solo espejo y puede quedar desfasado entre
+ * tramos. Además, un fichaje real es un hecho autoritativo y nunca puede quedarse
+ * sin proyección por no existir un tramo efectivo esa semana.
  *
  * `writeWeeklyProjection` sigue reconstruyendo correctamente el carry desde los
  * hechos históricos, pero al fijar from=to=currentWeek evitamos reescribir todas
@@ -51,7 +52,7 @@ async function writeCurrentWeekProjectionForRelevantEmployees(
   weekEnd: CivilDate;
   weeksWritten: number;
   employeeCount: number;
-  activeEmployeeCount: number;
+  contractEmployeeCount: number;
   attendanceEmployeeCount: number;
 }> {
   const todayMadrid = formatYmdInMadrid(new Date());
@@ -63,8 +64,10 @@ async function writeCurrentWeekProjectionForRelevantEmployees(
   const { weekEnd } = weekBounds(weekStart);
   const { startIso, endIso } = madridRangeUtcIso(weekStart, weekEnd);
 
-  const [profilesRes, logsRes] = await Promise.all([
-    supabase.from('profiles').select('id, joining_date, end_date'),
+  const [termsRes, logsRes] = await Promise.all([
+    supabase
+      .from('hours_contract_terms')
+      .select('user_id, effective_from, effective_to'),
     supabase
       .from('time_logs')
       .select('user_id')
@@ -72,25 +75,22 @@ async function writeCurrentWeekProjectionForRelevantEmployees(
       .lte('clock_in', endIso),
   ]);
 
-  if (profilesRes.error) {
-    throw new Error(`Listado de perfiles activos: ${profilesRes.error.message}`);
+  if (termsRes.error) {
+    throw new Error(`Listado de tramos contractuales: ${termsRes.error.message}`);
   }
   if (logsRes.error) {
     throw new Error(`Fichajes de la semana actual: ${logsRes.error.message}`);
   }
 
-  const activeUserIds = [
+  const contractUserIds = [
     ...new Set(
-      (profilesRes.data ?? [])
+      (termsRes.data ?? [])
         .filter((row) => {
-          const joiningDate = row.joining_date ? ymdKey(row.joining_date) : null;
-          const endDate = row.end_date ? ymdKey(row.end_date) : null;
-          return (
-            (joiningDate == null || joiningDate <= weekEnd) &&
-            (endDate == null || endDate >= weekStart)
-          );
+          const from = row.effective_from ? ymdKey(row.effective_from) : null;
+          const to = row.effective_to ? ymdKey(row.effective_to) : null;
+          return from != null && from <= weekEnd && (to == null || to >= weekStart);
         })
-        .map((row) => row.id)
+        .map((row) => row.user_id)
         .filter(Boolean),
     ),
   ] as string[];
@@ -99,7 +99,7 @@ async function writeCurrentWeekProjectionForRelevantEmployees(
     ...new Set((logsRes.data ?? []).map((row) => row.user_id).filter(Boolean)),
   ] as string[];
 
-  const userIds = [...new Set([...activeUserIds, ...attendanceUserIds])];
+  const userIds = [...new Set([...contractUserIds, ...attendanceUserIds])];
 
   const failures: string[] = [];
   let weeksWritten = 0;
@@ -131,7 +131,7 @@ async function writeCurrentWeekProjectionForRelevantEmployees(
     weekEnd,
     weeksWritten,
     employeeCount: userIds.length,
-    activeEmployeeCount: activeUserIds.length,
+    contractEmployeeCount: contractUserIds.length,
     attendanceEmployeeCount: attendanceUserIds.length,
   };
 }
@@ -143,7 +143,7 @@ async function writeCurrentWeekProjectionForRelevantEmployees(
  *
  * Query:
  * - slot=winter|summer → guarda DST Madrid (CET=1 / CEST=2)
- * - mode omitido/current-week → escribe la semana actual de perfiles activos o con fichajes
+ * - mode omitido/current-week → semana actual de usuarios con contrato o fichajes
  * - mode=full → recálculo histórico global manual
  * - mode=persist-only → compatibilidad legacy: Writer para empleados con snapshots
  */
