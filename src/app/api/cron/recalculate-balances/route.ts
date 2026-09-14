@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import {
   persistOvertimeCostForEmployees,
   recalculateAllBalancesAndPersist,
 } from '@/lib/hours-engine/recalculate-and-persist-all';
+import { writeWeeklyProjection } from '@/lib/hours-engine/projection';
+import type { CivilDate } from '@/lib/hours-engine/types';
+import { mondayOnOrBefore, weekBounds } from '@/lib/hours-engine/week-dates';
+import { formatYmdInMadrid } from '@/lib/madrid-date-bounds';
 
 export const maxDuration = 300;
 export const dynamic = 'force-dynamic';
@@ -24,6 +28,90 @@ function madridUtcOffsetHours(at: Date = new Date()): number {
   return sign * (hours + mins / 60);
 }
 
+function ymdKey(value: unknown): CivilDate {
+  return String(value).split('T')[0]! as CivilDate;
+}
+
+/**
+ * Cron semanal: solo materializa la semana en curso para perfiles activos en ella.
+ *
+ * `writeWeeklyProjection` sigue reconstruyendo correctamente el carry desde los
+ * hechos históricos, pero al fijar from=to=currentWeek evitamos reescribir todas
+ * las semanas de todos los empleados cada lunes (causa de los timeouts de 300 s).
+ */
+async function writeCurrentWeekProjectionForActiveEmployees(
+  supabase: SupabaseClient,
+): Promise<{
+  weekStart: CivilDate;
+  weekEnd: CivilDate;
+  weeksWritten: number;
+  employeeCount: number;
+}> {
+  const todayMadrid = formatYmdInMadrid(new Date());
+  if (!todayMadrid) {
+    throw new Error('No se pudo resolver la fecha actual de Madrid');
+  }
+
+  const weekStart = mondayOnOrBefore(ymdKey(todayMadrid));
+  const { weekEnd } = weekBounds(weekStart);
+
+  const { data: profiles, error: profilesErr } = await supabase
+    .from('profiles')
+    .select('id, joining_date, end_date');
+
+  if (profilesErr) {
+    throw new Error(`Listado de perfiles activos: ${profilesErr.message}`);
+  }
+
+  const userIds = [
+    ...new Set(
+      (profiles ?? [])
+        .filter((row) => {
+          const joiningDate = row.joining_date ? ymdKey(row.joining_date) : null;
+          const endDate = row.end_date ? ymdKey(row.end_date) : null;
+          return (
+            (joiningDate == null || joiningDate <= weekEnd) &&
+            (endDate == null || endDate >= weekStart)
+          );
+        })
+        .map((row) => row.id)
+        .filter(Boolean),
+    ),
+  ] as string[];
+
+  const failures: string[] = [];
+  let weeksWritten = 0;
+
+  for (const userId of userIds) {
+    const result = await writeWeeklyProjection(supabase, {
+      userId,
+      fromWeekStart: weekStart,
+      toWeekStart: weekStart,
+      processKind: 'cron',
+    });
+
+    if (!result.ok) {
+      failures.push(`${userId}: ${result.error}`);
+      continue;
+    }
+
+    weeksWritten += result.weeksWritten;
+  }
+
+  if (failures.length > 0) {
+    throw new Error(
+      `Writer de semana actual falló en ${failures.length} empleados. Primero: ${failures[0]}`,
+    );
+  }
+
+  return {
+    weekStart,
+    weekEnd,
+    weeksWritten,
+    employeeCount: userIds.length,
+  };
+}
+
 /**
  * Cron: Writer único de proyección (HE+Cost → weekly_snapshots).
  *
@@ -31,8 +119,9 @@ function madridUtcOffsetHours(at: Date = new Date()): number {
  *
  * Query:
  * - slot=winter|summer → guarda DST Madrid (CET=1 / CEST=2)
- * - mode=persist-only → Writer para empleados con snapshots (sin RPC SQL)
- * - mode omitido → mismo Writer global (compat. schedule Vercel)
+ * - mode omitido/current-week → escribe solo la semana actual de perfiles activos
+ * - mode=full → recálculo histórico global manual
+ * - mode=persist-only → compatibilidad legacy: Writer para empleados con snapshots
  */
 export async function GET(request: NextRequest) {
   const supabaseUrl =
@@ -100,15 +189,26 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, mode: 'persist-only', ...result });
     }
 
-    console.log('[CRON_RECALC] Writer global', { slot });
-    const result = await recalculateAllBalancesAndPersist(supabase);
-    console.log('[CRON_RECALC] OK', result);
+    if (mode === 'full') {
+      console.log('[CRON_RECALC] Writer global histórico', { slot });
+      const result = await recalculateAllBalancesAndPersist(supabase);
+      console.log('[CRON_RECALC] Full OK', result);
+      return NextResponse.json({
+        success: true,
+        mode: 'full',
+        weeksPersisted: result.weeksPersisted,
+        employeeCount: result.employeeCount,
+        rpcData: result.rpcData,
+      });
+    }
+
+    console.log('[CRON_RECALC] Writer semana actual', { slot });
+    const result = await writeCurrentWeekProjectionForActiveEmployees(supabase);
+    console.log('[CRON_RECALC] Current-week OK', result);
     return NextResponse.json({
       success: true,
-      mode: 'full',
-      weeksPersisted: result.weeksPersisted,
-      employeeCount: result.employeeCount,
-      rpcData: result.rpcData,
+      mode: 'current-week',
+      ...result,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
