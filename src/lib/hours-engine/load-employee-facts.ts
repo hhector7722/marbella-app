@@ -20,6 +20,9 @@ type BoundaryProfileRow = ProfilesBoundary & { id: string };
 /**
  * Fuente contractual = hours_contract_terms.
  * joining_date / end_date = hechos de frontera en profiles (no jornada/régimen).
+ *
+ * Un empleado puede no tener tramos contractuales cargados todavía. Eso no invalida
+ * sus fichajes: el Hours Engine resolverá esos días como pre_alta/gap con contrato 0.
  */
 export async function loadEmployeeBoundaryFacts(
   supabase: SupabaseClient,
@@ -53,11 +56,6 @@ export async function loadEmployeeBoundaryFacts(
   }) as ProfilesBoundary;
 
   const rows = (termsRes.data ?? []) as ContractTermRow[];
-  if (rows.length === 0) {
-    throw new Error(
-      `Empleado ${userId} sin tramos en hours_contract_terms. Ejecutar seed/migración.`,
-    );
-  }
 
   return employeeFactsFromContractTerms(
     {
@@ -71,9 +69,8 @@ export async function loadEmployeeBoundaryFacts(
 
 /**
  * Carga los hechos de frontera de varios empleados en dos consultas totales.
- * Mantiene la misma semántica que loadEmployeeBoundaryFacts(): si falta un tramo
- * contractual para cualquier empleado, la operación en lote falla y el consumidor
- * puede aplicar el mismo fallback individual que antes.
+ * Los empleados sin tramos también se devuelven: sus fichajes siguen siendo hechos
+ * válidos y el resolver contractual los tratará como pre_alta/gap con contrato 0.
  */
 export async function loadEmployeeBoundaryFactsBatch(
   supabase: SupabaseClient,
@@ -121,12 +118,6 @@ export async function loadEmployeeBoundaryFactsBatch(
       end_date: null,
     };
     const rows = termsByUserId.get(userId) ?? [];
-
-    if (rows.length === 0) {
-      throw new Error(
-        `Empleado ${userId} sin tramos en hours_contract_terms. Ejecutar seed/migración.`,
-      );
-    }
 
     result[userId] = employeeFactsFromContractTerms(
       {
