@@ -1,0 +1,47 @@
+services:
+  docling:
+    image: ghcr.io/docling-project/docling-serve:v1.21.0
+    restart: unless-stopped
+    environment:
+      UVICORN_HOST: 0.0.0.0
+      UVICORN_PORT: 5001
+      UVICORN_WORKERS: 1
+      DOCLING_SERVE_API_KEY: ${DOCLING_API_KEY:?Define DOCLING_API_KEY}
+      DOCLING_SERVE_ENABLE_UI: "false"
+      DOCLING_SERVE_ENG_KIND: local
+      DOCLING_SERVE_ENG_LOC_NUM_WORKERS: 1
+      DOCLING_SERVE_ENG_LOC_SHARE_MODELS: "true"
+      DOCLING_SERVE_MAX_NUM_PAGES: 20
+      DOCLING_SERVE_MAX_FILE_SIZE: "15728640"
+      DOCLING_DEVICE: cpu
+      DOCLING_NUM_THREADS: 4
+      DOCLING_DEBUG_PROFILE_PIPELINE_TIMINGS: "true"
+    ports:
+      - "127.0.0.1:5001:5001"
+    volumes:
+      - docling-model-cache:/root/.cache
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5001/docs', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 120s
+
+  evidence-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      docling:
+        condition: service_healthy
+    environment:
+      SUPABASE_FUNCTION_URL: ${SUPABASE_FUNCTION_URL:?Define SUPABASE_FUNCTION_URL}
+      DOCLING_WORKER_TOKEN: ${DOCLING_WORKER_TOKEN:?Define DOCLING_WORKER_TOKEN}
+      DOCLING_BASE_URL: http://docling:5001
+      DOCLING_API_KEY: ${DOCLING_API_KEY:?Define DOCLING_API_KEY}
+      WORKER_POLL_SECONDS: "5"
+      WORKER_HTTP_TIMEOUT_SECONDS: "840"
+
+volumes:
+  docling-model-cache:
