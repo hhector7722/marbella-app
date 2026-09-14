@@ -17,48 +17,15 @@ type IOSVideoElement = HTMLVideoElement & {
   webkitEnterFullscreen?: () => void;
 };
 
-type ZoomState = {
-  scale: number;
-  x: number;
-  y: number;
-};
+type LandscapeLock = 'landscape' | 'landscape-primary' | 'landscape-secondary';
 
-const ZOOM_IDENTITY: ZoomState = { scale: ZOOM_MIN, x: 0, y: 0 };
+type ScreenOrientationWithLock = ScreenOrientation & {
+  lock?: (orientation: LandscapeLock) => Promise<void>;
+  unlock?: () => void;
+};
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
-}
-
-function clampPan(scale: number, x: number, y: number, width: number, height: number): ZoomState {
-  if (scale <= ZOOM_MIN + 0.001) return ZOOM_IDENTITY;
-  const minX = width * (1 - scale);
-  const minY = height * (1 - scale);
-  return {
-    scale,
-    x: clamp(x, minX, 0),
-    y: clamp(y, minY, 0),
-  };
-}
-
-function zoomAroundPoint(
-  current: ZoomState,
-  nextScale: number,
-  pointX: number,
-  pointY: number,
-  width: number,
-  height: number,
-): ZoomState {
-  const scale = clamp(nextScale, ZOOM_MIN, ZOOM_MAX);
-  if (scale <= ZOOM_MIN + 0.001) return ZOOM_IDENTITY;
-
-  const ratio = scale / current.scale;
-  return clampPan(
-    scale,
-    pointX - (pointX - current.x) * ratio,
-    pointY - (pointY - current.y) * ratio,
-    width,
-    height,
-  );
 }
 
 function touchDistance(a: Touch, b: Touch) {
@@ -67,53 +34,108 @@ function touchDistance(a: Touch, b: Touch) {
   return Math.hypot(dx, dy);
 }
 
-function touchMidpoint(a: Touch, b: Touch, frame: DOMRect) {
+function touchMidpoint(a: Touch, b: Touch) {
   return {
-    x: (a.clientX + b.clientX) / 2 - frame.left,
-    y: (a.clientY + b.clientY) / 2 - frame.top,
+    x: (a.clientX + b.clientX) / 2,
+    y: (a.clientY + b.clientY) / 2,
   };
+}
+
+async function tryLockLandscape() {
+  const orientation = screen.orientation as ScreenOrientationWithLock | undefined;
+  if (!orientation?.lock) return;
+
+  try {
+    await orientation.lock('landscape');
+  } catch {
+    try {
+      await orientation.lock('landscape-primary');
+    } catch {
+      // El SO o el navegador pueden rechazar el bloqueo (p. ej. antirotación).
+    }
+  }
+}
+
+function unlockOrientation() {
+  const orientation = screen.orientation as ScreenOrientationWithLock | undefined;
+  try {
+    orientation?.unlock?.();
+  } catch {
+    // Sin unlock disponible o fuera de fullscreen.
+  }
 }
 
 export default function CameraLive() {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
-  const zoomLayerRef = useRef<HTMLDivElement>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const zoomRef = useRef<ZoomState>(ZOOM_IDENTITY);
+  const scaleRef = useRef(ZOOM_MIN);
   const pinchRef = useRef<{
     startDistance: number;
-    startZoom: ZoomState;
+    startScale: number;
   } | null>(null);
   const panRef = useRef<{
     pointerId: number;
     startX: number;
     startY: number;
-    originX: number;
-    originY: number;
+    originLeft: number;
+    originTop: number;
   } | null>(null);
 
   const [streamVersion, setStreamVersion] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [zoom, setZoom] = useState<ZoomState>(ZOOM_IDENTITY);
+  const [scale, setScale] = useState(ZOOM_MIN);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const streamUrl = useMemo(
     () => `${CAMERA_MP4_URL}&reload=${streamVersion}`,
     [streamVersion],
   );
 
-  const applyZoom = useCallback((next: ZoomState) => {
-    zoomRef.current = next;
-    setZoom(next);
-    const layer = zoomLayerRef.current;
-    if (!layer) return;
-    layer.style.transform = `translate(${next.x}px, ${next.y}px) scale(${next.scale})`;
+  const applyScaleAtClientPoint = useCallback((nextScale: number, clientX: number, clientY: number) => {
+    const scroll = scrollRef.current;
+    const frame = frameRef.current;
+    if (!scroll || !frame) return;
+    if (document.fullscreenElement === frame) return;
+
+    const clamped = clamp(nextScale, ZOOM_MIN, ZOOM_MAX);
+    const prev = scaleRef.current;
+
+    const rect = scroll.getBoundingClientRect();
+    const offsetX = clientX - rect.left;
+    const offsetY = clientY - rect.top;
+    const contentX = scroll.scrollLeft + offsetX;
+    const contentY = scroll.scrollTop + offsetY;
+    const ratio = clamped / Math.max(prev, 0.0001);
+
+    scaleRef.current = clamped;
+    frame.style.width = `${clamped * 100}%`;
+    setScale(clamped);
+
+    if (clamped <= ZOOM_MIN + 0.001) {
+      scroll.scrollLeft = 0;
+      scroll.scrollTop = 0;
+      return;
+    }
+
+    const maxLeft = Math.max(0, scroll.scrollWidth - scroll.clientWidth);
+    const maxTop = Math.max(0, scroll.scrollHeight - scroll.clientHeight);
+    scroll.scrollLeft = clamp(contentX * ratio - offsetX, 0, maxLeft);
+    scroll.scrollTop = clamp(contentY * ratio - offsetY, 0, maxTop);
   }, []);
 
   const resetZoom = useCallback(() => {
-    applyZoom(ZOOM_IDENTITY);
+    scaleRef.current = ZOOM_MIN;
+    setScale(ZOOM_MIN);
     pinchRef.current = null;
     panRef.current = null;
-  }, [applyZoom]);
+    const scroll = scrollRef.current;
+    if (scroll) {
+      scroll.scrollLeft = 0;
+      scroll.scrollTop = 0;
+    }
+  }, []);
 
   const clearReconnectTimer = useCallback(() => {
     if (reconnectTimerRef.current) {
@@ -208,27 +230,24 @@ export default function CameraLive() {
   }, [clearReconnectTimer, ensurePlaying, markUnavailable, refreshStream]);
 
   useEffect(() => {
-    const frame = frameRef.current;
-    if (!frame) return;
+    const onFullscreenChange = () => {
+      const active = document.fullscreenElement === frameRef.current;
+      setIsFullscreen(active);
+      if (!document.fullscreenElement) unlockOrientation();
+    };
 
-    const getFrameRect = () => frame.getBoundingClientRect();
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+  }, []);
+
+  useEffect(() => {
+    const scroll = scrollRef.current;
+    if (!scroll) return;
 
     const onWheel = (event: WheelEvent) => {
       event.preventDefault();
-      const rect = getFrameRect();
-      const pointX = event.clientX - rect.left;
-      const pointY = event.clientY - rect.top;
       const factor = Math.exp(-event.deltaY * WHEEL_ZOOM_FACTOR);
-      applyZoom(
-        zoomAroundPoint(
-          zoomRef.current,
-          zoomRef.current.scale * factor,
-          pointX,
-          pointY,
-          rect.width,
-          rect.height,
-        ),
-      );
+      applyScaleAtClientPoint(scaleRef.current * factor, event.clientX, event.clientY);
     };
 
     const onTouchStart = (event: TouchEvent) => {
@@ -236,19 +255,19 @@ export default function CameraLive() {
         panRef.current = null;
         pinchRef.current = {
           startDistance: touchDistance(event.touches[0], event.touches[1]),
-          startZoom: { ...zoomRef.current },
+          startScale: scaleRef.current,
         };
         return;
       }
 
-      if (event.touches.length === 1 && zoomRef.current.scale > ZOOM_MIN + 0.001) {
+      if (event.touches.length === 1 && scaleRef.current > ZOOM_MIN + 0.001) {
         const touch = event.touches[0];
         panRef.current = {
           pointerId: touch.identifier,
           startX: touch.clientX,
           startY: touch.clientY,
-          originX: zoomRef.current.x,
-          originY: zoomRef.current.y,
+          originLeft: scroll.scrollLeft,
+          originTop: scroll.scrollTop,
         };
       }
     };
@@ -256,37 +275,29 @@ export default function CameraLive() {
     const onTouchMove = (event: TouchEvent) => {
       if (event.touches.length === 2 && pinchRef.current) {
         event.preventDefault();
-        const rect = getFrameRect();
         const distance = touchDistance(event.touches[0], event.touches[1]);
-        const mid = touchMidpoint(event.touches[0], event.touches[1], rect);
+        const mid = touchMidpoint(event.touches[0], event.touches[1]);
         const nextScale =
-          pinchRef.current.startZoom.scale * (distance / Math.max(pinchRef.current.startDistance, 1));
-        applyZoom(
-          zoomAroundPoint(
-            pinchRef.current.startZoom,
-            nextScale,
-            mid.x,
-            mid.y,
-            rect.width,
-            rect.height,
-          ),
-        );
+          pinchRef.current.startScale * (distance / Math.max(pinchRef.current.startDistance, 1));
+        applyScaleAtClientPoint(nextScale, mid.x, mid.y);
         return;
       }
 
-      if (event.touches.length === 1 && panRef.current && zoomRef.current.scale > ZOOM_MIN + 0.001) {
+      if (event.touches.length === 1 && panRef.current && scaleRef.current > ZOOM_MIN + 0.001) {
         event.preventDefault();
         const touch = event.touches[0];
         if (touch.identifier !== panRef.current.pointerId) return;
-        const rect = getFrameRect();
-        applyZoom(
-          clampPan(
-            zoomRef.current.scale,
-            panRef.current.originX + (touch.clientX - panRef.current.startX),
-            panRef.current.originY + (touch.clientY - panRef.current.startY),
-            rect.width,
-            rect.height,
-          ),
+        const maxLeft = Math.max(0, scroll.scrollWidth - scroll.clientWidth);
+        const maxTop = Math.max(0, scroll.scrollHeight - scroll.clientHeight);
+        scroll.scrollLeft = clamp(
+          panRef.current.originLeft - (touch.clientX - panRef.current.startX),
+          0,
+          maxLeft,
+        );
+        scroll.scrollTop = clamp(
+          panRef.current.originTop - (touch.clientY - panRef.current.startY),
+          0,
+          maxTop,
         );
       }
     };
@@ -295,47 +306,49 @@ export default function CameraLive() {
       if (event.touches.length < 2) pinchRef.current = null;
       if (event.touches.length === 0) panRef.current = null;
 
-      if (event.touches.length === 1 && zoomRef.current.scale > ZOOM_MIN + 0.001) {
+      if (event.touches.length === 1 && scaleRef.current > ZOOM_MIN + 0.001) {
         const touch = event.touches[0];
         panRef.current = {
           pointerId: touch.identifier,
           startX: touch.clientX,
           startY: touch.clientY,
-          originX: zoomRef.current.x,
-          originY: zoomRef.current.y,
+          originLeft: scroll.scrollLeft,
+          originTop: scroll.scrollTop,
         };
       }
     };
 
     const onPointerDown = (event: PointerEvent) => {
       if (event.pointerType === 'touch') return;
-      if (zoomRef.current.scale <= ZOOM_MIN + 0.001) return;
+      if (scaleRef.current <= ZOOM_MIN + 0.001) return;
       if (event.button !== 0) return;
 
       panRef.current = {
         pointerId: event.pointerId,
         startX: event.clientX,
         startY: event.clientY,
-        originX: zoomRef.current.x,
-        originY: zoomRef.current.y,
+        originLeft: scroll.scrollLeft,
+        originTop: scroll.scrollTop,
       };
-      frame.setPointerCapture(event.pointerId);
+      scroll.setPointerCapture(event.pointerId);
     };
 
     const onPointerMove = (event: PointerEvent) => {
       if (event.pointerType === 'touch') return;
       if (!panRef.current || panRef.current.pointerId !== event.pointerId) return;
-      if (zoomRef.current.scale <= ZOOM_MIN + 0.001) return;
+      if (scaleRef.current <= ZOOM_MIN + 0.001) return;
 
-      const rect = getFrameRect();
-      applyZoom(
-        clampPan(
-          zoomRef.current.scale,
-          panRef.current.originX + (event.clientX - panRef.current.startX),
-          panRef.current.originY + (event.clientY - panRef.current.startY),
-          rect.width,
-          rect.height,
-        ),
+      const maxLeft = Math.max(0, scroll.scrollWidth - scroll.clientWidth);
+      const maxTop = Math.max(0, scroll.scrollHeight - scroll.clientHeight);
+      scroll.scrollLeft = clamp(
+        panRef.current.originLeft - (event.clientX - panRef.current.startX),
+        0,
+        maxLeft,
+      );
+      scroll.scrollTop = clamp(
+        panRef.current.originTop - (event.clientY - panRef.current.startY),
+        0,
+        maxTop,
       );
     };
 
@@ -344,28 +357,28 @@ export default function CameraLive() {
       if (panRef.current?.pointerId === event.pointerId) panRef.current = null;
     };
 
-    frame.addEventListener('wheel', onWheel, { passive: false });
-    frame.addEventListener('touchstart', onTouchStart, { passive: true });
-    frame.addEventListener('touchmove', onTouchMove, { passive: false });
-    frame.addEventListener('touchend', onTouchEnd);
-    frame.addEventListener('touchcancel', onTouchEnd);
-    frame.addEventListener('pointerdown', onPointerDown);
-    frame.addEventListener('pointermove', onPointerMove);
-    frame.addEventListener('pointerup', onPointerUp);
-    frame.addEventListener('pointercancel', onPointerUp);
+    scroll.addEventListener('wheel', onWheel, { passive: false });
+    scroll.addEventListener('touchstart', onTouchStart, { passive: true });
+    scroll.addEventListener('touchmove', onTouchMove, { passive: false });
+    scroll.addEventListener('touchend', onTouchEnd);
+    scroll.addEventListener('touchcancel', onTouchEnd);
+    scroll.addEventListener('pointerdown', onPointerDown);
+    scroll.addEventListener('pointermove', onPointerMove);
+    scroll.addEventListener('pointerup', onPointerUp);
+    scroll.addEventListener('pointercancel', onPointerUp);
 
     return () => {
-      frame.removeEventListener('wheel', onWheel);
-      frame.removeEventListener('touchstart', onTouchStart);
-      frame.removeEventListener('touchmove', onTouchMove);
-      frame.removeEventListener('touchend', onTouchEnd);
-      frame.removeEventListener('touchcancel', onTouchEnd);
-      frame.removeEventListener('pointerdown', onPointerDown);
-      frame.removeEventListener('pointermove', onPointerMove);
-      frame.removeEventListener('pointerup', onPointerUp);
-      frame.removeEventListener('pointercancel', onPointerUp);
+      scroll.removeEventListener('wheel', onWheel);
+      scroll.removeEventListener('touchstart', onTouchStart);
+      scroll.removeEventListener('touchmove', onTouchMove);
+      scroll.removeEventListener('touchend', onTouchEnd);
+      scroll.removeEventListener('touchcancel', onTouchEnd);
+      scroll.removeEventListener('pointerdown', onPointerDown);
+      scroll.removeEventListener('pointermove', onPointerMove);
+      scroll.removeEventListener('pointerup', onPointerUp);
+      scroll.removeEventListener('pointercancel', onPointerUp);
     };
-  }, [applyZoom]);
+  }, [applyScaleAtClientPoint]);
 
   const handlePlaying = () => {
     clearReconnectTimer();
@@ -412,6 +425,7 @@ export default function CameraLive() {
     try {
       if (frame?.requestFullscreen) {
         await frame.requestFullscreen();
+        await tryLockLandscape();
         return;
       }
 
@@ -423,28 +437,33 @@ export default function CameraLive() {
     }
   };
 
-  const isZoomed = zoom.scale > ZOOM_MIN + 0.001;
+  const isZoomed = scale > ZOOM_MIN + 0.001;
 
   return (
     <main className="min-h-screen px-2 pb-4 pt-header-safe md:px-3">
       <div className="mx-auto flex w-full max-w-none flex-col items-center">
         <section className="w-full">
           <div
-            ref={frameRef}
-            className="relative aspect-[1536/432] w-full overflow-hidden rounded-xl border-[0.5px] border-white/90 bg-black touch-none"
+            ref={scrollRef}
+            className="relative w-full overflow-auto touch-none"
             style={{ cursor: isZoomed ? 'grab' : 'default' }}
           >
             <div
-              ref={zoomLayerRef}
-              className="absolute inset-0 origin-top-left will-change-transform"
-              style={{
-                transform: `translate(${zoom.x}px, ${zoom.y}px) scale(${zoom.scale})`,
-              }}
+              ref={frameRef}
+              className="relative bg-black rounded-xl border-[0.5px] border-white/90 [:fullscreen]:rounded-none [:fullscreen]:border-0"
+              style={
+                isFullscreen
+                  ? { width: '100%', height: '100%' }
+                  : {
+                      width: `${scale * 100}%`,
+                      aspectRatio: '1536 / 432',
+                    }
+              }
             >
               <video
                 ref={videoRef}
                 key={streamVersion}
-                className="absolute inset-0 h-full w-full rounded-[inherit] object-cover"
+                className="absolute inset-0 h-full w-full rounded-[inherit] object-cover [:fullscreen]:rounded-none"
                 src={streamUrl}
                 autoPlay
                 muted
@@ -462,26 +481,26 @@ export default function CameraLive() {
                 onError={handleError}
                 onEnded={handleEnded}
               />
-            </div>
 
-            {isPlaying ? (
-              <Image
-                src="/icons/live.png"
-                alt=""
-                width={160}
-                height={72}
-                className="pointer-events-none absolute right-2 top-2 z-20 h-2.5 w-auto object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)] sm:h-3"
-                aria-hidden
-                priority
-              />
-            ) : (
-              <div
-                className="pointer-events-none absolute inset-0 z-10 grid place-items-center bg-black/35"
-                aria-label="Cargando vídeo"
-              >
-                <LoadingSpinner size="lg" className="text-white" />
-              </div>
-            )}
+              {isPlaying ? (
+                <Image
+                  src="/icons/live.png"
+                  alt=""
+                  width={160}
+                  height={72}
+                  className="pointer-events-none absolute right-2 top-2 z-20 h-2.5 w-auto object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)] sm:h-3"
+                  aria-hidden
+                  priority
+                />
+              ) : (
+                <div
+                  className="pointer-events-none absolute inset-0 z-10 grid place-items-center bg-black/35"
+                  aria-label="Cargando vídeo"
+                >
+                  <LoadingSpinner size="lg" className="text-white" />
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="mt-ds-3 flex flex-wrap items-center justify-center gap-ds-2">
