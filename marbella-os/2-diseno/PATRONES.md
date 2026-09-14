@@ -120,6 +120,7 @@ El patrón propio del dominio de horas: una semana de negocio como unidad, **den
 - En el mosaico Staff la semana flota sobre el petróleo, al ancho del hueco, sin cabecera de bloque. Es papel blanco y cabecera roja, no cristal.
 - **La vista de plantilla (todos los trabajadores) comparte el cromo y no el pie.** Primer nombre y fichajes por día. No se unifica el contenido de celda con el de una persona.
 - **Día «No registrado»:** no se pintan hora de entrada ni de salida. Una cruz en `color.negativo` ocupa el hueco de esos registros, centrada. En plantilla, la cruz ocupa el hueco de las horas de esa fila. Distinto de «salida no registrada» (`clock_out_show_no_registrada`): ahí sí se ven las horas.
+- **Día especial (Festivo / Enfermo / Baja / Personal) sin fichaje real:** el nombre completo del tipo, centrado, a 7–10 px según la celda (por debajo de `tipo.minimo`; ver [TOKENS](TOKENS.md)). No compite tipográficamente con los relojes de un día con fichaje.
 - Las celdas miden lo mismo que P3 en una semana vacía (68 / 76 / 84 px) y crecen si el contenido no cabe.
 - El pie de resumen mantiene su altura aunque no tenga contenido, para no romper el ritmo vertical.
 - Los controles de decisión de la semana (modo bolsa o pago, contrato, aplicar) viven en el pie, no en un modo aparte.

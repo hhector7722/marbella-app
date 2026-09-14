@@ -38,6 +38,10 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-14
 
+- **Detalle de asistencia: horas justificadas solo si hay.** En el modal del día (historial Staff, resumen semanal del mosaico y asistencia del Master) la card «Horas justificadas (computan)» no se pinta cuando el valor es cero. Quien gestiona puede añadirlas con «+ Horas justificadas».
+
+- **Calendario de asistencia: etiquetas F/E/B/P más pequeñas.** En `/staff/history` y en el resumen semanal del mosaico Staff, Festivo / Enfermo / Baja / Personal bajan a 7–10 px para no competir con los relojes de la celda. [TOKENS](../2-diseno/TOKENS.md).
+
 - **Staff propinas: etiquetas cortas y desglose con «Ver».** En `/staff/propinas`, los botes pasan a «Lun - vie» y «Sáb - dom». En el último reparto, la propina va en negro; Horas, Propina y el ajuste abren el desglose con un Button «Ver» (ya no con lupa). Propina final no desglosa. En el historial, el importe de cada card es blanco.
 
 - **Cámaras: el zoom amplía el marco, no recorta.** En `/camaras`, pellizco o rueda hacen crecer toda la zona del vídeo (borde incluido); se panea por scroll. «Pantalla completa» pide orientación horizontal cuando el navegador lo permite; el bloqueo de rotación del sistema puede seguir imponiéndose.

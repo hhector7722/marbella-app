@@ -5,21 +5,19 @@ import { cn } from '@/lib/utils';
 
 /** Pasos Tailwind (grandes → pequeños). Literales estáticos para que JIT los incluya. */
 const SIZE_STEPS = [
-    'text-[13px]',
-    'text-[12px]',
-    'text-[11px]',
     'text-[10px]',
     'text-[9px]',
     'text-[8px]',
+    'text-[7px]',
 ] as const;
 
 /** Primer paint legible según longitud (antes del measure). */
 function initialSizeForLabel(label: string): (typeof SIZE_STEPS)[number] {
     const n = label.length;
-    if (n <= 4) return 'text-[13px]'; // Baja
-    if (n <= 7) return 'text-[11px]'; // Festivo / Enfermo
-    if (n <= 8) return 'text-[10px]'; // Personal
-    return 'text-[8px]';
+    if (n <= 4) return 'text-[10px]'; // Baja
+    if (n <= 7) return 'text-[9px]'; // Festivo / Enfermo
+    if (n <= 8) return 'text-[8px]'; // Personal
+    return 'text-[7px]';
 }
 
 export function specialEventFullLabel(eventType: string): string | null {
