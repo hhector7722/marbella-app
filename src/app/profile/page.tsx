@@ -446,13 +446,7 @@ function ProfileContent() {
                 title={fullName}
                 titleAlign="center"
                 className="page-profile"
-                subtitle={
-                    viewMode === 'staff'
-                        ? 'Mi cuenta'
-                        : viewMode === 'manager-employee'
-                          ? (profile.role === 'manager' ? 'Manager' : profile.role === 'supervisor' ? 'Supervisor' : 'Staff')
-                          : undefined
-                }
+                subtitle={viewMode === 'staff' ? 'Mi cuenta' : undefined}
                 showBackButton={isManager}
                 onBack={isManager ? () => void openPlantillaFromProfile() : undefined}
                 titleLeading={

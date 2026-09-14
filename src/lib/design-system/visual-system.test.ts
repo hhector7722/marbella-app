@@ -349,7 +349,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.match(css, /--espacio-8/);
         assert.match(
             css,
-            /\[data-component='PageScreen'\] \[data-element='header'\] \[data-component='Button'\]\[data-variant='tertiary'\]/
+            /\[data-component='PageScreen'\] \[data-element='chrome'\] > \[data-element='header'\] \[data-component='Button'\]\[data-variant='tertiary'\]/
         );
         assert.match(
             css,
@@ -1435,7 +1435,7 @@ describe('Jerarquía visual canónica (ADR-0010)', () => {
         assert.doesNotMatch(form, /bg-\[#36606F\].*px-4 py-2/, 'el form no pinta cabecera petróleo propia');
 
         const hosts = [
-            'components/tips/TipsDashboardView.tsx',
+            'components/tips/TipPoolCashModal.tsx',
             'app/dashboard/movements/page.tsx',
             'components/dashboards/AdminDashboardView.tsx',
             'components/dashboards/StaffDashboardView.tsx',

@@ -67,6 +67,7 @@ export function TipPoolCashModal({
         key={`tip-cash-${poolType}`}
         type="in"
         boxName={title}
+        formId={TIP_POOL_CASH_FORM_ID}
         onCancel={onClose}
         onSubmit={(nextTotal, breakdown, notes) => {
           const normalizedBreakdown = Object.fromEntries(
