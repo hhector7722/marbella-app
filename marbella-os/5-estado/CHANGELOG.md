@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-14
 
+- **Staff propinas: etiquetas cortas y desglose con «Ver».** En `/staff/propinas`, los botes pasan a «Lun - vie» y «Sáb - dom». En el último reparto, la propina va en negro; Horas, Propina y el ajuste abren el desglose con un Button «Ver» (ya no con lupa). Propina final no desglosa. En el historial, el importe de cada card es blanco.
+
 - **Cámaras: el zoom amplía el marco, no recorta.** En `/camaras`, pellizco o rueda hacen crecer toda la zona del vídeo (borde incluido); se panea por scroll. «Pantalla completa» pide orientación horizontal cuando el navegador lo permite; el bloqueo de rotación del sistema puede seguir imponiéndose.
 
 - **Actividades: el PDF del día vuelve a abrirse.** Una policy RESTRICTIVE de Storage pensada solo para albaranes bloqueaba el resto de buckets privados; el botón PDF del modal de un día respondía «Object not found». Queda acotada a `albaranes` y deja pasar `pavilion_activities` (y los demás) a quien ya tenía permiso. [SEGURIDAD](../3-ingenieria/SEGURIDAD.md).

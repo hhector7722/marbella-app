@@ -9,7 +9,6 @@ import {
   formatTipInt,
   formatTipMoney,
   formatTipPct,
-  roundTipToHalfEuro,
   tjiColorClass,
   type StaffTipHistoryEntry,
 } from '@/lib/tip-distribution-display';
@@ -23,7 +22,7 @@ import {
 } from '@/lib/staff-tip-entry-display';
 import type { ModalLayer } from '@/components/ui/modal';
 import { SanctionedTipMoney } from '@/components/tips/SanctionedTipMoney';
-import { StaffTipDetailHintIcon } from '@/components/tips/StaffTipDetailHintIcon';
+import { StaffTipDetailVerButton } from '@/components/tips/StaffTipDetailVerButton';
 import { StaffTipBreakdownModal } from '@/components/tips/StaffTipBreakdownModal';
 import { StaffTipModalColumnGrid } from '@/components/tips/StaffTipModalColumnGrid';
 
@@ -39,13 +38,14 @@ const METRIC_LABEL_SLOT =
   'flex min-h-[2.5rem] w-full min-w-0 shrink-0 items-start justify-center pt-0.5';
 const METRICS_GRID = 'mt-3 grid w-full grid-cols-4 gap-x-1 gap-y-0';
 
-type DetailKind = 'hours' | 'propina' | 'penalizacion' | 'propinaFinal' | null;
+type DetailKind = 'hours' | 'propina' | 'penalizacion' | null;
 
 function MetricCell({
   label,
   value,
   valueClassName,
   valueTypography = 'metric',
+  detailInstance,
   onOpenDetail,
 }: {
   label: ReactNode;
@@ -53,10 +53,11 @@ function MetricCell({
   valueClassName?: string;
   /** Texto secundario (p. ej. «Sin penalización») en lugar de cifra principal. */
   valueTypography?: 'metric' | 'descriptive';
+  detailInstance?: string;
   onOpenDetail?: () => void;
 }) {
-  const body = (
-    <>
+  return (
+    <div className="flex min-w-0 w-full flex-col items-center px-0 py-1">
       <div className={METRIC_VALUE_SLOT}>
         <span
           className={cn(
@@ -72,29 +73,13 @@ function MetricCell({
       <div className={METRIC_LABEL_SLOT}>
         <div className="flex flex-col items-center gap-0.5 text-center">
           <span className={METRIC_LABEL_TEXT}>{label}</span>
-          {onOpenDetail ? (
-            <StaffTipDetailHintIcon />
-          ) : (
-            <span className="h-5 w-5 shrink-0" aria-hidden />
-          )}
+          {onOpenDetail && detailInstance ? (
+            <StaffTipDetailVerButton instance={detailInstance} onClick={onOpenDetail} />
+          ) : null}
         </div>
       </div>
-    </>
+    </div>
   );
-
-  if (onOpenDetail) {
-    return (
-      <button
-        type="button"
-        onClick={onOpenDetail}
-        className="flex min-w-0 w-full flex-col items-center px-0 py-1 transition-opacity active:opacity-70"
-      >
-        {body}
-      </button>
-    );
-  }
-
-  return <div className="flex min-w-0 w-full flex-col items-center px-0 py-1">{body}</div>;
 }
 
 export function StaffTipRepartoPanel({
@@ -146,12 +131,14 @@ export function StaffTipRepartoPanel({
         <MetricCell
           label="Horas"
           value={fmtHours(hTotal)}
+          detailInstance="staff-tip-reparto-ver-horas"
           onOpenDetail={() => setDetail('hours')}
         />
         <MetricCell
           label="Propina"
           value={formatTipMoney(sinPen.total)}
-          valueClassName="text-[#36606F]"
+          valueClassName="text-zinc-900"
+          detailInstance="staff-tip-reparto-ver-propina"
           onOpenDetail={() => setDetail('propina')}
         />
         <MetricCell
@@ -159,6 +146,7 @@ export function StaffTipRepartoPanel({
           value={adjustmentValue}
           valueTypography={adjustmentKind === 'ninguna' ? 'descriptive' : 'metric'}
           valueClassName={adjustmentKind === 'ninguna' ? undefined : adjustmentValueClass}
+          detailInstance="staff-tip-reparto-ver-ajuste"
           onOpenDetail={() => setDetail('penalizacion')}
         />
         <MetricCell
@@ -176,7 +164,6 @@ export function StaffTipRepartoPanel({
             )
           }
           valueClassName={entry.isSanctioned ? undefined : 'text-emerald-600'}
-          onOpenDetail={() => setDetail('propinaFinal')}
         />
       </div>
 
@@ -203,12 +190,12 @@ export function StaffTipRepartoPanel({
               {
                 label: 'Lun – Vie',
                 value: formatTipMoney(sinPen.weekday),
-                valueClassName: 'text-[#36606F]',
+                valueClassName: 'text-zinc-900',
               },
               {
                 label: 'Sáb – Dom',
                 value: formatTipMoney(sinPen.weekend),
-                valueClassName: 'text-[#36606F]',
+                valueClassName: 'text-zinc-900',
               },
             ]}
           />
@@ -240,43 +227,6 @@ export function StaffTipRepartoPanel({
               },
             ]}
           />
-        </StaffTipBreakdownModal>
-      ) : null}
-
-      {detail === 'propinaFinal' ? (
-        <StaffTipBreakdownModal
-          title="Propina final"
-          onClose={() => setDetail(null)}
-          layer={breakdownLayer}
-          parentInstance={breakdownParentInstance}
-        >
-          <div className="flex items-start gap-0.5">
-            <div className="flex min-w-0 flex-1 flex-col items-center px-0.5 py-1">
-              <div className="flex h-10 w-full shrink-0 items-center justify-center">
-                <span className="text-center text-base font-black tabular-nums leading-tight text-[#36606F]">
-                  {formatTipMoney(finalAmount)}
-                </span>
-              </div>
-              <span className="mt-1 w-full text-center text-[8px] font-bold uppercase leading-tight tracking-wide text-zinc-500 sm:text-[9px]">
-                Propina
-              </span>
-            </div>
-            <div className="flex min-w-0 flex-1 flex-col items-center justify-center px-0.5 py-1 pt-4">
-              <span className="text-center text-[8px] font-medium leading-tight text-zinc-400 sm:text-[9px]">
-                Redondeado
-              </span>
-            </div>
-            <div className="flex min-w-0 flex-1 flex-col items-center px-0.5 py-1">
-              <div className="flex h-10 w-full shrink-0 items-center justify-center">
-                <span className="text-center text-base font-black tabular-nums leading-tight text-emerald-600">
-                  {formatRoundedTipMoney(finalAmount)}
-                </span>
-              </div>
-              <span className="mt-1 w-full text-center text-[8px] font-bold uppercase leading-tight tracking-wide text-zinc-500 sm:text-[9px]">
-                Propina final
-              </span>
-            </div>
-          </div>
         </StaffTipBreakdownModal>
       ) : null}
     </>

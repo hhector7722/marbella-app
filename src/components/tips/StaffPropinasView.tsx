@@ -264,7 +264,7 @@ export default function StaffPropinasView({
                 instance="staff-propinas-pool-weekday"
                 onClick={() => openCash('weekday')}
               >
-                Bote lun - vie
+                Lun - vie
               </Button>
               <Button
                 type="button"
@@ -273,7 +273,7 @@ export default function StaffPropinasView({
                 instance="staff-propinas-pool-weekend"
                 onClick={() => openCash('weekend')}
               >
-                Bote sab - dom
+                Sáb - dom
               </Button>
             </div>
           </div>
@@ -323,7 +323,7 @@ export default function StaffPropinasView({
                         </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
-                        <span className="text-base font-black tabular-nums text-emerald-600">
+                        <span className="text-base font-black tabular-nums text-white">
                           {formatRoundedTipMoney(entry.totalAmount)}
                         </span>
                         <ChevronRight size={18} className="opacity-50" strokeWidth={2.5} />

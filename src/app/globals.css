@@ -1527,8 +1527,12 @@
 ) {
   color: var(--home-widget-ink-secondary);
 }
-[data-component='Surface'][data-instance='staff-propinas-history-entry'] :is(.text-emerald-600, .text-emerald-700) {
-  color: var(--color-positivo);
+[data-component='Surface'][data-instance='staff-propinas-history-entry'] :is(
+  .text-white,
+  .text-emerald-600,
+  .text-emerald-700
+) {
+  color: var(--home-widget-ink);
 }
 [data-instance='staff-propinas-history'] [data-component='EmptyState'] :is([data-element='title'], [data-element='description']) {
   color: color-mix(in srgb, var(--color-texto-invertido) 72%, transparent);

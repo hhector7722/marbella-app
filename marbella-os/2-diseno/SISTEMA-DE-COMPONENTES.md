@@ -124,7 +124,7 @@ Layout `hug` / `fill` no son variantes semánticas: el default visual es **`hug`
 
 **Código**: `src/components/ui/Surface.tsx`.
 
-**Estado**: existe. Piloto: `PageScreen`, dashboard caja/ventas, Staff (semana y fichaje), matriz de propinas, Sala LIVE. En `/staff/propinas`, los `Surface` `block` (`staff-propinas-last`, `staff-propinas-history`) no usan `color.superficie`: llevan `--home-widget-fill-secondary` y tinta invertida, igual que las cards de sáb/dom del widget de horario. El modal de detalle del reparto sigue en papel.
+**Estado**: existe. Piloto: `PageScreen`, dashboard caja/ventas, Staff (semana y fichaje), matriz de propinas, Sala LIVE. En `/staff/propinas`, `staff-propinas-last` es papel blanco (`color.superficie`); cada `staff-propinas-history-entry` usa `--home-widget-fill-secondary` y tinta invertida, igual que las cards de sáb/dom del widget de horario. El modal de detalle del reparto sigue en papel.
 
 ### Insignia de estado
 
