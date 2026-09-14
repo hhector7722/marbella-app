@@ -38,6 +38,8 @@ Una entrada por cambio, agrupadas por fecha descendente. Cada entrada: qué camb
 
 ## 2026-09-14
 
+- **Detalle de asistencia: Horas, H Extras y Total día en una fila.** En el modal del día esas tres magnitudes viven en la misma card; ya no hay una card inferior solo para el total. Quien gestiona sigue abriendo la semana desde un botón aparte.
+
 - **Detalle de asistencia: horas justificadas solo si hay.** En el modal del día (historial Staff, resumen semanal del mosaico y asistencia del Master) la card «Horas justificadas (computan)» no se pinta cuando el valor es cero. Quien gestiona puede añadirlas con «+ Horas justificadas».
 
 - **Calendario de asistencia: etiquetas F/E/B/P más pequeñas.** En `/staff/history` y en el resumen semanal del mosaico Staff, Festivo / Enfermo / Baja / Personal bajan a 7–10 px para no competir con los relojes de la celda. [TOKENS](../2-diseno/TOKENS.md).

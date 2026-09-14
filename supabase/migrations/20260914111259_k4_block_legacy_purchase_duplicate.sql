@@ -9,13 +9,13 @@ LANGUAGE plpgsql
 SET search_path = ''
 AS $$
 BEGIN
-  IF NEW.movement_type = 'PURCHASE'
+  IF NEW.movement_type = 'PURCHASE'::public.stock_movement_type
      AND NEW.reference_type = 'purchase_invoice_line'::public.stock_reference_type
      AND NEW.reference_id IS NOT NULL
      AND EXISTS (
        SELECT 1
        FROM public.stock_movements legacy
-       WHERE legacy.movement_type = 'PURCHASE'
+       WHERE legacy.movement_type = 'PURCHASE'::public.stock_movement_type
          AND legacy.reference_doc = 'ALB-LINE-' || NEW.reference_id::text
      ) THEN
     RAISE EXCEPTION

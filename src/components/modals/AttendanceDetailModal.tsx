@@ -665,7 +665,6 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
 
     const activeLogs = logs.filter((l) => !l.is_deleted);
     const showAddFichajeButton = canCreateFichaje && !loading;
-    const dayTotalHours = activeLogs.reduce((acc, l) => acc + resolveDraftHours(l), 0);
 
     const handleCreateFichaje = async () => {
         if (!date || !createUserId || !createTime.trim()) return;
@@ -961,8 +960,14 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                             </label>
                                         ) : null}
 
-                                        <div className={cn('grid gap-1.5', specialDay ? 'grid-cols-1' : 'grid-cols-2', !specialDay && 'mt-1.5')}>
-                                            <div className="bg-white rounded-xl py-1.5 px-2 border border-zinc-100">
+                                        <div
+                                            className={cn(
+                                                'grid gap-1.5',
+                                                specialDay ? 'grid-cols-1' : 'grid-cols-3',
+                                                !specialDay && 'mt-1.5',
+                                            )}
+                                        >
+                                            <div className="bg-white rounded-xl py-1.5 px-2 border border-zinc-100 min-w-0">
                                                 <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest block">
                                                     {specialDay ? 'Horas que computan' : 'Horas'}
                                                 </span>
@@ -982,25 +987,33 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                                     </span>
                                                 )}
                                             </div>
-                                            {!specialDay && (
-                                                <div className="bg-white rounded-xl py-1.5 px-2 border border-zinc-100">
-                                                    <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest block">H Extras</span>
-                                                    {isManager ? (
-                                                        <input
-                                                            type="number"
-                                                            step="0.5"
-                                                            value={workedHours > 8 ? workedHours - 8 : ''}
-                                                            placeholder=" "
-                                                            onChange={(e) => setLogHours(index, 8 + (parseFloat(e.target.value) || 0))}
-                                                            className="text-[12px] font-black text-red-600 bg-transparent border-none p-0 focus:ring-0 w-full"
-                                                        />
-                                                    ) : (
-                                                        <span className="text-[12px] font-black text-red-600 block">
-                                                            {workedHours > 8 ? fmtMarbellaHours(workedHours - 8) : ' '}
+                                            {!specialDay ? (
+                                                <>
+                                                    <div className="bg-white rounded-xl py-1.5 px-2 border border-zinc-100 min-w-0">
+                                                        <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest block">H Extras</span>
+                                                        {isManager ? (
+                                                            <input
+                                                                type="number"
+                                                                step="0.5"
+                                                                value={workedHours > 8 ? workedHours - 8 : ''}
+                                                                placeholder=" "
+                                                                onChange={(e) => setLogHours(index, 8 + (parseFloat(e.target.value) || 0))}
+                                                                className="text-[12px] font-black text-red-600 bg-transparent border-none p-0 focus:ring-0 w-full"
+                                                            />
+                                                        ) : (
+                                                            <span className="text-[12px] font-black text-red-600 block">
+                                                                {workedHours > 8 ? fmtMarbellaHours(workedHours - 8) : ' '}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="bg-white rounded-xl py-1.5 px-2 border border-zinc-100 min-w-0">
+                                                        <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest block">Total día</span>
+                                                        <span className="text-[12px] font-black text-zinc-800 block">
+                                                            {dayTotal > 0 ? fmtMarbellaHours(dayTotal) : ' '}
                                                         </span>
-                                                    )}
-                                                </div>
-                                            )}
+                                                    </div>
+                                                </>
+                                            ) : null}
                                         </div>
 
                                         {!specialDay && (justifiedAmt > 0 || isManager) ? (
@@ -1030,11 +1043,6 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                                                 {fmtMarbellaHours(justifiedAmt)}
                                                             </span>
                                                         )}
-                                                        {dayTotal > 0 ? (
-                                                            <span className="text-[7px] font-bold text-blue-500 mt-0.5 block">
-                                                                Total día: {fmtMarbellaHours(dayTotal)}
-                                                            </span>
-                                                        ) : null}
                                                     </div>
                                                 ) : null}
                                                 {isManager ? (
@@ -1086,24 +1094,16 @@ export function AttendanceDetailModal({ isOpen, onClose, date, userId, userRole,
                                 );
                             })}
 
-                            {activeLogs.length > 1 || dayTotalHours > 0 || isManager ? (
-                                <AttendancePaper className="flex items-center justify-between gap-2 py-1.5">
-                                    <div className="flex items-baseline gap-1.5 min-w-0">
-                                        <span className="text-[7px] font-black uppercase tracking-widest text-zinc-500">Total día</span>
-                                        <span className="text-[12px] font-black text-zinc-800">
-                                            {dayTotalHours > 0 ? fmtMarbellaHours(dayTotalHours) : ' '}
-                                        </span>
-                                    </div>
-                                    {isManager && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setEditWeekModalOpen(true)}
-                                            className="min-h-[48px] shrink-0 rounded-xl border border-[#36606F] bg-[#36606F]/10 text-[#36606F] flex items-center justify-center gap-1.5 py-2 px-2 hover:bg-[#36606F]/20 transition-colors active:scale-95"
-                                        >
-                                            <Calendar size={14} strokeWidth={2.5} />
-                                            <span className="text-[8px] font-black uppercase tracking-widest leading-tight">Semana</span>
-                                        </button>
-                                    )}
+                            {isManager ? (
+                                <AttendancePaper className="flex items-center justify-end py-1.5">
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditWeekModalOpen(true)}
+                                        className="min-h-[48px] shrink-0 rounded-xl border border-[#36606F] bg-[#36606F]/10 text-[#36606F] flex items-center justify-center gap-1.5 py-2 px-2 hover:bg-[#36606F]/20 transition-colors active:scale-95"
+                                    >
+                                        <Calendar size={14} strokeWidth={2.5} />
+                                        <span className="text-[8px] font-black uppercase tracking-widest leading-tight">Semana</span>
+                                    </button>
                                 </AttendancePaper>
                             ) : null}
 
