@@ -24,7 +24,7 @@ export default function Navbar() {
     const router = useRouter();
     const supabase = createClient();
     const { topHidden } = useChromeScroll();
-    const { identity, isMaster, openViewAsPicker } = useMasterViewAs();
+    const { identity, isMaster, sessionReady, openViewAsPicker } = useMasterViewAs();
     const [userData, setUserData] = useState<{ name: string; role: string; email: string; is_supervisor?: boolean } | null>(null);
 
     useEffect(() => {
@@ -69,8 +69,11 @@ export default function Navbar() {
     if (pathname.startsWith('/design-system')) return null;
 
     const effectiveRole = identity?.isViewingAs ? identity.effectiveRole : userData?.role;
+    const effectiveCameraEmail = (
+        identity?.isViewingAs ? identity.effectiveEmail : userData?.email
+    )?.trim().toLowerCase();
     const canSeeCamera = Boolean(
-        userData?.email && CAMERA_ACCESS_EMAILS.has(userData.email.trim().toLowerCase())
+        sessionReady && effectiveCameraEmail && CAMERA_ACCESS_EMAILS.has(effectiveCameraEmail)
     );
 
     const displayName =
